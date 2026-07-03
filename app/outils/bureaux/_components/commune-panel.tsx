@@ -50,14 +50,14 @@ export function CommunePanel({ commune, bureaux }: Props) {
   const validBureaux = bureaux.filter((b): b is BureauResult => !!b)
 
   // Couleurs des dots sur la map. Contrainte : aucune collision visuelle
-  // avec les 4 OP (CAPAC orange, FGTB rouge, CSC vert, CGSLB bleu) ni
+  // avec les 4 OP (CAPAC orange, FGTB rouge, CSC vert, SYNOVA bleu) ni
   // avec le centroïde commune (violet primary).
   //  - ONEM    : anthracite (sobre, "officiel", distinct de toutes les
   //              couleurs OP — le rouge clair précédent #F87171 était
   //              trop proche de l'orange CAPAC #F58220)
   //  - CPAS    : gris neutre
   //  - COMMUNE : blanc (stroke pour visibilité sur fond clair)
-  //  - SYNDICAT: couleur de l'organisme (FGTB rouge, CSC vert, CGSLB
+  //  - SYNDICAT: couleur de l'organisme (FGTB rouge, CSC vert, SYNOVA
   //              bleu, CAPAC orange — déjà dans organismeColor en DB)
   const TYPE_COLOR: Record<string, string> = {
     ONEM: '#1F2937', // gray-800 anthracite — distinct de tous les OP
@@ -73,11 +73,11 @@ export function CommunePanel({ commune, bureaux }: Props) {
     .map((b) => {
       // Pour ONEM/CPAS/COMMUNE on force TYPE_COLOR (rouge clair / gris /
       // blanc) — organismeColor en DB peut avoir des valeurs historiques
-      // bleues qui collidaient avec CGSLB (cf. bug visible : 2 dots bleus
-      // ONEM + CGSLB indistinguables).
+      // bleues qui collidaient avec SYNOVA (cf. bug visible : 2 dots bleus
+      // ONEM + SYNOVA indistinguables).
       //
       // Pour SYNDICAT on prend organismeColor (couleur officielle de chaque
-      // OP : CAPAC orange, FGTB rouge, CSC vert, CGSLB bleu).
+      // OP : CAPAC orange, FGTB rouge, CSC vert, SYNOVA bleu).
       const color =
         b.type === 'SYNDICAT'
           ? (b.organismeColor ?? TYPE_COLOR.SYNDICAT)

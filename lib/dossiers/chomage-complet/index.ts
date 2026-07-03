@@ -73,7 +73,7 @@ L'introduction de la demande doit intervenir rapidement après la fin du
 contrat de travail. En pratique, on retient un repère simple : **8 jours
 ouvrables** à partir du jour qui suit la fin du contrat pour s'inscrire
 comme demandeur d'emploi auprès du service régional et déposer le
-dossier auprès de l'organisme de paiement (FGTB, CSC, CGSLB ou CAPAC).
+dossier auprès de l'organisme de paiement (FGTB, CSC, SYNOVA ou CAPAC).
 
 Un dépôt tardif n'éteint pas le droit, mais peut entraîner une perte
 des allocations pour la période couverte par le retard. En cas de

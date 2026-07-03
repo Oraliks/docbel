@@ -26,7 +26,7 @@ périmètre code (décision/juridique).
 - [ ] Corriger `lib/app-settings.ts` (« Aucun cookie de pistage tiers » = faux).
 - [ ] Notice contextuelle IA (`intent-search.tsx`) : « requête analysée par Anthropic, USA »
       OU désactiver `/api/intent-detect` (fallback local).
-- [ ] Case consentement art. 9 sur booking FGTB/CSC/CGSLB (`booking-flow.tsx`) — bloquante.
+- [ ] Case consentement art. 9 sur booking FGTB/CSC/SYNOVA (`booking-flow.tsx`) — bloquante.
 
 ## 2) Juridique / documentaire (🧑‍⚖️ hors code, à acter par le propriétaire)
 - [ ] 🧑‍⚖️ Choisir l'**entité responsable de traitement** (personne physique vs société) + BCE.

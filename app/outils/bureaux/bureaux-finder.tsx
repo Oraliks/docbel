@@ -157,7 +157,7 @@ export function BureauxFinder() {
   )
 
   const showResults = !!data && !loading
-  // Pour la map : on inclut TOUS les OP (CAPAC + FGTB + CSC + CGSLB), pas
+  // Pour la map : on inclut TOUS les OP (CAPAC + FGTB + CSC + SYNOVA), pas
   // juste le premier. Ça permet de voir leur dispersion géographique réelle
   // autour de la commune sélectionnée.
   const mapBureaus = useMemo(

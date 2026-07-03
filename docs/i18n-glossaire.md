@@ -53,7 +53,7 @@ seules EN/AR/TR/RO/BG gardent le terme FR + la glose.
 | **SPP** | 🔴 | administration fédérale belge spécialisée | NL: POD · ✓ |
 | **ALE** | 🔴 | agence locale pour petits travaux occasionnels | NL: PWA · ✓ |
 | **Organisme de paiement (OP)** | 🟡 | organisme qui verse les allocations (CAPAC ou un syndicat) | NL: uitbetalingsinstelling |
-| **CSC / FGTB / CGSLB** | 🔴 | syndicats belges (qui paient aussi les allocations) | NL: ACV / ABVV / ACLVB |
+| **CSC / FGTB / SYNOVA** | 🔴 | syndicats belges (qui paient aussi les allocations ; SYNOVA = ex-CGSLB/ACLVB) | NL: ACV / ABVV / SYNOVA |
 | **Mutualité** | 🟡 | organisme qui rembourse les soins et verse les indemnités maladie | NL: ziekenfonds |
 | **Secrétariat social** | 🟡 | prestataire qui gère la paie et les déclarations pour l'employeur | NL: sociaal secretariaat |
 | **Itsme** | 🔴 | application belge d'identité numérique | nom propre |

@@ -2381,12 +2381,12 @@
       "ophCapacBadge": "Public institution",
       "ophCapacBody": "The <strong>Auxiliary Fund for the Payment of Unemployment Benefits</strong> is the public institution, run by the State. No membership fee, free. Only provides benefit payment — no legal defence or union services.",
       "ophCapacFor": "<strong>Who is it for?</strong> You don't want to join a union, or you're looking for the simplest and most neutral option.",
-      "ophSyndicatNames": "FGTB/ABVV · CSC/ACV · CGSLB/ACLVB",
+      "ophSyndicatNames": "FGTB/ABVV · CSC/ACV · SYNOVA",
       "ophSyndicatBadge": "Unions",
       "ophSyndicatBody": "The 3 Belgian unions also pay benefits to their members and additionally offer <strong>legal defence</strong>, labour law advice, and support. <strong>Monthly membership fee</strong> (~15-20 €/month depending on union and status).",
       "ophSyndicatFgtb": "<strong>FGTB/ABVV</strong> (Belgian General Federation of Labour) — socialist, more present in industry",
       "ophSyndicatCsc": "<strong>CSC/ACV</strong> (Confederation of Christian Trade Unions) — largest Belgian union",
-      "ophSyndicatCgslb": "<strong>CGSLB/ACLVB</strong> (General Confederation of Liberal Trade Unions of Belgium) — liberal, smaller",
+      "ophSyndicatSynova": "<strong>SYNOVA</strong> (formerly CGSLB/ACLVB, General Confederation of Liberal Trade Unions of Belgium) — free trade union, smaller",
       "ophSyndicatFor": "<strong>Who is it for?</strong> You want active support (employer dispute, negotiation, advice) on top of the payment.",
       "ophUnknownTitle": "Don't know if you're already a member?",
       "ophUnknownBullet1": "Check your payslip — the union deduction is shown if you contribute to a union",
@@ -3887,7 +3887,7 @@
         },
         "correction": {
           "title": "Correcting an error",
-          "fallbackBody": "If the card has already been sent and contains an error, you can correct it using a form available from your payment institution (CAPAC/HVW, CSC/ACV, FGTB/ABVV or CGSLB/ACLVB)."
+          "fallbackBody": "If the card has already been sent and contains an error, you can correct it using a form available from your payment institution (CAPAC/HVW, CSC/ACV, FGTB/ABVV or SYNOVA)."
         },
         "firstSendDate": {
           "title": "Earliest possible sending date"
@@ -4593,7 +4593,7 @@
           },
           "delai8Jours": {
             "title": "The 8-day deadline",
-            "body": "The claim must be filed quickly after the end of the employment contract. In practice, a simple landmark applies: **8 business days** from the day following the end of the contract to register as a job seeker with the regional service and submit the file with the payment organisation (FGTB/ABVV, CSC/ACV, CGSLB/ACLVB or CAPAC/HVW).\n\nA late submission does not extinguish the right, but may cause loss of benefits for the period covered by the delay. In case of difficulty (illness, ongoing steps), the partner must be able to document the cause of the delay to assert it with ONEM/RVA.\n\nPublic reference: www.onem.be."
+            "body": "The claim must be filed quickly after the end of the employment contract. In practice, a simple landmark applies: **8 business days** from the day following the end of the contract to register as a job seeker with the regional service and submit the file with the payment organisation (FGTB/ABVV, CSC/ACV, SYNOVA or CAPAC/HVW).\n\nA late submission does not extinguish the right, but may cause loss of benefits for the period covered by the delay. In case of difficulty (illness, ongoing steps), the partner must be able to document the cause of the delay to assert it with ONEM/RVA.\n\nPublic reference: www.onem.be."
           },
           "documentsAPreparer": {
             "title": "The documents to prepare",
@@ -6290,8 +6290,8 @@
               "description": "The official application to complete and send your temporary unemployment control card on iPhone."
             },
             "orgs": {
-              "label": "Payment institutions (HVW/CAPAC, ACV/CSC, ABVV/FGTB, ACLVB/CGSLB)",
-              "description": "To receive your benefits, you must be affiliated with a payment institution: HVW/CAPAC (public) or a trade union (ACV/CSC, ABVV/FGTB, ACLVB/CGSLB)."
+              "label": "Payment institutions (HVW/CAPAC, ACV/CSC, ABVV/FGTB, SYNOVA)",
+              "description": "To receive your benefits, you must be affiliated with a payment institution: HVW/CAPAC (public) or a trade union (ACV/CSC, ABVV/FGTB, SYNOVA)."
             },
             "onem": {
               "label": "NEO — National Employment Office",
@@ -6492,7 +6492,7 @@
           "title": "I am not yet affiliated with a payment institution",
           "level": "Intermediate",
           "duration": "3 min",
-          "context": "You fill in your card, but you are not yet affiliated with a payment institution (HVW/CAPAC, ACV/CSC, ABVV/FGTB or ACLVB/CGSLB).",
+          "context": "You fill in your card, but you are not yet affiliated with a payment institution (HVW/CAPAC, ACV/CSC, ABVV/FGTB or SYNOVA).",
           "objective": "Understand that the card can be filled in without affiliation but cannot be submitted.",
           "expectedAction": "Fill in the card but observe that submission is blocked.",
           "feedbackCorrect": "Correct: without affiliation with a payment institution, the card can be filled in but cannot be submitted.",
@@ -6782,7 +6782,7 @@
         },
         "send": {
           "firstSendBefore": "Submission is not yet possible: the first possible submission date has not been reached. Even when this date falls before the end of the month, the card must be filled in correctly until the last day of the month. (This simulation never sends anything.)",
-          "noPaymentOrg": "In the real application, you can fill in the card, but you must be affiliated with a payment institution (HVW/CAPAC, ACV/CSC, ABVV/FGTB or ACLVB/CGSLB) to be able to send it.",
+          "noPaymentOrg": "In the real application, you can fill in the card, but you must be affiliated with a payment institution (HVW/CAPAC, ACV/CSC, ABVV/FGTB or SYNOVA) to be able to send it.",
           "notNeeded": "If you do not request benefits, submission is not necessary. If you wish to request benefits, affiliation with a payment institution is required."
         },
         "correction": {
@@ -6841,7 +6841,7 @@
         },
         "pas-inscrit-organisme-paiement": {
           "title": "Not being affiliated with a payment institution",
-          "explanation": "Without affiliation with a payment institution (HVW/CAPAC, ACV/CSC, ABVV/FGTB or ACLVB/CGSLB), the card can be filled in but cannot be submitted.",
+          "explanation": "Without affiliation with a payment institution (HVW/CAPAC, ACV/CSC, ABVV/FGTB or SYNOVA), the card can be filled in but cannot be submitted.",
           "advice": "Affiliate yourself with a payment institution as soon as possible to be able to submit your card and receive your benefits."
         },
         "oublier-jours-maladie": {
@@ -6902,7 +6902,7 @@
         },
         "6": {
           "q": "Do I have to be affiliated with a payment institution?",
-          "a": "Yes. To receive benefits and to send the card, you must be affiliated with a payment institution: HVW/CAPAC, ACV/CSC, ABVV/FGTB or ACLVB/CGSLB."
+          "a": "Yes. To receive benefits and to send the card, you must be affiliated with a payment institution: HVW/CAPAC, ACV/CSC, ABVV/FGTB or SYNOVA."
         },
         "7": {
           "q": "Can I fill in the card without a payment institution?",
@@ -7476,7 +7476,7 @@
       "svcType_paiement_capac": "CAPAC (public fund)",
       "svcType_paiement_fgtb": "FGTB (payment body)",
       "svcType_paiement_csc": "CSC (payment body)",
-      "svcType_paiement_cgslb": "CGSLB (payment body)",
+      "svcType_paiement_synova": "SYNOVA (payment body)",
       "svcType_mutuelle_solidaris": "Solidaris health insurer",
       "svcType_mutuelle_mc": "Mutualité Chrétienne",
       "svcType_mutuelle_mloz": "MLOZ (independent health insurers)",
@@ -7486,7 +7486,7 @@
       "svcTypeHelper_paiement_capac": "CAPAC/HVW offices",
       "svcTypeHelper_paiement_fgtb": "FGTB/ABVV funds",
       "svcTypeHelper_paiement_csc": "CSC/ACV funds",
-      "svcTypeHelper_paiement_cgslb": "CGSLB/ACLVB funds",
+      "svcTypeHelper_paiement_synova": "SYNOVA funds",
       "svcTypeHelper_mutuelle_solidaris": "—",
       "svcTypeHelper_mutuelle_mc": "—",
       "svcTypeHelper_mutuelle_mloz": "—",

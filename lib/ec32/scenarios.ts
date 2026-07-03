@@ -255,7 +255,7 @@ export const ec32DefaultScenarios: Ec32ScenarioContent[] = [
     duration: '3 min',
     durationKey: 'public.ec32Content.scenarios.no-payment-org.duration',
     context:
-      'Vous complétez votre carte, mais vous n’êtes pas encore inscrit auprès d’un organisme de paiement (CAPAC, CSC, FGTB ou CGSLB).',
+      'Vous complétez votre carte, mais vous n’êtes pas encore inscrit auprès d’un organisme de paiement (CAPAC, CSC, FGTB ou SYNOVA).',
     contextKey: 'public.ec32Content.scenarios.no-payment-org.context',
     objective:
       'Comprendre que la carte peut être complétée sans inscription, mais ne peut pas être envoyée.',

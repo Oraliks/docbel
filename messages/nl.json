@@ -484,7 +484,7 @@
       "svcType_paiement_capac": "HVW (openbare kas)",
       "svcType_paiement_fgtb": "ABVV (uitbetalingsinstelling)",
       "svcType_paiement_csc": "ACV (uitbetalingsinstelling)",
-      "svcType_paiement_cgslb": "ACLVB (uitbetalingsinstelling)",
+      "svcType_paiement_synova": "SYNOVA (uitbetalingsinstelling)",
       "svcType_mutuelle_solidaris": "Ziekenfonds Solidaris",
       "svcType_mutuelle_mc": "Christelijke Mutualiteit",
       "svcType_mutuelle_mloz": "MLOZ (Onafhankelijke Ziekenfondsen)",
@@ -494,7 +494,7 @@
       "svcTypeHelper_paiement_capac": "HVW-bureaus",
       "svcTypeHelper_paiement_fgtb": "ABVV-kantoren",
       "svcTypeHelper_paiement_csc": "ACV-kantoren",
-      "svcTypeHelper_paiement_cgslb": "ACLVB-kantoren",
+      "svcTypeHelper_paiement_synova": "SYNOVA-kantoren",
       "svcTypeHelper_mutuelle_solidaris": "—",
       "svcTypeHelper_mutuelle_mc": "—",
       "svcTypeHelper_mutuelle_mloz": "—",
@@ -5448,12 +5448,12 @@
       "ophCapacBadge": "Openbare instelling",
       "ophCapacBody": "De <strong>Hulpkas voor Werkloosheidsuitkeringen</strong> is de openbare instelling, beheerd door de Staat. Geen lidgeld, gratis. Verzorgt enkel de uitbetaling van de uitkeringen — geen juridische verdediging of vakbondsdiensten.",
       "ophCapacFor": "<strong>Voor wie?</strong> Je wil niet bij een vakbond aansluiten of je zoekt de eenvoudigste en neutrale oplossing.",
-      "ophSyndicatNames": "ABVV · ACV · ACLVB",
+      "ophSyndicatNames": "ABVV · ACV · SYNOVA",
       "ophSyndicatBadge": "Vakbonden",
       "ophSyndicatBody": "De 3 Belgische vakbonden betalen ook de uitkeringen aan hun leden uit en bieden bovendien <strong>juridische verdediging</strong>, arbeidsrechtelijk advies en begeleiding. <strong>Maandelijks lidgeld</strong> (~15-20 €/maand afhankelijk van vakbond en statuut).",
       "ophSyndicatFgtb": "<strong>ABVV</strong> (Algemeen Belgisch Vakverbond) — socialistisch, sterker aanwezig in de industrie",
       "ophSyndicatCsc": "<strong>ACV</strong> (Algemeen Christelijk Vakverbond) — grootste Belgische vakbond",
-      "ophSyndicatCgslb": "<strong>ACLVB</strong> (Algemene Centrale der Liberale Vakbonden van België) — liberaal, kleiner",
+      "ophSyndicatSynova": "<strong>SYNOVA</strong> (voorheen ACLVB/CGSLB, Algemene Centrale der Liberale Vakbonden van België) — vrije vakbond, kleiner",
       "ophSyndicatFor": "<strong>Voor wie?</strong> Je wil actieve ondersteuning (geschillen met werkgever, onderhandeling, advies) bovenop de uitbetaling.",
       "ophUnknownTitle": "Weet je niet of je al aangesloten bent?",
       "ophUnknownBullet1": "Kijk op je loonfiche — de vakbondsbijdrage staat vermeld als je bij een vakbond bijdraagt",
@@ -6954,7 +6954,7 @@
         },
         "correction": {
           "title": "Een fout corrigeren",
-          "fallbackBody": "Als de kaart al verstuurd is en een fout bevat, kunt u die corrigeren met een formulier dat beschikbaar is bij uw uitbetalingsinstelling (HVW, ACV, ABVV of ACLVB)."
+          "fallbackBody": "Als de kaart al verstuurd is en een fout bevat, kunt u die corrigeren met een formulier dat beschikbaar is bij uw uitbetalingsinstelling (HVW, ACV, ABVV of SYNOVA)."
         },
         "firstSendDate": {
           "title": "Eerste mogelijke verzenddatum"
@@ -7660,7 +7660,7 @@
           },
           "delai8Jours": {
             "title": "De termijn van 8 dagen",
-            "body": "De aanvraag moet snel ingediend worden na het einde van de arbeidsovereenkomst. In de praktijk geldt een eenvoudig richtpunt: **8 werkdagen** vanaf de dag na het einde van de overeenkomst om zich in te schrijven als werkzoekende bij de gewestelijke dienst en het dossier in te dienen bij de uitbetalingsinstelling (ABVV, ACV, ACLVB of HVW).\n\nEen laattijdige indiening doet het recht niet vervallen, maar kan leiden tot verlies van uitkeringen voor de periode van de vertraging. Bij moeilijkheden (ziekte, lopende stappen) moet de partner de oorzaak van de vertraging kunnen documenteren om die bij de RVA in te roepen.\n\nPublieke bron: www.rva.be."
+            "body": "De aanvraag moet snel ingediend worden na het einde van de arbeidsovereenkomst. In de praktijk geldt een eenvoudig richtpunt: **8 werkdagen** vanaf de dag na het einde van de overeenkomst om zich in te schrijven als werkzoekende bij de gewestelijke dienst en het dossier in te dienen bij de uitbetalingsinstelling (ABVV, ACV, SYNOVA of HVW).\n\nEen laattijdige indiening doet het recht niet vervallen, maar kan leiden tot verlies van uitkeringen voor de periode van de vertraging. Bij moeilijkheden (ziekte, lopende stappen) moet de partner de oorzaak van de vertraging kunnen documenteren om die bij de RVA in te roepen.\n\nPublieke bron: www.rva.be."
           },
           "documentsAPreparer": {
             "title": "Voor te bereiden documenten",
@@ -9357,8 +9357,8 @@
               "description": "De officiële applicatie om uw controlekaart tijdelijke werkloosheid op iPhone in te vullen en te verzenden."
             },
             "orgs": {
-              "label": "Uitbetalingsinstellingen (HVW, ACV, ABVV, ACLVB)",
-              "description": "Om uw uitkeringen te ontvangen, moet u aangesloten zijn bij een uitbetalingsinstelling: de HVW (openbaar) of een vakbond (ACV, ABVV, ACLVB)."
+              "label": "Uitbetalingsinstellingen (HVW, ACV, ABVV, SYNOVA)",
+              "description": "Om uw uitkeringen te ontvangen, moet u aangesloten zijn bij een uitbetalingsinstelling: de HVW (openbaar) of een vakbond (ACV, ABVV, SYNOVA)."
             },
             "onem": {
               "label": "RVA — Rijksdienst voor Arbeidsvoorziening",
@@ -9559,7 +9559,7 @@
           "title": "Ik ben nog niet aangesloten bij een uitbetalingsinstelling",
           "level": "Gevorderd",
           "duration": "3 min",
-          "context": "U vult uw kaart in, maar u bent nog niet aangesloten bij een uitbetalingsinstelling (HVW, ACV, ABVV of ACLVB).",
+          "context": "U vult uw kaart in, maar u bent nog niet aangesloten bij een uitbetalingsinstelling (HVW, ACV, ABVV of SYNOVA).",
           "objective": "Begrijpen dat de kaart zonder aansluiting wel kan worden ingevuld, maar niet kan worden verzonden.",
           "expectedAction": "Vul de kaart in maar stel vast dat verzenden geblokkeerd is.",
           "feedbackCorrect": "Juist: zonder aansluiting bij een uitbetalingsinstelling kan de kaart worden ingevuld maar niet verzonden.",
@@ -9849,7 +9849,7 @@
         },
         "send": {
           "firstSendBefore": "Verzenden is nog niet mogelijk: de eerste mogelijke verzenddatum is niet bereikt. Ook al valt deze datum vóór het einde van de maand, de kaart moet correct worden ingevuld tot de laatste dag van de maand. (Deze simulatie verzendt nooit iets.)",
-          "noPaymentOrg": "In de echte applicatie kunt u de kaart invullen, maar u moet aangesloten zijn bij een uitbetalingsinstelling (HVW, ACV, ABVV of ACLVB) om ze te kunnen verzenden.",
+          "noPaymentOrg": "In de echte applicatie kunt u de kaart invullen, maar u moet aangesloten zijn bij een uitbetalingsinstelling (HVW, ACV, ABVV of SYNOVA) om ze te kunnen verzenden.",
           "notNeeded": "Vraagt u geen uitkeringen aan, dan is verzenden niet nodig. Wilt u uitkeringen aanvragen, dan is aansluiting bij een uitbetalingsinstelling vereist."
         },
         "correction": {
@@ -9908,7 +9908,7 @@
         },
         "pas-inscrit-organisme-paiement": {
           "title": "Niet aangesloten zijn bij een uitbetalingsinstelling",
-          "explanation": "Zonder aansluiting bij een uitbetalingsinstelling (HVW, ACV, ABVV of ACLVB) kan de kaart worden ingevuld maar niet worden verzonden.",
+          "explanation": "Zonder aansluiting bij een uitbetalingsinstelling (HVW, ACV, ABVV of SYNOVA) kan de kaart worden ingevuld maar niet worden verzonden.",
           "advice": "Sluit u zo snel mogelijk aan bij een uitbetalingsinstelling om uw kaart te kunnen verzenden en uw uitkeringen te ontvangen."
         },
         "oublier-jours-maladie": {
@@ -9969,7 +9969,7 @@
         },
         "6": {
           "q": "Moet ik aangesloten zijn bij een uitbetalingsinstelling?",
-          "a": "Ja. Om uitkeringen te ontvangen en de kaart te verzenden, moet u aangesloten zijn bij een uitbetalingsinstelling: de HVW, het ACV, het ABVV of de ACLVB."
+          "a": "Ja. Om uitkeringen te ontvangen en de kaart te verzenden, moet u aangesloten zijn bij een uitbetalingsinstelling: de HVW, het ACV, het ABVV of de SYNOVA."
         },
         "7": {
           "q": "Kan ik de kaart invullen zonder uitbetalingsinstelling?",

@@ -54,7 +54,7 @@ export const ec32DefaultFaq: Ec32FaqItem[] = [
   {
     q: 'Dois-je être inscrit auprès d’un organisme de paiement ?',
     questionKey: 'public.ec32Content.faq.6.q',
-    a: 'Oui. Pour percevoir des allocations et pour envoyer la carte, vous devez être inscrit auprès d’un organisme de paiement : la CAPAC, la CSC, la FGTB ou la CGSLB.',
+    a: 'Oui. Pour percevoir des allocations et pour envoyer la carte, vous devez être inscrit auprès d’un organisme de paiement : la CAPAC, la CSC, la FGTB ou la SYNOVA.',
     answerKey: 'public.ec32Content.faq.6.a',
   },
   {

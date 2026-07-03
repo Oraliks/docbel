@@ -26,12 +26,12 @@ interface Props {
   userGeoloc: UserGeoloc | null
 }
 
-const ORDER = ['capac', 'fgtb', 'csc', 'cgslb']
+const ORDER = ['capac', 'fgtb', 'csc', 'synova']
 
 /**
  * OP card alignée sur le layout standard BureauCard :
  *  - Header : label "ORGANISME DE PAIEMENT" + flag report
- *  - Strip tabs CAPAC/FGTB/CSC/CGSLB + lien "Quel OP choisir ?"
+ *  - Strip tabs CAPAC/FGTB/CSC/SYNOVA + lien "Quel OP choisir ?"
  *  - Content row : logo (dynamique selon tab) | contact (340px) | distances
  *    (80px) | horaires (flex-1) | bouton itinéraire
  *

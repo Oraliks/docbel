@@ -2092,7 +2092,7 @@
       "pvPdfDetailHeading": "Berechnungsdetails",
       "pvPdfIclLabel": "ICL (Differenz)",
       "pvPdfIclValue": "{jours} Tage",
-      "pvPdfDisclaimer": "Richtwert auf Grundlage der offiziellen Tarife des SPF Emploi (FÖD Beschäftigung) (CCT 75 vor 2014, Gesetz vom 26. Dezember 2013 nach 2014). Die genaue Frist kann je nach sektoriellen Vereinbarungen, individuellen Abkommen oder besonderen Umständen abweichen. Wenden Sie sich an Ihre Gewerkschaft (CSC / FGTB / CGSLB) oder einen Rechtsberater, bevor Sie Schritte unternehmen.",
+      "pvPdfDisclaimer": "Richtwert auf Grundlage der offiziellen Tarife des SPF Emploi (FÖD Beschäftigung) (CCT 75 vor 2014, Gesetz vom 26. Dezember 2013 nach 2014). Die genaue Frist kann je nach sektoriellen Vereinbarungen, individuellen Abkommen oder besonderen Umständen abweichen. Wenden Sie sich an Ihre Gewerkschaft (CSC / FGTB / SYNOVA) oder einen Rechtsberater, bevor Sie Schritte unternehmen.",
       "choIntro": "Schätzen Sie Ihre <strong>monatliche Arbeitslosenunterstützung</strong> anhand Ihres letzten Gehalts, Ihrer familiären Situation und der Degression der ONEM (belgische Bundesbehörde für Arbeitslosigkeit). Die belgischen Beträge nehmen mit der Zeit ab.",
       "choSalaireLabel": "Monatliches Bruttogehalt (€)",
       "choSalairePlaceholder": "z. B.: 2 500",
@@ -3004,12 +3004,12 @@
       "ophCapacBadge": "Öffentliche Einrichtung",
       "ophCapacBody": "Die <strong>CAPAC (Caisse Auxiliaire de Paiement des Allocations de Chômage – staatliche Hilfskasse für Arbeitslosenzahlungen)</strong> ist die öffentliche, vom Staat verwaltete Zahlstelle. Ohne Beitrag, kostenlos. Bietet nur die Auszahlung der Leistungen – keine Rechtsvertretung oder gewerkschaftliche Dienste.",
       "ophCapacFor": "<strong>Für wen?</strong> Du möchtest keiner Gewerkschaft beitreten oder suchst die einfachste und neutralste Lösung.",
-      "ophSyndicatNames": "FGTB · CSC · CGSLB (belgische Gewerkschaften)",
+      "ophSyndicatNames": "FGTB · CSC · SYNOVA (belgische Gewerkschaften)",
       "ophSyndicatBadge": "Gewerkschaften",
       "ophSyndicatBody": "Die 3 belgischen Gewerkschaften zahlen ihren Mitgliedern ebenfalls die Leistungen und bieten zusätzlich <strong>Rechtsschutz</strong>, arbeitsrechtliche Beratung und Begleitung. <strong>Monatlicher Beitrag</strong> (~15–20 €/Monat je nach Gewerkschaft und Status).",
       "ophSyndicatFgtb": "<strong>FGTB</strong> (Fédération Générale du Travail de Belgique – sozialistisch orientiert, stärker in der Industrie vertreten)",
       "ophSyndicatCsc": "<strong>CSC</strong> (Confédération des Syndicats Chrétiens – größte belgische Gewerkschaft)",
-      "ophSyndicatCgslb": "<strong>CGSLB</strong> (Centrale Générale des Syndicats Libéraux de Belgique – liberal, kleinste der drei)",
+      "ophSyndicatSynova": "<strong>SYNOVA</strong> (ehemals CGSLB, Centrale Générale des Syndicats Libéraux de Belgique – freie Gewerkschaft, kleinste der drei)",
       "ophSyndicatFor": "<strong>Für wen?</strong> Du möchtest zusätzlich zur Auszahlung eine aktive Unterstützung (Konflikt mit dem Arbeitgeber, Verhandlung, Beratung).",
       "ophUnknownTitle": "Du weißt nicht, ob du bereits Mitglied bist?",
       "ophUnknownBullet1": "Schau dir deine Gehaltsabrechnung an — der Gewerkschaftsbeitrag ist erwähnt, falls du an eine Gewerkschaft zahlst",
@@ -3811,7 +3811,7 @@
         },
         "correction": {
           "title": "Einen Fehler korrigieren",
-          "fallbackBody": "Wenn die Karte bereits gesendet wurde und einen Fehler enthält, können Sie ihn mithilfe eines Formulars korrigieren, das bei Ihrer Auszahlungsstelle (CAPAC, CSC, FGTB oder CGSLB) erhältlich ist."
+          "fallbackBody": "Wenn die Karte bereits gesendet wurde und einen Fehler enthält, können Sie ihn mithilfe eines Formulars korrigieren, das bei Ihrer Auszahlungsstelle (CAPAC, CSC, FGTB oder SYNOVA) erhältlich ist."
         },
         "firstSendDate": {
           "title": "Frühestmögliches Sendedatum"
@@ -4517,7 +4517,7 @@
           },
           "delai8Jours": {
             "title": "Die 8-Tage-Frist",
-            "body": "Der Antrag muss rasch nach dem Ende des Arbeitsvertrags gestellt werden. In der Praxis gilt eine einfache Orientierungsgröße: **8 Werktage** ab dem Tag nach dem Vertragsende, um sich als Arbeitssuchender beim regionalen Dienst anzumelden und das Dossier beim Auszahlungsorgan (FGTB, CSC, CGSLB oder CAPAC) einzureichen.\n\nEine verspätete Einreichung löscht das Recht nicht aus, kann jedoch zum Verlust der Leistungen für den Zeitraum des Verzugs führen. Bei Schwierigkeiten (Krankheit, laufende Verfahren) muss der Partner die Ursache des Verzugs belegen können, um sie gegenüber dem ONEM (LfA) geltend zu machen.\n\nÖffentliche Referenzquelle: www.onem.be."
+            "body": "Der Antrag muss rasch nach dem Ende des Arbeitsvertrags gestellt werden. In der Praxis gilt eine einfache Orientierungsgröße: **8 Werktage** ab dem Tag nach dem Vertragsende, um sich als Arbeitssuchender beim regionalen Dienst anzumelden und das Dossier beim Auszahlungsorgan (FGTB, CSC, SYNOVA oder CAPAC) einzureichen.\n\nEine verspätete Einreichung löscht das Recht nicht aus, kann jedoch zum Verlust der Leistungen für den Zeitraum des Verzugs führen. Bei Schwierigkeiten (Krankheit, laufende Verfahren) muss der Partner die Ursache des Verzugs belegen können, um sie gegenüber dem ONEM (LfA) geltend zu machen.\n\nÖffentliche Referenzquelle: www.onem.be."
           },
           "documentsAPreparer": {
             "title": "Die vorzubereitenden Dokumente",
@@ -5928,8 +5928,8 @@
               "description": "Die offizielle App zum Ausfüllen und Einreichen Ihrer Kontrollkarte (C3) für vorübergehende Arbeitslosigkeit auf iPhone."
             },
             "orgs": {
-              "label": "Auszahlungsorganismen (CAPAC, CSC, FGTB, CGSLB)",
-              "description": "Um Ihre Arbeitslosengelder zu erhalten, müssen Sie einem Auszahlungsorganismus angeschlossen sein: der CAPAC (öffentliche Kasse) oder einer Gewerkschaft (CSC, FGTB oder CGSLB)."
+              "label": "Auszahlungsorganismen (CAPAC, CSC, FGTB, SYNOVA)",
+              "description": "Um Ihre Arbeitslosengelder zu erhalten, müssen Sie einem Auszahlungsorganismus angeschlossen sein: der CAPAC (öffentliche Kasse) oder einer Gewerkschaft (CSC, FGTB oder SYNOVA)."
             },
             "onem": {
               "label": "ONEM — Landesamt für Arbeitsbeschaffung",
@@ -6130,7 +6130,7 @@
           "title": "Ich bin noch nicht bei einer Auszahlungsstelle (Organisme de paiement) angemeldet",
           "level": "Fortgeschritten",
           "duration": "3 Min.",
-          "context": "Sie füllen Ihre Karte aus, sind aber noch nicht bei einer Auszahlungsstelle (CAPAC, CSC, FGTB oder CGSLB) angemeldet.",
+          "context": "Sie füllen Ihre Karte aus, sind aber noch nicht bei einer Auszahlungsstelle (CAPAC, CSC, FGTB oder SYNOVA) angemeldet.",
           "objective": "Verstehen, dass die Karte ohne Anmeldung ausgefüllt, aber nicht gesendet werden kann.",
           "expectedAction": "Die Karte ausfüllen und feststellen, dass das Senden blockiert ist.",
           "feedbackCorrect": "Richtig: Ohne Anmeldung bei einer Auszahlungsstelle (Organisme de paiement) kann die Karte zwar ausgefüllt, aber nicht gesendet werden.",
@@ -6416,7 +6416,7 @@
         },
         "send": {
           "firstSendBefore": "Das Einreichen ist noch nicht möglich: Das frühestmögliche Einreichungsdatum wurde noch nicht erreicht. Auch wenn dieses Datum vor dem Monatsende liegt, muss die Karte bis zum letzten Tag des Monats korrekt ausgefüllt werden. (Diese Simulation sendet niemals etwas.)",
-          "noPaymentOrg": "In der echten Anwendung können Sie die Karte ausfüllen, aber Sie müssen bei einer Zahlstelle (CAPAC, CSC, FGTB oder CGSLB) angeschlossen sein, um sie einreichen zu können.",
+          "noPaymentOrg": "In der echten Anwendung können Sie die Karte ausfüllen, aber Sie müssen bei einer Zahlstelle (CAPAC, CSC, FGTB oder SYNOVA) angeschlossen sein, um sie einreichen zu können.",
           "notNeeded": "Wenn Sie keine Leistungen beantragen, ist das Einreichen nicht notwendig. Wenn Sie Leistungen beantragen möchten, ist die Anmeldung bei einer Zahlstelle erforderlich."
         },
         "correction": {
@@ -6475,7 +6475,7 @@
         },
         "pas-inscrit-organisme-paiement": {
           "title": "Nicht bei einer Auszahlungsstelle (Organisme de paiement) eingeschrieben sein",
-          "explanation": "Ohne Einschreibung bei einer Auszahlungsstelle (Organisme de paiement – CAPAC, CSC, FGTB oder CGSLB) kann die Karte ausgefüllt, aber nicht gesendet werden.",
+          "explanation": "Ohne Einschreibung bei einer Auszahlungsstelle (Organisme de paiement – CAPAC, CSC, FGTB oder SYNOVA) kann die Karte ausgefüllt, aber nicht gesendet werden.",
           "advice": "Schreiben Sie sich so bald wie möglich bei einer Auszahlungsstelle (Organisme de paiement) ein, um Ihre Karte senden und Ihre Arbeitslosengeld (allocations de chômage) erhalten zu können."
         },
         "oublier-jours-maladie": {
@@ -6505,7 +6505,7 @@
         },
         "pas-informer-organisme-autre-employeur": {
           "title": "Den Auszahlungsträger (Organisme de paiement) bei einem weiteren gewöhnlichen Arbeitgeber nicht informieren",
-          "explanation": "Wenn Sie mehrere gewöhnliche Beschäftigungen kombinieren, muss die andere Beschäftigung Ihrem Auszahlungsträger (Organisme de paiement – CAPAC, CSC, FGTB oder CGSLB) mitgeteilt werden.",
+          "explanation": "Wenn Sie mehrere gewöhnliche Beschäftigungen kombinieren, muss die andere Beschäftigung Ihrem Auszahlungsträger (Organisme de paiement – CAPAC, CSC, FGTB oder SYNOVA) mitgeteilt werden.",
           "advice": "Melden Sie alle Ihre gewöhnlichen Beschäftigungen Ihrem Auszahlungsträger (Organisme de paiement), um Missverständnisse zu vermeiden."
         }
       },
@@ -6536,7 +6536,7 @@
         },
         "6": {
           "q": "Muss ich bei einer Auszahlungsstelle (organisme de paiement) eingeschrieben sein?",
-          "a": "Ja. Um Leistungen zu erhalten und die Karte einzureichen, müssen Sie bei einer Auszahlungsstelle (organisme de paiement) eingeschrieben sein: der CAPAC (öffentliche Auszahlungskasse), der CSC, der FGTB oder der CGSLB (belgische Gewerkschaften, die ebenfalls Leistungen auszahlen)."
+          "a": "Ja. Um Leistungen zu erhalten und die Karte einzureichen, müssen Sie bei einer Auszahlungsstelle (organisme de paiement) eingeschrieben sein: der CAPAC (öffentliche Auszahlungskasse), der CSC, der FGTB oder der SYNOVA (belgische Gewerkschaften, die ebenfalls Leistungen auszahlen)."
         },
         "7": {
           "q": "Kann ich die Karte ohne Auszahlungsstelle (organisme de paiement) ausfüllen?",

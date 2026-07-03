@@ -20,7 +20,7 @@ interface Props {
 
 /**
  * Modal éducative "Quel organisme de paiement choisir ?".
- * Explique la différence CAPAC (public) vs syndicats (FGTB/CSC/CGSLB) :
+ * Explique la différence CAPAC (public) vs syndicats (FGTB/CSC/SYNOVA) :
  * conditions, cotisation, services associés. Aide le user à savoir lequel
  * choisir avant de cliquer sur un tab.
  */
@@ -85,7 +85,7 @@ export function OpHelpModal({ open, onOpenChange }: Props) {
                 {t.rich('ophSyndicatCsc', { strong: (c) => <strong>{c}</strong> })}
               </li>
               <li>
-                {t.rich('ophSyndicatCgslb', { strong: (c) => <strong>{c}</strong> })}
+                {t.rich('ophSyndicatSynova', { strong: (c) => <strong>{c}</strong> })}
               </li>
             </ul>
             <p className="text-[11px] text-muted-foreground">

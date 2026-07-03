@@ -16,7 +16,7 @@
  *   CAPAC  : #003E7E (similaire ONEM, organisme public)
  *   FGTB   : #E30613 (rouge socialiste)
  *   CSC    : #008F4F (vert syndicat chrétien)
- *   CGSLB  : #0050A0 (bleu libéral)
+ *   SYNOVA : #0050A0 (ex-CGSLB, bleu libéral)
  */
 
 import type { SVGProps } from 'react'
@@ -196,23 +196,23 @@ export function CscLogo({ size = 48, ...rest }: LogoProps) {
 }
 
 /* ─────────────────────────────────────────────────────────────────── */
-/* CGSLB — bleu libéral                                               */
+/* SYNOVA — bleu libéral (ex-CGSLB)                                    */
 /* ─────────────────────────────────────────────────────────────────── */
-export function CgslbLogo({ size = 48, ...rest }: LogoProps) {
+export function SynovaLogo({ size = 48, ...rest }: LogoProps) {
   return (
-    <svg {...baseProps(size, rest)} aria-label="CGSLB">
-      <RoundedBg from="#003C84" to="#0050A0" id="cgslb-bg" />
+    <svg {...baseProps(size, rest)} aria-label="SYNOVA">
+      <RoundedBg from="#003C84" to="#0050A0" id="synova-bg" />
       <text
         x="24"
         y="30"
         textAnchor="middle"
-        fontSize="13"
+        fontSize="10.5"
         fontWeight="800"
         fill="white"
         fontFamily="system-ui, sans-serif"
-        letterSpacing="-0.5"
+        letterSpacing="-0.3"
       >
-        CGSLB
+        SYNOVA
       </text>
     </svg>
   )
@@ -231,6 +231,6 @@ export function OrganismeLogo({
   if (c === 'capac') return <CapacLogo size={size} {...rest} />
   if (c === 'fgtb') return <FgtbLogo size={size} {...rest} />
   if (c === 'csc') return <CscLogo size={size} {...rest} />
-  if (c === 'cgslb') return <CgslbLogo size={size} {...rest} />
+  if (c === 'synova') return <SynovaLogo size={size} {...rest} />
   return <OpLogo size={size} {...rest} />
 }

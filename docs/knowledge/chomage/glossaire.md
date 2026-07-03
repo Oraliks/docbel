@@ -17,7 +17,7 @@ conditions. C'est l'ONEM qui décide en dernier ressort de votre droit aux alloc
 
 **Organisme de paiement**
 L'organisme qui reçoit votre dossier, calcule et **paie** vos allocations. Vous en choisissez
-un : soit un **syndicat** (FGTB, CSC, CGSLB), soit la **CAPAC** (organisme public). C'est votre
+un : soit un **syndicat** (FGTB, CSC, SYNOVA), soit la **CAPAC** (organisme public). C'est votre
 interlocuteur direct pour vos paiements et vos formulaires.
 
 **CAPAC**
@@ -25,7 +25,7 @@ Caisse Auxiliaire de Paiement des Allocations de Chômage. L'organisme de paieme
 (non syndical). On peut s'y affilier sans être membre d'un syndicat.
 
 **Syndicat**
-Organisation de travailleurs (FGTB, CSC, CGSLB) qui peut aussi jouer le rôle d'organisme de
+Organisation de travailleurs (FGTB, CSC, SYNOVA) qui peut aussi jouer le rôle d'organisme de
 paiement des allocations de chômage pour ses affiliés.
 
 **Chômage complet**

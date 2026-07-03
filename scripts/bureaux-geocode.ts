@@ -31,7 +31,7 @@ function getArg(flag: string): string | null {
   return idx >= 0 ? (process.argv[idx + 1] ?? null) : null
 }
 const TYPE_FILTER = getArg('--type') // CPAS | COMMUNE | SYNDICAT | ONEM | null
-const ORG_FILTER = getArg('--org') // capac | fgtb | csc | cgslb | null
+const ORG_FILTER = getArg('--org') // capac | fgtb | csc | synova | null
 
 const USER_AGENT = 'Beldoc/1.0 (geocoding bureaux belges; contact: oraliks@github)'
 const NOMINATIM = 'https://nominatim.openstreetmap.org/search'

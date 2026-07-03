@@ -1,7 +1,7 @@
 // Import des bureaux OP (Organismes de Paiement) scrapés depuis leurs sites
-// officiels : CAPAC, FGTB, CSC, CGSLB.
+// officiels : CAPAC, FGTB, CSC, SYNOVA.
 //
-// Sources : lib/data/op-bureaux-{capac,fgtb,csc,cgslb}.json
+// Sources : lib/data/op-bureaux-{capac,fgtb,csc,synova}.json
 //
 // Strategie :
 //  1. Pour chaque OP : DELETE les Bureau type=SYNDICAT existants (pour éviter
@@ -43,7 +43,7 @@ const ORGS = [
   { code: 'capac', file: 'op-bureaux-capac.json' },
   { code: 'fgtb', file: 'op-bureaux-fgtb.json' },
   { code: 'csc', file: 'op-bureaux-csc.json' },
-  { code: 'cgslb', file: 'op-bureaux-cgslb.json' },
+  { code: 'synova', file: 'op-bureaux-synova.json' },
 ] as const
 
 /**

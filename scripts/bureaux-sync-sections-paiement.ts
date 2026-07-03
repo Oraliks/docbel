@@ -1,6 +1,6 @@
 // Sync des sections d'organismes de paiement (70 antennes locales) depuis lookup
 // section-organismes-paiement. Enrichit les Bureau type=SYNDICAT existants
-// (CAPAC/FGTB/CSC/CGSLB) avec adresses + téléphones + BIC officiels ONEM.
+// (CAPAC/FGTB/CSC/SYNOVA) avec adresses + téléphones + BIC officiels ONEM.
 //
 // Usage :
 //   pnpm bureaux:sync-sections-paiement          (dry-run)
@@ -29,7 +29,7 @@ const OP_CODE_TO_ORG: Record<string, string> = {
   '1': 'capac',
   '2': 'csc',
   '3': 'fgtb',
-  '4': 'cgslb',
+  '4': 'synova',
 }
 
 async function main() {
@@ -44,13 +44,13 @@ async function main() {
 
   // Précharge organismes
   const orgs = await prisma.organisme.findMany({
-    where: { code: { in: ['capac', 'fgtb', 'csc', 'cgslb'] } },
+    where: { code: { in: ['capac', 'fgtb', 'csc', 'synova'] } },
   })
   const orgByCode = new Map(orgs.map((o) => [o.code, o]))
 
   // Précharge bureaux existants par organisme
   const existing = await prisma.bureau.findMany({
-    where: { organisme: { code: { in: ['capac', 'fgtb', 'csc', 'cgslb'] } } },
+    where: { organisme: { code: { in: ['capac', 'fgtb', 'csc', 'synova'] } } },
     select: {
       id: true,
       name: true,

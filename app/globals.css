@@ -839,7 +839,7 @@ body {
 
 /* Radar loader — utilisé par /outils/bureaux pendant la résolution CP.
    Métaphore "scan de zone" : ondes circulaires qui se diffusent, dots
-   colorés (4 OP : CAPAC/FGTB/CSC/CGSLB) qui s'allument en orbite, pin
+   colorés (4 OP : CAPAC/FGTB/CSC/SYNOVA) qui s'allument en orbite, pin
    central qui pulse. Liaison directe avec la map (mêmes couleurs).
    Tout désactivable via prefers-reduced-motion. */
 @keyframes radar-pulse {

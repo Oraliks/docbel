@@ -3011,12 +3011,12 @@
       "ophCapacBadge": "Organ publik",
       "ophCapacBody": "<strong>Caisse Auxiliaire de Paiement des Allocations de Chômage (CAPAC)</strong> është organi publik, i administruar nga Shteti. Pa kontribut, falas. Ofron vetëm pagesën e shpërbblimeve — pa mbrojtje juridike dhe pa shërbime sindikale.",
       "ophCapacFor": "<strong>Për kë?</strong> Nuk doni të anëtarësoheni në një sindikatë, ose kërkoni zgjidhjen më të thjeshtë dhe neutrale.",
-      "ophSyndicatNames": "FGTB · CSC · CGSLB",
+      "ophSyndicatNames": "FGTB · CSC · SYNOVA",
       "ophSyndicatBadge": "Sindikatat",
-      "ophSyndicatBody": "3 sindikatat belge (CSC / FGTB / CGSLB) u paguajnë gjithashtu shpërblimet anëtarëve të tyre dhe ofrojnë gjithashtu <strong>mbrojtje juridike</strong>, këshillim në të drejtën e punës dhe mbështetje. <strong>Kontribut mujor</strong> (~15-20 €/muaj sipas sindikatës dhe statusit).",
+      "ophSyndicatBody": "3 sindikatat belge (CSC / FGTB / SYNOVA) u paguajnë gjithashtu shpërblimet anëtarëve të tyre dhe ofrojnë gjithashtu <strong>mbrojtje juridike</strong>, këshillim në të drejtën e punës dhe mbështetje. <strong>Kontribut mujor</strong> (~15-20 €/muaj sipas sindikatës dhe statusit).",
       "ophSyndicatFgtb": "<strong>FGTB</strong> (Fédération Générale du Travail de Belgique) — socialiste, më e pranishme në industri",
       "ophSyndicatCsc": "<strong>CSC</strong> (Confédération des Syndicats Chrétiens) — sindikata më e madhe belge",
-      "ophSyndicatCgslb": "<strong>CGSLB</strong> (Centrale Générale des Syndicats Libéraux de Belgique) — liberale, më e vogël",
+      "ophSyndicatSynova": "<strong>SYNOVA</strong> (ish-CGSLB, Centrale Générale des Syndicats Libéraux de Belgique) — sindikatë e lirë, më e vogël",
       "ophSyndicatFor": "<strong>Për kë?</strong> Doni mbështetje aktive (litigj me punëdhënësin, negociatë, këshillim) përveç pagesës.",
       "ophUnknownTitle": "Nuk e dini nëse jeni tashmë anëtar?",
       "ophUnknownBullet1": "Shikoni fletëpagesën tuaj — zbritja sindikale është e shënuar nëse kontribuoni në një sindikatë",
@@ -3811,7 +3811,7 @@
         },
         "correction": {
           "title": "Korrigjo një gabim",
-          "fallbackBody": "Nëse kartela është dërguar tashmë dhe përmban një gabim, mund ta korrigjoni me anë të një formulari të disponueshëm pranë organit tuaj të pagesës (CAPAC, CSC, FGTB ose CGSLB)."
+          "fallbackBody": "Nëse kartela është dërguar tashmë dhe përmban një gabim, mund ta korrigjoni me anë të një formulari të disponueshëm pranë organit tuaj të pagesës (CAPAC, CSC, FGTB ose SYNOVA)."
         },
         "firstSendDate": {
           "title": "Data e parë e mundshme e dërgimit"
@@ -4517,7 +4517,7 @@
           },
           "delai8Jours": {
             "title": "Afati 8-ditor",
-            "body": "Depozitimi i kërkesës duhet të bëhet shpejt pas mbarimit të kontratës së punës. Në praktikë, ruhet një pikë referimi e thjeshtë: **8 ditë pune** nga dita që ndjek fundin e kontratës për t'u regjistruar si kërkues pune pranë shërbimit rajonal dhe për të depozituar dosjen pranë organizmit të pagesës — organisme de paiement (FGTB, CSC, CGSLB ose CAPAC — kasë publike që paguan përfitimet e papunësisë).\n\nNjë depozitim i vonuar nuk shuan të drejtën, por mund të çojë në humbjen e përfitimeve për periudhën e mbuluar nga vonesa. Në rast vështirësie (sëmundje, procedura në vazhdim), partneri duhet të jetë në gjendje të dokumentojë shkakun e vonesës për ta bërë të vlefshme pranë ONEM — administrata federale belge e papunësisë.\n\nBurimi publik i referencës: www.onem.be."
+            "body": "Depozitimi i kërkesës duhet të bëhet shpejt pas mbarimit të kontratës së punës. Në praktikë, ruhet një pikë referimi e thjeshtë: **8 ditë pune** nga dita që ndjek fundin e kontratës për t'u regjistruar si kërkues pune pranë shërbimit rajonal dhe për të depozituar dosjen pranë organizmit të pagesës — organisme de paiement (FGTB, CSC, SYNOVA ose CAPAC — kasë publike që paguan përfitimet e papunësisë).\n\nNjë depozitim i vonuar nuk shuan të drejtën, por mund të çojë në humbjen e përfitimeve për periudhën e mbuluar nga vonesa. Në rast vështirësie (sëmundje, procedura në vazhdim), partneri duhet të jetë në gjendje të dokumentojë shkakun e vonesës për ta bërë të vlefshme pranë ONEM — administrata federale belge e papunësisë.\n\nBurimi publik i referencës: www.onem.be."
           },
           "documentsAPreparer": {
             "title": "Dokumentet për t'u përgatitur",
@@ -5928,8 +5928,8 @@
               "description": "Aplikacioni zyrtar për të plotësuar dhe dërguar kartën tuaj të kontrollit të papunësisë së përkohshme (C3 / carte de contrôle) në iPhone."
             },
             "orgs": {
-              "label": "Organet e pagesës (CAPAC, CSC, FGTB, CGSLB)",
-              "description": "Për të marrë pagesat tuaja, duhet të jeni i/e anëtarësuar në një organ pagese (organisme de paiement): CAPAC (publike) ose një sindikatë (CSC, FGTB, CGSLB)."
+              "label": "Organet e pagesës (CAPAC, CSC, FGTB, SYNOVA)",
+              "description": "Për të marrë pagesat tuaja, duhet të jeni i/e anëtarësuar në një organ pagese (organisme de paiement): CAPAC (publike) ose një sindikatë (CSC, FGTB, SYNOVA)."
             },
             "onem": {
               "label": "ONEM — Zyra Kombëtare e Punësimit",
@@ -6130,7 +6130,7 @@
           "title": "Nuk jam ende i regjistruar pranë një organizmi pagese",
           "level": "Mesatar",
           "duration": "3 min",
-          "context": "Ju plotësoni kartën tuaj, por nuk jeni ende i regjistruar pranë një organizmi pagese (CAPAC, CSC, FGTB ose CGSLB).",
+          "context": "Ju plotësoni kartën tuaj, por nuk jeni ende i regjistruar pranë një organizmi pagese (CAPAC, CSC, FGTB ose SYNOVA).",
           "objective": "Të kuptohet se karta mund të plotësohet pa regjistrim, por nuk mund të dërgohet.",
           "expectedAction": "Plotësoni kartën, por vëreni se dërgimi është i bllokuar.",
           "feedbackCorrect": "Saktë: pa regjistrim pranë një organizmi pagese, karta mund të plotësohet por nuk mund të dërgohet.",
@@ -6416,7 +6416,7 @@
         },
         "send": {
           "firstSendBefore": "Dërgimi nuk është ende i mundur: data e parë e mundshme e dërgimit nuk është arritur. Edhe kur kjo datë bie para fundit të muajit, karta duhet të plotësohet saktë deri në ditën e fundit të muajit. (Ky simulator nuk dërgon asgjë kurrë.)",
-          "noPaymentOrg": "Në aplikacionin real, mund ta plotësoni kartën, por duhet të jeni i/e anëtarësuar pranë një organismi pagese (organisme de paiement — CAPAC, CSC, FGTB ose CGSLB) për ta dërguar.",
+          "noPaymentOrg": "Në aplikacionin real, mund ta plotësoni kartën, por duhet të jeni i/e anëtarësuar pranë një organismi pagese (organisme de paiement — CAPAC, CSC, FGTB ose SYNOVA) për ta dërguar.",
           "notNeeded": "Nëse nuk kërkoni asnjë ndihmë (allocation de chômage), dërgimi nuk është i nevojshëm. Nëse dëshironi të kërkoni ndihmë, regjistrimi pranë një organismi pagese është i domosdoshëm."
         },
         "correction": {
@@ -6475,7 +6475,7 @@
         },
         "pas-inscrit-organisme-paiement": {
           "title": "Të mos jeni i regjistruar pranë një organisme pagese (Organisme de paiement / OP)",
-          "explanation": "Pa regjistrim pranë një organisme pagese (Organisme de paiement / OP) (CAPAC, CSC, FGTB ose CGSLB), karta mund të plotësohet por nuk mund të dërgohet.",
+          "explanation": "Pa regjistrim pranë një organisme pagese (Organisme de paiement / OP) (CAPAC, CSC, FGTB ose SYNOVA), karta mund të plotësohet por nuk mund të dërgohet.",
           "advice": "Regjistrohuni pranë një organisme pagese (Organisme de paiement / OP) sa më shpejt të jetë e mundur për të mundur të dërgoni kartën tuaj dhe të merrni pagesat tuaja."
         },
         "oublier-jours-maladie": {
@@ -6536,7 +6536,7 @@
         },
         "6": {
           "q": "A duhet të jem i regjistruar pranë një organismi pagese?",
-          "a": "Po. Për të përfituar nga shpërblimet (allocations) dhe për të dërguar kartën, duhet të jeni i regjistruar pranë një organismi pagese (organisme de paiement): CAPAC (kasa publike që paguan shpërblimet e papunësisë), CSC, FGTB ose CGSLB (sindikata belge)."
+          "a": "Po. Për të përfituar nga shpërblimet (allocations) dhe për të dërguar kartën, duhet të jeni i regjistruar pranë një organismi pagese (organisme de paiement): CAPAC (kasa publike që paguan shpërblimet e papunësisë), CSC, FGTB ose SYNOVA (sindikata belge)."
         },
         "7": {
           "q": "A mund të plotësoj kartën pa organism pagese?",

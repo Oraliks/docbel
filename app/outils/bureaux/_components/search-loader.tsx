@@ -23,7 +23,7 @@ const OP_COLORS = {
   capac: '#F58220',
   fgtb: '#E30613',
   csc: '#008F4F',
-  cgslb: '#0050A0',
+  synova: '#0050A0',
 }
 
 /**
@@ -95,7 +95,7 @@ function RadarLoader({ cp }: Props) {
         <OpDot pos="top" color={OP_COLORS.capac} delay="0ms" title="CAPAC" />
         <OpDot pos="right" color={OP_COLORS.fgtb} delay="400ms" title="FGTB" />
         <OpDot pos="bottom" color={OP_COLORS.csc} delay="800ms" title="CSC" />
-        <OpDot pos="left" color={OP_COLORS.cgslb} delay="1200ms" title="CGSLB" />
+        <OpDot pos="left" color={OP_COLORS.synova} delay="1200ms" title="SYNOVA" />
         <span className="relative z-10 flex items-center justify-center size-10 rounded-full bg-primary/10 animate-pin-bounce">
           <MapPin className="size-5 text-primary" fill="currentColor" />
         </span>

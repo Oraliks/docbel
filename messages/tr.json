@@ -3010,12 +3010,12 @@
       "ophCapacBadge": "Kamu kurumu",
       "ophCapacBody": "<strong>Caisse Auxiliaire de Paiement des Allocations de Chômage (CAPAC)</strong>, devlet tarafından yönetilen kamu ödeme kurumudur. Aidat gerekmez, ücretsizdir. Yalnızca işsizlik ödeneği ödemesi yapar — hukuki savunma veya sendika hizmetleri sunmaz.",
       "ophCapacFor": "<strong>Kimler için?</strong> Bir sendikaya üye olmak istemiyorsan ya da en basit ve tarafsız seçeneği arıyorsan.",
-      "ophSyndicatNames": "FGTB · CSC · CGSLB",
+      "ophSyndicatNames": "FGTB · CSC · SYNOVA",
       "ophSyndicatBadge": "Sendikalar",
-      "ophSyndicatBody": "Belçika'nın 3 sendikası (CSC / FGTB / CGSLB) da üyelerine işsizlik ödeneği ödemesi yapar; bunun yanı sıra <strong>hukuki savunma</strong>, iş hukuku danışmanlığı ve bireysel destek hizmetleri sunar. <strong>Aylık aidat</strong> (~15-20 €/ay, sendikaya ve statüye göre değişir).",
+      "ophSyndicatBody": "Belçika'nın 3 sendikası (CSC / FGTB / SYNOVA) da üyelerine işsizlik ödeneği ödemesi yapar; bunun yanı sıra <strong>hukuki savunma</strong>, iş hukuku danışmanlığı ve bireysel destek hizmetleri sunar. <strong>Aylık aidat</strong> (~15-20 €/ay, sendikaya ve statüye göre değişir).",
       "ophSyndicatFgtb": "<strong>FGTB</strong> (Fédération Générale du Travail de Belgique) — sosyalist eğilimli, sanayi sektöründe daha yaygın",
       "ophSyndicatCsc": "<strong>CSC</strong> (Confédération des Syndicats Chrétiens) — Belçika'nın en büyük sendikası",
-      "ophSyndicatCgslb": "<strong>CGSLB</strong> (Centrale Générale des Syndicats Libéraux de Belgique) — liberal eğilimli, en küçük sendika",
+      "ophSyndicatSynova": "<strong>SYNOVA</strong> (eski adıyla CGSLB, Centrale Générale des Syndicats Libéraux de Belgique) — özgür eğilimli, en küçük sendika",
       "ophSyndicatFor": "<strong>Kimler için?</strong> Ödeme almanın yanı sıra aktif destek (işveren anlaşmazlığı, müzakere, danışmanlık) istiyorsunuz.",
       "ophUnknownTitle": "Zaten üye olup olmadığından emin değil misin?",
       "ophUnknownBullet1": "Maaş bordronuza bakın — bir sendikaya aidat ödüyorsanız sendika kesintisi orada belirtilir",
@@ -3811,7 +3811,7 @@
         },
         "correction": {
           "title": "Bir hatayı düzelt",
-          "fallbackBody": "Kart zaten gönderilmişse ve bir hata içeriyorsa, ödeme kuruluşunuzdan (CAPAC, CSC, FGTB veya CGSLB) temin edilebilecek bir form aracılığıyla düzeltebilirsiniz."
+          "fallbackBody": "Kart zaten gönderilmişse ve bir hata içeriyorsa, ödeme kuruluşunuzdan (CAPAC, CSC, FGTB veya SYNOVA) temin edilebilecek bir form aracılığıyla düzeltebilirsiniz."
         },
         "firstSendDate": {
           "title": "İlk mümkün gönderim tarihi"
@@ -4517,7 +4517,7 @@
           },
           "delai8Jours": {
             "title": "8 günlük süre",
-            "body": "Başvurunun iş sözleşmesinin sona ermesinin hemen ardından yapılması gerekmektedir. Pratikte şu basit kural esas alınır: sözleşmenin bittiği günü izleyen günden itibaren **8 iş günü** içinde bölgesel istihdam hizmetine iş arayan olarak kaydolmak ve dosyayı ödeme organına (FGTB, CSC, CGSLB veya CAPAC) sunmak gerekir.\n\nGeç yapılan başvuru hakkı ortadan kaldırmaz; ancak gecikme süresiyle kapsanan dönem için ödenek kaybına yol açabilir. Gecikmeye yol açan bir durum söz konusuysa (hastalık, devam eden başvurular vb.), bu durumun ONEM nezdinde geçerli kılınabilmesi için gerekçenin belgelenmesi şarttır.\n\nResmi kaynak: www.onem.be."
+            "body": "Başvurunun iş sözleşmesinin sona ermesinin hemen ardından yapılması gerekmektedir. Pratikte şu basit kural esas alınır: sözleşmenin bittiği günü izleyen günden itibaren **8 iş günü** içinde bölgesel istihdam hizmetine iş arayan olarak kaydolmak ve dosyayı ödeme organına (FGTB, CSC, SYNOVA veya CAPAC) sunmak gerekir.\n\nGeç yapılan başvuru hakkı ortadan kaldırmaz; ancak gecikme süresiyle kapsanan dönem için ödenek kaybına yol açabilir. Gecikmeye yol açan bir durum söz konusuysa (hastalık, devam eden başvurular vb.), bu durumun ONEM nezdinde geçerli kılınabilmesi için gerekçenin belgelenmesi şarttır.\n\nResmi kaynak: www.onem.be."
           },
           "documentsAPreparer": {
             "title": "Hazırlanacak belgeler",
@@ -5928,8 +5928,8 @@
               "description": "Geçici işsizliğe ilişkin kontrol kartınızı (C3 / carte de contrôle) iPhone'da doldurup göndermek için resmi uygulama."
             },
             "orgs": {
-              "label": "Ödeme kuruluşları (CAPAC, CSC, FGTB, CGSLB)",
-              "description": "İşsizlik ödeneğinizi alabilmek için bir ödeme kuruluşuna (organisme de paiement) üye olmanız gerekir: kamu kuruluşu CAPAC veya bir sendika (CSC, FGTB ya da CGSLB)."
+              "label": "Ödeme kuruluşları (CAPAC, CSC, FGTB, SYNOVA)",
+              "description": "İşsizlik ödeneğinizi alabilmek için bir ödeme kuruluşuna (organisme de paiement) üye olmanız gerekir: kamu kuruluşu CAPAC veya bir sendika (CSC, FGTB ya da SYNOVA)."
             },
             "onem": {
               "label": "ONEM — Office national de l'emploi (Ulusal İstihdam Ofisi)",
@@ -6130,7 +6130,7 @@
           "title": "Henüz bir ödeme kuruluşuna (organisme de paiement) kayıtlı değilim",
           "level": "Orta düzey",
           "duration": "3 dk",
-          "context": "Kartınızı dolduruyorsunuz, ancak henüz bir ödeme kuruluşuna (CAPAC, CSC, FGTB veya CGSLB) kayıtlı değilsiniz.",
+          "context": "Kartınızı dolduruyorsunuz, ancak henüz bir ödeme kuruluşuna (CAPAC, CSC, FGTB veya SYNOVA) kayıtlı değilsiniz.",
           "objective": "Kart, kayıt olmadan doldurulabilir ancak gönderilemez; bunu anlamak.",
           "expectedAction": "Kartı doldurmak, ancak gönderimin engellendiğini görmek.",
           "feedbackCorrect": "Doğru: bir ödeme kuruluşuna (organisme de paiement) kayıt olmadan kart doldurulabilir, ancak gönderilemez.",
@@ -6416,7 +6416,7 @@
         },
         "send": {
           "firstSendBefore": "Gönderim henüz mümkün değil: ilk mümkün gönderim tarihi henüz gelmedi. Bu tarih ayın sonundan önce olsa bile kart, ayın son gününe kadar doğru şekilde doldurulmalıdır. (Bu simülasyon hiçbir zaman gerçek gönderim yapmaz.)",
-          "noPaymentOrg": "Gerçek uygulamada kartı doldurabilirsiniz; ancak gönderebilmek için bir ödeme kurumuna (CAPAC, CSC, FGTB veya CGSLB) kayıtlı olmanız gerekir.",
+          "noPaymentOrg": "Gerçek uygulamada kartı doldurabilirsiniz; ancak gönderebilmek için bir ödeme kurumuna (CAPAC, CSC, FGTB veya SYNOVA) kayıtlı olmanız gerekir.",
           "notNeeded": "Ödenek talep etmiyorsanız gönderim gerekli değildir. Ödenek talep etmek istiyorsanız, bir ödeme kurumuna (uitbetalingsinstelling) kayıt yaptırmanız gerekmektedir."
         },
         "correction": {
@@ -6475,7 +6475,7 @@
         },
         "pas-inscrit-organisme-paiement": {
           "title": "Bir ödeme kurumuna kayıtlı olmamak",
-          "explanation": "Bir ödeme kurumuna (CAPAC, CSC, FGTB veya CGSLB) kayıt yaptırılmadan kart doldurulabilir ancak gönderilemez.",
+          "explanation": "Bir ödeme kurumuna (CAPAC, CSC, FGTB veya SYNOVA) kayıt yaptırılmadan kart doldurulabilir ancak gönderilemez.",
           "advice": "Kartınızı gönderebilmek ve işsizlik ödeneğinizi alabilmek için bir an önce bir ödeme kurumuna kayıt olun."
         },
         "oublier-jours-maladie": {
@@ -6505,7 +6505,7 @@
         },
         "pas-informer-organisme-autre-employeur": {
           "title": "Başka bir alışılmış işveren durumunda ödeme kurumunu (organisme de paiement) bilgilendirme",
-          "explanation": "Birden fazla alışılmış işi birleştiriyorsanız, diğer çalışmanızı ödeme kurumunuza (organisme de paiement — CAPAC, CSC, FGTB veya CGSLB) bildirmeniz gerekmektedir.",
+          "explanation": "Birden fazla alışılmış işi birleştiriyorsanız, diğer çalışmanızı ödeme kurumunuza (organisme de paiement — CAPAC, CSC, FGTB veya SYNOVA) bildirmeniz gerekmektedir.",
           "advice": "Herhangi bir yanlış anlaşılmayı önlemek için tüm alışılmış çalışmalarınızı ödeme kurumunuza (organisme de paiement) bildirin."
         }
       },
@@ -6536,7 +6536,7 @@
         },
         "6": {
           "q": "Bir ödeme kurumuna (organisme de paiement) kayıtlı olmam gerekiyor mu?",
-          "a": "Evet. Ödenek alabilmek ve kartınızı gönderebilmek için bir ödeme kurumuna kayıtlı olmanız gerekmektedir: CAPAC (kamu ödeme kasası — NL: HVW), CSC, FGTB veya CGSLB (Belçika işçi sendikaları)."
+          "a": "Evet. Ödenek alabilmek ve kartınızı gönderebilmek için bir ödeme kurumuna kayıtlı olmanız gerekmektedir: CAPAC (kamu ödeme kasası — NL: HVW), CSC, FGTB veya SYNOVA (Belçika işçi sendikaları)."
         },
         "7": {
           "q": "Kartı bir ödeme kuruluşu (organisme de paiement) olmadan doldurabilir miyim?",

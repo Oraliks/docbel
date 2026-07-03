@@ -133,7 +133,7 @@ export const EC32_NOTICES: Record<string, string> = {
   'send.firstSendBefore':
     'L’envoi n’est pas encore possible : la première date d’envoi possible n’est pas atteinte. Même lorsque cette date tombe avant la fin du mois, la carte doit être complétée correctement jusqu’au dernier jour du mois. (Cette simulation n’envoie jamais rien.)',
   'send.noPaymentOrg':
-    'Dans la vraie application, vous pouvez compléter la carte, mais vous devez être affilié à un organisme de paiement (CAPAC, CSC, FGTB ou CGSLB) pour pouvoir l’envoyer.',
+    'Dans la vraie application, vous pouvez compléter la carte, mais vous devez être affilié à un organisme de paiement (CAPAC, CSC, FGTB ou SYNOVA) pour pouvoir l’envoyer.',
   'send.notNeeded':
     'Si vous ne demandez pas d’allocations, l’envoi n’est pas nécessaire. Si vous souhaitez demander des allocations, l’inscription auprès d’un organisme de paiement est nécessaire.',
 

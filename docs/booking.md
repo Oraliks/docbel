@@ -1,6 +1,6 @@
 # Plateforme de prise de rendez-vous (booking)
 
-Plateforme multi-tenant : des organisations (FGTB, CSC, CGSLB, CAPAC, ou toute
+Plateforme multi-tenant : des organisations (FGTB, CSC, SYNOVA, CAPAC, ou toute
 entreprise cliente) publient des créneaux ; les citoyens (connectés ou non)
 réservent en ligne ; l'équipe valide.
 

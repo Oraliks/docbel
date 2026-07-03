@@ -103,7 +103,7 @@ const articles = [
     slug: "revalorisation-allocations-chomage-avril-2026",
     title: "Revalorisation des allocations de chômage — avril 2026",
     excerpt:
-      "Depuis le 1er avril 2026, les allocations de chômage complet sont revalorisées de 2,1 % suite à l'indexation automatique. Les organismes de paiement (CAPAC, CSC, CGSLB, FGTB) mettront à jour les paiements automatiquement.",
+      "Depuis le 1er avril 2026, les allocations de chômage complet sont revalorisées de 2,1 % suite à l'indexation automatique. Les organismes de paiement (CAPAC, CSC, SYNOVA, FGTB) mettront à jour les paiements automatiquement.",
     category: "Mise à jour",
     color: "#7C3AED",
     emoji: "📋",
@@ -113,7 +113,7 @@ const articles = [
     publishedAt: new Date("2026-04-22"),
     content: `Depuis le 1er avril 2026, une revalorisation importante des allocations de chômage complet a été mise en place suite à l'indexation automatique des salaires.
 
-Cette augmentation de 2,1 % s'applique à tous les chômeurs complets indemnisés. Les organismes de paiement (CAPAC, CSC, CGSLB, FGTB) ont reçu les directives pour mettre à jour automatiquement les montants versés à partir de cette date.
+Cette augmentation de 2,1 % s'applique à tous les chômeurs complets indemnisés. Les organismes de paiement (CAPAC, CSC, SYNOVA, FGTB) ont reçu les directives pour mettre à jour automatiquement les montants versés à partir de cette date.
 
 **Qui est concerné ?**
 - Les chômeurs complets indemnisés
@@ -461,7 +461,7 @@ async function main() {
   console.log("🌱 Seeding bureaus (communes, CPAS, ONEM)...");
   await seedBureaus(prisma);
 
-  console.log("🌱 Seeding booking tenants (FGTB, CSC, CGSLB, CAPAC)...");
+  console.log("🌱 Seeding booking tenants (FGTB, CSC, SYNOVA, CAPAC)...");
   await seedBookingTenants(prisma);
 
   console.log("🌱 Seeding formations (catégories, tags, Boussole, démo)...");

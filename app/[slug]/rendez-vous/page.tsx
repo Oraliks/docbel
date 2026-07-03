@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
 import { parseFormFields } from "@/lib/booking/form-fields";
@@ -11,12 +11,17 @@ import { BookingUnavailable } from "@/components/booking/booking-unavailable";
 
 export const dynamic = "force-dynamic";
 
+// Anciens slugs de tenants renommés — évite de casser les liens déjà partagés.
+// CGSLB → SYNOVA (renommage officiel du syndicat, 05/2026).
+const LEGACY_SLUGS: Record<string, string> = { cgslb: "synova" };
+
 export async function generateMetadata({
   params,
 }: {
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
+  if (LEGACY_SLUGS[slug]) redirect(`/${LEGACY_SLUGS[slug]}/rendez-vous`);
   const tenant = await prisma.bookingTenant.findFirst({
     where: { slug },
     select: { name: true },
@@ -34,6 +39,14 @@ export default async function TenantBookingPage({
 }) {
   const { slug } = await params;
   const { cp, lang } = await searchParams;
+
+  if (LEGACY_SLUGS[slug]) {
+    const qs = new URLSearchParams();
+    if (cp) qs.set("cp", cp);
+    if (lang) qs.set("lang", lang);
+    const suffix = qs.toString();
+    redirect(`/${LEGACY_SLUGS[slug]}/rendez-vous${suffix ? `?${suffix}` : ""}`);
+  }
 
   const tenant = await prisma.bookingTenant.findFirst({
     where: { slug },

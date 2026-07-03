@@ -27,7 +27,7 @@ const KNOWN_SERVICE_TYPES = [
   "paiement_capac",
   "paiement_fgtb",
   "paiement_csc",
-  "paiement_cgslb",
+  "paiement_synova",
   "mutuelle_solidaris",
   "mutuelle_mc",
   "mutuelle_mloz",

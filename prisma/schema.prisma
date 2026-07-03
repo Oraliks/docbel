@@ -30,7 +30,7 @@ enum OrganismeType {
   federal // ONEM, ONP, BCSS, INASTI
   regional // Forem, Actiris, VDAB, ADG
   local // Commune, CPAS
-  social // Mutuelle, Caisse de chômage (CAPAC, CSC, CGSLB, FGTB)
+  social // Mutuelle, Caisse de chômage (CAPAC, CSC, SYNOVA, FGTB)
   professional // Secrétariat social, fiduciaire
   other
 }
@@ -1230,7 +1230,7 @@ model UserProfile {
   contractType            String? // CDI | CDD | interim | independant
   contractStart           DateTime?
   // Préférences administratives (pour résolveur bureaux)
-  organismePaiement       String? // "capac" | "fgtb" | "csc" | "cgslb"
+  organismePaiement       String? // "capac" | "fgtb" | "csc" | "synova"
   commissionParitaireCode String? // ref CommissionParitaire.code (ex: "124")
   mutuelleCode            String? // "solidaris" | "mc" | "mloz" | "mutlibres" | "neutrales"
   // Méta
@@ -2295,7 +2295,7 @@ model TranslationSuggestion {
 // ===========================================================================
 // Plateforme de prise de rendez-vous (booking) — multi-tenant.
 // Un BookingTenant = une organisation qui vend/offre la prise de RDV en ligne
-// (FGTB, CSC, CGSLB, CAPAC, ou une entreprise cliente). Chaque tenant a une ou
+// (FGTB, CSC, SYNOVA, CAPAC, ou une entreprise cliente). Chaque tenant a une ou
 // plusieurs antennes (BookingLocation), des règles de créneaux hebdomadaires
 // (BookingSlotRule) avec capacité par heure, des exceptions (fériés/extra), et
 // des réservations (Booking) validées par l'équipe (BookingTenantMember).
@@ -2306,7 +2306,7 @@ model TranslationSuggestion {
 // ===========================================================================
 
 enum BookingCategory {
-  unemployment // chômage (FGTB, CSC, CGSLB, CAPAC, ONEM)
+  unemployment // chômage (FGTB, CSC, SYNOVA, CAPAC, ONEM)
   social_aid // CPAS / aide sociale
   municipal // démarches communales
   private // entreprise privée cliente

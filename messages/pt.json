@@ -2094,7 +2094,7 @@
       "pvPdfDetailHeading": "Detalhe do cálculo",
       "pvPdfIclLabel": "ICL (diferença)",
       "pvPdfIclValue": "{jours} dias",
-      "pvPdfDisclaimer": "Estimativa indicativa baseada nos baremos oficiais do SPF Emploi (CCT 75 pré-2014, lei de 26 de dezembro de 2013 pós-2014). O prazo exato pode variar consoante as convenções sectoriais, acordos individuais ou circunstâncias particulares. Consulte o seu sindicato (CSC / FGTB / CGSLB) ou um consultor jurídico antes de tomar qualquer decisão.",
+      "pvPdfDisclaimer": "Estimativa indicativa baseada nos baremos oficiais do SPF Emploi (CCT 75 pré-2014, lei de 26 de dezembro de 2013 pós-2014). O prazo exato pode variar consoante as convenções sectoriais, acordos individuais ou circunstâncias particulares. Consulte o seu sindicato (CSC / FGTB / SYNOVA) ou um consultor jurídico antes de tomar qualquer decisão.",
       "choIntro": "Estime a sua <strong>prestação de desemprego mensal</strong> (allocation de chômage) em função do seu último salário, da sua situação familiar e da fase de redução progressiva do ONEM (organismo federal belga do desemprego). Os montantes belgas diminuem progressivamente ao longo do tempo.",
       "choSalaireLabel": "Salário bruto mensal (€)",
       "choSalairePlaceholder": "ex: 2 500",
@@ -3011,12 +3011,12 @@
       "ophCapacBadge": "Organismo público",
       "ophCapacBody": "A <strong>CAPAC (Caisse Auxiliaire de Paiement des Allocations de Chômage)</strong> é o organismo público, gerido pelo Estado. Sem quotas, gratuito. Apenas efectua o pagamento das prestações — sem defesa jurídica nem serviços sindicais.",
       "ophCapacFor": "<strong>Para quem?</strong> Não queres aderir a um sindicato, ou preferes a opção mais simples e neutra.",
-      "ophSyndicatNames": "FGTB · CSC · CGSLB",
+      "ophSyndicatNames": "FGTB · CSC · SYNOVA",
       "ophSyndicatBadge": "Sindicatos",
-      "ophSyndicatBody": "Os 3 sindicatos belgas (CSC / FGTB / CGSLB) também pagam as prestações aos seus membros, e oferecem ainda <strong>defesa jurídica</strong>, aconselhamento em direito do trabalho e acompanhamento. <strong>Quota mensal</strong> (~15-20 €/mês conforme o sindicato e o estatuto).",
+      "ophSyndicatBody": "Os 3 sindicatos belgas (CSC / FGTB / SYNOVA) também pagam as prestações aos seus membros, e oferecem ainda <strong>defesa jurídica</strong>, aconselhamento em direito do trabalho e acompanhamento. <strong>Quota mensal</strong> (~15-20 €/mês conforme o sindicato e o estatuto).",
       "ophSyndicatFgtb": "<strong>FGTB</strong> (Fédération Générale du Travail de Belgique) — socialista, com maior presença na indústria",
       "ophSyndicatCsc": "<strong>CSC</strong> (Confédération des Syndicats Chrétiens) — o maior sindicato belga",
-      "ophSyndicatCgslb": "<strong>CGSLB</strong> (Centrale Générale des Syndicats Libéraux de Belgique) — liberal, o mais pequeno",
+      "ophSyndicatSynova": "<strong>SYNOVA</strong> (ex-CGSLB, Centrale Générale des Syndicats Libéraux de Belgique) — sindicato livre, o mais pequeno",
       "ophSyndicatFor": "<strong>Para quem?</strong> Queres apoio activo (litígios com o empregador, negociação, aconselhamento) para além do pagamento.",
       "ophUnknownTitle": "Não sabes se já és filiado?",
       "ophUnknownBullet1": "Consulta o teu recibo de vencimento — a retenção sindical está indicada se cotizares para um sindicato",
@@ -3811,7 +3811,7 @@
         },
         "correction": {
           "title": "Corrigir um erro",
-          "fallbackBody": "Se o cartão já foi enviado e contém um erro, pode corrigi-lo através de um formulário disponível junto do seu organismo de pagamento (CAPAC, CSC, FGTB ou CGSLB)."
+          "fallbackBody": "Se o cartão já foi enviado e contém um erro, pode corrigi-lo através de um formulário disponível junto do seu organismo de pagamento (CAPAC, CSC, FGTB ou SYNOVA)."
         },
         "firstSendDate": {
           "title": "Primeira data de envio possível"
@@ -4517,7 +4517,7 @@
           },
           "delai8Jours": {
             "title": "O prazo de 8 dias",
-            "body": "O pedido deve ser apresentado rapidamente após o fim do contrato de trabalho. Na prática, há um referencial simples: **8 dias úteis** a contar do dia seguinte ao fim do contrato para se inscrever como demandeur d'emploi junto do serviço regional e depositar o dossier junto do organisme de paiement — organismo de pagamento (FGTB, CSC, CGSLB ou CAPAC [caixa pública de pagamento das prestações de desemprego]).\n\nUma apresentação tardia não extingue o direito, mas pode implicar a perda das prestações relativas ao período abrangido pelo atraso. Em caso de dificuldade (doença, diligências em curso), o parceiro deve poder documentar a causa do atraso para a fazer valer junto do ONEM [administração federal belga do desemprego].\n\nFonte pública de referência: www.onem.be."
+            "body": "O pedido deve ser apresentado rapidamente após o fim do contrato de trabalho. Na prática, há um referencial simples: **8 dias úteis** a contar do dia seguinte ao fim do contrato para se inscrever como demandeur d'emploi junto do serviço regional e depositar o dossier junto do organisme de paiement — organismo de pagamento (FGTB, CSC, SYNOVA ou CAPAC [caixa pública de pagamento das prestações de desemprego]).\n\nUma apresentação tardia não extingue o direito, mas pode implicar a perda das prestações relativas ao período abrangido pelo atraso. Em caso de dificuldade (doença, diligências em curso), o parceiro deve poder documentar a causa do atraso para a fazer valer junto do ONEM [administração federal belga do desemprego].\n\nFonte pública de referência: www.onem.be."
           },
           "documentsAPreparer": {
             "title": "Os documentos a preparar",
@@ -5928,8 +5928,8 @@
               "description": "A aplicação oficial para preencher e enviar o seu cartão de controlo C3 / carte de contrôle de desemprego temporário (chômage temporaire) no iPhone."
             },
             "orgs": {
-              "label": "Organismos de pagamento (CAPAC, CSC, FGTB, CGSLB)",
-              "description": "Para receber as suas prestações de desemprego (allocations de chômage), deve estar filiado num organismo de pagamento (organisme de paiement): a CAPAC (pública) ou um sindicato (CSC, FGTB ou CGSLB)."
+              "label": "Organismos de pagamento (CAPAC, CSC, FGTB, SYNOVA)",
+              "description": "Para receber as suas prestações de desemprego (allocations de chômage), deve estar filiado num organismo de pagamento (organisme de paiement): a CAPAC (pública) ou um sindicato (CSC, FGTB ou SYNOVA)."
             },
             "onem": {
               "label": "ONEM — Gabinete Nacional do Emprego (Office national de l'emploi)",
@@ -6130,7 +6130,7 @@
           "title": "Ainda não estou inscrito num organismo de pagamento (OP)",
           "level": "Intermédio",
           "duration": "3 min",
-          "context": "Está a preencher o seu cartão, mas ainda não está inscrito num organismo de pagamento (CAPAC, CSC, FGTB ou CGSLB).",
+          "context": "Está a preencher o seu cartão, mas ainda não está inscrito num organismo de pagamento (CAPAC, CSC, FGTB ou SYNOVA).",
           "objective": "Compreender que o cartão pode ser preenchido sem inscrição, mas não pode ser enviado.",
           "expectedAction": "Preencher o cartão mas constatar que o envio está bloqueado.",
           "feedbackCorrect": "Correto: sem inscrição num organismo de pagamento (OP), o cartão pode ser preenchido mas não pode ser enviado.",
@@ -6416,7 +6416,7 @@
         },
         "send": {
           "firstSendBefore": "O envio ainda não é possível: a primeira data de envio possível ainda não foi atingida. Mesmo quando essa data ocorre antes do fim do mês, o cartão deve ser preenchido corretamente até ao último dia do mês. (Esta simulação nunca envia nada.)",
-          "noPaymentOrg": "Na aplicação real, pode preencher o cartão, mas deve estar inscrito num organismo de pagamento (CAPAC, CSC, FGTB ou CGSLB) para o poder enviar.",
+          "noPaymentOrg": "Na aplicação real, pode preencher o cartão, mas deve estar inscrito num organismo de pagamento (CAPAC, CSC, FGTB ou SYNOVA) para o poder enviar.",
           "notNeeded": "Se não solicitar subsídios, o envio não é necessário. Se pretender solicitar subsídios, é necessário inscrever-se num organismo de pagamento."
         },
         "correction": {
@@ -6475,7 +6475,7 @@
         },
         "pas-inscrit-organisme-paiement": {
           "title": "Não estar inscrito num organismo de pagamento",
-          "explanation": "Sem inscrição num organismo de pagamento (CAPAC, CSC, FGTB ou CGSLB), o cartão pode ser preenchido mas não pode ser enviado.",
+          "explanation": "Sem inscrição num organismo de pagamento (CAPAC, CSC, FGTB ou SYNOVA), o cartão pode ser preenchido mas não pode ser enviado.",
           "advice": "Inscreva-se num organismo de pagamento o mais rapidamente possível para poder enviar o seu cartão e receber as suas prestações de desemprego."
         },
         "oublier-jours-maladie": {
@@ -6536,7 +6536,7 @@
         },
         "6": {
           "q": "Devo estar inscrito num organismo de pagamento (OP)?",
-          "a": "Sim. Para receber as prestações de desemprego e para enviar o cartão, deve estar inscrito num organismo de pagamento (OP): a CAPAC (caixa pública de desemprego), a CSC, a FGTB ou a CGSLB (sindicatos belgas que também pagam as prestações)."
+          "a": "Sim. Para receber as prestações de desemprego e para enviar o cartão, deve estar inscrito num organismo de pagamento (OP): a CAPAC (caixa pública de desemprego), a CSC, a FGTB ou a SYNOVA (sindicatos belgas que também pagam as prestações)."
         },
         "7": {
           "q": "Posso preencher o cartão sem organismo de pagamento (OP)?",

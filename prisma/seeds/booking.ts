@@ -8,7 +8,7 @@ import { DEFAULT_BOOKING_FORM } from "../../lib/booking/form-fields";
 const TENANTS = [
   { slug: "fgtb", name: "FGTB", org: "FGTB", color: "#E2001A" },
   { slug: "csc", name: "CSC", org: "CSC", color: "#F18A00" },
-  { slug: "cgslb", name: "CGSLB", org: "CGSLB", color: "#0096D6" },
+  { slug: "synova", name: "SYNOVA", org: "SYNOVA", color: "#0096D6" },
   { slug: "capac", name: "CAPAC", org: "CAPAC", color: "#1A56DB" },
 ];
 

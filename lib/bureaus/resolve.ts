@@ -49,10 +49,10 @@ export type SerializedBureauWithDistance = SerializedBureau & {
 };
 
 const NEAR_LIMIT = 12;
-const OP_CODES = ["capac", "fgtb", "csc", "cgslb"] as const;
+const OP_CODES = ["capac", "fgtb", "csc", "synova"] as const;
 
 export type ResolveOptions = {
-  /** Code organisme de paiement choisi par le user ("capac" | "fgtb" | "csc" | "cgslb") */
+  /** Code organisme de paiement choisi par le user ("capac" | "fgtb" | "csc" | "synova") */
   organismePaiement?: string | null;
   /** Code mutuelle ("solidaris" | "mc" | ...) */
   mutuelleCode?: string | null;

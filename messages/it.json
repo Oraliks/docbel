@@ -3010,12 +3010,12 @@
       "ophCapacBadge": "Organismo pubblico",
       "ophCapacBody": "La <strong>CAPAC (Caisse Auxiliaire de Paiement des Allocations de Chômage)</strong> è l'organismo pubblico gestito dallo Stato. Senza contributi, gratuita. Fornisce solo il pagamento delle indennità di disoccupazione — senza difesa legale né servizi sindacali.",
       "ophCapacFor": "<strong>Per chi?</strong> Non vuoi aderire a un sindacato, o cerchi la soluzione più semplice e neutrale.",
-      "ophSyndicatNames": "FGTB · CSC · CGSLB",
+      "ophSyndicatNames": "FGTB · CSC · SYNOVA",
       "ophSyndicatBadge": "Sindacati",
-      "ophSyndicatBody": "I 3 sindacati belgi (CSC / FGTB / CGSLB) pagano anch'essi le indennità ai propri iscritti e offrono inoltre la <strong>difesa legale</strong>, la consulenza in diritto del lavoro e l'accompagnamento. <strong>Contributo mensile</strong> (~15-20 €/mese a seconda del sindacato e dello status).",
+      "ophSyndicatBody": "I 3 sindacati belgi (CSC / FGTB / SYNOVA) pagano anch'essi le indennità ai propri iscritti e offrono inoltre la <strong>difesa legale</strong>, la consulenza in diritto del lavoro e l'accompagnamento. <strong>Contributo mensile</strong> (~15-20 €/mese a seconda del sindacato e dello status).",
       "ophSyndicatFgtb": "<strong>FGTB</strong> (Fédération Générale du Travail de Belgique) — socialista, più presente nell'industria",
       "ophSyndicatCsc": "<strong>CSC</strong> (Confédération des Syndicats Chrétiens) — il sindacato belga più grande",
-      "ophSyndicatCgslb": "<strong>CGSLB</strong> (Centrale Générale des Syndicats Libéraux de Belgique) — liberale, il più piccolo",
+      "ophSyndicatSynova": "<strong>SYNOVA</strong> (ex-CGSLB, Centrale Générale des Syndicats Libéraux de Belgique) — sindacato libero, il più piccolo",
       "ophSyndicatFor": "<strong>Per chi?</strong> Vuoi un supporto attivo (controversia con il datore di lavoro, negoziazione, consulenza) oltre al pagamento.",
       "ophUnknownTitle": "Non sai se sei già iscritto?",
       "ophUnknownBullet1": "Controlla la tua busta paga — la trattenuta sindacale è indicata se sei iscritto a un sindacato",
@@ -3811,7 +3811,7 @@
         },
         "correction": {
           "title": "Correggere un errore",
-          "fallbackBody": "Se la carta è già stata inviata e contiene un errore, è possibile correggerlo tramite un modulo disponibile presso il vostro organismo di pagamento (CAPAC, CSC, FGTB o CGSLB)."
+          "fallbackBody": "Se la carta è già stata inviata e contiene un errore, è possibile correggerlo tramite un modulo disponibile presso il vostro organismo di pagamento (CAPAC, CSC, FGTB o SYNOVA)."
         },
         "firstSendDate": {
           "title": "Prima data di invio possibile"
@@ -4517,7 +4517,7 @@
           },
           "delai8Jours": {
             "title": "Il termine di 8 giorni",
-            "body": "La presentazione della domanda deve avvenire rapidamente dopo la fine del contratto di lavoro. In pratica, si tiene come riferimento un criterio semplice: **8 giorni lavorativi** a partire dal giorno successivo alla fine del contratto per iscriversi come richiedente di impiego (demandeur d'emploi) presso il servizio regionale e depositare il fascicolo presso l'organismo di pagamento (organisme de paiement) (FGTB, CSC, CGSLB o CAPAC).\n\nUn deposito tardivo non estingue il diritto, ma può comportare una perdita delle allocazioni per il periodo coperto dal ritardo. In caso di difficoltà (malattia, pratiche in corso), il richiedente deve poter documentare la causa del ritardo per farla valere presso l'ONEM (amministrazione federale belga del chômage).\n\nFonte pubblica di riferimento: www.onem.be."
+            "body": "La presentazione della domanda deve avvenire rapidamente dopo la fine del contratto di lavoro. In pratica, si tiene come riferimento un criterio semplice: **8 giorni lavorativi** a partire dal giorno successivo alla fine del contratto per iscriversi come richiedente di impiego (demandeur d'emploi) presso il servizio regionale e depositare il fascicolo presso l'organismo di pagamento (organisme de paiement) (FGTB, CSC, SYNOVA o CAPAC).\n\nUn deposito tardivo non estingue il diritto, ma può comportare una perdita delle allocazioni per il periodo coperto dal ritardo. In caso di difficoltà (malattia, pratiche in corso), il richiedente deve poter documentare la causa del ritardo per farla valere presso l'ONEM (amministrazione federale belga del chômage).\n\nFonte pubblica di riferimento: www.onem.be."
           },
           "documentsAPreparer": {
             "title": "I documenti da preparare",
@@ -5928,8 +5928,8 @@
               "description": "L'applicazione ufficiale per compilare e inviare la vostra carta di controllo del chômage temporaire (disoccupazione temporanea) su iPhone."
             },
             "orgs": {
-              "label": "Organismi di pagamento — Organisme de paiement (CAPAC, CSC, FGTB, CGSLB)",
-              "description": "Per percepire le vostre allocazioni di disoccupazione, dovete essere affiliati a un organismo di pagamento (Organisme de paiement): la CAPAC (pubblica) oppure un sindacato (CSC, FGTB, CGSLB)."
+              "label": "Organismi di pagamento — Organisme de paiement (CAPAC, CSC, FGTB, SYNOVA)",
+              "description": "Per percepire le vostre allocazioni di disoccupazione, dovete essere affiliati a un organismo di pagamento (Organisme de paiement): la CAPAC (pubblica) oppure un sindacato (CSC, FGTB, SYNOVA)."
             },
             "onem": {
               "label": "ONEM — Office national de l'emploi (Ufficio Nazionale dell'Impiego)",
@@ -6130,7 +6130,7 @@
           "title": "Non sono ancora iscritto presso un organismo di pagamento (OP)",
           "level": "Intermedio",
           "duration": "3 min",
-          "context": "State compilando la vostra carta, ma non siete ancora iscritti presso un organismo di pagamento (OP) (CAPAC [cassa pubblica per le allocazioni di disoccupazione], CSC, FGTB o CGSLB [sindacati belgi]).",
+          "context": "State compilando la vostra carta, ma non siete ancora iscritti presso un organismo di pagamento (OP) (CAPAC [cassa pubblica per le allocazioni di disoccupazione], CSC, FGTB o SYNOVA [sindacati belgi]).",
           "objective": "Capire che la carta può essere compilata senza iscrizione, ma non può essere inviata.",
           "expectedAction": "Compilare la carta ma constatare che l'invio è bloccato.",
           "feedbackCorrect": "Corretto: senza iscrizione presso un organismo di pagamento (uitbetalingsinstelling), la carta può essere compilata ma non può essere inviata.",
@@ -6416,7 +6416,7 @@
         },
         "send": {
           "firstSendBefore": "L'invio non è ancora possibile: la prima data di invio possibile non è ancora raggiunta. Anche quando questa data cade prima della fine del mese, la carta deve essere compilata correttamente fino all'ultimo giorno del mese. (Questa simulazione non invia mai nulla.)",
-          "noPaymentOrg": "Nella vera applicazione, è possibile compilare la carta, ma è necessario essere affiliati a un organismo di pagamento (CAPAC, CSC, FGTB o CGSLB) per poterla inviare.",
+          "noPaymentOrg": "Nella vera applicazione, è possibile compilare la carta, ma è necessario essere affiliati a un organismo di pagamento (CAPAC, CSC, FGTB o SYNOVA) per poterla inviare.",
           "notNeeded": "Se non si richiedono le allocazioni di disoccupazione, l'invio non è necessario. Se si desidera richiedere le allocazioni, è necessario iscriversi presso un organismo di pagamento."
         },
         "correction": {
@@ -6475,7 +6475,7 @@
         },
         "pas-inscrit-organisme-paiement": {
           "title": "Non essere iscritto presso un organismo di pagamento (Organisme de paiement)",
-          "explanation": "Senza iscrizione presso un organismo di pagamento (Organisme de paiement) (CAPAC, CSC, FGTB o CGSLB), la carta può essere compilata ma non può essere inviata.",
+          "explanation": "Senza iscrizione presso un organismo di pagamento (Organisme de paiement) (CAPAC, CSC, FGTB o SYNOVA), la carta può essere compilata ma non può essere inviata.",
           "advice": "Iscriviti presso un organismo di pagamento (Organisme de paiement) il prima possibile per poter inviare la tua carta e percepire le tue allocazioni di disoccupazione (allocations de chômage)."
         },
         "oublier-jours-maladie": {
@@ -6536,7 +6536,7 @@
         },
         "6": {
           "q": "Devo essere iscritto presso un organismo di pagamento (OP)?",
-          "a": "Sì. Per ricevere le allocazioni di disoccupazione e per inviare la carta, è necessario essere iscritti presso un organismo di pagamento (OP): la CAPAC (cassa pubblica per le allocazioni di disoccupazione), la CSC, la FGTB o la CGSLB (sindacati belgi)."
+          "a": "Sì. Per ricevere le allocazioni di disoccupazione e per inviare la carta, è necessario essere iscritti presso un organismo di pagamento (OP): la CAPAC (cassa pubblica per le allocazioni di disoccupazione), la CSC, la FGTB o la SYNOVA (sindacati belgi)."
         },
         "7": {
           "q": "Posso compilare la carta senza un organismo di pagamento?",

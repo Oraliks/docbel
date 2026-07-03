@@ -128,7 +128,7 @@ export const ec32DefaultMistakes: Ec32MistakeItem[] = [
     title: 'Ne pas être inscrit auprès d’un organisme de paiement',
     titleKey: 'public.ec32Content.mistakes.pas-inscrit-organisme-paiement.title',
     explanation:
-      'Sans inscription auprès d’un organisme de paiement (CAPAC, CSC, FGTB ou CGSLB), la carte peut être complétée mais ne peut pas être envoyée.',
+      'Sans inscription auprès d’un organisme de paiement (CAPAC, CSC, FGTB ou SYNOVA), la carte peut être complétée mais ne peut pas être envoyée.',
     explanationKey: 'public.ec32Content.mistakes.pas-inscrit-organisme-paiement.explanation',
     advice:
       'Inscrivez-vous auprès d’un organisme de paiement dès que possible pour pouvoir envoyer votre carte et percevoir vos allocations.',

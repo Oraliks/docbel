@@ -54,7 +54,7 @@ export function Ec32SendModal({
   monthLabel?: string
   /** Nom de l'employeur — injecté dans le texte verbatim ONEM. */
   employerName?: string
-  /** Organisme de paiement (CAPAC/CSC/FGTB/CGSLB) — défaut neutre. */
+  /** Organisme de paiement (CAPAC/CSC/FGTB/SYNOVA) — défaut neutre. */
   paymentOrgName?: string
   onOpenChange: (open: boolean) => void
   /** Appelé après confirmation : la carte passe en `sent`/`locked`. */

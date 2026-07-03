@@ -385,10 +385,10 @@ export const ec32DefaultContent: Ec32Content = {
         url: 'https://apps.apple.com/be/app/ec3-2-ch%C3%B4mage-temporaire/id1435477924',
       },
       {
-        label: 'Organismes de paiement (CAPAC, CSC, FGTB, CGSLB)',
+        label: 'Organismes de paiement (CAPAC, CSC, FGTB, SYNOVA)',
         labelKey: 'public.ec32Content.content.resourcesSection.items.orgs.label',
         description:
-          'Pour percevoir vos allocations, vous devez être affilié à un organisme de paiement : la CAPAC (publique) ou un syndicat (CSC, FGTB, CGSLB).',
+          'Pour percevoir vos allocations, vous devez être affilié à un organisme de paiement : la CAPAC (publique) ou un syndicat (CSC, FGTB, SYNOVA).',
         descriptionKey: 'public.ec32Content.content.resourcesSection.items.orgs.description',
         url: '/organisme-de-paiement',
       },

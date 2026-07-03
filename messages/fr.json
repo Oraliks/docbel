@@ -579,7 +579,7 @@
       "svcType_paiement_capac": "CAPAC (caisse publique)",
       "svcType_paiement_fgtb": "FGTB (org. paiement)",
       "svcType_paiement_csc": "CSC (org. paiement)",
-      "svcType_paiement_cgslb": "CGSLB (org. paiement)",
+      "svcType_paiement_synova": "SYNOVA (org. paiement)",
       "svcType_mutuelle_solidaris": "Mutuelle Solidaris",
       "svcType_mutuelle_mc": "Mutualité Chrétienne",
       "svcType_mutuelle_mloz": "MLOZ (Mut. libres)",
@@ -589,7 +589,7 @@
       "svcTypeHelper_paiement_capac": "Bureaux CAPAC/HVW",
       "svcTypeHelper_paiement_fgtb": "Caisses FGTB/ABVV",
       "svcTypeHelper_paiement_csc": "Caisses CSC/ACV",
-      "svcTypeHelper_paiement_cgslb": "Caisses CGSLB/ACLVB",
+      "svcTypeHelper_paiement_synova": "Caisses SYNOVA",
       "svcTypeHelper_mutuelle_solidaris": "—",
       "svcTypeHelper_mutuelle_mc": "—",
       "svcTypeHelper_mutuelle_mloz": "—",
@@ -6201,12 +6201,12 @@
       "ophCapacBadge": "Organisme public",
       "ophCapacBody": "La <strong>Caisse Auxiliaire de Paiement des Allocations de Chômage</strong> est l'organisme public, géré par l'État. Sans cotisation, gratuit. Ne fournit que le paiement des allocations — pas de défense juridique ni de services syndicaux.",
       "ophCapacFor": "<strong>Pour qui ?</strong> Tu ne veux pas adhérer à un syndicat, ou tu cherches le plus simple et neutre.",
-      "ophSyndicatNames": "FGTB · CSC · CGSLB",
+      "ophSyndicatNames": "FGTB · CSC · SYNOVA",
       "ophSyndicatBadge": "Syndicats",
       "ophSyndicatBody": "Les 3 syndicats belges paient aussi les allocations à leurs membres, et offrent en plus la <strong>défense juridique</strong>, le conseil en droit du travail, et l'accompagnement. <strong>Cotisation mensuelle</strong> (~15-20 €/mois selon syndicat et statut).",
       "ophSyndicatFgtb": "<strong>FGTB</strong> (Fédération Générale du Travail de Belgique) — socialiste, plus présent en industrie",
       "ophSyndicatCsc": "<strong>CSC</strong> (Confédération des Syndicats Chrétiens) — plus gros syndicat belge",
-      "ophSyndicatCgslb": "<strong>CGSLB</strong> (Centrale Générale des Syndicats Libéraux de Belgique) — libéral, plus petit",
+      "ophSyndicatSynova": "<strong>SYNOVA</strong> (ex-CGSLB, Centrale Générale des Syndicats Libéraux de Belgique) — syndicat libre, plus petit",
       "ophSyndicatFor": "<strong>Pour qui ?</strong> Tu veux un soutien actif (litige employeur, négociation, conseil) en plus du paiement.",
       "ophUnknownTitle": "Tu ne sais pas si tu es déjà affilié ?",
       "ophUnknownBullet1": "Regarde ta fiche de paie — la retenue syndicale est mentionnée si tu cotises à un syndicat",
@@ -7018,7 +7018,7 @@
         },
         "correction": {
           "title": "Corriger une erreur",
-          "fallbackBody": "Si la carte a déjà été envoyée et qu'elle contient une erreur, vous pouvez la corriger au moyen d'un formulaire disponible auprès de votre organisme de paiement (CAPAC, CSC, FGTB ou CGSLB)."
+          "fallbackBody": "Si la carte a déjà été envoyée et qu'elle contient une erreur, vous pouvez la corriger au moyen d'un formulaire disponible auprès de votre organisme de paiement (CAPAC, CSC, FGTB ou SYNOVA)."
         },
         "firstSendDate": {
           "title": "Première date d'envoi possible"
@@ -7724,7 +7724,7 @@
           },
           "delai8Jours": {
             "title": "Le délai de 8 jours",
-            "body": "L'introduction de la demande doit intervenir rapidement après la fin du contrat de travail. En pratique, on retient un repère simple : **8 jours ouvrables** à partir du jour qui suit la fin du contrat pour s'inscrire comme demandeur d'emploi auprès du service régional et déposer le dossier auprès de l'organisme de paiement (FGTB, CSC, CGSLB ou CAPAC).\n\nUn dépôt tardif n'éteint pas le droit, mais peut entraîner une perte des allocations pour la période couverte par le retard. En cas de difficulté (maladie, démarches en cours), le partenaire doit pouvoir documenter la cause du retard pour la faire valoir auprès de l'ONEM.\n\nSource publique de référence : www.onem.be."
+            "body": "L'introduction de la demande doit intervenir rapidement après la fin du contrat de travail. En pratique, on retient un repère simple : **8 jours ouvrables** à partir du jour qui suit la fin du contrat pour s'inscrire comme demandeur d'emploi auprès du service régional et déposer le dossier auprès de l'organisme de paiement (FGTB, CSC, SYNOVA ou CAPAC).\n\nUn dépôt tardif n'éteint pas le droit, mais peut entraîner une perte des allocations pour la période couverte par le retard. En cas de difficulté (maladie, démarches en cours), le partenaire doit pouvoir documenter la cause du retard pour la faire valoir auprès de l'ONEM.\n\nSource publique de référence : www.onem.be."
           },
           "documentsAPreparer": {
             "title": "Les documents à préparer",
@@ -9421,8 +9421,8 @@
               "description": "L’application officielle pour compléter et envoyer votre carte de contrôle de chômage temporaire sur iPhone."
             },
             "orgs": {
-              "label": "Organismes de paiement (CAPAC, CSC, FGTB, CGSLB)",
-              "description": "Pour percevoir vos allocations, vous devez être affilié à un organisme de paiement : la CAPAC (publique) ou un syndicat (CSC, FGTB, CGSLB)."
+              "label": "Organismes de paiement (CAPAC, CSC, FGTB, SYNOVA)",
+              "description": "Pour percevoir vos allocations, vous devez être affilié à un organisme de paiement : la CAPAC (publique) ou un syndicat (CSC, FGTB, SYNOVA)."
             },
             "onem": {
               "label": "ONEM — Office national de l’emploi",
@@ -9623,7 +9623,7 @@
           "title": "Je ne suis pas encore inscrit auprès d’un organisme de paiement",
           "level": "Intermédiaire",
           "duration": "3 min",
-          "context": "Vous complétez votre carte, mais vous n’êtes pas encore inscrit auprès d’un organisme de paiement (CAPAC, CSC, FGTB ou CGSLB).",
+          "context": "Vous complétez votre carte, mais vous n’êtes pas encore inscrit auprès d’un organisme de paiement (CAPAC, CSC, FGTB ou SYNOVA).",
           "objective": "Comprendre que la carte peut être complétée sans inscription, mais ne peut pas être envoyée.",
           "expectedAction": "Compléter la carte mais constater que l’envoi est bloqué.",
           "feedbackCorrect": "Correct : sans inscription auprès d’un organisme de paiement, la carte peut être complétée mais ne peut pas être envoyée.",
@@ -9913,7 +9913,7 @@
         },
         "send": {
           "firstSendBefore": "L’envoi n’est pas encore possible : la première date d’envoi possible n’est pas atteinte. Même lorsque cette date tombe avant la fin du mois, la carte doit être complétée correctement jusqu’au dernier jour du mois. (Cette simulation n’envoie jamais rien.)",
-          "noPaymentOrg": "Dans la vraie application, vous pouvez compléter la carte, mais vous devez être affilié à un organisme de paiement (CAPAC, CSC, FGTB ou CGSLB) pour pouvoir l’envoyer.",
+          "noPaymentOrg": "Dans la vraie application, vous pouvez compléter la carte, mais vous devez être affilié à un organisme de paiement (CAPAC, CSC, FGTB ou SYNOVA) pour pouvoir l’envoyer.",
           "notNeeded": "Si vous ne demandez pas d’allocations, l’envoi n’est pas nécessaire. Si vous souhaitez demander des allocations, l’inscription auprès d’un organisme de paiement est nécessaire."
         },
         "correction": {
@@ -9972,7 +9972,7 @@
         },
         "pas-inscrit-organisme-paiement": {
           "title": "Ne pas être inscrit auprès d’un organisme de paiement",
-          "explanation": "Sans inscription auprès d’un organisme de paiement (CAPAC, CSC, FGTB ou CGSLB), la carte peut être complétée mais ne peut pas être envoyée.",
+          "explanation": "Sans inscription auprès d’un organisme de paiement (CAPAC, CSC, FGTB ou SYNOVA), la carte peut être complétée mais ne peut pas être envoyée.",
           "advice": "Inscrivez-vous auprès d’un organisme de paiement dès que possible pour pouvoir envoyer votre carte et percevoir vos allocations."
         },
         "oublier-jours-maladie": {
@@ -10033,7 +10033,7 @@
         },
         "6": {
           "q": "Dois-je être inscrit auprès d’un organisme de paiement ?",
-          "a": "Oui. Pour percevoir des allocations et pour envoyer la carte, vous devez être inscrit auprès d’un organisme de paiement : la CAPAC, la CSC, la FGTB ou la CGSLB."
+          "a": "Oui. Pour percevoir des allocations et pour envoyer la carte, vous devez être inscrit auprès d’un organisme de paiement : la CAPAC, la CSC, la FGTB ou la SYNOVA."
         },
         "7": {
           "q": "Puis-je compléter la carte sans organisme de paiement ?",

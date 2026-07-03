@@ -19,7 +19,7 @@ const TYPE_BY_CODE: Record<string, BureauTypeCode> = {
   capac: "SYNDICAT",
   csc: "SYNDICAT",
   fgtb: "SYNDICAT",
-  cgslb: "SYNDICAT",
+  synova: "SYNDICAT",
 };
 
 export function BureauCallout({

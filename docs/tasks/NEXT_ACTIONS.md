@@ -29,9 +29,12 @@ Légende priorité : **P0** critique · **P1** important · **P2** souhaitable �
 | 18 | P3 | Doc | Désigner DPO + déposer demande NRN au SPF Intérieur (administratif) | hors-code | — | — | bloqué (juriste) |
 
 ## Plans en attente de validation
-- **Réglementation V3** (« texte de loi vivant » : abrogé barré, crochets cliquables,
-  hashtags, navigation code annoté, Q&A IA…) → [REGLEMENTATION_V3_PLAN.md](REGLEMENTATION_V3_PLAN.md).
-  Proposition 2026-07-03, ~19 fonctionnalités en 5 vagues, rien codé. Vague 1 = demandes Oraliks.
+- **Réglementation V3** (« texte de loi vivant ») → [REGLEMENTATION_V3_PLAN.md](REGLEMENTATION_V3_PLAN.md) —
+  **vagues 1-5 LIVRÉES 2026-07-03** (commits `ff2d26a`→`9028c45`, build+909 tests verts).
+- **Réglementation V4** (« lecture augmentée & outils du conseiller » : glossaire au survol,
+  sommaire flottant, paires AR↔AM, explorateur réforme, notes, dossiers…) →
+  [REGLEMENTATION_V4_PLAN.md](REGLEMENTATION_V4_PLAN.md). Proposition 2026-07-03, 16 features en 5 vagues
+  (V6-V10), rien codé. 4 décisions à trancher (structure loi, notes localStorage/DB, table signalements, réforme).
 
 ## Quick wins déjà faits cette session (cf. rapport)
 - `.env.example` complété (clés réellement utilisées).

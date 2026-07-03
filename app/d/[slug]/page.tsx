@@ -4,6 +4,8 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { BundleRunner } from "@/components/docbel/bundle-runner";
+import { DossierJourneyIntro } from "@/components/docbel/dossier-journey-intro";
+import { serializeJourneyWarnings, serializeJourneyDocuments } from "@/lib/dossiers/journey";
 import { DossierEnConstruction } from "@/components/docbel/dossier-en-construction";
 import { parseOfficialSources } from "@/lib/bundles/types";
 import type { FormPayload, PdfFormField } from "@/lib/pdf-forms/types";
@@ -255,20 +257,46 @@ export default async function BundleRoute({
         <span className="truncate text-[color:var(--glass-ink)]">{bundle.name}</span>
       </nav>
 
-      <BundleRunner
-        bundle={serializedBundle}
-        runId={run?.id ?? null}
-        resumeCode={run?.resumeCode ?? null}
-        resumeCodeExpiresAt={run?.resumeCodeExpiresAt?.toISOString() ?? null}
-        resumeEmail={run?.resumeEmail ?? null}
-        eligibilityAnswers={eligibilityAnswers}
-        completedTemplateIds={(run?.completedTemplateIds as string[]) || []}
-        payloads={payloads}
-        templateNames={templateNames}
-        fieldLabels={fieldLabels}
-        applicableSlugs={finalApplicableSlugs}
-        externalDocuments={externalDocuments}
-      />
+      {(() => {
+        const runnerProps = {
+          bundle: serializedBundle,
+          runId: run?.id ?? null,
+          resumeCode: run?.resumeCode ?? null,
+          resumeCodeExpiresAt: run?.resumeCodeExpiresAt?.toISOString() ?? null,
+          resumeEmail: run?.resumeEmail ?? null,
+          eligibilityAnswers,
+          completedTemplateIds: (run?.completedTemplateIds as string[]) || [],
+          payloads,
+          templateNames,
+          fieldLabels,
+          applicableSlugs: finalApplicableSlugs,
+          externalDocuments,
+        };
+
+        // Écran d'explication : uniquement si le dossier codé fournit un
+        // `journey` + un libellé CTA, ET qu'aucun run n'est déjà en cours
+        // (un visiteur qui reprend son dossier va droit au questionnaire).
+        const showJourney =
+          dossier?.journey && dossier.journeyCtaLabel && !run;
+
+        if (showJourney) {
+          return (
+            <DossierJourneyIntro
+              journey={dossier!.journey!}
+              warnings={serializeJourneyWarnings(
+                dossier!.warnings,
+                eligibilityAnswers as unknown as DossierAnswers,
+              )}
+              documents={serializeJourneyDocuments(selectedDocs ?? [])}
+              ctaLabel={dossier!.journeyCtaLabel!}
+              ctaLabelKey={dossier!.journeyCtaLabelKey}
+              {...runnerProps}
+            />
+          );
+        }
+
+        return <BundleRunner {...runnerProps} />;
+      })()}
     </div>
   );
 }

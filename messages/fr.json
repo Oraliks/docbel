@@ -7804,6 +7804,25 @@
       "insertion": {
         "title": "Allocations d'insertion (jeunes)",
         "description": "Pour les jeunes qui sortent des études et n'ont pas (assez) travaillé pour ouvrir un droit au chômage classique.",
+        "journeyCtaLabel": "Créer ma demande sur base des études",
+        "journey": {
+          "step1": {
+            "title": "Après les études",
+            "body": "Inscris-toi comme demandeur d'emploi auprès du service régional compétent : Actiris, Forem, VDAB ou ADG."
+          },
+          "step2": {
+            "title": "Pendant 156 jours",
+            "body": "Le stage d'insertion démarre : cherche activement du travail et garde tes preuves. Tu es suivi par le service régional de l'emploi."
+          },
+          "step3": {
+            "title": "À la fin du stage",
+            "body": "Confirme ton inscription comme demandeur d'emploi et introduis ta demande d'allocations d'insertion."
+          },
+          "step4": {
+            "title": "Après l'acceptation",
+            "body": "Le paiement passe par ton organisme de paiement (CAPAC ou syndicat) et tu remplis chaque mois ta carte de contrôle."
+          }
+        },
         "warning": {
           "demandeAvant25": {
             "title": "Demande avant 25 ans",

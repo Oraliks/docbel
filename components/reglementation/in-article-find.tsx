@@ -94,7 +94,21 @@ export function InArticleFind({ label }: { label: string }) {
     setOpen(false);
   };
 
-  useEffect(() => () => clear(), []);
+  // Injecte les styles ::highlight() au runtime : le pseudo-élément CSS Custom
+  // Highlight n'est pas reconnu par l'optimiseur CSS du build (Lightning CSS) et
+  // serait sinon signalé/retiré. Injection idempotente, hors pipeline de build.
+  useEffect(() => {
+    const ID = "regl-find-hl-style";
+    if (typeof document !== "undefined" && !document.getElementById(ID)) {
+      const style = document.createElement("style");
+      style.id = ID;
+      style.textContent =
+        "::highlight(regl-find){background-color:color-mix(in oklab,var(--primary) 22%,transparent)}" +
+        "::highlight(regl-find-current){background-color:var(--primary);color:var(--primary-foreground)}";
+      document.head.appendChild(style);
+    }
+    return () => clear();
+  }, []);
 
   if (!open) {
     return (

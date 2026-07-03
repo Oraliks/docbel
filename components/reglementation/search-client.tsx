@@ -12,7 +12,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { BookOpen, Loader2, RotateCcw, Search } from "lucide-react";
+import { BookOpen, Loader2, RotateCcw, Search, Sparkles } from "lucide-react";
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -26,9 +26,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
+import { THEMES } from "@/lib/reglementation/themes";
 import type { ResultItem } from "./types";
 import { ResultCard } from "./result-card";
 import { RegLegend } from "./legend";
+import { OPEN_PALETTE_EVENT } from "./command-palette";
+import { PinsRecents } from "./pins-recents";
 
 interface SearchResponse {
   mode: "liste" | "fts" | "hybride";
@@ -63,6 +66,8 @@ export function ReglementationSearchClient() {
   const [nature, setNature] = useState(searchParams.get("nature") ?? ALL);
   const [statut, setStatut] = useState(searchParams.get("statut") ?? ALL);
   const [loi, setLoi] = useState(searchParams.get("loi") ?? ALL);
+  const [reforme, setReforme] = useState(searchParams.get("reforme") === "1");
+  const [theme, setTheme] = useState(searchParams.get("theme") ?? "");
   const [tri, setTri] = useState(searchParams.get("tri") ?? "pertinence");
   const [page, setPage] = useState(1);
   const [data, setData] = useState<SearchResponse | null>(null);
@@ -71,7 +76,15 @@ export function ReglementationSearchClient() {
   const abortRef = useRef<AbortController | null>(null);
 
   const fetchResults = useCallback(
-    async (query: string, n: string, s: string, l: string, p: number) => {
+    async (
+      query: string,
+      n: string,
+      s: string,
+      l: string,
+      p: number,
+      r: boolean,
+      th: string,
+    ) => {
       abortRef.current?.abort();
       const controller = new AbortController();
       abortRef.current = controller;
@@ -82,6 +95,8 @@ export function ReglementationSearchClient() {
       if (n !== ALL) params.set("nature", n);
       if (s !== ALL) params.set("statut", s);
       if (l !== ALL) params.set("loi", l);
+      if (r) params.set("reforme", "1");
+      if (th) params.set("theme", th);
       params.set("page", String(p));
       params.set("pageSize", String(PAGE_SIZE));
       try {
@@ -103,13 +118,15 @@ export function ReglementationSearchClient() {
   // Débounce sur la saisie ; fetch immédiat sur filtres/page.
   useEffect(() => {
     const handle = setTimeout(() => {
-      fetchResults(q.trim(), nature, statut, loi, page);
+      fetchResults(q.trim(), nature, statut, loi, page, reforme, theme);
       // Reflète l'état dans l'URL (partage / retour arrière), sans navigation.
       const url = new URLSearchParams();
       if (q.trim()) url.set("q", q.trim());
       if (nature !== ALL) url.set("nature", nature);
       if (statut !== ALL) url.set("statut", statut);
       if (loi !== ALL) url.set("loi", loi);
+      if (reforme) url.set("reforme", "1");
+      if (theme) url.set("theme", theme);
       if (tri !== "pertinence") url.set("tri", tri);
       const qs = url.toString();
       router.replace(`/partenaire/reglementation${qs ? `?${qs}` : ""}`, {
@@ -117,7 +134,7 @@ export function ReglementationSearchClient() {
       });
     }, 300);
     return () => clearTimeout(handle);
-  }, [q, nature, statut, loi, tri, page, fetchResults, router]);
+  }, [q, nature, statut, loi, reforme, theme, tri, page, fetchResults, router]);
 
   const onFilterChange =
     (setter: (v: string) => void) => (v: string | null) => {
@@ -130,6 +147,8 @@ export function ReglementationSearchClient() {
     setNature(ALL);
     setStatut(ALL);
     setLoi(ALL);
+    setReforme(false);
+    setTheme("");
     setTri("pertinence");
     setPage(1);
   };
@@ -142,6 +161,9 @@ export function ReglementationSearchClient() {
 
   return (
     <div className="space-y-4">
+      {/* Épingles + consultés récemment (localStorage) */}
+      <PinsRecents />
+
       {/* Bandeau stats */}
       <div className="grid gap-3 sm:grid-cols-3">
         <Card>
@@ -185,8 +207,17 @@ export function ReglementationSearchClient() {
               setPage(1);
             }}
             placeholder={t("reglSearchPlaceholder")}
-            className="pl-9"
+            className="pl-9 pr-24"
           />
+          <button
+            type="button"
+            onClick={() => window.dispatchEvent(new Event(OPEN_PALETTE_EVENT))}
+            className="absolute right-2 top-1/2 hidden -translate-y-1/2 items-center gap-1 rounded border bg-muted/50 px-1.5 py-0.5 text-xs text-muted-foreground transition-colors hover:bg-muted sm:inline-flex"
+            title={t("reglPaletteHint")}
+          >
+            <kbd className="font-sans">Ctrl</kbd>
+            <kbd className="font-sans">K</kbd>
+          </button>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Select value={loi} onValueChange={onFilterChange(setLoi)}>
@@ -234,11 +265,47 @@ export function ReglementationSearchClient() {
               <SelectItem value="article">{t("reglTriArticle")}</SelectItem>
             </SelectContent>
           </Select>
+          <Button
+            type="button"
+            variant={reforme ? "default" : "outline"}
+            size="sm"
+            aria-pressed={reforme}
+            onClick={() => { setReforme((v) => !v); setPage(1); }}
+            className="gap-1.5"
+          >
+            <Sparkles className="size-3.5" aria-hidden />
+            {t("reglReforme2026")}
+          </Button>
           <Button variant="ghost" size="sm" onClick={handleReset} className="gap-1.5">
             <RotateCcw className="size-3.5" aria-hidden />
             {t("reglReset")}
           </Button>
         </div>
+      </div>
+
+      {/* Thématiques (hashtags) — filtres rapides par concept métier */}
+      <div className="flex flex-wrap items-center gap-1.5">
+        {THEMES.map((th) => {
+          const active = theme === th.key;
+          return (
+            <button
+              key={th.key}
+              type="button"
+              aria-pressed={active}
+              onClick={() => {
+                setTheme(active ? "" : th.key);
+                setPage(1);
+              }}
+              className={`rounded-full border px-2.5 py-1 text-xs transition-colors ${
+                active
+                  ? "border-primary bg-primary/10 font-medium text-primary"
+                  : "text-muted-foreground hover:bg-accent hover:text-foreground"
+              }`}
+            >
+              #{th.label}
+            </button>
+          );
+        })}
       </div>
 
       {/* Compteur */}

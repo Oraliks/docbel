@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { natureMeta } from "@/lib/reglementation/nature";
 import { NatureTile } from "./nature-badge";
 import { renderHeadline } from "./highlight";
+import { PinButton } from "./pins-recents";
 import type { ResultItem } from "./types";
 
 export function ResultCard({ item }: { item: ResultItem }) {
@@ -20,7 +21,19 @@ export function ResultCard({ item }: { item: ResultItem }) {
       {/* Liseré gauche coloré selon la nature juridique */}
       <span className={`absolute inset-y-0 left-0 w-1 ${m.accent}`} />
 
-      <CardContent className="flex gap-3 py-3 pl-4">
+      {/* Épingle */}
+      <div className="absolute right-2 top-2">
+        <PinButton
+          item={{
+            riolexId: item.riolexId,
+            loi: item.loi,
+            articleNumber: item.articleNumber,
+            title: item.title,
+          }}
+        />
+      </div>
+
+      <CardContent className="flex gap-3 py-3 pl-4 pr-10">
         <NatureTile nature={item.natureJuridique} />
 
         <div className="min-w-0 flex-1 space-y-1.5">
@@ -36,6 +49,11 @@ export function ResultCard({ item }: { item: ResultItem }) {
               <Badge variant="destructive">{t("reglAbroge")}</Badge>
             ) : (
               <Badge variant="success">{t("reglStatutVigueur")}</Badge>
+            )}
+            {item.reforme2026 && (
+              <Badge className="border-orange-200 bg-orange-50 text-orange-700">
+                {t("reglReforme2026")}
+              </Badge>
             )}
           </div>
 

@@ -11,6 +11,7 @@ export interface ResultItem {
   datePublication: string | null;
   sourceUrl: string | null;
   headline: string | null;
+  reforme2026?: boolean;
 }
 
 export interface LegalMeta {

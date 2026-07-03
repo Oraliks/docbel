@@ -24,11 +24,20 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePartnerOrAdminAuth } from "@/lib/auth-check";
 import { allowedVisibilities } from "@/lib/chomage-ia/context";
+import { parseQueryIntent } from "@/lib/reglementation/query-intent";
+import { themeByKey } from "@/lib/reglementation/themes";
 import {
   embedTexts,
   getEmbeddingProvider,
   vectorToSqlLiteral,
 } from "@/lib/chomage-ia/embeddings";
+
+/**
+ * Fragment SQL détectant la réforme chômage (Loi-programme 18/07/2025, EV 1.3.2026)
+ * dans le texte de l'article. Littéral constant sans entrée utilisateur → sûr
+ * à inliner (pas d'injection possible).
+ */
+const REFORME_SQL = `s."content" ILIKE '%Loi-programme 18.7.2025%'`;
 
 export const dynamic = "force-dynamic";
 
@@ -69,6 +78,7 @@ interface ResultItem {
   datePublication: string | null;
   sourceUrl: string | null;
   headline: string | null;
+  reforme2026: boolean;
 }
 
 function toItem(
@@ -78,6 +88,7 @@ function toItem(
     sourceUrl: string | null;
     legalMeta: unknown;
     headline?: string | null;
+    reforme2026?: boolean;
   },
   exposeSource: boolean,
 ): ResultItem {
@@ -96,6 +107,7 @@ function toItem(
     // Lien RioLex réservé aux admins (source interne, cf. demande Oraliks).
     sourceUrl: exposeSource ? row.sourceUrl : null,
     headline: row.headline ?? null,
+    reforme2026: row.reforme2026 === true,
   };
 }
 
@@ -111,6 +123,8 @@ export async function GET(req: NextRequest) {
   const nature = NATURES.has(natureRaw) ? natureRaw : null;
   const statut = sp.get("statut"); // "vigueur" | "abroge" | null
   const loi = (sp.get("loi") ?? "").trim().slice(0, 200) || null;
+  const reforme = sp.get("reforme") === "1" || sp.get("reforme") === "true";
+  const themeKey = (sp.get("theme") ?? "").trim().slice(0, 40) || null;
   const page = Math.max(1, parseInt(sp.get("page") ?? "1", 10) || 1);
   const pageSize = Math.min(
     50,
@@ -139,6 +153,19 @@ export async function GET(req: NextRequest) {
     params.push(loi);
     conds.push(`s."legalMeta"->>'loi' = $${params.length}`);
   }
+  if (reforme) {
+    conds.push(REFORME_SQL);
+  }
+  if (themeKey) {
+    const th = themeByKey(themeKey);
+    if (th) {
+      const ors = th.keywords.map((kw) => {
+        params.push(`%${kw}%`);
+        return `s."content" ILIKE $${params.length}`;
+      });
+      if (ors.length) conds.push(`(${ors.join(" OR ")})`);
+    }
+  }
   const whereSql = conds.join("\n  AND ");
 
   try {
@@ -164,10 +191,12 @@ export async function GET(req: NextRequest) {
           title: string;
           sourceUrl: string | null;
           legalMeta: unknown;
+          reforme2026: boolean;
           total: bigint;
         }>
       >(
         `SELECT s."id", s."title", s."sourceUrl", s."legalMeta",
+                (${REFORME_SQL}) AS reforme2026,
                 COUNT(*) OVER() AS total
          FROM "KnowledgeSource" s
          WHERE ${whereSql}
@@ -200,11 +229,13 @@ export async function GET(req: NextRequest) {
         title: string;
         sourceUrl: string | null;
         legalMeta: unknown;
+        reforme2026: boolean;
         rank: number;
         headline: string;
       }>
     >(
       `SELECT s."id", s."title", s."sourceUrl", s."legalMeta",
+              (${REFORME_SQL}) AS reforme2026,
               ts_rank_cd(s."contentTsv", websearch_to_tsquery('french', $${qIdx})) AS rank,
               ts_headline('french', left(s."content", 4000),
                           websearch_to_tsquery('french', $${qIdx}),
@@ -280,13 +311,14 @@ export async function GET(req: NextRequest) {
               sourceUrl: true,
               legalMeta: true,
               summary: true,
+              content: true,
             },
             take: SEM_TOP_K,
           })
         : [];
     const extraById = new Map(extra.map((r) => [r.id, r]));
 
-    const fusedItems: ResultItem[] = [];
+    let fusedItems: ResultItem[] = [];
     for (const id of fusedIds) {
       const fts = ftsById.get(id);
       if (fts) {
@@ -295,7 +327,51 @@ export async function GET(req: NextRequest) {
       }
       const row = extraById.get(id);
       if (row) {
-        fusedItems.push(toItem({ ...row, headline: row.summary ?? null }, isAdmin));
+        fusedItems.push(
+          toItem(
+            {
+              ...row,
+              headline: row.summary ?? null,
+              reforme2026: /Loi-programme 18\.7\.2025/i.test(row.content ?? ""),
+            },
+            isAdmin,
+          ),
+        );
+      }
+    }
+
+    // Boost : si la requête est un n° d'article (« art. 79 »), épingle la fiche
+    // exacte en tête (corrige le ranking où l'article visé était noyé).
+    const intent = parseQueryIntent(q);
+    if (intent.articleNumber) {
+      const exactParams = [...params, intent.articleNumber];
+      let exactWhere = `${whereSql} AND lower(s."legalMeta"->>'articleNumber') = $${exactParams.length}`;
+      if (intent.nature) {
+        exactParams.push(intent.nature);
+        exactWhere += ` AND s."legalMeta"->>'natureJuridique' = $${exactParams.length}`;
+      }
+      const exactRows = await prisma.$queryRawUnsafe<
+        Array<{
+          id: string;
+          title: string;
+          sourceUrl: string | null;
+          legalMeta: unknown;
+          reforme2026: boolean;
+        }>
+      >(
+        `SELECT s."id", s."title", s."sourceUrl", s."legalMeta", (${REFORME_SQL}) AS reforme2026
+         FROM "KnowledgeSource" s
+         WHERE ${exactWhere}
+         LIMIT 10`,
+        ...exactParams,
+      );
+      if (exactRows.length > 0) {
+        const exactItems = exactRows.map((r) => toItem(r, isAdmin));
+        const exactIds = new Set(exactItems.map((i) => i.id));
+        fusedItems = [
+          ...exactItems,
+          ...fusedItems.filter((i) => !exactIds.has(i.id)),
+        ];
       }
     }
 

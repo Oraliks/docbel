@@ -14,6 +14,7 @@ import {
 } from "@/lib/reglementation/parse-amendments";
 import { loiToPrefix, type RefContext } from "@/lib/reglementation/resolve-ref";
 import { getCitedBy } from "@/lib/reglementation/backlinks";
+import { deriveThemes } from "@/lib/reglementation/themes";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 
@@ -24,6 +25,7 @@ import { OnemCommentary } from "@/components/reglementation/onem-commentary";
 import { ArticleSidebar } from "@/components/reglementation/article-sidebar";
 import { ArticlePager, type PagerLink } from "@/components/reglementation/article-pager";
 import { CopyButton } from "@/components/reglementation/copy-button";
+import { PinButton, RecordVisit } from "@/components/reglementation/pins-recents";
 import { NatureTile } from "@/components/reglementation/nature-badge";
 import { PrintButton } from "@/components/reglementation/print-button";
 import type { LegalMeta, Neighbor } from "@/components/reglementation/types";
@@ -149,6 +151,8 @@ export default async function ReglementationArticlePage({ params }: PageProps) {
   // legalMeta est constante par loi → trompeuse ; on la corrige ici).
   const amendments = sortAmendmentsByEV(extractAmendments(article.content));
   const realEV = latestEV(amendments);
+  const isReforme = /Loi-programme 18\.7\.2025/i.test(article.content ?? "");
+  const themes = deriveThemes(article.content);
 
   // Le lien RioLex (source interne) n'est exposé qu'aux admins (demande Oraliks).
   const riolexUrl = isAdmin ? article.sourceUrl : null;
@@ -178,6 +182,16 @@ export default async function ReglementationArticlePage({ params }: PageProps) {
   return (
     <div className="px-4 py-6 lg:px-6">
       <div className="w-full space-y-5">
+        {/* Enregistre la visite pour l'historique « Consultés récemment » */}
+        <RecordVisit
+          item={{
+            riolexId,
+            loi: meta.loi ?? "",
+            articleNumber: meta.articleNumber ?? "",
+            title: article.title,
+          }}
+        />
+
         {/* Fil d'Ariane + retour — masqués à l'impression */}
         <div className="flex flex-wrap items-center gap-3 print:hidden">
           <Link
@@ -225,15 +239,41 @@ export default async function ReglementationArticlePage({ params }: PageProps) {
                 {meta.abroge === true && (
                   <Badge variant="destructive">{t("reglAbroge")}</Badge>
                 )}
+                {isReforme && (
+                  <Badge className="border-orange-200 bg-orange-50 text-orange-700">
+                    {t("reglReforme2026")}
+                  </Badge>
+                )}
               </div>
               <h1 className="text-2xl font-semibold tracking-tight">
                 {article.title}
               </h1>
+              {themes.length > 0 && (
+                <div className="flex flex-wrap items-center gap-1.5 pt-0.5 print:hidden">
+                  {themes.map((th) => (
+                    <Link
+                      key={th.key}
+                      href={`/partenaire/reglementation?theme=${th.key}`}
+                      className="rounded-full border px-2.5 py-0.5 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                    >
+                      #{th.label}
+                    </Link>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 
           {/* Barre d'actions — masquée à l'impression */}
           <div className="flex shrink-0 items-center gap-2 print:hidden">
+            <PinButton
+              item={{
+                riolexId,
+                loi: meta.loi ?? "",
+                articleNumber: meta.articleNumber ?? "",
+                title: article.title,
+              }}
+            />
             <CopyButton
               value={t("reglCitation", {
                 loi: meta.loi ?? "",

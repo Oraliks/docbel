@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
-import { ArrowLeft, ExternalLink, Ban } from "lucide-react";
+import { ArrowLeft, ExternalLink, Ban, GitCompare } from "lucide-react";
 
 import { prisma } from "@/lib/prisma";
 import { requirePartnerOrAdminAuth } from "@/lib/auth-check";
@@ -14,6 +14,7 @@ import {
 } from "@/lib/reglementation/parse-amendments";
 import { loiToPrefix, type RefContext } from "@/lib/reglementation/resolve-ref";
 import { getCitedBy } from "@/lib/reglementation/backlinks";
+import { getCorpusRiolexIds } from "@/lib/reglementation/get-article";
 import { deriveThemes } from "@/lib/reglementation/themes";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -21,6 +22,7 @@ import { Separator } from "@/components/ui/separator";
 import { slugifyLoi } from "@/lib/reglementation/loi";
 import { LegalText } from "@/components/reglementation/legal-text";
 import { TextSettings } from "@/components/reglementation/text-settings";
+import { ReadingMode } from "@/components/reglementation/reading-mode";
 import { OnemCommentary } from "@/components/reglementation/onem-commentary";
 import { ArticleSidebar } from "@/components/reglementation/article-sidebar";
 import { ArticlePager, type PagerLink } from "@/components/reglementation/article-pager";
@@ -159,18 +161,7 @@ export default async function ReglementationArticlePage({ params }: PageProps) {
 
   // Ensemble des riolexId visibles → on ne relie un renvoi qu'à une fiche
   // existante (renvoi vers une loi hors corpus reste du texte brut).
-  const idRows = await prisma.$queryRawUnsafe<Array<{ rid: string | null }>>(
-    `SELECT DISTINCT s."legalMeta"->>'riolexId' AS rid
-     FROM "KnowledgeSource" s
-     WHERE s."domain" = 'chomage' AND s."enabled" = true
-       AND s."visibility" = ANY($1::text[])
-       AND s."legalMeta" IS NOT NULL
-       AND COALESCE(s."legalMeta"->>'isOnemCommentary', '') <> 'true'`,
-    visibilities,
-  );
-  const corpusIds = new Set(
-    idRows.map((r) => r.rid).filter((v): v is string => !!v),
-  );
+  const corpusIds = await getCorpusRiolexIds(visibilities);
   const refContext: RefContext = {
     currentPrefix: loiToPrefix(meta.loi),
     exists: (id) => corpusIds.has(id),
@@ -284,6 +275,13 @@ export default async function ReglementationArticlePage({ params }: PageProps) {
               label={t("reglCopyRef")}
               copiedLabel={t("reglCopied")}
             />
+            <Link
+              href={`/partenaire/reglementation/comparer?a=${encodeURIComponent(riolexId)}`}
+              className="inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm transition-colors hover:bg-accent"
+            >
+              <GitCompare className="size-4" aria-hidden />
+              {t("reglCompare")}
+            </Link>
             <PrintButton label={t("reglPrint")} />
             {riolexUrl && (
               <a
@@ -319,7 +317,9 @@ export default async function ReglementationArticlePage({ params }: PageProps) {
             />
 
             <TextSettings>
-              <LegalText raw={article.content} refContext={refContext} />
+              <ReadingMode title={article.title} label={t("reglReadingMode")}>
+                <LegalText raw={article.content} refContext={refContext} />
+              </ReadingMode>
             </TextSettings>
 
             {/* Commentaire ONEM — admin uniquement */}

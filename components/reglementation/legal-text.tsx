@@ -86,7 +86,7 @@ export function LegalText({
 
   return (
     <div
-      className="legal-text max-w-[var(--legal-measure,72ch)] space-y-3.5 text-[length:var(--legal-fs,15px)] leading-[var(--legal-lh,1.7)]"
+      className="legal-text max-w-[var(--legal-measure,72ch)] space-y-3.5 text-[length:var(--legal-fs,15px)] leading-[var(--legal-lh,1.7)] print:max-w-none print:text-[12pt]"
       data-slot="legal-text"
     >
       {blocks.map((block, i) => {
@@ -114,7 +114,7 @@ export function LegalText({
           return (
             <div
               key={i}
-              className={`flex gap-2.5 ${deep ? "ml-6 border-l border-border/60 pl-4" : "pl-4"} ${blockClass(block)}`}
+              className={`flex gap-2.5 print:break-inside-avoid ${deep ? "ml-6 border-l border-border/60 pl-4" : "pl-4"} ${blockClass(block)}`}
             >
               <span
                 className={`shrink-0 tabular-nums ${deep ? "text-muted-foreground/70" : "font-medium text-foreground/70"}`}

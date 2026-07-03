@@ -28,7 +28,7 @@ export function OnemCommentary({ raw }: { raw: string }) {
           {t("reglCommentAdminOnly")}
         </span>
       </div>
-      <Accordion type="multiple" className="rounded-md border">
+      <Accordion type="multiple" className="rounded-md border print:hidden">
         {items.map((item) => (
           <AccordionItem key={item.index} value={String(item.index)}>
             <AccordionTrigger className="px-4">
@@ -54,6 +54,22 @@ export function OnemCommentary({ raw }: { raw: string }) {
           </AccordionItem>
         ))}
       </Accordion>
+
+      {/* Version aplatie pour l'impression (les accordéons fermés ne s'impriment pas). */}
+      <div className="hidden space-y-3 print:block">
+        {items.map((item) => (
+          <div key={item.index} className="break-inside-avoid">
+            <p className="text-sm font-semibold">
+              {t("reglCommentLabel", { index: item.index })}
+              {item.date ? ` — ${item.date}` : ""}
+              {item.institution ? ` (${item.institution})` : ""}
+            </p>
+            <div className="whitespace-pre-wrap text-sm leading-relaxed">
+              {item.text}
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

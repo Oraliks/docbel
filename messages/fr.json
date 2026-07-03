@@ -4138,7 +4138,12 @@
       "reglPaletteHint": "Recherche rapide par numéro d’article (Ctrl+K)",
       "reglPalettePlaceholder": "N° d’article (ex. « 131bis », « am 75ter ») ou titre…",
       "reglPinned": "Épinglés",
-      "reglRecents": "Récemment consultés"
+      "reglRecents": "Récemment consultés",
+      "reglReadingMode": "Plein écran",
+      "reglCompare": "Comparer",
+      "reglCompareTitle": "Comparer deux articles",
+      "reglComparePick": "Choisir un article (n° ou titre)…",
+      "reglCompareEmpty": "Choisissez un article à comparer."
     },
     "auth": {
       "title": "Connexion",

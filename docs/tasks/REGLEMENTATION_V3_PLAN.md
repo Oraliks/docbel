@@ -1,9 +1,31 @@
 # Plan Réglementation V3 — « rendre le texte de loi vivant »
 
-> **Statut : proposition à valider par Oraliks** (2026-07-03). Rien n'est codé.
+> **Statut : vagues 1 à 5 LIVRÉES** (2026-07-03, session autonome). Build + 909 tests verts.
 > Méthode : exploration multi-agents du code + des 46 fichiers staging RioLex,
 > 39 idées générées sous 4 lentilles (terrain / benchmarks legal-tech / lisibilité / data-IA),
 > chaque idée vérifiée contre le code réel → doublons fusionnés, ~19 retenues.
+
+## Livraison (commits sur main, non poussés)
+- **Vague 1** `ff2d26a` — texte vivant : amendements cliquables + timeline, {n}/❌ propres, abrogé barré rouge, hiérarchie typo, densité réglable, RioLex admin-only.
+- **Vague 2** `803a19d` — navigation : renvois cliquables (résolveur contextuel), sommaire par loi, précédent/suivant + flèches clavier, ancres § + copier référence, « Cité par » (graphe mémoïsé).
+- **Vague 3** `daae76a` — recherche : boost n° exact (fix art. 79), palette Ctrl+K, hashtags thématiques, badge/filtre Réforme 2026, épingles + récents.
+- **Vague 4** `e3bcec1` — guichet : mode plein écran, comparer 2 articles, impression soignée.
+- **Vague 5** `9028c45` — qualité (admin) : Schéma/Références typés dans commentaires ONEM, tableau de bord « Santé du corpus ».
+
+**Décisions autonomes** (à confirmer par Oraliks) :
+- **Hors périmètre** (instruction « que la réglementation, IA on verra ») : Q&A IA (4.4), résumé IA par article (4.5).
+- **Hashtags (3.3) sans IA** : dérivés d'un dictionnaire métier heuristique (`lib/reglementation/themes.ts`) au lieu du batch Haiku prévu — vocabulaire à affiner avec toi.
+- **Backlinks « Cité par » (2.4) et Réforme 2026 (3.4) sans écriture DB** : calculés à la volée (graphe mémoïsé / regex runtime) au lieu du backfill `legalMeta` prévu — évite toute mutation de la base Neon partagée sans supervision.
+- **Santé du corpus (5.1) sans ré-import** : anomalies dérivées à la volée des données en base (les métadonnées qualité du staging, strippées à l'import, n'ont PAS été réinjectées — nécessiterait un backfill DB à faire sous ta supervision).
+- **4.6 (liens base légale depuis AGR / Decision Builder) non fait** : touche d'autres modules, hors « que la réglementation ».
+- **i18n** : nouvelles clés ajoutées en `fr.json` uniquement (le deep-merge next-intl retombe sur le FR pour les 13 autres langues) — traduction à faire plus tard.
+
+## Reste à faire si tu veux aller plus loin
+- Réintégrer les métadonnées qualité du staging (`commentaireTronque` ×13, `commentaireCondense` ×3, notes d'extraction ×4) via un backfill `legalMeta`-only (SQL additif, à valider).
+- Persister backlinks / flag réforme / résumés en `legalMeta` si le calcul runtime devient un coût (aujourd'hui négligeable).
+- Traduire les nouvelles clés `regl*` (NL en priorité pour FGTB/CSC).
+- Marginalia des amendements en gouttière (écran large) — itération UI si le popover ne suffit pas.
+- Encre distincte des passages `[insérés]` — vrai chantier de parsing (87 crochets multi-lignes, 34 déséquilibrés).
 
 ## Demandes explicites d'Oraliks (actées, socle du plan)
 - (a) Abrogé **barré en rouge**, mais lisible.

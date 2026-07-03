@@ -137,6 +137,21 @@ export const allocationsInsertion: DossierDefinition = {
   // éléments de situation sont consignés dans le questionnaire.
   types: [],
 
+  // Chaîne le wizard d'orientation → pré-qualification : seules les
+  // correspondances SÛRES sont mappées (pré-sélection éditable, jamais
+  // bloquant). « moins-25 » du wizard n'est PAS mappé : plus grossier que
+  // nos tranches d'âge (moins-18 / 18-20 / 21-24).
+  prefillFromOrientation: (o) => {
+    const out: Record<string, string> = {};
+    if (o.situation === "jeune-etudes" && o.subOption === "25-plus") {
+      out.age = "25-plus";
+    }
+    // « Je sors des études, j'ai peu ou pas travaillé » (perte-emploi) :
+    // les études sont terminées ou arrêtées.
+    if (o.subOption === "sors-etudes") out.aTermineEtudes = "true";
+    return out;
+  },
+
   questions: [
     // ------- Âge (condition clé : demande avant 25 ans) -------
     {

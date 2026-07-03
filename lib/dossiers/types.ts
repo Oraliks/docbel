@@ -11,6 +11,7 @@
 
 import type { CanonicalKey } from "@/lib/fields/catalog";
 import type { Localized } from "@/lib/pdf-forms/types";
+import type { OrientationAnswers } from "./orientation";
 
 /// Réponses aux questions d'orientation : { [questionId]: valeur }.
 /// Accepte `number` (ex. salaire) en plus de string/boolean.
@@ -331,6 +332,15 @@ export interface DossierDefinition {
   journeyCtaLabel?: string;
   /// Clé i18n du libellé CTA (préférée si fournie).
   journeyCtaLabelKey?: string;
+  /// Préremplissage de la pré-qualification depuis le wizard d'orientation
+  /// (cookie `beldoc-orientation`, cf. lib/dossiers/orientation.ts). Optionnel
+  /// et OPT-IN par dossier : mappe les choix du wizard (situation / subOption /
+  /// refine) vers des réponses d'éligibilité PRÉ-SÉLECTIONNÉES — l'utilisateur
+  /// les voit et peut les modifier avant de démarrer (jamais bloquant).
+  /// Ne mapper que les correspondances SÛRES (même fait, même granularité).
+  prefillFromOrientation?: (
+    orientation: OrientationAnswers
+  ) => Record<string, string>;
   /// Espace théorique pédagogique (admin / partenaires).
   theory?: DossierTheorySection[];
   /// Procédures opérationnelles d'introduction de la demande (admin / partenaires).

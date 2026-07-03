@@ -13,6 +13,7 @@ import { collectTriggeredSlugs, parseTriggers } from "@/lib/pdf-forms/triggers";
 import type { BundleCondition } from "@/lib/bundles/conditions";
 import { parseEligibilityAnswers } from "@/lib/bundles/eligibility";
 import { getDossier } from "@/lib/dossiers/registry";
+import { parseOrientationAnswers } from "@/lib/dossiers/orientation";
 import { dossierQuestionsToEligibility, selectDocuments, type DossierAnswers } from "@/lib/dossiers/types";
 import { getLocale } from "next-intl/server";
 import { localizeRecord } from "@/lib/i18n/content";
@@ -20,6 +21,9 @@ import { localizeRecord } from "@/lib/i18n/content";
 export const dynamic = "force-dynamic";
 
 const BUNDLE_COOKIE = "beldoc-bundle-session";
+/// Cookie posé par le wizard d'orientation (cf. dossier-wizard.tsx). Lu ici
+/// SANS le supprimer — il est consommé (et effacé) à la création du run.
+const ORIENTATION_COOKIE = "beldoc-orientation";
 
 export default async function BundleRoute({
   params,
@@ -195,7 +199,25 @@ export default async function BundleRoute({
   };
 
   const dossier = getDossier(slug);
-  const eligibilityAnswers = parseEligibilityAnswers(run?.eligibilityAnswers);
+  let eligibilityAnswers = parseEligibilityAnswers(run?.eligibilityAnswers);
+
+  // Chaînage orientation → pré-qualification : si l'utilisateur arrive du
+  // wizard (cookie `beldoc-orientation`, consommé plus tard à la création du
+  // run) et qu'aucun run n'existe encore, on PRÉ-SÉLECTIONNE les réponses que
+  // le wizard connaît déjà — uniquement si le wizard a résolu vers CE dossier.
+  // L'utilisateur voit ces réponses dans la pré-qualification et peut les
+  // modifier avant de démarrer (informatif, jamais bloquant).
+  if (!run && dossier?.prefillFromOrientation) {
+    const orientation = parseOrientationAnswers(
+      cookieStore.get(ORIENTATION_COOKIE)?.value,
+    );
+    if (orientation && orientation.slug === slug) {
+      eligibilityAnswers = {
+        ...dossier.prefillFromOrientation(orientation),
+        ...eligibilityAnswers,
+      };
+    }
+  }
   const selectedDocs = dossier
     ? selectDocuments(dossier, eligibilityAnswers as unknown as DossierAnswers)
     : null;

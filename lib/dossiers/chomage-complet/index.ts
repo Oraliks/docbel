@@ -145,6 +145,23 @@ export const chomageComplet: DossierDefinition = {
   // fin de contrat est consigné dans le questionnaire, pas dans `types`.
   types: [],
 
+  // Chaîne le wizard d'orientation → pré-qualification : seules les
+  // correspondances SÛRES sont mappées (pré-sélection éditable, jamais
+  // bloquant).
+  prefillFromOrientation: (o) => {
+    const out: Record<string, string> = {};
+    // « Est-ce votre toute première demande de chômage ? »
+    if (o.refine === "premiere") out.aDejaTouche = "false";
+    if (o.refine === "redemande") out.aDejaTouche = "true";
+    // Les libellés du wizard précisent explicitement « salarié » :
+    // « J'ai travaillé un bon moment en Belgique » (passé salarié) et
+    // « Avez-vous déjà travaillé (salarié) ? » → Oui.
+    if (o.subOption === "passe-travail-be" || o.refine === "a-travaille") {
+      out.statut = "salarie";
+    }
+    return out;
+  },
+
   questions: [
     // ------- Statut & contexte -------
     {

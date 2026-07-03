@@ -22,18 +22,24 @@
  *   - Brochure ONEM "Le chômage complet" (phases de dégressivité)
  */
 
-export type SituationFamiliale = "chef_menage" | "isole" | "cohabitant";
+import type {
+  ChomagePhase,
+  SituationFamiliale,
+} from "@/lib/chomage/categories";
+import {
+  getChomageParams,
+  type ChomageParams,
+} from "@/lib/chomage/params";
 
 /**
- * Phases de dégressivité du chômage complet (ONEM).
- *  - 1A : mois 1-3   (taux maximal sur plafond A)
- *  - 1B : mois 4-6   (légère dégressivité sur plafond A)
- *  - 2A : mois 7-12  (plafond intermédiaire B)
- *  - 2B : mois 13-24 (plafond inférieur C)
- *  - 2C : an 2 → an 3 (forfaitaire dégressif intermédiaire)
- *  - 3  : au-delà (forfaitaire minimum)
+ * Types canoniques du domaine (situations familiales, phases de
+ * dégressivité) : définis dans lib/chomage/categories.ts, réexportés ici
+ * pour ne casser aucun import existant.
  */
-export type ChomagePhase = "1A" | "1B" | "2A" | "2B" | "2C" | "3";
+export type {
+  ChomagePhase,
+  SituationFamiliale,
+} from "@/lib/chomage/categories";
 
 export interface ChomageInput {
   /** Dernier salaire mensuel brut (€). */
@@ -62,67 +68,15 @@ export interface ChomageResult {
 }
 
 /* ------------------------------------------------------------------ */
-/*  Barèmes 2026 (estimations indicatives basées sur ONEM 2025)       */
+/*  Barèmes — source de vérité : lib/chomage/params.ts                 */
 /* ------------------------------------------------------------------ */
 
 /**
- * Date d'effet des barèmes ci-dessous (plafonds salariaux + forfaits).
- * Sert de point de vérité unique pour tracer la fraîcheur des montants.
- * TODO réviser à la prochaine indexation ONEM (mettre à jour cette date
- * ET les constantes PLAFOND_* / FORFAIT_* en même temps).
+ * Date d'effet du jeu de barèmes EN VIGUEUR (plafonds salariaux + forfaits).
+ * Résolue depuis lib/chomage/params.ts — pour réviser les montants à la
+ * prochaine indexation ONEM, ajouter un jeu daté LÀ-BAS (jamais ici).
  */
-export const BAREME_VERSION = "2026-03-01";
-
-/**
- * Plafonds salariaux mensuels (€) — barèmes ONEM au 1er mars 2026.
- * Source : onem.be — "À combien s'élève votre allocation de chômage".
- *
- * NB : la réforme 2026 a relevé les plafonds. La phase 4-6 a aussi son
- * propre plafond (PLAFOND_A_BIS) ; on l'utilise quand la phase est 1B.
- */
-const PLAFOND_A = 4265.98; // mois 1-3 (phase 1A)
-const PLAFOND_A_BIS = 4010.98; // mois 4-6 (phase 1B)
-const PLAFOND_B = 3262.99; // mois 7-12 (phase 2A)
-const PLAFOND_C = 3262.99; // mois 13+ (phase 2B) — aligné sur B après réforme 2026
-
-/**
- * Forfaits MINIMUM mensuels par situation familiale (€).
- * En dessous, l'allocation calculée est remontée à ce plancher.
- */
-const FORFAIT_MIN: Record<SituationFamiliale, number> = {
-  chef_menage: 1500,
-  isole: 1260,
-  cohabitant: 1015,
-};
-
-/**
- * Forfaits MAXIMUM mensuels par situation familiale (€).
- * Au-dessus, l'allocation calculée est plafonnée à ce maximum.
- */
-const FORFAIT_MAX: Record<SituationFamiliale, number> = {
-  chef_menage: 2200,
-  isole: 1850,
-  cohabitant: 1500,
-};
-
-/**
- * Phase 2C — forfaitaire dégressif (an 2 → an 3 de chômage complet).
- */
-const FORFAIT_2C: Record<SituationFamiliale, number> = {
-  chef_menage: 1700,
-  isole: 1400,
-  cohabitant: 800,
-};
-
-/**
- * Phase 3 — forfaitaire minimal (au-delà d'an 3).
- * Égal au forfait minimum pour chef de ménage / isolé, plus bas pour cohabitant.
- */
-const FORFAIT_3: Record<SituationFamiliale, number> = {
-  chef_menage: 1500,
-  isole: 1260,
-  cohabitant: 670,
-};
+export const BAREME_VERSION = getChomageParams().validFrom;
 
 /* ------------------------------------------------------------------ */
 /*  Labels (FR)                                                       */
@@ -183,24 +137,27 @@ export function phaseFromMonths(mois: number): ChomagePhase {
 /**
  * Pour une phase donnée, renvoie le plafond salarial applicable et le taux.
  * Les phases 2C et 3 sont forfaitaires : ces valeurs ne sont utilisées que
- * pour l'affichage (le calcul réel passe par FORFAIT_2C / FORFAIT_3).
+ * pour l'affichage (le calcul réel passe par forfait2C / forfait3).
  */
-function getPhaseParams(phase: ChomagePhase): { plafond: number; taux: number } {
+function getPhaseParams(
+  phase: ChomagePhase,
+  values: ChomageParams,
+): { plafond: number; taux: number } {
   switch (phase) {
     case "1A":
-      return { plafond: PLAFOND_A, taux: 0.65 };
+      return { plafond: values.plafonds["1A"], taux: values.taux["1A"] };
     case "1B":
       // Plafond distinct mois 4-6 depuis la réforme 2026.
-      return { plafond: PLAFOND_A_BIS, taux: 0.6 };
+      return { plafond: values.plafonds["1B"], taux: values.taux.autres };
     case "2A":
-      return { plafond: PLAFOND_B, taux: 0.6 };
+      return { plafond: values.plafonds["2A"], taux: values.taux.autres };
     case "2B":
-      return { plafond: PLAFOND_C, taux: 0.6 };
+      return { plafond: values.plafonds["2B"], taux: values.taux.autres };
     case "2C":
-      // Forfaitaire — on conserve plafond C / taux 0.6 pour l'info affichée.
-      return { plafond: PLAFOND_C, taux: 0.6 };
+      // Forfaitaire — on conserve plafond C / taux 60 % pour l'info affichée.
+      return { plafond: values.plafonds["2B"], taux: values.taux.autres };
     case "3":
-      return { plafond: PLAFOND_C, taux: 0.6 };
+      return { plafond: values.plafonds["2B"], taux: values.taux.autres };
   }
 }
 
@@ -228,7 +185,8 @@ export function calcChomage(
     return { error: "Phase de chômage invalide." };
   }
 
-  const { plafond, taux } = getPhaseParams(phase);
+  const { values } = getChomageParams();
+  const { plafond, taux } = getPhaseParams(phase, values);
   const salairePlafonne = Math.min(salaireBrut, plafond);
 
   // --- Montant brut avant bornes forfaitaires ---
@@ -236,10 +194,10 @@ export function calcChomage(
 
   if (phase === "2C") {
     // Forfaitaire dégressif — indépendant du salaire.
-    allocationMensuelle = FORFAIT_2C[situationFamiliale];
+    allocationMensuelle = values.forfait2C[situationFamiliale];
   } else if (phase === "3") {
     // Forfaitaire minimum.
-    allocationMensuelle = FORFAIT_3[situationFamiliale];
+    allocationMensuelle = values.forfait3[situationFamiliale];
   } else {
     // Phases 1A → 2B : pourcentage du salaire plafonné.
     allocationMensuelle = salairePlafonne * taux;
@@ -248,8 +206,8 @@ export function calcChomage(
   // --- Bornes forfaitaires min/max (toutes phases sauf forfaitaires pures) ---
   // Les forfaits 2C et 3 sont déjà calibrés ; on ne les re-borne pas.
   if (phase !== "2C" && phase !== "3") {
-    const min = FORFAIT_MIN[situationFamiliale];
-    const max = FORFAIT_MAX[situationFamiliale];
+    const min = values.forfaitMin[situationFamiliale];
+    const max = values.forfaitMax[situationFamiliale];
     allocationMensuelle = Math.min(Math.max(allocationMensuelle, min), max);
   }
 

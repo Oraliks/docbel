@@ -1,0 +1,2721 @@
+{
+  "capturedAt": "2026-07-01",
+  "matiere": "Chômage",
+  "source": "https://rvaonemtech.powerappsportals.com/fr-FR/RioLex/?page=1&materie=329720005",
+  "note": "Portail servi en version hors connexion / lecture seule ('Vous êtes hors connexion'). La navigation vers les fiches Wettekst non mises en cache ne re-rend pas le contenu ; l'index global (get_page_text) et les href réels de la page liste ont servi de source. Le riolexId est la valeur du paramètre id des href /wetsartikel/?id=... (suffixe -art_<num>, '/' -> '_', suffixes latins bis/ter/quater/... conservés). construit=true signifie: numéro+titre relevés dans l'index texte, préfixe confirmé par un href réel du même texte, mais href individuel non lu directement.",
+  "texts": [
+    {
+      "loi": "AM 26/11/1991",
+      "intitule": "Arrêté ministériel du 26 novembre 1991 portant les modalités d'application de la réglementation du chômage",
+      "natureJuridique": "AM",
+      "prefixe": "26_11_1991-1",
+      "articleCount": 114,
+      "articleIds": [
+        {
+          "riolexId": "26_11_1991-1-art_1",
+          "articleNumber": "1",
+          "titre": "Définitions",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_2",
+          "articleNumber": "2",
+          "titre": "Ressorts de la Capac",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_3",
+          "articleNumber": "3",
+          "titre": "Ressorts Capac / liste en annexe",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_4",
+          "articleNumber": "4",
+          "titre": "Information obligatoire / OP au chômeur",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_4bis",
+          "articleNumber": "4bis",
+          "titre": "Notification de la décision / données obligatoires",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_5",
+          "articleNumber": "5",
+          "titre": "Salaire mensuel de référence / fixation",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_6",
+          "articleNumber": "6",
+          "titre": "liste des diplômes/certificats/attestations",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_7",
+          "articleNumber": "7",
+          "titre": "Nombre des journées de travail / calcul",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_8",
+          "articleNumber": "8",
+          "titre": "Nombre de demi-journées de travail / calcul",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_9",
+          "articleNumber": "9",
+          "titre": "Journées de travail / l'enseignant",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_10",
+          "articleNumber": "10",
+          "titre": "Journées de travail / artistes (abrogé)",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_11",
+          "articleNumber": "11",
+          "titre": "Journées de travail / bûcheron",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_12",
+          "articleNumber": "12",
+          "titre": "Journées de travail / travailleur à domicile",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_13",
+          "articleNumber": "13",
+          "titre": "Abrogé",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_14",
+          "articleNumber": "14",
+          "titre": "Journées de travail / n'entrent pas en ligne de compte",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_15",
+          "articleNumber": "15",
+          "titre": "Insuffisance des salaires",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_16",
+          "articleNumber": "16",
+          "titre": "Pas de versements ou de retenues sécurité sociale",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_17",
+          "articleNumber": "17",
+          "titre": "Pas de retenues sécurité sociale",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_18",
+          "articleNumber": "18",
+          "titre": "Activité bénévole",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_19",
+          "articleNumber": "19",
+          "titre": "Avantages accordés dans le cadre d'une formation",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_20",
+          "articleNumber": "20",
+          "titre": "Jours couverts par un pécule de vacances ou rémunération",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_20_1",
+          "articleNumber": "20/1",
+          "titre": "",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_21",
+          "articleNumber": "21",
+          "titre": "Allocation pour le samedi",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_22",
+          "articleNumber": "22",
+          "titre": "Emploi convenable / critères",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_23",
+          "articleNumber": "23",
+          "titre": "Emploi convenable / critères",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_24",
+          "articleNumber": "24",
+          "titre": "Emploi non convenable / barèmes",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_25",
+          "articleNumber": "25",
+          "titre": "Emploi non convenable / absence - déplacement",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_26",
+          "articleNumber": "26",
+          "titre": "Emploi non convenable / revenu",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_27",
+          "articleNumber": "27",
+          "titre": "Emploi non convenable / temps partiel volontaire",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_28",
+          "articleNumber": "28",
+          "titre": "Emploi non convenable / objecteurs de conscience",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_29",
+          "articleNumber": "29",
+          "titre": "Emploi non convenable / régime de travail",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_30",
+          "articleNumber": "30",
+          "titre": "Emploi convenable / frontalier",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_31",
+          "articleNumber": "31",
+          "titre": "Emploi convenable / artiste",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_32",
+          "articleNumber": "32",
+          "titre": "Emploi convenable / sans influence",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_32bis",
+          "articleNumber": "32bis",
+          "titre": "Emploi convenable / ALE",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_32ter",
+          "articleNumber": "32ter",
+          "titre": "Emploi convenable / travailleur de 50 ans ou plus",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_32quater",
+          "articleNumber": "32quater",
+          "titre": "Formation convenable",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_34",
+          "articleNumber": "34",
+          "titre": "Disponibilité / chômeur temporaire",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_35",
+          "articleNumber": "35",
+          "titre": "Disponibilité / chômeur temporaire",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_36",
+          "articleNumber": "36",
+          "titre": "Preuve d'inscription comme demandeur d'emploi / attestation",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_37",
+          "articleNumber": "37",
+          "titre": "Preuve d'inscription / quand",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_38",
+          "articleNumber": "38",
+          "titre": "Le chômeur qui n'est pas inscrit comme demandeur d'emploi",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_38bis",
+          "articleNumber": "38bis",
+          "titre": "Durée de chômage / calcul du nombre de mois",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_39",
+          "articleNumber": "39",
+          "titre": "Le chômeur qui ne réside pas effectivement en Belgique / bénéfice d'allocations",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_40",
+          "articleNumber": "40",
+          "titre": "Carte de contrôle / contenu et modèle",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_41",
+          "articleNumber": "41",
+          "titre": "Carte de contrôle / compléter - transmettre",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_42",
+          "articleNumber": "42",
+          "titre": "Abrogé",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_43",
+          "articleNumber": "43",
+          "titre": "Abrogé",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_44",
+          "articleNumber": "44",
+          "titre": "Abrogé",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_44bis",
+          "articleNumber": "44bis",
+          "titre": "Abrogé",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_45",
+          "articleNumber": "45",
+          "titre": "Abrogé",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_46",
+          "articleNumber": "46",
+          "titre": "Abrogé",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_47",
+          "articleNumber": "47",
+          "titre": "Abrogé",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_48",
+          "articleNumber": "48",
+          "titre": "Abrogé",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_49",
+          "articleNumber": "49",
+          "titre": "Abrogé",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_50",
+          "articleNumber": "50",
+          "titre": "Abrogé",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_51",
+          "articleNumber": "51",
+          "titre": "Abrogé",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_52",
+          "articleNumber": "52",
+          "titre": "Abrogé",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_52bis",
+          "articleNumber": "52bis",
+          "titre": "Abrogé",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_53",
+          "articleNumber": "53",
+          "titre": "Jours assimilés à des jours d'occupation",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_53bis",
+          "articleNumber": "53bis",
+          "titre": "Abrogé",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_54",
+          "articleNumber": "54",
+          "titre": "Occupation par une ALE / modalités",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_55",
+          "articleNumber": "55",
+          "titre": "Occupation par une ALE / agriculture et horticulture",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_56",
+          "articleNumber": "56",
+          "titre": "Durée du chômage / calcul / délai recours administratif",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_57",
+          "articleNumber": "57",
+          "titre": "La durée moyenne régionale du chômage",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_58",
+          "articleNumber": "58",
+          "titre": "Dispense suite à une situation difficile sur le plan social et familial / personnes concernées",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_59",
+          "articleNumber": "59",
+          "titre": "Définition / cohabitation",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_60",
+          "articleNumber": "60",
+          "titre": "Définition / revenu professionnel",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_61",
+          "articleNumber": "61",
+          "titre": "Définition / revenu de remplacement",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_62",
+          "articleNumber": "62",
+          "titre": "Revenus pas considérés comme revenu de remplacement",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_63",
+          "articleNumber": "63",
+          "titre": "Définition / parents d'acceuil",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_64",
+          "articleNumber": "64",
+          "titre": "Valeur indice-pivot",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_65",
+          "articleNumber": "65",
+          "titre": "Base de calcul de l'allocation / quelle rémunération?",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_66",
+          "articleNumber": "66",
+          "titre": "Base au calcul de l'allocation / chômeur temporaire",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_67",
+          "articleNumber": "67",
+          "titre": "Rémunération journalière moyenne / calcul",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_68",
+          "articleNumber": "68",
+          "titre": "Travailleur payé à la pièce ou à l'entreprise",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_69",
+          "articleNumber": "69",
+          "titre": "Rémunération journalière moyenne / tranches de salaire / indice-pivot",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_70",
+          "articleNumber": "70",
+          "titre": "Définition / passé professionnel en tant que salarié",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_71",
+          "articleNumber": "71",
+          "titre": "Période ininterrompue de reprise de travail, journée de travail",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_72",
+          "articleNumber": "72",
+          "titre": "Abrogé",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_73",
+          "articleNumber": "73",
+          "titre": "Abrogé",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_74",
+          "articleNumber": "74",
+          "titre": "Abrogé",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_75",
+          "articleNumber": "75",
+          "titre": "Abrogé",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_75bis",
+          "articleNumber": "75bis",
+          "titre": "Définition / allocation de référence",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_75ter",
+          "articleNumber": "75ter",
+          "titre": "Définition / rémunération nette",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_75quater",
+          "articleNumber": "75quater",
+          "titre": "Allocation de référence et majoration / sont réduites de",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_76",
+          "articleNumber": "76",
+          "titre": "Définition / organisme de paiement cédant et prenant",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_77",
+          "articleNumber": "77",
+          "titre": "Transfert à un autre OP / condition",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_78",
+          "articleNumber": "78",
+          "titre": "Transfert / formulaires",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_79",
+          "articleNumber": "79",
+          "titre": "Formulaire C8 / procédure",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_80",
+          "articleNumber": "80",
+          "titre": "Formulaire C8 / procédure",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_81",
+          "articleNumber": "81",
+          "titre": "Transfert / date d'effet",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_82",
+          "articleNumber": "82",
+          "titre": "Transfert / procédure / accordé - refusé",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_83",
+          "articleNumber": "83",
+          "titre": "Chômage temporaire / livre de validation",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_84",
+          "articleNumber": "84",
+          "titre": "Livre de validation / composition",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_85",
+          "articleNumber": "85",
+          "titre": "Livre de validation / à quel endroit tenir à la disposition?",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_86",
+          "articleNumber": "86",
+          "titre": "Perte de certificat de chômage temporaire",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_86bis",
+          "articleNumber": "86bis",
+          "titre": "Carte de contrôle / obligations employeur",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_87",
+          "articleNumber": "87",
+          "titre": "Demande d'allocations / formulaires",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_88",
+          "articleNumber": "88",
+          "titre": "Abrogé",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_89",
+          "articleNumber": "89",
+          "titre": "Demande d'allocations / travailleurs des ports",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_89bis",
+          "articleNumber": "89bis",
+          "titre": "Demande d'allocations / pêcheurs de mer",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_90",
+          "articleNumber": "90",
+          "titre": "Dossier complet / documents qui sont nécessaires",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_91",
+          "articleNumber": "91",
+          "titre": "Définition / interruption dans le bénéfice des allocations",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_92",
+          "articleNumber": "92",
+          "titre": "Introduction du dossier par OP / délai",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_93",
+          "articleNumber": "93",
+          "titre": "Introduction dossier / délai / dossier incomplèt",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_94",
+          "articleNumber": "94",
+          "titre": "Directeur compétent / cas particuliers",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_95",
+          "articleNumber": "95",
+          "titre": "Date à partir de laquelle le droit aux allocations est accordé",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_96",
+          "articleNumber": "96",
+          "titre": "Evénement modificatif / influence sur l'allocation",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_96bis",
+          "articleNumber": "96bis",
+          "titre": "Fichiers transmis au moyen d'un support papier ou par voie électronique",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_97",
+          "articleNumber": "97",
+          "titre": "Arrêtés ministériel abrogés / aperçu",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_98",
+          "articleNumber": "98",
+          "titre": "Date de l'entrée en vigueur de l'AM",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_999",
+          "articleNumber": "999",
+          "titre": "Liste des arrêtés modifiant l' AM du 26.11.1991",
+          "construit": false
+        },
+        {
+          "riolexId": "26_11_1991-1-art_33",
+          "articleNumber": "33",
+          "titre": "Inaptitude physique ou mentale au travail / procédure",
+          "construit": false
+        }
+      ]
+    },
+    {
+      "loi": "AR 12/06/2024",
+      "intitule": "Arrêté royal portant exécution de l'article 7, § 1er, alinéa 3, zh), et § 1ernonies de l'arrêté-loi du 28 décembre 1944 concernant la sécurité sociale des travailleurs, et concernant la procédure de remboursement des mesures d'employabilité",
+      "natureJuridique": "AR",
+      "prefixe": "12_06_2024-1",
+      "articleCount": 4,
+      "articleIds": [
+        {
+          "riolexId": "12_06_2024-1-art_1",
+          "articleNumber": "1",
+          "titre": "",
+          "construit": false
+        },
+        {
+          "riolexId": "12_06_2024-1-art_2",
+          "articleNumber": "2",
+          "titre": "",
+          "construit": false
+        },
+        {
+          "riolexId": "12_06_2024-1-art_3",
+          "articleNumber": "3",
+          "titre": "",
+          "construit": false
+        },
+        {
+          "riolexId": "12_06_2024-1-art_4",
+          "articleNumber": "4",
+          "titre": "",
+          "construit": false
+        }
+      ]
+    },
+    {
+      "loi": "AR 26/03/2003",
+      "intitule": "AR du 26.3.2003 d'exécution de l'article 7, § 1er, al. 3, q, de l'arrêté-loi du 28 décembre 1944 concernant la sécurité sociale des travailleurs, relatif aux gardiens et gardiennes d'enfants",
+      "natureJuridique": "AR",
+      "prefixe": "26_03_2003-1",
+      "articleCount": 8,
+      "articleIds": [
+        {
+          "riolexId": "26_03_2003-1-art_1",
+          "articleNumber": "1",
+          "titre": "",
+          "construit": false
+        },
+        {
+          "riolexId": "26_03_2003-1-art_2",
+          "articleNumber": "2",
+          "titre": "",
+          "construit": true
+        },
+        {
+          "riolexId": "26_03_2003-1-art_3",
+          "articleNumber": "3",
+          "titre": "",
+          "construit": true
+        },
+        {
+          "riolexId": "26_03_2003-1-art_4",
+          "articleNumber": "4",
+          "titre": "",
+          "construit": true
+        },
+        {
+          "riolexId": "26_03_2003-1-art_5",
+          "articleNumber": "5",
+          "titre": "",
+          "construit": true
+        },
+        {
+          "riolexId": "26_03_2003-1-art_6",
+          "articleNumber": "6",
+          "titre": "",
+          "construit": true
+        },
+        {
+          "riolexId": "26_03_2003-1-art_7",
+          "articleNumber": "7",
+          "titre": "",
+          "construit": true
+        },
+        {
+          "riolexId": "26_03_2003-1-art_8",
+          "articleNumber": "8",
+          "titre": "",
+          "construit": false
+        }
+      ]
+    },
+    {
+      "loi": "AR 25/11/1991",
+      "intitule": "Arrêté royal du 25 novembre 1991 portant réglementation du chômage",
+      "natureJuridique": "AR",
+      "prefixe": "25_11_1991-1",
+      "articleCount": 304,
+      "articleIds": [
+        {
+          "riolexId": "25_11_1991-1-art_1",
+          "articleNumber": "1",
+          "titre": "Définitions",
+          "construit": false
+        },
+        {
+          "riolexId": "25_11_1991-1-art_1bis",
+          "articleNumber": "1bis",
+          "titre": "Définitions / voir AR du 10 juin 2001",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_2",
+          "articleNumber": "2",
+          "titre": "Comité de gestion / composition",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_3",
+          "articleNumber": "3",
+          "titre": "La gestion journalière de l'Office / par qui?",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_3bis",
+          "articleNumber": "3bis",
+          "titre": "Abrogé",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_4",
+          "articleNumber": "4",
+          "titre": "Les indemnités à allouer aux commissaires du gouvernement, aux réviseurs et au délégué du Ministre des Finances",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_5",
+          "articleNumber": "5",
+          "titre": "Organisation de l'Office",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_6",
+          "articleNumber": "6",
+          "titre": "Commission administrative nationale",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_7",
+          "articleNumber": "7",
+          "titre": "Commission administrative nationale / composition / fonctionnement",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_8",
+          "articleNumber": "8",
+          "titre": "CAN / jetons de présence / les indemnités pour frais de parcours et de séjour",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_9",
+          "articleNumber": "9",
+          "titre": "CAN / règlement d'ordre intérieur",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_10",
+          "articleNumber": "10",
+          "titre": "Abrogé",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_11",
+          "articleNumber": "11",
+          "titre": "Abrogé",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_12",
+          "articleNumber": "12",
+          "titre": "Abrogé",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_13",
+          "articleNumber": "13",
+          "titre": "Abrogé",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_14",
+          "articleNumber": "14",
+          "titre": "Abrogé",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_15",
+          "articleNumber": "15",
+          "titre": "Abrogé",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_16",
+          "articleNumber": "16",
+          "titre": "Abrogé",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_17",
+          "articleNumber": "17",
+          "titre": "Organisme de paiement / modalités de l'agréation",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_18",
+          "articleNumber": "18",
+          "titre": "Caisse auxiliaire / administration / indemnités / organisation",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_19",
+          "articleNumber": "19",
+          "titre": "Caisse auxiliaire / gestion journalière / par qui?",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_20",
+          "articleNumber": "20",
+          "titre": "Caisse auxiliaire / fonctionnaire dirigeant / pouvoirs",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_21",
+          "articleNumber": "21",
+          "titre": "Caisse auxiliaire / fonctionnaire dirigeant adjoint / pouvoirs",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_22",
+          "articleNumber": "22",
+          "titre": "Caisse auxiliaire / représentation pour certains actes judiciaires et extrajudiciaires",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_22bis",
+          "articleNumber": "22bis",
+          "titre": "Caisse auxiliaire / emprunts / les biens immobiliers",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_23",
+          "articleNumber": "23",
+          "titre": "Caisse auxiliaire / personnel / nomination - promotion - révocation",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_24",
+          "articleNumber": "24",
+          "titre": "Organismes de paiement / missions",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_25",
+          "articleNumber": "25",
+          "titre": "Organismes de paiement / missions / assistance au travailleur convoqué par NAC",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_26",
+          "articleNumber": "26",
+          "titre": "Organismes de paiement / moyens",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_26bis",
+          "articleNumber": "26bis",
+          "titre": "Mission d'info / charte",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_27",
+          "articleNumber": "27",
+          "titre": "Définitions",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_28",
+          "articleNumber": "28",
+          "titre": "Définition / travailleur à temps plein",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_30",
+          "articleNumber": "30",
+          "titre": "Admissibilité / journées de travail / période de référence",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_31",
+          "articleNumber": "31",
+          "titre": "Admissibilité / journées de travail / travailleur des ports / pêcheur de mer reconnu",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_32",
+          "articleNumber": "32",
+          "titre": "Admissibilité / travailleur à temps plein de 36 ans ou plus",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_33",
+          "articleNumber": "33",
+          "titre": "Admissibilité / travailleur temps partiel volontaire",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_34",
+          "articleNumber": "34",
+          "titre": "Abrogé",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_35",
+          "articleNumber": "35",
+          "titre": "Admissibilité / allocations de transition",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_36",
+          "articleNumber": "36",
+          "titre": "Admissibilité / études / stage d'insertion professionnelle (stage d'attente)",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_36_1",
+          "articleNumber": "36/1",
+          "titre": "",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_36_2",
+          "articleNumber": "36/2",
+          "titre": "",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_36_3",
+          "articleNumber": "36/3",
+          "titre": "",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_36_4",
+          "articleNumber": "36/4",
+          "titre": "",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_36_5",
+          "articleNumber": "36/5",
+          "titre": "",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_36_6",
+          "articleNumber": "36/6",
+          "titre": "",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_36_7",
+          "articleNumber": "36/7",
+          "titre": "",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_36_8",
+          "articleNumber": "36/8",
+          "titre": "",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_36_9",
+          "articleNumber": "36/9",
+          "titre": "",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_36_10",
+          "articleNumber": "36/10",
+          "titre": "",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_36_11",
+          "articleNumber": "36/11",
+          "titre": "",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_36bis",
+          "articleNumber": "36bis",
+          "titre": "Admissibilité / vacances-jeunes ou senior",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_36ter",
+          "articleNumber": "36ter",
+          "titre": "Toelaatbaarheid / formation professionnelle individuelle en entreprise / allocation de formation",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_36quater",
+          "articleNumber": "36quater",
+          "titre": "Admissibilité / stage d'insertion / allocations de stage",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_36quinquies",
+          "articleNumber": "36quinquies",
+          "titre": "Admissibilité / allocation de formation et stage d'insertion / pas de cumul possible",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_36sexies",
+          "articleNumber": "36sexies",
+          "titre": "",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_37",
+          "articleNumber": "37",
+          "titre": "Jours de travail / prestations de travail prises en considération",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_38",
+          "articleNumber": "38",
+          "titre": "Jours assimilés",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_38bis",
+          "articleNumber": "38bis",
+          "titre": "Prestations de travail et journées assimilées situées pendant les périodes de prolongation de la période de référence",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_39",
+          "articleNumber": "39",
+          "titre": "Abrogé",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_40",
+          "articleNumber": "40",
+          "titre": "Passage d'allocations d'insertion (allocations d'attente) ou de transition aux allocations de chômage",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_41",
+          "articleNumber": "41",
+          "titre": "Passage / journées qui ne sont pas prises en considération",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_42",
+          "articleNumber": "42",
+          "titre": "Dispense de stage / travailleur qui demande à nouveau les allocations",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_42bis",
+          "articleNumber": "42bis",
+          "titre": "Dispense de stage / chômeur temporaire",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_43",
+          "articleNumber": "43",
+          "titre": "Admissibilité / travailleur étranger ou apatride",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_44",
+          "articleNumber": "44",
+          "titre": "Indemnisation / privation involontaire de travail et de rémunération",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_45",
+          "articleNumber": "45",
+          "titre": "Privation involontaire de travail et de rémunération / définition travail",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_45bis",
+          "articleNumber": "45bis",
+          "titre": "Privation involontaire de travail et de rémunération / activités bénévoles",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_46",
+          "articleNumber": "46",
+          "titre": "Privation involontaire de travail et de rémunération / définition revenu",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_47",
+          "articleNumber": "47",
+          "titre": "Indemnisation / allocations provisionnelles / conditions",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_48",
+          "articleNumber": "48",
+          "titre": "Privation involontaire de travail et de rémunération / activité accessoire / cumul avec allocations",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_48bis",
+          "articleNumber": "48bis",
+          "titre": "Abrogé",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_49",
+          "articleNumber": "49",
+          "titre": "Privation involontaire de travail et de rémunération / mandat politique",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_50",
+          "articleNumber": "50",
+          "titre": "Abrogé",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_51",
+          "articleNumber": "51",
+          "titre": "Privation involontaire de travail et de rémunération / définition / chômage volontaire",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_52",
+          "articleNumber": "52",
+          "titre": "Privation involontaire de travail et de rémunération / chômage volontaire / sanctions",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_52bis",
+          "articleNumber": "52bis",
+          "titre": "Privation involontaire de travail et de rémunération / chômage volontaire / sanctions",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_53",
+          "articleNumber": "53",
+          "titre": "Privation involontaire de travail et de rémunération / sanctions / effet de la décision",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_53bis",
+          "articleNumber": "53bis",
+          "titre": "Privation involontaire de travail et de rémunération / sanctions / avertissement / sursis d'exclusion",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_54",
+          "articleNumber": "54",
+          "titre": "Privation involontaire de travail et de rémunération / changement d'emploi",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_55",
+          "articleNumber": "55",
+          "titre": "Privation involontaire de travail et de rémunération / journées ou périodes non indemnisables",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_56",
+          "articleNumber": "56",
+          "titre": "Disponibilité pour le marché de l'emploi/décesion d'exclusion",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_56_1",
+          "articleNumber": "56/1",
+          "titre": "",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_56_2",
+          "articleNumber": "56/2",
+          "titre": "",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_56_3",
+          "articleNumber": "56/3",
+          "titre": "",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_56_4",
+          "articleNumber": "56/4",
+          "titre": "",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_56_5",
+          "articleNumber": "56/5",
+          "titre": "",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_56_6",
+          "articleNumber": "56/6",
+          "titre": "",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_57",
+          "articleNumber": "57",
+          "titre": "Disponibilité / chômeur temporaire",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_58",
+          "articleNumber": "58",
+          "titre": "Disponibilité / inscription comme demandeur d'emploi",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_58_1",
+          "articleNumber": "58/1",
+          "titre": "",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_58_2",
+          "articleNumber": "58/2",
+          "titre": "",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_58_3",
+          "articleNumber": "58/3",
+          "titre": "",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_58_4",
+          "articleNumber": "58/4",
+          "titre": "",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_58_5",
+          "articleNumber": "58/5",
+          "titre": "",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_58_6",
+          "articleNumber": "58/6",
+          "titre": "",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_58_7",
+          "articleNumber": "58/7",
+          "titre": "",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_58_8",
+          "articleNumber": "58/8",
+          "titre": "",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_58_9",
+          "articleNumber": "58/9",
+          "titre": "",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_58_10",
+          "articleNumber": "58/10",
+          "titre": "",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_58_12",
+          "articleNumber": "58/12",
+          "titre": "",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_59",
+          "articleNumber": "59",
+          "titre": "Disponibilité / inscription comme demandeur emploi / chômeur temporaire",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_59bis",
+          "articleNumber": "59bis",
+          "titre": "Disponibilité / comportement de recherche active / procédure de suivi",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_59bis_1",
+          "articleNumber": "59bis/1",
+          "titre": "Disponibilité / comportement de recherche active jeunes / procédure de suivi",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_59ter",
+          "articleNumber": "59ter",
+          "titre": "Disponibilité / procédure de suivi / lettre d'info précédente",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_59ter_1",
+          "articleNumber": "59ter/1",
+          "titre": "Disponibilité / procédure de suivi jeunes / lettre d'info précédente",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_59quater",
+          "articleNumber": "59quater",
+          "titre": "Disponibilité / procédure de suivi / premier entretien / invitation et evaluation",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_59quater_1",
+          "articleNumber": "59quater/1",
+          "titre": "Disponibilité / procédure de suivi jeunes / info par écrit ou entretien / évaluation positive ou non concluante",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_59quater_2",
+          "articleNumber": "59quater/2",
+          "titre": "Disponibilité / procédure de suivi jeunes / nouvelle évaluation après évaluation positive / info par écrit ou entretien / évaluation positive ou non concluante",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_59quater_3",
+          "articleNumber": "59quater/3",
+          "titre": "Disponibilité / procédure de suivi jeunes / entretien après évaluation non concluante et évaluation définitive",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_59quinquies",
+          "articleNumber": "59quinquies",
+          "titre": "Disponibilité / procédure de suivi / deuxième entretien / invitation et évaluation",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_59quinquies_1",
+          "articleNumber": "59quinquies/1",
+          "titre": "Disponibilité / procédure de suivi jeunes / nouvelle évaluation après évaluation positive définitive / info par écrit ou entretien / évaluation positive ou non concluante",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_59quinquies_2",
+          "articleNumber": "59quinquies/2",
+          "titre": "Disponibilité / procédure de suivi jeunes / info par écrit ou entretien après exclusion évaluation négative et définitive et évaluation",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_59sexies",
+          "articleNumber": "59sexies",
+          "titre": "Disponibilité / procédure de suivi / troisième entretien / invitation et évaluation",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_59septies",
+          "articleNumber": "59septies",
+          "titre": "Disponibilité / procédure de suivi / procédure de recours CAN",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_59octies",
+          "articleNumber": "59octies",
+          "titre": "Disponibilité / procédure de suivi / cessation de l'exclusion",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_59nonies",
+          "articleNumber": "59nonies",
+          "titre": "Disponibilité / procédure de suivi / entretiens d'évaluation / modalités",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_59decies",
+          "articleNumber": "59decies",
+          "titre": "Disponibilité / procédure de suivi / exclusion / montant revenus annuels / indice-pivot",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_61",
+          "articleNumber": "61",
+          "titre": "Indemnisation / travailleur avex allocation de maladie",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_62",
+          "articleNumber": "62",
+          "titre": "Indemnisation / travailleur avec inaptitude au travail",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_63",
+          "articleNumber": "63",
+          "titre": "Indemnisation / travailleur avec obligation scolaire à temps plein et à temps partiel",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_63bis",
+          "articleNumber": "63bis",
+          "titre": "",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_64",
+          "articleNumber": "64",
+          "titre": "Indemnisation / limite d'âge",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_65",
+          "articleNumber": "65",
+          "titre": "Indemnisation / travailleur qui peut prétendre à une pension",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_66",
+          "articleNumber": "66",
+          "titre": "Indemnisation / résidence en Belgique",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_66bis",
+          "articleNumber": "66bis",
+          "titre": "Indemnisation / obligation de résidence / certificat de résidence",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_67",
+          "articleNumber": "67",
+          "titre": "Indemnisation / obligations de milice / détention préventive / privation de liberté",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_68",
+          "articleNumber": "68",
+          "titre": "Indemnisation / études de plein exercice ou formation à une profession indépendante",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_69",
+          "articleNumber": "69",
+          "titre": "Indemnisation / travailleur étranger ou apatride",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_70",
+          "articleNumber": "70",
+          "titre": "Indemnisation / exclusion / pas de suite à une convocation",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_71",
+          "articleNumber": "71",
+          "titre": "Indemnisation / carte de contrôle",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_71bis",
+          "articleNumber": "71bis",
+          "titre": "Carte de contôle / chômeur de 50 ans ou plus",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_71ter",
+          "articleNumber": "71ter",
+          "titre": "",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_72",
+          "articleNumber": "72",
+          "titre": "Contrôle / travailleur à temps partiel",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_73",
+          "articleNumber": "73",
+          "titre": "Chômage temporaire / grève ou lock-out",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_74",
+          "articleNumber": "74",
+          "titre": "Régimes particuliers pour catégories particulières de travailleurs",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_74bis",
+          "articleNumber": "74bis",
+          "titre": "Indemnisation / artistes",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_75",
+          "articleNumber": "75",
+          "titre": "Indemnisation / travailleur à domicile",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_76",
+          "articleNumber": "76",
+          "titre": "Indemnisation / travailleur diamantaire",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_77",
+          "articleNumber": "77",
+          "titre": "Indemnisation / coureur cycliste",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_78",
+          "articleNumber": "78",
+          "titre": "Indemnisation / travailleur handicapé / atelier protégé",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_78bis",
+          "articleNumber": "78bis",
+          "titre": "Vacances jeunes / vacances-senior",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_78ter",
+          "articleNumber": "78ter",
+          "titre": "Transition professionnelle / allocation d'intégration",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_78quater",
+          "articleNumber": "78quater",
+          "titre": "Emplois services / allocation de réinsertion",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_78quinquies",
+          "articleNumber": "78quinquies",
+          "titre": "Abrogé",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_78sexies",
+          "articleNumber": "78sexies",
+          "titre": "Activation / généralités",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_79",
+          "articleNumber": "79",
+          "titre": "ALE",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_79bis",
+          "articleNumber": "79bis",
+          "titre": "ALE / prix d'achat, activités autorisées",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_79ter",
+          "articleNumber": "79ter",
+          "titre": "Assistants de prévention et de sécurité",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_80",
+          "articleNumber": "80",
+          "titre": "Chômage de longue durée",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_81",
+          "articleNumber": "81",
+          "titre": "Chômage de longue durée / avertissement",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_82",
+          "articleNumber": "82",
+          "titre": "Chômage de longue durée / recours",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_83",
+          "articleNumber": "83",
+          "titre": "Chômage de longue durée / effets de la suspension",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_84",
+          "articleNumber": "84",
+          "titre": "Chômage de longue durée / sursis de la suspension / revenus du ménage",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_85",
+          "articleNumber": "85",
+          "titre": "Chômage de longue dureé / fin de la suspension",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_86",
+          "articleNumber": "86",
+          "titre": "Chômage de longue durée / nouvelle suspension",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_87",
+          "articleNumber": "87",
+          "titre": "Chômage de longue durée / notion ménage",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_88",
+          "articleNumber": "88",
+          "titre": "Chômage de longue durée / modalités avertissement et décision",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_89",
+          "articleNumber": "89",
+          "titre": "Dispense / chômeurs âgés",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_89_1",
+          "articleNumber": "89/1",
+          "titre": "",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_89bis",
+          "articleNumber": "89bis",
+          "titre": "Dispense d'obligation de séjour",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_90",
+          "articleNumber": "90",
+          "titre": "Dispense / raisons sociales et familiales",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_91",
+          "articleNumber": "91",
+          "titre": "Dispense / formation professionnelle",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_92",
+          "articleNumber": "92",
+          "titre": "Dispense / formation profession indépendante",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_94",
+          "articleNumber": "94",
+          "titre": "Dispense / autres études",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_94bis",
+          "articleNumber": "94bis",
+          "titre": "Dispense/engagement volontaire militaire",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_95",
+          "articleNumber": "95",
+          "titre": "Abrogé",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_96",
+          "articleNumber": "96",
+          "titre": "Dispense / enseignement / vacances scolaires",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_97",
+          "articleNumber": "97",
+          "titre": "Dispense / expérience professionnelle au service d'un pays étranger",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_98",
+          "articleNumber": "98",
+          "titre": "Dispense / travailleur temps partiel",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_98bis",
+          "articleNumber": "98bis",
+          "titre": "Dispense / situations assimilées",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_98ter",
+          "articleNumber": "98ter",
+          "titre": "",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_99",
+          "articleNumber": "99",
+          "titre": "Définition Q, P et S",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_100",
+          "articleNumber": "100",
+          "titre": "Régime d'indemnisation / chômage complet",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_101",
+          "articleNumber": "101",
+          "titre": "Abrogé",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_102",
+          "articleNumber": "102",
+          "titre": "Abrogé",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_103",
+          "articleNumber": "103",
+          "titre": "Régime d'indemnisation / travailleur temps partiel volontaire",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_104",
+          "articleNumber": "104",
+          "titre": "Régime d'indemnisation / travailleur temps partiel volontaire / reprise de travail / diminution nombre d'allocations",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_105",
+          "articleNumber": "105",
+          "titre": "Régime d'indemnisation / chômage complet",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_106",
+          "articleNumber": "106",
+          "titre": "Régime d'indemnisation / chômage temporaire",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_107",
+          "articleNumber": "107",
+          "titre": "Régime d'indemnisation / chômage temporaire / travailleur temps partiel avec maintien des droits",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_108",
+          "articleNumber": "108",
+          "titre": "Régime d'indemnisation / chômage temporaire / travailleur temps partiel volontaire",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_108bis",
+          "articleNumber": "108bis",
+          "titre": "Régime d'indemnisation / chômage temporaire / prépension à mi-temps",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_109",
+          "articleNumber": "109",
+          "titre": "Nombre d'allocations journalières / diminution selon jours d'activité",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_110",
+          "articleNumber": "110",
+          "titre": "Montant de l'allocation / situation familiale / définitions / travailleur ayant charge de famille / travailleur isolé",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_111",
+          "articleNumber": "111",
+          "titre": "Montant de l'allocation / salaire pris en considération",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_112",
+          "articleNumber": "112",
+          "titre": "Montant de l'allocation / salaire pris en considération / mois calculés de date à date",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_113",
+          "articleNumber": "113",
+          "titre": "Montant de l'allocation / principe d'indexation",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_114",
+          "articleNumber": "114",
+          "titre": "Montant de l'allocation / périodes d'indemnisation",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_115",
+          "articleNumber": "115",
+          "titre": "Montant de l'allocation / montant journalier minimum",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_116",
+          "articleNumber": "116",
+          "titre": "Montant de l'allocation / périodes d'indemnisation / retour - prolongation",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_117",
+          "articleNumber": "117",
+          "titre": "Montant de l'allocation / périodes d'indemnisation / travailleur temps partiel volontaire",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_118",
+          "articleNumber": "118",
+          "titre": "Montant de l'allocation / révision de la base de calcul",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_119",
+          "articleNumber": "119",
+          "titre": "Montant de l'allocation / modalités définies par ministre",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_120",
+          "articleNumber": "120",
+          "titre": "Abrogé",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_121",
+          "articleNumber": "121",
+          "titre": "Abrogé",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_122",
+          "articleNumber": "122",
+          "titre": "Abrogé",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_123",
+          "articleNumber": "123",
+          "titre": "Abrogé",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_124",
+          "articleNumber": "124",
+          "titre": "Montant de l'allocation / allocation de transition et allocation d'insertion (allocation d'attente)",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_124bis",
+          "articleNumber": "124bis",
+          "titre": "",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_125",
+          "articleNumber": "125",
+          "titre": "Montant de l'allocation / en cas de dispense art. 90",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_126",
+          "articleNumber": "126",
+          "titre": "Complément d'ancienneté / conditions",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_127",
+          "articleNumber": "127",
+          "titre": "Complément d'ancienneté / montant",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_128",
+          "articleNumber": "128",
+          "titre": "Périodes d'indemnisation et complément d'ancienneté",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_129",
+          "articleNumber": "129",
+          "titre": "Abrogé",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_129bis",
+          "articleNumber": "129bis",
+          "titre": "Complément de reprise du travail / conditions",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_129ter",
+          "articleNumber": "129ter",
+          "titre": "Complément de reprise du travail / indépendants / conditions",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_129quater",
+          "articleNumber": "129quater",
+          "titre": "Complément de reprise de travail / indépendants / conditions",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_130",
+          "articleNumber": "130",
+          "titre": "Montant de l'allocation / réduction en cas de cumul autorisé",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_130bis",
+          "articleNumber": "130bis",
+          "titre": "Montant de l'allocation / diminution temporaire",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_130ter",
+          "articleNumber": "130ter",
+          "titre": "",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_131",
+          "articleNumber": "131",
+          "titre": "Montant de l'allocation / prime formation professionnelle",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_131bis",
+          "articleNumber": "131bis",
+          "titre": "Montant de l'allocation / AGR",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_131ter",
+          "articleNumber": "131ter",
+          "titre": "Montant de l'allocation / allocation-vacances jeunes",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_131quater",
+          "articleNumber": "131quater",
+          "titre": "Montant de l'allocation / allocation d'intégration",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_131quinquies",
+          "articleNumber": "131quinquies",
+          "titre": "Montant de l'allocation / allocation de réinsertion",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_131sexies",
+          "articleNumber": "131sexies",
+          "titre": "Abrogé",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_131septies",
+          "articleNumber": "131septies",
+          "titre": "Montant de l'allocation / complément de mobilité",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_131septies_1",
+          "articleNumber": "131septies/1",
+          "titre": "Montant de l'allocation / complément de garde d'enfants",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_131septies_2",
+          "articleNumber": "131septies/2",
+          "titre": "Montant de l'allocation / complément de garde d'enfants",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_131octies",
+          "articleNumber": "131octies",
+          "titre": "Montant de l'allocation / complément pour formation professionnelle et action de formation ou d'insertion",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_131nonies",
+          "articleNumber": "131nonies",
+          "titre": "prime de passage",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_132",
+          "articleNumber": "132",
+          "titre": "Demande d'allocations / transfer à un autre OP",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_133",
+          "articleNumber": "133",
+          "titre": "Demande d'allocation / modalités",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_134",
+          "articleNumber": "134",
+          "titre": "Demande d'allocations / déclaration d'un événement modificatif",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_134bis",
+          "articleNumber": "134bis",
+          "titre": "Demande d'allocations / transmission de données directe",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_134ter",
+          "articleNumber": "134ter",
+          "titre": "Demande d'allocations/Regis OP",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_135",
+          "articleNumber": "135",
+          "titre": "Demande d'allocation / allocations provisoires",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_136",
+          "articleNumber": "136",
+          "titre": "Demande d'allocations / déclaration sur honeur / accusé de réception",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_137",
+          "articleNumber": "137",
+          "titre": "Demande d'allocation / documents délivrés par l'employeur",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_138",
+          "articleNumber": "138",
+          "titre": "Demande d'allocations / quels documents?",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_138bis",
+          "articleNumber": "138bis",
+          "titre": "Demande d'allocations / transmissions de données électroniques",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_139",
+          "articleNumber": "139",
+          "titre": "Surveillance",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_139_1",
+          "articleNumber": "139/1",
+          "titre": "Surveillance / mesures",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_140",
+          "articleNumber": "140",
+          "titre": "Surveillace / convocation pour contrôle",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_141",
+          "articleNumber": "141",
+          "titre": "Surveillance / convocation pour examen médical",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_142",
+          "articleNumber": "142",
+          "titre": "Droit aux allocations / directeur compétent",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_143",
+          "articleNumber": "143",
+          "titre": "Droit aux allocations / compétence directeur",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_144",
+          "articleNumber": "144",
+          "titre": "Droit aux allocations / audition",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_145",
+          "articleNumber": "145",
+          "titre": "Droit aux allocations / délai de décision",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_146",
+          "articleNumber": "146",
+          "titre": "Droit aux allocations / carte d'allocations / notification",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_147",
+          "articleNumber": "147",
+          "titre": "Droit aux allocation / date de l'octroi",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_148",
+          "articleNumber": "148",
+          "titre": "Droit aux allocations / validité de la carte d'allocation",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_149",
+          "articleNumber": "149",
+          "titre": "Révision d'une décision / dans quels cas? / à partir de quand?",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_150",
+          "articleNumber": "150",
+          "titre": "Révision d'une décision / décision contre laquelle un recours est introduit",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_151",
+          "articleNumber": "151",
+          "titre": "Révision d'une décision / date de validité sur la carte d'allocations",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_152",
+          "articleNumber": "152",
+          "titre": "Révision d'une décision / date d'effet",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_152bis",
+          "articleNumber": "152bis",
+          "titre": "",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_152ter",
+          "articleNumber": "152ter",
+          "titre": "",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_152quater",
+          "articleNumber": "152quater",
+          "titre": "",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_152quinquies",
+          "articleNumber": "152quinquies",
+          "titre": "",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_152sexies",
+          "articleNumber": "152sexies",
+          "titre": "",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_153",
+          "articleNumber": "153",
+          "titre": "Sanctions administratives / problèmes relatés aux déclarations",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_154",
+          "articleNumber": "154",
+          "titre": "Sanctions administratives",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_155",
+          "articleNumber": "155",
+          "titre": "Sanctions administratives",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_156",
+          "articleNumber": "156",
+          "titre": "Abrogé",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_157",
+          "articleNumber": "157",
+          "titre": "Sanctions administratives",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_157bis",
+          "articleNumber": "157bis",
+          "titre": "Sanctions administratives / avertissement - sursis",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_158",
+          "articleNumber": "158",
+          "titre": "Sanctions administratives / date d'effet",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_159",
+          "articleNumber": "159",
+          "titre": "Sanctions administratives / durée totale en cas de plusieurs sanctions",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_160",
+          "articleNumber": "160",
+          "titre": "Paiement de l'allocation",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_161",
+          "articleNumber": "161",
+          "titre": "Paiement de l'allocation / délai de paiement",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_162",
+          "articleNumber": "162",
+          "titre": "Paiement de l'allocation / moyen de paiement",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_163",
+          "articleNumber": "163",
+          "titre": "Paiement de l'allocation / travailleur handicapé",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_163bis",
+          "articleNumber": "163bis",
+          "titre": "Paiement de l'allocation / décision hors délai",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_164",
+          "articleNumber": "164",
+          "titre": "Introduction et vérification des paiements",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_165",
+          "articleNumber": "165",
+          "titre": "Introduction et vérification des paiements / dépenses définitivement éliminées",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_166",
+          "articleNumber": "166",
+          "titre": "Introduction et vérification des paiements",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_167",
+          "articleNumber": "167",
+          "titre": "Introduction et vérification des paiements / responsabilité OP",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_168",
+          "articleNumber": "168",
+          "titre": "Introduction et vérification des paiements / erreur dans le traitement du dossier",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_168bis",
+          "articleNumber": "168bis",
+          "titre": "Introduction et vérification des paiements / les sommes irrécouvrables payées indûment",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_169",
+          "articleNumber": "169",
+          "titre": "Récupération des allocations",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_170",
+          "articleNumber": "170",
+          "titre": "Récupération des allocations / procédure",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_171",
+          "articleNumber": "171",
+          "titre": "Récupération des allocations / influence des ressources du débiteur",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_172",
+          "articleNumber": "172",
+          "titre": "Récupération des allocations / la renonciation partielle à la récupération",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_173",
+          "articleNumber": "173",
+          "titre": "Récupération des allocations / la renonciation à la récupération",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_174",
+          "articleNumber": "174",
+          "titre": "Récupération des allocations / la renonciation à la récupération / commission de techniciens",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_175",
+          "articleNumber": "175",
+          "titre": "Dispositions pénales",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_176",
+          "articleNumber": "176",
+          "titre": "Dispositions pénales",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_177",
+          "articleNumber": "177",
+          "titre": "Arrêtés royaux et titres abrogés",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_178",
+          "articleNumber": "178",
+          "titre": "AR 20 décembre 1963 / validité articles 136, 143, 146 et 195",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_178bis",
+          "articleNumber": "178bis",
+          "titre": "Dérogation à l'article 68 / continuation des études déjà entamées",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_179",
+          "articleNumber": "179",
+          "titre": "Date d'entrée en vigueur de l'AR",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_180",
+          "articleNumber": "180",
+          "titre": "Compétence en matière d'exécution de l'AR",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_181",
+          "articleNumber": "181",
+          "titre": "nouveau régime spécifique pour les travailleurs des arts",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_182",
+          "articleNumber": "182",
+          "titre": "admissibilité spécifique / octroi / renouvellement",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_183",
+          "articleNumber": "183",
+          "titre": "dispense de stage / travailleur qui demande à nouveau les allocations du travail des arts",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_184",
+          "articleNumber": "184",
+          "titre": "fin de la période d'application Chapitre XII / renonciation",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_185",
+          "articleNumber": "185",
+          "titre": "prolongation période de référence / calcul des journées de travail / journées prises en considération",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_186",
+          "articleNumber": "186",
+          "titre": "les allocations du travail des arts ne sont pas des journées assimilées",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_187",
+          "articleNumber": "187",
+          "titre": "les activités non rémunérées dans le cadre d'une formation ne constituent pas du travail",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_188",
+          "articleNumber": "188",
+          "titre": "cumul d'activités avec l'allocation du travail des arts",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_189",
+          "articleNumber": "189",
+          "titre": "montant de l'allocation du travail des arts / réduction en cas de cumul d'activités",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_190",
+          "articleNumber": "190",
+          "titre": "rémunération journalière moyenne du travailleur des arts",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_191",
+          "articleNumber": "191",
+          "titre": "allocation journalière (pourcentage et minima) du travailleur des arts",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_192",
+          "articleNumber": "192",
+          "titre": "pas d'application de l'art. 116, de l'AR",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_193",
+          "articleNumber": "193",
+          "titre": "révision de la base de calcul de l'allocation du travail des arts",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_194",
+          "articleNumber": "194",
+          "titre": "disponibilité et inscription comme demandeur d'emploi du travailleur des arts",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_195",
+          "articleNumber": "195",
+          "titre": "dispositions provisoires pour le travailleur des arts",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_196",
+          "articleNumber": "196",
+          "titre": "compétence ministerielle",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_999",
+          "articleNumber": "999",
+          "titre": "Liste des arrêtés modifiant l' AR du 25.11.1991",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_94ter",
+          "articleNumber": "94ter",
+          "titre": "Annulé",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_93",
+          "articleNumber": "93",
+          "titre": "Dispense / études de plein exercice",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_60",
+          "articleNumber": "60",
+          "titre": "Indemnisation / aptitude au travail",
+          "construit": true
+        },
+        {
+          "riolexId": "25_11_1991-1-art_29",
+          "articleNumber": "29",
+          "titre": "Définition / travailleur à temps partiel",
+          "construit": true
+        }
+      ]
+    },
+    {
+      "loi": "Arrêté-loi 28/12/1944",
+      "intitule": "Arrêté-loi concernant la securité sociale des travailleurs du 28.12.1944",
+      "natureJuridique": "Arrêté-loi",
+      "prefixe": "28_12_1944-1",
+      "articleCount": 5,
+      "articleIds": [
+        {
+          "riolexId": "28_12_1944-1-art_8",
+          "articleNumber": "8",
+          "titre": "",
+          "construit": true
+        },
+        {
+          "riolexId": "28_12_1944-1-art_8bis",
+          "articleNumber": "8bis",
+          "titre": "",
+          "construit": false
+        },
+        {
+          "riolexId": "28_12_1944-1-art_8ter",
+          "articleNumber": "8ter",
+          "titre": "",
+          "construit": true
+        },
+        {
+          "riolexId": "28_12_1944-1-art_8quater",
+          "articleNumber": "8quater",
+          "titre": "",
+          "construit": true
+        },
+        {
+          "riolexId": "28_12_1944-1-art_9",
+          "articleNumber": "9",
+          "titre": "",
+          "construit": false
+        }
+      ]
+    },
+    {
+      "loi": "Loi-programme 18/07/2025",
+      "intitule": "Loi-programme du 18/07/2025",
+      "natureJuridique": "Loi-programme",
+      "prefixe": "18_07_2025-1",
+      "articleCount": 8,
+      "articleIds": [
+        {
+          "riolexId": "18_07_2025-1-art_209",
+          "articleNumber": "209",
+          "titre": "",
+          "construit": false
+        },
+        {
+          "riolexId": "18_07_2025-1-art_210",
+          "articleNumber": "210",
+          "titre": "",
+          "construit": false
+        },
+        {
+          "riolexId": "18_07_2025-1-art_211",
+          "articleNumber": "211",
+          "titre": "",
+          "construit": false
+        },
+        {
+          "riolexId": "18_07_2025-1-art_212",
+          "articleNumber": "212",
+          "titre": "",
+          "construit": false
+        },
+        {
+          "riolexId": "18_07_2025-1-art_213",
+          "articleNumber": "213",
+          "titre": "",
+          "construit": false
+        },
+        {
+          "riolexId": "18_07_2025-1-art_214",
+          "articleNumber": "214",
+          "titre": "",
+          "construit": false
+        },
+        {
+          "riolexId": "18_07_2025-1-art_215",
+          "articleNumber": "215",
+          "titre": "",
+          "construit": false
+        },
+        {
+          "riolexId": "18_07_2025-1-art_216",
+          "articleNumber": "216",
+          "titre": "",
+          "construit": false
+        }
+      ]
+    }
+  ],
+  "totalArticles": 443
+}

@@ -309,6 +309,7 @@ export default async function BundleRoute({
           fieldLabels,
           applicableSlugs: finalApplicableSlugs,
           externalDocuments,
+          inlineDocumentQuestions: dossier?.inlineDocumentQuestions ?? false,
         };
 
         // Écran d'explication : uniquement si le dossier codé fournit un

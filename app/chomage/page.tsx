@@ -25,6 +25,7 @@ import { prisma } from "@/lib/prisma";
 import { localizeRecords } from "@/lib/i18n/content";
 import { WizardTeaser } from "@/components/docbel/landing/wizard-teaser";
 import { CalcChomage } from "@/components/docbel/calculators/calc-chomage";
+import { CommentCaMarche } from "@/components/docbel/chomage/comment-ca-marche";
 
 export const dynamic = "force-dynamic";
 
@@ -61,13 +62,13 @@ export default async function ChomageHubPage() {
     .findMany({
       where: { active: true, slug: { in: CHOMAGE_BUNDLE_SLUGS } },
       orderBy: [{ order: "asc" }, { name: "asc" }],
-      select: { id: true, slug: true, name: true, color: true },
+      select: { id: true, slug: true, name: true, description: true, color: true },
     })
     .catch(() => []);
   const bundles = await localizeRecords(
     "DocumentBundle",
     bundleRows,
-    ["name"],
+    ["name", "description"],
     locale,
   );
 
@@ -142,7 +143,10 @@ export default async function ChomageHubPage() {
         </div>
       </header>
 
-      {/* 1. Orientation — réutilise le teaser du wizard de l'accueil. */}
+      {/* 1. Comment ça se passe — aperçu illustré du parcours + montants sourcés. */}
+      <CommentCaMarche />
+
+      {/* 2. Orientation — réutilise le teaser du wizard de l'accueil. */}
       <WizardTeaser />
 
       {/* 2. Calculateur complet (l'estimation rapide redondante a été retirée). */}
@@ -251,8 +255,10 @@ export default async function ChomageHubPage() {
               return (
                 <Link
                   key={bundle.id}
-                  href="/mon-dossier"
-                  className="glass-surface glass-interactive group flex items-center gap-3 p-4"
+                  // Porte d'entrée directe du funnel : chaque carte mène AU
+                  // dossier (écran journey), pas au wizard d'orientation générique.
+                  href={`/d/${bundle.slug}`}
+                  className="glass-surface glass-interactive group flex items-start gap-3 p-4"
                 >
                   <span
                     className="glass-icon-tile flex size-9 shrink-0 items-center justify-center rounded-xl"
@@ -265,13 +271,20 @@ export default async function ChomageHubPage() {
                   >
                     <FileText className="size-4" />
                   </span>
-                  <span className="flex-1 text-[13px] font-bold leading-snug tracking-tight text-[color:var(--glass-ink)]">
-                    {bundle.name}
+                  <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                    <span className="flex items-center gap-1 text-[13.5px] font-bold leading-snug tracking-tight text-[color:var(--glass-ink)]">
+                      {bundle.name}
+                      <ArrowRight
+                        className="size-3.5 shrink-0 text-[color:var(--glass-ink-faint)] transition-transform duration-200 group-hover:translate-x-0.5 motion-reduce:transform-none"
+                        aria-hidden
+                      />
+                    </span>
+                    {bundle.description ? (
+                      <span className="line-clamp-2 text-[12px] leading-[1.5] text-[color:var(--glass-ink-soft)]">
+                        {bundle.description}
+                      </span>
+                    ) : null}
                   </span>
-                  <ArrowRight
-                    className="size-4 shrink-0 text-[color:var(--glass-ink-faint)] transition-transform duration-200 group-hover:translate-x-0.5 motion-reduce:transform-none"
-                    aria-hidden
-                  />
                 </Link>
               );
             })}

@@ -85,17 +85,26 @@ describe("allocations-insertion — arbre de documents conditionnel", () => {
     }
   });
 
-  it("les formulaires remplissables = la DEMANDE + le C1 (PDF officiel + champs)", () => {
+  it("les formulaires remplissables = DEMANDE, C1, DIPLÔME, ÉTRANGER (PDF officiels)", () => {
     const fillable = allocationsInsertion.documents.filter(
       (d) => (!d.responsibility || d.responsibility === "user") && d.fields.length > 0,
     );
     expect(fillable.map((d) => d.slug).sort()).toEqual(
-      ["c1-insertion", "c109-36-demande"].sort(),
+      ["c1-insertion", "c109-36-demande", "c109-36-diplome", "c109-36-etranger"].sort(),
     );
     // Chaque remplissable pointe vers un PDF officiel committé.
     for (const d of fillable) {
       expect(d.sourcePdfPath).toMatch(/^private\/pdfs\/.+\.pdf$/);
     }
+  });
+
+  it("les formulaires d'études restent conditionnels (branche parcoursEtudes)", () => {
+    // DIPLÔME + ÉTRANGER sont remplissables MAIS gardent leur includeWhen :
+    // ils n'apparaissent que pour la bonne branche.
+    expect(slugsFor({})).not.toContain("c109-36-diplome");
+    expect(slugsFor({})).not.toContain("c109-36-etranger");
+    expect(slugsFor({ parcoursEtudes: "secondaire-belge" })).toContain("c109-36-diplome");
+    expect(slugsFor({ parcoursEtudes: "etranger" })).toContain("c109-36-etranger");
   });
 
   it("la DEMANDE mappe l'identité canonique (NISS, nom, date, signature)", () => {

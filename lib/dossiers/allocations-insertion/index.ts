@@ -435,14 +435,20 @@ export const allocationsInsertion: DossierDefinition = {
       titleKey: "insertion.doc.c109Diplome.title",
       issuer: "Établissement d'enseignement",
       required: true,
-      responsibility: "external",
-      responsibilityNote: {
-        fr: "À faire remplir par ton école secondaire ou de formation. Prouve que tu possèdes le diplôme, certificat ou attestation requis.",
-      },
+      // Préremplissable : le citoyen remplit son identité (NISS + nom en tête
+      // de chaque page) ; le RESTE (diplôme, communauté, cachet, signature) est
+      // à faire compléter par son établissement d'enseignement. Il télécharge
+      // le PDF prérempli et le porte à son école. PDF officiel Oraliks
+      // (109 widgets, 5 pages) — seule l'identité est mappée, le reste
+      // s'auto-infère et sera complété à la main par l'établissement.
+      sourcePdfPath: "private/pdfs/C109-36_Diplome_FR.pdf",
       includeWhen: (a) => a.parcoursEtudes === "secondaire-belge",
       internalRef:
-        "C109/36-DIPLÔME (art. 36) — remplace le CERTIFICAT depuis le 01/03/2026 (Oraliks). Formulaire école secondaire/formation.",
-      fields: [],
+        "C109/36-DIPLÔME (art. 36) — remplace le CERTIFICAT depuis 01/03/2026 (Oraliks). PDF officiel 2026-07-05. Identité citoyen mappée ; partie école (diplôme/communauté/cachet/signature) auto-inférée, complétée par l'établissement. UX : envisager de masquer/READONLY les champs école côté admin.",
+      fields: [
+        { field: "niss", required: true, section: "identite", pdfFieldName: "NISS" },
+        { field: "fullName", required: true, section: "identite", pdfFieldName: "NomPrenom" },
+      ],
     },
     {
       slug: "copie-diplome-superieur",
@@ -466,17 +472,22 @@ export const allocationsInsertion: DossierDefinition = {
       slug: "c109-36-etranger",
       title: "C109/36-ÉTRANGER — Déclaration d'études à l'étranger",
       titleKey: "insertion.doc.c109Etranger.title",
-      issuer: "Toi + preuves",
+      issuer: "ONEM",
       required: true,
-      responsibility: "external",
-      responsibilityNote: {
-        fr: "À compléter si tu as étudié à l'étranger (avec les attestations ou preuves de ton diplôme), ou si ta situation ne correspond à aucun des autres cas. Vérifie si ton diplôme ouvre le droit.",
-      },
+      // Formulaire de DÉCLARATION rempli par le citoyen (24 champs) : études à
+      // l'étranger, équivalence, situation salarié/indépendant, parent, etc.
+      // Préremplissable ; identité + signature mappées. PDF officiel Oraliks.
+      sourcePdfPath: "private/pdfs/C109-36_Etranger_FR.pdf",
       includeWhen: (a) =>
         a.parcoursEtudes === "etranger" || a.parcoursEtudes === "autre",
       internalRef:
-        "C109/36-ÉTRANGER (art. 36) — remplace l'ANNEXE depuis le 01/03/2026 (Oraliks). Couvre 'études à l'étranger' + cas résiduel 'autre'.",
-      fields: [],
+        "C109/36-ÉTRANGER (art. 36) — remplace l'ANNEXE depuis 01/03/2026 (Oraliks). Couvre 'études à l'étranger' + cas résiduel 'autre'. PDF officiel 2026-07-05, rempli par le citoyen.",
+      fields: [
+        { field: "niss", required: true, section: "identite", pdfFieldName: "NISS" },
+        { field: "fullName", required: true, section: "identite", pdfFieldName: "NomPrenom" },
+        { field: "creationDate", section: "signature", pdfFieldName: "DateSignature" },
+        { field: "signature", section: "signature", pdfFieldName: "Signature" },
+      ],
     },
 
     // ---------- Conditionnels ----------

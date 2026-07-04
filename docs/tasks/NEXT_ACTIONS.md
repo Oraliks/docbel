@@ -27,6 +27,7 @@ Légende priorité : **P0** critique · **P1** important · **P2** souhaitable �
 | 16 | P3 | Dette | Découper monolithes (`file-manager.tsx`, `chat-full-shell.tsx`, `calc-*.tsx`) | composants ciblés | Moyen | `pnpm build` + écrans | à faire |
 | 17 | P3 | Dette | Réduire ESLint (cibler `set-state-in-effect`, unused-vars) sans tout casser | divers | Moyen | `pnpm lint` (delta) | à faire |
 | 18 | P3 | Doc | Désigner DPO + déposer demande NRN au SPF Intérieur (administratif) | hors-code | — | — | bloqué (juriste) |
+| 19 | P3 | i18n | Traduire les 3 questions d'aiguillage (parcours d'études/âge/a travaillé) du dossier allocations-insertion en 12 langues (pattern `*Key`, laissées FR-only lors du refresh du parcours) | `lib/dossiers/allocations-insertion/index.ts`, `messages/*.json` | Faible | `pnpm i18n:check` | à faire |
 
 ## Plans en attente de validation
 - **Réglementation V3** (« texte de loi vivant ») → [REGLEMENTATION_V3_PLAN.md](REGLEMENTATION_V3_PLAN.md) —

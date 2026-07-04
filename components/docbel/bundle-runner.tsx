@@ -86,6 +86,10 @@ interface BundleRunnerProps {
   /// Documents obligatoires au dossier mais à charge d'un tiers (employeur,
   /// ONEM, mutuelle…). Listés à part — pas de bouton « Compléter ».
   externalDocuments?: ExternalDocument[];
+  /// Si vrai : n'affiche jamais la pré-qualification en écran bloquant — les
+  /// questions restent visibles en ligne au-dessus des documents, qui sont
+  /// toujours affichés. Cf. `DossierDefinition.inlineDocumentQuestions`.
+  inlineDocumentQuestions?: boolean;
 }
 
 const RESPONSIBILITY_LABEL_KEYS: Record<ExternalDocument["responsibility"], string> = {
@@ -107,6 +111,7 @@ export function BundleRunner({
   fieldLabels,
   applicableSlugs = null,
   externalDocuments = [],
+  inlineDocumentQuestions = false,
 }: BundleRunnerProps) {
   const t = useTranslations("public.dossier");
   const router = useRouter();
@@ -142,10 +147,17 @@ export function BundleRunner({
   }, [hasEligibilityQuestions, eligibilityQuestions, eligibilityAnswers]);
 
   /// Affichage de la pré-qualification :
-  /// - quand on n'a pas encore démarré le run ET il y a des questions
-  /// - OU quand l'utilisateur a explicitement demandé à revoir ses réponses
-  const showsPrequalifier =
-    (!runId && hasEligibilityQuestions) || editingEligibility;
+  /// - mode "gate" (comportement historique, inchangé) : quand on n'a pas
+  ///   encore démarré le run ET il y a des questions, OU quand l'utilisateur
+  ///   a explicitement demandé à revoir ses réponses.
+  /// - mode "en ligne" (`inlineDocumentQuestions`) : jamais de gate — les
+  ///   questions et les documents sont TOUJOURS affichés ensemble.
+  const showsPrequalifierGate =
+    !inlineDocumentQuestions && ((!runId && hasEligibilityQuestions) || editingEligibility);
+  const showsQuestions =
+    showsPrequalifierGate || (inlineDocumentQuestions && hasEligibilityQuestions);
+  const showsDocumentsSection =
+    inlineDocumentQuestions || !showsPrequalifierGate || Boolean(runId);
 
   async function ensureRun(answers?: EligibilityAnswers): Promise<string | null> {
     if (runId && !answers) return runId;
@@ -324,7 +336,7 @@ export function BundleRunner({
       {warnings.length > 0 && <BundleWarnings warnings={warnings} />}
 
       {/* Pré-qualification — informatif, jamais bloquant */}
-      {showsPrequalifier && (
+      {showsQuestions && (
         <EligibilityPrequalifier
           questions={eligibilityQuestions}
           initialAnswers={eligibilityAnswers}
@@ -359,10 +371,10 @@ export function BundleRunner({
         </div>
       )}
 
-      {/* Documents — masqué tant que la pré-qualification n'est pas faite */}
-      {(!showsPrequalifier || runId) && (
+      {/* Documents — masqué tant que la pré-qualification n'est pas faite (mode gate) ; toujours affiché en mode inline */}
+      {showsDocumentsSection && (
         <>
-          {!runId && (
+          {!runId && !inlineDocumentQuestions && (
             <Alert>
               <AlertDescription className="text-sm flex items-center justify-between gap-3 flex-wrap">
                 <span>

@@ -39,6 +39,17 @@ export interface DossierQuestion {
   /// de documents, calcul de natureDA…). Non transmise au prequalifier.
   /// Utiliser `visibleIf` pour les questions du parcours citoyen.
   visibleWhen?: (answers: DossierAnswers) => boolean;
+  /// Si vrai : cette question doit avoir une réponse avant qu'un document
+  /// `gatedByRestOfDossier` du même dossier ne puisse se débloquer —
+  /// typiquement une question dont dépend l'inclusion d'un document
+  /// REMPLISSABLE et obligatoire (ex. `parcoursEtudes` détermine
+  /// DIPLÔME/ÉTRANGER). Absent/faux = cette question n'a PAS besoin d'être
+  /// répondue pour débloquer (elle peut rester purement informative — ex.
+  /// `age`/`aTravaille`, qui ne branchent que des documents à charge d'un
+  /// tiers, jamais remplissables dans beldoc). Si AUCUNE question du
+  /// dossier n'a ce flag, TOUTES sont requises par prudence (comportement
+  /// inchangé pour tout dossier qui n'utilise pas cette distinction).
+  gatesDocuments?: boolean;
 }
 
 /// Un champ d'un document : soit une référence au catalogue, soit un champ

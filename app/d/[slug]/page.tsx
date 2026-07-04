@@ -10,6 +10,7 @@ import { DossierEnConstruction } from "@/components/docbel/dossier-en-constructi
 import { parseOfficialSources } from "@/lib/bundles/types";
 import type { PdfFormField } from "@/lib/pdf-forms/types";
 import { collectAllTriggeredSlugs } from "@/lib/pdf-forms/triggers";
+import { areGatingQuestionsAnswered } from "@/lib/pdf-forms/generate-lock";
 import type { BundleCondition } from "@/lib/bundles/conditions";
 import { parseEligibilityAnswers } from "@/lib/bundles/eligibility";
 import { getDossier } from "@/lib/dossiers/registry";
@@ -232,6 +233,14 @@ export default async function BundleRoute({
   const gatedSlugs = dossier
     ? dossier.documents.filter((d) => d.gatedByRestOfDossier).map((d) => d.slug)
     : [];
+  // Cf. lib/pdf-forms/generate-lock.ts (Finding 2, revue finale) : seules
+  // les questions marquées `gatesDocuments` doivent avoir une réponse pour
+  // débloquer un document `gatedByRestOfDossier` — pas TOUTES les questions
+  // du dossier (ex. allocations-insertion : seule `parcoursEtudes` gate,
+  // `age`/`aTravaille` restent purement informatives).
+  const gatingQuestionsAnswered = dossier
+    ? areGatingQuestionsAnswered(dossier.questions, eligibilityAnswers as unknown as DossierAnswers)
+    : true;
   const applicableSlugs = selectedDocs ? selectedDocs.map((d) => d.slug) : null;
   // Les formulaires matérialisés par trigger sont toujours applicables — on
   // les rajoute aux applicables pour qu'ils ne soient pas masqués par le
@@ -306,6 +315,7 @@ export default async function BundleRoute({
           externalDocuments,
           inlineDocumentQuestions: dossier?.inlineDocumentQuestions ?? false,
           gatedSlugs,
+          gatingQuestionsAnswered,
         };
 
         // Écran d'explication : uniquement si le dossier codé fournit un

@@ -94,6 +94,14 @@ interface BundleRunnerProps {
   /// lib/dossiers/types.ts) — transmis à `computeItemStatuses` pour calculer
   /// `ItemStatus.locked`. Vide pour tout dossier qui n'utilise pas ce champ.
   gatedSlugs?: string[];
+  /// Vrai si les questions marquées `gatesDocuments` (ou, à défaut, TOUTES
+  /// les questions — cf. `DossierQuestion.gatesDocuments`) ont une réponse.
+  /// Remplace `eligibilityCompleted` (qui exige TOUTES les questions) comme
+  /// signal passé à `computeItemStatuses` pour débloquer un document
+  /// `gatedByRestOfDossier` — cf. lib/pdf-forms/generate-lock.ts (Finding 2).
+  /// Défaut `true` : un dossier qui ne passe pas cette prop (ou qui ne
+  /// marque aucune question `gatesDocuments`) garde le comportement actuel.
+  gatingQuestionsAnswered?: boolean;
 }
 
 const RESPONSIBILITY_LABEL_KEYS: Record<ExternalDocument["responsibility"], string> = {
@@ -117,6 +125,7 @@ export function BundleRunner({
   externalDocuments = [],
   inlineDocumentQuestions = false,
   gatedSlugs = [],
+  gatingQuestionsAnswered = true,
 }: BundleRunnerProps) {
   const t = useTranslations("public.dossier");
   const router = useRouter();
@@ -304,7 +313,7 @@ export function BundleRunner({
       completedTemplateIds,
       payloads,
       applicableSlugs,
-      { eligibilityAnswersComplete: eligibilityCompleted, gatedSlugs },
+      { eligibilityAnswersComplete: gatingQuestionsAnswered, gatedSlugs },
     );
 
   return (

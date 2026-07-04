@@ -205,6 +205,13 @@ export const allocationsInsertion: DossierDefinition = {
         { value: "etranger", label: { fr: "Études à l'étranger" } },
         { value: "autre", label: { fr: "Aucune de ces situations" } },
       ],
+      // Seule question qui branche un document REMPLISSABLE et obligatoire
+      // (DIPLÔME/ÉTRANGER) : elle seule doit être répondue pour débloquer
+      // C109/36-DEMANDE (cf. lib/pdf-forms/generate-lock.ts). `age` et
+      // `aTravaille` ne branchent que des documents à charge d'un tiers
+      // (responsibility ≠ "user"), jamais remplissables — les exiger aussi
+      // contredirait le principe « informatif, jamais bloquant ».
+      gatesDocuments: true,
     },
 
     // ------- Travail (le C4 permet de réduire la durée du SIP) -------

@@ -133,4 +133,9 @@ describe("allocations-insertion — arbre de documents conditionnel", () => {
     const gated = allocationsInsertion.documents.filter((d) => d.gatedByRestOfDossier);
     expect(gated.map((d) => d.slug)).toEqual(["c109-36-demande"]);
   });
+
+  it("seule parcoursEtudes est marquée gatesDocuments (age/aTravaille ne branchent que des documents à charge d'un tiers)", () => {
+    const gating = allocationsInsertion.questions.filter((q) => q.gatesDocuments);
+    expect(gating.map((q) => q.id)).toEqual(["parcoursEtudes"]);
+  });
 });

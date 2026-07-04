@@ -1651,21 +1651,39 @@ git commit -m "feat(allocations-insertion): show locked state and hint for the g
 
 ## Task 12: Enforce the lock server-side in the generate route
 
+**Correction found during implementation (do not re-litigate — this is settled):**
+the original version of this task defined `isGeneratingBlocked` directly inside
+`app/api/pdf/[slug]/generate/route.ts` and tested it from
+`app/api/pdf/[slug]/__tests__/generate-lock.test.ts`. The implementer discovered
+this cannot run: (1) `vitest.config.ts`'s `include` only covers `lib/**` and
+`components/**`, not `app/**`; (2) `route.ts` statically imports `@/lib/auth`,
+which throws eagerly at module-load time when `BETTER_AUTH_SECRET` is unset —
+true in the test environment. Both are pre-existing repo conditions, not
+something this task should fix. Rather than widen shared `vitest.config.ts`
+(a change beyond this task's declared scope, and the kind of infra change
+CLAUDE.md says should get a conscious decision) or fake a secret in test config,
+`isGeneratingBlocked` is extracted into `lib/pdf-forms/generate-lock.ts` instead
+— the same pattern this plan already used in Task 8 (pure logic lives in `lib/`
+specifically so it's testable without framework/DB side effects). `route.ts`
+imports it instead of defining it. Behavior is identical; only the function's
+home file changes.
+
 **Files:**
+- Create: `lib/pdf-forms/generate-lock.ts`
+- Test: create `lib/pdf-forms/__tests__/generate-lock.test.ts`
 - Modify: `app/api/pdf/[slug]/generate/route.ts`
-- Test: create `app/api/pdf/[slug]/__tests__/generate-lock.test.ts`
 
 **Interfaces:**
-- Consumes: `getDossier` (`lib/dossiers/registry.ts`), `selectDocuments` (`lib/dossiers/types.ts`), `collectAllTriggeredSlugs` (Task 8), `dossierQuestionsToEligibility`-style answer-completeness check.
-- Produces: a pure function `isGeneratingBlocked(...)` (exported for the test) plus a guard added to the route's `POST` handler that returns HTTP 409 when blocked.
+- Consumes: `selectDocuments` (`lib/dossiers/types.ts`) — `generate-lock.ts` itself does not need `getDossier`, `collectAllTriggeredSlugs`, or Prisma; those stay in `route.ts`, which computes `dossier`/`triggeredSlugs`/`completedSlugs` and passes them into the pure function.
+- Produces: `isGeneratingBlocked(...)`, exported from `lib/pdf-forms/generate-lock.ts` — imported by both the test and by `route.ts`. The route gains a guard in its `POST` handler that returns HTTP 409 when blocked.
 
 - [ ] **Step 1: Write the failing test**
 
-Create `app/api/pdf/[slug]/__tests__/generate-lock.test.ts`:
+Create `lib/pdf-forms/__tests__/generate-lock.test.ts`:
 
 ```ts
 import { describe, expect, it } from "vitest";
-import { isGeneratingBlocked } from "../generate/route";
+import { isGeneratingBlocked } from "../generate-lock";
 import type { DossierDefinition } from "@/lib/dossiers/types";
 
 const dossier: DossierDefinition = {
@@ -1775,23 +1793,26 @@ describe("isGeneratingBlocked", () => {
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `pnpm vitest run app/api/pdf/[slug]/__tests__/generate-lock.test.ts`
-Expected: FAIL — `isGeneratingBlocked` is not exported from `../generate/route`.
+Run: `pnpm vitest run lib/pdf-forms/__tests__/generate-lock.test.ts`
+Expected: FAIL — `../generate-lock` module does not exist.
 
-- [ ] **Step 3: Add the pure function and wire it into the route**
+- [ ] **Step 3: Create the pure function**
 
-In `app/api/pdf/[slug]/generate/route.ts`, add near the top (after the existing imports, before the `json` constant):
+Create `lib/pdf-forms/generate-lock.ts`:
 
 ```ts
-import { getDossier } from "@/lib/dossiers/registry";
+// Verrou de génération : décide si un document "gatedByRestOfDossier" (en
+// pratique, C109/36-DEMANDE du dossier allocations-insertion) peut être
+// généré maintenant, ou doit attendre que le reste du dossier soit complet.
+//
+// Extrait comme module `lib/` pur (pas de Prisma, pas d'auth) plutôt que
+// défini dans app/api/pdf/[slug]/generate/route.ts, pour rester testable
+// sans dépendre de l'infrastructure de la route (import statique de
+// @/lib/auth, qui lève au chargement du module si BETTER_AUTH_SECRET est
+// absent — vrai dans l'environnement de test).
+
 import { selectDocuments, type DossierAnswers, type DossierDefinition } from "@/lib/dossiers/types";
-import { collectAllTriggeredSlugs } from "@/lib/pdf-forms/triggers";
-import { parseEligibilityAnswers } from "@/lib/bundles/eligibility";
-```
 
-Add this exported pure function (placed after the `json` constant, before `POST`):
-
-```ts
 /// Vrai si `targetSlug` est marqué `gatedByRestOfDossier` dans `dossier` ET
 /// qu'il manque au moins un autre document obligatoire+applicable pour
 /// débloquer sa génération — soit parce qu'une question d'aiguillage n'a
@@ -1803,7 +1824,7 @@ export function isGeneratingBlocked(params: {
   targetSlug: string;
   answers: DossierAnswers;
   /// Slugs des PdfForms déjà complétés dans ce run (dérivés de
-  /// `completedTemplateIds` par le caller — cf. Step 4).
+  /// `completedTemplateIds` par le caller — cf. Step 5).
   completedSlugs: string[];
   triggeredSlugs: string[];
 }): boolean {
@@ -1838,6 +1859,25 @@ export function isGeneratingBlocked(params: {
   return false;
 }
 ```
+
+- [ ] **Step 4: Run test to verify it passes**
+
+Run: `pnpm vitest run lib/pdf-forms/__tests__/generate-lock.test.ts`
+Expected: PASS (all 6 tests — pure function, no DB, no auth import involved).
+
+- [ ] **Step 5: Wire `isGeneratingBlocked` into the route**
+
+In `app/api/pdf/[slug]/generate/route.ts`, add near the top (after the existing imports, before the `json` constant):
+
+```ts
+import { getDossier } from "@/lib/dossiers/registry";
+import type { DossierAnswers } from "@/lib/dossiers/types";
+import { collectAllTriggeredSlugs } from "@/lib/pdf-forms/triggers";
+import { parseEligibilityAnswers } from "@/lib/bundles/eligibility";
+import { isGeneratingBlocked } from "@/lib/pdf-forms/generate-lock";
+```
+
+(`isGeneratingBlocked` is imported here, not defined in this file — it lives in `lib/pdf-forms/generate-lock.ts` from Step 3. `selectDocuments`/`DossierDefinition` are not needed directly in this file; they're used inside `generate-lock.ts`.)
 
 Then, inside `POST`, right after the existing block that loads `form` (`const form = await prisma.pdfForm.findUnique(...)`) and before the `body = await req.json()` parsing, we need the `bundleRunId` — but that's only known once `body` is parsed. Move the lock check to right after `bundleRunId` is extracted later in the function. Find:
 
@@ -1905,27 +1945,22 @@ Replace with (note the lock check now happens BEFORE the payload/completion writ
 
 (The original `if (run && run.status === "in_progress") { ... }` block that follows — the one that writes `newPayloads`/`newCompleted` — stays exactly as it was; we've only added a new guarded block ABOVE it that can early-return 409, reusing the same `run` fetch. Since we changed the `prisma.bundleRun.findUnique` call to add an `include`, and the ORIGINAL following code reads `run.payloads`/`run.completedTemplateIds` — those fields are still present on `run` regardless of the added `include`, so no further changes are needed below this point.)
 
-- [ ] **Step 4: Run test to verify it passes**
-
-Run: `pnpm vitest run app/api/pdf/[slug]/__tests__/generate-lock.test.ts`
-Expected: PASS (all 6 tests — pure function, no DB involved).
-
-- [ ] **Step 5: Run the full test suite and build**
+- [ ] **Step 6: Run the full test suite and build**
 
 Run: `pnpm test`
 Expected: PASS.
 
 Run: `pnpm build`
-Expected: PASS.
+Expected: PASS (this also typechecks `route.ts`'s new import of `isGeneratingBlocked` from `generate-lock.ts`).
 
-- [ ] **Step 6: Manual verification (end-to-end, requires prod or a seeded environment per existing project constraints — cf. Task 7)**
+- [ ] **Step 7: Manual verification (end-to-end, requires prod or a seeded environment per existing project constraints — cf. Task 7)**
 
 In an environment where `allocations-insertion` is seeded (prod, per established practice — do not seed locally): start a run, answer `parcoursEtudes: secondaire-belge`, complete C1 but not DIPLÔME, then attempt to open `/document/c109-36-demande` and submit it. Confirm the request is rejected with the 409 message, even if the UI's disabled button is somehow bypassed (e.g. via direct API call) — this is the defense-in-depth check, it must hold independently of Task 11's client-side disabling.
 
-- [ ] **Step 7: Commit**
+- [ ] **Step 8: Commit**
 
 ```bash
-git add "app/api/pdf/[slug]/generate/route.ts" "app/api/pdf/[slug]/__tests__/generate-lock.test.ts"
+git add lib/pdf-forms/generate-lock.ts lib/pdf-forms/__tests__/generate-lock.test.ts "app/api/pdf/[slug]/generate/route.ts"
 git commit -m "feat(allocations-insertion): enforce the DEMANDE lock server-side"
 ```
 

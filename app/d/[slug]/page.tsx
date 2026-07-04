@@ -85,7 +85,23 @@ export default async function BundleRoute({
     run = await prisma.bundleRun.findFirst({ where, orderBy: { startedAt: "desc" } });
   }
 
-  const payloads = (run?.payloads as Record<string, Record<string, unknown>>) || {};
+  // Un run « in_progress » VIDE (aucune réponse, aucun document rempli, aucun
+  // payload) ne doit PAS compter comme une reprise : sinon l'écran
+  // d'explication (journey) ET la pré-qualification sont sautés à tort, et on
+  // tombe direct sur un parcours vide (bug constaté en prod). On ne traite
+  // comme « en cours » qu'un run avec une progression réelle ; sinon on repart
+  // comme un nouveau visiteur — le run vide sera réutilisé à la reprise (le
+  // POST /run retrouve le run in_progress existant par session/utilisateur).
+  const runHasProgress = Boolean(
+    run &&
+      ((((run.completedTemplateIds as string[] | null)?.length ?? 0) > 0) ||
+        Object.keys(parseEligibilityAnswers(run.eligibilityAnswers)).length > 0 ||
+        Object.keys((run.payloads as Record<string, unknown> | null) ?? {}).length > 0),
+  );
+  const effectiveRun = runHasProgress ? run : null;
+
+  const payloads =
+    (effectiveRun?.payloads as Record<string, Record<string, unknown>>) || {};
 
   const fieldLabels: Record<string, string> = {};
   const templateNames: Record<string, string> = {};
@@ -199,15 +215,15 @@ export default async function BundleRoute({
   };
 
   const dossier = getDossier(slug);
-  let eligibilityAnswers = parseEligibilityAnswers(run?.eligibilityAnswers);
+  let eligibilityAnswers = parseEligibilityAnswers(effectiveRun?.eligibilityAnswers);
 
   // Chaînage orientation → pré-qualification : si l'utilisateur arrive du
   // wizard (cookie `beldoc-orientation`, consommé plus tard à la création du
-  // run) et qu'aucun run n'existe encore, on PRÉ-SÉLECTIONNE les réponses que
-  // le wizard connaît déjà — uniquement si le wizard a résolu vers CE dossier.
-  // L'utilisateur voit ces réponses dans la pré-qualification et peut les
-  // modifier avant de démarrer (informatif, jamais bloquant).
-  if (!run && dossier?.prefillFromOrientation) {
+  // run) et qu'aucun run réel n'existe encore, on PRÉ-SÉLECTIONNE les réponses
+  // que le wizard connaît déjà — uniquement si le wizard a résolu vers CE
+  // dossier. L'utilisateur voit ces réponses dans la pré-qualification et peut
+  // les modifier avant de démarrer (informatif, jamais bloquant).
+  if (!effectiveRun && dossier?.prefillFromOrientation) {
     const orientation = parseOrientationAnswers(
       cookieStore.get(ORIENTATION_COOKIE)?.value,
     );
@@ -282,12 +298,12 @@ export default async function BundleRoute({
       {(() => {
         const runnerProps = {
           bundle: serializedBundle,
-          runId: run?.id ?? null,
-          resumeCode: run?.resumeCode ?? null,
-          resumeCodeExpiresAt: run?.resumeCodeExpiresAt?.toISOString() ?? null,
-          resumeEmail: run?.resumeEmail ?? null,
+          runId: effectiveRun?.id ?? null,
+          resumeCode: effectiveRun?.resumeCode ?? null,
+          resumeCodeExpiresAt: effectiveRun?.resumeCodeExpiresAt?.toISOString() ?? null,
+          resumeEmail: effectiveRun?.resumeEmail ?? null,
           eligibilityAnswers,
-          completedTemplateIds: (run?.completedTemplateIds as string[]) || [],
+          completedTemplateIds: (effectiveRun?.completedTemplateIds as string[]) || [],
           payloads,
           templateNames,
           fieldLabels,
@@ -296,10 +312,11 @@ export default async function BundleRoute({
         };
 
         // Écran d'explication : uniquement si le dossier codé fournit un
-        // `journey` + un libellé CTA, ET qu'aucun run n'est déjà en cours
-        // (un visiteur qui reprend son dossier va droit au questionnaire).
+        // `journey` + un libellé CTA, ET qu'aucun run RÉEL n'est en cours (un
+        // run vide ne compte pas — cf. runHasProgress ci-dessus). Un visiteur
+        // qui reprend un dossier réellement entamé va droit au questionnaire.
         const showJourney =
-          dossier?.journey && dossier.journeyCtaLabel && !run;
+          dossier?.journey && dossier.journeyCtaLabel && !effectiveRun;
 
         if (showJourney) {
           return (

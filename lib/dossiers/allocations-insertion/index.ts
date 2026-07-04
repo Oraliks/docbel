@@ -259,6 +259,32 @@ export const allocationsInsertion: DossierDefinition = {
       ],
     },
 
+    // ------- Parcours d'études (branche la preuve d'études à joindre) -------
+    {
+      id: "parcoursEtudes",
+      label: { fr: "Quel est ton parcours d'études ?" },
+      helpText: {
+        fr: "Cela détermine la preuve d'études à joindre : un formulaire rempli par ton école (secondaire/formation), une copie de ton diplôme (bachelier/master belge), ou un formulaire spécifique si tu as étudié à l'étranger.",
+      },
+      type: "select",
+      options: [
+        { value: "secondaire-belge", label: { fr: "Études secondaires ou de formation en Belgique" } },
+        { value: "superieur-belge", label: { fr: "Bachelier ou master belge (enseignement supérieur)" } },
+        { value: "etranger", label: { fr: "Études à l'étranger" } },
+        { value: "autre", label: { fr: "Aucune de ces situations" } },
+      ],
+    },
+
+    // ------- Travail (le C4 permet de réduire la durée du SIP) -------
+    {
+      id: "aTravaille",
+      label: { fr: "As-tu déjà travaillé comme salarié ?" },
+      helpText: {
+        fr: "Si tu as travaillé, le C4 remis par ton employeur peut réduire la durée de ton stage d'insertion. Réponds « oui » même pour un job étudiant ou un contrat court.",
+      },
+      type: "boolean",
+    },
+
     // ------- Situation familiale (détermine le forfait) -------
     {
       id: "chargeFamille",
@@ -300,35 +326,199 @@ export const allocationsInsertion: DossierDefinition = {
       message: MONTANTS_MESSAGE,
       severity: "info",
     },
+    {
+      // Advisory toujours visible : l'alternance n'ajoute pas de document mais
+      // change le parcours (SIP raccourci/supprimé). On ne pose donc pas de
+      // question dédiée — on informe (principe « informatif, jamais bloquant »).
+      title: "Formation en alternance : contacte vite un organisme",
+      titleKey: "insertion.warning.alternance.title",
+      message:
+        "Si tu as réussi une formation en alternance, ton stage d'insertion peut être raccourci — voire supprimé — et tes évaluations en sont affectées. Prends contact avec un organisme de paiement (CAPAC, CSC, FGTB ou SYNOVA) dès maintenant.",
+      messageKey: "insertion.warning.alternance.message",
+      severity: "info",
+    },
   ],
 
+  // ===================================================================
+  // ARBRE DE DOCUMENTS (chantier — dicté par Oraliks 2026-07-05).
+  // ⚠️ Aucun PDF C109/36 dans le repo → ces pièces sont modélisées en
+  // CHECKLIST conditionnelle (`responsibility` external/employer/onem, pas de
+  // champs) : elles s'affichent dans la carte « à fournir par un tiers » selon
+  // la situation, avec qui les remplit / comment les obtenir. Pour rendre l'une
+  // d'elles préremplissable plus tard : ajouter `sourcePdfPath` + `fields` (le
+  // PDF officiel), puis la (re)semer. Cf. [[project-insertion-document-tree]].
+  //
+  // Conditions basées sur les réponses (stockées en chaînes) :
+  //   parcoursEtudes ∈ secondaire-belge | superieur-belge | etranger | autre
+  //   age ∈ moins-18 | 18-20 | 21-24 | 25-plus
+  //   aTravaille ∈ "true" | "false"
+  // À AFFINER par Oraliks (marqué « À VALIDER » en internalRef).
+  // ===================================================================
   documents: [
+    // ---------- Toujours dans le dossier ----------
     {
-      // C1 — Déclaration de situation personnelle.
-      // Pivot du dossier tant que l'attestation d'études et le formulaire de
-      // stage d'insertion ne sont pas encore disponibles côté PDF.
-      // NB : slug distinct des autres C1 (chomage-temporaire / -complet) pour
-      // éviter un conflit dans la table PdfForm (slug unique global).
+      slug: "c109-36-demande",
+      title: "C109/36-DEMANDE — Demande d'allocations d'insertion",
+      titleKey: "insertion.doc.c109Demande.title",
+      issuer: "ONEM",
+      required: true,
+      responsibility: "onem",
+      responsibilityNote: {
+        fr: "Le formulaire de demande. Ton organisme de paiement (CAPAC, CSC, FGTB ou SYNOVA) l'établit avec toi et t'explique tes obligations. Bases légales : art. 36 et 36quater AR 25.11.1991.",
+      },
+      internalRef:
+        "C109/36-DEMANDE — toujours requis. PDF absent du repo → à rendre préremplissable quand le PDF officiel sera fourni.",
+      fields: [],
+    },
+    {
+      // Seul PDF réellement présent (private/pdfs/C1_FR.pdf) → seul document
+      // qui pourra être prérempli dans beldoc (une fois le PdfForm semé).
+      // Slug distinct des autres C1 (unicité globale de PdfForm.slug).
       slug: "c1-insertion",
       title: "C1 — Déclaration de situation personnelle",
       titleKey: "insertion.doc.c1.title",
       issuer: "ONEM",
       required: true,
       sourcePdfPath: "private/pdfs/C1_FR.pdf",
-      internalRef: "Dossier allocations-insertion, document central (déclaration personnelle).",
+      internalRef:
+        "Déclaration personnelle. Le seul document préremplissable pour l'instant (PDF présent).",
       fields: [
         { field: "niss", required: true, section: "identite", pdfFieldName: "NISS" },
       ],
     },
-    // -----------------------------------------------------------------
-    // À AJOUTER ULTÉRIEUREMENT, quand les PDFs officiels seront disponibles :
-    //   - Attestation d'études (slug provisoire "attestation-etudes") :
-    //     délivrée par l'établissement, confirme la fin des études et, pour
-    //     les < 21 ans, le diplôme/titre obtenu.
-    //   - Formulaire de stage d'insertion professionnelle (slug provisoire
-    //     "stage-insertion") : suivi des 156 jours auprès du service régional
-    //     de l'emploi.
-    // -----------------------------------------------------------------
+    {
+      slug: "attestation-inscription-a15",
+      title: "Attestation d'inscription comme demandeur d'emploi (A15 – historique)",
+      titleKey: "insertion.doc.a15.title",
+      issuer: "ACTIRIS / Forem / VDAB / ADG",
+      required: true,
+      responsibility: "external",
+      responsibilityNote: {
+        fr: "À demander à ton service régional de l'emploi : ACTIRIS (Bruxelles), Forem (Wallonie), VDAB (Flandre) ou ADG (Communauté germanophone). Toujours à joindre à ta demande.",
+      },
+      internalRef: "A15 historique — attestation d'inscription. Toujours requise.",
+      fields: [],
+    },
+    {
+      slug: "evaluations-positives-sip",
+      title: "Les 2 évaluations positives du stage d'insertion",
+      titleKey: "insertion.doc.evaluations.title",
+      issuer: "ACTIRIS / Forem / VDAB / ADG",
+      required: true,
+      responsibility: "external",
+      responsibilityNote: {
+        fr: "Deux évaluations positives de ton comportement de recherche d'emploi, délivrées par ton service régional pendant le stage d'insertion.",
+      },
+      internalRef: "2 évaluations positives pendant le SIP. Toujours requises.",
+      fields: [],
+    },
+
+    // ---------- Preuve d'études — une branche selon `parcoursEtudes` ----------
+    {
+      slug: "c109-36-certificat",
+      title: "C109/36-CERTIFICAT — Certificat d'études",
+      titleKey: "insertion.doc.c109Certificat.title",
+      issuer: "Établissement d'enseignement",
+      required: true,
+      responsibility: "external",
+      responsibilityNote: {
+        fr: "À faire compléter par ton école secondaire ou de formation. Vérifie que les études que tu as suivies ouvrent le droit aux allocations d'insertion.",
+      },
+      includeWhen: (a) => a.parcoursEtudes === "secondaire-belge",
+      internalRef:
+        "C109/36-CERTIFICAT (art. 36) — vérifie que les ÉTUDES ouvrent le droit. À VALIDER Oraliks : distinction/condition exacte vs DIPLÔME (2 formulaires distincts).",
+      fields: [],
+    },
+    {
+      slug: "c109-36-diplome",
+      title: "C109/36-DIPLÔME — Preuve de diplôme, certificat ou attestation",
+      titleKey: "insertion.doc.c109Diplome.title",
+      issuer: "Établissement d'enseignement",
+      required: true,
+      responsibility: "external",
+      responsibilityNote: {
+        fr: "À faire remplir par ton école secondaire ou de formation. Prouve que tu possèdes le diplôme, certificat ou attestation requis.",
+      },
+      includeWhen: (a) => a.parcoursEtudes === "secondaire-belge",
+      internalRef:
+        "C109/36-DIPLÔME (art. 36) — vérifie la POSSESSION du diplôme. Formulaire distinct du CERTIFICAT (Oraliks). À VALIDER : condition exacte d'inclusion.",
+      fields: [],
+    },
+    {
+      slug: "copie-diplome-superieur",
+      title: "Copie de ton bachelier ou master belge",
+      titleKey: "insertion.doc.copieDiplomeSuperieur.title",
+      issuer: "Toi",
+      required: true,
+      responsibility: "external",
+      responsibilityNote: {
+        fr: "Dispense de formulaire d'école : joins une copie de ton diplôme belge (bachelier/master). Valable s'il a été précédé de 6 ans d'études en Belgique, OU si tu as travaillé ≥ 78 jours comme salarié, OU été indépendant à titre principal ≥ 3 mois.",
+      },
+      includeWhen: (a) => a.parcoursEtudes === "superieur-belge",
+      internalRef:
+        "Dispense bachelier/master belge (conditions art. 36). À VALIDER Oraliks (les conditions peuvent renvoyer vers DEMANDE ou ÉTRANGER).",
+      fields: [],
+    },
+    {
+      slug: "c109-36-etranger",
+      title: "C109/36-ÉTRANGER — Déclaration d'études à l'étranger",
+      titleKey: "insertion.doc.c109Etranger.title",
+      issuer: "Toi + preuves",
+      required: true,
+      responsibility: "external",
+      responsibilityNote: {
+        fr: "À compléter si tu as étudié à l'étranger, accompagné des attestations ou preuves de ton diplôme. Vérifie si ton diplôme étranger ouvre le droit.",
+      },
+      includeWhen: (a) => a.parcoursEtudes === "etranger",
+      internalRef: "C109/36-ÉTRANGER (art. 36).",
+      fields: [],
+    },
+    {
+      slug: "c109-36-annexe",
+      title: "C109/36-ANNEXE",
+      titleKey: "insertion.doc.c109Annexe.title",
+      issuer: "Toi",
+      required: true,
+      responsibility: "external",
+      responsibilityNote: {
+        fr: "À compléter si tu ne rentres dans aucune des autres situations (ni secondaire belge, ni bachelier/master belge, ni études à l'étranger).",
+      },
+      includeWhen: (a) => a.parcoursEtudes === "autre",
+      internalRef:
+        "C109/36-ANNEXE — cas résiduel (mentionné par le CERTIFICAT). À VALIDER Oraliks : relation exacte avec ÉTRANGER.",
+      fields: [],
+    },
+
+    // ---------- Conditionnels ----------
+    {
+      slug: "c109-36-condition21ans",
+      title: "C109/36-CONDITION21ANS — Preuve du diplôme (moins de 21 ans)",
+      titleKey: "insertion.doc.c109Condition21.title",
+      issuer: "Établissement / Communauté",
+      required: true,
+      responsibility: "external",
+      responsibilityNote: {
+        fr: "Si tu as moins de 21 ans : formulaire prouvant le diplôme ou certificat obtenu, dans la version de ta Communauté (F, N ou D). Une dispense est parfois possible.",
+      },
+      includeWhen: (a) => a.age === "moins-18" || a.age === "18-20",
+      internalRef:
+        "C109/36-CONDITION21ANS (F/N/D). Exigé < 21 ans. Dispenses à préciser (À VALIDER Oraliks).",
+      fields: [],
+    },
+    {
+      slug: "c4-reduction-sip",
+      title: "C4 — Certificat de chômage (si tu as travaillé)",
+      titleKey: "insertion.doc.c4.title",
+      issuer: "Ton employeur",
+      required: false,
+      responsibility: "employer",
+      responsibilityNote: {
+        fr: "Si tu as travaillé : réclame le C4 à ton (ancien) employeur. Il peut réduire la durée de ton stage d'insertion.",
+      },
+      includeWhen: (a) => a.aTravaille === "true",
+      internalRef: "C4 employeur — réduit le SIP. Conditionnel (a travaillé).",
+      fields: [],
+    },
   ],
 
   journeyCtaLabel: "Créer ma demande sur base des études",

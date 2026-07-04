@@ -51,6 +51,11 @@ export interface ItemStatus {
   /// `false` = hors dossier / condition non remplie ; `true` = applicable ;
   /// `"pending"` = condition en attente d'autres réponses.
   eligibility: boolean | "pending";
+  /// `true` si cet item est marqué `gatedByRestOfDossier` (cf.
+  /// lib/dossiers/types.ts) ET qu'il manque au moins un autre document
+  /// obligatoire+applicable, ou que les questions d'aiguillage n'ont pas
+  /// encore de réponse. Toujours `false` pour un item non gated.
+  locked: boolean;
 }
 
 export interface ComputedRunner {
@@ -62,6 +67,16 @@ export interface ComputedRunner {
   allRequiredDone: boolean;
 }
 
+export interface ComputeItemStatusesOptions {
+  /// Toutes les questions de `dossier.questions` ont-elles une réponse ? Cf.
+  /// `eligibilityCompleted` déjà calculé dans BundleRunner. Absent = true
+  /// (aucun impact pour les dossiers qui n'utilisent pas `gatedSlugs`).
+  eligibilityAnswersComplete?: boolean;
+  /// Slugs des items marqués `gatedByRestOfDossier` dans ce dossier (0 ou 1
+  /// en pratique aujourd'hui — jamais plus d'un, cf. commentaire du type).
+  gatedSlugs?: string[];
+}
+
 /// Calcule les statuts des items. `applicableSlugs` (dossier codé) écrase la
 /// visibilité : un item dont le slug n'est pas applicable est caché, peu
 /// importe sa condition JSON.
@@ -70,10 +85,13 @@ export function computeItemStatuses(
   completedTemplateIds: string[],
   payloads: CollectedPayloads,
   applicableSlugs: string[] | null | undefined,
+  opts: ComputeItemStatusesOptions = {},
 ): ComputedRunner {
   const applicableSet = applicableSlugs ? new Set(applicableSlugs) : null;
+  const gatedSlugs = new Set(opts.gatedSlugs ?? []);
+  const eligibilityAnswersComplete = opts.eligibilityAnswersComplete ?? true;
 
-  const itemStatuses: ItemStatus[] = items.map((item) => {
+  const baseStatuses = items.map((item) => {
     const completed = completedTemplateIds.includes(itemSourceId(item));
     const slug = item.pdfForm?.slug ?? null;
     const inDossier =
@@ -81,6 +99,33 @@ export function computeItemStatuses(
     const conditionRes = evaluateCondition(item.condition, payloads);
     const eligibility = inDossier ? conditionRes : false;
     return { item, completed, eligibility };
+  });
+
+  // Ensemble des slugs "obligatoire + actuellement applicable" — sert au
+  // calcul du verrou. Un item gated s'exclut lui-même de cette liste (il ne
+  // peut pas dépendre de sa propre complétion).
+  const requiredApplicableSlugs = new Set(
+    baseStatuses
+      .filter((s) => s.item.required && s.eligibility === true && s.item.pdfForm?.slug)
+      .map((s) => s.item.pdfForm!.slug),
+  );
+
+  const itemStatuses: ItemStatus[] = baseStatuses.map((s) => {
+    const slug = s.item.pdfForm?.slug ?? null;
+    let locked = false;
+    if (slug && gatedSlugs.has(slug)) {
+      if (!eligibilityAnswersComplete) {
+        locked = true;
+      } else {
+        const othersRequired = [...requiredApplicableSlugs].filter((other) => other !== slug);
+        const othersMissing = othersRequired.some((other) => {
+          const otherItem = baseStatuses.find((o) => o.item.pdfForm?.slug === other);
+          return !otherItem?.completed;
+        });
+        locked = othersMissing;
+      }
+    }
+    return { ...s, locked };
   });
 
   const visibleItems = itemStatuses.filter(

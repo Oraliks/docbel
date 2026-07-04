@@ -68,6 +68,11 @@ export async function POST(
   const incoming = ((body.payload as FormPayload) || {});
   const today = todayISO();
   for (const f of fields) {
+    // Champs masqués (complétés par un tiers, ex. partie école du DIPLÔME) :
+    // jamais auto-injectés → ils restent BLANCS dans le PDF (le tiers signe /
+    // date à la main). Sans ce garde, la signature du citoyen serait apposée
+    // sur les lignes de signature de l'école.
+    if (f.hidden) continue;
     if (isCreationDateField(f)) incoming[f.id] = today;
     if (isSignatureField(f) && !incoming[f.id]) incoming[f.id] = "confirmed";
   }

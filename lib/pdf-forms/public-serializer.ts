@@ -92,6 +92,9 @@ export function toPublicForm(
   >
 ): PublicForm {
   const fields = ((form.fields as unknown as PdfFormField[]) || [])
+    // Les champs `hidden` (complétés par un tiers) ne sont jamais envoyés au
+    // client : le citoyen ne les voit pas et ne les remplit pas.
+    .filter((f) => !f.hidden)
     .slice()
     .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
     .map(toPublicField);

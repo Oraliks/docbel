@@ -435,16 +435,17 @@ export const allocationsInsertion: DossierDefinition = {
       titleKey: "insertion.doc.c109Diplome.title",
       issuer: "Établissement d'enseignement",
       required: true,
-      // Préremplissable : le citoyen remplit son identité (NISS + nom en tête
-      // de chaque page) ; le RESTE (diplôme, communauté, cachet, signature) est
-      // à faire compléter par son établissement d'enseignement. Il télécharge
-      // le PDF prérempli et le porte à son école. PDF officiel Oraliks
-      // (109 widgets, 5 pages) — seule l'identité est mappée, le reste
-      // s'auto-infère et sera complété à la main par l'établissement.
+      // Préremplissable : le citoyen ne remplit QUE son identité (NISS + nom en
+      // tête). Tout le reste (diplôme, communauté, cachet, signature de l'école)
+      // est MASQUÉ de son formulaire via `lockUndeclaredFields` → il ne voit
+      // qu'une étape « identité », télécharge le PDF prérempli et le porte à son
+      // établissement, qui complète le reste (blanc) à la main.
+      // PDF officiel Oraliks (109 widgets, 5 pages).
       sourcePdfPath: "private/pdfs/C109-36_Diplome_FR.pdf",
+      lockUndeclaredFields: true,
       includeWhen: (a) => a.parcoursEtudes === "secondaire-belge",
       internalRef:
-        "C109/36-DIPLÔME (art. 36) — remplace le CERTIFICAT depuis 01/03/2026 (Oraliks). PDF officiel 2026-07-05. Identité citoyen mappée ; partie école (diplôme/communauté/cachet/signature) auto-inférée, complétée par l'établissement. UX : envisager de masquer/READONLY les champs école côté admin.",
+        "C109/36-DIPLÔME (art. 36) — remplace le CERTIFICAT depuis 01/03/2026 (Oraliks). PDF officiel 2026-07-05. Seule l'identité citoyen est saisie ; partie école masquée (hidden) → blanche dans le PDF, complétée par l'établissement.",
       fields: [
         { field: "niss", required: true, section: "identite", pdfFieldName: "NISS" },
         { field: "fullName", required: true, section: "identite", pdfFieldName: "NomPrenom" },

@@ -91,6 +91,12 @@ export interface DossierDocument {
   /// Inclusion conditionnelle selon les réponses d'orientation. Absent =
   /// toujours inclus.
   includeWhen?: (answers: DossierAnswers) => boolean;
+  /// Si `true` : tout widget du PDF officiel NON listé dans `fields` est
+  /// MASQUÉ du formulaire citoyen (hidden) — ni affiché, ni auto-rempli, blanc
+  /// dans le PDF généré. Pour les formulaires dont un TIERS complète l'essentiel
+  /// (ex. C109/36-DIPLÔME : le citoyen ne remplit que son identité, l'école
+  /// complète le reste sur le PDF imprimé). Sans effet si pas de `sourcePdfPath`.
+  lockUndeclaredFields?: boolean;
   /// Champs à remplir. Vide pour un document `responsibility ≠ "user"`
   /// (le citoyen ne le complète pas dans beldoc).
   fields: DossierFieldRef[];

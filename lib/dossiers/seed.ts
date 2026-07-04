@@ -100,19 +100,37 @@ async function createPdfFormForDocument(doc: DossierDocument, userId: string | n
     // ingestPdf (déjà un PdfFormField[]) et on applique les overrides du
     // module pour les widgets déclarés. Les widgets non mappés gardent leur
     // métadonnée auto-inférée.
+    // Dédoublonnage : un même champ (ex. NISS en tête de chaque page) apparaît
+    // sur plusieurs widgets de MÊME nom. Le citoyen ne doit le voir qu'UNE fois.
+    // On garde la 1ʳᵉ occurrence visible et on masque (hidden) les suivantes —
+    // elles se remplissent quand même via le nom AcroForm partagé (pdf-lib).
+    const seenPdfNames = new Set<string>();
     enriched = ingest.fields.map((inferred, i) => {
       const declared = declaredByPdfName.get(inferred.pdfFieldName);
-      if (!declared) return { ...inferred, order: i };
+      const isDuplicate = seenPdfNames.has(inferred.pdfFieldName);
+      seenPdfNames.add(inferred.pdfFieldName);
+      if (!declared) {
+        // `lockUndeclaredFields` : tout champ non mappé par le module est
+        // MASQUÉ du citoyen (formulaire complété par un tiers, ex. partie école
+        // du DIPLÔME) → hidden + non requis. Il reste blanc dans le PDF.
+        const hide = doc.lockUndeclaredFields === true || isDuplicate;
+        return hide
+          ? { ...inferred, order: i, hidden: true, required: false }
+          : { ...inferred, order: i };
+      }
       return {
         ...inferred,
         id: declared.key,
         type: declared.type,
-        required: declared.required,
+        required: isDuplicate ? false : declared.required,
         label: declared.label,
         help: declared.help,
         prefillFrom: declared.prefillFrom,
         section: declared.section,
         order: i,
+        // Répétition d'un champ déclaré (même nom PDF) → masquée : une seule
+        // saisie citoyen, toutes les occurrences remplies via le nom partagé.
+        ...(isDuplicate ? { hidden: true } : {}),
       } as PdfFormField;
     });
   } else {

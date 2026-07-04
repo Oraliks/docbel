@@ -188,6 +188,11 @@ export interface PdfFormField {
   internalNote?: string;
   acroType?: AcroFieldType;
   readOnly?: boolean;
+  /// Champ MASQUÉ du formulaire citoyen : jamais rendu (filtré au sérialiseur
+  /// public) ni auto-injecté (date/signature) à la génération → reste BLANC
+  /// dans le PDF. Pour les formulaires complétés en partie par un tiers (ex.
+  /// C109/36-DIPLÔME, complété par l'école). Distinct de `readOnly` (grisé).
+  hidden?: boolean;
 
   // ---- Champ `array` (lignes répétables) ----
   /// Schéma des champs d'une ligne. Seulement utilisé quand `type === "array"`.

@@ -171,9 +171,6 @@ export const allocationsInsertion: DossierDefinition = {
     if (o.situation === "jeune-etudes" && o.subOption === "25-plus") {
       out.age = "25-plus";
     }
-    // « Je sors des études, j'ai peu ou pas travaillé » (perte-emploi) :
-    // les études sont terminées ou arrêtées.
-    if (o.subOption === "sors-etudes") out.aTermineEtudes = "true";
     return out;
   },
 
@@ -191,71 +188,6 @@ export const allocationsInsertion: DossierDefinition = {
         { value: "18-20", label: { fr: "Entre 18 et 20 ans" } },
         { value: "21-24", label: { fr: "Entre 21 et 24 ans" } },
         { value: "25-plus", label: { fr: "25 ans ou plus" } },
-      ],
-    },
-
-    // ------- Fin des études -------
-    {
-      id: "aTermineEtudes",
-      label: { fr: "As-tu terminé (ou arrêté) tes études ?" },
-      helpText: {
-        fr: "Réponds « oui » si tu as fini ton année ou si tu as arrêté l'école. Les allocations d'insertion s'ouvrent après la fin des activités scolaires.",
-      },
-      type: "boolean",
-    },
-
-    // ------- Diplôme (obligatoire avant 21 ans) -------
-    {
-      id: "aDiplome",
-      label: { fr: "As-tu obtenu un diplôme ou un titre ?" },
-      helpText: {
-        fr: "Avant 21 ans, avoir un diplôme est obligatoire — pas juste avoir suivi les cours.",
-      },
-      type: "boolean",
-      // Pertinent surtout pour les jeunes de moins de 21 ans, pour qui le
-      // diplôme/titre est une condition d'accès.
-      visibleIf: { fieldId: "age", op: "in", value: ["moins-18", "18-20"] },
-    },
-
-    // ------- Stage d'insertion professionnelle (156 jours) -------
-    {
-      id: "stageInsertion",
-      label: {
-        fr: "Où en es-tu de ton stage d'insertion professionnelle (156 jours = environ 6 mois après la fin des études) ?",
-      },
-      helpText: {
-        fr: "Le stage d'insertion est une période d'environ 6 mois après la fin des études, pendant laquelle tu cherches du travail. Tu ne peux toucher les allocations qu'une fois ce stage terminé (et après 2 évaluations positives du service régional de l'emploi).",
-      },
-      type: "select",
-      options: [
-        { value: "pas-commence", label: { fr: "Pas encore commencé" } },
-        { value: "en-cours", label: { fr: "En cours" } },
-        { value: "termine-156j", label: { fr: "Terminé (156 jours atteints)" } },
-      ],
-    },
-
-    // ------- Inscription comme demandeur d'emploi -------
-    {
-      id: "inscritDemandeurEmploi",
-      label: { fr: "Es-tu déjà inscrit comme demandeur d'emploi ?" },
-      helpText: {
-        fr: "Pour faire courir ton stage d'insertion, tu dois être inscrit dans le service de l'emploi de ta région : FOREM en Wallonie, ACTIRIS à Bruxelles, VDAB en Flandre, ADG en Communauté germanophone. Si tu ne sais plus, réponds « non » — on te rappellera comment faire.",
-      },
-      type: "boolean",
-    },
-
-    // ------- Nationalité / séjour -------
-    {
-      id: "nationalite",
-      label: { fr: "Quelle est ta nationalité ?" },
-      helpText: {
-        fr: "Si tu n'es pas belge ni d'un pays UE/EEE, des conditions de permis de séjour/travail s'ajoutent.",
-      },
-      type: "select",
-      options: [
-        { value: "belge", label: { fr: "Belge" } },
-        { value: "ue-eee", label: { fr: "D'un pays de l'UE / EEE" } },
-        { value: "hors-ue", label: { fr: "D'un autre pays (hors UE/EEE)" } },
       ],
     },
 
@@ -284,22 +216,15 @@ export const allocationsInsertion: DossierDefinition = {
       },
       type: "boolean",
     },
-
-    // ------- Situation familiale (détermine le forfait) -------
-    {
-      id: "chargeFamille",
-      label: { fr: "Avec qui vis-tu ?" },
-      helpText: {
-        fr: "Isolé = tu vis seul. Cohabitant = tu vis avec d'autres personnes qui ont aussi un revenu. Chef de ménage = tu vis avec ta famille et tu es la seule personne du ménage qui ramène un revenu. Cela détermine le montant forfaitaire de l'allocation.",
-      },
-      type: "select",
-      options: [
-        { value: "isole", label: { fr: "Je vis seul (isolé)" } },
-        { value: "cohabitant", label: { fr: "Avec d'autres revenus (cohabitant)" } },
-        { value: "chef-menage", label: { fr: "Je suis le seul revenu du foyer (chef de ménage)" } },
-      ],
-    },
   ],
+
+  // Écran de pré-qualification séparé supprimé (2026-07) : ces 3 questions
+  // sont rendues en ligne au-dessus des documents (cf. BundleRunner). Les 6
+  // questions purement informatives retirées (aTermineEtudes, aDiplome,
+  // stageInsertion, inscritDemandeurEmploi, nationalite, chargeFamille) ne
+  // branchaient aucun document — leur contenu utile reste dans les cartes
+  // "à savoir" du journey ci-dessous.
+  inlineDocumentQuestions: true,
 
   warnings: [
     {

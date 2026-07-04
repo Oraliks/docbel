@@ -338,6 +338,13 @@ export interface DossierDefinition {
   journeyCtaLabel?: string;
   /// Clé i18n du libellé CTA (préférée si fournie).
   journeyCtaLabelKey?: string;
+  /// Si vrai : `BundleRunner` n'affiche JAMAIS `EligibilityPrequalifier` en
+  /// écran bloquant séparé — les questions de `questions[]` sont rendues en
+  /// ligne, au-dessus de la liste de documents, qui reste toujours visible.
+  /// Absent/faux = comportement actuel inchangé (écran de pré-qualification
+  /// avant les documents). Opt-in par dossier — n'affecte aucun autre dossier
+  /// tant qu'il n'est pas explicitement activé sur celui-ci.
+  inlineDocumentQuestions?: boolean;
   /// Préremplissage de la pré-qualification depuis le wizard d'orientation
   /// (cookie `beldoc-orientation`, cf. lib/dossiers/orientation.ts). Optionnel
   /// et OPT-IN par dossier : mappe les choix du wizard (situation / subOption /

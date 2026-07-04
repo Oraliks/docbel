@@ -56,10 +56,8 @@ describe("prefillFromOrientation — allocations-insertion", () => {
     expect(prefill({ situation: "jeune-etudes", subOption: "moins-25" })).toEqual({});
   });
 
-  it("« je sors des études » implique études terminées/arrêtées", () => {
-    expect(prefill({ situation: "perte-emploi", subOption: "sors-etudes" })).toEqual({
-      aTermineEtudes: "true",
-    });
+  it("« je sors des études » n'a plus de préremplissage (question supprimée 2026-07)", () => {
+    expect(prefill({ situation: "perte-emploi", subOption: "sors-etudes" })).toEqual({});
   });
 });
 

@@ -116,4 +116,16 @@ describe("allocations-insertion — arbre de documents conditionnel", () => {
     );
     expect(mapped).toEqual(["niss", "fullName", "creationDate", "signature"]);
   });
+
+  it("le questionnaire ne garde que les 3 questions qui branchent un document", () => {
+    expect(allocationsInsertion.questions.map((q) => q.id)).toEqual([
+      "age",
+      "parcoursEtudes",
+      "aTravaille",
+    ]);
+  });
+
+  it("le dossier active l'aiguillage en ligne (plus d'écran séparé)", () => {
+    expect(allocationsInsertion.inlineDocumentQuestions).toBe(true);
+  });
 });

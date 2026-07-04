@@ -97,6 +97,14 @@ export interface DossierDocument {
   /// (ex. C109/36-DIPLÔME : le citoyen ne remplit que son identité, l'école
   /// complète le reste sur le PDF imprimé). Sans effet si pas de `sourcePdfPath`.
   lockUndeclaredFields?: boolean;
+  /// Si `true` : ce document (obligatoire, remplissable) reste verrouillé —
+  /// non téléchargeable — tant que TOUT AUTRE document actuellement
+  /// obligatoire et applicable du dossier (branche + déclenchés par un autre
+  /// formulaire) n'est pas complété. Réservé à UN SEUL document par dossier :
+  /// celui qui matérialise la soumission finale (ex. C109/36-DEMANDE). Ne
+  /// jamais poser sur plus d'un document du même dossier — ça créerait un
+  /// verrou circulaire (aucun des deux ne pourrait jamais se débloquer).
+  gatedByRestOfDossier?: boolean;
   /// Champs à remplir. Vide pour un document `responsibility ≠ "user"`
   /// (le citoyen ne le complète pas dans beldoc).
   fields: DossierFieldRef[];

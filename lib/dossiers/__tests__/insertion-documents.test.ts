@@ -128,4 +128,9 @@ describe("allocations-insertion — arbre de documents conditionnel", () => {
   it("le dossier active l'aiguillage en ligne (plus d'écran séparé)", () => {
     expect(allocationsInsertion.inlineDocumentQuestions).toBe(true);
   });
+
+  it("seul C109/36-DEMANDE est marqué gatedByRestOfDossier", () => {
+    const gated = allocationsInsertion.documents.filter((d) => d.gatedByRestOfDossier);
+    expect(gated.map((d) => d.slug)).toEqual(["c109-36-demande"]);
+  });
 });

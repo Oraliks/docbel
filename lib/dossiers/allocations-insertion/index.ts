@@ -292,6 +292,7 @@ export const allocationsInsertion: DossierDefinition = {
       titleKey: "insertion.doc.c109Demande.title",
       issuer: "ONEM",
       required: true,
+      gatedByRestOfDossier: true,
       // Formulaire OBLIGATOIRE, préremplissable dans beldoc (responsibility
       // user par défaut). PDF officiel AcroForm fourni par Oraliks (44 widgets).
       // On mappe l'identité + la signature ci-dessous ; les déclarations de

@@ -21,6 +21,31 @@
 // 1 an / 12 mois (au lieu de 3 ans) — cf. Loi-programme du 18/07/2025.
 
 import type { DossierDefinition, DossierTheorySection } from "../types";
+import { getInsertionParams, mensuelBrut } from "@/lib/chomage/params";
+
+// -------------------------------------------------------------------
+// Montants — composés depuis la SOURCE UNIQUE lib/chomage/params.ts
+// (jamais de chiffres en dur dans le contenu : une indexation = un nouveau
+// jeu daté là-bas, ce bloc suit automatiquement).
+// Pas de messageKey : le texte contient des montants dynamiques ; le warning
+// s'affiche en FR (fallback) dans toutes les langues tant que les warnings
+// ne supportent pas l'interpolation ICU. À traiter avec la vague i18n.
+// -------------------------------------------------------------------
+const INSERTION = getInsertionParams();
+const EUR = new Intl.NumberFormat("fr-BE", {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
+const [jj, mm, aaaa] = INSERTION.validFrom.split("-").reverse();
+const M = INSERTION.values.montantsJour;
+const MONTANTS_MESSAGE =
+  `Montants bruts au ${jj}/${mm}/${aaaa} (par mois) : avec charge de famille ` +
+  `${EUR.format(mensuelBrut(M.chargeFamille))} € · isolé 21 ans ou plus ` +
+  `${EUR.format(mensuelBrut(M.isole.aPartirDe21))} € · cohabitant ` +
+  `${EUR.format(mensuelBrut(M.cohabitant.aPartirDe18))} € (privilégié ` +
+  `${EUR.format(mensuelBrut(M.cohabitantPrivilegie.aPartirDe18))} €). ` +
+  `Avant 21 ans, les montants sont réduits. Seul ton organisme de paiement ` +
+  `confirme ton montant exact.`;
 
 // -------------------------------------------------------------------
 // TODOs documents — à seeder quand les PDFs officiels seront disponibles.
@@ -265,6 +290,14 @@ export const allocationsInsertion: DossierDefinition = {
       message:
         "Tu dois d'abord accomplir un stage d'insertion professionnelle de 156 jours (environ 6 mois) après la fin de tes études avant de pouvoir toucher les allocations.",
       messageKey: "insertion.warning.stageInsertion310j.message",
+      severity: "info",
+    },
+    {
+      // Montants issus de lib/chomage/params.ts (source unique, datée,
+      // vérifiée contre le barème publié par le test de parité).
+      title: "Montants actuels (bruts)",
+      titleKey: "insertion.warning.montants.title",
+      message: MONTANTS_MESSAGE,
       severity: "info",
     },
   ],

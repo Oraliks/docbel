@@ -2,7 +2,10 @@ import { describe, expect, it } from "vitest";
 
 import {
   CHOMAGE_PARAM_SETS,
+  INSERTION_PARAM_SETS,
   getChomageParams,
+  getInsertionParams,
+  mensuelBrut,
 } from "../params";
 import { CHOMAGE_PHASES, SITUATIONS_FAMILIALES } from "../categories";
 
@@ -70,28 +73,68 @@ describe("CHOMAGE_PARAM_SETS — garde-fous des montants (réforme 2026)", () =>
   });
 });
 
-describe("CHOMAGE_PARAM_SETS — invariants structurels", () => {
+describe("INSERTION_PARAM_SETS — garde-fous des montants (site ONEM 01/03/2026)", () => {
+  const { montantsJour } = getInsertionParams(new Date(2026, 2, 1)).values;
+
+  it("montants journaliers = page officielle ONEM allocation d'insertion", () => {
+    expect(montantsJour).toEqual({
+      chargeFamille: 69.26,
+      isole: { moins18: 18.93, de18a20: 29.76, aPartirDe21: 51.56 },
+      cohabitantPrivilegie: { moins18: 17.67, aPartirDe18: 28.38 },
+      cohabitant: { moins18: 15.61, aPartirDe18: 24.88 },
+    });
+  });
+
+  it("mensuel = journalier × 26, identique aux mensuels affichés par l'ONEM", () => {
+    // Croisement avec les montants MENSUELS publiés sur la même page.
+    expect(mensuelBrut(montantsJour.chargeFamille)).toBe(1800.76);
+    expect(mensuelBrut(montantsJour.isole.aPartirDe21)).toBe(1340.56);
+    expect(mensuelBrut(montantsJour.isole.de18a20)).toBe(773.76);
+    expect(mensuelBrut(montantsJour.isole.moins18)).toBe(492.18);
+    expect(mensuelBrut(montantsJour.cohabitantPrivilegie.aPartirDe18)).toBe(737.88);
+    expect(mensuelBrut(montantsJour.cohabitantPrivilegie.moins18)).toBe(459.42);
+    expect(mensuelBrut(montantsJour.cohabitant.aPartirDe18)).toBe(646.88);
+    expect(mensuelBrut(montantsJour.cohabitant.moins18)).toBe(405.86);
+  });
+
+  it("échoue bruyamment avant la réforme (aucun jeu historique encodé)", () => {
+    expect(() => getInsertionParams(new Date(2026, 1, 28))).toThrow(
+      /Aucun jeu de paramètres insertion/,
+    );
+  });
+});
+
+describe("Jeux de paramètres — invariants structurels (chômage + insertion)", () => {
+  const FAMILIES = [
+    { name: "chomage", sets: CHOMAGE_PARAM_SETS },
+    { name: "insertion", sets: INSERTION_PARAM_SETS },
+  ] as const;
+
   it("chaque jeu a des dates ISO valides et une source datée", () => {
     const ISO = /^\d{4}-\d{2}-\d{2}$/;
-    for (const set of CHOMAGE_PARAM_SETS) {
-      expect(set.validFrom).toMatch(ISO);
-      if (set.validTo) expect(set.validTo).toMatch(ISO);
-      expect(set.label.length).toBeGreaterThan(0);
-      expect(set.source.label.length).toBeGreaterThan(0);
-      expect(set.source.verifiedAt).toMatch(ISO);
+    for (const { sets } of FAMILIES) {
+      for (const set of sets) {
+        expect(set.validFrom).toMatch(ISO);
+        if (set.validTo) expect(set.validTo).toMatch(ISO);
+        expect(set.label.length).toBeGreaterThan(0);
+        expect(set.source.label.length).toBeGreaterThan(0);
+        expect(set.source.verifiedAt).toMatch(ISO);
+      }
     }
   });
 
-  it("les périodes ne se chevauchent pas (au plus un jeu par date)", () => {
+  it("les périodes ne se chevauchent pas (au plus un jeu par date, par famille)", () => {
     // Sonde chaque borne validFrom/validTo : une seule période doit matcher.
-    const probes = CHOMAGE_PARAM_SETS.flatMap((s) =>
-      [s.validFrom, s.validTo].filter((d): d is string => Boolean(d)),
-    );
-    for (const iso of probes) {
-      const matching = CHOMAGE_PARAM_SETS.filter(
-        (s) => s.validFrom <= iso && (!s.validTo || iso < s.validTo),
+    for (const { sets } of FAMILIES) {
+      const probes = sets.flatMap((s) =>
+        [s.validFrom, s.validTo].filter((d): d is string => Boolean(d)),
       );
-      expect(matching.length).toBeLessThanOrEqual(1);
+      for (const iso of probes) {
+        const matching = sets.filter(
+          (s) => s.validFrom <= iso && (!s.validTo || iso < s.validTo),
+        );
+        expect(matching.length).toBeLessThanOrEqual(1);
+      }
     }
   });
 

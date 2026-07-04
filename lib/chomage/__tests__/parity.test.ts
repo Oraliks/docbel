@@ -21,7 +21,7 @@
 import { describe, expect, it } from "vitest";
 
 import fixture from "../__fixtures__/bareme-publie.json";
-import { getChomageParams } from "../params";
+import { getChomageParams, getInsertionParams } from "../params";
 
 interface PlafondRow {
   comparisonKey: string;
@@ -86,5 +86,57 @@ describe("parité code ↔ barème publié — plafonds salariaux (art. 111, al.
         `plafond ${phase} = ${montant} absent du barème publié ${fixture.file.name} — indexation ONEM ? Ajouter un jeu daté dans lib/chomage/params.ts puis régénérer le fixture.`,
       ).toBe(true);
     }
+  });
+});
+
+describe("parité code ↔ barème publié — allocations d'insertion (feuille W)", () => {
+  interface WRow {
+    comparisonKey: string;
+    amount: number;
+  }
+  const w = fixture.allocationW as WRow[];
+
+  function officielW(comparisonKey: string): number {
+    const row = w.find((r) => r.comparisonKey === comparisonKey);
+    if (!row) {
+      throw new Error(
+        `Ligne "${comparisonKey}" introuvable dans le fixture — régénérer via scripts/export-bareme-parity-fixture.ts`,
+      );
+    }
+    return row.amount;
+  }
+
+  const { montantsJour } = getInsertionParams(
+    new Date(fixture.file.validFrom as string),
+  ).values;
+
+  // Correspondance codes W (décodage confirmé via la page publique ONEM,
+  // montants identiques au centime) : A=charge de famille, N=isolé,
+  // P=cohabitant privilégié, B=cohabitant ; bandes d'âge lt18/gt18_lt21/gt21.
+  const MAPPING: Array<[string, number]> = [
+    ["allocation_w:WA2:full", montantsJour.chargeFamille],
+    ["allocation_w:WN2:full:lt18", montantsJour.isole.moins18],
+    ["allocation_w:WN2:full:gt18_lt21", montantsJour.isole.de18a20],
+    ["allocation_w:WN2:full:gt21", montantsJour.isole.aPartirDe21],
+    ["allocation_w:WP2:full:lt18", montantsJour.cohabitantPrivilegie.moins18],
+    ["allocation_w:WP2:full:gt18", montantsJour.cohabitantPrivilegie.aPartirDe18],
+    ["allocation_w:WB2:full:lt18", montantsJour.cohabitant.moins18],
+    ["allocation_w:WB2:full:gt18", montantsJour.cohabitant.aPartirDe18],
+  ];
+
+  it("chaque montant d'insertion du code = ligne W du barème publié (égalité exacte)", () => {
+    for (const [key, montantCode] of MAPPING) {
+      expect(montantCode, `divergence sur ${key}`).toBe(officielW(key));
+    }
+  });
+
+  it("QUESTION MÉTIER : la variante WA2V (charge de famille M 1→5) existe et est majorée", () => {
+    // Le site public ONEM n'affiche que WA2 (69,26) pour la charge de
+    // famille ; la feuille W du barème contient en plus WA2V "M 1 -> 5",
+    // majorée. On documente son existence SANS l'utiliser tant qu'Oraliks
+    // n'a pas tranché si les 5 premiers mois doivent être exposés.
+    expect(officielW("allocation_w:WA2V:full")).toBeGreaterThan(
+      officielW("allocation_w:WA2:full"),
+    );
   });
 });

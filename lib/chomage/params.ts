@@ -96,6 +96,69 @@ export const CHOMAGE_PARAM_SETS: readonly VersionedParams<ChomageParams>[] = [
   },
 ];
 
+/* ------------------------------------------------------------------ */
+/*  Allocations d'insertion (feuille W du barème ONEM)                 */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Montants BRUTS des allocations d'insertion, en €/JOUR (régime 6 jours —
+ * mensuel = journalier × 26, cf. `mensuelBrut`). Catégories et bandes d'âge
+ * = celles de la page officielle ONEM.
+ *
+ * Correspondance vérifiée (2026-07-05) avec la feuille W du barème publié
+ * (fixture lib/chomage/__fixtures__/bareme-publie.json) :
+ *   chargeFamille        → allocation_w:WA2:full  (libellé "M 6 ->")
+ *   isole (3 âges)       → allocation_w:WN2:full:{lt18,gt18_lt21,gt21}
+ *   cohabitantPrivilegie → allocation_w:WP2:full:{lt18,gt18}
+ *   cohabitant           → allocation_w:WB2:full:{lt18,gt18}
+ *
+ * ⚠️ NOTE MÉTIER (à confirmer par Oraliks) : la feuille W contient aussi une
+ * variante WA2V "charge de famille M 1 -> 5" à 71,97 €/j, ABSENTE de la page
+ * publique ONEM (qui n'affiche que 69,26). On encode la valeur publique ;
+ * si les 5 premiers mois sont réellement majorés, ajouter la nuance ici.
+ */
+export interface InsertionParams {
+  montantsJour: {
+    /** Cohabitant avec charge de famille (code W A). */
+    chargeFamille: number;
+    /** Isolé (code W N), par bande d'âge. */
+    isole: { moins18: number; de18a20: number; aPartirDe21: number };
+    /** Cohabitant privilégié (code W P). */
+    cohabitantPrivilegie: { moins18: number; aPartirDe18: number };
+    /** Cohabitant ordinaire / non privilégié (code W B). */
+    cohabitant: { moins18: number; aPartirDe18: number };
+  };
+}
+
+export const INSERTION_PARAM_SETS: readonly VersionedParams<InsertionParams>[] = [
+  {
+    validFrom: "2026-03-01",
+    label: "Allocations d'insertion — réforme mars 2026",
+    source: {
+      label: "ONEM — Montants : allocation d'insertion (au 01/03/2026)",
+      url: "https://www.onem.be/documentation/montants/allocation-dinsertion",
+      verifiedAt: "2026-07-05",
+    },
+    values: {
+      montantsJour: {
+        chargeFamille: 69.26,
+        isole: { moins18: 18.93, de18a20: 29.76, aPartirDe21: 51.56 },
+        cohabitantPrivilegie: { moins18: 17.67, aPartirDe18: 28.38 },
+        cohabitant: { moins18: 15.61, aPartirDe18: 24.88 },
+      },
+    },
+  },
+];
+
+/** Mensuel brut ONEM : journalier × 26 jours indemnisables, arrondi au cent. */
+export function mensuelBrut(montantJour: number): number {
+  return Math.round(montantJour * 26 * 100) / 100;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Résolution par date                                                */
+/* ------------------------------------------------------------------ */
+
 /** Date civile locale au format ISO "YYYY-MM-DD" (jour belge, pas UTC). */
 function toIsoDay(date: Date): string {
   const y = date.getFullYear();
@@ -105,27 +168,40 @@ function toIsoDay(date: Date): string {
 }
 
 /**
- * Résout le jeu de paramètres en vigueur à une date donnée (défaut :
- * aujourd'hui). Bornes : validFrom inclus, validTo exclu.
- *
+ * Résout le jeu en vigueur à une date (validFrom inclus, validTo exclu).
  * @throws Error explicite si aucun jeu ne couvre la date — on préfère
- * échouer bruyamment plutôt que calculer avec un barème du mauvais régime
- * (ex. simuler une situation d'avant la réforme 2026 avec les montants 2026).
+ * échouer bruyamment plutôt que calculer avec un barème du mauvais régime.
  */
-export function getChomageParams(
-  date: Date = new Date(),
-): VersionedParams<ChomageParams> {
+function resolveParamSet<T>(
+  sets: readonly VersionedParams<T>[],
+  date: Date,
+  domaine: string,
+): VersionedParams<T> {
   const iso = toIsoDay(date);
-  const match = CHOMAGE_PARAM_SETS.find(
+  const match = sets.find(
     (set) => set.validFrom <= iso && (!set.validTo || iso < set.validTo),
   );
   if (!match) {
-    const known = CHOMAGE_PARAM_SETS.map(
-      (s) => `${s.validFrom} → ${s.validTo ?? "en vigueur"}`,
-    ).join(", ");
+    const known = sets
+      .map((s) => `${s.validFrom} → ${s.validTo ?? "en vigueur"}`)
+      .join(", ");
     throw new Error(
-      `Aucun jeu de paramètres chômage ne couvre la date ${iso}. Périodes connues : ${known}.`,
+      `Aucun jeu de paramètres ${domaine} ne couvre la date ${iso}. Périodes connues : ${known}.`,
     );
   }
   return match;
+}
+
+/** Paramètres du chômage complet en vigueur à la date donnée (défaut : aujourd'hui). */
+export function getChomageParams(
+  date: Date = new Date(),
+): VersionedParams<ChomageParams> {
+  return resolveParamSet(CHOMAGE_PARAM_SETS, date, "chômage");
+}
+
+/** Paramètres des allocations d'insertion en vigueur à la date donnée. */
+export function getInsertionParams(
+  date: Date = new Date(),
+): VersionedParams<InsertionParams> {
+  return resolveParamSet(INSERTION_PARAM_SETS, date, "insertion");
 }

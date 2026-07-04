@@ -117,3 +117,39 @@ export function parseTriggers(raw: unknown): PdfFormTrigger[] {
   }
   return out;
 }
+
+/// Un item du bundle, réduit aux 3 champs nécessaires pour agréger les
+/// déclencheurs de tout le dossier (pas de dépendance à Prisma ici — le
+/// caller mappe ses propres types vers cette forme minimale).
+export interface BundleItemForTriggers {
+  pdfFormId: string | null;
+  pdfFormSlug: string | null;
+  /// Valeur brute JSON du champ `PdfForm.triggers` — parsée en interne.
+  rawTriggers: unknown;
+}
+
+/// Agrège les documents actuellement déclenchés par les réponses déjà
+/// données dans N'IMPORTE LEQUEL des formulaires du bundle (pas seulement le
+/// C1) — un slug déjà présent dans le bundle n'est jamais re-proposé.
+/// Utilisé par `app/d/[slug]/page.tsx` (matérialisation des items virtuels)
+/// et par la route `generate` (verrou de téléchargement, cf. Task 9-12).
+export function collectAllTriggeredSlugs(
+  items: BundleItemForTriggers[],
+  payloads: Record<string, unknown>
+): string[] {
+  const existingSlugs = new Set(
+    items.map((it) => it.pdfFormSlug).filter((s): s is string => !!s)
+  );
+  const triggeredSlugs = new Set<string>();
+  for (const item of items) {
+    if (!item.pdfFormId) continue;
+    const payload = payloads[item.pdfFormId] as FormPayload | undefined;
+    if (!payload) continue;
+    const triggers = parseTriggers(item.rawTriggers);
+    if (triggers.length === 0) continue;
+    for (const s of collectTriggeredSlugs(triggers, payload)) {
+      if (!existingSlugs.has(s)) triggeredSlugs.add(s);
+    }
+  }
+  return [...triggeredSlugs];
+}

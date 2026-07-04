@@ -4,6 +4,7 @@ import {
   collectTriggeredSlugs,
   parseTriggers,
   activeTriggers,
+  collectAllTriggeredSlugs,
 } from "../triggers";
 import type { PdfFormTrigger } from "../types";
 
@@ -155,5 +156,52 @@ describe("parseTriggers", () => {
     expect(parseTriggers(null)).toEqual([]);
     expect(parseTriggers("nope")).toEqual([]);
     expect(parseTriggers({})).toEqual([]);
+  });
+});
+
+describe("collectAllTriggeredSlugs", () => {
+  it("agrège les triggers de plusieurs items du bundle et déduplique contre les slugs déjà présents", () => {
+    const items = [
+      {
+        pdfFormId: "form-c1",
+        pdfFormSlug: "c1-insertion",
+        rawTriggers: [
+          { whenFieldId: "tremplinIndependants", whenValue: "oui", requiresFormSlug: "c1c" },
+          { whenFieldId: "administrateurSociete", whenValue: "oui", requiresFormSlug: "c1a" },
+        ],
+      },
+      {
+        pdfFormId: "form-demande",
+        pdfFormSlug: "c109-36-demande",
+        rawTriggers: [],
+      },
+    ];
+    const payloads = {
+      "form-c1": { tremplinIndependants: "oui", administrateurSociete: "non" },
+    };
+    expect(collectAllTriggeredSlugs(items, payloads).sort()).toEqual(["c1c"]);
+  });
+
+  it("ignore un item déjà présent dans le bundle (pas de doublon avec un slug existant)", () => {
+    const items = [
+      {
+        pdfFormId: "form-c1",
+        pdfFormSlug: "c1a", // déjà dans le bundle sous ce même slug
+        rawTriggers: [{ whenFieldId: "x", whenValue: "oui", requiresFormSlug: "c1a" }],
+      },
+    ];
+    expect(collectAllTriggeredSlugs(items, { "form-c1": { x: "oui" } })).toEqual([]);
+  });
+
+  it("ignore les items sans payload ou sans pdfFormId", () => {
+    const items = [
+      { pdfFormId: null, pdfFormSlug: null, rawTriggers: [] },
+      {
+        pdfFormId: "form-c1",
+        pdfFormSlug: "c1-insertion",
+        rawTriggers: [{ whenFieldId: "x", whenValue: "oui", requiresFormSlug: "c1a" }],
+      },
+    ];
+    expect(collectAllTriggeredSlugs(items, {})).toEqual([]);
   });
 });

@@ -8,8 +8,8 @@ import { DossierJourneyIntro } from "@/components/docbel/dossier-journey-intro";
 import { serializeJourneyWarnings, serializeJourneyDocuments } from "@/lib/dossiers/journey";
 import { DossierEnConstruction } from "@/components/docbel/dossier-en-construction";
 import { parseOfficialSources } from "@/lib/bundles/types";
-import type { FormPayload, PdfFormField } from "@/lib/pdf-forms/types";
-import { collectTriggeredSlugs, parseTriggers } from "@/lib/pdf-forms/triggers";
+import type { PdfFormField } from "@/lib/pdf-forms/types";
+import { collectAllTriggeredSlugs } from "@/lib/pdf-forms/triggers";
 import type { BundleCondition } from "@/lib/bundles/conditions";
 import { parseEligibilityAnswers } from "@/lib/bundles/eligibility";
 import { getDossier } from "@/lib/dossiers/registry";
@@ -116,24 +116,16 @@ export default async function BundleRoute({
     }
   }
 
-  // --- Évaluation des déclencheurs ---
-  // Pour chaque PdfForm complété (ayant un payload), on évalue ses triggers
-  // contre son payload et on collecte les slugs requis. Les slugs déjà présents
-  // dans le bundle ne sont pas re-matérialisés.
-  const existingSlugs = new Set(
-    bundle.items.map((it) => it.pdfForm?.slug).filter((s): s is string => !!s)
+  // --- Évaluation des déclencheurs (logique partagée, cf. lib/pdf-forms/triggers.ts) ---
+  const triggeredSlugsList = collectAllTriggeredSlugs(
+    bundle.items.map((it) => ({
+      pdfFormId: it.pdfFormId,
+      pdfFormSlug: it.pdfForm?.slug ?? null,
+      rawTriggers: it.pdfForm?.triggers,
+    })),
+    payloads,
   );
-  const triggeredSlugs = new Set<string>();
-  for (const item of bundle.items) {
-    if (!item.pdfForm) continue;
-    const payload = (payloads[item.pdfForm.id] as FormPayload) || null;
-    if (!payload) continue;
-    const triggers = parseTriggers(item.pdfForm.triggers);
-    if (triggers.length === 0) continue;
-    for (const s of collectTriggeredSlugs(triggers, payload)) {
-      if (!existingSlugs.has(s)) triggeredSlugs.add(s);
-    }
-  }
+  const triggeredSlugs = new Set(triggeredSlugsList);
 
   // Charge les PdfForms cibles depuis leur slug (un seul query) et matérialise
   // des items virtuels (sans DocumentBundleItem en DB).

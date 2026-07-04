@@ -424,6 +424,21 @@ export const C1_QUESTIONS: PdfFormField[] = [
     section: SECTION_SITUATION_FAMILIALE,
     order: 105,
   }),
+  {
+    id: "habiteEnColocation",
+    pdfFieldName: "",
+    type: "radio",
+    required: false,
+    label: { fr: "Habites-tu en colocation ?", nl: "", de: "" },
+    help: {
+      fr: "Colocation = tu partages un logement avec une ou plusieurs personnes SANS lien de parenté ni de couple (chacun sa vie, pas de ménage commun) — même si le registre national vous montre à la même adresse. Cette précision permet d'ajouter automatiquement l'ANNEXE REGIS à ton parcours.",
+      nl: "", de: "",
+    },
+    options: YN,
+    visibleIf: { fieldId: "statutFamilial", op: "equals", value: "cohabite" },
+    section: SECTION_SITUATION_FAMILIALE,
+    order: 106,
+  },
   // Grille cohabitants — visible seulement si l'utilisateur a indiqué
   // cohabiter. Pour chaque ligne : identité, lien familial, date naissance,
   // allocations familiales perçues (auto-non si > 35 ans), type & montant
@@ -1338,6 +1353,16 @@ export const C1_TRIGGERS: PdfFormTrigger[] = [
     unlessValue: "oui",
     requiresFormSlug: "c1-regis",
     reason: { fr: "Situation de cohabitation à préciser via Annexe REGIS", nl: "", de: "" },
+  },
+  {
+    // Nouvelle question concrète (2026-07) : la colocation (aucun lien de
+    // parenté, pas de ménage commun) est exactement le cas couvert par le
+    // code FN4 de l'Annexe Regis. Pas de suivi "déjà déclaré" pour cette
+    // question — non demandé, cf. spec.
+    whenFieldId: "habiteEnColocation",
+    whenValue: "oui",
+    requiresFormSlug: "c1-regis",
+    reason: { fr: "Colocation à préciser via l'Annexe Regis (code FN4)", nl: "", de: "" },
   },
   {
     whenFieldId: "mandatArtistique",

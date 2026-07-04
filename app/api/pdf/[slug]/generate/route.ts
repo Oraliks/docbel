@@ -17,7 +17,7 @@ import { getDossier } from "@/lib/dossiers/registry";
 import type { DossierAnswers } from "@/lib/dossiers/types";
 import { collectAllTriggeredSlugs } from "@/lib/pdf-forms/triggers";
 import { parseEligibilityAnswers } from "@/lib/bundles/eligibility";
-import { isGeneratingBlocked } from "@/lib/pdf-forms/generate-lock";
+import { isGeneratingBlocked, resolveCompletedSlugs } from "@/lib/pdf-forms/generate-lock";
 
 const json = { "Content-Type": "application/json; charset=utf-8" };
 
@@ -139,9 +139,21 @@ export async function POST(
             runPayloads,
           );
           const completedIds = (run.completedTemplateIds as string[]) || [];
-          const completedSlugs = run.bundle.items
-            .filter((it) => it.pdfForm && completedIds.includes(it.pdfFormId ?? ""))
-            .map((it) => it.pdfForm!.slug);
+          // Les formulaires compagnons déclenchés (c1-regis, c1a…) ne sont
+          // JAMAIS des DocumentBundleItem réels (cf. lib/dossiers/seed.ts) —
+          // on les récupère à part pour que resolveCompletedSlugs puisse
+          // reconnaître un compagnon complété (cf. Finding 1, revue finale).
+          const triggeredForms = triggeredSlugs.length
+            ? await prisma.pdfForm.findMany({
+                where: { slug: { in: triggeredSlugs } },
+                select: { id: true, slug: true },
+              })
+            : [];
+          const completedSlugs = resolveCompletedSlugs(
+            run.bundle.items.map((it) => ({ pdfFormId: it.pdfFormId, pdfFormSlug: it.pdfForm?.slug ?? null })),
+            triggeredForms.map((f) => ({ pdfFormId: f.id, pdfFormSlug: f.slug })),
+            completedIds,
+          );
           if (
             isGeneratingBlocked({
               dossier,

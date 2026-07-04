@@ -18,12 +18,17 @@ import {
   ArrowRight,
   CalendarClock,
   CalendarDays,
+  Check,
   ChevronRight,
+  ClipboardCheck,
+  Clock,
   Coins,
   FileCheck2,
   FilePlus2,
   GraduationCap,
+  Headset,
   Info,
+  ShieldCheck,
   UserRoundCheck,
   Wallet,
   type LucideIcon,
@@ -62,6 +67,61 @@ function warningIcon(title: string, severity: JourneyWarning["severity"]): Lucid
 /** Carte blanche translucide, bordure lavande fine, ombre douce, coins arrondis. */
 const CARD =
   "rounded-3xl border border-[color:color-mix(in_oklab,var(--glass-accent-a)_38%,transparent)] bg-[color:var(--glass-surface-strong)] shadow-[0_10px_34px_-18px_rgba(91,70,229,0.28)] backdrop-blur-xl";
+
+/** 4 nœuds du parcours (études → conditions → demande → allocations). */
+const COMPACT_PATH_NODES = [
+  { icon: GraduationCap, titleKey: "journeyPathEtudesTitle", bodyKey: "journeyPathEtudesBody" },
+  { icon: ClipboardCheck, titleKey: "journeyPathConditionsTitle", bodyKey: "journeyPathConditionsBody" },
+  { icon: CalendarDays, titleKey: "journeyPathDemandeTitle", bodyKey: "journeyPathDemandeBody" },
+  { icon: Wallet, titleKey: "journeyPathAllocationsTitle", bodyKey: "journeyPathAllocationsBody" },
+] as const;
+
+/** Chemin horizontal compact à 4 étapes illustrant le parcours de la demande. */
+function JourneyCompactPath({ className }: { className?: string }) {
+  const td = useTranslations("public.dossier");
+  return (
+    <div className={`relative flex items-start justify-between gap-1 ${className ?? ""}`}>
+      <span
+        aria-hidden
+        className="absolute top-7 hidden h-[2px] sm:block"
+        style={{
+          left: "12.5%",
+          right: "12.5%",
+          background:
+            "linear-gradient(to right, color-mix(in oklab, var(--glass-accent-a) 45%, transparent), color-mix(in oklab, var(--glass-accent-c) 45%, transparent))",
+        }}
+      />
+      {COMPACT_PATH_NODES.map(({ icon: Icon, titleKey, bodyKey }, i) => {
+        const isLast = i === COMPACT_PATH_NODES.length - 1;
+        return (
+          <div key={titleKey} className="relative z-10 flex flex-1 flex-col items-center gap-2 text-center">
+            <span
+              className="relative flex size-14 items-center justify-center rounded-2xl text-[color:var(--glass-accent-deep)] shadow-[0_10px_24px_-12px_rgba(91,70,229,0.45)]"
+              style={{ background: "color-mix(in oklab, var(--glass-accent-a) 22%, var(--glass-surface-strong))" }}
+            >
+              <Icon className="size-6" strokeWidth={1.8} aria-hidden />
+              {isLast ? (
+                <span
+                  className="absolute -right-1.5 -top-1.5 flex size-5 items-center justify-center rounded-full text-white shadow-sm"
+                  style={{ background: "var(--glass-accent-c)" }}
+                  aria-hidden
+                >
+                  <Check className="size-3" strokeWidth={3} />
+                </span>
+              ) : null}
+            </span>
+            <span className="text-[13px] font-semibold leading-snug text-[color:var(--glass-ink)]">
+              {td(titleKey)}
+            </span>
+            <span className="max-w-[92px] text-[11px] leading-[1.4] text-[color:var(--glass-ink-soft)]">
+              {td(bodyKey)}
+            </span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 export function DossierJourneyIntro({
   journey,
@@ -111,26 +171,82 @@ export function DossierJourneyIntro({
         />
       </div>
 
-      {/* ══ Hero — titre éditorial serif + illustration, sans carte ══ */}
-      <header className="grid items-center gap-4 lg:grid-cols-[1.1fr_0.9fr] lg:items-start">
-        <div className="flex flex-col">
-          <h1
-            className="glass-display text-[34px] font-semibold leading-[1.03] text-[color:var(--glass-ink)] sm:text-[46px]"
-            style={{ fontVariationSettings: "'WONK' 0, 'SOFT' 0", fontFeatureSettings: "'swsh' 0, 'salt' 0" }}
-          >
-            {runnerProps.bundle.name}
-          </h1>
-          {runnerProps.bundle.description ? (
-            <p className="mt-3 max-w-[420px] text-[14.5px] leading-[1.6] text-[color:var(--glass-ink-soft)]">
-              {runnerProps.bundle.description}
-            </p>
-          ) : null}
-        </div>
-        <JourneyHeroIllustration className="h-auto w-full max-w-[420px] justify-self-center lg:justify-self-end" />
-      </header>
+      {/* ══ Hero — compact pour allocations-insertion (maquette), sinon mise en page historique ══ */}
+      {runnerProps.bundle.slug === "allocations-insertion" ? (
+        <header className="flex flex-col gap-7 lg:flex-row lg:items-center lg:justify-between lg:gap-10">
+          <div className="flex max-w-[520px] flex-col gap-4">
+            <div>
+              <h1
+                className="glass-display text-[28px] font-semibold leading-[1.08] text-[color:var(--glass-ink)] sm:text-[34px]"
+                style={{ fontVariationSettings: "'WONK' 0, 'SOFT' 0", fontFeatureSettings: "'swsh' 0, 'salt' 0" }}
+              >
+                {runnerProps.bundle.name}
+              </h1>
+              {runnerProps.bundle.description ? (
+                <p className="mt-2.5 text-[14px] leading-[1.55] text-[color:var(--glass-ink-soft)]">
+                  {runnerProps.bundle.description}
+                </p>
+              ) : null}
+            </div>
+            <div className="flex flex-wrap items-center gap-3">
+              <button
+                type="button"
+                onClick={start}
+                className="glass-cta inline-flex items-center gap-2 rounded-full px-6 py-3 text-[13.5px] font-bold shadow-[0_12px_32px_-10px_rgba(91,70,229,0.55)]"
+              >
+                {cta}
+                <ArrowRight className="size-4" aria-hidden />
+              </button>
+              <a
+                href="#etapes-demande"
+                className="inline-flex items-center gap-2 rounded-full border px-5 py-3 text-[13.5px] font-semibold text-[color:var(--glass-ink)] transition-colors hover:bg-[color:color-mix(in_oklab,var(--glass-accent-a)_12%,transparent)]"
+                style={{ borderColor: "color-mix(in oklab, var(--glass-accent-a) 45%, transparent)" }}
+              >
+                <Info className="size-4" aria-hidden />
+                {td("journeyHowItWorksLabel")}
+              </a>
+            </div>
+            <div className="flex flex-wrap gap-x-6 gap-y-2.5 pt-1">
+              {(
+                [
+                  { icon: Clock, titleKey: "journeyTrustFastTitle", bodyKey: "journeyTrustFastBody" },
+                  { icon: ShieldCheck, titleKey: "journeyTrustDataTitle", bodyKey: "journeyTrustDataBody" },
+                  { icon: Headset, titleKey: "journeyTrustHelpTitle", bodyKey: "journeyTrustHelpBody" },
+                ] as const
+              ).map(({ icon: Icon, titleKey, bodyKey }) => (
+                <div key={titleKey} className="flex items-start gap-2">
+                  <Icon className="mt-0.5 size-4 shrink-0 text-[color:var(--glass-accent-deep)]" aria-hidden />
+                  <div>
+                    <p className="text-[12px] font-semibold leading-tight text-[color:var(--glass-ink)]">{td(titleKey)}</p>
+                    <p className="text-[11px] leading-tight text-[color:var(--glass-ink-soft)]">{td(bodyKey)}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+          <JourneyCompactPath className="w-full max-w-[440px] shrink-0" />
+        </header>
+      ) : (
+        <header className="grid items-center gap-4 lg:grid-cols-[1.1fr_0.9fr] lg:items-start">
+          <div className="flex flex-col">
+            <h1
+              className="glass-display text-[34px] font-semibold leading-[1.03] text-[color:var(--glass-ink)] sm:text-[46px]"
+              style={{ fontVariationSettings: "'WONK' 0, 'SOFT' 0", fontFeatureSettings: "'swsh' 0, 'salt' 0" }}
+            >
+              {runnerProps.bundle.name}
+            </h1>
+            {runnerProps.bundle.description ? (
+              <p className="mt-3 max-w-[420px] text-[14.5px] leading-[1.6] text-[color:var(--glass-ink-soft)]">
+                {runnerProps.bundle.description}
+              </p>
+            ) : null}
+          </div>
+          <JourneyHeroIllustration className="h-auto w-full max-w-[420px] justify-self-center lg:justify-self-end" />
+        </header>
+      )}
 
       {/* ══ 4 cartes d'étapes (compactes, informatives) ══ */}
-      <ol className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+      <ol id="etapes-demande" className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
         {steps.map((step, i) => {
           const Icon = STEP_ICON[step.icon];
           return (

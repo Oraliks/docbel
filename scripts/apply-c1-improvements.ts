@@ -13,61 +13,25 @@
 // Usage : pnpm tsx scripts/apply-c1-improvements.ts        (dry run par défaut)
 //         pnpm tsx scripts/apply-c1-improvements.ts --yes  (applique en DB)
 
-import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { applyC1Improvements, C1_TRIGGERS } from "@/lib/pdf-forms/seed/c1-fields-improvements";
-import { applyC1RegisImprovements } from "@/lib/pdf-forms/seed/c1-regis-fields";
-import type { PdfFormField, PdfFormTrigger } from "@/lib/pdf-forms/types";
+import { C1_IMPROVEMENT_TARGETS, applyOneC1Improvement } from "@/lib/pdf-forms/seed/apply-c1-improvements-core";
 
 const APPLY = process.argv.includes("--yes");
 
-interface TargetConfig {
-  slug: string;
-  improve: (fields: PdfFormField[]) => PdfFormField[];
-  triggers: PdfFormTrigger[];
-}
-
-const TARGETS: TargetConfig[] = [
-  { slug: "c1", improve: applyC1Improvements, triggers: C1_TRIGGERS },
-  { slug: "c1-insertion", improve: applyC1Improvements, triggers: C1_TRIGGERS },
-  { slug: "c1-regis", improve: applyC1RegisImprovements, triggers: [] },
-];
-
-async function applyOne(target: TargetConfig) {
-  const form = await prisma.pdfForm.findUnique({
-    where: { slug: target.slug },
-    select: { id: true, slug: true, title: true, version: true, fields: true, triggers: true },
-  });
-  if (!form) {
-    console.log(`⚠️  ${target.slug.padEnd(16)} introuvable en DB — seed-le d'abord (endpoint admin ou seed-c1-companion-forms.ts).`);
-    return;
-  }
-
-  const current = (form.fields as unknown as PdfFormField[]) || [];
-  const improved = target.improve(current);
-
-  console.log(`\n${target.slug} (v${form.version}, id=${form.id})`);
-  console.log(`  Champs avant     : ${current.length}`);
-  console.log(`  Champs après     : ${improved.length}`);
-  console.log(`  Triggers avant   : ${Array.isArray(form.triggers) ? form.triggers.length : 0}`);
-  console.log(`  Triggers après   : ${target.triggers.length}`);
-
-  if (!APPLY) return;
-
-  await prisma.pdfForm.update({
-    where: { id: form.id },
-    data: {
-      fields: improved as unknown as Prisma.InputJsonValue,
-      triggers: target.triggers as unknown as Prisma.InputJsonValue,
-    },
-  });
-  console.log(`  ✓ mis à jour`);
-}
-
 async function main() {
   console.log(`Mode : ${APPLY ? "🔥 APPLY" : "👀 DRY RUN"}`);
-  for (const target of TARGETS) {
-    await applyOne(target);
+  for (const target of C1_IMPROVEMENT_TARGETS) {
+    const r = await applyOneC1Improvement(target, APPLY);
+    if (r.status === "not_found") {
+      console.log(`⚠️  ${r.slug.padEnd(16)} introuvable en DB — seed-le d'abord (endpoint admin ou seed-c1-companion-forms.ts).`);
+      continue;
+    }
+    console.log(`\n${r.slug} (v${r.version}, id=${r.formId})`);
+    console.log(`  Champs avant     : ${r.fieldsBefore}`);
+    console.log(`  Champs après     : ${r.fieldsAfter}`);
+    console.log(`  Triggers avant   : ${r.triggersBefore}`);
+    console.log(`  Triggers après   : ${r.triggersAfter}`);
+    if (APPLY) console.log(`  ✓ mis à jour`);
   }
   if (!APPLY) {
     console.log("\nDry-run terminé. Passe --yes pour appliquer.");

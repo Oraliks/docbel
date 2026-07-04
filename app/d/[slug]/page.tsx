@@ -229,6 +229,9 @@ export default async function BundleRoute({
   const selectedDocs = dossier
     ? selectDocuments(dossier, eligibilityAnswers as unknown as DossierAnswers)
     : null;
+  const gatedSlugs = dossier
+    ? dossier.documents.filter((d) => d.gatedByRestOfDossier).map((d) => d.slug)
+    : [];
   const applicableSlugs = selectedDocs ? selectedDocs.map((d) => d.slug) : null;
   // Les formulaires matérialisés par trigger sont toujours applicables — on
   // les rajoute aux applicables pour qu'ils ne soient pas masqués par le
@@ -302,6 +305,7 @@ export default async function BundleRoute({
           applicableSlugs: finalApplicableSlugs,
           externalDocuments,
           inlineDocumentQuestions: dossier?.inlineDocumentQuestions ?? false,
+          gatedSlugs,
         };
 
         // Écran d'explication : uniquement si le dossier codé fournit un

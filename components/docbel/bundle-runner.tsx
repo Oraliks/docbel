@@ -90,6 +90,10 @@ interface BundleRunnerProps {
   /// questions restent visibles en ligne au-dessus des documents, qui sont
   /// toujours affichés. Cf. `DossierDefinition.inlineDocumentQuestions`.
   inlineDocumentQuestions?: boolean;
+  /// Slugs des documents marqués `gatedByRestOfDossier` dans ce dossier (cf.
+  /// lib/dossiers/types.ts) — transmis à `computeItemStatuses` pour calculer
+  /// `ItemStatus.locked`. Vide pour tout dossier qui n'utilise pas ce champ.
+  gatedSlugs?: string[];
 }
 
 const RESPONSIBILITY_LABEL_KEYS: Record<ExternalDocument["responsibility"], string> = {
@@ -112,6 +116,7 @@ export function BundleRunner({
   applicableSlugs = null,
   externalDocuments = [],
   inlineDocumentQuestions = false,
+  gatedSlugs = [],
 }: BundleRunnerProps) {
   const t = useTranslations("public.dossier");
   const router = useRouter();
@@ -299,6 +304,7 @@ export function BundleRunner({
       completedTemplateIds,
       payloads,
       applicableSlugs,
+      { eligibilityAnswersComplete: eligibilityCompleted, gatedSlugs },
     );
 
   return (
@@ -409,7 +415,7 @@ export function BundleRunner({
               <CardTitle className="text-base">{t("runnerFlowDocuments")}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
-              {visibleItems.map(({ item, completed, eligibility }, idx) => {
+              {visibleItems.map(({ item, completed, eligibility, locked }, idx) => {
                 const isPending = eligibility === "pending";
                 return (
                   <div
@@ -477,12 +483,17 @@ export function BundleRunner({
                           {t("runnerPendingHint")}
                         </p>
                       )}
+                      {locked && !completed && (
+                        <p className="text-[11px] text-amber-700 mt-1">
+                          {t("runnerLockedHint")}
+                        </p>
+                      )}
                     </div>
                     <Button
                       size="sm"
                       variant={completed ? "outline" : "default"}
                       onClick={() => handleStart(item)}
-                      disabled={isPending || starting}
+                      disabled={isPending || starting || (locked && !completed)}
                     >
                       {completed
                         ? t("edit")

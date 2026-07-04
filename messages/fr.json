@@ -4556,6 +4556,7 @@
       "runnerTriggeredBadge": "Suite à tes réponses",
       "runnerConditionLabel": "Condition :",
       "runnerPendingHint": "Complétez d'abord les documents précédents pour savoir si celui-ci est requis.",
+      "runnerLockedHint": "Termine d'abord les autres documents obligatoires de ton dossier avant de pouvoir compléter celui-ci.",
       "runnerStarting": "Démarrage…",
       "runnerExternalDocsTitle": "Documents à fournir par un tiers ({count})",
       "runnerExternalDocsNote": "Ces pièces sont obligatoires au dossier mais tu ne peux pas les remplir toi-même. Pense à les réclamer dès que possible.",

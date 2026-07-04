@@ -13,6 +13,11 @@ import { todayISO } from "@/lib/pdf-forms/system-values";
 import { isCreationDateField, isSignatureField } from "@/lib/pdf-forms/auto-fields";
 import { PdfFormField, FormPayload, Locale, isLocale } from "@/lib/pdf-forms/types";
 import { ensureWriteAllowed } from "@/lib/admin/readonly-guard";
+import { getDossier } from "@/lib/dossiers/registry";
+import type { DossierAnswers } from "@/lib/dossiers/types";
+import { collectAllTriggeredSlugs } from "@/lib/pdf-forms/triggers";
+import { parseEligibilityAnswers } from "@/lib/bundles/eligibility";
+import { isGeneratingBlocked } from "@/lib/pdf-forms/generate-lock";
 
 const json = { "Content-Type": "application/json; charset=utf-8" };
 
@@ -116,7 +121,43 @@ export async function POST(
   const bundleRunId = typeof body.bundleRunId === "string" ? body.bundleRunId : null;
   if (bundleRunId) {
     try {
-      const run = await prisma.bundleRun.findUnique({ where: { id: bundleRunId } });
+      const run = await prisma.bundleRun.findUnique({
+        where: { id: bundleRunId },
+        include: { bundle: { include: { items: { include: { pdfForm: { select: { id: true, slug: true, triggers: true } } } } } } },
+      });
+      if (run && run.status === "in_progress") {
+        const dossier = getDossier(run.bundle.slug);
+        if (dossier) {
+          const answers = parseEligibilityAnswers(run.eligibilityAnswers) as unknown as DossierAnswers;
+          const runPayloads = (run.payloads as Record<string, unknown>) || {};
+          const triggeredSlugs = collectAllTriggeredSlugs(
+            run.bundle.items.map((it) => ({
+              pdfFormId: it.pdfFormId,
+              pdfFormSlug: it.pdfForm?.slug ?? null,
+              rawTriggers: it.pdfForm?.triggers,
+            })),
+            runPayloads,
+          );
+          const completedIds = (run.completedTemplateIds as string[]) || [];
+          const completedSlugs = run.bundle.items
+            .filter((it) => it.pdfForm && completedIds.includes(it.pdfFormId ?? ""))
+            .map((it) => it.pdfForm!.slug);
+          if (
+            isGeneratingBlocked({
+              dossier,
+              targetSlug: slug,
+              answers,
+              completedSlugs,
+              triggeredSlugs,
+            })
+          ) {
+            return NextResponse.json(
+              { error: "Complète d'abord les autres documents obligatoires de ton dossier." },
+              { status: 409, headers: json },
+            );
+          }
+        }
+      }
       if (run && run.status === "in_progress") {
         const currentPayloads = (run.payloads as Record<string, unknown>) || {};
         const currentCompleted = (run.completedTemplateIds as string[]) || [];

@@ -340,19 +340,24 @@ export const allocationsInsertion: DossierDefinition = {
   ],
 
   // ===================================================================
-  // ARBRE DE DOCUMENTS (chantier — dicté par Oraliks 2026-07-05).
-  // ⚠️ Aucun PDF C109/36 dans le repo → ces pièces sont modélisées en
-  // CHECKLIST conditionnelle (`responsibility` external/employer/onem, pas de
-  // champs) : elles s'affichent dans la carte « à fournir par un tiers » selon
-  // la situation, avec qui les remplit / comment les obtenir. Pour rendre l'une
-  // d'elles préremplissable plus tard : ajouter `sourcePdfPath` + `fields` (le
-  // PDF officiel), puis la (re)semer. Cf. [[project-insertion-document-tree]].
+  // ARBRE DE DOCUMENTS (dicté par Oraliks 2026-07-05).
+  // Deux couches :
+  //   • REMPLISSABLES dans beldoc (responsibility user + sourcePdfPath +
+  //     fields) : C109/36-DEMANDE (PDF officiel Oraliks) et C1. Elles
+  //     deviennent des PdfForms au seed. ⚠️ Activation prod = Vercel Blob +
+  //     seed (sans Blob, le PDF stocké pointe vers le disque local → cassé en
+  //     prod ; cf. lib/pdf-forms/storage.ts).
+  //   • À FOURNIR PAR UN TIERS (responsibility external/employer, fields vides)
+  //     : école, ACTIRIS/Forem/VDAB/ADG, employeur. Affichées en checklist
+  //     conditionnelle sans PDF requis (code-driven, pas de seed).
+  // Cf. [[project-insertion-document-tree]].
   //
   // Conditions basées sur les réponses (stockées en chaînes) :
   //   parcoursEtudes ∈ secondaire-belge | superieur-belge | etranger | autre
   //   age ∈ moins-18 | 18-20 | 21-24 | 25-plus
   //   aTravaille ∈ "true" | "false"
-  // À AFFINER par Oraliks (marqué « À VALIDER » en internalRef).
+  // Réforme 01/03/2026 : CERTIFICAT → remplacé par DIPLÔME ; ANNEXE →
+  // remplacé par ÉTRANGER. CONDITION21ANS conservé (À VALIDER Oraliks).
   // ===================================================================
   documents: [
     // ---------- Toujours dans le dossier ----------
@@ -362,17 +367,25 @@ export const allocationsInsertion: DossierDefinition = {
       titleKey: "insertion.doc.c109Demande.title",
       issuer: "ONEM",
       required: true,
-      responsibility: "onem",
-      responsibilityNote: {
-        fr: "Le formulaire de demande. Ton organisme de paiement (CAPAC, CSC, FGTB ou SYNOVA) l'établit avec toi et t'explique tes obligations. Bases légales : art. 36 et 36quater AR 25.11.1991.",
-      },
+      // Formulaire OBLIGATOIRE, préremplissable dans beldoc (responsibility
+      // user par défaut). PDF officiel AcroForm fourni par Oraliks (44 widgets).
+      // On mappe l'identité + la signature ci-dessous ; les déclarations de
+      // situation pendant le SIP et les cases « pièces jointes » sont
+      // auto-inférées par l'ingest (l'admin peut les enrichir).
+      // Bases légales : art. 36 et 36quater AR 25.11.1991.
+      sourcePdfPath: "private/pdfs/C109-36_Demande_FR.pdf",
       internalRef:
-        "C109/36-DEMANDE — toujours requis. PDF absent du repo → à rendre préremplissable quand le PDF officiel sera fourni.",
-      fields: [],
+        "C109/36-DEMANDE — obligatoire. PDF officiel Oraliks 2026-07-05. Activation prod = Vercel Blob + seed (sans Blob, le PDF stocké pointe vers le disque local → cassé en prod). Cf. [[project-insertion-document-tree]].",
+      fields: [
+        { field: "niss", required: true, section: "identite", pdfFieldName: "NISS" },
+        { field: "fullName", required: true, section: "identite", pdfFieldName: "NomPrenom" },
+        // Date de signature = jour de génération (system.today), champ "DateSignature".
+        { field: "creationDate", section: "signature", pdfFieldName: "DateSignature" },
+        { field: "signature", section: "signature", pdfFieldName: "Signature" },
+      ],
     },
     {
-      // Seul PDF réellement présent (private/pdfs/C1_FR.pdf) → seul document
-      // qui pourra être prérempli dans beldoc (une fois le PdfForm semé).
+      // C1 — déclaration de situation personnelle (PDF présent : C1_FR.pdf).
       // Slug distinct des autres C1 (unicité globale de PdfForm.slug).
       slug: "c1-insertion",
       title: "C1 — Déclaration de situation personnelle",
@@ -381,7 +394,7 @@ export const allocationsInsertion: DossierDefinition = {
       required: true,
       sourcePdfPath: "private/pdfs/C1_FR.pdf",
       internalRef:
-        "Déclaration personnelle. Le seul document préremplissable pour l'instant (PDF présent).",
+        "Déclaration personnelle. Préremplissable (PDF présent). Activation prod = Blob + seed (comme la demande).",
       fields: [
         { field: "niss", required: true, section: "identite", pdfFieldName: "NISS" },
       ],
@@ -414,21 +427,8 @@ export const allocationsInsertion: DossierDefinition = {
     },
 
     // ---------- Preuve d'études — une branche selon `parcoursEtudes` ----------
-    {
-      slug: "c109-36-certificat",
-      title: "C109/36-CERTIFICAT — Certificat d'études",
-      titleKey: "insertion.doc.c109Certificat.title",
-      issuer: "Établissement d'enseignement",
-      required: true,
-      responsibility: "external",
-      responsibilityNote: {
-        fr: "À faire compléter par ton école secondaire ou de formation. Vérifie que les études que tu as suivies ouvrent le droit aux allocations d'insertion.",
-      },
-      includeWhen: (a) => a.parcoursEtudes === "secondaire-belge",
-      internalRef:
-        "C109/36-CERTIFICAT (art. 36) — vérifie que les ÉTUDES ouvrent le droit. À VALIDER Oraliks : distinction/condition exacte vs DIPLÔME (2 formulaires distincts).",
-      fields: [],
-    },
+    // NB : le C109/36-CERTIFICAT n'est plus valable depuis le 01/03/2026 —
+    // remplacé par le C109/36-DIPLÔME (info Oraliks 2026-07-05).
     {
       slug: "c109-36-diplome",
       title: "C109/36-DIPLÔME — Preuve de diplôme, certificat ou attestation",
@@ -441,7 +441,7 @@ export const allocationsInsertion: DossierDefinition = {
       },
       includeWhen: (a) => a.parcoursEtudes === "secondaire-belge",
       internalRef:
-        "C109/36-DIPLÔME (art. 36) — vérifie la POSSESSION du diplôme. Formulaire distinct du CERTIFICAT (Oraliks). À VALIDER : condition exacte d'inclusion.",
+        "C109/36-DIPLÔME (art. 36) — remplace le CERTIFICAT depuis le 01/03/2026 (Oraliks). Formulaire école secondaire/formation.",
       fields: [],
     },
     {
@@ -460,6 +460,9 @@ export const allocationsInsertion: DossierDefinition = {
       fields: [],
     },
     {
+      // Le C109/36-ÉTRANGER remplace le C109/36-ANNEXE (info Oraliks
+      // 2026-07-05) : il couvre les études à l'étranger ET le cas résiduel
+      // (aucune situation belge standard).
       slug: "c109-36-etranger",
       title: "C109/36-ÉTRANGER — Déclaration d'études à l'étranger",
       titleKey: "insertion.doc.c109Etranger.title",
@@ -467,25 +470,12 @@ export const allocationsInsertion: DossierDefinition = {
       required: true,
       responsibility: "external",
       responsibilityNote: {
-        fr: "À compléter si tu as étudié à l'étranger, accompagné des attestations ou preuves de ton diplôme. Vérifie si ton diplôme étranger ouvre le droit.",
+        fr: "À compléter si tu as étudié à l'étranger (avec les attestations ou preuves de ton diplôme), ou si ta situation ne correspond à aucun des autres cas. Vérifie si ton diplôme ouvre le droit.",
       },
-      includeWhen: (a) => a.parcoursEtudes === "etranger",
-      internalRef: "C109/36-ÉTRANGER (art. 36).",
-      fields: [],
-    },
-    {
-      slug: "c109-36-annexe",
-      title: "C109/36-ANNEXE",
-      titleKey: "insertion.doc.c109Annexe.title",
-      issuer: "Toi",
-      required: true,
-      responsibility: "external",
-      responsibilityNote: {
-        fr: "À compléter si tu ne rentres dans aucune des autres situations (ni secondaire belge, ni bachelier/master belge, ni études à l'étranger).",
-      },
-      includeWhen: (a) => a.parcoursEtudes === "autre",
+      includeWhen: (a) =>
+        a.parcoursEtudes === "etranger" || a.parcoursEtudes === "autre",
       internalRef:
-        "C109/36-ANNEXE — cas résiduel (mentionné par le CERTIFICAT). À VALIDER Oraliks : relation exacte avec ÉTRANGER.",
+        "C109/36-ÉTRANGER (art. 36) — remplace l'ANNEXE depuis le 01/03/2026 (Oraliks). Couvre 'études à l'étranger' + cas résiduel 'autre'.",
       fields: [],
     },
 

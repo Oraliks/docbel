@@ -21,30 +21,31 @@ describe("allocations-insertion — arbre de documents conditionnel", () => {
     expect(slugsFor({}).sort()).toEqual([...BASELINE].sort());
   });
 
+  it("le CERTIFICAT et l'ANNEXE (abrogés au 01/03/2026) n'existent plus", () => {
+    const slugs = allocationsInsertion.documents.map((d) => d.slug);
+    expect(slugs).not.toContain("c109-36-certificat");
+    expect(slugs).not.toContain("c109-36-annexe");
+  });
+
   it("preuve d'études : UNE seule branche selon parcoursEtudes", () => {
-    // Secondaire belge → CERTIFICAT + DIPLÔME (deux formulaires distincts).
+    // Secondaire belge → DIPLÔME (remplace le CERTIFICAT depuis 01/03/2026).
     const sec = slugsFor({ parcoursEtudes: "secondaire-belge" });
-    expect(sec).toContain("c109-36-certificat");
     expect(sec).toContain("c109-36-diplome");
     expect(sec).not.toContain("c109-36-etranger");
-    expect(sec).not.toContain("c109-36-annexe");
     expect(sec).not.toContain("copie-diplome-superieur");
 
     // Supérieur belge → copie du diplôme (dispense), pas de formulaire école.
     const sup = slugsFor({ parcoursEtudes: "superieur-belge" });
     expect(sup).toContain("copie-diplome-superieur");
-    expect(sup).not.toContain("c109-36-certificat");
     expect(sup).not.toContain("c109-36-diplome");
 
-    // Étranger → ÉTRANGER uniquement.
-    const etr = slugsFor({ parcoursEtudes: "etranger" });
-    expect(etr).toContain("c109-36-etranger");
-    expect(etr).not.toContain("c109-36-annexe");
+    // Étranger → ÉTRANGER.
+    expect(slugsFor({ parcoursEtudes: "etranger" })).toContain("c109-36-etranger");
 
-    // Autre → ANNEXE uniquement.
+    // Autre → ÉTRANGER aussi (il a remplacé l'ANNEXE).
     const autre = slugsFor({ parcoursEtudes: "autre" });
-    expect(autre).toContain("c109-36-annexe");
-    expect(autre).not.toContain("c109-36-etranger");
+    expect(autre).toContain("c109-36-etranger");
+    expect(autre).not.toContain("c109-36-diplome");
   });
 
   it("moins de 21 ans → ajoute C109/36-CONDITION21ANS", () => {
@@ -69,7 +70,6 @@ describe("allocations-insertion — arbre de documents conditionnel", () => {
     expect(s.sort()).toEqual(
       [
         ...BASELINE,
-        "c109-36-certificat",
         "c109-36-diplome",
         "c109-36-condition21ans",
         "c4-reduction-sip",
@@ -85,10 +85,26 @@ describe("allocations-insertion — arbre de documents conditionnel", () => {
     }
   });
 
-  it("seul le C1 reste préremplissable (PDF présent + champs)", () => {
+  it("les formulaires remplissables = la DEMANDE + le C1 (PDF officiel + champs)", () => {
     const fillable = allocationsInsertion.documents.filter(
       (d) => (!d.responsibility || d.responsibility === "user") && d.fields.length > 0,
     );
-    expect(fillable.map((d) => d.slug)).toEqual(["c1-insertion"]);
+    expect(fillable.map((d) => d.slug).sort()).toEqual(
+      ["c1-insertion", "c109-36-demande"].sort(),
+    );
+    // Chaque remplissable pointe vers un PDF officiel committé.
+    for (const d of fillable) {
+      expect(d.sourcePdfPath).toMatch(/^private\/pdfs\/.+\.pdf$/);
+    }
+  });
+
+  it("la DEMANDE mappe l'identité canonique (NISS, nom, date, signature)", () => {
+    const demande = allocationsInsertion.documents.find(
+      (d) => d.slug === "c109-36-demande",
+    );
+    const mapped = demande?.fields.flatMap((f) =>
+      "field" in f ? [f.field] : [],
+    );
+    expect(mapped).toEqual(["niss", "fullName", "creationDate", "signature"]);
   });
 });

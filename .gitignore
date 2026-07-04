@@ -62,6 +62,8 @@ ONBOARDING_IMPLEMENTATION.md
 .agents/
 .codex/
 skills-lock.json
+.worktrees/
+.superpowers/
 
 # Playwright E2E
 playwright-report/

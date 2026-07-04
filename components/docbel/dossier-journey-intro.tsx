@@ -1,19 +1,16 @@
 "use client";
 
 /**
- * Écran d'explication d'un dossier (« journey ») — version interactive.
+ * Écran d'explication d'un dossier (« journey ») — mise en page « landing ».
  *
- * Signature visuelle : le « chemin de demande » — une ligne SVG dessinée qui
- * relie les étapes illustrées (vignettes maison, cf. journey-illustrations).
- * Cliquer une étape la met au premier plan (panneau de détail, ligne de
- * progression qui se remplit). Le contenu reste 100 % piloté par la
- * `DossierDefinition` (étapes, avertissements, documents) : ce composant ne
- * fait que la mise en scène — réutilisable tel quel par tout dossier.
+ * Structure (façon maquette validée) : hero illustré → 4 cartes d'étapes
+ * numérotées et illustrées → grille « à savoir avant de commencer » →
+ * bandeau CTA final. Le contenu reste 100 % piloté par la `DossierDefinition`
+ * (étapes, avertissements, documents) — ce composant n'est que la mise en scène,
+ * réutilisable par tout dossier qui déclare un `journey`.
  *
- * Accessibilité : étapes = boutons (aria-current="step"), détail en
- * aria-live, navigation précédent/suivant, focus visible hérité du système.
- * Mouvement doux uniquement (transitions CSS), `prefers-reduced-motion` géré
- * par les primitives glass existantes.
+ * Un clic sur un CTA (carte d'étape ou bandeau) démarre le questionnaire
+ * (`BundleRunner`, inchangé). Mouvement doux, `prefers-reduced-motion`-safe.
  */
 
 import { type ComponentProps, useState } from "react";
@@ -21,27 +18,20 @@ import { useTranslations } from "next-intl";
 import {
   AlertTriangle,
   ArrowRight,
-  ChevronLeft,
+  CalendarDays,
   ChevronRight,
+  Coins,
+  FilePlus2,
   FileText,
+  GraduationCap,
   Info,
+  type LucideIcon,
 } from "lucide-react";
 import { BundleRunner } from "./bundle-runner";
 import { JourneyVignette } from "./journey-illustrations";
+import { JourneyHeroIllustration } from "./journey-hero-illustration";
 import type { DossierJourneyStep } from "@/lib/dossiers/types";
 import type { JourneyWarning, JourneyDocument } from "@/lib/dossiers/journey";
-
-/** Remplissage (%) de la ligne de progression pour chaque jalon atteint. */
-const PATH_PROGRESS = [13, 38, 63, 96];
-
-/** Positions des jalons sur la ligne (viewBox 400×44, tracé « à la main »). */
-const PATH_NODES: Array<{ x: number; y: number }> = [
-  { x: 50, y: 25 },
-  { x: 150, y: 15 },
-  { x: 250, y: 27 },
-  { x: 350, y: 17 },
-];
-const PATH_D = "M10 28 C 40 18, 80 12, 120 18 S 200 32, 250 27 S 330 12, 392 19";
 
 type DossierJourneyIntroProps = {
   journey: DossierJourneyStep[];
@@ -50,6 +40,16 @@ type DossierJourneyIntroProps = {
   ctaLabel: string;
   ctaLabelKey?: string;
 } & ComponentProps<typeof BundleRunner>;
+
+/** Icône « à savoir » : heuristique sur le titre, repli sur la sévérité. */
+function warningIcon(title: string, severity: JourneyWarning["severity"]): LucideIcon {
+  const t = title.toLowerCase();
+  if (/montant|€|alloc|brut/.test(t)) return Coins;
+  if (/alternance|formation|dipl/.test(t)) return GraduationCap;
+  if (/stage|jour|mois|délai|delai/.test(t)) return CalendarDays;
+  if (severity === "critical") return AlertTriangle;
+  return Info;
+}
 
 export function DossierJourneyIntro({
   journey,
@@ -62,10 +62,8 @@ export function DossierJourneyIntro({
   const t = useTranslations("public.dossierContent");
   const td = useTranslations("public.dossier");
   const [started, setStarted] = useState(false);
-  const [selected, setSelected] = useState(0);
 
   // Résout une clé i18n si elle existe dans le catalogue, sinon le libellé brut.
-  // Clés dynamiques (fournies par le dossier) → cast requis (next-intl v4).
   const resolve = (key: string | undefined, fallback: string): string => {
     if (!key) return fallback;
     const k = key as Parameters<typeof t>[0];
@@ -81,230 +79,164 @@ export function DossierJourneyIntro({
   }
 
   const steps = [...journey].sort((a, b) => a.order - b.order);
-  const current = steps[selected] ?? steps[0];
-  const progress = PATH_PROGRESS[Math.min(selected, PATH_PROGRESS.length - 1)];
+  const start = () => setStarted(true);
+  const cta = resolve(ctaLabelKey, ctaLabel);
 
   return (
-    <section className="flex w-full flex-col gap-6">
-      {/* En-tête */}
-      <header className="flex flex-col gap-2">
-        <h1 className="glass-display text-[28px] font-semibold leading-tight sm:text-[34px]">
-          {runnerProps.bundle.name}
-        </h1>
-        {runnerProps.bundle.description ? (
-          <p className="max-w-2xl text-[14px] leading-[1.6] text-[color:var(--glass-ink-soft)]">
-            {runnerProps.bundle.description}
-          </p>
-        ) : null}
+    <section className="flex w-full flex-col gap-7">
+      {/* ══ Hero : texte + illustration ══ */}
+      <header className="glass-surface relative overflow-hidden rounded-3xl p-6 sm:p-8 lg:p-10">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0"
+          style={{
+            backgroundImage:
+              "radial-gradient(ellipse 60% 100% at 82% 40%, color-mix(in oklab, var(--glass-accent-deep) 12%, transparent) 0%, transparent 62%)",
+          }}
+        />
+        <div className="relative grid items-center gap-8 lg:grid-cols-[1.05fr_0.95fr]">
+          <div className="flex flex-col">
+            <h1 className="glass-display text-[30px] font-semibold leading-[1.08] sm:text-[40px]">
+              {runnerProps.bundle.name}
+            </h1>
+            {runnerProps.bundle.description ? (
+              <p className="mt-4 max-w-[460px] text-[14px] leading-[1.65] text-[color:var(--glass-ink-soft)]">
+                {runnerProps.bundle.description}
+              </p>
+            ) : null}
+          </div>
+          <JourneyHeroIllustration className="h-auto w-full max-w-[520px] justify-self-center lg:justify-self-end" />
+        </div>
       </header>
 
-      <div className="grid gap-5 lg:grid-cols-[2fr_1fr]">
-        {/* ══ Chemin de demande ══ */}
-        <div className="flex min-w-0 flex-col gap-4">
-          {/* Ligne dessinée + jalons (décorative — les boutons font foi) */}
-          <svg
-            viewBox="0 0 400 44"
-            className="hidden h-11 w-full sm:block"
-            preserveAspectRatio="none"
-            aria-hidden="true"
-          >
-            <path
-              d={PATH_D}
-              fill="none"
-              stroke="color-mix(in oklab, var(--glass-accent-deep) 28%, transparent)"
-              strokeWidth="2"
-              strokeDasharray="5 6"
-              strokeLinecap="round"
-            />
-            <path
-              d={PATH_D}
-              fill="none"
-              stroke="var(--glass-accent-deep)"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              pathLength={100}
-              strokeDasharray="100"
-              strokeDashoffset={100 - progress}
-              style={{ transition: "stroke-dashoffset 600ms cubic-bezier(0.4,0,0.2,1)" }}
-            />
-            {PATH_NODES.slice(0, steps.length).map((node, i) => (
-              <circle
-                key={node.x}
-                cx={node.x}
-                cy={node.y}
-                r={i === selected ? 7 : 5}
-                fill={
-                  i <= selected
-                    ? "var(--glass-accent-deep)"
-                    : "color-mix(in oklab, var(--glass-accent-deep) 16%, transparent)"
-                }
-                stroke="var(--glass-accent-deep)"
-                strokeWidth={i <= selected ? 0 : 1.5}
-                style={{ transition: "r 300ms, fill 300ms" }}
+      {/* ══ Étapes : 4 cartes numérotées, illustrées, avec CTA ══ */}
+      <ol className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {steps.map((step, i) => (
+          <li key={step.order} className="relative outils-rise" style={{ animationDelay: `${i * 90}ms` }}>
+            {/* Connecteur chevron entre les cartes (desktop) */}
+            {i < steps.length - 1 ? (
+              <ChevronRight
+                className="absolute -right-3 top-1/2 z-10 hidden size-6 -translate-y-1/2 rounded-full bg-[color:var(--glass-surface-strong)] p-0.5 text-[color:var(--glass-accent-deep)] shadow-sm lg:block"
+                aria-hidden
               />
-            ))}
-          </svg>
-
-          {/* Jalons cliquables */}
-          <ol className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            {steps.map((step, i) => {
-              const active = i === selected;
-              return (
-                <li key={step.order} className="outils-rise" style={{ animationDelay: `${i * 90}ms` }}>
-                  <button
-                    type="button"
-                    onClick={() => setSelected(i)}
-                    aria-current={active ? "step" : undefined}
-                    className="glass-surface glass-interactive flex h-full w-full flex-col items-start gap-2 rounded-2xl p-4 text-left transition-all"
-                    style={
-                      active
-                        ? {
-                            boxShadow: "0 0 0 2px var(--glass-accent-deep)",
-                            background:
-                              "color-mix(in oklab, var(--glass-accent-deep) 9%, transparent)",
-                          }
-                        : undefined
-                    }
-                  >
-                    <JourneyVignette icon={step.icon} className="h-14 w-14" />
-                    <span className="text-[10.5px] font-bold uppercase tracking-[0.12em] text-[color:var(--glass-ink-faint)]">
-                      {td("journeyStepEyebrow", { order: step.order })}
-                    </span>
-                    <span className="line-clamp-2 text-[13.5px] font-semibold leading-snug text-[color:var(--glass-ink)]">
-                      {resolve(step.titleKey, step.title)}
-                    </span>
-                  </button>
-                </li>
-              );
-            })}
-          </ol>
-
-          {/* Panneau de détail — rejoue l'entrée à chaque sélection */}
-          <div
-            key={selected}
-            aria-live="polite"
-            className="glass-surface outils-rise flex flex-col gap-4 rounded-2xl p-5 sm:flex-row sm:items-center sm:gap-6"
-          >
-            <div
-              className="glass-icon-tile flex size-24 shrink-0 items-center justify-center self-center rounded-3xl sm:size-28"
-              style={{
-                background: "color-mix(in oklab, var(--glass-accent-deep) 10%, transparent)",
-                "--tile-hue": "var(--glass-accent-deep)",
-              } as React.CSSProperties}
-            >
-              <JourneyVignette icon={current.icon} className="h-20 w-20 sm:h-24 sm:w-24" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-[color:var(--glass-ink-faint)]">
-                {td("journeyStepLabel", { current: selected + 1, total: steps.length })}
-              </p>
-              <h2 className="mt-1 text-[17px] font-semibold leading-snug text-[color:var(--glass-ink)]">
-                {resolve(current.titleKey, current.title)}
-              </h2>
-              <p className="mt-1.5 text-[13.5px] leading-[1.6] text-[color:var(--glass-ink-soft)]">
-                {resolve(current.bodyKey, current.body)}
-              </p>
-            </div>
-            <div className="flex shrink-0 items-center gap-2 self-end sm:self-center">
-              <button
-                type="button"
-                onClick={() => setSelected((s) => Math.max(0, s - 1))}
-                disabled={selected === 0}
-                aria-label={td("journeyPrev")}
-                className="glass-interactive flex size-9 items-center justify-center rounded-full border border-[color:color-mix(in_oklab,var(--glass-accent-deep)_30%,transparent)] text-[color:var(--glass-accent-deep)] disabled:opacity-35"
-              >
-                <ChevronLeft className="size-4" />
-              </button>
-              <button
-                type="button"
-                onClick={() => setSelected((s) => Math.min(steps.length - 1, s + 1))}
-                disabled={selected === steps.length - 1}
-                aria-label={td("journeyNext")}
-                className="glass-interactive flex size-9 items-center justify-center rounded-full border border-[color:color-mix(in_oklab,var(--glass-accent-deep)_30%,transparent)] text-[color:var(--glass-accent-deep)] disabled:opacity-35"
-              >
-                <ChevronRight className="size-4" />
-              </button>
-            </div>
-          </div>
-
-          {/* CTA */}
-          <div className="outils-rise" style={{ animationDelay: "360ms" }}>
+            ) : null}
             <button
               type="button"
-              onClick={() => setStarted(true)}
-              className="glass-cta inline-flex items-center justify-center gap-2 rounded-full px-6 py-3.5 text-[14px] font-bold"
+              onClick={start}
+              className="glass-surface glass-interactive group flex h-full w-full flex-col items-center gap-3 rounded-2xl p-5 text-center transition-transform hover:-translate-y-0.5"
             >
-              {resolve(ctaLabelKey, ctaLabel)}
-              <ArrowRight className="size-4" aria-hidden />
+              <span className="flex size-8 items-center justify-center rounded-full bg-[color:var(--glass-accent-deep)] text-[13px] font-bold text-white">
+                {step.order}
+              </span>
+              <span
+                className="glass-icon-tile flex size-20 items-center justify-center rounded-2xl"
+                style={{
+                  background: "color-mix(in oklab, var(--glass-accent-deep) 10%, transparent)",
+                  "--tile-hue": "var(--glass-accent-deep)",
+                } as React.CSSProperties}
+              >
+                <JourneyVignette icon={step.icon} className="h-14 w-14" />
+              </span>
+              <span className="text-[15px] font-semibold leading-snug text-[color:var(--glass-ink)]">
+                {resolve(step.titleKey, step.title)}
+              </span>
+              <span className="text-[13px] leading-[1.55] text-[color:var(--glass-ink-soft)]">
+                {resolve(step.bodyKey, step.body)}
+              </span>
+              <span className="mt-auto inline-flex items-center gap-1 pt-1 text-[12.5px] font-semibold text-[color:var(--glass-accent-deep)]">
+                {td("journeyStepCta")}
+                <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-0.5" aria-hidden />
+              </span>
             </button>
+          </li>
+        ))}
+      </ol>
+
+      {/* ══ À savoir avant de commencer ══ */}
+      {warnings.length > 0 ? (
+        <div className="flex flex-col gap-4">
+          <h2 className="glass-display w-fit border-b-2 border-[color:var(--glass-accent-deep)] pb-1 text-[19px] font-semibold">
+            {td("journeyConditionsTitle")}
+          </h2>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {warnings.map((w, i) => {
+              const title = resolve(w.titleKey, w.title);
+              const critical = w.severity === "critical";
+              const WIcon = warningIcon(title, w.severity);
+              const hue = critical ? "var(--glass-pop-fg)" : "var(--glass-accent-deep)";
+              return (
+                <div
+                  key={w.titleKey ?? w.title}
+                  className="glass-surface outils-rise flex flex-col gap-2.5 rounded-2xl p-5"
+                  style={{ animationDelay: `${120 + i * 80}ms` }}
+                >
+                  <span
+                    className="flex size-10 items-center justify-center rounded-xl"
+                    style={{ background: `color-mix(in oklab, ${hue} 14%, transparent)`, color: hue }}
+                    aria-hidden
+                  >
+                    <WIcon className="size-5" />
+                  </span>
+                  <p className="text-[14px] font-semibold leading-snug text-[color:var(--glass-ink)]">
+                    {title}
+                  </p>
+                  <p className="text-[12.5px] leading-[1.55] text-[color:var(--glass-ink-soft)]">
+                    {resolve(w.messageKey, w.message)}
+                  </p>
+                </div>
+              );
+            })}
           </div>
         </div>
+      ) : null}
 
-        {/* ══ Sidebar : conditions + documents ══ */}
-        <aside className="flex flex-col gap-4">
-          {warnings.length > 0 ? (
-            <div className="flex flex-col gap-3">
-              <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-[color:var(--glass-ink-faint)]">
-                {td("journeyConditionsTitle")}
-              </p>
-              {warnings.map((w, i) => {
-                const critical = w.severity === "critical";
-                const WIcon = critical ? AlertTriangle : Info;
-                const hue = critical ? "var(--glass-pop-fg)" : "var(--glass-accent-deep)";
-                return (
-                  <div
-                    key={w.titleKey ?? w.title}
-                    className="glass-surface outils-rise flex gap-3 rounded-2xl p-4"
-                    style={{ animationDelay: `${120 + i * 90}ms` }}
-                  >
-                    <span
-                      className="flex size-9 shrink-0 items-center justify-center rounded-xl"
-                      style={{ background: `color-mix(in oklab, ${hue} 14%, transparent)`, color: hue }}
-                      aria-hidden
-                    >
-                      <WIcon className="size-4" />
-                    </span>
-                    <div className="min-w-0">
-                      <p className="text-[13px] font-semibold text-[color:var(--glass-ink)]">
-                        {resolve(w.titleKey, w.title)}
-                      </p>
-                      <p className="mt-0.5 text-[12.5px] leading-[1.55] text-[color:var(--glass-ink-soft)]">
-                        {resolve(w.messageKey, w.message)}
-                      </p>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          ) : null}
+      {/* ══ Documents à prévoir (repli discret sous les cartes) ══ */}
+      {documents.length > 0 ? (
+        <div className="glass-surface flex flex-col gap-3 rounded-2xl p-5">
+          <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-[color:var(--glass-ink-faint)]">
+            {td("journeyDocsTitle")}
+          </p>
+          <div className="flex flex-wrap gap-x-6 gap-y-2">
+            {documents.map((d) => (
+              <span key={d.slug} className="inline-flex items-center gap-2 text-[12.5px] font-medium text-[color:var(--glass-ink)]">
+                <FileText className="size-3.5 text-[color:var(--glass-accent-deep)]" aria-hidden />
+                {resolve(d.titleKey, d.title)}
+              </span>
+            ))}
+          </div>
+        </div>
+      ) : null}
 
-          {documents.length > 0 ? (
-            <div className="flex flex-col gap-3">
-              <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-[color:var(--glass-ink-faint)]">
-                {td("journeyDocsTitle")}
-              </p>
-              <div className="glass-surface outils-rise flex flex-col gap-2.5 rounded-2xl p-4" style={{ animationDelay: "300ms" }}>
-                {documents.map((d) => (
-                  <div key={d.slug} className="flex items-center gap-2.5">
-                    <span
-                      className="flex size-8 shrink-0 items-center justify-center rounded-lg"
-                      style={{
-                        background: "color-mix(in oklab, var(--glass-accent-deep) 12%, transparent)",
-                        color: "var(--glass-accent-deep)",
-                      }}
-                      aria-hidden
-                    >
-                      <FileText className="size-3.5" />
-                    </span>
-                    <span className="text-[12.5px] font-medium text-[color:var(--glass-ink)]">
-                      {resolve(d.titleKey, d.title)}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ) : null}
-        </aside>
+      {/* ══ Bandeau CTA final ══ */}
+      <div className="glass-surface outils-rise flex flex-col items-start gap-5 rounded-3xl p-6 sm:flex-row sm:items-center sm:justify-between sm:p-8">
+        <div className="flex items-center gap-4">
+          <span
+            className="glass-icon-tile flex size-14 shrink-0 items-center justify-center rounded-2xl text-[color:var(--glass-accent-deep)]"
+            style={{
+              background: "color-mix(in oklab, var(--glass-accent-deep) 12%, transparent)",
+              "--tile-hue": "var(--glass-accent-deep)",
+            } as React.CSSProperties}
+            aria-hidden
+          >
+            <FilePlus2 className="size-6" />
+          </span>
+          <div>
+            <p className="glass-display text-[20px] font-semibold leading-snug">
+              {td("journeyBannerTitle")}
+            </p>
+            <p className="mt-1 text-[13.5px] leading-[1.5] text-[color:var(--glass-ink-soft)]">
+              {td("journeyBannerSubtitle")}
+            </p>
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={start}
+          className="glass-cta inline-flex shrink-0 items-center justify-center gap-2 rounded-full px-6 py-3.5 text-[14px] font-bold"
+        >
+          {cta}
+          <ArrowRight className="size-4" aria-hidden />
+        </button>
       </div>
     </section>
   );

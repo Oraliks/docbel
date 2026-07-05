@@ -38,7 +38,7 @@ export function YesNoSegmentedControl({
             role="radio"
             aria-checked={selected}
             onClick={() => onChange(opt.value)}
-            className={`px-4 py-2 text-sm font-medium transition-colors ${i === 0 ? "" : "border-l border-[color:var(--glass-border)]"} ${
+            className={`px-4 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 ${i === 0 ? "" : "border-l border-[color:var(--glass-border)]"} ${
               selected
                 ? "bg-[color:var(--glass-accent-deep,#5B46E5)] text-white"
                 : "text-[color:var(--glass-ink-soft)] hover:bg-[color:var(--glass-pop-bg)]"

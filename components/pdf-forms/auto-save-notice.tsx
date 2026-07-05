@@ -16,7 +16,7 @@ export function AutoSaveNotice({ lastSavedAt, isPartOfBundle }: AutoSaveNoticePr
     <p className="text-xs text-[color:var(--glass-ink-soft)]">
       Vos réponses sont enregistrées automatiquement
       {lastSavedAt && ` (dernier enregistrement à ${lastSavedAt.toLocaleTimeString("fr-BE", { hour: "2-digit", minute: "2-digit" })})`}
-      {isPartOfBundle && " — retrouve ton code de reprise sur la page du dossier"}.
+      {isPartOfBundle && " — retrouvez votre code de reprise sur la page du dossier"}.
     </p>
   );
 }

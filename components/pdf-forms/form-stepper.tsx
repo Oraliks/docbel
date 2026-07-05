@@ -29,7 +29,7 @@ export function FormStepper({ steps, activeIndex, onSelect }: FormStepperProps) 
               type="button"
               onClick={() => onSelect(i)}
               aria-current={isActive ? "step" : undefined}
-              className="flex min-w-0 flex-1 items-center gap-2 rounded-xl px-2 py-1.5 text-left transition-colors hover:bg-[color:var(--glass-pop-bg)]"
+              className="flex min-w-0 flex-1 items-center gap-2 rounded-xl px-2 py-1.5 text-left transition-colors hover:bg-[color:var(--glass-pop-bg)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
             >
               <span
                 className={`flex size-7 shrink-0 items-center justify-center rounded-full text-xs font-bold ${

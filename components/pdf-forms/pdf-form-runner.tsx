@@ -22,13 +22,19 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { PdfField } from "./pdf-field";
-import { buildValidator, isFieldVisible } from "@/lib/pdf-forms/validation";
-import { sectionLabel } from "@/lib/pdf-forms/section-labels";
+import { buildValidator } from "@/lib/pdf-forms/validation";
 import { Locale, FieldValue, FormPayload, PdfFormField, loc } from "@/lib/pdf-forms/types";
 import { todayISO } from "@/lib/pdf-forms/system-values";
 import { resolveSignerName } from "@/lib/pdf-forms/signature";
 import { isAutoField, isCreationDateField, isSignatureField } from "@/lib/pdf-forms/auto-fields";
 import type { PublicForm, PublicField } from "@/lib/pdf-forms/public-serializer";
+import { buildSteps, type OptionalSection } from "@/lib/pdf-forms/build-steps";
+import { FormStepper } from "./form-stepper";
+import { FormShell } from "./form-shell";
+import { ContextHelpPanel } from "./context-help-panel";
+import { CompactAccordionSection } from "./compact-accordion-section";
+import { AutoSaveNotice } from "./auto-save-notice";
+import { OptionCard } from "@/components/ui/option-card";
 
 const LOCALE_NAMES: Record<Locale, string> = { fr: "FR", nl: "NL", de: "DE" };
 
@@ -51,6 +57,7 @@ function defaultValues(form: PublicForm, bundlePrefill?: Record<string, string>)
 
 type Step =
   | { kind: "fields"; id: string; title: string; subtitle: string; fields: PublicField[] }
+  | { kind: "optional-group"; id: string; title: string; subtitle: string; sections: OptionalSection[] }
   | { kind: "summary"; id: string; title: string; subtitle: string };
 
 interface PdfFormRunnerProps {
@@ -59,9 +66,13 @@ interface PdfFormRunnerProps {
   bundleRunId?: string;
   onValuesChange?: (values: FormPayload) => void;
   onLocaleChange?: (locale: Locale) => void;
+  /// Filet de sécurité : force l'ancien rendu (grille dense + résumé
+  /// détaillé) si true. Piloté par un env var serveur, cf. Task 12. Défaut
+  /// false (nouveau rendu).
+  legacyLayout?: boolean;
 }
 
-export function PdfFormRunner({ form, bundlePrefill, bundleRunId, onValuesChange, onLocaleChange }: PdfFormRunnerProps) {
+export function PdfFormRunner({ form, bundlePrefill, bundleRunId, onValuesChange, onLocaleChange, legacyLayout = false }: PdfFormRunnerProps) {
   const t = useTranslations("public.dossier");
   const [locale, setLocale] = useState<Locale>(form.defaultLocale);
   const [values, setValues] = useState<FormPayload>(() => defaultValues(form, bundlePrefill));
@@ -72,6 +83,7 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, onValuesChange
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState<null | { mode: "download" | "doccle" }>(null);
   const [active, setActive] = useState(0);
+  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => { onValuesChange?.(values); }, [values, onValuesChange]);
@@ -104,51 +116,39 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, onValuesChange
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form.slug]);
 
-  // ----- Construction des étapes (tabs) -----
-  // Étapes affichées : une par section de champs saisis, puis "Résumé".
-  // Les champs signature ET les champs auto (system.today) sont masqués du
-  // formulaire : ils sont injectés automatiquement à la génération du PDF
-  // (date du jour côté serveur, signature numérique avec le nom déduit du
-  // formulaire). Le bouton final unique = "Signer et générer le document".
+  // ----- Construction des étapes -----
+  // Étapes "core" (séquentielles) + un bloc "optionnel" replié (sections
+  // stepPriority=optional) + l'étape résumé, dans cet ordre. Logique pure
+  // extraite dans build-steps.ts (testée indépendamment).
+  const dataFields = useMemo(
+    () => form.fields.filter((f) => !isAutoField(f)),
+    [form.fields]
+  );
+  const { coreSteps, optionalSections } = useMemo(
+    () =>
+      buildSteps(dataFields, values, locale, {
+        fallbackTitle: t("runnerStepInfoTitle"),
+        fallbackSubtitle: t("runnerStepInfoSubtitle"),
+      }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [dataFields, values, locale]
+  );
+
   const steps = useMemo<Step[]>(() => {
-    const visible = form.fields.filter((f) => isFieldVisible(f.visibleIf, values));
-    const dataFields = visible.filter((f) => !isAutoField(f));
-
-    // Regroupement GLOBAL par section (pas seulement les champs consécutifs) :
-    // deux champs de la même section mais éloignés dans l'ordre du PDF (ex.
-    // NISS en tête, puis nom bien plus loin après des champs sans section)
-    // doivent fusionner dans le même onglet plutôt que créer un doublon
-    // ("Identité" apparaissant deux fois). L'ordre des onglets suit l'ordre
-    // de PREMIÈRE apparition de chaque section.
-    const groups: Array<{ key: string | undefined; fields: PublicField[] }> = [];
-    const groupIndexByKey = new Map<string | undefined, number>();
-    for (const f of dataFields) {
-      const idx = groupIndexByKey.get(f.section);
-      if (idx !== undefined) groups[idx].fields.push(f);
-      else {
-        groupIndexByKey.set(f.section, groups.length);
-        groups.push({ key: f.section, fields: [f] });
-      }
-    }
-
-    const out: Step[] = [];
-    if (groups.length === 0) {
-      out.push({ kind: "fields", id: "informations", title: t("runnerStepInfoTitle"), subtitle: t("runnerStepInfoSubtitle"), fields: [] });
-    } else {
-      groups.forEach((g, i) => {
-        out.push({
-          kind: "fields",
-          id: g.key ?? `section-${i}`,
-          title: g.key ? sectionLabel(g.key, locale) : t("runnerStepInfoTitle"),
-          subtitle: t("runnerStepInfoSubtitle"),
-          fields: g.fields,
-        });
+    const out: Step[] = [...coreSteps];
+    if (optionalSections.length > 0) {
+      out.push({
+        kind: "optional-group",
+        id: "optional-group",
+        title: t("runnerOptionalGroupTitle"),
+        subtitle: t("runnerOptionalGroupSubtitle"),
+        sections: optionalSections,
       });
     }
     out.push({ kind: "summary", id: "summary", title: t("runnerStepSummaryTitle"), subtitle: t("runnerStepSummarySubtitle") });
     return out;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form.fields, values, locale]);
+  }, [coreSteps, optionalSections, locale]);
 
   // Nom du signataire résolu depuis les champs saisis (pour la signature
   // numérique). "" si aucun nom exploitable.
@@ -162,6 +162,7 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, onValuesChange
     const m: Record<string, number> = {};
     steps.forEach((s, i) => {
       if (s.kind === "fields") s.fields.forEach((f) => (m[f.id] = i));
+      if (s.kind === "optional-group") s.sections.forEach((sec) => sec.fields.forEach((f) => (m[f.id] = i)));
     });
     return m;
   }, [steps]);
@@ -180,6 +181,7 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, onValuesChange
           }).catch(() => {});
           return cur;
         });
+        setLastSavedAt(new Date());
       }, 1500);
     },
     [form.slug]
@@ -298,13 +300,37 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, onValuesChange
     );
   }
 
-  const current = steps[activeIndex];
-  const stepHasError = (s: Step) => s.kind === "fields" && s.fields.some((f) => errors[f.id]);
+  if (legacyLayout) {
+    return (
+      <LegacyRunnerBody
+        form={form}
+        steps={steps}
+        activeIndex={activeIndex}
+        setActive={setActive}
+        locale={locale}
+        values={values}
+        errors={errors}
+        setValue={setValue}
+        signerName={signerName}
+        consent={consent}
+        setConsent={setConsent}
+        delivery={delivery}
+        setDelivery={setDelivery}
+        doccleRef={doccleRef}
+        setDoccleRef={setDoccleRef}
+        submitting={submitting}
+        submit={submit}
+        t={t}
+      />
+    );
+  }
 
-  const stepIcon = (s: Step, i: number) => {
-    if (s.kind === "summary") return <EyeIcon className="size-4" />;
-    return i === 0 ? <UserIcon className="size-4" /> : <FileTextIcon className="size-4" />;
-  };
+  const current = steps[activeIndex];
+  const stepHasError = (s: Step) =>
+    (s.kind === "fields" && s.fields.some((f) => errors[f.id])) ||
+    (s.kind === "optional-group" && s.sections.some((sec) => sec.fields.some((f) => errors[f.id])));
+
+  const activeSectionKey = current.kind === "fields" ? current.id : undefined;
 
   return (
     <div className="flex flex-col gap-3">
@@ -331,12 +357,327 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, onValuesChange
         </div>
       )}
 
-      {/* Carte blanche contenant les tabs + le contenu de l'étape */}
+      <FormShell
+        helpPanel={<ContextHelpPanel sectionKey={activeSectionKey} locale={locale} />}
+      >
+        <Card className="overflow-hidden rounded-2xl border-0 bg-card shadow-sm">
+          <div className="border-b px-2">
+            <FormStepper
+              steps={steps.map((s) => ({ id: s.id, label: s.title, hasError: stepHasError(s) }))}
+              activeIndex={activeIndex}
+              onSelect={setActive}
+            />
+          </div>
+
+          <CardContent className="p-5 sm:p-6">
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (current.kind === "summary") submit();
+              }}
+              className="flex flex-col gap-5"
+            >
+              {/* En-tête d'étape */}
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex flex-col gap-0.5">
+                  <h2 className="text-base font-semibold">{current.title}</h2>
+                  <p className="text-xs text-muted-foreground">
+                    {current.kind === "summary"
+                      ? t("runnerSummaryStepHelp")
+                      : t("runnerFieldsStepHelp")}
+                  </p>
+                </div>
+                {current.kind === "fields" && current.fields.length > 0 && (
+                  <span className="flex shrink-0 items-center gap-1.5 rounded-full bg-muted px-2.5 py-1 text-[11px] text-muted-foreground">
+                    <InfoIcon className="size-3" />
+                    {current.fields.every((f) => f.required) ? t("runnerAllFieldsRequired") : t("runnerStarFieldsRequired")}
+                  </span>
+                )}
+              </div>
+
+              {/* Contenu de l'étape */}
+              {current.kind === "summary" ? (
+                <ConfirmationCard hasSignature={form.fields.some(isSignatureField)} signerName={signerName} />
+              ) : current.kind === "optional-group" ? (
+                <CompactAccordionSection
+                  sections={current.sections}
+                  renderFields={(fields) => (
+                    <FieldsCluster
+                      fields={fields}
+                      values={values}
+                      errors={errors}
+                      locale={locale}
+                      setValue={setValue}
+                      formId={form.id}
+                      formSlug={form.slug}
+                    />
+                  )}
+                />
+              ) : (
+                <FieldsCluster
+                  fields={current.fields}
+                  values={values}
+                  errors={errors}
+                  locale={locale}
+                  setValue={setValue}
+                  formId={form.id}
+                  formSlug={form.slug}
+                />
+              )}
+
+              {/* Pied d'étape */}
+              {current.kind === "summary" ? (
+                <div className="flex flex-col gap-4">
+                  {form.allowDownload && form.allowDoccle && (
+                    <div className="flex flex-col gap-2">
+                      <span className="text-xs font-medium text-muted-foreground">{t("runnerDeliveryModeLabel")}</span>
+                      <div className="flex gap-1.5">
+                        <Button type="button" size="sm" variant={delivery === "download" ? "default" : "outline"} onClick={() => setDelivery("download")}>
+                          <DownloadIcon className="size-4" /> {t("runnerDeliveryDownload")}
+                        </Button>
+                        <Button type="button" size="sm" variant={delivery === "doccle" ? "default" : "outline"} onClick={() => setDelivery("doccle")}>
+                          <SendIcon className="size-4" /> {t("runnerDeliveryDoccle")}
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                  {delivery === "doccle" && (
+                    <div className="flex flex-col gap-1.5">
+                      <Label htmlFor="doccle-ref">{t("runnerDoccleRecipientLabel")}</Label>
+                      <Input id="doccle-ref" value={doccleRef} placeholder={t("runnerDoccleRecipientPlaceholder")} onChange={(e) => setDoccleRef(e.target.value)} />
+                    </div>
+                  )}
+                  <Separator />
+                  {form.fields.some(isSignatureField) && (
+                    <div className="rounded-lg border border-dashed bg-muted/30 p-3 text-sm">
+                      <div className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                        {t("runnerDigitalSignatureLabel")}
+                      </div>
+                      {signerName ? (
+                        <>
+                          <div className="mt-1 font-serif text-lg italic">{signerName}</div>
+                          <div className="mt-0.5 text-[11px] text-muted-foreground">
+                            {t("runnerDigitalSignatureAutoNote")}
+                          </div>
+                        </>
+                      ) : (
+                        <div className="mt-1 text-xs text-amber-700 dark:text-amber-300">
+                          {t("runnerDigitalSignatureNameRequired")}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  <label className="flex items-start gap-2.5 text-sm text-muted-foreground">
+                    <Checkbox checked={consent} onCheckedChange={(c) => setConsent(c === true)} className="mt-0.5" />
+                    <span>{t("runnerConsentText")}</span>
+                  </label>
+                  <AutoSaveNotice lastSavedAt={lastSavedAt} isPartOfBundle={!!bundleRunId} />
+                  <div className="flex items-center gap-2">
+                    {activeIndex > 0 && (
+                      <Button type="button" variant="outline" onClick={() => setActive(activeIndex - 1)}>
+                        <ChevronLeftIcon className="size-4" /> {t("previous")}
+                      </Button>
+                    )}
+                    <Button type="submit" disabled={submitting} className="flex-1">
+                      {submitting ? <Loader2Icon className="size-4 animate-spin" /> : delivery === "doccle" ? <SendIcon className="size-4" /> : <DownloadIcon className="size-4" />}
+                      {submitting
+                        ? t("runnerGenerating")
+                        : delivery === "doccle"
+                        ? t("runnerSubmitSignAndSend")
+                        : t("runnerSubmitSignAndGenerate")}
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center justify-between">
+                    {activeIndex > 0 ? (
+                      <Button type="button" variant="outline" onClick={() => setActive(activeIndex - 1)}>
+                        <ChevronLeftIcon className="size-4" /> {t("previous")}
+                      </Button>
+                    ) : (
+                      <span />
+                    )}
+                    <Button type="button" onClick={() => setActive(activeIndex + 1)}>
+                      {t("continue")} <ChevronRightIcon className="size-4" />
+                    </Button>
+                  </div>
+                  <AutoSaveNotice lastSavedAt={lastSavedAt} isPartOfBundle={!!bundleRunId} />
+                </div>
+              )}
+            </form>
+          </CardContent>
+        </Card>
+      </FormShell>
+    </div>
+  );
+}
+
+/// Regroupe les champs `renderAs: "chip"` en grille de OptionCard (au lieu
+/// d'appeler PdfField pour ceux-là) ; le reste des champs suit le rendu
+/// PdfField habituel. Single-select si le champ est "radio", multi-select
+/// (indépendant) si "checkbox" — chaque champ garde sa propre valeur, ce
+/// composant ne fait qu'aiguiller le rendu.
+function FieldsCluster({
+  fields,
+  values,
+  errors,
+  locale,
+  setValue,
+  formId,
+  formSlug,
+}: {
+  fields: PublicField[];
+  values: FormPayload;
+  errors: Record<string, string>;
+  locale: Locale;
+  setValue: (id: string, value: FieldValue) => void;
+  formId: string;
+  formSlug: string;
+}) {
+  const chipFields = fields.filter((f) => f.renderAs === "chip");
+  const otherFields = fields.filter((f) => f.renderAs !== "chip");
+
+  return (
+    <div className="flex flex-col gap-5">
+      {chipFields.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {chipFields.map((f) => {
+            if (f.type === "radio") {
+              return (f.options || []).map((o) => (
+                <OptionCard
+                  key={`${f.id}-${o.value}`}
+                  label={loc(o.label, locale)}
+                  selected={values[f.id] === o.value}
+                  onToggle={() => setValue(f.id, o.value)}
+                />
+              ));
+            }
+            // checkbox : une seule carte, toggle indépendant.
+            return (
+              <OptionCard
+                key={f.id}
+                label={loc(f.label, locale)}
+                selected={values[f.id] === true}
+                onToggle={() => setValue(f.id, values[f.id] !== true)}
+              />
+            );
+          })}
+        </div>
+      )}
+      {otherFields.length > 0 && (
+        <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2">
+          {otherFields.map((f) => (
+            <div key={f.id} className={FULL_WIDTH_TYPES.has(f.type) ? "sm:col-span-2" : ""}>
+              <PdfField
+                field={f}
+                value={values[f.id] ?? ""}
+                error={errors[f.id]}
+                locale={locale}
+                onChange={(v) => setValue(f.id, v)}
+                formId={formId}
+                formSlug={formSlug}
+              />
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/// Étape finale allégée : plus de liste détaillée des valeurs (ancien
+/// SummaryStep, conservé plus bas pour le mode legacy). Le mode de
+/// livraison/signature/consentement restent dans le pied d'étape appelant.
+function ConfirmationCard({ hasSignature, signerName }: { hasSignature: boolean; signerName: string }) {
+  return (
+    <div className="rounded-2xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] p-5 text-sm text-[color:var(--glass-ink)]">
+      Votre déclaration est prête à être envoyée.
+      {hasSignature && !signerName && (
+        <span className="mt-1 block text-amber-700 dark:text-amber-300">
+          Renseignez votre nom en début de formulaire pour signer numériquement.
+        </span>
+      )}
+    </div>
+  );
+}
+
+interface LegacyRunnerBodyProps {
+  form: PublicForm;
+  steps: Step[];
+  activeIndex: number;
+  setActive: (i: number) => void;
+  locale: Locale;
+  values: FormPayload;
+  errors: Record<string, string>;
+  setValue: (id: string, value: FieldValue) => void;
+  signerName: string;
+  consent: boolean;
+  setConsent: (c: boolean) => void;
+  delivery: "download" | "doccle";
+  setDelivery: (d: "download" | "doccle") => void;
+  doccleRef: string;
+  setDoccleRef: (v: string) => void;
+  submitting: boolean;
+  submit: () => void;
+  t: ReturnType<typeof useTranslations>;
+}
+
+/// Ancien rendu (grille dense 2 colonnes + résumé détaillé), conservé
+/// verbatim pour le filet de sécurité PDF_FORM_LEGACY_LAYOUT (cf. Task 12).
+/// Ne reçoit AUCUNE des nouvelles données (renderAs/stepPriority sont
+/// ignorés ici par construction — un step "optional-group" est aplati en
+/// simple liste de champs, comme un step "fields" classique).
+function LegacyRunnerBody({
+  form,
+  steps,
+  activeIndex,
+  setActive,
+  locale,
+  values,
+  errors,
+  setValue,
+  signerName,
+  consent,
+  setConsent,
+  delivery,
+  setDelivery,
+  doccleRef,
+  setDoccleRef,
+  submitting,
+  submit,
+  t,
+}: LegacyRunnerBodyProps) {
+  const flatSteps = steps.map((s) =>
+    s.kind === "optional-group"
+      ? { kind: "fields" as const, id: s.id, title: s.title, subtitle: s.subtitle, fields: s.sections.flatMap((sec) => sec.fields) }
+      : s
+  );
+  const activeIdx = Math.min(activeIndex, flatSteps.length - 1);
+  const current = flatSteps[activeIdx];
+  const stepHasError = (s: (typeof flatSteps)[number]) => s.kind === "fields" && s.fields.some((f) => errors[f.id]);
+
+  const stepIcon = (s: (typeof flatSteps)[number], i: number) => {
+    if (s.kind === "summary") return <EyeIcon className="size-4" />;
+    return i === 0 ? <UserIcon className="size-4" /> : <FileTextIcon className="size-4" />;
+  };
+
+  return (
+    <div className="flex flex-col gap-3">
+      {(form.locales.length > 1 || form.allowItsme) && (
+        <div className="flex flex-wrap items-center gap-2">
+          {form.locales.length > 1 &&
+            form.locales.map((l) => (
+              <Button key={l} size="sm" variant={l === locale ? "default" : "outline"} className="h-7 px-2.5" onClick={() => {}}>
+                {LOCALE_NAMES[l]}
+              </Button>
+            ))}
+        </div>
+      )}
       <Card className="overflow-hidden rounded-2xl border-0 bg-card shadow-sm">
-        {/* Barre de tabs */}
         <div className="flex overflow-x-auto border-b">
-          {steps.map((s, i) => {
-            const activeTab = i === activeIndex;
+          {flatSteps.map((s, i) => {
+            const activeTab = i === activeIdx;
             const err = stepHasError(s);
             return (
               <button
@@ -376,14 +717,11 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, onValuesChange
             }}
             className="flex flex-col gap-5"
           >
-            {/* En-tête d'étape */}
             <div className="flex items-start justify-between gap-3">
               <div className="flex flex-col gap-0.5">
                 <h2 className="text-base font-semibold">{current.title}</h2>
                 <p className="text-xs text-muted-foreground">
-                  {current.kind === "summary"
-                    ? t("runnerSummaryStepHelp")
-                    : t("runnerFieldsStepHelp")}
+                  {current.kind === "summary" ? t("runnerSummaryStepHelp") : t("runnerFieldsStepHelp")}
                 </p>
               </div>
               {current.kind === "fields" && current.fields.length > 0 && (
@@ -394,9 +732,6 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, onValuesChange
               )}
             </div>
 
-            {/* Contenu : champs (grille 2 col) ou résumé. L'étape signature
-                explicite a été retirée — la signature est générée à la
-                soumission avec le nom déduit du formulaire. */}
             {current.kind === "summary" ? (
               <SummaryStep form={form} values={values} locale={locale} signerName={signerName} />
             ) : (
@@ -417,7 +752,6 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, onValuesChange
               </div>
             )}
 
-            {/* Pied d'étape */}
             {current.kind === "summary" ? (
               <div className="flex flex-col gap-4">
                 {form.allowDownload && form.allowDoccle && (
@@ -435,28 +769,21 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, onValuesChange
                 )}
                 {delivery === "doccle" && (
                   <div className="flex flex-col gap-1.5">
-                    <Label htmlFor="doccle-ref">{t("runnerDoccleRecipientLabel")}</Label>
-                    <Input id="doccle-ref" value={doccleRef} placeholder={t("runnerDoccleRecipientPlaceholder")} onChange={(e) => setDoccleRef(e.target.value)} />
+                    <Label htmlFor="doccle-ref-legacy">{t("runnerDoccleRecipientLabel")}</Label>
+                    <Input id="doccle-ref-legacy" value={doccleRef} placeholder={t("runnerDoccleRecipientPlaceholder")} onChange={(e) => setDoccleRef(e.target.value)} />
                   </div>
                 )}
                 <Separator />
-                {/* Aperçu de la signature numérique qui sera apposée. */}
                 {form.fields.some(isSignatureField) && (
                   <div className="rounded-lg border border-dashed bg-muted/30 p-3 text-sm">
-                    <div className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                      {t("runnerDigitalSignatureLabel")}
-                    </div>
+                    <div className="text-[11px] uppercase tracking-wide text-muted-foreground">{t("runnerDigitalSignatureLabel")}</div>
                     {signerName ? (
                       <>
                         <div className="mt-1 font-serif text-lg italic">{signerName}</div>
-                        <div className="mt-0.5 text-[11px] text-muted-foreground">
-                          {t("runnerDigitalSignatureAutoNote")}
-                        </div>
+                        <div className="mt-0.5 text-[11px] text-muted-foreground">{t("runnerDigitalSignatureAutoNote")}</div>
                       </>
                     ) : (
-                      <div className="mt-1 text-xs text-amber-700 dark:text-amber-300">
-                        {t("runnerDigitalSignatureNameRequired")}
-                      </div>
+                      <div className="mt-1 text-xs text-amber-700 dark:text-amber-300">{t("runnerDigitalSignatureNameRequired")}</div>
                     )}
                   </div>
                 )}
@@ -465,31 +792,27 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, onValuesChange
                   <span>{t("runnerConsentText")}</span>
                 </label>
                 <div className="flex items-center gap-2">
-                  {activeIndex > 0 && (
-                    <Button type="button" variant="outline" onClick={() => setActive(activeIndex - 1)}>
+                  {activeIdx > 0 && (
+                    <Button type="button" variant="outline" onClick={() => setActive(activeIdx - 1)}>
                       <ChevronLeftIcon className="size-4" /> {t("previous")}
                     </Button>
                   )}
                   <Button type="submit" disabled={submitting} className="flex-1">
                     {submitting ? <Loader2Icon className="size-4 animate-spin" /> : delivery === "doccle" ? <SendIcon className="size-4" /> : <DownloadIcon className="size-4" />}
-                    {submitting
-                      ? t("runnerGenerating")
-                      : delivery === "doccle"
-                      ? t("runnerSubmitSignAndSend")
-                      : t("runnerSubmitSignAndGenerate")}
+                    {submitting ? t("runnerGenerating") : delivery === "doccle" ? t("runnerSubmitSignAndSend") : t("runnerSubmitSignAndGenerate")}
                   </Button>
                 </div>
               </div>
             ) : (
               <div className="flex items-center justify-between">
-                {activeIndex > 0 ? (
-                  <Button type="button" variant="outline" onClick={() => setActive(activeIndex - 1)}>
+                {activeIdx > 0 ? (
+                  <Button type="button" variant="outline" onClick={() => setActive(activeIdx - 1)}>
                     <ChevronLeftIcon className="size-4" /> {t("previous")}
                   </Button>
                 ) : (
                   <span />
                 )}
-                <Button type="button" onClick={() => setActive(activeIndex + 1)}>
+                <Button type="button" onClick={() => setActive(activeIdx + 1)}>
                   {t("continue")} <ChevronRightIcon className="size-4" />
                 </Button>
               </div>

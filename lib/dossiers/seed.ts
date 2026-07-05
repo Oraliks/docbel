@@ -72,6 +72,94 @@ async function readOfficialPdf(relativePath: string): Promise<Buffer> {
   }
 }
 
+/// Calcule les champs enrichis d'un PDF officiel : part de l'inférence brute
+/// de `ingestPdf` (déjà un `PdfFormField[]`) et applique les overrides du
+/// module (`doc.fields`) pour les widgets déclarés — les widgets non mappés
+/// gardent leur métadonnée auto-inférée.
+/// Dédoublonnage : un même champ (ex. NISS en tête de chaque page) apparaît
+/// sur plusieurs widgets de MÊME nom. Le citoyen ne doit le voir qu'UNE fois.
+/// On garde la 1ʳᵉ occurrence visible et on masque (hidden) les suivantes —
+/// elles se remplissent quand même via le nom AcroForm partagé (pdf-lib).
+/// Pure — aucun accès DB. Réutilisée à la création ET pour recalculer les
+/// champs d'un PdfForm déjà seedé après mise à jour du module (cf.
+/// `recomputeDocumentFields` plus bas).
+export function computeEnrichedFields(
+  doc: DossierDocument,
+  declaredByPdfName: Map<string, ResolvedField>,
+  ingestFields: PdfFormField[],
+): PdfFormField[] {
+  const seenPdfNames = new Set<string>();
+  return ingestFields.map((inferred, i) => {
+    const declared = declaredByPdfName.get(inferred.pdfFieldName);
+    const isDuplicate = seenPdfNames.has(inferred.pdfFieldName);
+    seenPdfNames.add(inferred.pdfFieldName);
+    if (!declared) {
+      // `lockUndeclaredFields` : tout champ non mappé par le module est
+      // MASQUÉ du citoyen (formulaire complété par un tiers, ex. partie école
+      // du DIPLÔME) → hidden + non requis. Il reste blanc dans le PDF.
+      const hide = doc.lockUndeclaredFields === true || isDuplicate;
+      return hide
+        ? { ...inferred, order: i, hidden: true, required: false }
+        : { ...inferred, order: i };
+    }
+    return {
+      ...inferred,
+      id: declared.key,
+      type: declared.type,
+      required: isDuplicate ? false : declared.required,
+      label: declared.label,
+      help: declared.help,
+      prefillFrom: declared.prefillFrom,
+      section: declared.section,
+      order: i,
+      // Répétition d'un champ déclaré (même nom PDF) → masquée : une seule
+      // saisie citoyen, toutes les occurrences remplies via le nom partagé.
+      ...(isDuplicate ? { hidden: true } : {}),
+    } as PdfFormField;
+  });
+}
+
+/// Recalcule et met à jour EN PLACE les `fields` d'un PdfForm officiel déjà
+/// seedé, à partir des dernières déclarations du module — SANS toucher au
+/// bundle/items/runs existants (contrairement à `seedDossier({force:true})`
+/// qui supprime tout). Utile après une mise à jour des champs déclarés (ex.
+/// ajout de sections/labels). `apply=false` → dry-run (compte seulement).
+export interface RecomputeFieldsResult {
+  slug: string;
+  status: "updated" | "not_found";
+  fieldsBefore?: number;
+  fieldsAfter?: number;
+}
+
+export async function recomputeDocumentFields(
+  doc: DossierDocument,
+  apply: boolean,
+): Promise<RecomputeFieldsResult> {
+  const existing = await prisma.pdfForm.findUnique({
+    where: { slug: doc.slug },
+    select: { id: true, fields: true },
+  });
+  if (!existing) return { slug: doc.slug, status: "not_found" };
+  if (!doc.sourcePdfPath) {
+    throw new Error(`${doc.slug} : pas de sourcePdfPath, recalcul non applicable`);
+  }
+
+  const declaredFields = resolveDocumentFields(doc);
+  const declaredByPdfName = new Map(declaredFields.map((f) => [f.pdfFieldName, f]));
+  const buffer = await readOfficialPdf(doc.sourcePdfPath);
+  const ingest = await ingestPdf(buffer);
+  const enriched = computeEnrichedFields(doc, declaredByPdfName, ingest.fields);
+  const before = ((existing.fields as unknown as PdfFormField[]) || []).length;
+
+  if (apply) {
+    await prisma.pdfForm.update({
+      where: { id: existing.id },
+      data: { fields: enriched as unknown as Prisma.InputJsonValue },
+    });
+  }
+  return { slug: doc.slug, status: "updated", fieldsBefore: before, fieldsAfter: enriched.length };
+}
+
 /// Crée (idempotent par slug) un PdfForm publié à partir d'un document.
 /// Si `doc.sourcePdfPath` est défini → utilise le vrai PDF officiel ; sinon
 /// génère un stub. Quand l'AcroForm officiel a plus de widgets que les
@@ -96,43 +184,7 @@ async function createPdfFormForDocument(doc: DossierDocument, userId: string | n
 
   let enriched: PdfFormField[];
   if (usingOfficial) {
-    // PDF officiel = source de vérité. On part de l'inférence faite par
-    // ingestPdf (déjà un PdfFormField[]) et on applique les overrides du
-    // module pour les widgets déclarés. Les widgets non mappés gardent leur
-    // métadonnée auto-inférée.
-    // Dédoublonnage : un même champ (ex. NISS en tête de chaque page) apparaît
-    // sur plusieurs widgets de MÊME nom. Le citoyen ne doit le voir qu'UNE fois.
-    // On garde la 1ʳᵉ occurrence visible et on masque (hidden) les suivantes —
-    // elles se remplissent quand même via le nom AcroForm partagé (pdf-lib).
-    const seenPdfNames = new Set<string>();
-    enriched = ingest.fields.map((inferred, i) => {
-      const declared = declaredByPdfName.get(inferred.pdfFieldName);
-      const isDuplicate = seenPdfNames.has(inferred.pdfFieldName);
-      seenPdfNames.add(inferred.pdfFieldName);
-      if (!declared) {
-        // `lockUndeclaredFields` : tout champ non mappé par le module est
-        // MASQUÉ du citoyen (formulaire complété par un tiers, ex. partie école
-        // du DIPLÔME) → hidden + non requis. Il reste blanc dans le PDF.
-        const hide = doc.lockUndeclaredFields === true || isDuplicate;
-        return hide
-          ? { ...inferred, order: i, hidden: true, required: false }
-          : { ...inferred, order: i };
-      }
-      return {
-        ...inferred,
-        id: declared.key,
-        type: declared.type,
-        required: isDuplicate ? false : declared.required,
-        label: declared.label,
-        help: declared.help,
-        prefillFrom: declared.prefillFrom,
-        section: declared.section,
-        order: i,
-        // Répétition d'un champ déclaré (même nom PDF) → masquée : une seule
-        // saisie citoyen, toutes les occurrences remplies via le nom partagé.
-        ...(isDuplicate ? { hidden: true } : {}),
-      } as PdfFormField;
-    });
+    enriched = computeEnrichedFields(doc, declaredByPdfName, ingest.fields);
   } else {
     // Stub : on prend les déclarations du module comme autorité.
     enriched = declaredFields.map((f, i) => {

@@ -14,6 +14,8 @@ const LABELS: Record<string, Record<Locale, string>> = {
   "cotisation-syndicale": { fr: "Cotisation syndicale", nl: "Vakbondsbijdrage", de: "Gewerkschaftsbeitrag" },
   "non-eee": { fr: "Travailleur hors EEE / Suisse", nl: "Werknemer buiten EER/Zwitserland", de: "Arbeitnehmer außerhalb EWR/Schweiz" },
   divers: { fr: "Divers", nl: "Diversen", de: "Sonstiges" },
+  absences: { fr: "Absences et interruptions", nl: "Afwezigheden en onderbrekingen", de: "Abwesenheiten und Unterbrechungen" },
+  inscription: { fr: "Inscription comme demandeur d'emploi", nl: "Inschrijving als werkzoekende", de: "Anmeldung als Arbeitsuchender" },
   affirmations: { fr: "Affirmations sur l'honneur", nl: "Eervolle verklaringen", de: "Eidesstattliche Erklärung" },
   annexes: { fr: "Annexes (optionnelles)", nl: "Bijlagen (optioneel)", de: "Anlagen (optional)" },
   signature: { fr: "Date et signature", nl: "Datum en handtekening", de: "Datum und Unterschrift" },

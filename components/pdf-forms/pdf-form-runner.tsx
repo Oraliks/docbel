@@ -114,11 +114,21 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, onValuesChange
     const visible = form.fields.filter((f) => isFieldVisible(f.visibleIf, values));
     const dataFields = visible.filter((f) => !isAutoField(f));
 
+    // Regroupement GLOBAL par section (pas seulement les champs consécutifs) :
+    // deux champs de la même section mais éloignés dans l'ordre du PDF (ex.
+    // NISS en tête, puis nom bien plus loin après des champs sans section)
+    // doivent fusionner dans le même onglet plutôt que créer un doublon
+    // ("Identité" apparaissant deux fois). L'ordre des onglets suit l'ordre
+    // de PREMIÈRE apparition de chaque section.
     const groups: Array<{ key: string | undefined; fields: PublicField[] }> = [];
+    const groupIndexByKey = new Map<string | undefined, number>();
     for (const f of dataFields) {
-      const last = groups[groups.length - 1];
-      if (last && last.key === f.section) last.fields.push(f);
-      else groups.push({ key: f.section, fields: [f] });
+      const idx = groupIndexByKey.get(f.section);
+      if (idx !== undefined) groups[idx].fields.push(f);
+      else {
+        groupIndexByKey.set(f.section, groups.length);
+        groups.push({ key: f.section, fields: [f] });
+      }
     }
 
     const out: Step[] = [];

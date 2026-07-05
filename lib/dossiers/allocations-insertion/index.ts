@@ -252,9 +252,14 @@ export const allocationsInsertion: DossierDefinition = {
       required: true,
       // Formulaire OBLIGATOIRE, préremplissable dans beldoc (responsibility
       // user par défaut). PDF officiel AcroForm fourni par Oraliks (44 widgets).
-      // On mappe l'identité + la signature ci-dessous ; les déclarations de
-      // situation pendant le SIP et les cases « pièces jointes » sont
-      // auto-inférées par l'ingest (l'admin peut les enrichir).
+      // Identité + signature mappées au catalogue ci-dessous. Les 39 autres
+      // champs du PDF officiel (déclarations pendant le SIP, pièces jointes)
+      // sont déclarés explicitement (2026-07) pour être regroupés en
+      // catégories cohérentes dans le formulaire citoyen — auparavant
+      // auto-inférés sans section, ils tombaient tous dans un onglet
+      // "Informations" fourre-tout de 39 champs. Libellés/regroupements
+      // À VALIDER Oraliks (sens précis de certaines cases à cocher — ex.
+      // Cb_Stage, DateAllocationInsertion — déduit du nom du champ PDF).
       // Bases légales : art. 36 et 36quater AR 25.11.1991.
       sourcePdfPath: "private/pdfs/C109-36_Demande_FR.pdf",
       internalRef:
@@ -262,6 +267,56 @@ export const allocationsInsertion: DossierDefinition = {
       fields: [
         { field: "niss", required: true, section: "identite", pdfFieldName: "NISS" },
         { field: "fullName", required: true, section: "identite", pdfFieldName: "NomPrenom" },
+
+        // ---- Motifs d'introduction ----
+        { custom: { key: "datefinetudes", pdfFieldName: "DateFinEtudes", type: "text", label: { fr: "Date de fin des études" } }, section: "demande" },
+        { custom: { key: "cb_demandeinsertion", pdfFieldName: "Cb_DemandeInsertion", type: "checkbox", label: { fr: "Demande d'allocations d'insertion" } }, section: "demande" },
+        { custom: { key: "dateallocationinsertion", pdfFieldName: "DateAllocationInsertion", type: "text", label: { fr: "Date de la demande d'allocations d'insertion" } }, section: "demande" },
+        { custom: { key: "cb_chomeurcomplet", pdfFieldName: "Cb_ChomeurComplet", type: "checkbox", label: { fr: "Chômeur complet" } }, section: "demande" },
+        { custom: { key: "cb_tempspartiel", pdfFieldName: "Cb_TempsPartiel", type: "checkbox", label: { fr: "Travail à temps partiel" } }, section: "demande" },
+        { custom: { key: "cb_stagetransition", pdfFieldName: "Cb_StageTransition", type: "checkbox", label: { fr: "Stage de transition" } }, section: "demande" },
+        { custom: { key: "datestagetransition", pdfFieldName: "DateStageTransition", type: "text", label: { fr: "Date du stage de transition" } }, section: "demande" },
+
+        // ---- Mes activités ----
+        { custom: { key: "cb_salarie", pdfFieldName: "Cb_Salarie", type: "checkbox", label: { fr: "Salarié" } }, section: "mes-activites" },
+        { custom: { key: "cb_independant", pdfFieldName: "Cb_Independant", type: "checkbox", label: { fr: "Indépendant" } }, section: "mes-activites" },
+        { custom: { key: "dateindependantdebut", pdfFieldName: "DateIndependantDebut", type: "text", label: { fr: "Début de l'activité indépendante" } }, section: "mes-activites" },
+        { custom: { key: "dateindependantfin", pdfFieldName: "DateIndependantFin", type: "text", label: { fr: "Fin de l'activité indépendante" } }, section: "mes-activites" },
+
+        // ---- Absences et interruptions (pendant le stage d'insertion) ----
+        { custom: { key: "cb_incapacite", pdfFieldName: "Cb_Incapacite", type: "checkbox", label: { fr: "Incapacité de travail" } }, section: "absences" },
+        { custom: { key: "cb_maladie", pdfFieldName: "Cb_Maladie", type: "checkbox", label: { fr: "Maladie" } }, section: "absences" },
+        { custom: { key: "datemaladiedebut", pdfFieldName: "DateMaladieDebut", type: "text", label: { fr: "Maladie — début" } }, section: "absences" },
+        { custom: { key: "datemaladiefin", pdfFieldName: "DateMaladieFin", type: "text", label: { fr: "Maladie — fin" } }, section: "absences" },
+        { custom: { key: "cb_maternite", pdfFieldName: "Cb_Maternite", type: "checkbox", label: { fr: "Congé de maternité" } }, section: "absences" },
+        { custom: { key: "cb_nondisponible", pdfFieldName: "Cb_NonDisponible", type: "checkbox", label: { fr: "Période(s) d'indisponibilité" } }, section: "absences" },
+        { custom: { key: "datenondispo1debut", pdfFieldName: "DateNonDispo1Debut", type: "text", label: { fr: "Indisponibilité 1 — début" } }, section: "absences" },
+        { custom: { key: "datenondispo1fin", pdfFieldName: "DateNonDispo1Fin", type: "text", label: { fr: "Indisponibilité 1 — fin" } }, section: "absences" },
+        { custom: { key: "datenondispo2debut", pdfFieldName: "DateNonDispo2Debut", type: "text", label: { fr: "Indisponibilité 2 — début" } }, section: "absences" },
+        { custom: { key: "datenondispo2fin", pdfFieldName: "DateNonDispo2Fin", type: "text", label: { fr: "Indisponibilité 2 — fin" } }, section: "absences" },
+        { custom: { key: "cb_etranger", pdfFieldName: "Cb_Etranger", type: "checkbox", label: { fr: "Séjour à l'étranger" } }, section: "absences" },
+        { custom: { key: "dateetrangerdebut", pdfFieldName: "DateEtrangerDebut", type: "text", label: { fr: "Séjour à l'étranger — début" } }, section: "absences" },
+        { custom: { key: "dateetrangerfin", pdfFieldName: "DateEtrangerFin", type: "text", label: { fr: "Séjour à l'étranger — fin" } }, section: "absences" },
+        { custom: { key: "cb_stage", pdfFieldName: "Cb_Stage", type: "checkbox", label: { fr: "Stage" } }, section: "absences" },
+        { custom: { key: "cb_stageassimilation", pdfFieldName: "Cb_StageAssimilation", type: "checkbox", label: { fr: "Assimilation du stage d'insertion" } }, section: "absences" },
+        { custom: { key: "cb_c363deja", pdfFieldName: "Cb_C363Deja", type: "checkbox", label: { fr: "Formulaire C363 déjà remis" } }, section: "absences" },
+        { custom: { key: "cb_c363joins", pdfFieldName: "Cb_C363Joins", type: "checkbox", label: { fr: "Formulaire C363 joint à cette demande" } }, section: "absences" },
+        { custom: { key: "cb_pasdassimilation", pdfFieldName: "Cb_PasDAssimilation", type: "checkbox", label: { fr: "Pas de demande d'assimilation" } }, section: "absences" },
+        { custom: { key: "cb_autreraison", pdfFieldName: "Cb_AutreRaison", type: "checkbox", label: { fr: "Autre raison" } }, section: "absences" },
+        { custom: { key: "autreraisontexte", pdfFieldName: "AutreRaisonTexte", type: "textarea", label: { fr: "Précise l'autre raison" } }, section: "absences" },
+
+        // ---- Inscription comme demandeur d'emploi ----
+        { custom: { key: "cb_resteinscrit", pdfFieldName: "Cb_ResteInscrit", type: "checkbox", label: { fr: "Je reste inscrit comme demandeur d'emploi" } }, section: "inscription" },
+        { custom: { key: "cb_plusinscrit", pdfFieldName: "Cb_PlusInscrit", type: "checkbox", label: { fr: "Je ne suis plus inscrit comme demandeur d'emploi" } }, section: "inscription" },
+        { custom: { key: "datedesinscription", pdfFieldName: "DateDesinscription", type: "text", label: { fr: "Date de désinscription" } }, section: "inscription" },
+        { custom: { key: "raisondesinscription", pdfFieldName: "RaisonDesinscription", type: "textarea", label: { fr: "Raison de la désinscription" } }, section: "inscription" },
+
+        // ---- Annexes (pièces jointes cochées) ----
+        { custom: { key: "cb_attestationinscription", pdfFieldName: "Cb_AttestationInscription", type: "checkbox", label: { fr: "Attestation d'inscription jointe" } }, section: "annexes" },
+        { custom: { key: "cb_formulairediplome", pdfFieldName: "Cb_FormulaireDiplome", type: "checkbox", label: { fr: "Formulaire diplôme joint" } }, section: "annexes" },
+        { custom: { key: "cb_copiebachelier", pdfFieldName: "Cb_CopieBachelier", type: "checkbox", label: { fr: "Copie du bachelier/master jointe" } }, section: "annexes" },
+        { custom: { key: "cb_formetranger", pdfFieldName: "Cb_FormEtranger", type: "checkbox", label: { fr: "Formulaire études à l'étranger joint" } }, section: "annexes" },
+
         // Date de signature = jour de génération (system.today), champ "DateSignature".
         { field: "creationDate", section: "signature", pdfFieldName: "DateSignature" },
         { field: "signature", section: "signature", pdfFieldName: "Signature" },

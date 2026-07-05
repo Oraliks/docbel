@@ -360,8 +360,8 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, onValuesChange
       <FormShell
         helpPanel={<ContextHelpPanel sectionKey={activeSectionKey} locale={locale} />}
       >
-        <Card className="overflow-hidden rounded-2xl border-0 bg-card shadow-sm">
-          <div className="border-b px-2">
+        <Card className="overflow-hidden rounded-3xl border-0 bg-card shadow-sm">
+          <div className="border-b border-[color:var(--glass-border)] px-3">
             <FormStepper
               steps={steps.map((s) => ({ id: s.id, label: s.title, hasError: stepHasError(s) }))}
               activeIndex={activeIndex}
@@ -379,9 +379,14 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, onValuesChange
             >
               {/* En-tête d'étape */}
               <div className="flex items-start justify-between gap-3">
-                <div className="flex flex-col gap-0.5">
-                  <h2 className="text-base font-semibold">{current.title}</h2>
-                  <p className="text-xs text-muted-foreground">
+                <div className="flex flex-col gap-1">
+                  <h2
+                    className="glass-display text-[22px] font-semibold leading-tight text-[color:var(--glass-ink)] sm:text-[26px]"
+                    style={{ fontVariationSettings: "'WONK' 0, 'SOFT' 0", fontFeatureSettings: "'swsh' 0, 'salt' 0" }}
+                  >
+                    {current.title}
+                  </h2>
+                  <p className="text-[13px] text-[color:var(--glass-ink-soft)]">
                     {current.kind === "summary"
                       ? t("runnerSummaryStepHelp")
                       : t("runnerFieldsStepHelp")}
@@ -472,35 +477,47 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, onValuesChange
                     <span>{t("runnerConsentText")}</span>
                   </label>
                   <AutoSaveNotice lastSavedAt={lastSavedAt} isPartOfBundle={!!bundleRunId} />
-                  <div className="flex items-center gap-2">
-                    {activeIndex > 0 && (
-                      <Button type="button" variant="outline" onClick={() => setActive(activeIndex - 1)}>
-                        <ChevronLeftIcon className="size-4" /> {t("previous")}
+                  <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[color:var(--glass-border)] pt-4">
+                    <StepProgress
+                      current={activeIndex + 1}
+                      total={steps.length}
+                      label={t("runnerStepCounter", { current: activeIndex + 1, total: steps.length })}
+                    />
+                    <div className="flex flex-1 items-center justify-end gap-2 sm:flex-none">
+                      {activeIndex > 0 && (
+                        <Button type="button" variant="outline" className="rounded-full" onClick={() => setActive(activeIndex - 1)}>
+                          <ChevronLeftIcon className="size-4" /> {t("previous")}
+                        </Button>
+                      )}
+                      <Button type="submit" disabled={submitting} className="rounded-full px-6">
+                        {submitting ? <Loader2Icon className="size-4 animate-spin" /> : delivery === "doccle" ? <SendIcon className="size-4" /> : <DownloadIcon className="size-4" />}
+                        {submitting
+                          ? t("runnerGenerating")
+                          : delivery === "doccle"
+                          ? t("runnerSubmitSignAndSend")
+                          : t("runnerSubmitSignAndGenerate")}
                       </Button>
-                    )}
-                    <Button type="submit" disabled={submitting} className="flex-1">
-                      {submitting ? <Loader2Icon className="size-4 animate-spin" /> : delivery === "doccle" ? <SendIcon className="size-4" /> : <DownloadIcon className="size-4" />}
-                      {submitting
-                        ? t("runnerGenerating")
-                        : delivery === "doccle"
-                        ? t("runnerSubmitSignAndSend")
-                        : t("runnerSubmitSignAndGenerate")}
-                    </Button>
+                    </div>
                   </div>
                 </div>
               ) : (
-                <div className="flex flex-col gap-2">
-                  <div className="flex items-center justify-between">
-                    {activeIndex > 0 ? (
-                      <Button type="button" variant="outline" onClick={() => setActive(activeIndex - 1)}>
-                        <ChevronLeftIcon className="size-4" /> {t("previous")}
+                <div className="flex flex-col gap-3 border-t border-[color:var(--glass-border)] pt-4">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <StepProgress
+                      current={activeIndex + 1}
+                      total={steps.length}
+                      label={t("runnerStepCounter", { current: activeIndex + 1, total: steps.length })}
+                    />
+                    <div className="flex items-center gap-2">
+                      {activeIndex > 0 && (
+                        <Button type="button" variant="outline" className="rounded-full" onClick={() => setActive(activeIndex - 1)}>
+                          <ChevronLeftIcon className="size-4" /> {t("previous")}
+                        </Button>
+                      )}
+                      <Button type="button" className="rounded-full px-6" onClick={() => setActive(activeIndex + 1)}>
+                        {t("continue")} <ChevronRightIcon className="size-4" />
                       </Button>
-                    ) : (
-                      <span />
-                    )}
-                    <Button type="button" onClick={() => setActive(activeIndex + 1)}>
-                      {t("continue")} <ChevronRightIcon className="size-4" />
-                    </Button>
+                    </div>
                   </div>
                   <AutoSaveNotice lastSavedAt={lastSavedAt} isPartOfBundle={!!bundleRunId} />
                 </div>
@@ -535,13 +552,20 @@ function FieldsCluster({
   formId: string;
   formSlug: string;
 }) {
+  // Trois familles de rendu : cartes de choix (chips), lignes binaires
+  // compactes (oui/non + cases, empilées dans un conteneur à séparateurs),
+  // et le reste en grille classique.
+  const isRowField = (f: PublicField) =>
+    f.renderAs !== "chip" &&
+    (f.type === "checkbox" || (f.type === "radio" && (f.options || []).length === 2));
   const chipFields = fields.filter((f) => f.renderAs === "chip");
-  const otherFields = fields.filter((f) => f.renderAs !== "chip");
+  const rowFields = fields.filter(isRowField);
+  const otherFields = fields.filter((f) => f.renderAs !== "chip" && !isRowField(f));
 
   return (
     <div className="flex flex-col gap-5">
       {chipFields.length > 0 && (
-        <div className="flex flex-wrap gap-2">
+        <div className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-3">
           {chipFields.map((f) => {
             if (f.type === "radio") {
               return (f.options || []).map((o) => (
@@ -565,6 +589,23 @@ function FieldsCluster({
           })}
         </div>
       )}
+      {rowFields.length > 0 && (
+        <div className="divide-y divide-[color:var(--glass-border)] rounded-2xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)]">
+          {rowFields.map((f) => (
+            <PdfField
+              key={f.id}
+              field={f}
+              value={values[f.id] ?? ""}
+              error={errors[f.id]}
+              locale={locale}
+              onChange={(v) => setValue(f.id, v)}
+              formId={formId}
+              formSlug={formSlug}
+              rowLayout
+            />
+          ))}
+        </div>
+      )}
       {otherFields.length > 0 && (
         <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2">
           {otherFields.map((f) => (
@@ -586,19 +627,39 @@ function FieldsCluster({
   );
 }
 
+/// Compteur d'étape + barre de progression fine + pourcentage (pied d'étape).
+function StepProgress({ current, total, label }: { current: number; total: number; label: string }) {
+  const pct = total > 0 ? Math.round((current / total) * 100) : 0;
+  return (
+    <div className="flex items-center gap-3">
+      <span className="whitespace-nowrap text-xs font-semibold text-[color:var(--glass-ink-soft)]">{label}</span>
+      <span className="relative h-1.5 w-24 overflow-hidden rounded-full bg-[color:var(--glass-pop-bg)] sm:w-36" aria-hidden>
+        <span
+          className="absolute inset-y-0 left-0 rounded-full bg-[color:var(--glass-accent-deep,#5B46E5)] transition-[width] duration-300"
+          style={{ width: `${pct}%` }}
+        />
+      </span>
+      <span className="text-xs font-bold text-[color:var(--glass-accent-deep,#5B46E5)]">{pct}%</span>
+    </div>
+  );
+}
+
 /// Étape finale allégée : plus de liste détaillée des valeurs (ancien
 /// SummaryStep, conservé plus bas pour le mode legacy). Le mode de
 /// livraison/signature/consentement restent dans le pied d'étape appelant.
 function ConfirmationCard({ hasSignature, signerName }: { hasSignature: boolean; signerName: string }) {
   const t = useTranslations("public.dossier");
   return (
-    <div className="rounded-2xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] p-5 text-sm text-[color:var(--glass-ink)]">
-      {t("runnerConfirmationReady")}
-      {hasSignature && !signerName && (
-        <span className="mt-1 block text-amber-700 dark:text-amber-300">
-          {t("runnerConfirmationNameForSignature")}
-        </span>
-      )}
+    <div className="flex items-start gap-3 rounded-2xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] p-5 text-sm text-[color:var(--glass-ink)]">
+      <CheckCircle2Icon aria-hidden className="mt-0.5 size-5 shrink-0 text-[color:var(--glass-accent-deep,#5B46E5)]" />
+      <div className="min-w-0">
+        {t("runnerConfirmationReady")}
+        {hasSignature && !signerName && (
+          <span className="mt-1 block text-amber-700 dark:text-amber-300">
+            {t("runnerConfirmationNameForSignature")}
+          </span>
+        )}
+      </div>
     </div>
   );
 }

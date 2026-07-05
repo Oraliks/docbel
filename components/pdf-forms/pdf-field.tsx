@@ -41,6 +41,12 @@ interface Props {
   /// avec la traçabilité du formulaire d'origine.
   formId?: string;
   formSlug?: string;
+  /// Rendu « ligne compacte » (libellé à gauche, contrôle à droite) pour les
+  /// champs binaires empilés dans un conteneur à séparateurs (nouveau
+  /// form-runner). Opt-in — le chemin legacy ne le passe jamais, défaut
+  /// false = rendu historique inchangé. Ne concerne que checkbox et radio à
+  /// 2 options ; ignoré pour les autres types.
+  rowLayout?: boolean;
 }
 
 /// Rend le label + une InfoTooltip si `help` est présent — remplace
@@ -56,7 +62,7 @@ function LabelWithTooltip({ label, help, required }: { label: string; help: stri
   );
 }
 
-export function PdfField({ field, value, error, locale, onChange, formId, formSlug }: Props) {
+export function PdfField({ field, value, error, locale, onChange, formId, formSlug, rowLayout = false }: Props) {
   const label = loc(field.label, locale);
   const help = loc(field.help, locale);
   const placeholder = loc(field.placeholder, locale);
@@ -95,6 +101,27 @@ export function PdfField({ field, value, error, locale, onChange, formId, formSl
     // PAS être modifiées côté UX (eg. cotisation syndicale, gérée par
     // l'organisme de paiement). On désactive l'interaction et on grise.
     const isReadOnly = field.readOnly === true;
+    if (rowLayout) {
+      return (
+        <div className="flex flex-col gap-1 px-4 py-3" data-invalid={invalid}>
+          <div className="flex items-center justify-between gap-4">
+            <FieldLabel
+              htmlFor={field.id}
+              className={`min-w-0 flex-1 ${isReadOnly ? "font-normal text-muted-foreground" : "font-normal"}`}
+            >
+              <LabelWithTooltip label={label} help={help} required={field.required} />
+            </FieldLabel>
+            <Checkbox
+              id={field.id}
+              checked={value === true}
+              onCheckedChange={(c) => !isReadOnly && onChange(c === true)}
+              disabled={isReadOnly}
+            />
+          </div>
+          {errorReport}
+        </div>
+      );
+    }
     return (
       <Field orientation="horizontal" data-invalid={invalid}>
         <Checkbox
@@ -118,6 +145,26 @@ export function PdfField({ field, value, error, locale, onChange, formId, formSl
   // déroulante (auto-appliqué, pas d'opt-in par champ nécessaire).
   if (field.type === "radio" && (field.options || []).length === 2) {
     const opts = field.options as unknown as [FieldOption, FieldOption];
+    if (rowLayout) {
+      return (
+        <div className="flex flex-col gap-1 px-4 py-3" data-invalid={invalid}>
+          <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+            <FieldLabel htmlFor={field.id} className="min-w-0 flex-1">
+              <LabelWithTooltip label={label} help={help} required={field.required} />
+            </FieldLabel>
+            <YesNoSegmentedControl
+              id={field.id}
+              value={(value as string) ?? ""}
+              onChange={onChange}
+              options={opts}
+              locale={locale}
+              invalid={invalid}
+            />
+          </div>
+          {errorReport}
+        </div>
+      );
+    }
     return (
       <Field data-invalid={invalid}>
         <FieldLabel htmlFor={field.id}>

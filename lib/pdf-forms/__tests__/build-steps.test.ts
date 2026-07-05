@@ -90,4 +90,40 @@ describe("buildSteps — champs invisibles et auto-champs exclus", () => {
     const result = buildSteps(fields, { a: "non" }, "fr", LABELS);
     expect(result.coreSteps[0].fields.map((f) => f.id)).toEqual(["a"]);
   });
+
+  it("un champ signature est exclu des steps (auto-rempli)", () => {
+    const fields = [
+      field({ id: "name", section: "demande" }),
+      field({ id: "sig", section: "demande", type: "signature" }),
+    ];
+    const result = buildSteps(fields, {}, "fr", LABELS);
+    expect(result.coreSteps[0].fields.map((f) => f.id)).toEqual(["name"]);
+  });
+
+  it("un champ avec prefillFrom=system.today est exclu des steps (date de création auto-injectée)", () => {
+    const fields = [
+      field({ id: "name", section: "demande" }),
+      field({ id: "created_at", section: "demande", type: "text", prefillFrom: "system.today" }),
+    ];
+    const result = buildSteps(fields, {}, "fr", LABELS);
+    expect(result.coreSteps[0].fields.map((f) => f.id)).toEqual(["name"]);
+  });
+
+  it("un champ signature détecté au label est exclu (rétrocompatibilité)", () => {
+    const fields = [
+      field({ id: "name", section: "demande" }),
+      field({ id: "sig", section: "demande", type: "text", label: { fr: "Signature numérique" } }),
+    ];
+    const result = buildSteps(fields, {}, "fr", LABELS);
+    expect(result.coreSteps[0].fields.map((f) => f.id)).toEqual(["name"]);
+  });
+
+  it("un champ date créée détecté au label est exclu (rétrocompatibilité)", () => {
+    const fields = [
+      field({ id: "name", section: "demande" }),
+      field({ id: "date_doc", section: "demande", type: "text", label: { fr: "Date de création" } }),
+    ];
+    const result = buildSteps(fields, {}, "fr", LABELS);
+    expect(result.coreSteps[0].fields.map((f) => f.id)).toEqual(["name"]);
+  });
 });

@@ -6,6 +6,7 @@
 
 import { isFieldVisible } from "./validation";
 import { sectionLabel } from "./section-labels";
+import { isAutoField } from "./auto-fields";
 import type { FormPayload, Locale } from "./types";
 import type { PublicField } from "./public-serializer";
 
@@ -50,7 +51,7 @@ export function buildSteps(
   locale: Locale,
   labels: BuildStepsLabels
 ): BuildStepsResult {
-  const visible = fields.filter((f) => isFieldVisible(f.visibleIf, values));
+  const visible = fields.filter((f) => isFieldVisible(f.visibleIf, values) && !isAutoField(f));
 
   const groups: Array<{ key: string | undefined; fields: PublicField[] }> = [];
   const groupIndexByKey = new Map<string | undefined, number>();

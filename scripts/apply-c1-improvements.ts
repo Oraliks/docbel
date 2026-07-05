@@ -1,6 +1,7 @@
 // Applique les améliorations de schéma sur les PdfForms de la famille C1 en
-// DB : le C1 générique, le C1 du dossier insertion (c1-insertion) et
-// l'Annexe Regis (c1-regis).
+// DB : le C1 générique, le C1 du dossier insertion (c1-insertion), l'Annexe
+// Regis (c1-regis) et les formulaires compagnons déclenchés par le C1
+// (c1-partenaire, c1a, c1b, c1c, c46, c47) — cf. C1_IMPROVEMENT_TARGETS.
 //
 // AVANT (bug) : ce script ciblait "le PdfForm le plus récemment modifié dont
 // sourceFileName contient C1_FR" — comme c1-insertion partage le même

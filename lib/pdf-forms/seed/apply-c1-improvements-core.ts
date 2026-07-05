@@ -7,6 +7,12 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { applyC1Improvements, C1_TRIGGERS } from "./c1-fields-improvements";
 import { applyC1RegisImprovements } from "./c1-regis-fields";
+import { applyC1PartenaireImprovements } from "./c1-partenaire-fields";
+import { applyC1AImprovements } from "./c1a-fields";
+import { applyC1BImprovements } from "./c1b-fields";
+import { applyC1CImprovements } from "./c1c-fields";
+import { applyC46Improvements } from "./c46-fields";
+import { applyC47Improvements } from "./c47-fields";
 import type { PdfFormField, PdfFormTrigger } from "../types";
 
 export interface C1ImprovementTarget {
@@ -19,6 +25,12 @@ export const C1_IMPROVEMENT_TARGETS: C1ImprovementTarget[] = [
   { slug: "c1", improve: applyC1Improvements, triggers: C1_TRIGGERS },
   { slug: "c1-insertion", improve: applyC1Improvements, triggers: C1_TRIGGERS },
   { slug: "c1-regis", improve: applyC1RegisImprovements, triggers: [] },
+  { slug: "c1-partenaire", improve: applyC1PartenaireImprovements, triggers: [] },
+  { slug: "c1a", improve: applyC1AImprovements, triggers: [] },
+  { slug: "c1b", improve: applyC1BImprovements, triggers: [] },
+  { slug: "c1c", improve: applyC1CImprovements, triggers: [] },
+  { slug: "c46", improve: applyC46Improvements, triggers: [] },
+  { slug: "c47", improve: applyC47Improvements, triggers: [] },
 ];
 
 export interface ApplyC1ImprovementResult {
@@ -71,7 +83,7 @@ export async function applyOneC1Improvement(
   return result;
 }
 
-/// Exécute les 3 cibles dans l'ordre, séquentiellement.
+/// Exécute toutes les cibles dans l'ordre, séquentiellement.
 export async function applyAllC1Improvements(apply: boolean): Promise<ApplyC1ImprovementResult[]> {
   const results: ApplyC1ImprovementResult[] = [];
   for (const target of C1_IMPROVEMENT_TARGETS) {

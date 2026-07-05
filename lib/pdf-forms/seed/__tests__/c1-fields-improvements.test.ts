@@ -73,3 +73,87 @@ describe("applyC1Improvements — defaultMotif optionnel", () => {
     expect(motif?.defaultValue).toBeUndefined();
   });
 });
+
+describe("C1_QUESTIONS — habillage renderAs / stepPriority", () => {
+  it("motifIntroduction et les champs de modification sont renderAs=chip", () => {
+    const chipIds = ["motifIntroduction", "modificationAdresse", "modificationCompte", "modificationSituationFamiliale", "modificationPermisSejour", "modificationCotisationSyndicale"];
+    for (const id of chipIds) {
+      const f = C1_QUESTIONS.find((q) => q.id === id);
+      expect(f, `champ ${id} introuvable`).toBeDefined();
+      expect(f?.renderAs, `champ ${id} devrait être renderAs=chip`).toBe("chip");
+    }
+  });
+
+  it("toutes les sections activités/revenus/cotisation/non-UE/divers/annexes sont stepPriority=optional", () => {
+    const optionalSectionKeys = ["mes-activites", "mes-revenus", "cotisation-syndicale", "non-eee", "divers", "annexes"];
+    for (const key of optionalSectionKeys) {
+      const fieldsInSection = C1_QUESTIONS.filter((q) => q.section === key);
+      expect(fieldsInSection.length, `aucun champ trouvé pour la section ${key}`).toBeGreaterThan(0);
+      for (const f of fieldsInSection) {
+        expect(f.stepPriority, `champ ${f.id} (section ${key}) devrait être stepPriority=optional`).toBe("optional");
+      }
+    }
+  });
+
+  it("identite/demande/situation-familiale/mode-paiement/affirmations/signature restent stepPriority core (absent)", () => {
+    const coreSectionKeys = ["identite", "demande", "situation-familiale", "mode-paiement", "affirmations", "signature"];
+    for (const key of coreSectionKeys) {
+      const fieldsInSection = C1_QUESTIONS.filter((q) => q.section === key);
+      expect(fieldsInSection.length, `aucun champ trouvé pour la section ${key}`).toBeGreaterThan(0);
+      for (const f of fieldsInSection) {
+        expect(f.stepPriority, `champ ${f.id} (section ${key}) ne devrait PAS être optional`).not.toBe("optional");
+      }
+    }
+  });
+
+  it("chaque champ ayant un renderAs=chip conserve son pdfFieldName/visibleIf/section/order d'origine", () => {
+    const expectations: Record<string, { pdfFieldName: string; section: string; order: number; visibleIf?: unknown }> = {
+      motifIntroduction: {
+        pdfFieldName:
+          "pour la première fois 5|après une interruption de mes allocations 5|je déclare une modification concernant|je change dorganisme de paiement à partir du 5",
+        section: "demande",
+        order: 3,
+      },
+      modificationAdresse: {
+        pdfFieldName: "mon adresse à partir du",
+        section: "demande",
+        order: 5,
+        visibleIf: { fieldId: "motifIntroduction", op: "equals", value: "modification" },
+      },
+      modificationCompte: {
+        pdfFieldName: "le mode de paiement de mes allocations ou mon numéro de compte6",
+        section: "demande",
+        order: 6,
+        visibleIf: { fieldId: "motifIntroduction", op: "equals", value: "modification" },
+      },
+      modificationSituationFamiliale: {
+        pdfFieldName: "ma situation personnelle ou celle des membres de mon ménage 7",
+        section: "demande",
+        order: 7,
+        visibleIf: { fieldId: "motifIntroduction", op: "equals", value: "modification" },
+      },
+      modificationPermisSejour: {
+        pdfFieldName: "mon permis de séjour ou mon permis de travail",
+        section: "demande",
+        order: 8,
+        visibleIf: { fieldId: "motifIntroduction", op: "equals", value: "modification" },
+      },
+      modificationCotisationSyndicale: {
+        pdfFieldName: "la retenue des cotisations syndicales",
+        section: "demande",
+        order: 9,
+        visibleIf: { fieldId: "motifIntroduction", op: "equals", value: "modification" },
+      },
+    };
+    for (const [id, expected] of Object.entries(expectations)) {
+      const f = C1_QUESTIONS.find((q) => q.id === id);
+      expect(f, `champ ${id} introuvable`).toBeDefined();
+      expect(f?.pdfFieldName, `pdfFieldName de ${id} ne doit pas changer`).toBe(expected.pdfFieldName);
+      expect(f?.section, `section de ${id} ne doit pas changer`).toBe(expected.section);
+      expect(f?.order, `order de ${id} ne doit pas changer`).toBe(expected.order);
+      if (expected.visibleIf) {
+        expect(f?.visibleIf, `visibleIf de ${id} ne doit pas changer`).toEqual(expected.visibleIf);
+      }
+    }
+  });
+});

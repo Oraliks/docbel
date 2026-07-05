@@ -276,6 +276,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
     ],
     section: SECTION_DEMANDE,
     order: 3,
+    renderAs: "chip",
   },
   {
     id: "dateChangementOrganisme",
@@ -301,6 +302,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
     visibleIf: { fieldId: "motifIntroduction", op: "equals", value: "modification" },
     section: SECTION_DEMANDE,
     order: 5,
+    renderAs: "chip",
   },
   {
     id: "modificationCompte",
@@ -311,6 +313,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
     visibleIf: { fieldId: "motifIntroduction", op: "equals", value: "modification" },
     section: SECTION_DEMANDE,
     order: 6,
+    renderAs: "chip",
   },
   {
     id: "modificationSituationFamiliale",
@@ -321,6 +324,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
     visibleIf: { fieldId: "motifIntroduction", op: "equals", value: "modification" },
     section: SECTION_DEMANDE,
     order: 7,
+    renderAs: "chip",
   },
   {
     id: "modificationPermisSejour",
@@ -331,6 +335,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
     visibleIf: { fieldId: "motifIntroduction", op: "equals", value: "modification" },
     section: SECTION_DEMANDE,
     order: 8,
+    renderAs: "chip",
   },
   {
     id: "modificationCotisationSyndicale",
@@ -341,6 +346,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
     visibleIf: { fieldId: "motifIntroduction", op: "equals", value: "modification" },
     section: SECTION_DEMANDE,
     order: 9,
+    renderAs: "chip",
   },
   {
     id: "dateModificationEffective",
@@ -696,6 +702,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
     options: YN,
     section: SECTION_ACTIVITES,
     order: 200,
+    stepPriority: "optional",
   },
   {
     id: "etudesPleinExerciceDate",
@@ -706,6 +713,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
     visibleIf: { fieldId: "etudesPleinExercice", op: "equals", value: "oui" },
     section: SECTION_ACTIVITES,
     order: 201,
+    stepPriority: "optional",
   },
   {
     id: "apprentissageAlternance",
@@ -720,6 +728,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
     options: YN,
     section: SECTION_ACTIVITES,
     order: 210,
+    stepPriority: "optional",
   },
   {
     id: "apprentissageAlternanceDate",
@@ -730,6 +739,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
     visibleIf: { fieldId: "apprentissageAlternance", op: "equals", value: "oui" },
     section: SECTION_ACTIVITES,
     order: 211,
+    stepPriority: "optional",
   },
   {
     id: "formationStageSyntra",
@@ -741,6 +751,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
     options: YN,
     section: SECTION_ACTIVITES,
     order: 220,
+    stepPriority: "optional",
   },
   {
     id: "formationStageSyntraDate",
@@ -751,6 +762,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
     visibleIf: { fieldId: "formationStageSyntra", op: "equals", value: "oui" },
     section: SECTION_ACTIVITES,
     order: 221,
+    stepPriority: "optional",
   },
   {
     id: "mandatArtistique",
@@ -765,16 +777,20 @@ export const C1_QUESTIONS: PdfFormField[] = [
     options: YN,
     section: SECTION_ACTIVITES,
     order: 230,
+    stepPriority: "optional",
   },
-  dejaDeclare({
-    id: "mandatArtistiqueDejaDeclare",
-    parentId: "mandatArtistique",
-    helpText: "Si non, tu devras compléter le FORMULAIRE C46 — il sera ajouté à ton parcours.",
-    section: SECTION_ACTIVITES,
-    order: 231,
-    pdfFieldName:
-      "ma déclaration précédente sur le FORMULAIRE C46 reste inchangée|je le déclare pour la première fois ou je déclare une modification et je joins",
-  }),
+  {
+    ...dejaDeclare({
+      id: "mandatArtistiqueDejaDeclare",
+      parentId: "mandatArtistique",
+      helpText: "Si non, tu devras compléter le FORMULAIRE C46 — il sera ajouté à ton parcours.",
+      section: SECTION_ACTIVITES,
+      order: 231,
+      pdfFieldName:
+        "ma déclaration précédente sur le FORMULAIRE C46 reste inchangée|je le déclare pour la première fois ou je déclare une modification et je joins",
+    }),
+    stepPriority: "optional",
+  },
   {
     id: "mandatPolitique",
     pdfFieldName: "oui_6|non_6",
@@ -788,6 +804,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
     options: YN,
     section: SECTION_ACTIVITES,
     order: 240,
+    stepPriority: "optional",
   },
   {
     id: "chapitreXIIArts",
@@ -802,6 +819,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
     options: YN,
     section: SECTION_ACTIVITES,
     order: 250,
+    stepPriority: "optional",
   },
   {
     id: "tremplinIndependants",
@@ -816,17 +834,21 @@ export const C1_QUESTIONS: PdfFormField[] = [
     options: YN,
     section: SECTION_ACTIVITES,
     order: 270,
+    stepPriority: "optional",
   },
-  dejaDeclare({
-    id: "tremplinIndependantsDejaDeclare",
-    parentId: "tremplinIndependants",
-    helpText:
-      "Si non, tu devras compléter le FORMULAIRE C1C — il sera ajouté à ton parcours.",
-    section: SECTION_ACTIVITES,
-    order: 271,
-    pdfFieldName:
-      "ma déclaration précédente sur le FORMULAIRE C1C reste inchangée|je sollicite pour la première fois le bénéfice de lavantage  Tremplin",
-  }),
+  {
+    ...dejaDeclare({
+      id: "tremplinIndependantsDejaDeclare",
+      parentId: "tremplinIndependants",
+      helpText:
+        "Si non, tu devras compléter le FORMULAIRE C1C — il sera ajouté à ton parcours.",
+      section: SECTION_ACTIVITES,
+      order: 271,
+      pdfFieldName:
+        "ma déclaration précédente sur le FORMULAIRE C1C reste inchangée|je sollicite pour la première fois le bénéfice de lavantage  Tremplin",
+    }),
+    stepPriority: "optional",
+  },
   {
     id: "activiteAccessoireOuAide",
     pdfFieldName: "oui_9|non_9",
@@ -837,16 +859,20 @@ export const C1_QUESTIONS: PdfFormField[] = [
     options: YN,
     section: SECTION_ACTIVITES,
     order: 280,
+    stepPriority: "optional",
   },
-  dejaDeclare({
-    id: "activiteAccessoireDejaDeclare",
-    parentId: "activiteAccessoireOuAide",
-    helpText: "Si non, tu devras compléter le FORMULAIRE C1A — il sera ajouté à ton parcours.",
-    section: SECTION_ACTIVITES,
-    order: 281,
-    pdfFieldName:
-      "ma déclaration précédente sur le FORMULAIRE C1A reste inchangée_2|je le déclare pour la première fois ou je déclare une modification et je joins_3",
-  }),
+  {
+    ...dejaDeclare({
+      id: "activiteAccessoireDejaDeclare",
+      parentId: "activiteAccessoireOuAide",
+      helpText: "Si non, tu devras compléter le FORMULAIRE C1A — il sera ajouté à ton parcours.",
+      section: SECTION_ACTIVITES,
+      order: 281,
+      pdfFieldName:
+        "ma déclaration précédente sur le FORMULAIRE C1A reste inchangée_2|je le déclare pour la première fois ou je déclare une modification et je joins_3",
+    }),
+    stepPriority: "optional",
+  },
   {
     id: "administrateurSociete",
     pdfFieldName: "oui_10|non_10",
@@ -857,20 +883,24 @@ export const C1_QUESTIONS: PdfFormField[] = [
     options: YN,
     section: SECTION_ACTIVITES,
     order: 290,
+    stepPriority: "optional",
   },
-  dejaDeclare({
-    id: "administrateurSocieteDejaDeclare",
-    parentId: "administrateurSociete",
-    helpText: "Si non, tu devras compléter le FORMULAIRE C1A — il sera ajouté à ton parcours.",
-    section: SECTION_ACTIVITES,
-    order: 291,
-    // Le PDF officiel mutualise une seule paire C1A pour les questions 9-11
-    // (accessoire / administrateur / indép. accessoire-principal). On pointe
-    // donc sur la même paire que les autres follow-ups C1A — le dernier
-    // remplissage gagne.
-    pdfFieldName:
-      "ma déclaration précédente sur le FORMULAIRE C1A reste inchangée_2|je le déclare pour la première fois ou je déclare une modification et je joins_3",
-  }),
+  {
+    ...dejaDeclare({
+      id: "administrateurSocieteDejaDeclare",
+      parentId: "administrateurSociete",
+      helpText: "Si non, tu devras compléter le FORMULAIRE C1A — il sera ajouté à ton parcours.",
+      section: SECTION_ACTIVITES,
+      order: 291,
+      // Le PDF officiel mutualise une seule paire C1A pour les questions 9-11
+      // (accessoire / administrateur / indép. accessoire-principal). On pointe
+      // donc sur la même paire que les autres follow-ups C1A — le dernier
+      // remplissage gagne.
+      pdfFieldName:
+        "ma déclaration précédente sur le FORMULAIRE C1A reste inchangée_2|je le déclare pour la première fois ou je déclare une modification et je joins_3",
+    }),
+    stepPriority: "optional",
+  },
   {
     id: "independantAccessoireOuPrincipal",
     pdfFieldName: "oui_11|non_11",
@@ -884,17 +914,21 @@ export const C1_QUESTIONS: PdfFormField[] = [
     options: YN,
     section: SECTION_ACTIVITES,
     order: 500,
+    stepPriority: "optional",
   },
-  dejaDeclare({
-    id: "independantAccessoireDejaDeclare",
-    parentId: "independantAccessoireOuPrincipal",
-    helpText:
-      "Pour une activité accessoire : si non déclarée, tu devras compléter le FORMULAIRE C1A.",
-    section: SECTION_ACTIVITES,
-    order: 501,
-    pdfFieldName:
-      "ma déclaration précédente sur le FORMULAIRE C1A reste inchangée_2|je le déclare pour la première fois ou je déclare une modification et je joins_3",
-  }),
+  {
+    ...dejaDeclare({
+      id: "independantAccessoireDejaDeclare",
+      parentId: "independantAccessoireOuPrincipal",
+      helpText:
+        "Pour une activité accessoire : si non déclarée, tu devras compléter le FORMULAIRE C1A.",
+      section: SECTION_ACTIVITES,
+      order: 501,
+      pdfFieldName:
+        "ma déclaration précédente sur le FORMULAIRE C1A reste inchangée_2|je le déclare pour la première fois ou je déclare une modification et je joins_3",
+    }),
+    stepPriority: "optional",
+  },
 
   // ---------- MES REVENUS (5 questions, page 2) ----------
   {
@@ -913,6 +947,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
     options: YN,
     section: SECTION_REVENUS,
     order: 510,
+    stepPriority: "optional",
   },
   {
     id: "pensionRetraiteSurvie",
@@ -927,16 +962,20 @@ export const C1_QUESTIONS: PdfFormField[] = [
     options: YN,
     section: SECTION_REVENUS,
     order: 520,
+    stepPriority: "optional",
   },
-  dejaDeclare({
-    id: "pensionRetraiteDejaDeclare",
-    parentId: "pensionRetraiteSurvie",
-    helpText: "Si non, tu devras compléter le FORMULAIRE C1B — il sera ajouté à ton parcours.",
-    section: SECTION_REVENUS,
-    order: 521,
-    pdfFieldName:
-      "ma déclaration précédente sur le FORMULAIRE C1B reste inchangée|je le déclare pour la première fois ou je déclare une modification et je",
-  }),
+  {
+    ...dejaDeclare({
+      id: "pensionRetraiteDejaDeclare",
+      parentId: "pensionRetraiteSurvie",
+      helpText: "Si non, tu devras compléter le FORMULAIRE C1B — il sera ajouté à ton parcours.",
+      section: SECTION_REVENUS,
+      order: 521,
+      pdfFieldName:
+        "ma déclaration précédente sur le FORMULAIRE C1B reste inchangée|je le déclare pour la première fois ou je déclare une modification et je",
+    }),
+    stepPriority: "optional",
+  },
   {
     id: "indemniteMaladieInvalidite",
     pdfFieldName: "oui_14|non_14",
@@ -947,6 +986,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
     options: YN,
     section: SECTION_REVENUS,
     order: 530,
+    stepPriority: "optional",
   },
   {
     id: "indemniteAccidentTravail",
@@ -958,6 +998,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
     options: YN,
     section: SECTION_REVENUS,
     order: 540,
+    stepPriority: "optional",
   },
   {
     id: "avantageFinancierFormation",
@@ -975,6 +1016,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
     options: YN,
     section: SECTION_REVENUS,
     order: 550,
+    stepPriority: "optional",
   },
 
   // ====================================================================
@@ -1100,6 +1142,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
     readOnly: true,
     section: SECTION_COTISATION,
     order: 700,
+    stepPriority: "optional",
   },
   {
     id: "retireCotisationSyndicale",
@@ -1111,6 +1154,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
     readOnly: true,
     section: SECTION_COTISATION,
     order: 701,
+    stepPriority: "optional",
   },
 
   // ====================================================================
@@ -1136,6 +1180,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
     defaultValue: "non",
     section: SECTION_NON_EEE,
     order: 800,
+    stepPriority: "optional",
   },
   {
     id: "accesMarcheTravail",
@@ -1155,6 +1200,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
     visibleIf: { fieldId: "nationaliteHorsEEE", op: "equals", value: "oui" },
     section: SECTION_NON_EEE,
     order: 801,
+    stepPriority: "optional",
   },
 
   // ====================================================================
@@ -1170,6 +1216,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
     defaultValue: "non",
     section: SECTION_DIVERS,
     order: 900,
+    stepPriority: "optional",
   },
   {
     id: "congeSansSoldeDate",
@@ -1180,6 +1227,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
     visibleIf: { fieldId: "congeSansSolde", op: "equals", value: "oui" },
     section: SECTION_DIVERS,
     order: 901,
+    stepPriority: "optional",
   },
   {
     id: "incapacite33",
@@ -1198,14 +1246,18 @@ export const C1_QUESTIONS: PdfFormField[] = [
     defaultValue: "non",
     section: SECTION_DIVERS,
     order: 910,
+    stepPriority: "optional",
   },
-  dejaDeclare({
-    id: "incapacite33DejaDeclare",
-    parentId: "incapacite33",
-    helpText: "Si non, tu devras compléter le FORMULAIRE C47 — il sera ajouté à ton parcours.",
-    section: SECTION_DIVERS,
-    order: 911,
-  }),
+  {
+    ...dejaDeclare({
+      id: "incapacite33DejaDeclare",
+      parentId: "incapacite33",
+      helpText: "Si non, tu devras compléter le FORMULAIRE C47 — il sera ajouté à ton parcours.",
+      section: SECTION_DIVERS,
+      order: 911,
+    }),
+    stepPriority: "optional",
+  },
 
   // ====================================================================
   // SECTION — AFFIRMATIONS OBLIGATOIRES
@@ -1257,6 +1309,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
     label: { fr: "J'ai joint une attestation de la DG Personnes handicapées du SPF Sécurité sociale", nl: "", de: "" },
     section: SECTION_ANNEXES,
     order: 1100,
+    stepPriority: "optional",
   },
   {
     id: "annexeExtraitPension",
@@ -1266,6 +1319,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
     label: { fr: "J'ai joint une copie de l'extrait de la pension", nl: "", de: "" },
     section: SECTION_ANNEXES,
     order: 1101,
+    stepPriority: "optional",
   },
   {
     id: "annexeC1Regis",
@@ -1275,6 +1329,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
     label: { fr: "J'ai joint un FORMULAIRE C1 ANNEXE REGIS", nl: "", de: "" },
     section: SECTION_ANNEXES,
     order: 1102,
+    stepPriority: "optional",
   },
   {
     id: "annexePermisSejour",
@@ -1284,6 +1339,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
     label: { fr: "J'ai joint une copie du permis de séjour et/ou du permis de travail", nl: "", de: "" },
     section: SECTION_ANNEXES,
     order: 1103,
+    stepPriority: "optional",
   },
   {
     id: "annexeAutre",
@@ -1293,6 +1349,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
     label: { fr: "J'ai joint un autre document (préciser ci-dessous)", nl: "", de: "" },
     section: SECTION_ANNEXES,
     order: 1104,
+    stepPriority: "optional",
   },
   {
     id: "annexeAutreDescription",
@@ -1303,6 +1360,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
     visibleIf: { fieldId: "annexeAutre", op: "equals", value: true },
     section: SECTION_ANNEXES,
     order: 1105,
+    stepPriority: "optional",
   },
 
   // ====================================================================

@@ -19,7 +19,7 @@ export function OptionCard({ label, selected, onToggle, icon: Icon }: OptionCard
       type="button"
       aria-pressed={selected}
       onClick={onToggle}
-      className={`flex items-center gap-2 rounded-2xl border px-4 py-2.5 text-left text-sm font-medium transition-colors ${
+      className={`flex items-center gap-2 rounded-2xl border px-4 py-2.5 text-left text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 ${
         selected
           ? "border-[color:var(--glass-accent-deep,#5B46E5)] bg-[color:var(--glass-pop-bg)] text-[color:var(--glass-accent-deep,#5B46E5)]"
           : "border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] text-[color:var(--glass-ink)] hover:border-[color:var(--glass-accent-deep,#5B46E5)]"

@@ -16,7 +16,7 @@ import { InfoTooltip } from "@/components/ui/info-tooltip";
 import { YesNoSegmentedControl } from "@/components/ui/yes-no-segmented";
 import { FieldErrorReport } from "./field-error-report";
 import { ArrayField } from "./array-field";
-import { loc, Locale, FieldValue, FullNameValue, isFullNameValue } from "@/lib/pdf-forms/types";
+import { loc, Locale, FieldValue, FullNameValue, isFullNameValue, FieldOption } from "@/lib/pdf-forms/types";
 import type { PublicField } from "@/lib/pdf-forms/public-serializer";
 
 // Type HTML + inputMode adaptés au type sémantique (clavier mobile pertinent).
@@ -117,7 +117,7 @@ export function PdfField({ field, value, error, locale, onChange, formId, formSl
   // Radio à exactement 2 options : bascule compacte au lieu d'une liste
   // déroulante (auto-appliqué, pas d'opt-in par champ nécessaire).
   if (field.type === "radio" && (field.options || []).length === 2) {
-    const opts = field.options as unknown as [unknown, unknown];
+    const opts = field.options as unknown as [FieldOption, FieldOption];
     return (
       <Field data-invalid={invalid}>
         <FieldLabel htmlFor={field.id}>

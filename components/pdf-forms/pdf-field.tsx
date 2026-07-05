@@ -12,6 +12,8 @@ import {
 } from "@/components/ui/select";
 import { Field, FieldLabel, FieldDescription } from "@/components/ui/field";
 import { NissInput } from "@/components/ui/niss-input";
+import { InfoTooltip } from "@/components/ui/info-tooltip";
+import { YesNoSegmentedControl } from "@/components/ui/yes-no-segmented";
 import { FieldErrorReport } from "./field-error-report";
 import { ArrayField } from "./array-field";
 import { loc, Locale, FieldValue, FullNameValue, isFullNameValue } from "@/lib/pdf-forms/types";
@@ -39,6 +41,19 @@ interface Props {
   /// avec la traçabilité du formulaire d'origine.
   formId?: string;
   formSlug?: string;
+}
+
+/// Rend le label + une InfoTooltip si `help` est présent — remplace
+/// l'ancien affichage systématique de `help` en <FieldDescription> visible
+/// en permanence (objectif : compacité, cf. spec 2026-07-05).
+function LabelWithTooltip({ label, help, required }: { label: string; help: string; required?: boolean }) {
+  return (
+    <span className="flex items-center gap-1.5">
+      {label}
+      {required && <span className="text-destructive"> *</span>}
+      {help && <InfoTooltip text={help} />}
+    </span>
+  );
 }
 
 export function PdfField({ field, value, error, locale, onChange, formId, formSlug }: Props) {
@@ -92,22 +107,41 @@ export function PdfField({ field, value, error, locale, onChange, formId, formSl
           htmlFor={field.id}
           className={isReadOnly ? "font-normal text-muted-foreground" : "font-normal"}
         >
-          {label}
-          {field.required && <span className="text-destructive"> *</span>}
+          <LabelWithTooltip label={label} help={help} required={field.required} />
         </FieldLabel>
-        {help && <FieldDescription>{help}</FieldDescription>}
         {errorReport}
       </Field>
     );
   }
 
-  // Select / radio : liste déroulante (compact).
+  // Radio à exactement 2 options : bascule compacte au lieu d'une liste
+  // déroulante (auto-appliqué, pas d'opt-in par champ nécessaire).
+  if (field.type === "radio" && (field.options || []).length === 2) {
+    const opts = field.options as unknown as [unknown, unknown];
+    return (
+      <Field data-invalid={invalid}>
+        <FieldLabel htmlFor={field.id}>
+          <LabelWithTooltip label={label} help={help} required={field.required} />
+        </FieldLabel>
+        <YesNoSegmentedControl
+          id={field.id}
+          value={(value as string) ?? ""}
+          onChange={onChange}
+          options={opts}
+          locale={locale}
+          invalid={invalid}
+        />
+        {errorReport}
+      </Field>
+    );
+  }
+
+  // Select / radio (3+ options) : liste déroulante (compact), inchangé.
   if (field.type === "select" || field.type === "radio") {
     return (
       <Field data-invalid={invalid}>
         <FieldLabel htmlFor={field.id}>
-          {label}
-          {field.required && <span className="text-destructive"> *</span>}
+          <LabelWithTooltip label={label} help={help} required={field.required} />
         </FieldLabel>
         <Select value={(value as string) ?? ""} onValueChange={(v) => onChange(v)}>
           <SelectTrigger id={field.id} className="w-full" aria-invalid={invalid}>
@@ -122,7 +156,6 @@ export function PdfField({ field, value, error, locale, onChange, formId, formSl
             ))}
           </SelectContent>
         </Select>
-        {help && <FieldDescription>{help}</FieldDescription>}
         {errorReport}
       </Field>
     );
@@ -133,8 +166,7 @@ export function PdfField({ field, value, error, locale, onChange, formId, formSl
     return (
       <Field data-invalid={invalid}>
         <FieldLabel htmlFor={field.id}>
-          {label}
-          {field.required && <span className="text-destructive"> *</span>}
+          <LabelWithTooltip label={label} help={help} required={field.required} />
         </FieldLabel>
         <Textarea
           id={field.id}
@@ -144,7 +176,6 @@ export function PdfField({ field, value, error, locale, onChange, formId, formSl
           aria-invalid={invalid}
           onChange={(e) => onChange(e.target.value)}
         />
-        {help && <FieldDescription>{help}</FieldDescription>}
         {errorReport}
       </Field>
     );
@@ -180,14 +211,12 @@ export function PdfField({ field, value, error, locale, onChange, formId, formSl
     return (
       <Field data-invalid={invalid}>
         <FieldLabel htmlFor={field.id}>
-          {label}
-          {field.required && <span className="text-destructive"> *</span>}
+          <LabelWithTooltip label={label} help={help} required={field.required} />
         </FieldLabel>
         <div className="flex flex-col gap-2 sm:flex-row">
           {lastFirst ? lastInput : firstInput}
           {lastFirst ? firstInput : lastInput}
         </div>
-        {help && <FieldDescription>{help}</FieldDescription>}
         {errorReport}
       </Field>
     );
@@ -201,8 +230,7 @@ export function PdfField({ field, value, error, locale, onChange, formId, formSl
     return (
       <Field data-invalid={invalid}>
         <FieldLabel htmlFor={field.id}>
-          {label}
-          {field.required && <span className="text-destructive"> *</span>}
+          <LabelWithTooltip label={label} help={help} required={field.required} />
         </FieldLabel>
         <NissInput
           id={field.id}
@@ -210,7 +238,6 @@ export function PdfField({ field, value, error, locale, onChange, formId, formSl
           aria-invalid={invalid}
           onChange={(v) => onChange(v)}
         />
-        {help && <FieldDescription>{help}</FieldDescription>}
         {errorReport}
       </Field>
     );
@@ -223,8 +250,7 @@ export function PdfField({ field, value, error, locale, onChange, formId, formSl
   return (
     <Field data-invalid={invalid}>
       <FieldLabel htmlFor={field.id}>
-        {label}
-        {field.required && <span className="text-destructive"> *</span>}
+        <LabelWithTooltip label={label} help={help} required={field.required} />
       </FieldLabel>
       <Input
         id={field.id}
@@ -240,7 +266,6 @@ export function PdfField({ field, value, error, locale, onChange, formId, formSl
         readOnly={autoToday}
         onChange={(e) => onChange(e.target.value)}
       />
-      {help && <FieldDescription>{help}</FieldDescription>}
       {autoToday && !help && (
         <FieldDescription>Date de génération du document (automatique).</FieldDescription>
       )}

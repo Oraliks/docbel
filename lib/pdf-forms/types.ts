@@ -182,6 +182,17 @@ export interface PdfFormField {
   /// Regroupement visuel ("identite", "adresse", "employeur"…).
   section?: string;
   order?: number;
+  /// Habillage visuel spécifique (absent = rendu par défaut). "chip" = rendu
+  /// en carte de choix cliquable (OptionCard) au lieu du widget standard —
+  /// réservé aux champs où un choix visuel fait sens (ex. motif d'un C1).
+  /// N'affecte ni la validation ni la valeur stockée.
+  renderAs?: "chip";
+  /// Priorité d'affichage de la SECTION de ce champ (tous les champs d'une
+  /// même section doivent porter la même valeur). Absent/"core" = toujours
+  /// une étape séquentielle obligatoire (comportement actuel). "optional" =
+  /// section repliée en fin de parcours, dépliée automatiquement si déjà
+  /// répondue (cf. lib/pdf-forms/build-steps.ts).
+  stepPriority?: "core" | "optional";
 
   // Méta technique (non exposée au public)
   /// Note interne admin — JAMAIS exposée côté public.

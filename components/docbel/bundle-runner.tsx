@@ -86,22 +86,6 @@ interface BundleRunnerProps {
   /// Documents obligatoires au dossier mais à charge d'un tiers (employeur,
   /// ONEM, mutuelle…). Listés à part — pas de bouton « Compléter ».
   externalDocuments?: ExternalDocument[];
-  /// Si vrai : n'affiche jamais la pré-qualification en écran bloquant — les
-  /// questions restent visibles en ligne au-dessus des documents, qui sont
-  /// toujours affichés. Cf. `DossierDefinition.inlineDocumentQuestions`.
-  inlineDocumentQuestions?: boolean;
-  /// Slugs des documents marqués `gatedByRestOfDossier` dans ce dossier (cf.
-  /// lib/dossiers/types.ts) — transmis à `computeItemStatuses` pour calculer
-  /// `ItemStatus.locked`. Vide pour tout dossier qui n'utilise pas ce champ.
-  gatedSlugs?: string[];
-  /// Vrai si les questions marquées `gatesDocuments` (ou, à défaut, TOUTES
-  /// les questions — cf. `DossierQuestion.gatesDocuments`) ont une réponse.
-  /// Remplace `eligibilityCompleted` (qui exige TOUTES les questions) comme
-  /// signal passé à `computeItemStatuses` pour débloquer un document
-  /// `gatedByRestOfDossier` — cf. lib/pdf-forms/generate-lock.ts (Finding 2).
-  /// Défaut `true` : un dossier qui ne passe pas cette prop (ou qui ne
-  /// marque aucune question `gatesDocuments`) garde le comportement actuel.
-  gatingQuestionsAnswered?: boolean;
 }
 
 const RESPONSIBILITY_LABEL_KEYS: Record<ExternalDocument["responsibility"], string> = {
@@ -123,9 +107,6 @@ export function BundleRunner({
   fieldLabels,
   applicableSlugs = null,
   externalDocuments = [],
-  inlineDocumentQuestions = false,
-  gatedSlugs = [],
-  gatingQuestionsAnswered = true,
 }: BundleRunnerProps) {
   const t = useTranslations("public.dossier");
   const router = useRouter();
@@ -160,18 +141,12 @@ export function BundleRunner({
     );
   }, [hasEligibilityQuestions, eligibilityQuestions, eligibilityAnswers]);
 
-  /// Affichage de la pré-qualification :
-  /// - mode "gate" (comportement historique, inchangé) : quand on n'a pas
-  ///   encore démarré le run ET il y a des questions, OU quand l'utilisateur
-  ///   a explicitement demandé à revoir ses réponses.
-  /// - mode "en ligne" (`inlineDocumentQuestions`) : jamais de gate — les
-  ///   questions et les documents sont TOUJOURS affichés ensemble.
+  /// Pré-qualification en écran bloquant : quand on n'a pas encore démarré
+  /// le run ET il y a des questions, OU quand l'utilisateur a explicitement
+  /// demandé à revoir ses réponses.
   const showsPrequalifierGate =
-    !inlineDocumentQuestions && ((!runId && hasEligibilityQuestions) || editingEligibility);
-  const showsQuestions =
-    showsPrequalifierGate || (inlineDocumentQuestions && hasEligibilityQuestions);
-  const showsDocumentsSection =
-    inlineDocumentQuestions || !showsPrequalifierGate || Boolean(runId);
+    (!runId && hasEligibilityQuestions) || editingEligibility;
+  const showsDocumentsSection = !showsPrequalifierGate || Boolean(runId);
 
   async function ensureRun(answers?: EligibilityAnswers): Promise<string | null> {
     if (runId && !answers) return runId;
@@ -308,13 +283,7 @@ export function BundleRunner({
     completedCount,
     requiredVisible,
     allRequiredDone,
-  } = computeItemStatuses(
-      bundle.items,
-      completedTemplateIds,
-      payloads,
-      applicableSlugs,
-      { eligibilityAnswersComplete: gatingQuestionsAnswered, gatedSlugs },
-    );
+  } = computeItemStatuses(bundle.items, completedTemplateIds, payloads, applicableSlugs);
 
   return (
     <div className="space-y-6">
@@ -351,7 +320,7 @@ export function BundleRunner({
       {warnings.length > 0 && <BundleWarnings warnings={warnings} />}
 
       {/* Pré-qualification — informatif, jamais bloquant */}
-      {showsQuestions && (
+      {showsPrequalifierGate && (
         <EligibilityPrequalifier
           questions={eligibilityQuestions}
           initialAnswers={eligibilityAnswers}
@@ -386,10 +355,10 @@ export function BundleRunner({
         </div>
       )}
 
-      {/* Documents — masqué tant que la pré-qualification n'est pas faite (mode gate) ; toujours affiché en mode inline */}
+      {/* Documents — masqué tant que la pré-qualification n'est pas faite */}
       {showsDocumentsSection && (
         <>
-          {!runId && !inlineDocumentQuestions && (
+          {!runId && (
             <Alert>
               <AlertDescription className="text-sm flex items-center justify-between gap-3 flex-wrap">
                 <span>
@@ -424,7 +393,7 @@ export function BundleRunner({
               <CardTitle className="text-base">{t("runnerFlowDocuments")}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
-              {visibleItems.map(({ item, completed, eligibility, locked }, idx) => {
+              {visibleItems.map(({ item, completed, eligibility }, idx) => {
                 const isPending = eligibility === "pending";
                 return (
                   <div
@@ -492,17 +461,12 @@ export function BundleRunner({
                           {t("runnerPendingHint")}
                         </p>
                       )}
-                      {locked && !completed && (
-                        <p className="text-[11px] text-amber-700 mt-1">
-                          {t("runnerLockedHint")}
-                        </p>
-                      )}
                     </div>
                     <Button
                       size="sm"
                       variant={completed ? "outline" : "default"}
                       onClick={() => handleStart(item)}
-                      disabled={isPending || starting || (locked && !completed)}
+                      disabled={isPending || starting}
                     >
                       {completed
                         ? t("edit")

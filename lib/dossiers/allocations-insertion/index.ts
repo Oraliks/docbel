@@ -174,64 +174,14 @@ export const allocationsInsertion: DossierDefinition = {
     return out;
   },
 
-  questions: [
-    // ------- Âge (condition clé : demande avant 25 ans) -------
-    {
-      id: "age",
-      label: { fr: "Quel âge as-tu ?" },
-      helpText: {
-        fr: "La demande doit en principe être faite avant 25 ans.",
-      },
-      type: "select",
-      options: [
-        { value: "moins-18", label: { fr: "Moins de 18 ans" } },
-        { value: "18-20", label: { fr: "Entre 18 et 20 ans" } },
-        { value: "21-24", label: { fr: "Entre 21 et 24 ans" } },
-        { value: "25-plus", label: { fr: "25 ans ou plus" } },
-      ],
-    },
-
-    // ------- Parcours d'études (branche la preuve d'études à joindre) -------
-    {
-      id: "parcoursEtudes",
-      label: { fr: "Quel est ton parcours d'études ?" },
-      helpText: {
-        fr: "Cela détermine la preuve d'études à joindre : un formulaire rempli par ton école (secondaire/formation), une copie de ton diplôme (bachelier/master belge), ou un formulaire spécifique si tu as étudié à l'étranger.",
-      },
-      type: "select",
-      options: [
-        { value: "secondaire-belge", label: { fr: "Études secondaires ou de formation en Belgique" } },
-        { value: "superieur-belge", label: { fr: "Bachelier ou master belge (enseignement supérieur)" } },
-        { value: "etranger", label: { fr: "Études à l'étranger" } },
-        { value: "autre", label: { fr: "Aucune de ces situations" } },
-      ],
-      // Seule question qui branche un document REMPLISSABLE et obligatoire
-      // (DIPLÔME/ÉTRANGER) : elle seule doit être répondue pour débloquer
-      // C109/36-DEMANDE (cf. lib/pdf-forms/generate-lock.ts). `age` et
-      // `aTravaille` ne branchent que des documents à charge d'un tiers
-      // (responsibility ≠ "user"), jamais remplissables — les exiger aussi
-      // contredirait le principe « informatif, jamais bloquant ».
-      gatesDocuments: true,
-    },
-
-    // ------- Travail (le C4 permet de réduire la durée du SIP) -------
-    {
-      id: "aTravaille",
-      label: { fr: "As-tu déjà travaillé comme salarié ?" },
-      helpText: {
-        fr: "Si tu as travaillé, le C4 remis par ton employeur peut réduire la durée de ton stage d'insertion. Réponds « oui » même pour un job étudiant ou un contrat court.",
-      },
-      type: "boolean",
-    },
-  ],
-
-  // Écran de pré-qualification séparé supprimé (2026-07) : ces 3 questions
-  // sont rendues en ligne au-dessus des documents (cf. BundleRunner). Les 6
-  // questions purement informatives retirées (aTermineEtudes, aDiplome,
-  // stageInsertion, inscritDemandeurEmploi, nationalite, chargeFamille) ne
-  // branchaient aucun document — leur contenu utile reste dans les cartes
-  // "à savoir" du journey ci-dessous.
-  inlineDocumentQuestions: true,
+  // Aucune question d'aiguillage (2026-07) : la réponse équivalente (parcours
+  // d'études, âge, travail antérieur) se déduit du document que le citoyen
+  // choisit d'ouvrir et remplir, pas d'un pré-questionnaire séparé — cf.
+  // documents ci-dessous, tous listés d'emblée avec un intitulé qui indique à
+  // qui ils s'adressent (ex. « si tu as moins de 21 ans », « si tu as
+  // travaillé »). Le contenu informatif des anciennes questions reste dans
+  // les cartes "à savoir" du journey et dans les intitulés des documents.
+  questions: [],
 
   warnings: [
     {
@@ -284,10 +234,11 @@ export const allocationsInsertion: DossierDefinition = {
   //     conditionnelle sans PDF requis (code-driven, pas de seed).
   // Cf. [[project-insertion-document-tree]].
   //
-  // Conditions basées sur les réponses (stockées en chaînes) :
-  //   parcoursEtudes ∈ secondaire-belge | superieur-belge | etranger | autre
-  //   age ∈ moins-18 | 18-20 | 21-24 | 25-plus
-  //   aTravaille ∈ "true" | "false"
+  // Tous les documents sont listés d'emblée, SANS filtrage par réponse
+  // (2026-07) : chaque intitulé/note indique à qui il s'adresse (« si tu as
+  // moins de 21 ans », « si tu as travaillé »…) — le citoyen choisit
+  // lui-même celui qui correspond à sa situation, exactement comme un
+  // dossier administratif papier présente plusieurs formulaires alternatifs.
   // Réforme 01/03/2026 : CERTIFICAT → remplacé par DIPLÔME ; ANNEXE →
   // remplacé par ÉTRANGER. CONDITION21ANS conservé (À VALIDER Oraliks).
   // ===================================================================
@@ -299,7 +250,6 @@ export const allocationsInsertion: DossierDefinition = {
       titleKey: "insertion.doc.c109Demande.title",
       issuer: "ONEM",
       required: true,
-      gatedByRestOfDossier: true,
       // Formulaire OBLIGATOIRE, préremplissable dans beldoc (responsibility
       // user par défaut). PDF officiel AcroForm fourni par Oraliks (44 widgets).
       // On mappe l'identité + la signature ci-dessous ; les déclarations de
@@ -359,7 +309,7 @@ export const allocationsInsertion: DossierDefinition = {
       fields: [],
     },
 
-    // ---------- Preuve d'études — une branche selon `parcoursEtudes` ----------
+    // ---------- Preuve d'études — le citoyen choisit celle qui s'applique ----------
     // NB : le C109/36-CERTIFICAT n'est plus valable depuis le 01/03/2026 —
     // remplacé par le C109/36-DIPLÔME (info Oraliks 2026-07-05).
     {
@@ -376,7 +326,6 @@ export const allocationsInsertion: DossierDefinition = {
       // PDF officiel Oraliks (109 widgets, 5 pages).
       sourcePdfPath: "private/pdfs/C109-36_Diplome_FR.pdf",
       lockUndeclaredFields: true,
-      includeWhen: (a) => a.parcoursEtudes === "secondaire-belge",
       internalRef:
         "C109/36-DIPLÔME (art. 36) — remplace le CERTIFICAT depuis 01/03/2026 (Oraliks). PDF officiel 2026-07-05. Seule l'identité citoyen est saisie ; partie école masquée (hidden) → blanche dans le PDF, complétée par l'établissement.",
       fields: [
@@ -394,7 +343,6 @@ export const allocationsInsertion: DossierDefinition = {
       responsibilityNote: {
         fr: "Dispense de formulaire d'école : joins une copie de ton diplôme belge (bachelier/master). Valable s'il a été précédé de 6 ans d'études en Belgique, OU si tu as travaillé ≥ 78 jours comme salarié, OU été indépendant à titre principal ≥ 3 mois.",
       },
-      includeWhen: (a) => a.parcoursEtudes === "superieur-belge",
       internalRef:
         "Dispense bachelier/master belge (conditions art. 36). À VALIDER Oraliks (les conditions peuvent renvoyer vers DEMANDE ou ÉTRANGER).",
       fields: [],
@@ -412,8 +360,6 @@ export const allocationsInsertion: DossierDefinition = {
       // l'étranger, équivalence, situation salarié/indépendant, parent, etc.
       // Préremplissable ; identité + signature mappées. PDF officiel Oraliks.
       sourcePdfPath: "private/pdfs/C109-36_Etranger_FR.pdf",
-      includeWhen: (a) =>
-        a.parcoursEtudes === "etranger" || a.parcoursEtudes === "autre",
       internalRef:
         "C109/36-ÉTRANGER (art. 36) — remplace l'ANNEXE depuis 01/03/2026 (Oraliks). Couvre 'études à l'étranger' + cas résiduel 'autre'. PDF officiel 2026-07-05, rempli par le citoyen.",
       fields: [
@@ -435,7 +381,6 @@ export const allocationsInsertion: DossierDefinition = {
       responsibilityNote: {
         fr: "Si tu as moins de 21 ans : formulaire prouvant le diplôme ou certificat obtenu, dans la version de ta Communauté (F, N ou D). Une dispense est parfois possible.",
       },
-      includeWhen: (a) => a.age === "moins-18" || a.age === "18-20",
       internalRef:
         "C109/36-CONDITION21ANS (F/N/D). Exigé < 21 ans. Dispenses à préciser (À VALIDER Oraliks).",
       fields: [],
@@ -450,8 +395,7 @@ export const allocationsInsertion: DossierDefinition = {
       responsibilityNote: {
         fr: "Si tu as travaillé : réclame le C4 à ton (ancien) employeur. Il peut réduire la durée de ton stage d'insertion.",
       },
-      includeWhen: (a) => a.aTravaille === "true",
-      internalRef: "C4 employeur — réduit le SIP. Conditionnel (a travaillé).",
+      internalRef: "C4 employeur — réduit le SIP. Toujours listé, applicable si tu as travaillé.",
       fields: [],
     },
   ],

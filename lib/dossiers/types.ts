@@ -39,17 +39,6 @@ export interface DossierQuestion {
   /// de documents, calcul de natureDA…). Non transmise au prequalifier.
   /// Utiliser `visibleIf` pour les questions du parcours citoyen.
   visibleWhen?: (answers: DossierAnswers) => boolean;
-  /// Si vrai : cette question doit avoir une réponse avant qu'un document
-  /// `gatedByRestOfDossier` du même dossier ne puisse se débloquer —
-  /// typiquement une question dont dépend l'inclusion d'un document
-  /// REMPLISSABLE et obligatoire (ex. `parcoursEtudes` détermine
-  /// DIPLÔME/ÉTRANGER). Absent/faux = cette question n'a PAS besoin d'être
-  /// répondue pour débloquer (elle peut rester purement informative — ex.
-  /// `age`/`aTravaille`, qui ne branchent que des documents à charge d'un
-  /// tiers, jamais remplissables dans beldoc). Si AUCUNE question du
-  /// dossier n'a ce flag, TOUTES sont requises par prudence (comportement
-  /// inchangé pour tout dossier qui n'utilise pas cette distinction).
-  gatesDocuments?: boolean;
 }
 
 /// Un champ d'un document : soit une référence au catalogue, soit un champ
@@ -108,14 +97,6 @@ export interface DossierDocument {
   /// (ex. C109/36-DIPLÔME : le citoyen ne remplit que son identité, l'école
   /// complète le reste sur le PDF imprimé). Sans effet si pas de `sourcePdfPath`.
   lockUndeclaredFields?: boolean;
-  /// Si `true` : ce document (obligatoire, remplissable) reste verrouillé —
-  /// non téléchargeable — tant que TOUT AUTRE document actuellement
-  /// obligatoire et applicable du dossier (branche + déclenchés par un autre
-  /// formulaire) n'est pas complété. Réservé à UN SEUL document par dossier :
-  /// celui qui matérialise la soumission finale (ex. C109/36-DEMANDE). Ne
-  /// jamais poser sur plus d'un document du même dossier — ça créerait un
-  /// verrou circulaire (aucun des deux ne pourrait jamais se débloquer).
-  gatedByRestOfDossier?: boolean;
   /// Champs à remplir. Vide pour un document `responsibility ≠ "user"`
   /// (le citoyen ne le complète pas dans beldoc).
   fields: DossierFieldRef[];
@@ -357,13 +338,6 @@ export interface DossierDefinition {
   journeyCtaLabel?: string;
   /// Clé i18n du libellé CTA (préférée si fournie).
   journeyCtaLabelKey?: string;
-  /// Si vrai : `BundleRunner` n'affiche JAMAIS `EligibilityPrequalifier` en
-  /// écran bloquant séparé — les questions de `questions[]` sont rendues en
-  /// ligne, au-dessus de la liste de documents, qui reste toujours visible.
-  /// Absent/faux = comportement actuel inchangé (écran de pré-qualification
-  /// avant les documents). Opt-in par dossier — n'affecte aucun autre dossier
-  /// tant qu'il n'est pas explicitement activé sur celui-ci.
-  inlineDocumentQuestions?: boolean;
   /// Préremplissage de la pré-qualification depuis le wizard d'orientation
   /// (cookie `beldoc-orientation`, cf. lib/dossiers/orientation.ts). Optionnel
   /// et OPT-IN par dossier : mappe les choix du wizard (situation / subOption /

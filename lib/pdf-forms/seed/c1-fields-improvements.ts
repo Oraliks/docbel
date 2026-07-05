@@ -283,7 +283,10 @@ export const C1_QUESTIONS: PdfFormField[] = [
     type: "date",
     required: false,
     label: { fr: "À partir du", nl: "", de: "" },
-    help: { fr: "Date de prise d'effet du changement d'organisme de paiement.", nl: "", de: "" },
+    help: {
+      fr: "Le transfert prend effet le mois suivant, sous certaines conditions de délai qui dépendent de ton type d'allocation actuel. Ton nouvel organisme de paiement te confirmera la date exacte.",
+      nl: "", de: "",
+    },
     visibleIf: { fieldId: "motifIntroduction", op: "equals", value: "changement-op" },
     section: SECTION_DEMANDE,
     order: 4,
@@ -338,6 +341,20 @@ export const C1_QUESTIONS: PdfFormField[] = [
     visibleIf: { fieldId: "motifIntroduction", op: "equals", value: "modification" },
     section: SECTION_DEMANDE,
     order: 9,
+  },
+  {
+    id: "dateModificationEffective",
+    pdfFieldName: "", // À stamper sur les 3 cases date réelles (adresse / situation familiale / compte) — noms AcroForm à identifier via scripts/dump-c1.ts (suivi séparé, cf. NEXT_ACTIONS).
+    type: "date",
+    required: false,
+    label: { fr: "Date d'effet de la ou des modification(s) cochée(s) ci-dessus", nl: "", de: "" },
+    help: {
+      fr: "Une seule date pour l'adresse, la situation personnelle/du ménage et le compte bancaire. Si tes changements n'ont pas tous la même date d'effet, fais une déclaration séparée pour chaque date différente. Ne concerne pas la cotisation syndicale ni le permis de séjour (pas de date sur le formulaire officiel).",
+      nl: "", de: "",
+    },
+    visibleIf: { fieldId: "motifIntroduction", op: "equals", value: "modification" },
+    section: SECTION_DEMANDE,
+    order: 9.5,
   },
 
   // ====================================================================

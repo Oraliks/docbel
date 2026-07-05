@@ -36,6 +36,23 @@ describe("C1_TRIGGERS — colocation → Annexe Regis", () => {
   });
 });
 
+describe("C1_QUESTIONS — dateModificationEffective", () => {
+  it("existe, type date, visible seulement si motifIntroduction = modification", () => {
+    const f = C1_QUESTIONS.find((q) => q.id === "dateModificationEffective");
+    expect(f).toBeDefined();
+    expect(f?.type).toBe("date");
+    expect(f?.required).toBe(false);
+    expect(f?.visibleIf).toEqual({ fieldId: "motifIntroduction", op: "equals", value: "modification" });
+  });
+});
+
+describe("C1_QUESTIONS — dateChangementOrganisme aide enrichie", () => {
+  it("mentionne que le délai dépend du type d'allocation en cours", () => {
+    const f = C1_QUESTIONS.find((q) => q.id === "dateChangementOrganisme");
+    expect(f?.help?.fr).toContain("type d'allocation");
+  });
+});
+
 describe("applyC1Improvements — defaultMotif optionnel", () => {
   it("sans options, motifIntroduction n'a pas de defaultValue (comportement actuel inchangé)", () => {
     const result = applyC1Improvements([]);

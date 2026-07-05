@@ -4729,6 +4729,8 @@
       "runnerStepSummarySubtitle": "Vérifiez vos informations avant de signer.",
       "runnerOptionalGroupTitle": "Autres informations à déclarer",
       "runnerOptionalGroupSubtitle": "Dépliez uniquement ce qui vous concerne.",
+      "runnerConfirmationReady": "Votre déclaration est prête à être envoyée.",
+      "runnerConfirmationNameForSignature": "Renseignez votre nom en début de formulaire pour signer numériquement.",
       "runnerConsentRequired": "Veuillez accepter le traitement de vos données.",
       "runnerNameRequiredToSign": "Renseignez votre nom (prénom + nom) pour pouvoir signer le document.",
       "runnerSomeFieldsInvalid": "Certains champs sont invalides. Vérifiez les informations en rouge.",

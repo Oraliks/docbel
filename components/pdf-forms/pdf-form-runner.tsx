@@ -590,12 +590,13 @@ function FieldsCluster({
 /// SummaryStep, conservé plus bas pour le mode legacy). Le mode de
 /// livraison/signature/consentement restent dans le pied d'étape appelant.
 function ConfirmationCard({ hasSignature, signerName }: { hasSignature: boolean; signerName: string }) {
+  const t = useTranslations("public.dossier");
   return (
     <div className="rounded-2xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] p-5 text-sm text-[color:var(--glass-ink)]">
-      Votre déclaration est prête à être envoyée.
+      {t("runnerConfirmationReady")}
       {hasSignature && !signerName && (
         <span className="mt-1 block text-amber-700 dark:text-amber-300">
-          Renseignez votre nom en début de formulaire pour signer numériquement.
+          {t("runnerConfirmationNameForSignature")}
         </span>
       )}
     </div>

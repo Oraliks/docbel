@@ -28,7 +28,8 @@ import { todayISO } from "@/lib/pdf-forms/system-values";
 import { resolveSignerName } from "@/lib/pdf-forms/signature";
 import { isAutoField, isCreationDateField, isSignatureField } from "@/lib/pdf-forms/auto-fields";
 import type { PublicForm, PublicField } from "@/lib/pdf-forms/public-serializer";
-import { buildSteps, type OptionalSection } from "@/lib/pdf-forms/build-steps";
+import { buildSteps, buildMacroSteps, type OptionalSection, type MacroStep } from "@/lib/pdf-forms/build-steps";
+import { sectionLabel } from "@/lib/pdf-forms/section-labels";
 import { FormStepper } from "./form-stepper";
 import { FormShell } from "./form-shell";
 import { ContextHelpPanel } from "./context-help-panel";
@@ -150,22 +151,35 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, onValuesChange
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [coreSteps, optionalSections, locale]);
 
+  // Mode « macro-étapes » (ex. C1 → 5 étapes) : non-null si des champs portent
+  // `stepGroup`. Supersède `steps` (pas de résumé, envoi sur la dernière
+  // étape). Null pour les autres formulaires → rendu classique inchangé.
+  const macroSteps = useMemo(() => buildMacroSteps(form.fields, values), [form.fields, values]);
+
   // Nom du signataire résolu depuis les champs saisis (pour la signature
   // numérique). "" si aucun nom exploitable.
   const signerName = useMemo(() => resolveSignerName(form.fields, values), [form.fields, values]);
 
   // Clamp dérivé (le nombre d'étapes peut diminuer via visibleIf).
-  const activeIndex = Math.min(active, steps.length - 1);
+  const stepCount = macroSteps ? macroSteps.length : steps.length;
+  const activeIndex = Math.min(active, stepCount - 1);
 
-  // Map champ → index d'étape (pour sauter sur la 1ʳᵉ erreur).
+  // Map champ → index d'étape (pour sauter sur la 1ʳᵉ erreur) — macro-aware.
   const fieldStepIndex = useMemo(() => {
     const m: Record<string, number> = {};
-    steps.forEach((s, i) => {
-      if (s.kind === "fields") s.fields.forEach((f) => (m[f.id] = i));
-      if (s.kind === "optional-group") s.sections.forEach((sec) => sec.fields.forEach((f) => (m[f.id] = i)));
-    });
+    if (macroSteps) {
+      macroSteps.forEach((ms, i) => {
+        ms.sections.forEach((sec) => sec.fields.forEach((f) => (m[f.id] = i)));
+        ms.advanced.forEach((f) => (m[f.id] = i));
+      });
+    } else {
+      steps.forEach((s, i) => {
+        if (s.kind === "fields") s.fields.forEach((f) => (m[f.id] = i));
+        if (s.kind === "optional-group") s.sections.forEach((sec) => sec.fields.forEach((f) => (m[f.id] = i)));
+      });
+    }
     return m;
-  }, [steps]);
+  }, [steps, macroSteps]);
 
   const setValue = useCallback(
     (id: string, value: FieldValue) => {
@@ -320,6 +334,35 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, onValuesChange
         setDoccleRef={setDoccleRef}
         submitting={submitting}
         submit={submit}
+        t={t}
+      />
+    );
+  }
+
+  // Mode macro (C1) : rendu 5 étapes sans résumé, envoi sur la dernière.
+  if (macroSteps) {
+    return (
+      <MacroRunnerBody
+        form={form}
+        macroSteps={macroSteps}
+        activeIndex={activeIndex}
+        setActive={setActive}
+        locale={locale}
+        setLocale={setLocale}
+        values={values}
+        errors={errors}
+        setValue={setValue}
+        signerName={signerName}
+        consent={consent}
+        setConsent={setConsent}
+        delivery={delivery}
+        setDelivery={setDelivery}
+        doccleRef={doccleRef}
+        setDoccleRef={setDoccleRef}
+        submitting={submitting}
+        submit={submit}
+        lastSavedAt={lastSavedAt}
+        bundleRunId={bundleRunId}
         t={t}
       />
     );
@@ -660,6 +703,220 @@ function ConfirmationCard({ hasSignature, signerName }: { hasSignature: boolean;
           </span>
         )}
       </div>
+    </div>
+  );
+}
+
+/// Titres i18n des 5 macro-étapes du C1 (repli sur l'id si clé absente).
+const MACRO_TITLE_KEY: Record<string, string> = {
+  motif: "runnerGroupMotif",
+  identite: "runnerGroupIdentite",
+  "activites-revenus": "runnerGroupActivitesRevenus",
+  famille: "runnerGroupFamille",
+  final: "runnerGroupFinal",
+};
+
+interface MacroRunnerBodyProps {
+  form: PublicForm;
+  macroSteps: MacroStep[];
+  activeIndex: number;
+  setActive: (i: number) => void;
+  locale: Locale;
+  setLocale: (l: Locale) => void;
+  values: FormPayload;
+  errors: Record<string, string>;
+  setValue: (id: string, value: FieldValue) => void;
+  signerName: string;
+  consent: boolean;
+  setConsent: (c: boolean) => void;
+  delivery: "download" | "doccle";
+  setDelivery: (d: "download" | "doccle") => void;
+  doccleRef: string;
+  setDoccleRef: (v: string) => void;
+  submitting: boolean;
+  submit: () => void;
+  lastSavedAt: Date | null;
+  bundleRunId?: string;
+  t: ReturnType<typeof useTranslations>;
+}
+
+/// Rendu « macro-étapes » (C1 → 5 étapes) : pas d'étape résumé, l'action
+/// d'envoi (consentement + livraison + signature + génération) vit dans le
+/// pied de la DERNIÈRE étape. Réutilise FieldsCluster / FormStepper /
+/// ContextHelpPanel / StepProgress. Une macro-étape à plusieurs sections
+/// affiche un sous-titre par section ; le long-tail non curé (`advanced`)
+/// va dans un accordéon replié.
+function MacroRunnerBody({
+  form, macroSteps, activeIndex, setActive, locale, setLocale, values, errors,
+  setValue, signerName, consent, setConsent, delivery, setDelivery, doccleRef,
+  setDoccleRef, submitting, submit, lastSavedAt, bundleRunId, t,
+}: MacroRunnerBodyProps) {
+  const current = macroSteps[activeIndex];
+  const isLast = activeIndex === macroSteps.length - 1;
+  const multiSection = current.sections.length > 1;
+  const titleFor = (id: string) => {
+    const k = MACRO_TITLE_KEY[id];
+    return k ? t(k) : id;
+  };
+  const stepHasError = (ms: MacroStep) =>
+    ms.sections.some((sec) => sec.fields.some((f) => errors[f.id])) ||
+    ms.advanced.some((f) => errors[f.id]);
+
+  const cluster = (fields: PublicField[]) => (
+    <FieldsCluster
+      fields={fields}
+      values={values}
+      errors={errors}
+      locale={locale}
+      setValue={setValue}
+      formId={form.id}
+      formSlug={form.slug}
+    />
+  );
+
+  const progress = (
+    <StepProgress
+      current={activeIndex + 1}
+      total={macroSteps.length}
+      label={t("runnerStepCounter", { current: activeIndex + 1, total: macroSteps.length })}
+    />
+  );
+
+  return (
+    <div className="flex flex-col gap-3">
+      {(form.locales.length > 1 || form.allowItsme) && (
+        <div className="flex flex-wrap items-center gap-2">
+          {form.locales.length > 1 &&
+            form.locales.map((l) => (
+              <Button key={l} size="sm" variant={l === locale ? "default" : "outline"} className="h-7 px-2.5" onClick={() => setLocale(l)}>
+                {LOCALE_NAMES[l]}
+              </Button>
+            ))}
+          {form.allowItsme && (
+            <Button type="button" variant="outline" size="sm" className="ml-auto" onClick={() => { window.location.href = `/api/pdf/${form.slug}/prefill/start`; }}>
+              {t("runnerItsmePrefillCta")}
+            </Button>
+          )}
+        </div>
+      )}
+
+      <FormShell helpPanel={<ContextHelpPanel sectionKey={current.sections[0]?.key} locale={locale} />}>
+        <Card className="overflow-hidden rounded-3xl border-0 bg-card shadow-sm">
+          <div className="border-b border-[color:var(--glass-border)] px-3">
+            <FormStepper
+              steps={macroSteps.map((s) => ({ id: s.id, label: titleFor(s.id), hasError: stepHasError(s) }))}
+              activeIndex={activeIndex}
+              onSelect={setActive}
+            />
+          </div>
+
+          <CardContent className="p-5 sm:p-6">
+            <form
+              onSubmit={(e) => { e.preventDefault(); if (isLast) submit(); }}
+              className="flex flex-col gap-5"
+            >
+              <div className="flex flex-col gap-1">
+                <h2
+                  className="glass-display text-[22px] font-semibold leading-tight text-[color:var(--glass-ink)] sm:text-[26px]"
+                  style={{ fontVariationSettings: "'WONK' 0, 'SOFT' 0", fontFeatureSettings: "'swsh' 0, 'salt' 0" }}
+                >
+                  {titleFor(current.id)}
+                </h2>
+                <p className="text-[13px] text-[color:var(--glass-ink-soft)]">{t("runnerFieldsStepHelp")}</p>
+              </div>
+
+              {current.sections.map((sec, i) => (
+                <div key={sec.key ?? `sec-${i}`} className="flex flex-col gap-3">
+                  {multiSection && sec.key && (
+                    <h3 className="text-[11px] font-bold uppercase tracking-[0.06em] text-[color:var(--glass-ink-soft)]">
+                      {sectionLabel(sec.key, locale)}
+                    </h3>
+                  )}
+                  {cluster(sec.fields)}
+                </div>
+              ))}
+
+              {current.advanced.length > 0 && (
+                <CompactAccordionSection
+                  sections={[{ key: "advanced", title: t("runnerAdvancedSectionTitle"), fields: current.advanced, defaultOpen: false }]}
+                  renderFields={cluster}
+                />
+              )}
+
+              {isLast ? (
+                <div className="flex flex-col gap-4 border-t border-[color:var(--glass-border)] pt-4">
+                  {form.allowDownload && form.allowDoccle && (
+                    <div className="flex flex-col gap-2">
+                      <span className="text-xs font-medium text-muted-foreground">{t("runnerDeliveryModeLabel")}</span>
+                      <div className="flex gap-1.5">
+                        <Button type="button" size="sm" variant={delivery === "download" ? "default" : "outline"} onClick={() => setDelivery("download")}>
+                          <DownloadIcon className="size-4" /> {t("runnerDeliveryDownload")}
+                        </Button>
+                        <Button type="button" size="sm" variant={delivery === "doccle" ? "default" : "outline"} onClick={() => setDelivery("doccle")}>
+                          <SendIcon className="size-4" /> {t("runnerDeliveryDoccle")}
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                  {delivery === "doccle" && (
+                    <div className="flex flex-col gap-1.5">
+                      <Label htmlFor="doccle-ref-macro">{t("runnerDoccleRecipientLabel")}</Label>
+                      <Input id="doccle-ref-macro" value={doccleRef} placeholder={t("runnerDoccleRecipientPlaceholder")} onChange={(e) => setDoccleRef(e.target.value)} />
+                    </div>
+                  )}
+                  {form.fields.some(isSignatureField) && (
+                    <div className="rounded-lg border border-dashed bg-muted/30 p-3 text-sm">
+                      <div className="text-[11px] uppercase tracking-wide text-muted-foreground">{t("runnerDigitalSignatureLabel")}</div>
+                      {signerName ? (
+                        <>
+                          <div className="mt-1 font-serif text-lg italic">{signerName}</div>
+                          <div className="mt-0.5 text-[11px] text-muted-foreground">{t("runnerDigitalSignatureAutoNote")}</div>
+                        </>
+                      ) : (
+                        <div className="mt-1 text-xs text-amber-700 dark:text-amber-300">{t("runnerDigitalSignatureNameRequired")}</div>
+                      )}
+                    </div>
+                  )}
+                  <label className="flex items-start gap-2.5 text-sm text-muted-foreground">
+                    <Checkbox checked={consent} onCheckedChange={(c) => setConsent(c === true)} className="mt-0.5" />
+                    <span>{t("runnerConsentText")}</span>
+                  </label>
+                  <AutoSaveNotice lastSavedAt={lastSavedAt} isPartOfBundle={!!bundleRunId} />
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    {progress}
+                    <div className="flex flex-1 items-center justify-end gap-2 sm:flex-none">
+                      <Button type="button" variant="outline" className="rounded-full" onClick={() => setActive(activeIndex - 1)}>
+                        <ChevronLeftIcon className="size-4" /> {t("previous")}
+                      </Button>
+                      <Button type="submit" disabled={submitting} className="rounded-full px-6">
+                        {submitting ? <Loader2Icon className="size-4 animate-spin" /> : delivery === "doccle" ? <SendIcon className="size-4" /> : <DownloadIcon className="size-4" />}
+                        {submitting ? t("runnerGenerating") : delivery === "doccle" ? t("runnerSubmitSignAndSend") : t("runnerSubmitSignAndGenerate")}
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-3 border-t border-[color:var(--glass-border)] pt-4">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    {progress}
+                    <div className="flex items-center gap-2">
+                      {activeIndex > 0 && (
+                        <Button type="button" variant="outline" className="rounded-full" onClick={() => setActive(activeIndex - 1)}>
+                          <ChevronLeftIcon className="size-4" /> {t("previous")}
+                        </Button>
+                      )}
+                      <Button type="button" className="rounded-full px-6" onClick={() => setActive(activeIndex + 1)}>
+                        {t("continue")} <ChevronRightIcon className="size-4" />
+                      </Button>
+                    </div>
+                  </div>
+                  <AutoSaveNotice lastSavedAt={lastSavedAt} isPartOfBundle={!!bundleRunId} />
+                </div>
+              )}
+            </form>
+          </CardContent>
+        </Card>
+      </FormShell>
     </div>
   );
 }

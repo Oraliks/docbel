@@ -1520,6 +1520,33 @@ export interface ApplyC1ImprovementsOptions {
 ///    familiale…) sont préservés tels quels.
 ///
 /// Idempotent : ré-exécutable sans dupliquer (compare les `id`).
+///
+/// Regroupe aussi les 12 sections en 5 macro-étapes (cf. spec
+/// 2026-07-06-form-runner-5-macro-steps) via `stepGroup`, consommé par
+/// `buildMacroSteps`. Sections inférées non enrichies (`adresse`, `banque`)
+/// → identité ; champs sans section → pas de groupe → accordéon « Autres
+/// informations » en fin d'étape 5.
+const SECTION_TO_STEP_GROUP: Record<string, string> = {
+  [SECTION_DEMANDE]: "motif",
+  [SECTION_IDENTITE]: "identite",
+  adresse: "identite",
+  banque: "identite",
+  [SECTION_PAIEMENT]: "identite",
+  [SECTION_ACTIVITES]: "activites-revenus",
+  [SECTION_REVENUS]: "activites-revenus",
+  [SECTION_SITUATION_FAMILIALE]: "famille",
+  [SECTION_COTISATION]: "final",
+  [SECTION_NON_EEE]: "final",
+  [SECTION_DIVERS]: "final",
+  [SECTION_AFFIRMATIONS]: "final",
+  [SECTION_ANNEXES]: "final",
+};
+
+function withStepGroup(f: PdfFormField): PdfFormField {
+  const group = f.section ? SECTION_TO_STEP_GROUP[f.section] : undefined;
+  return group ? { ...f, stepGroup: group } : f;
+}
+
 export function applyC1Improvements(
   fields: PdfFormField[],
   opts?: ApplyC1ImprovementsOptions
@@ -1541,5 +1568,7 @@ export function applyC1Improvements(
       )
     : C1_QUESTIONS;
 
-  return [...preserved, ...questions];
+  // Pose `stepGroup` sur tout champ dont la section est mappée (préservés
+  // inférés inclus) ; les champs sans section restent sans groupe → catch.
+  return [...preserved, ...questions].map(withStepGroup);
 }

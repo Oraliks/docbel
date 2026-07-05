@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildSteps } from "../build-steps";
+import { buildSteps, buildMacroSteps } from "../build-steps";
 import type { PublicField } from "../public-serializer";
 
 const LABELS = { fallbackTitle: "Informations", fallbackSubtitle: "Complétez les champs" };
@@ -125,5 +125,62 @@ describe("buildSteps — champs invisibles et auto-champs exclus", () => {
     ];
     const result = buildSteps(fields, {}, "fr", LABELS);
     expect(result.coreSteps[0].fields.map((f) => f.id)).toEqual(["name"]);
+  });
+});
+
+describe("buildMacroSteps — regroupement en macro-étapes (mode opt-in)", () => {
+  it("renvoie null si aucun champ n'a de stepGroup (formulaire non-macro)", () => {
+    const fields = [field({ id: "a", section: "identite" }), field({ id: "b", section: "adresse" })];
+    expect(buildMacroSteps(fields, {})).toBeNull();
+  });
+
+  it("ordonne selon l'ordre canonique du C1, pas l'ordre des champs du PDF", () => {
+    // Champs dans l'ordre PDF : identité d'abord, motif ensuite — l'ordre du
+    // parcours doit rester Motif → Identité → Activités&revenus → Famille.
+    const fields = [
+      field({ id: "i1", section: "identite", stepGroup: "identite" }),
+      field({ id: "m", section: "demande", stepGroup: "motif" }),
+      field({ id: "f", section: "situation-familiale", stepGroup: "famille" }),
+      field({ id: "a", section: "mes-activites", stepGroup: "activites-revenus" }),
+    ];
+    const steps = buildMacroSteps(fields, {});
+    expect(steps).not.toBeNull();
+    expect(steps!.map((s) => s.id)).toEqual(["motif", "identite", "activites-revenus", "famille"]);
+  });
+
+  it("sous-groupe par section à l'intérieur d'une macro-étape (sous-titres)", () => {
+    const fields = [
+      field({ id: "i1", section: "identite", stepGroup: "identite" }),
+      field({ id: "p1", section: "mode-paiement", stepGroup: "identite" }),
+      field({ id: "i2", section: "identite", stepGroup: "identite" }),
+    ];
+    const steps = buildMacroSteps(fields, {})!;
+    const identite = steps.find((s) => s.id === "identite")!;
+    expect(identite.sections.map((sec) => sec.key)).toEqual(["identite", "mode-paiement"]);
+    expect(identite.sections[0].fields.map((f) => f.id)).toEqual(["i1", "i2"]);
+  });
+
+  it("rattache les champs SANS stepGroup à la dernière macro-étape (advanced)", () => {
+    const fields = [
+      field({ id: "m", section: "demande", stepGroup: "motif" }),
+      field({ id: "final1", section: "divers", stepGroup: "final" }),
+      field({ id: "raw1" }),
+      field({ id: "raw2", section: undefined }),
+    ];
+    const steps = buildMacroSteps(fields, {})!;
+    expect(steps.map((s) => s.id)).toEqual(["motif", "final"]);
+    expect(steps[0].advanced).toEqual([]);
+    expect(steps[1].advanced.map((f) => f.id)).toEqual(["raw1", "raw2"]);
+  });
+
+  it("exclut les champs invisibles (visibleIf non satisfait) et auto (signature)", () => {
+    const fields = [
+      field({ id: "m", section: "demande", stepGroup: "motif" }),
+      field({ id: "gated", section: "divers", stepGroup: "final", visibleIf: { fieldId: "m", op: "equals", value: "x" } }),
+      field({ id: "sig", type: "signature", section: "signature", stepGroup: "final" }),
+    ];
+    const steps = buildMacroSteps(fields, {})!;
+    // "gated" caché (m != x) et "sig" auto → seul "motif" reste, pas de "final".
+    expect(steps.map((s) => s.id)).toEqual(["motif"]);
   });
 });

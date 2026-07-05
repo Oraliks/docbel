@@ -193,6 +193,12 @@ export interface PdfFormField {
   /// section repliée en fin de parcours, dépliée automatiquement si déjà
   /// répondue (cf. lib/pdf-forms/build-steps.ts).
   stepPriority?: "core" | "optional";
+  /// Macro-étape à laquelle appartient ce champ (regroupe plusieurs sections
+  /// en un nombre restreint d'étapes, ex. C1 → 5 étapes). Absent = pas de
+  /// mode macro (le formulaire garde une étape par section). Piloté en amont
+  /// (applyC1Improvements) ; consommé par buildMacroSteps. Prime sur
+  /// stepPriority quand présent (mode macro = pas d'optional-collapse).
+  stepGroup?: string;
 
   // Méta technique (non exposée au public)
   /// Note interne admin — JAMAIS exposée côté public.

@@ -29,6 +29,7 @@ export interface PublicField {
   order?: number;
   renderAs?: PdfFormField["renderAs"];
   stepPriority?: PdfFormField["stepPriority"];
+  stepGroup?: PdfFormField["stepGroup"];
   // ---- Champ `array` ----
   itemFields?: PublicField[];
   addRowLabel?: PdfFormField["addRowLabel"];
@@ -62,6 +63,7 @@ export function toPublicField(f: PdfFormField): PublicField {
     order: f.order,
     renderAs: f.renderAs,
     stepPriority: f.stepPriority,
+    stepGroup: f.stepGroup,
     itemFields: f.itemFields ? f.itemFields.map(toPublicField) : undefined,
     addRowLabel: f.addRowLabel,
     minRows: f.minRows,

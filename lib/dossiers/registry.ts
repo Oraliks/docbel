@@ -13,6 +13,7 @@ import { chomageComplet } from "./chomage-complet";
 import { chomageFrontalier } from "./chomage-frontalier";
 import { prepension } from "./prepension";
 import { allocationsInsertion } from "./allocations-insertion";
+import { changementSituationPersonnelle } from "./changement-situation-personnelle";
 
 const REGISTRY: Record<string, DossierDefinition> = {
   [chomageTemporaire.slug]: chomageTemporaire,
@@ -20,6 +21,7 @@ const REGISTRY: Record<string, DossierDefinition> = {
   [chomageFrontalier.slug]: chomageFrontalier,
   [prepension.slug]: prepension,
   [allocationsInsertion.slug]: allocationsInsertion,
+  [changementSituationPersonnelle.slug]: changementSituationPersonnelle,
 };
 
 /// Renvoie la définition de dossier codée pour ce slug, ou null si le dossier

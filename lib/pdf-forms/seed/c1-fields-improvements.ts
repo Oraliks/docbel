@@ -283,7 +283,10 @@ export const C1_QUESTIONS: PdfFormField[] = [
     type: "date",
     required: false,
     label: { fr: "À partir du", nl: "", de: "" },
-    help: { fr: "Date de prise d'effet du changement d'organisme de paiement.", nl: "", de: "" },
+    help: {
+      fr: "Le transfert prend effet le mois suivant, sous certaines conditions de délai qui dépendent de ton type d'allocation actuel. Ton nouvel organisme de paiement te confirmera la date exacte.",
+      nl: "", de: "",
+    },
     visibleIf: { fieldId: "motifIntroduction", op: "equals", value: "changement-op" },
     section: SECTION_DEMANDE,
     order: 4,
@@ -338,6 +341,20 @@ export const C1_QUESTIONS: PdfFormField[] = [
     visibleIf: { fieldId: "motifIntroduction", op: "equals", value: "modification" },
     section: SECTION_DEMANDE,
     order: 9,
+  },
+  {
+    id: "dateModificationEffective",
+    pdfFieldName: "", // À stamper sur les 3 cases date réelles (adresse / situation familiale / compte) — noms AcroForm à identifier via scripts/dump-c1.ts (suivi séparé, cf. NEXT_ACTIONS).
+    type: "date",
+    required: false,
+    label: { fr: "Date d'effet de la ou des modification(s) cochée(s) ci-dessus", nl: "", de: "" },
+    help: {
+      fr: "Une seule date pour l'adresse, la situation personnelle/du ménage et le compte bancaire. Si tes changements n'ont pas tous la même date d'effet, fais une déclaration séparée pour chaque date différente. Ne concerne pas la cotisation syndicale ni le permis de séjour (pas de date sur le formulaire officiel).",
+      nl: "", de: "",
+    },
+    visibleIf: { fieldId: "motifIntroduction", op: "equals", value: "modification" },
+    section: SECTION_DEMANDE,
+    order: 9.5,
   },
 
   // ====================================================================
@@ -1432,12 +1449,23 @@ function coveredCheckboxNames(): Set<string> {
 /// Comportement :
 /// 1. Retire tous les champs inférés correspondant aux 15 paires oui_N/non_N
 ///    (les nouveaux champs `radio` les couvrent).
+export interface ApplyC1ImprovementsOptions {
+  /// Valeur par défaut à appliquer sur `motifIntroduction` pour CETTE cible
+  /// uniquement (ne mute jamais le tableau partagé `C1_QUESTIONS`). Utilisé
+  /// par les dossiers dont le motif d'entrée est implicite (ex.
+  /// "changement-situation-personnelle" → "modification").
+  defaultMotif?: string;
+}
+
 /// 2. Append les 15 questions enrichies + 5 follow-ups virtuels.
 /// 3. Tous les autres champs (identité, adresse, mode de paiement, situation
 ///    familiale…) sont préservés tels quels.
 ///
 /// Idempotent : ré-exécutable sans dupliquer (compare les `id`).
-export function applyC1Improvements(fields: PdfFormField[]): PdfFormField[] {
+export function applyC1Improvements(
+  fields: PdfFormField[],
+  opts?: ApplyC1ImprovementsOptions
+): PdfFormField[] {
   const covered = coveredCheckboxNames();
   const newIds = new Set(C1_QUESTIONS.map((q) => q.id));
 
@@ -1449,5 +1477,11 @@ export function applyC1Improvements(fields: PdfFormField[]): PdfFormField[] {
     return true;
   });
 
-  return [...preserved, ...C1_QUESTIONS];
+  const questions = opts?.defaultMotif
+    ? C1_QUESTIONS.map((q) =>
+        q.id === "motifIntroduction" ? { ...q, defaultValue: opts.defaultMotif } : q
+      )
+    : C1_QUESTIONS;
+
+  return [...preserved, ...questions];
 }

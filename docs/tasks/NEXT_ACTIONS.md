@@ -28,6 +28,8 @@ Légende priorité : **P0** critique · **P1** important · **P2** souhaitable �
 | 17 | P3 | Dette | Réduire ESLint (cibler `set-state-in-effect`, unused-vars) sans tout casser | divers | Moyen | `pnpm lint` (delta) | à faire |
 | 18 | P3 | Doc | Désigner DPO + déposer demande NRN au SPF Intérieur (administratif) | hors-code | — | — | bloqué (juriste) |
 | 19 | P3 | i18n | Traduire les 3 questions d'aiguillage (parcours d'études/âge/a travaillé) du dossier allocations-insertion en 12 langues (pattern `*Key`, laissées FR-only lors du refresh du parcours) | `lib/dossiers/allocations-insertion/index.ts`, `messages/*.json` | Faible | `pnpm i18n:check` | à faire |
+| 20 | P3 | i18n | Traduire le contenu du dossier `changement-situation-personnelle` (titre/description/journey/warning/doc/theory) dans les 12 langues, laissé FR-only à la création | `lib/dossiers/changement-situation-personnelle/index.ts`, `messages/*.json` | Faible | `pnpm i18n:check` | à faire |
+| 21 | P2 | Dette | Identifier les 3 vrais noms AcroForm des dates de modification C1 (adresse/situation familiale/compte) via `scripts/dump-c1.ts` et stamper `dateModificationEffective` dessus à la génération PDF | `lib/pdf-forms/seed/c1-fields-improvements.ts`, `lib/pdf-forms/filler.ts` | Faible | `pnpm test` + génération PDF réelle | à faire |
 
 ## Plans en attente de validation
 - **Réglementation V3** (« texte de loi vivant ») → [REGLEMENTATION_V3_PLAN.md](REGLEMENTATION_V3_PLAN.md) —

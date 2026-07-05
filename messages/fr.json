@@ -7907,6 +7907,46 @@
             "body": "Le montant de l'allocation d'insertion est **forfaitaire** : il ne dépend pas d'un salaire antérieur mais de la situation familiale du jeune (isolé, cohabitant, chef de ménage) et, dans certains cas, de son âge. Il n'y a pas d'évolution par périodes d'indemnisation comme dans le chômage classique.\n\nLe droit est **limité dans le temps** : depuis la réforme entrée en vigueur le 1er mars 2026, 1 an (12 mois) maximum (avant cette date : 3 ans). Cette durée peut être prolongée d'une durée égale aux périodes de travail ou événements assimilés survenus pendant l'indemnisation.\n\nSource publique de référence : www.onem.be."
           }
         }
+      },
+      "changementSituation": {
+        "title": "Changement dans ma situation personnelle",
+        "description": "Déclare un changement d'adresse, de compte bancaire, de situation familiale, de permis de séjour, de cotisation syndicale ou d'organisme de paiement pendant que tu touches des allocations.",
+        "journeyCtaLabel": "Déclarer mon changement",
+        "journey": {
+          "step1": {
+            "title": "Ta situation a changé",
+            "body": "Déménagement, nouveau compte bancaire, changement familial, permis de séjour ou envie de changer d'organisme de paiement : ce formulaire couvre ces cas."
+          },
+          "step2": {
+            "title": "Un seul C1 pour plusieurs changements",
+            "body": "Tu peux cocher plusieurs cases à la fois si elles prennent effet à la même date. Sinon, fais une déclaration séparée par date."
+          },
+          "step3": {
+            "title": "Prépare tes informations",
+            "body": "Nouvelle adresse, IBAN, date d'effet : aie ces éléments sous la main avant de commencer."
+          },
+          "step4": {
+            "title": "Envoi à ton organisme de paiement",
+            "body": "Une fois complété, le C1 (et les formulaires complémentaires si besoin) part vers ton organisme de paiement (FGTB, CSC, SYNOVA, CAPAC)."
+          }
+        },
+        "warning": {
+          "uneSeuleDate": {
+            "title": "Une seule date par déclaration",
+            "message": "Si tes changements n'ont pas tous la même date d'effet, fais une déclaration séparée pour chaque date différente."
+          }
+        },
+        "doc": {
+          "c1": {
+            "title": "C1 — Déclaration de changement de situation"
+          }
+        },
+        "theory": {
+          "transfertsOp": {
+            "title": "Délais des transferts d'organisme de paiement",
+            "body": "Le délai d'introduction et la prise d'effet d'un transfert d'organisme de paiement dépendent du type d'allocation en cours :\n\n- **Chômage complet / AGR** : demande à introduire au plus tard le dernier jour du mois précédant celui visé par le transfert ; prise d'effet le 1ᵉʳ jour du mois suivant la réception du flux par le bureau du chômage.\n- **Chômage temporaire** : demande à introduire au plus tard le dernier jour du 2ᵉ mois qui suit celui visé ; prise d'effet dès le 1ᵉʳ jour du mois visé (sauf chômage temporaire déjà indemnisé pour ce mois).\n\nSource interne (formation partenaire) — paraphrasé, jamais cité verbatim."
+          }
+        }
       }
     },
     "formationsLib": {

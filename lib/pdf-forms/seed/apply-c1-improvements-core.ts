@@ -24,6 +24,11 @@ export interface C1ImprovementTarget {
 export const C1_IMPROVEMENT_TARGETS: C1ImprovementTarget[] = [
   { slug: "c1", improve: applyC1Improvements, triggers: C1_TRIGGERS },
   { slug: "c1-insertion", improve: applyC1Improvements, triggers: C1_TRIGGERS },
+  {
+    slug: "c1-changement-situation",
+    improve: (fields) => applyC1Improvements(fields, { defaultMotif: "modification" }),
+    triggers: C1_TRIGGERS,
+  },
   { slug: "c1-regis", improve: applyC1RegisImprovements, triggers: [] },
   { slug: "c1-partenaire", improve: applyC1PartenaireImprovements, triggers: [] },
   { slug: "c1a", improve: applyC1AImprovements, triggers: [] },

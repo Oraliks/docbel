@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { C1_QUESTIONS, C1_TRIGGERS } from "../c1-fields-improvements";
+import { C1_QUESTIONS, C1_TRIGGERS, applyC1Improvements } from "../c1-fields-improvements";
 import { evaluateTrigger } from "../../triggers";
 
 describe("C1_QUESTIONS — habiteEnColocation", () => {
@@ -33,5 +33,26 @@ describe("C1_TRIGGERS — colocation → Annexe Regis", () => {
     for (const slug of ["c1-partenaire", "c47", "c1-regis", "c46", "c1c", "c1a", "c1b"]) {
       expect(targets).toContain(slug);
     }
+  });
+});
+
+describe("applyC1Improvements — defaultMotif optionnel", () => {
+  it("sans options, motifIntroduction n'a pas de defaultValue (comportement actuel inchangé)", () => {
+    const result = applyC1Improvements([]);
+    const motif = result.find((f) => f.id === "motifIntroduction");
+    expect(motif).toBeDefined();
+    expect(motif?.defaultValue).toBeUndefined();
+  });
+
+  it("avec defaultMotif, motifIntroduction porte la defaultValue fournie", () => {
+    const result = applyC1Improvements([], { defaultMotif: "modification" });
+    const motif = result.find((f) => f.id === "motifIntroduction");
+    expect(motif?.defaultValue).toBe("modification");
+  });
+
+  it("C1_QUESTIONS partagé reste non muté après un appel avec defaultMotif", () => {
+    applyC1Improvements([], { defaultMotif: "modification" });
+    const motif = C1_QUESTIONS.find((f) => f.id === "motifIntroduction");
+    expect(motif?.defaultValue).toBeUndefined();
   });
 });

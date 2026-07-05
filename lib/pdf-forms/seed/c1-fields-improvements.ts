@@ -1432,12 +1432,23 @@ function coveredCheckboxNames(): Set<string> {
 /// Comportement :
 /// 1. Retire tous les champs inférés correspondant aux 15 paires oui_N/non_N
 ///    (les nouveaux champs `radio` les couvrent).
+export interface ApplyC1ImprovementsOptions {
+  /// Valeur par défaut à appliquer sur `motifIntroduction` pour CETTE cible
+  /// uniquement (ne mute jamais le tableau partagé `C1_QUESTIONS`). Utilisé
+  /// par les dossiers dont le motif d'entrée est implicite (ex.
+  /// "changement-situation-personnelle" → "modification").
+  defaultMotif?: string;
+}
+
 /// 2. Append les 15 questions enrichies + 5 follow-ups virtuels.
 /// 3. Tous les autres champs (identité, adresse, mode de paiement, situation
 ///    familiale…) sont préservés tels quels.
 ///
 /// Idempotent : ré-exécutable sans dupliquer (compare les `id`).
-export function applyC1Improvements(fields: PdfFormField[]): PdfFormField[] {
+export function applyC1Improvements(
+  fields: PdfFormField[],
+  opts?: ApplyC1ImprovementsOptions
+): PdfFormField[] {
   const covered = coveredCheckboxNames();
   const newIds = new Set(C1_QUESTIONS.map((q) => q.id));
 
@@ -1449,5 +1460,11 @@ export function applyC1Improvements(fields: PdfFormField[]): PdfFormField[] {
     return true;
   });
 
-  return [...preserved, ...C1_QUESTIONS];
+  const questions = opts?.defaultMotif
+    ? C1_QUESTIONS.map((q) =>
+        q.id === "motifIntroduction" ? { ...q, defaultValue: opts.defaultMotif } : q
+      )
+    : C1_QUESTIONS;
+
+  return [...preserved, ...questions];
 }

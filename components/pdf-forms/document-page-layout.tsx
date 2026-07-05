@@ -31,13 +31,15 @@ interface Props {
   bundlePrefill?: Record<string, string>;
   bundleRunId?: string;
   bundleSlug?: string;
+  /// Filet de sécurité : si true, affiche l'ancien rendu dense du PDF.
+  legacyLayout?: boolean;
 }
 
 /// Page publique de remplissage d'un PDF — reprend le langage visuel "glass"
 /// du reste du site (fond dégradé hérité de .glass-root, surfaces translucides)
 /// et le layout du mockup : header riche avec illustration décorative, pills
 /// meta, puis 2 colonnes (formulaire à gauche, résumé live à droite).
-export function DocumentPageLayout({ form, bundlePrefill, bundleRunId, bundleSlug, dossierTypes }: Props) {
+export function DocumentPageLayout({ form, bundlePrefill, bundleRunId, bundleSlug, dossierTypes, legacyLayout }: Props) {
   const t = useTranslations("public.dossier");
   const [values, setValues] = useState<FormPayload>({});
   const [locale, setLocale] = useState<Locale>(form.defaultLocale);
@@ -132,6 +134,7 @@ export function DocumentPageLayout({ form, bundlePrefill, bundleRunId, bundleSlu
             bundleRunId={bundleRunId}
             onValuesChange={onValuesChange}
             onLocaleChange={onLocaleChange}
+            legacyLayout={legacyLayout}
           />
         </div>
 

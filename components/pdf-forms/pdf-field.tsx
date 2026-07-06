@@ -328,7 +328,10 @@ export function PdfField({ field, value, error, locale, onChange, formId, formSl
   // Champ dérivé (ex. date de naissance ← NISS) : verrouillé UNIQUEMENT tant
   // que la dérivation produit une valeur ; sinon reste normalement éditable.
   const isDerivedLocked = field.derivedFrom != null && derivedValue != null;
-  const locked = autoToday || isDerivedLocked;
+  // `readOnly` posé côté schéma (ex. Pays verrouillé sur "Belgique") :
+  // toujours verrouillé, pas de condition — cf. commentaire du champ `field`
+  // dans lib/pdf-forms/types.ts.
+  const locked = autoToday || isDerivedLocked || field.readOnly === true;
   const displayValue = isDerivedLocked ? derivedValue : ((value as string | number) ?? "");
   return (
     <Field data-invalid={invalid} className="gap-1.5">
@@ -361,6 +364,9 @@ export function PdfField({ field, value, error, locale, onChange, formId, formSl
       )}
       {isDerivedLocked && (
         <FieldDescription>Champ rempli automatiquement — modifiable si besoin en corrigeant le champ source.</FieldDescription>
+      )}
+      {field.readOnly && !autoToday && !isDerivedLocked && !help && (
+        <FieldDescription>Champ verrouillé pour ce dossier.</FieldDescription>
       )}
       {errorReport}
     </Field>

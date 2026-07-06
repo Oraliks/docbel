@@ -204,7 +204,11 @@ export const C1_QUESTIONS: PdfFormField[] = [
     type: "text",
     required: true,
     label: { fr: "Pays", nl: "", de: "" },
+    // Ce dossier concerne des résidents belges (C1 = déclaration à l'ONEM) :
+    // verrouillé plutôt que simplement pré-rempli, pour ne pas laisser
+    // l'utilisateur taper un autre pays par erreur sur ce champ précis.
     defaultValue: "Belgique",
+    readOnly: true,
     section: SECTION_IDENTITE,
     order: -86,
   },

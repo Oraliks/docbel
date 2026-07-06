@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { useReportSubmit } from "@/components/reports/use-report-submit";
 
 export interface SuggestCorrectionProps {
   /** Locale cible. Si non fournie, on lit la locale active (next-intl). */
@@ -35,7 +36,8 @@ export interface SuggestCorrectionProps {
  * Déclencheur discret « Proposer une correction » → ouvre un dialog glass.
  * Ne s'affiche QUE si la locale active n'est pas le FR (rien à corriger sur la
  * langue source). Réutilisable : sur le contenu DB (model+recordId+field) ou
- * une clé d'UI (uiKey). POST public vers /api/translation-suggestions.
+ * une clé d'UI (uiKey). Soumis via le moteur unifié /api/reports (type
+ * "translation").
  */
 export function SuggestCorrection({
   locale,
@@ -53,7 +55,8 @@ export function SuggestCorrection({
   const [suggested, setSuggested] = useState(currentText ?? "");
   const [email, setEmail] = useState("");
   const [comment, setComment] = useState("");
-  const [submitting, setSubmitting] = useState(false);
+  const { submit, status } = useReportSubmit("translation");
+  const submitting = status === "submitting";
 
   // Langue source → aucune correction possible : on ne rend rien.
   if (targetLocale.toLowerCase().startsWith("fr")) return null;
@@ -64,34 +67,29 @@ export function SuggestCorrection({
       toast.error("Merci de saisir votre correction.");
       return;
     }
-    setSubmitting(true);
-    try {
-      const res = await fetch("/api/translation-suggestions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          locale: targetLocale,
-          model: uiKey ? undefined : model,
-          recordId: uiKey ? undefined : recordId,
-          field: uiKey ? undefined : field,
-          uiKey,
-          sourceText,
-          currentText: currentText || undefined,
-          suggestedText: value,
-          comment: comment.trim() || undefined,
-          submittedBy: email.trim() || undefined,
-        }),
-      });
-      if (!res.ok) throw new Error("request failed");
-      toast.success("Merci ! Votre proposition a bien été envoyée.");
-      setOpen(false);
-      setComment("");
-      setEmail("");
-    } catch {
-      toast.error("Échec de l'envoi. Réessayez plus tard.");
-    } finally {
-      setSubmitting(false);
+    const result = await submit({
+      targetId: uiKey ?? recordId,
+      message: comment.trim() || undefined,
+      payload: {
+        locale: targetLocale,
+        model: uiKey ? undefined : model,
+        recordId: uiKey ? undefined : recordId,
+        field: uiKey ? undefined : field,
+        uiKey,
+        sourceText,
+        currentText: currentText || undefined,
+        suggestedText: value,
+      },
+      reporterEmail: email.trim() || undefined,
+    });
+    if (!result.ok) {
+      toast.error(result.error || "Échec de l'envoi. Réessayez plus tard.");
+      return;
     }
+    toast.success("Merci ! Votre proposition a bien été envoyée.");
+    setOpen(false);
+    setComment("");
+    setEmail("");
   }
 
   return (

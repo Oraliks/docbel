@@ -28,6 +28,7 @@
     "db:setup": "dotenv -e .env.local -- prisma db push && pnpm seed && tsx scripts/setup-local-auth.ts",
     "auth:backfill": "tsx scripts/backfill-better-auth-accounts.ts",
     "backfill:resume-hash": "dotenv -e .env.local -- tsx scripts/backfill-resume-code-hash.ts",
+    "backfill:reports": "dotenv -e .env.local -- tsx scripts/backfill-reports.ts",
     "smoke:decision-tree": "dotenv -e .env.local -- tsx scripts/smoke-decision-tree.ts",
     "seed:decision-trees": "dotenv -e .env.local -- tsx scripts/seed-decision-trees.ts",
     "seed:canonical": "dotenv -e .env.local -- tsx scripts/seed-canonical-fields.ts",

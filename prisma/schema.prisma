@@ -3402,3 +3402,39 @@ model TrainingContextRecommendation {
   @@unique([contextKey, trainingId])
   @@index([contextKey, isActive])
 }
+
+/// Signalement unifié : remplace BureauReport, FormValidationReport,
+/// TrainingReport, TranslationSuggestion (backfill en Task 17) + RioLex
+/// (mailto, Task 16). `type` reste une String (pas un enum Postgres) :
+/// ajouter un type ne doit jamais nécessiter de migration — cf.
+/// lib/reports/registry.ts. `status` : pending | in_progress | resolved | dismissed.
+model Report {
+  id            String    @id @default(cuid())
+  type          String
+  status        String    @default("pending")
+
+  message       String?
+  targetId      String?
+  targetLabel   String?
+  targetUrl     String?
+
+  payload       Json
+
+  reporterEmail String?
+  reporterId    String?
+  reporterOrg   String?
+  ipHash        String?
+  userAgent     String?
+
+  adminNote     String?
+  actionTaken   String?
+  resolvedById  String?
+  resolvedAt    DateTime?
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([type, status])
+  @@index([targetId])
+  @@index([createdAt(sort: Desc)])
+}

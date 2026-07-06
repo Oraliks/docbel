@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { usePathname, useSearchParams } from "next/navigation"
 import { useState } from "react"
-import { ActivityIcon, FolderIcon, MailIcon, ScrollTextIcon, ChevronRightIcon, LayoutDashboardIcon, UsersIcon } from "lucide-react"
+import { ActivityIcon, FlagIcon, FolderIcon, MailIcon, ScrollTextIcon, ChevronRightIcon, LayoutDashboardIcon, UsersIcon } from "lucide-react"
 import {
   SidebarGroup,
   SidebarGroupContent,
@@ -41,6 +41,7 @@ const QUICK_LINKS = [
   { label: "Utilisateurs", url: "/admin/users", icon: UsersIcon },
   { label: "Fichiers", url: "/admin?view=filemanager", icon: FolderIcon },
   { label: "Messagerie", url: "/admin/messagerie", icon: MailIcon },
+  { label: "Signalements", url: "/admin/signalements", icon: FlagIcon },
   { label: "Activité", url: "/admin/activity", icon: ActivityIcon },
   { label: "Changelog", url: "/admin/changelog", icon: ScrollTextIcon },
 ]
@@ -72,9 +73,11 @@ function useIsQuickLinkActive() {
 export function NavMain({
   items,
   unreadCount = 0,
+  pendingReportsCount = 0,
 }: {
   items: NavItem[]
   unreadCount?: number
+  pendingReportsCount?: number
 }) {
   const isActive = useIsQuickLinkActive()
   // Seed : ouvre d'emblée le(s) groupe(s) contenant la route active pour que
@@ -114,7 +117,8 @@ export function NavMain({
           <div className="flex items-center gap-1.5 px-1">
             {QUICK_LINKS.map((item) => {
               const active = isActive(item.url)
-              const showBadge = item.label === "Messagerie" && unreadCount > 0
+              const badgeCount = item.label === "Messagerie" ? unreadCount : item.label === "Signalements" ? pendingReportsCount : 0
+              const showBadge = badgeCount > 0
               return (
                 <Tooltip key={item.label}>
                   <TooltipTrigger
@@ -139,12 +143,12 @@ export function NavMain({
                     <item.icon className="size-4" />
                     {showBadge ? (
                       <span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-medium text-primary-foreground tabular-nums">
-                        {unreadCount > 99 ? "99+" : unreadCount}
+                        {badgeCount > 99 ? "99+" : badgeCount}
                       </span>
                     ) : null}
                   </TooltipTrigger>
                   <TooltipContent side="bottom">
-                    {showBadge ? `${item.label} · ${unreadCount} non lu${unreadCount > 1 ? "s" : ""}` : item.label}
+                    {showBadge ? `${item.label} · ${badgeCount} non lu${badgeCount > 1 ? "s" : ""}` : item.label}
                   </TooltipContent>
                 </Tooltip>
               )

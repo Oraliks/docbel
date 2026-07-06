@@ -34,6 +34,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { data: session } = useAuthSession()
   const t = useTranslations("admin.nav")
   const [unreadCount, setUnreadCount] = useState(0)
+  const [pendingReportsCount, setPendingReportsCount] = useState(0)
 
   // Construit dans le composant pour pouvoir traduire les libellés via t().
   const navMain = [
@@ -264,6 +265,37 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     }
   }, [])
 
+  useEffect(() => {
+    let cancelled = false
+    async function fetchPendingReports() {
+      try {
+        const response = await fetch("/api/admin/reports/count?status=pending")
+        if (cancelled) return
+        if (response.ok) {
+          const data = await response.json()
+          setPendingReportsCount(data.count || 0)
+        }
+      } catch (error) {
+        console.error("Failed to fetch pending reports count:", error)
+      }
+    }
+
+    void fetchPendingReports()
+    const interval = window.setInterval(() => {
+      if (document.visibilityState === "visible") void fetchPendingReports()
+    }, 30_000)
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") void fetchPendingReports()
+    }
+    document.addEventListener("visibilitychange", onVisibility)
+
+    return () => {
+      cancelled = true
+      window.clearInterval(interval)
+      document.removeEventListener("visibilitychange", onVisibility)
+    }
+  }, [])
+
   const userData = {
     name: session?.user?.name || defaultUser.name,
     email: session?.user?.email || defaultUser.email,
@@ -286,7 +318,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={navMain} unreadCount={unreadCount} />
+        <NavMain items={navMain} unreadCount={unreadCount} pendingReportsCount={pendingReportsCount} />
         <NavSecondary items={[]} className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>

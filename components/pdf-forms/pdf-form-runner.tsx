@@ -22,7 +22,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { PdfField } from "./pdf-field";
-import { buildValidator, isFieldComplete } from "@/lib/pdf-forms/validation";
+import { buildValidator, isFieldComplete, validateStepFields } from "@/lib/pdf-forms/validation";
 import { Locale, FieldValue, FormPayload, PdfFormField, loc } from "@/lib/pdf-forms/types";
 import { todayISO } from "@/lib/pdf-forms/system-values";
 import { resolveSignerName } from "@/lib/pdf-forms/signature";
@@ -202,6 +202,28 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, onValuesChange
     [form.slug]
   );
 
+  // Bloque l'avancée vers une étape ULTÉRIEURE tant que les champs REQUIS de
+  // l'étape COURANTE (celle qu'on quitte) ne sont pas valides — remplace le
+  // seul message flou à l'envoi final par une erreur précise par champ,
+  // visible immédiatement (surlignage rouge + scroll). Reculer (étape déjà
+  // vue) reste toujours libre : cf. les appels à `setActive` directement
+  // pour "Précédent" et pour un clic en arrière sur le stepper.
+  const attemptAdvance = useCallback(
+    (stepFields: PublicField[], nextIndex: number) => {
+      const stepErrors = validateStepFields(stepFields as unknown as PdfFormField[], values, locale);
+      if (Object.keys(stepErrors).length > 0) {
+        setErrors((prev) => ({ ...prev, ...stepErrors }));
+        const firstInvalidId = stepFields.find((f) => stepErrors[f.id])?.id;
+        if (firstInvalidId) {
+          setTimeout(() => document.getElementById(firstInvalidId)?.scrollIntoView({ behavior: "smooth", block: "center" }), 60);
+        }
+        return;
+      }
+      setActive(nextIndex);
+    },
+    [values, locale]
+  );
+
   async function submit() {
     if (!consent) {
       toast.error(t("runnerConsentRequired"));
@@ -327,6 +349,7 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, onValuesChange
         steps={steps}
         activeIndex={activeIndex}
         setActive={setActive}
+        attemptAdvance={attemptAdvance}
         locale={locale}
         values={values}
         errors={errors}
@@ -353,6 +376,7 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, onValuesChange
         macroSteps={macroSteps}
         activeIndex={activeIndex}
         setActive={setActive}
+        attemptAdvance={attemptAdvance}
         locale={locale}
         setLocale={setLocale}
         values={values}
@@ -378,6 +402,14 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, onValuesChange
   const stepHasError = (s: Step) =>
     (s.kind === "fields" && s.fields.some((f) => errors[f.id])) ||
     (s.kind === "optional-group" && s.sections.some((sec) => sec.fields.some((f) => errors[f.id])));
+  const stepFieldsOf = (s: Step): PublicField[] =>
+    s.kind === "fields" ? s.fields : s.kind === "optional-group" ? s.sections.flatMap((sec) => sec.fields) : [];
+  // Navigation via le stepper : reculer reste toujours libre, avancer est
+  // gaté sur la validité de l'étape COURANTE (cf. attemptAdvance).
+  const handleStepSelect = (targetIndex: number) => {
+    if (targetIndex <= activeIndex) setActive(targetIndex);
+    else attemptAdvance(stepFieldsOf(current), targetIndex);
+  };
 
   const activeSectionKey = current.kind === "fields" ? current.id : undefined;
 
@@ -413,12 +445,11 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, onValuesChange
           <div className="border-b border-[color:var(--glass-border)] px-3">
             <FormStepper
               steps={steps.map((s) => {
-                const fs = s.kind === "fields" ? s.fields : s.kind === "optional-group" ? s.sections.flatMap((sec) => sec.fields) : [];
-                const meta = computeStepMeta(fs, values, locale, (c) => t("runnerStepRemaining", { count: c }));
+                const meta = computeStepMeta(stepFieldsOf(s), values, locale, (c) => t("runnerStepRemaining", { count: c }));
                 return { id: s.id, label: s.title, hasError: stepHasError(s), ...meta };
               })}
               activeIndex={activeIndex}
-              onSelect={setActive}
+              onSelect={handleStepSelect}
             />
           </div>
 
@@ -567,7 +598,7 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, onValuesChange
                           <ChevronLeftIcon className="size-4" /> {t("previous")}
                         </Button>
                       )}
-                      <Button type="button" className="rounded-full px-6" onClick={() => setActive(activeIndex + 1)}>
+                      <Button type="button" className="rounded-full px-6" onClick={() => attemptAdvance(stepFieldsOf(current), activeIndex + 1)}>
                         {t("continue")} <ChevronRightIcon className="size-4" />
                       </Button>
                     </div>
@@ -747,6 +778,7 @@ interface MacroRunnerBodyProps {
   macroSteps: MacroStep[];
   activeIndex: number;
   setActive: (i: number) => void;
+  attemptAdvance: (stepFields: PublicField[], nextIndex: number) => void;
   locale: Locale;
   setLocale: (l: Locale) => void;
   values: FormPayload;
@@ -773,7 +805,7 @@ interface MacroRunnerBodyProps {
 /// affiche un sous-titre par section ; le long-tail non curé (`advanced`)
 /// va dans un accordéon replié.
 function MacroRunnerBody({
-  form, macroSteps, activeIndex, setActive, locale, setLocale, values, errors,
+  form, macroSteps, activeIndex, setActive, attemptAdvance, locale, setLocale, values, errors,
   setValue, signerName, consent, setConsent, delivery, setDelivery, doccleRef,
   setDoccleRef, submitting, submit, lastSavedAt, bundleRunId, t,
 }: MacroRunnerBodyProps) {
@@ -787,6 +819,12 @@ function MacroRunnerBody({
   const stepHasError = (ms: MacroStep) =>
     ms.sections.some((sec) => sec.fields.some((f) => errors[f.id])) ||
     ms.advanced.some((f) => errors[f.id]);
+  const stepFieldsOf = (ms: MacroStep): PublicField[] => [...ms.sections.flatMap((sec) => sec.fields), ...ms.advanced];
+  // Reculer reste libre ; avancer est gaté sur la validité de l'étape courante.
+  const handleStepSelect = (targetIndex: number) => {
+    if (targetIndex <= activeIndex) setActive(targetIndex);
+    else attemptAdvance(stepFieldsOf(current), targetIndex);
+  };
 
   const cluster = (fields: PublicField[]) => (
     <FieldsCluster
@@ -831,12 +869,11 @@ function MacroRunnerBody({
           <div className="border-b border-[color:var(--glass-border)] px-3">
             <FormStepper
               steps={macroSteps.map((s) => {
-                const fs = [...s.sections.flatMap((sec) => sec.fields), ...s.advanced];
-                const meta = computeStepMeta(fs, values, locale, (c) => t("runnerStepRemaining", { count: c }));
+                const meta = computeStepMeta(stepFieldsOf(s), values, locale, (c) => t("runnerStepRemaining", { count: c }));
                 return { id: s.id, label: titleFor(s.id), hasError: stepHasError(s), ...meta };
               })}
               activeIndex={activeIndex}
-              onSelect={setActive}
+              onSelect={handleStepSelect}
             />
           </div>
 
@@ -941,7 +978,7 @@ function MacroRunnerBody({
                           <ChevronLeftIcon className="size-4" /> {t("previous")}
                         </Button>
                       )}
-                      <Button type="button" className="rounded-full px-6" onClick={() => setActive(activeIndex + 1)}>
+                      <Button type="button" className="rounded-full px-6" onClick={() => attemptAdvance(stepFieldsOf(current), activeIndex + 1)}>
                         {t("continue")} <ChevronRightIcon className="size-4" />
                       </Button>
                     </div>
@@ -962,6 +999,7 @@ interface LegacyRunnerBodyProps {
   steps: Step[];
   activeIndex: number;
   setActive: (i: number) => void;
+  attemptAdvance: (stepFields: PublicField[], nextIndex: number) => void;
   locale: Locale;
   values: FormPayload;
   errors: Record<string, string>;
@@ -988,6 +1026,7 @@ function LegacyRunnerBody({
   steps,
   activeIndex,
   setActive,
+  attemptAdvance,
   locale,
   values,
   errors,
@@ -1011,6 +1050,12 @@ function LegacyRunnerBody({
   const activeIdx = Math.min(activeIndex, flatSteps.length - 1);
   const current = flatSteps[activeIdx];
   const stepHasError = (s: (typeof flatSteps)[number]) => s.kind === "fields" && s.fields.some((f) => errors[f.id]);
+  const stepFieldsOf = (s: (typeof flatSteps)[number]): PublicField[] => (s.kind === "fields" ? s.fields : []);
+  // Reculer reste libre ; avancer est gaté sur la validité de l'étape courante.
+  const handleStepSelect = (targetIndex: number) => {
+    if (targetIndex <= activeIdx) setActive(targetIndex);
+    else attemptAdvance(stepFieldsOf(current), targetIndex);
+  };
 
   const stepIcon = (s: (typeof flatSteps)[number], i: number) => {
     if (s.kind === "summary") return <EyeIcon className="size-4" />;
@@ -1038,7 +1083,7 @@ function LegacyRunnerBody({
               <button
                 key={s.id}
                 type="button"
-                onClick={() => setActive(i)}
+                onClick={() => handleStepSelect(i)}
                 className={`flex min-w-[150px] flex-1 items-center gap-2.5 border-b-2 px-4 py-3.5 text-left transition-colors ${
                   activeTab
                     ? "border-[color:var(--glass-accent-deep,#7c3aed)] text-[color:var(--glass-accent-deep,#7c3aed)]"
@@ -1167,7 +1212,7 @@ function LegacyRunnerBody({
                 ) : (
                   <span />
                 )}
-                <Button type="button" onClick={() => setActive(activeIdx + 1)}>
+                <Button type="button" onClick={() => attemptAdvance(stepFieldsOf(current), activeIdx + 1)}>
                   {t("continue")} <ChevronRightIcon className="size-4" />
                 </Button>
               </div>

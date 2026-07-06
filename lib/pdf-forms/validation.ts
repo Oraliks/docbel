@@ -282,6 +282,29 @@ export function buildValidator(fields: PdfFormField[], lang: Locale = DEFAULT_LO
   });
 }
 
+/// Valide UNIQUEMENT les champs fournis (ex. l'étape courante du stepper),
+/// en ignorant le reste du payload — `z.object` est non-strict (clés
+/// inconnues simplement ignorées), donc passer le payload COMPLET d'un
+/// formulaire à plusieurs étapes est sûr : seuls les champs de `fields`
+/// peuvent produire une erreur. Sert à bloquer l'avancée d'étape tant que
+/// l'étape courante n'est pas valide (cf. pdf-form-runner.tsx, bouton
+/// « Continuer »), avec un message PRÉCIS par champ (pas un message global).
+/// Renvoie `{}` si tout est valide.
+export function validateStepFields(
+  fields: PdfFormField[],
+  payload: FormPayload,
+  lang: Locale = DEFAULT_LOCALE
+): Record<string, string> {
+  const result = buildValidator(fields, lang).safeParse(payload);
+  if (result.success) return {};
+  const errors: Record<string, string> = {};
+  for (const issue of result.error.issues) {
+    const id = String(issue.path[0] ?? "");
+    if (id && !errors[id]) errors[id] = issue.message;
+  }
+  return errors;
+}
+
 // ---------------------------------------------------------------------------
 // Validation par champ (temps réel au blur) + complétion d'étape.
 // Réutilise les mêmes validateurs que le schéma Zod, mais pour UN champ, sans

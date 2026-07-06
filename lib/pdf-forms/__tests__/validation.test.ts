@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { buildValidator, isFieldVisible, anchoredRegex, validateFieldFormat, isFieldComplete } from "../validation";
+import { buildValidator, isFieldVisible, anchoredRegex, validateFieldFormat, isFieldComplete, validateStepFields } from "../validation";
 import { PdfFormField } from "../types";
 
 function field(p: Partial<PdfFormField> & Pick<PdfFormField, "id" | "type">): PdfFormField {
@@ -212,5 +212,41 @@ describe("isFieldComplete — complétion d'un champ (pour le stepper)", () => {
     const f = field({ id: "n", type: "fullname" });
     expect(isFieldComplete(f, { first: "Jean", last: "Dupont" }, "fr")).toBe(true);
     expect(isFieldComplete(f, { first: "Jean", last: "" }, "fr")).toBe(false);
+  });
+});
+
+describe("validateStepFields — blocage d'avancée d'étape (bouton Continuer)", () => {
+  it("renvoie {} quand les champs fournis sont tous valides", () => {
+    const fields = [field({ id: "nom", type: "text", required: true })];
+    expect(validateStepFields(fields, { nom: "Dupont" }, "fr")).toEqual({});
+  });
+
+  it("renvoie un message précis par id pour un champ requis vide", () => {
+    const fields = [field({ id: "nom", type: "text", required: true })];
+    const errors = validateStepFields(fields, {}, "fr");
+    expect(Object.keys(errors)).toEqual(["nom"]);
+    expect(errors.nom).toBeTruthy();
+  });
+
+  it("ignore les champs qui n'appartiennent PAS à l'étape (payload complet du formulaire)", () => {
+    // Le payload contient un champ requis d'une AUTRE étape (non fourni ici) :
+    // ne doit jamais apparaître dans les erreurs de CETTE étape.
+    const stepFields = [field({ id: "adresse", type: "text", required: true })];
+    const fullPayload = { adresse: "Rue Neuve 1", niss: "" }; // "niss" requis ailleurs, absent d'ici
+    expect(validateStepFields(stepFields, fullPayload, "fr")).toEqual({});
+  });
+
+  it("signale aussi un format invalide (pas seulement le vide) pour un champ de l'étape", () => {
+    const fields = [field({ id: "niss", type: "niss", required: true })];
+    const errors = validateStepFields(fields, { niss: "850730" }, "fr"); // trop court
+    expect(errors.niss).toBeTruthy();
+  });
+
+  it("un champ requis mais invisible (visibleIf non satisfait) ne bloque pas", () => {
+    const fields = [
+      field({ id: "motif", type: "text" }),
+      field({ id: "detail", type: "text", required: true, visibleIf: { fieldId: "motif", op: "equals", value: "autre" } }),
+    ];
+    expect(validateStepFields(fields, { motif: "standard" }, "fr")).toEqual({});
   });
 });

@@ -6349,6 +6349,22 @@
       "baremeSheetMetaTitle": "{label} — Barèmes chômage ONEM | DocBel",
       "baremeSheetMetaDescription": "Montants officiels ONEM — {label}. Barème en vigueur par code et tranche."
     },
+    "reports": {
+      "triggerLabel": "Signaler une erreur",
+      "dialogTitle": "Signaler un problème",
+      "dialogDescription": "Décrivez le problème constaté, on regarde de notre côté.",
+      "categoryLabel": "Catégorie",
+      "messageLabel": "Description",
+      "messagePlaceholder": "Décrivez le problème constaté",
+      "emailLabel": "Votre email (optionnel — pour qu'on vous réponde)",
+      "emailPlaceholder": "vous@exemple.be",
+      "submit": "Envoyer le signalement",
+      "submitting": "Envoi…",
+      "cancel": "Annuler",
+      "close": "Fermer",
+      "doneMessage": "Merci ! Votre signalement a bien été transmis.",
+      "rateLimited": "Trop de signalements envoyés. Réessayez dans une heure."
+    },
     "shared": {
       "verified": "vérifié",
       "verifiedTitle": "Coordonnées vérifiées",

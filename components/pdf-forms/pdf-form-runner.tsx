@@ -654,9 +654,9 @@ function FieldsCluster({
         </div>
       )}
       {otherFields.length > 0 && (
-        <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-2 xl:grid-cols-3">
           {otherFields.map((f) => (
-            <div key={f.id} className={FULL_WIDTH_TYPES.has(f.type) ? "sm:col-span-2" : ""}>
+            <div key={f.id} className={FULL_WIDTH_TYPES.has(f.type) ? "sm:col-span-2 xl:col-span-3" : ""}>
               <PdfField
                 field={f}
                 value={values[f.id] ?? ""}
@@ -850,7 +850,14 @@ function MacroRunnerBody({
               </div>
 
               {current.sections.map((sec, i) => (
-                <div key={sec.key ?? `sec-${i}`} className="flex flex-col gap-3">
+                <div
+                  key={sec.key ?? `sec-${i}`}
+                  className={
+                    multiSection
+                      ? "flex flex-col gap-3 rounded-2xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] p-4 sm:p-5"
+                      : "flex flex-col gap-3"
+                  }
+                >
                   {multiSection && sec.key && (
                     <h3 className="text-[11px] font-bold uppercase tracking-[0.06em] text-[color:var(--glass-ink-soft)]">
                       {sectionLabel(sec.key, locale)}

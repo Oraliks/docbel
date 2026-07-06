@@ -1547,6 +1547,64 @@ function withStepGroup(f: PdfFormField): PdfFormField {
   return group ? { ...f, stepGroup: group } : f;
 }
 
+// ---------------------------------------------------------------------------
+// Curation des widgets bruts non sectionnés (le « long-tail » inféré du PDF).
+// Principe SÛR : on ne masque un champ que si son `pdfFieldName` est DÉJÀ
+// rempli ailleurs (champ enrichi, ou array cohabitants via templates /
+// firstMatchMapping), OU s'il s'agit d'un widget auto (date de génération,
+// signature) ou cryptique. Jamais un widget unique porteur de donnée → aucune
+// case officielle laissée blanche.
+// ---------------------------------------------------------------------------
+
+/// Étend un template positionnel "{index} 1" en "1 1","2 1",…,"N 1".
+function expandTemplate(tpl: string, maxRows: number): string[] {
+  const out: string[] = [];
+  for (let i = 1; i <= maxRows; i++) out.push(tpl.replace("{index}", String(i)));
+  return out;
+}
+
+/// Ensemble des pdfFieldName « déjà remplis » par les champs enrichis : nom
+/// direct, parts pipe-séparées, templates d'array et cibles firstMatchMapping.
+function collectCoveredPdfNames(fields: PdfFormField[]): Set<string> {
+  const covered = new Set<string>();
+  const add = (name?: string) => {
+    if (!name) return;
+    for (const part of name.split("|")) if (part) covered.add(part);
+  };
+  for (const f of fields) {
+    add(f.pdfFieldName);
+    if (f.type === "array") {
+      const maxRows = f.maxRows ?? 5;
+      for (const it of f.itemFields ?? []) {
+        if (it.pdfFieldNameTemplate) for (const n of expandTemplate(it.pdfFieldNameTemplate, maxRows)) add(n);
+        add(it.pdfFieldName);
+      }
+      if (f.firstMatchMapping) for (const v of Object.values(f.firstMatchMapping.fields)) add(v);
+    }
+  }
+  return covered;
+}
+
+/// Widgets cryptiques / sans libellé exploitable (junk PDF).
+const JUNK_PDF_RE = /^(undefined_\d+|Texte\d+|B E|Mois \+ Année|Remarques.*|Signature\d*)$/;
+/// Cellules positionnelles de la grille cohabitants ("1", "1 1", "1_2"…) :
+/// widgets de tableau sans libellé, remplis (colonnes 1/2) par l'array ou
+/// laissés virtuels (colonne nom) — jamais saisis directement par l'usager.
+const POSITIONAL_PDF_RE = /^\d+( \d+|_\d+)?$/;
+
+/// Masque un champ NON sectionné s'il est un doublon couvert, un widget auto,
+/// une cellule de grille positionnelle, ou du junk. Renvoie le champ inchangé
+/// sinon (reste dans « Autres informations »). Ne touche jamais un sectionné.
+function curatePreserved(f: PdfFormField, covered: Set<string>): PdfFormField {
+  if (f.section) return f;
+  const name = f.pdfFieldName || "";
+  const isDuplicate = covered.has(name);
+  const isAutoWidget = f.type === "signature" || /^Date\d+_af_date$/i.test(name);
+  const isJunk =
+    JUNK_PDF_RE.test(name) || POSITIONAL_PDF_RE.test(name) || (f.label?.fr ?? "") === "undefined";
+  return isDuplicate || isAutoWidget || isJunk ? { ...f, hidden: true } : f;
+}
+
 export function applyC1Improvements(
   fields: PdfFormField[],
   opts?: ApplyC1ImprovementsOptions
@@ -1568,7 +1626,10 @@ export function applyC1Improvements(
       )
     : C1_QUESTIONS;
 
-  // Pose `stepGroup` sur tout champ dont la section est mappée (préservés
-  // inférés inclus) ; les champs sans section restent sans groupe → catch.
-  return [...preserved, ...questions].map(withStepGroup);
+  // Pose `stepGroup` sur les champs sectionnés, puis cure les widgets bruts
+  // non sectionnés (masque doublons / auto / junk — jamais un widget unique).
+  const coveredNames = collectCoveredPdfNames(questions);
+  return [...preserved, ...questions]
+    .map(withStepGroup)
+    .map((f) => curatePreserved(f, coveredNames));
 }

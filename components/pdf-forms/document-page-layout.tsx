@@ -1,26 +1,19 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import {
   ClockIcon,
   ShieldCheckIcon,
   HelpCircleIcon,
-  FileTextIcon,
   ChevronRightIcon,
   UserIcon,
   SparklesIcon,
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"; // Card utilisé par la sidebar résumé
 import { Badge } from "@/components/ui/badge";
-import { GLASS_CARD } from "@/lib/glass-classes";
 import { PdfFormRunner } from "./pdf-form-runner";
-import type { PublicForm, PublicField } from "@/lib/pdf-forms/public-serializer";
-import type { FormPayload, Locale } from "@/lib/pdf-forms/types";
-import { isFullNameValue, loc } from "@/lib/pdf-forms/types";
-import { isCreationDateField, isSignatureField } from "@/lib/pdf-forms/auto-fields";
-import { todayISO } from "@/lib/pdf-forms/system-values";
+import type { PublicForm } from "@/lib/pdf-forms/public-serializer";
 
 interface Props {
   /// Si le PDF est ouvert dans le contexte d'un dossier codé, les "types"
@@ -41,11 +34,6 @@ interface Props {
 /// meta, puis 2 colonnes (formulaire à gauche, résumé live à droite).
 export function DocumentPageLayout({ form, bundlePrefill, bundleRunId, bundleSlug, dossierTypes, legacyLayout }: Props) {
   const t = useTranslations("public.dossier");
-  const [values, setValues] = useState<FormPayload>({});
-  const [locale, setLocale] = useState<Locale>(form.defaultLocale);
-
-  const onValuesChange = useCallback((v: FormPayload) => setValues(v), []);
-  const onLocaleChange = useCallback((l: Locale) => setLocale(l), []);
 
   const timeEstimate = useMemo(() => {
     const seconds = Math.max(2 * 60, Math.min(30 * 60, form.fields.length * 30));
@@ -125,23 +113,15 @@ export function DocumentPageLayout({ form, bundlePrefill, bundleRunId, bundleSlu
         />
       </header>
 
-      {/* Layout 2 colonnes */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
-        <div className="min-w-0">
-          <PdfFormRunner
-            form={form}
-            bundlePrefill={bundlePrefill}
-            bundleRunId={bundleRunId}
-            onValuesChange={onValuesChange}
-            onLocaleChange={onLocaleChange}
-            legacyLayout={legacyLayout}
-          />
-        </div>
-
-        <aside className="flex flex-col gap-4">
-          <SummarySidebar form={form} values={values} locale={locale} />
-        </aside>
-      </div>
+      {/* Formulaire pleine largeur : le résumé live en colonne a été retiré
+          (le PdfFormRunner porte déjà son aide contextuelle à droite via
+          FormShell). Le formulaire occupe donc toute la largeur du shell. */}
+      <PdfFormRunner
+        form={form}
+        bundlePrefill={bundlePrefill}
+        bundleRunId={bundleRunId}
+        legacyLayout={legacyLayout}
+      />
     </div>
   );
 }
@@ -299,70 +279,3 @@ function MetaSegment({
   );
 }
 
-function SummarySidebar({ form, values, locale }: { form: PublicForm; values: FormPayload; locale: Locale }) {
-  const t = useTranslations("public.dossier");
-  return (
-    <Card className={`${GLASS_CARD} sticky top-6`}>
-      <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 text-sm">
-          <FileTextIcon className="size-4 text-[color:var(--glass-accent-deep)]" />
-          {t("docPageSummaryTitle")}
-        </CardTitle>
-        <p className="text-[11px] text-[color:var(--glass-ink-soft)]">
-          {t("docPageSummarySubtitle")}
-        </p>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-3 text-xs">
-        <KV label={t("docPageSummaryDocType")} value={form.title} highlight />
-        {form.issuer && <KV label={t("organism")} value={form.issuer} />}
-        {form.fields.map((f) => (
-          <KV key={f.id} label={loc(f.label, locale) || f.id} value={renderValue(f, values[f.id], t)} />
-        ))}
-
-        <div className="mt-2 flex items-start gap-2 rounded-xl bg-[color:var(--glass-pop-bg)] p-3">
-          <ShieldCheckIcon className="mt-0.5 size-4 shrink-0 text-[color:var(--glass-accent-deep)]" />
-          <p className="text-[11px] text-[color:var(--glass-ink-soft)]">
-            <span className="font-semibold text-[color:var(--glass-ink)]">{t("docPagePrivacyHeading")}</span>{" "}
-            {t("docPagePrivacyBody")}
-          </p>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-function KV({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
-  return (
-    <div className="flex flex-col gap-0.5">
-      <span className="text-[10px] uppercase tracking-wide text-[color:var(--glass-ink-faint)]">{label}</span>
-      {highlight ? (
-        <Badge variant="secondary" className="w-fit text-[11px]">{value}</Badge>
-      ) : (
-        <span className={value ? "text-[color:var(--glass-ink)]" : "italic text-[color:var(--glass-ink-faint)]"}>
-          {value || "—"}
-        </span>
-      )}
-    </div>
-  );
-}
-
-type Translator = ReturnType<typeof useTranslations<"public.dossier">>;
-
-function renderValue(field: PublicField, raw: unknown, t: Translator): string {
-  // Champs auto-injectés à la génération : on les affiche comme tels dans la
-  // sidebar même s'ils n'ont pas de valeur saisie (signature → "Auto à la
-  // génération", date de création → date du jour).
-  if (isSignatureField(field)) return t("docPageAutoAtGeneration");
-  if (isCreationDateField(field)) return todayISO();
-  if (raw === undefined || raw === null) return "";
-  if (field.type === "checkbox") return raw === true ? t("yes") : t("no");
-  if (field.type === "fullname") {
-    if (!isFullNameValue(raw)) return typeof raw === "string" ? raw : "";
-    const first = (raw.first ?? "").trim();
-    const last = (raw.last ?? "").trim();
-    return field.nameOrder === "last-first"
-      ? [last, first].filter(Boolean).join(" ")
-      : [first, last].filter(Boolean).join(" ");
-  }
-  return typeof raw === "string" || typeof raw === "number" ? String(raw) : "";
-}

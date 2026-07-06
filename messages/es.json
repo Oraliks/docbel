@@ -1592,7 +1592,6 @@
       "ferRateLimited": "Demasiadas notificaciones enviadas. Vuelva a intentarlo dentro de una hora.",
       "ferSendFailed": "Error al enviar el reporte.",
       "ferSendSuccess": "Reporte enviado. ¡Gracias!",
-      "ferNetworkError": "Red no disponible. Inténtelo de nuevo.",
       "ferBtnClose": "Cerrar",
       "ferBtnCancel": "Cancelar",
       "ferBtnSend": "Enviar el reporte"

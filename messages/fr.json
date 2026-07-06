@@ -63,7 +63,6 @@
       "annuaire": "Annuaire",
       "competencesTerritoriales": "Compétences territoriales",
       "competencesOnem": "Compétences ONEM",
-      "signalements": "Signalements",
       "rendezVous": "Rendez-vous",
       "plateformeBooking": "Plateforme de booking",
       "planningFgtb": "Planning FGTB (.ics)",
@@ -74,7 +73,6 @@
       "formationsValidation": "Validation",
       "formationsPermissions": "Permissions",
       "formationsCategories": "Catégories",
-      "formationsSignalements": "Signalements",
       "formationsBoussole": "Boussole",
       "decisionBuilder": "Decision Builder",
       "decisionTrees": "Arbres",
@@ -4825,7 +4823,6 @@
       "ferRateLimited": "Trop de signalements envoyés. Réessayez dans une heure.",
       "ferSendFailed": "Échec de l'envoi du signalement.",
       "ferSendSuccess": "Signalement envoyé. Merci !",
-      "ferNetworkError": "Réseau indisponible. Réessayez.",
       "ferBtnClose": "Fermer",
       "ferBtnCancel": "Annuler",
       "ferBtnSend": "Envoyer le signalement"
@@ -6362,8 +6359,7 @@
       "submitting": "Envoi…",
       "cancel": "Annuler",
       "close": "Fermer",
-      "doneMessage": "Merci ! Votre signalement a bien été transmis.",
-      "rateLimited": "Trop de signalements envoyés. Réessayez dans une heure."
+      "doneMessage": "Merci ! Votre signalement a bien été transmis."
     },
     "shared": {
       "verified": "vérifié",

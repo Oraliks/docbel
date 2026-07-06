@@ -1592,7 +1592,6 @@
       "ferRateLimited": "Shumë raporte janë dërguar. Provoni përsëri pas një ore.",
       "ferSendFailed": "Dërgimi i raportit dështoi.",
       "ferSendSuccess": "Raporti u dërgua. Faleminderit!",
-      "ferNetworkError": "Rrjeti është i padisponueshëm. Provoni përsëri.",
       "ferBtnClose": "Mbyll",
       "ferBtnCancel": "Anulo",
       "ferBtnSend": "Dërgo raportin"

@@ -1592,7 +1592,6 @@
       "ferRateLimited": "Demasiadas comunicações enviadas. Tente novamente dentro de uma hora.",
       "ferSendFailed": "Falha no envio da comunicação.",
       "ferSendSuccess": "Comunicação enviada. Obrigado!",
-      "ferNetworkError": "Rede indisponível. Tente novamente.",
       "ferBtnClose": "Fechar",
       "ferBtnCancel": "Cancelar",
       "ferBtnSend": "Enviar a comunicação"

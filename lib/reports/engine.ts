@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { checkRateLimit, getClientIp, sha256Hex } from "@/lib/pdf-forms/security";
+import { checkRateLimit, sha256Hex } from "@/lib/pdf-forms/security";
 import { REPORT_TYPES, isKnownReportType } from "@/lib/reports/registry";
 
 export type LegacyStatus =

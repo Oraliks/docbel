@@ -711,7 +711,6 @@
       "ferRateLimited": "Too many reports sent. Try again in an hour.",
       "ferSendFailed": "Failed to send the report.",
       "ferSendSuccess": "Report sent. Thank you!",
-      "ferNetworkError": "Network unavailable. Try again.",
       "ferBtnClose": "Close",
       "ferBtnCancel": "Cancel",
       "ferBtnSend": "Send report"
@@ -9860,7 +9859,6 @@
       "annuaire": "Directory",
       "competencesTerritoriales": "Territorial competences",
       "competencesOnem": "ONEM competences",
-      "signalements": "Reports",
       "rendezVous": "Appointments",
       "plateformeBooking": "Booking platform",
       "planningFgtb": "FGTB planning (.ics)",
@@ -9871,7 +9869,6 @@
       "formationsValidation": "Validation",
       "formationsPermissions": "Permissions",
       "formationsCategories": "Categories",
-      "formationsSignalements": "Reports",
       "formationsBoussole": "Compass",
       "decisionBuilder": "Decision Builder",
       "decisionTrees": "Trees",

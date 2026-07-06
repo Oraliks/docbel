@@ -1592,7 +1592,6 @@
       "ferRateLimited": "Çok fazla bildirim gönderildi. Bir saat sonra tekrar deneyin.",
       "ferSendFailed": "Bildirim gönderilemedi.",
       "ferSendSuccess": "Bildirim gönderildi. Teşekkürler!",
-      "ferNetworkError": "Ağ kullanılamıyor. Lütfen tekrar deneyin.",
       "ferBtnClose": "Kapat",
       "ferBtnCancel": "İptal",
       "ferBtnSend": "Bildirimi gönder"

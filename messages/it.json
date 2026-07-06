@@ -1592,7 +1592,6 @@
       "ferRateLimited": "Troppe segnalazioni inviate. Riprova tra un'ora.",
       "ferSendFailed": "Invio della segnalazione non riuscito.",
       "ferSendSuccess": "Segnalazione inviata. Grazie!",
-      "ferNetworkError": "Rete non disponibile. Riprova.",
       "ferBtnClose": "Chiudi",
       "ferBtnCancel": "Annulla",
       "ferBtnSend": "Invia la segnalazione"

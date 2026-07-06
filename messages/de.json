@@ -1624,7 +1624,6 @@
       "ferRateLimited": "Zu viele Meldungen gesendet. Versuchen Sie es in einer Stunde erneut.",
       "ferSendFailed": "Fehler beim Senden der Meldung.",
       "ferSendSuccess": "Meldung gesendet. Vielen Dank!",
-      "ferNetworkError": "Netzwerk nicht verfügbar. Versuchen Sie es erneut.",
       "ferBtnClose": "Schließen",
       "ferBtnCancel": "Abbrechen",
       "ferBtnSend": "Meldung senden"

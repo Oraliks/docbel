@@ -392,23 +392,6 @@ export const REPORT_REASON_LABEL_KEYS: Record<ReportReason, string> = {
   autre: "reportReason.autre",
 };
 
-export const REPORT_STATUSES = ["new", "in_progress", "resolved", "rejected"] as const;
-export type ReportStatus = (typeof REPORT_STATUSES)[number];
-export const REPORT_STATUS_LABELS: Record<ReportStatus, string> = {
-  new: "Nouveau",
-  in_progress: "En cours",
-  resolved: "Traité",
-  rejected: "Rejeté",
-};
-
-/** Clés i18n (sous `public.formationsLib`) jumelles de REPORT_STATUS_LABELS. */
-export const REPORT_STATUS_LABEL_KEYS: Record<ReportStatus, string> = {
-  new: "reportStatus.new",
-  in_progress: "reportStatus.in_progress",
-  resolved: "reportStatus.resolved",
-  rejected: "reportStatus.rejected",
-};
-
 // --- Type-guards génériques -----------------------------------------------
 const inSet =
   <T extends string>(set: readonly T[]) =>

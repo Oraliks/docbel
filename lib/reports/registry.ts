@@ -27,8 +27,6 @@ export interface ReportTypeConfig {
   ) => Promise<void>;
 }
 
-const emailOptional = z.string().trim().email().max(320).optional();
-
 export const BUREAU_CATEGORIES = [
   { value: "hours", label: "Horaires incorrects" },
   { value: "address", label: "Adresse incorrecte" },
@@ -203,5 +201,3 @@ export const REPORT_TYPES: Record<string, ReportTypeConfig> = {
 export function isKnownReportType(type: string): type is keyof typeof REPORT_TYPES {
   return Object.prototype.hasOwnProperty.call(REPORT_TYPES, type);
 }
-
-export { emailOptional };

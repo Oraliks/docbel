@@ -1592,7 +1592,6 @@
       "ferRateLimited": "تم إرسال عدد كبير جداً من البلاغات. يرجى المحاولة مجدداً بعد ساعة.",
       "ferSendFailed": "فشل إرسال البلاغ.",
       "ferSendSuccess": "تم إرسال البلاغ. شكراً!",
-      "ferNetworkError": "الشبكة غير متاحة. حاول مجدداً.",
       "ferBtnClose": "إغلاق",
       "ferBtnCancel": "إلغاء",
       "ferBtnSend": "إرسال البلاغ"

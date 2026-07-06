@@ -13,6 +13,31 @@ describe("buildValidator", () => {
     expect(v.safeParse({ niss: "00000000000" }).success).toBe(false);
   });
 
+  it("iban sans internationalIban : rejette un IBAN étranger valide (belge strict par défaut)", () => {
+    const v = buildValidator([field({ id: "iban", type: "iban" })], "fr");
+    expect(v.safeParse({ iban: "FR7630006000011234567890189" }).success).toBe(false);
+    expect(v.safeParse({ iban: "BE68539007547034" }).success).toBe(true);
+  });
+
+  it("iban avec internationalIban=true : accepte un IBAN étranger valide (bug corrigé)", () => {
+    const v = buildValidator([field({ id: "iban", type: "iban", internationalIban: true })], "fr");
+    expect(v.safeParse({ iban: "FR7630006000011234567890189" }).success).toBe(true);
+    expect(v.safeParse({ iban: "LT601010012345678901" }).success).toBe(true); // Revolut (Lituanie)
+    expect(v.safeParse({ iban: "BE68539007547034" }).success).toBe(true); // belge toujours accepté
+    expect(v.safeParse({ iban: "FR0000000000000000000000000" }).success).toBe(false); // checksum invalide
+  });
+
+  it("format BIC (regex générique, ISO 9362) : accepte 8 ou 11 caractères, rejette le reste", () => {
+    const v = buildValidator(
+      [field({ id: "bic", type: "text", regex: "^[A-Za-z]{6}[A-Za-z0-9]{2}([A-Za-z0-9]{3})?$" })],
+      "fr"
+    );
+    expect(v.safeParse({ bic: "BNPAFRPP" }).success).toBe(true); // 8 car.
+    expect(v.safeParse({ bic: "GEBABEBB36A" }).success).toBe(true); // 11 car.
+    expect(v.safeParse({ bic: "TROPCOURT" }).success).toBe(false);
+    expect(v.safeParse({ bic: "12345678" }).success).toBe(false); // chiffres en tête interdits
+  });
+
   it("explique un NISS trop court (longueur) avec le nombre saisi", () => {
     const v = buildValidator([field({ id: "niss", type: "niss", required: true })], "fr");
     const res = v.safeParse({ niss: "850730" });

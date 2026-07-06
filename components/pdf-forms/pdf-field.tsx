@@ -14,9 +14,11 @@ import {
 } from "@/components/ui/select";
 import { Field, FieldLabel, FieldDescription } from "@/components/ui/field";
 import { NissInput } from "@/components/ui/niss-input";
+import { IbanInput } from "@/components/ui/iban-input";
 import { StreetAutocompleteInput } from "@/components/ui/street-autocomplete-input";
 import { usePostalCommuneHint } from "@/components/ui/use-postal-commune-hint";
 import { InfoTooltip } from "@/components/ui/info-tooltip";
+import { countryNameFromIban } from "@/lib/pdf-forms/iban-country";
 import { YesNoSegmentedControl } from "@/components/ui/yes-no-segmented";
 import { FieldErrorReport } from "./field-error-report";
 import { ArrayField } from "./array-field";
@@ -339,7 +341,38 @@ export function PdfField({
     );
   }
 
-  // Champs texte (text, iban, date, number, email, phone…)
+  // IBAN : masque automatique par groupes de 4, + indice pays si le champ
+  // accepte les comptes étrangers (field.internationalIban).
+  if (field.type === "iban") {
+    const ibanCountry = field.internationalIban ? countryNameFromIban((value as string) ?? "") : null;
+    return (
+      <Field data-invalid={invalid} className="gap-1.5">
+        <FieldLabel htmlFor={field.id}>
+          <LabelWithTooltip label={label} help={help} required={field.required} />
+        </FieldLabel>
+        <div className="flex items-center gap-2">
+          <div className="flex-1">
+            <IbanInput
+              id={field.id}
+              value={(value as string) ?? ""}
+              placeholder={placeholder}
+              aria-invalid={invalid}
+              onChange={(v) => onChange(v)}
+              onBlur={markTouched}
+            />
+          </div>
+          {showValid && (
+            <CheckCircle2Icon className="size-5 shrink-0 text-emerald-600 dark:text-emerald-400" aria-label="Valide" />
+          )}
+        </div>
+        {ibanCountry && <FieldDescription>→ {ibanCountry}</FieldDescription>}
+        {errorReport}
+      </Field>
+    );
+  }
+
+  // Champs texte (text, date, number, email, phone… — "iban" a sa propre
+  // branche ci-dessus, masquée)
   const hint = INPUT_HINTS[field.type] || {};
   // Date auto (date de génération) : pré-remplie et non éditable.
   const autoToday = field.prefillFrom === "system.today";

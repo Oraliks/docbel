@@ -1125,6 +1125,10 @@ export const C1_QUESTIONS: PdfFormField[] = [
       nl: "", de: "",
     },
     placeholder: { fr: "FR76 0000 0000 0000 0000 0000 000", nl: "", de: "" },
+    // Sans ce flag, ce champ utilisait (par erreur) le validateur BELGE
+    // strict — donc rejetait tout IBAN étranger, alors que c'est son seul
+    // but (Revolut/LT, FR, NL, DE… cf. isValidInternationalIBAN, 31 pays).
+    internationalIban: true,
     visibleIf: { fieldId: "modePaiement", op: "equals", value: "virement" },
     section: SECTION_PAIEMENT,
     order: 605,
@@ -1140,6 +1144,11 @@ export const C1_QUESTIONS: PdfFormField[] = [
       nl: "", de: "",
     },
     placeholder: { fr: "BNPAFRPP", nl: "", de: "" },
+    // Format ISO 9362 (4 lettres banque + 2 lettres pays + 2 alphanumériques
+    // + 3 alphanumériques optionnels) — vérifie juste la FORME, jamais
+    // l'exactitude d'un code banque réel (aucune base fiable disponible ici
+    // pour ça ; le mauvais code enverrait un paiement au mauvais endroit).
+    regex: "^[A-Za-z]{6}[A-Za-z0-9]{2}([A-Za-z0-9]{3})?$",
     visibleIf: { fieldId: "modePaiement", op: "equals", value: "virement" },
     section: SECTION_PAIEMENT,
     order: 606,

@@ -12,6 +12,7 @@ import {
   isValidNISS,
   diagnoseNISS,
   isValidBelgianIBAN,
+  isValidInternationalIBAN,
   isValidBelgianPostalCode,
   isValidBelgianTVA,
   isValidBelgianBCE,
@@ -38,6 +39,11 @@ const FALLBACK: Record<string, Record<Locale, string>> = {
     fr: "Le numéro de compte (IBAN) n'est pas valide. Un IBAN belge commence par BE suivi de 14 chiffres. Vérifiez-le sur votre carte bancaire ou un extrait de compte.",
     nl: "Het rekeningnummer (IBAN) is niet geldig. Een Belgisch IBAN begint met BE gevolgd door 14 cijfers. Controleer het op uw bankkaart of rekeninguittreksel.",
     de: "Die Kontonummer (IBAN) ist ungültig. Eine belgische IBAN beginnt mit BE, gefolgt von 14 Ziffern. Überprüfen Sie sie auf Ihrer Bankkarte oder einem Kontoauszug.",
+  },
+  iban_international: {
+    fr: "Le numéro de compte (IBAN) n'est pas valide. Vérifiez-le sur votre carte bancaire ou un extrait de compte (ex. FR76 3000 6000 0112 3456 7890 189).",
+    nl: "Het rekeningnummer (IBAN) is niet geldig. Controleer het op uw bankkaart of rekeninguittreksel (bijv. FR76 3000 6000 0112 3456 7890 189).",
+    de: "Die Kontonummer (IBAN) ist ungültig. Überprüfen Sie sie auf Ihrer Bankkarte oder einem Kontoauszug (z. B. FR76 3000 6000 0112 3456 7890 189).",
   },
   postal_be: {
     fr: "Le code postal n'est pas valide. En Belgique, c'est un nombre entre 1000 et 9999 (par exemple 1000 pour Bruxelles).",
@@ -168,7 +174,14 @@ function fieldToZod(field: PdfFormField, lang: Locale): ZodTypeAny {
         error: (issue) => loc(field.errorMsg, lang) || nissErrorMessage(String(issue.input ?? ""), lang),
       });
     case "iban":
-      return z.string().refine((v) => empty(v) || isValidBelgianIBAN(v), { message: errMsg(field, lang, "iban") });
+      // `internationalIban` (opt-in par champ) : le validateur ISO 13616
+      // générique (32 pays, déjà écrit) au lieu du strict belge — sert au
+      // champ "IBAN étranger" du C1, qui sinon rejetait TOUT IBAN non-belge.
+      return field.internationalIban
+        ? z.string().refine((v) => empty(v) || isValidInternationalIBAN(v), {
+            message: errMsg(field, lang, "iban_international"),
+          })
+        : z.string().refine((v) => empty(v) || isValidBelgianIBAN(v), { message: errMsg(field, lang, "iban") });
     case "postal_be":
       return z.string().refine((v) => empty(v) || isValidBelgianPostalCode(v), { message: errMsg(field, lang, "postal_be") });
     case "tva_be":
@@ -317,6 +330,7 @@ type FieldLike = {
   type: PdfFormField["type"];
   errorMsg?: PdfFormField["errorMsg"];
   nameOrder?: PdfFormField["nameOrder"];
+  internationalIban?: PdfFormField["internationalIban"];
 };
 
 /// Types dont le format est vérifiable en direct (les autres — text, textarea,
@@ -335,7 +349,10 @@ export function validateFieldFormat(field: FieldLike, value: unknown, lang: Loca
   const custom = loc(field.errorMsg, lang);
   switch (field.type) {
     case "niss": return isValidNISS(v) ? null : (custom || nissErrorMessage(v, lang));
-    case "iban": return isValidBelgianIBAN(v) ? null : (custom || FALLBACK.iban[lang]);
+    case "iban":
+      return field.internationalIban
+        ? (isValidInternationalIBAN(v) ? null : (custom || FALLBACK.iban_international[lang]))
+        : (isValidBelgianIBAN(v) ? null : (custom || FALLBACK.iban[lang]));
     case "date": return isValidISODate(v) ? null : (custom || FALLBACK.date[lang]);
     case "email": return isValidEmail(v) ? null : (custom || FALLBACK.email[lang]);
     case "phone_be": return isValidBelgianPhone(v) ? null : (custom || FALLBACK.phone_be[lang]);

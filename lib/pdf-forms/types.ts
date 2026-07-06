@@ -230,6 +230,10 @@ export interface PdfFormField {
   /// une suggestion remplit aussi ce champ code postal en retour (cf.
   /// components/ui/street-autocomplete-input.tsx).
   streetAutocomplete?: { postalFieldId: string };
+  /// Champ `iban` dont le compte n'est PAS forcément belge : utilise le
+  /// validateur ISO 13616 générique (32 pays, cf. isValidInternationalIBAN)
+  /// au lieu du validateur belge strict par défaut (BE + 14 chiffres).
+  internationalIban?: boolean;
 
   // Méta technique (non exposée au public)
   /// Note interne admin — JAMAIS exposée côté public.

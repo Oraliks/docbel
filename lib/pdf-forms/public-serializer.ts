@@ -33,6 +33,7 @@ export interface PublicField {
   autoAnswered?: PdfFormField["autoAnswered"];
   derivedFrom?: PdfFormField["derivedFrom"];
   streetAutocomplete?: PdfFormField["streetAutocomplete"];
+  internationalIban?: PdfFormField["internationalIban"];
   // ---- Champ `array` ----
   itemFields?: PublicField[];
   addRowLabel?: PdfFormField["addRowLabel"];
@@ -70,6 +71,7 @@ export function toPublicField(f: PdfFormField): PublicField {
     autoAnswered: f.autoAnswered,
     derivedFrom: f.derivedFrom,
     streetAutocomplete: f.streetAutocomplete,
+    internationalIban: f.internationalIban,
     itemFields: f.itemFields ? f.itemFields.map(toPublicField) : undefined,
     addRowLabel: f.addRowLabel,
     minRows: f.minRows,

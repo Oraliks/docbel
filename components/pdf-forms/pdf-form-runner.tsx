@@ -416,28 +416,28 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, onValuesChange
             />
           </div>
 
-          <CardContent className="p-5 sm:p-6">
+          <CardContent className="p-4 sm:p-5">
             <form
               onSubmit={(e) => {
                 e.preventDefault();
                 if (current.kind === "summary") submit();
               }}
-              className="flex flex-col gap-5"
+              className="flex flex-col gap-4"
             >
               {/* En-tête d'étape */}
               <div className="flex items-start justify-between gap-3">
                 <div className="flex flex-col gap-1">
                   <h2
-                    className="glass-display text-[22px] font-semibold leading-tight text-[color:var(--glass-ink)] sm:text-[26px]"
+                    className="glass-display text-[18px] font-semibold leading-tight text-[color:var(--glass-ink)] sm:text-[20px]"
                     style={{ fontVariationSettings: "'WONK' 0, 'SOFT' 0", fontFeatureSettings: "'swsh' 0, 'salt' 0" }}
                   >
                     {current.title}
                   </h2>
-                  <p className="text-[13px] text-[color:var(--glass-ink-soft)]">
-                    {current.kind === "summary"
-                      ? t("runnerSummaryStepHelp")
-                      : t("runnerFieldsStepHelp")}
-                  </p>
+                  {current.kind === "summary" && (
+                    <p className="text-[13px] text-[color:var(--glass-ink-soft)]">
+                      {t("runnerSummaryStepHelp")}
+                    </p>
+                  )}
                 </div>
                 {current.kind === "fields" && current.fields.length > 0 && (
                   <span className="flex shrink-0 items-center gap-1.5 rounded-full bg-muted px-2.5 py-1 text-[11px] text-muted-foreground">
@@ -610,7 +610,7 @@ function FieldsCluster({
   const otherFields = fields.filter((f) => f.renderAs !== "chip" && !isRowField(f));
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-4">
       {chipFields.length > 0 && (
         <div className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-3">
           {chipFields.map((f) => {
@@ -654,7 +654,7 @@ function FieldsCluster({
         </div>
       )}
       {otherFields.length > 0 && (
-        <div className="grid grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="grid grid-cols-1 gap-x-4 gap-y-3.5 sm:grid-cols-2 xl:grid-cols-3">
           {otherFields.map((f) => (
             <div key={f.id} className={FULL_WIDTH_TYPES.has(f.type) ? "sm:col-span-2 xl:col-span-3" : ""}>
               <PdfField
@@ -834,10 +834,10 @@ function MacroRunnerBody({
             />
           </div>
 
-          <CardContent className="p-5 sm:p-6">
+          <CardContent className="p-4 sm:p-5">
             <form
               onSubmit={(e) => { e.preventDefault(); if (isLast) submit(); }}
-              className="flex flex-col gap-5"
+              className="flex flex-col gap-4"
             >
               <div className="flex flex-col gap-1">
                 <h2
@@ -846,7 +846,6 @@ function MacroRunnerBody({
                 >
                   {titleFor(current.id)}
                 </h2>
-                <p className="text-[13px] text-[color:var(--glass-ink-soft)]">{t("runnerFieldsStepHelp")}</p>
               </div>
 
               {current.sections.map((sec, i) => (
@@ -854,7 +853,7 @@ function MacroRunnerBody({
                   key={sec.key ?? `sec-${i}`}
                   className={
                     multiSection
-                      ? "flex flex-col gap-3 rounded-2xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] p-4 sm:p-5"
+                      ? "flex flex-col gap-3 rounded-2xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] p-3.5 sm:p-4"
                       : "flex flex-col gap-3"
                   }
                 >

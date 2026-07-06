@@ -20,7 +20,7 @@ export function ContextHelpPanel({ sectionKey, locale }: ContextHelpPanelProps) 
   const t = useTranslations("public.dossier");
   const help = getSectionHelp(sectionKey, locale);
   return (
-    <aside className="flex flex-col gap-4 rounded-3xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface-strong)] p-5 lg:sticky lg:top-6">
+    <aside className="flex flex-col gap-3.5 rounded-3xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface-strong)] p-4 lg:sticky lg:top-6">
       <p className="text-[11px] font-bold uppercase tracking-[0.08em] text-[color:var(--glass-ink-soft)]">
         {t("runnerHelpPanelEyebrow")}
       </p>
@@ -40,7 +40,7 @@ export function ContextHelpPanel({ sectionKey, locale }: ContextHelpPanelProps) 
       </div>
 
       {help.examples && help.examples.length > 0 && (
-        <div className="rounded-2xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] p-4">
+        <div className="rounded-2xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] p-3.5">
           <p className="mb-2 text-xs font-semibold text-[color:var(--glass-ink)]">
             {t("runnerHelpExamplesLabel")}
           </p>
@@ -58,7 +58,7 @@ export function ContextHelpPanel({ sectionKey, locale }: ContextHelpPanelProps) 
         </div>
       )}
 
-      <div className="border-t border-[color:var(--glass-border)] pt-4">
+      <div className="border-t border-[color:var(--glass-border)] pt-3.5">
         <div className="flex items-start gap-3">
           <span
             aria-hidden

@@ -26,7 +26,7 @@ interface FormStepperProps {
 /// lilas + coche ; actif = violet plein ; à venir = discret.
 export function FormStepper({ steps, activeIndex, onSelect }: FormStepperProps) {
   return (
-    <ol className="flex items-center overflow-x-auto px-2 py-4">
+    <ol className="flex items-center overflow-x-auto px-2 py-3">
       {steps.map((step, i) => {
         const isActive = i === activeIndex;
         // Coche verte pilotée par la VRAIE complétion (pas la position) ;
@@ -42,7 +42,7 @@ export function FormStepper({ steps, activeIndex, onSelect }: FormStepperProps) 
               className="flex shrink-0 items-center gap-2.5 rounded-full py-1.5 pl-1.5 pr-3 transition-colors hover:bg-[color:var(--glass-pop-bg)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
             >
               <span
-                className={`flex size-9 shrink-0 items-center justify-center rounded-full text-[13px] font-bold transition-colors ${
+                className={`flex size-8 shrink-0 items-center justify-center rounded-full text-[13px] font-bold transition-colors ${
                   done
                     ? "bg-emerald-500 text-white shadow-[0_6px_16px_-6px_rgba(16,185,129,0.5)]"
                     : isActive

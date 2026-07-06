@@ -183,8 +183,8 @@ export function PdfField({ field, value, error, locale, onChange, formId, formSl
       );
     }
     return (
-      <Field data-invalid={invalid}>
-        <FieldLabel htmlFor={field.id}>
+      <Field data-invalid={invalid} className="gap-1.5">
+        <FieldLabel htmlFor={field.id} className="text-[13px]">
           <LabelWithTooltip label={label} help={help} required={field.required} />
         </FieldLabel>
         <YesNoSegmentedControl
@@ -203,8 +203,8 @@ export function PdfField({ field, value, error, locale, onChange, formId, formSl
   // Select / radio (3+ options) : liste déroulante (compact), inchangé.
   if (field.type === "select" || field.type === "radio") {
     return (
-      <Field data-invalid={invalid}>
-        <FieldLabel htmlFor={field.id}>
+      <Field data-invalid={invalid} className="gap-1.5">
+        <FieldLabel htmlFor={field.id} className="text-[13px]">
           <LabelWithTooltip label={label} help={help} required={field.required} />
         </FieldLabel>
         <Select value={(value as string) ?? ""} onValueChange={(v) => onChange(v)}>
@@ -228,8 +228,8 @@ export function PdfField({ field, value, error, locale, onChange, formId, formSl
   // Textarea
   if (field.type === "textarea") {
     return (
-      <Field data-invalid={invalid}>
-        <FieldLabel htmlFor={field.id}>
+      <Field data-invalid={invalid} className="gap-1.5">
+        <FieldLabel htmlFor={field.id} className="text-[13px]">
           <LabelWithTooltip label={label} help={help} required={field.required} />
         </FieldLabel>
         <Textarea
@@ -273,8 +273,8 @@ export function PdfField({ field, value, error, locale, onChange, formId, formSl
       </div>
     );
     return (
-      <Field data-invalid={invalid}>
-        <FieldLabel htmlFor={field.id}>
+      <Field data-invalid={invalid} className="gap-1.5">
+        <FieldLabel htmlFor={field.id} className="text-[13px]">
           <LabelWithTooltip label={label} help={help} required={field.required} />
         </FieldLabel>
         <div className="flex flex-col gap-2 sm:flex-row">
@@ -292,8 +292,8 @@ export function PdfField({ field, value, error, locale, onChange, formId, formSl
   // NISS : masque automatique AAMMJJ-SSS.CC
   if (field.type === "niss") {
     return (
-      <Field data-invalid={invalid}>
-        <FieldLabel htmlFor={field.id}>
+      <Field data-invalid={invalid} className="gap-1.5">
+        <FieldLabel htmlFor={field.id} className="text-[13px]">
           <LabelWithTooltip label={label} help={help} required={field.required} />
         </FieldLabel>
         <div className="flex items-center gap-2" onBlur={markTouched}>
@@ -319,7 +319,7 @@ export function PdfField({ field, value, error, locale, onChange, formId, formSl
   // Date auto (date de génération) : pré-remplie et non éditable.
   const autoToday = field.prefillFrom === "system.today";
   return (
-    <Field data-invalid={invalid}>
+    <Field data-invalid={invalid} className="gap-1.5">
       <FieldLabel htmlFor={field.id}>
         <LabelWithTooltip label={label} help={help} required={field.required} />
       </FieldLabel>

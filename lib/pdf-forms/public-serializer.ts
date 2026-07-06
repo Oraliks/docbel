@@ -30,6 +30,7 @@ export interface PublicField {
   renderAs?: PdfFormField["renderAs"];
   stepPriority?: PdfFormField["stepPriority"];
   stepGroup?: PdfFormField["stepGroup"];
+  autoAnswered?: PdfFormField["autoAnswered"];
   // ---- Champ `array` ----
   itemFields?: PublicField[];
   addRowLabel?: PdfFormField["addRowLabel"];
@@ -64,6 +65,7 @@ export function toPublicField(f: PdfFormField): PublicField {
     renderAs: f.renderAs,
     stepPriority: f.stepPriority,
     stepGroup: f.stepGroup,
+    autoAnswered: f.autoAnswered,
     itemFields: f.itemFields ? f.itemFields.map(toPublicField) : undefined,
     addRowLabel: f.addRowLabel,
     minRows: f.minRows,

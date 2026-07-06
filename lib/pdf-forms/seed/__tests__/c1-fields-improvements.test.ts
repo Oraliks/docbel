@@ -157,3 +157,94 @@ describe("C1_QUESTIONS — habillage renderAs / stepPriority", () => {
     }
   });
 });
+
+describe("applyC1Improvements — restrictMotifTo5Situations (Oraliks, 2026-07-06)", () => {
+  it("absent (par défaut) : comportement inchangé, pas de 5e chip, cotisation syndicale toujours visible", () => {
+    const result = applyC1Improvements([]);
+    expect(result.find((f) => f.id === "transfereOrganismePaiement")).toBeUndefined();
+    const cotisation = result.find((f) => f.id === "modificationCotisationSyndicale");
+    expect(cotisation?.hidden).toBeFalsy();
+    const adresse = result.find((f) => f.id === "modificationAdresse");
+    expect(adresse?.label?.fr).toBe("Modification d'adresse");
+  });
+
+  it("actif : motifIntroduction garde ses 4 options ET son pdfFieldName pipe d'origine intacts", () => {
+    // Invariant critique : le filler mappe options[i] <-> pdfFieldName.split('|')[i]
+    // positionnellement (cf. filler-checkbox-pair.test.ts). Toucher ici casserait
+    // le stamping PDF pour "première fois"/"interruption"/"modification"/"changement-op".
+    const result = applyC1Improvements([], { restrictMotifTo5Situations: true });
+    const motif = result.find((f) => f.id === "motifIntroduction");
+    expect(motif?.options).toHaveLength(4);
+    expect(motif?.pdfFieldName).toBe(
+      "pour la première fois 5|après une interruption de mes allocations 5|je déclare une modification concernant|je change dorganisme de paiement à partir du 5"
+    );
+  });
+
+  it("actif : motifIntroduction devient autoAnswered (exclu du rendu interactif, reste requis/soumis)", () => {
+    const result = applyC1Improvements([], { restrictMotifTo5Situations: true });
+    const motif = result.find((f) => f.id === "motifIntroduction");
+    expect(motif?.autoAnswered).toBe(true);
+    expect(motif?.required).toBe(true); // reste requis : le filler/validator le voient toujours
+    expect(motif?.defaultValue).toBeUndefined(); // note: defaultMotif est un opt séparé, testé ailleurs
+  });
+
+  it("absent : motifIntroduction n'est PAS autoAnswered (comportement c1/c1-insertion inchangé)", () => {
+    const result = applyC1Improvements([]);
+    const motif = result.find((f) => f.id === "motifIntroduction");
+    expect(motif?.autoAnswered).toBeFalsy();
+  });
+
+  it("actif : ajoute le 5e chip virtuel transfereOrganismePaiement (aucune case PDF propre)", () => {
+    const result = applyC1Improvements([], { restrictMotifTo5Situations: true });
+    const f = result.find((q) => q.id === "transfereOrganismePaiement");
+    expect(f).toBeDefined();
+    expect(f?.pdfFieldName).toBe("");
+    expect(f?.type).toBe("checkbox");
+    expect(f?.required).toBe(false);
+    expect(f?.renderAs).toBe("chip");
+    expect(f?.section).toBe("demande");
+    expect(f?.label?.fr).toBe("Je transfère mon dossier vers un autre organisme de paiement");
+  });
+
+  it("actif : masque modificationCotisationSyndicale (hors périmètre de ce dossier)", () => {
+    const result = applyC1Improvements([], { restrictMotifTo5Situations: true });
+    const f = result.find((q) => q.id === "modificationCotisationSyndicale");
+    expect(f?.hidden).toBe(true);
+  });
+
+  it("actif : relabelle et réordonne les 4 chips de modification restants selon le phrasé Oraliks", () => {
+    const result = applyC1Improvements([], { restrictMotifTo5Situations: true });
+    const expected: Record<string, { label: string; order: number }> = {
+      modificationAdresse: { label: "J'ai changé d'adresse", order: 5 },
+      modificationSituationFamiliale: {
+        label: "Ma situation personnelle ou celle des membres de mon ménage a changé",
+        order: 6,
+      },
+      modificationPermisSejour: { label: "Mon permis de séjour ou mon permis de travail a changé", order: 7 },
+      modificationCompte: { label: "Mon n° de compte bancaire a changé", order: 8 },
+    };
+    for (const [id, exp] of Object.entries(expected)) {
+      const f = result.find((q) => q.id === id);
+      expect(f?.label?.fr, `label de ${id}`).toBe(exp.label);
+      expect(f?.order, `order de ${id}`).toBe(exp.order);
+    }
+  });
+
+  it("actif : dateChangementOrganisme se déclenche sur transfereOrganismePaiement, plus sur motifIntroduction", () => {
+    const result = applyC1Improvements([], { restrictMotifTo5Situations: true });
+    const f = result.find((q) => q.id === "dateChangementOrganisme");
+    expect(f?.visibleIf).toEqual({ fieldId: "transfereOrganismePaiement", op: "equals", value: true });
+  });
+
+  it("actif : C1_QUESTIONS partagé reste non muté (labels/visibleIf/hidden d'origine intacts)", () => {
+    applyC1Improvements([], { restrictMotifTo5Situations: true });
+    const adresse = C1_QUESTIONS.find((q) => q.id === "modificationAdresse");
+    expect(adresse?.label?.fr).toBe("Modification d'adresse");
+    expect(adresse?.order).toBe(5);
+    const cotisation = C1_QUESTIONS.find((q) => q.id === "modificationCotisationSyndicale");
+    expect(cotisation?.hidden).toBeFalsy();
+    const dateChangement = C1_QUESTIONS.find((q) => q.id === "dateChangementOrganisme");
+    expect(dateChangement?.visibleIf).toEqual({ fieldId: "motifIntroduction", op: "equals", value: "changement-op" });
+    expect(C1_QUESTIONS.find((q) => q.id === "transfereOrganismePaiement")).toBeUndefined();
+  });
+});

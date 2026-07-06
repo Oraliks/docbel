@@ -27,6 +27,7 @@ import { Locale, FieldValue, FormPayload, PdfFormField, loc } from "@/lib/pdf-fo
 import { todayISO } from "@/lib/pdf-forms/system-values";
 import { resolveSignerName } from "@/lib/pdf-forms/signature";
 import { isAutoField, isCreationDateField, isSignatureField } from "@/lib/pdf-forms/auto-fields";
+import { applyMotifTransferOverride } from "@/lib/pdf-forms/c1-motif-transfer";
 import type { PublicForm, PublicField } from "@/lib/pdf-forms/public-serializer";
 import { buildSteps, buildMacroSteps, type OptionalSection, type MacroStep } from "@/lib/pdf-forms/build-steps";
 import { sectionLabel } from "@/lib/pdf-forms/section-labels";
@@ -210,7 +211,12 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, onValuesChange
     // signature du formulaire si un nom de signataire est résolu depuis la
     // saisie. Le serveur produira le bloc "Signé numériquement par X" au
     // bon endroit dans le PDF.
-    const signedValues: FormPayload = { ...values };
+    // applyMotifTransferOverride : no-op pour la plupart des formulaires ;
+    // sur le C1 "changement de situation", corrige motifIntroduction si le
+    // citoyen a coché "transfert vers un autre organisme de paiement" (case
+    // PDF mutuellement exclusive avec "modification", jamais soumise en
+    // même temps — cf. lib/pdf-forms/c1-motif-transfer.ts).
+    const signedValues: FormPayload = applyMotifTransferOverride({ ...values });
     if (signerName) {
       for (const f of form.fields) {
         if (isSignatureField(f)) signedValues[f.id] = "confirmed";

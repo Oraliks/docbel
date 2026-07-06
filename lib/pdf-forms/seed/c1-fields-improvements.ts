@@ -1513,7 +1513,63 @@ export interface ApplyC1ImprovementsOptions {
   /// par les dossiers dont le motif d'entrée est implicite (ex.
   /// "changement-situation-personnelle" → "modification").
   defaultMotif?: string;
+  /// Restreint le motif d'introduction à 5 situations concrètes (Oraliks,
+  /// 2026-07-06) pour le dossier "changement de situation personnelle" :
+  ///   - masque `modificationCotisationSyndicale` (hors périmètre de ce
+  ///     dossier — la retenue syndicale se gère via la section Cotisation) ;
+  ///   - relabelle + réordonne les 4 chips de modification restants
+  ///     (adresse / situation familiale / permis / compte) selon le phrasé
+  ///     dicté par Oraliks ;
+  ///   - ajoute un 5e chip virtuel `transfereOrganismePaiement` (case à
+  ///     cocher, aucune case PDF propre) qui révèle `dateChangementOrganisme`.
+  /// `motifIntroduction` reste défaulté sur "modification" et n'est PLUS
+  /// montré comme sélecteur — mais "je transfère vers un autre organisme" est
+  /// une case PDF DIFFÉRENTE et mutuellement exclusive de "modification" sur
+  /// le formulaire officiel (mêmes 4 cases radio qu'aujourd'hui). Il ne faut
+  /// donc JAMAIS soumettre "modification" quand ce 5e chip est coché : la
+  /// bascule se fait via `applyMotifTransferOverride`, appelée juste avant
+  /// l'envoi du payload (cf. `submit()` dans pdf-form-runner.tsx) — jamais en
+  /// mutant le state React live, pour ne pas faire disparaître les 4 chips
+  /// (gatés sur motifIntroduction === "modification", qui doit rester stable
+  /// pendant toute la saisie).
+  restrictMotifTo5Situations?: boolean;
 }
+
+/// Libellés relabelés (phrasé "je/mon", Oraliks 2026-07-06) + nouvel ordre
+/// d'affichage pour les 4 chips de modification existants, appliqués
+/// uniquement quand `restrictMotifTo5Situations` est actif.
+const RESTRICTED_MOTIF_OVERRIDES: Record<string, { label: string; order: number }> = {
+  modificationAdresse: { label: "J'ai changé d'adresse", order: 5 },
+  modificationSituationFamiliale: {
+    label: "Ma situation personnelle ou celle des membres de mon ménage a changé",
+    order: 6,
+  },
+  modificationPermisSejour: { label: "Mon permis de séjour ou mon permis de travail a changé", order: 7 },
+  modificationCompte: { label: "Mon n° de compte bancaire a changé", order: 8 },
+};
+
+/// 5e situation : transfert vers un autre organisme de paiement. Virtuel
+/// (aucune case PDF propre) — pilote uniquement la visibilité de
+/// `dateChangementOrganisme` et, à la soumission, la valeur réelle de
+/// `motifIntroduction` (cf. `applyMotifTransferOverride`).
+const TRANSFERE_ORGANISME_FIELD: PdfFormField = {
+  id: "transfereOrganismePaiement",
+  pdfFieldName: "",
+  type: "checkbox",
+  required: false,
+  label: { fr: "Je transfère mon dossier vers un autre organisme de paiement", nl: "", de: "" },
+  section: SECTION_DEMANDE,
+  order: 8.5,
+  renderAs: "chip",
+};
+
+// La dérivation de soumission (`transfereOrganismePaiement` → override de
+// `motifIntroduction`) vit dans lib/pdf-forms/c1-motif-transfer.ts, PAS ici :
+// ce fichier seed/ n'est importé que côté serveur (scripts, routes admin) —
+// le runner (composant client partagé par tous les dossiers) ne doit jamais
+// importer ce module (C1_QUESTIONS + tout le schéma C1) pour éviter de
+// gonfler le bundle client de CHAQUE formulaire avec ~150 définitions de
+// champs qui ne le concernent pas.
 
 /// 2. Append les 15 questions enrichies + 5 follow-ups virtuels.
 /// 3. Tous les autres champs (identité, adresse, mode de paiement, situation
@@ -1620,11 +1676,31 @@ export function applyC1Improvements(
     return true;
   });
 
-  const questions = opts?.defaultMotif
+  let questions = opts?.defaultMotif
     ? C1_QUESTIONS.map((q) =>
         q.id === "motifIntroduction" ? { ...q, defaultValue: opts.defaultMotif } : q
       )
     : C1_QUESTIONS;
+
+  if (opts?.restrictMotifTo5Situations) {
+    questions = questions
+      .map((q) => {
+        const override = RESTRICTED_MOTIF_OVERRIDES[q.id];
+        if (override) return { ...q, label: { ...q.label, fr: override.label }, order: override.order };
+        if (q.id === "modificationCotisationSyndicale") return { ...q, hidden: true };
+        if (q.id === "dateChangementOrganisme") {
+          return { ...q, visibleIf: { fieldId: "transfereOrganismePaiement", op: "equals" as const, value: true } };
+        }
+        // Reste réel/requis/soumis (nécessaire au filler + à la validation),
+        // mais n'est plus montré comme sélecteur : les 5 chips pilotent sa
+        // valeur (defaultValue "modification", ou "changement-op" via
+        // applyMotifTransferOverride au submit). Cf. doc de
+        // `autoAnswered` dans types.ts.
+        if (q.id === "motifIntroduction") return { ...q, autoAnswered: true };
+        return q;
+      })
+      .concat(TRANSFERE_ORGANISME_FIELD);
+  }
 
   // Pose `stepGroup` sur les champs sectionnés, puis cure les widgets bruts
   // non sectionnés (masque doublons / auto / junk — jamais un widget unique).

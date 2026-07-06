@@ -22,4 +22,19 @@ describe("C1_IMPROVEMENT_TARGETS — c1-changement-situation", () => {
       expect(motif?.defaultValue).toBeUndefined();
     }
   });
+
+  it("ajoute le 5e chip transfereOrganismePaiement, réservé à c1-changement-situation", () => {
+    const target = C1_IMPROVEMENT_TARGETS.find((t) => t.slug === "c1-changement-situation");
+    const improved = target!.improve([]);
+    expect(improved.find((f) => f.id === "transfereOrganismePaiement")).toBeDefined();
+
+    for (const slug of ["c1", "c1-insertion"]) {
+      const other = C1_IMPROVEMENT_TARGETS.find((t) => t.slug === slug);
+      const improvedOther = other!.improve([]);
+      expect(improvedOther.find((f) => f.id === "transfereOrganismePaiement")).toBeUndefined();
+      // motifIntroduction garde ses 4 options d'origine, intactes, pour c1/c1-insertion.
+      const motif = improvedOther.find((f) => f.id === "motifIntroduction");
+      expect(motif?.options).toHaveLength(4);
+    }
+  });
 });

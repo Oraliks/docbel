@@ -43,4 +43,13 @@ describe("isAutoField", () => {
     expect(isAutoField({ id: "d", type: "date", label: { fr: "Date de création" } })).toBe(true);
     expect(isAutoField({ id: "n", type: "text", label: { fr: "Nom" } })).toBe(false);
   });
+
+  it("vrai pour un champ marqué autoAnswered (ex. motifIntroduction restreint du C1)", () => {
+    expect(isAutoField({ id: "motifIntroduction", type: "radio", autoAnswered: true })).toBe(true);
+  });
+
+  it("autoAnswered absent/false ne déclenche rien seul", () => {
+    expect(isAutoField({ id: "x", type: "radio", label: { fr: "Motif" } })).toBe(false);
+    expect(isAutoField({ id: "x", type: "radio", label: { fr: "Motif" }, autoAnswered: false })).toBe(false);
+  });
 });

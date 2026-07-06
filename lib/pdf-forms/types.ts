@@ -199,6 +199,16 @@ export interface PdfFormField {
   /// (applyC1Improvements) ; consommé par buildMacroSteps. Prime sur
   /// stepPriority quand présent (mode macro = pas d'optional-collapse).
   stepGroup?: string;
+  /// Champ dont la valeur est fixée automatiquement (defaultValue au montage
+  /// du formulaire, et/ou dérivée juste avant soumission — cf.
+  /// lib/pdf-forms/c1-motif-transfer.ts) : jamais rendu comme contrôle
+  /// interactif dans les étapes (cf. `isAutoField`), mais reste sérialisé,
+  /// validé et soumis normalement — DISTINCT de `hidden`, qui exclut aussi
+  /// de la sérialisation publique et de la génération PDF. Utilisé pour
+  /// `motifIntroduction` sur le C1 "changement de situation" : le motif
+  /// reste réel et requis, mais l'utilisateur ne choisit plus parmi 4
+  /// options — il choisit parmi les 5 chips concrets qui pilotent sa valeur.
+  autoAnswered?: boolean;
 
   // Méta technique (non exposée au public)
   /// Note interne admin — JAMAIS exposée côté public.

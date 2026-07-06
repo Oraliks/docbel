@@ -234,6 +234,13 @@ export interface PdfFormField {
   /// validateur ISO 13616 générique (32 pays, cf. isValidInternationalIBAN)
   /// au lieu du validateur belge strict par défaut (BE + 14 chiffres).
   internationalIban?: boolean;
+  /// Contrainte de groupe : « au moins un des champs partageant cette même
+  /// clé (parmi les champs VISIBLES) doit être rempli/coché ». Aucun d'eux
+  /// n'est individuellement `required` — utilisé quand la question porte sur
+  /// un ENSEMBLE de choix plutôt qu'un champ unique (ex. les 5 chips
+  /// "situation" du C1 : aucune n'est obligatoire seule, mais il en faut au
+  /// moins une). L'erreur s'attache au premier champ visible du groupe.
+  requiredGroup?: string;
 
   // Méta technique (non exposée au public)
   /// Note interne admin — JAMAIS exposée côté public.

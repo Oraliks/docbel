@@ -1566,6 +1566,12 @@ export interface ApplyC1ImprovementsOptions {
   restrictMotifTo5Situations?: boolean;
 }
 
+/// Clé de groupe partagée par les 5 chips "situation" : aucune n'est
+/// individuellement requise, mais il en faut AU MOINS UNE (cf. `requiredGroup`
+/// dans types.ts) — sinon l'étape "Motif" pouvait être passée sans rien
+/// déclarer du tout (trouvé par Oraliks, 2026-07-07).
+const MOTIF_SITUATION_GROUP = "motifSituation";
+
 /// Libellés relabelés (phrasé "je/mon", Oraliks 2026-07-06) + nouvel ordre
 /// d'affichage pour les 4 chips de modification existants, appliqués
 /// uniquement quand `restrictMotifTo5Situations` est actif.
@@ -1592,6 +1598,7 @@ const TRANSFERE_ORGANISME_FIELD: PdfFormField = {
   section: SECTION_DEMANDE,
   order: 8.5,
   renderAs: "chip",
+  requiredGroup: MOTIF_SITUATION_GROUP,
 };
 
 // La dérivation de soumission (`transfereOrganismePaiement` → override de
@@ -1717,7 +1724,25 @@ export function applyC1Improvements(
     questions = questions
       .map((q) => {
         const override = RESTRICTED_MOTIF_OVERRIDES[q.id];
-        if (override) return { ...q, label: { ...q.label, fr: override.label }, order: override.order };
+        if (override) {
+          return {
+            ...q,
+            label: { ...q.label, fr: override.label },
+            order: override.order,
+            requiredGroup: MOTIF_SITUATION_GROUP,
+            // Message custom sur l'ANCRE (1ʳᵉ des 5, order=5) uniquement —
+            // les 4 autres membres du groupe n'ont pas besoin du leur, seul
+            // le 1er visible reçoit l'erreur (cf. buildValidator).
+            ...(q.id === "modificationAdresse"
+              ? {
+                  errorMsg: {
+                    fr: "Choisis au moins une situation parmi les 5 ci-dessus.",
+                    nl: "", de: "",
+                  },
+                }
+              : {}),
+          };
+        }
         if (q.id === "modificationCotisationSyndicale") return { ...q, hidden: true };
         if (q.id === "dateChangementOrganisme") {
           return { ...q, visibleIf: { fieldId: "transfereOrganismePaiement", op: "equals" as const, value: true } };

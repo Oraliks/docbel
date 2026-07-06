@@ -74,6 +74,11 @@ const FALLBACK: Record<string, Record<Locale, string>> = {
   select: { fr: "Veuillez choisir une valeur dans la liste.", nl: "Kies een waarde uit de lijst.", de: "Bitte wählen Sie einen Wert aus der Liste." },
   required: { fr: "Ce champ est obligatoire, merci de le remplir.", nl: "Dit veld is verplicht, gelieve het in te vullen.", de: "Dieses Feld ist erforderlich, bitte füllen Sie es aus." },
   number: { fr: "Veuillez saisir un nombre (chiffres uniquement).", nl: "Vul een getal in (alleen cijfers).", de: "Bitte geben Sie eine Zahl ein (nur Ziffern)." },
+  requiredGroup: {
+    fr: "Sélectionnez au moins une option ci-dessus.",
+    nl: "Selecteer minstens één optie hierboven.",
+    de: "Wählen Sie mindestens eine der obigen Optionen aus.",
+  },
 };
 
 // Messages dynamiques pour les contraintes de longueur (texte) et de plage
@@ -290,6 +295,33 @@ export function buildValidator(fields: PdfFormField[], lang: Locale = DEFAULT_LO
               "Veuillez signer dans le cadre (au doigt sur tablette/téléphone, ou à la souris)."
             : errMsg(f, lang, "required");
         ctx.addIssue({ code: "custom", path: [f.id], message });
+      }
+    }
+
+    // Contraintes de groupe (`requiredGroup`) : « au moins un des champs
+    // partageant cette même clé doit être rempli/coché » — aucun d'eux n'est
+    // individuellement `required` (ex. les 5 chips « situation » du C1 :
+    // aucune n'est obligatoire seule, mais il en faut au moins une). L'erreur
+    // s'attache au PREMIER champ visible du groupe ; le form-runner l'affiche
+    // comme message partagé sous tout le groupe de chips (cf. FieldsCluster).
+    const groups = new Map<string, PdfFormField[]>();
+    for (const f of fields) {
+      if (!f.requiredGroup) continue;
+      if (!isFieldVisible(f.visibleIf, payload)) continue;
+      if (!groups.has(f.requiredGroup)) groups.set(f.requiredGroup, []);
+      groups.get(f.requiredGroup)!.push(f);
+    }
+    for (const groupFields of groups.values()) {
+      if (groupFields.length === 0) continue;
+      const anySet = groupFields.some((f) => {
+        const v = payload[f.id];
+        if (f.type === "checkbox") return v === true;
+        return typeof v === "string" && v.trim() !== "";
+      });
+      if (!anySet) {
+        const anchor = groupFields[0];
+        const message = loc(anchor.errorMsg, lang) || errMsg(anchor, lang, "requiredGroup");
+        ctx.addIssue({ code: "custom", path: [anchor.id], message });
       }
     }
   });

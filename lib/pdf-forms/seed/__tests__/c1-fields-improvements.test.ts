@@ -236,6 +236,33 @@ describe("applyC1Improvements — restrictMotifTo5Situations (Oraliks, 2026-07-0
     expect(f?.visibleIf).toEqual({ fieldId: "transfereOrganismePaiement", op: "equals", value: true });
   });
 
+  it("actif : les 5 chips situation partagent la même clé requiredGroup (au moins une obligatoire)", () => {
+    const result = applyC1Improvements([], { restrictMotifTo5Situations: true });
+    const ids = [
+      "modificationAdresse",
+      "modificationSituationFamiliale",
+      "modificationPermisSejour",
+      "modificationCompte",
+      "transfereOrganismePaiement",
+    ];
+    const groups = ids.map((id) => result.find((q) => q.id === id)?.requiredGroup);
+    expect(groups.every((g) => g === "motifSituation")).toBe(true);
+  });
+
+  it("actif : l'ancre (modificationAdresse, 1ʳᵉ des 5) porte un message d'erreur explicite", () => {
+    const result = applyC1Improvements([], { restrictMotifTo5Situations: true });
+    const anchor = result.find((q) => q.id === "modificationAdresse");
+    expect(anchor?.errorMsg?.fr).toBeTruthy();
+  });
+
+  it("absent : les 5 chips n'ont PAS de requiredGroup (c1 / c1-insertion inchangés)", () => {
+    const result = applyC1Improvements([]);
+    for (const id of ["modificationAdresse", "modificationSituationFamiliale", "modificationPermisSejour", "modificationCompte"]) {
+      expect(result.find((q) => q.id === id)?.requiredGroup).toBeUndefined();
+    }
+    expect(result.find((q) => q.id === "transfereOrganismePaiement")).toBeUndefined();
+  });
+
   it("actif : C1_QUESTIONS partagé reste non muté (labels/visibleIf/hidden d'origine intacts)", () => {
     applyC1Improvements([], { restrictMotifTo5Situations: true });
     const adresse = C1_QUESTIONS.find((q) => q.id === "modificationAdresse");

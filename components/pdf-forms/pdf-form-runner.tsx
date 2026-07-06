@@ -663,31 +663,47 @@ function FieldsCluster({
     return typeof raw === "string" ? raw : undefined;
   };
 
+  // Erreur(s) partagée(s) des champs chip : une contrainte de GROUPE
+  // ("au moins un parmi N") s'attache à un seul champ (l'ancre), mais
+  // concerne visuellement TOUT le groupe — on l'affiche donc comme message
+  // sous la grille plutôt que de rougir une carte en particulier. Dédupliqué
+  // (plusieurs champs pourraient en théorie partager le même message).
+  const chipGroupErrors = [...new Set(chipFields.map((f) => errors[f.id]).filter(Boolean))];
+
   return (
     <div className="flex flex-col gap-4">
       {chipFields.length > 0 && (
-        <div className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-3">
-          {chipFields.map((f) => {
-            if (f.type === "radio") {
-              return (f.options || []).map((o) => (
+        <div className="flex flex-col gap-2">
+          <div className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-3">
+            {chipFields.map((f) => {
+              if (f.type === "radio") {
+                return (f.options || []).map((o) => (
+                  <OptionCard
+                    key={`${f.id}-${o.value}`}
+                    label={loc(o.label, locale)}
+                    selected={values[f.id] === o.value}
+                    onToggle={() => setValue(f.id, o.value)}
+                    invalid={f.required === true && !!errors[f.id]}
+                  />
+                ));
+              }
+              // checkbox : une seule carte, toggle indépendant.
+              return (
                 <OptionCard
-                  key={`${f.id}-${o.value}`}
-                  label={loc(o.label, locale)}
-                  selected={values[f.id] === o.value}
-                  onToggle={() => setValue(f.id, o.value)}
+                  key={f.id}
+                  label={loc(f.label, locale)}
+                  selected={values[f.id] === true}
+                  onToggle={() => setValue(f.id, values[f.id] !== true)}
+                  invalid={f.required === true && !!errors[f.id]}
                 />
-              ));
-            }
-            // checkbox : une seule carte, toggle indépendant.
-            return (
-              <OptionCard
-                key={f.id}
-                label={loc(f.label, locale)}
-                selected={values[f.id] === true}
-                onToggle={() => setValue(f.id, values[f.id] !== true)}
-              />
-            );
-          })}
+              );
+            })}
+          </div>
+          {chipGroupErrors.map((msg) => (
+            <p key={msg} role="alert" className="text-sm font-normal text-destructive">
+              {msg}
+            </p>
+          ))}
         </div>
       )}
       {rowFields.length > 0 && (

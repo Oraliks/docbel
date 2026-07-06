@@ -27,6 +27,64 @@ describe("buildValidator", () => {
     expect(v.safeParse({ iban: "FR0000000000000000000000000" }).success).toBe(false); // checksum invalide
   });
 
+  it("requiredGroup : rejette si AUCUN champ du groupe n'est rempli/coché", () => {
+    const v = buildValidator(
+      [
+        field({ id: "a", type: "checkbox", requiredGroup: "g" }),
+        field({ id: "b", type: "checkbox", requiredGroup: "g" }),
+        field({ id: "c", type: "checkbox", requiredGroup: "g" }),
+      ],
+      "fr"
+    );
+    const res = v.safeParse({ a: false, b: false, c: false });
+    expect(res.success).toBe(false);
+    if (!res.success) {
+      // L'erreur s'attache au PREMIER champ du groupe (l'ancre).
+      expect(res.error.issues[0].path).toEqual(["a"]);
+    }
+  });
+
+  it("requiredGroup : accepte dès qu'UN SEUL membre du groupe est rempli/coché", () => {
+    const v = buildValidator(
+      [
+        field({ id: "a", type: "checkbox", requiredGroup: "g" }),
+        field({ id: "b", type: "checkbox", requiredGroup: "g" }),
+      ],
+      "fr"
+    );
+    expect(v.safeParse({ a: false, b: true }).success).toBe(true);
+  });
+
+  it("requiredGroup : ignore un membre du groupe actuellement invisible (visibleIf non satisfait)", () => {
+    const v = buildValidator(
+      [
+        field({ id: "toggle", type: "text" }),
+        field({
+          id: "a",
+          type: "checkbox",
+          requiredGroup: "g",
+          visibleIf: { fieldId: "toggle", op: "equals", value: "show" },
+        }),
+      ],
+      "fr"
+    );
+    // "a" invisible (toggle !== "show") → aucun membre visible du groupe → pas d'erreur.
+    expect(v.safeParse({ toggle: "hide", a: false }).success).toBe(true);
+  });
+
+  it("requiredGroup : message custom via errorMsg sur l'ancre, sinon message générique", () => {
+    const vCustom = buildValidator(
+      [field({ id: "a", type: "checkbox", requiredGroup: "g", errorMsg: { fr: "Choisis-en au moins un." } })],
+      "fr"
+    );
+    const resCustom = vCustom.safeParse({ a: false });
+    expect(!resCustom.success && resCustom.error.issues[0].message).toBe("Choisis-en au moins un.");
+
+    const vGeneric = buildValidator([field({ id: "a", type: "checkbox", requiredGroup: "g" })], "fr");
+    const resGeneric = vGeneric.safeParse({ a: false });
+    expect(!resGeneric.success && resGeneric.error.issues[0].message).toMatch(/au moins une option/);
+  });
+
   it("format BIC (regex générique, ISO 9362) : accepte 8 ou 11 caractères, rejette le reste", () => {
     const v = buildValidator(
       [field({ id: "bic", type: "text", regex: "^[A-Za-z]{6}[A-Za-z0-9]{2}([A-Za-z0-9]{3})?$" })],

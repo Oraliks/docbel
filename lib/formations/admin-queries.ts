@@ -126,19 +126,14 @@ export async function getTrainingCounts(): Promise<{
   byStatus: Record<TrainingStatus, number>;
   privateInternal: number;
   organizations: number;
-  openReports: number;
 }> {
-  const [grouped, privateInternal, organizations, openReports] =
-    await Promise.all([
-      prisma.training.groupBy({ by: ["status"], _count: { _all: true } }),
-      prisma.training.count({
-        where: { visibility: { in: ["private", "internal"] } },
-      }),
-      prisma.formationOrganization.count(),
-      prisma.trainingReport.count({
-        where: { status: { in: ["new", "in_progress"] } },
-      }),
-    ]);
+  const [grouped, privateInternal, organizations] = await Promise.all([
+    prisma.training.groupBy({ by: ["status"], _count: { _all: true } }),
+    prisma.training.count({
+      where: { visibility: { in: ["private", "internal"] } },
+    }),
+    prisma.formationOrganization.count(),
+  ]);
 
   const byStatus = Object.fromEntries(
     TRAINING_STATUSES.map((s) => [s, 0]),
@@ -152,7 +147,7 @@ export async function getTrainingCounts(): Promise<{
     }
   }
 
-  return { total, byStatus, privateInternal, organizations, openReports };
+  return { total, byStatus, privateInternal, organizations };
 }
 
 /** File d'attente de validation : pending_review + changes_requested. */

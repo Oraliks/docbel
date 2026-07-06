@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Languages, ListChecks, BookMarked, MessagesSquare } from "lucide-react";
+import { Languages, ListChecks, BookMarked } from "lucide-react";
 
 const TABS = [
   {
@@ -24,12 +24,6 @@ const TABS = [
     label: "Glossaire",
     icon: BookMarked,
     match: (p: string) => p.startsWith("/admin/i18n/glossaire"),
-  },
-  {
-    href: "/admin/i18n/suggestions",
-    label: "Corrections",
-    icon: MessagesSquare,
-    match: (p: string) => p.startsWith("/admin/i18n/suggestions"),
   },
 ];
 

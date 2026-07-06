@@ -2,16 +2,14 @@
 
 import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Activity, Building2, Eye, MapPinned, AlertCircle } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { Activity, Building2, Eye, MapPinned } from "lucide-react";
 import { BureausManager } from "./bureaux-manager";
 import { ServiceAssignmentsManager } from "./bureaux/service-assignments-manager";
 import { OnemAssignmentsManager } from "./bureaux/onem-assignments-manager";
-import { ReportsManager } from "./bureaux/reports-manager";
 import { HealthDashboard } from "./bureaux/health-dashboard";
 import { PreviewFinder } from "./bureaux/preview-finder";
 
-type Tab = "sante" | "preview" | "annuaire" | "services" | "onem" | "reports";
+type Tab = "sante" | "preview" | "annuaire" | "services" | "onem";
 
 // Onglet "commissions" retiré : la feature commission paritaire (syndicats
 // sectoriels) n'était pas surfacée côté front (pas de sélecteur). Code +
@@ -49,17 +47,10 @@ const TABS: Array<{ value: Tab; label: string; icon: React.ComponentType<{ class
     icon: MapPinned,
     help: "Vue dédiée ONEM avec sélection multi-communes",
   },
-  {
-    value: "reports",
-    label: "Signalements",
-    icon: AlertCircle,
-    help: "Erreurs remontées par les utilisateurs publics",
-  },
 ];
 
 export function BureauxAdminWorkspace() {
   const [tab, setTab] = useState<Tab>("sante");
-  const [pendingReports, setPendingReports] = useState<number | null>(null);
 
   // Sync depuis l'URL hash (initial + clic sidebar même page)
   useEffect(() => {
@@ -81,21 +72,6 @@ export function BureauxAdminWorkspace() {
     }
   }, [tab]);
 
-  // Badge sur "Signalements" pour les pending
-  useEffect(() => {
-    let cancelled = false;
-    fetch("/api/admin/bureaux/reports?status=pending")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((j) => {
-        if (cancelled || !j) return;
-        setPendingReports(j.total ?? 0);
-      })
-      .catch(() => {});
-    return () => {
-      cancelled = true;
-    };
-  }, [tab]);
-
   const currentTab = TABS.find((t) => t.value === tab);
 
   return (
@@ -108,14 +84,6 @@ export function BureauxAdminWorkspace() {
               <Icon className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">{t.label}</span>
               <span className="sm:hidden">{t.label.split(" ")[0]}</span>
-              {t.value === "reports" && pendingReports !== null && pendingReports > 0 && (
-                <Badge
-                  variant="destructive"
-                  className="h-4 px-1 text-[10px] ml-1"
-                >
-                  {pendingReports}
-                </Badge>
-              )}
             </TabsTrigger>
           );
         })}
@@ -143,10 +111,6 @@ export function BureauxAdminWorkspace() {
 
       <TabsContent value="onem" className="mt-0">
         <OnemAssignmentsManager />
-      </TabsContent>
-
-      <TabsContent value="reports" className="mt-0">
-        <ReportsManager />
       </TabsContent>
     </Tabs>
   );

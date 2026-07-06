@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { GraduationCap, Search, ShieldCheck, Flag, Building2 } from "lucide-react";
+import { GraduationCap, Search, ShieldCheck, Building2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -33,7 +33,6 @@ interface Props {
     byStatus: Record<TrainingStatus, number>;
     privateInternal: number;
     organizations: number;
-    openReports: number;
   };
 }
 
@@ -87,7 +86,7 @@ export function FormationsOverviewClient({ rows, counts }: Props) {
       </div>
 
       {/* Stat cards */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
         <StatCard label={t("statTotal")} value={counts.total} />
         <StatCard
           label={t("statPendingReview")}
@@ -110,13 +109,6 @@ export function FormationsOverviewClient({ rows, counts }: Props) {
           value={counts.organizations}
           icon={<Building2 className="size-4" />}
           href="/admin/formations/permissions"
-        />
-        <StatCard
-          label={t("statOpenReports")}
-          value={counts.openReports}
-          tone={counts.openReports ? "error" : "muted"}
-          icon={<Flag className="size-4" />}
-          href="/admin/formations/signalements"
         />
       </div>
 

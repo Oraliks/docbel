@@ -177,7 +177,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         { title: t("annuaire"), url: "/admin/bureaux#annuaire" },
         { title: t("competencesTerritoriales"), url: "/admin/bureaux#services" },
         { title: t("competencesOnem"), url: "/admin/bureaux#onem" },
-        { title: t("signalements"), url: "/admin/bureaux#reports" },
       ],
     },
     {
@@ -191,7 +190,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         { title: t("formationsValidation"), url: "/admin/formations/validation" },
         { title: t("formationsPermissions"), url: "/admin/formations/permissions" },
         { title: t("formationsCategories"), url: "/admin/formations/categories" },
-        { title: t("formationsSignalements"), url: "/admin/formations/signalements" },
         { title: t("formationsBoussole"), url: "/admin/formations/boussole" },
       ],
     },

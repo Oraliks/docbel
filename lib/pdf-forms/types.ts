@@ -223,6 +223,13 @@ export interface PdfFormField {
   /// `lib/pdf-forms/field-derivations.ts` (registre des fonctions de
   /// dérivation) et par le form-runner (calcul réactif + rendu verrouillé).
   derivedFrom?: { fieldId: string; via: FieldDerivation };
+  /// Active l'autocomplete de rue belge (BeStAddress, ~144k rues, via
+  /// `/api/lookup/search?tableSlug=code-rue`) sur un champ `text`.
+  /// `postalFieldId` = id du champ code postal du MÊME formulaire : les
+  /// suggestions dont le code postal correspond remontent en tête ; choisir
+  /// une suggestion remplit aussi ce champ code postal en retour (cf.
+  /// components/ui/street-autocomplete-input.tsx).
+  streetAutocomplete?: { postalFieldId: string };
 
   // Méta technique (non exposée au public)
   /// Note interne admin — JAMAIS exposée côté public.

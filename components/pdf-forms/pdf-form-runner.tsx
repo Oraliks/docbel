@@ -656,6 +656,12 @@ function FieldsCluster({
   // depuis le champ source, jamais stocké dans `values` (cf. PdfField.derivedValue).
   const deriveValueFor = (f: PublicField): string | null =>
     f.derivedFrom ? FIELD_DERIVATIONS[f.derivedFrom.via](values[f.derivedFrom.fieldId] ?? "") : null;
+  // Code postal courant du champ désigné par `f.streetAutocomplete`, pour
+  // prioriser les suggestions de rue correspondantes (cf. PdfField).
+  const relatedPostalCodeFor = (f: PublicField): string | undefined => {
+    const raw = f.streetAutocomplete ? values[f.streetAutocomplete.postalFieldId] : undefined;
+    return typeof raw === "string" ? raw : undefined;
+  };
 
   return (
     <div className="flex flex-col gap-4">
@@ -715,6 +721,10 @@ function FieldsCluster({
                 formId={formId}
                 formSlug={formSlug}
                 derivedValue={deriveValueFor(f)}
+                relatedPostalCode={relatedPostalCodeFor(f)}
+                onSelectStreetSuggestion={(postalCode) => {
+                  if (f.streetAutocomplete) setValue(f.streetAutocomplete.postalFieldId, postalCode);
+                }}
               />
             </div>
           ))}
@@ -1160,6 +1170,10 @@ function LegacyRunnerBody({
                       formId={form.id}
                       formSlug={form.slug}
                       derivedValue={f.derivedFrom ? FIELD_DERIVATIONS[f.derivedFrom.via](values[f.derivedFrom.fieldId] ?? "") : null}
+                      relatedPostalCode={f.streetAutocomplete && typeof values[f.streetAutocomplete.postalFieldId] === "string" ? (values[f.streetAutocomplete.postalFieldId] as string) : undefined}
+                      onSelectStreetSuggestion={(postalCode) => {
+                        if (f.streetAutocomplete) setValue(f.streetAutocomplete.postalFieldId, postalCode);
+                      }}
                     />
                   </div>
                 ))}

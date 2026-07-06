@@ -14,6 +14,8 @@ import {
 } from "@/components/ui/select";
 import { Field, FieldLabel, FieldDescription } from "@/components/ui/field";
 import { NissInput } from "@/components/ui/niss-input";
+import { StreetAutocompleteInput } from "@/components/ui/street-autocomplete-input";
+import { usePostalCommuneHint } from "@/components/ui/use-postal-commune-hint";
 import { InfoTooltip } from "@/components/ui/info-tooltip";
 import { YesNoSegmentedControl } from "@/components/ui/yes-no-segmented";
 import { FieldErrorReport } from "./field-error-report";
@@ -57,6 +59,13 @@ interface Props {
   /// de `value` ; null = le champ source ne produit rien pour l'instant,
   /// reste normalement éditable. Ignoré si `field.derivedFrom` est absent.
   derivedValue?: string | null;
+  /// Valeur ACTUELLE du champ code postal désigné par `field.streetAutocomplete`
+  /// (si présent) — sert à prioriser les suggestions de rue correspondantes.
+  relatedPostalCode?: string;
+  /// Appelé quand l'utilisateur choisit une suggestion de rue qui porte un
+  /// code postal : permet au formulaire de remplir le champ code postal en
+  /// retour. Ignoré si `field.streetAutocomplete` est absent.
+  onSelectStreetSuggestion?: (postalCode: string) => void;
 }
 
 /// Rend le label + une InfoTooltip si `help` est présent — remplace
@@ -72,10 +81,19 @@ function LabelWithTooltip({ label, help, required }: { label: string; help: stri
   );
 }
 
-export function PdfField({ field, value, error, locale, onChange, formId, formSlug, rowLayout = false, derivedValue = null }: Props) {
+export function PdfField({
+  field, value, error, locale, onChange, formId, formSlug, rowLayout = false,
+  derivedValue = null, relatedPostalCode, onSelectStreetSuggestion,
+}: Props) {
   const label = loc(field.label, locale);
   const help = loc(field.help, locale);
   const placeholder = loc(field.placeholder, locale);
+
+  // Hook appelé INCONDITIONNELLEMENT (règles des hooks — le composant a
+  // plusieurs retours anticipés selon field.type plus bas) ; sans effet pour
+  // tout type ≠ postal_be (la valeur n'est utilisée que dans le rendu
+  // générique, plus bas, et le hook lui-même ignore une valeur non-4-chiffres).
+  const communeHint = usePostalCommuneHint(typeof value === "string" ? value : "");
 
   // Validation en direct au blur : erreur de format immédiate + ✓ vert quand
   // le champ est rempli et valide. Une erreur serveur/soumission (`error`)
@@ -333,28 +351,43 @@ export function PdfField({ field, value, error, locale, onChange, formId, formSl
   // dans lib/pdf-forms/types.ts.
   const locked = autoToday || isDerivedLocked || field.readOnly === true;
   const displayValue = isDerivedLocked ? derivedValue : ((value as string | number) ?? "");
+  const useStreetAutocomplete = field.streetAutocomplete != null && !locked;
   return (
     <Field data-invalid={invalid} className="gap-1.5">
       <FieldLabel htmlFor={field.id}>
         <LabelWithTooltip label={label} help={help} required={field.required} />
       </FieldLabel>
       <div className="flex items-center gap-2">
-        <Input
-          id={field.id}
-          type={hint.type ?? "text"}
-          inputMode={hint.inputMode}
-          value={displayValue}
-          placeholder={placeholder}
-          maxLength={field.maxLength}
-          min={field.min}
-          max={field.max}
-          aria-invalid={invalid}
-          disabled={locked}
-          readOnly={locked}
-          onChange={(e) => onChange(e.target.value)}
-          onBlur={markTouched}
-          className="flex-1"
-        />
+        {useStreetAutocomplete ? (
+          <StreetAutocompleteInput
+            id={field.id}
+            value={String(displayValue)}
+            placeholder={placeholder}
+            aria-invalid={invalid}
+            className="flex-1"
+            postalCode={relatedPostalCode}
+            onChange={(v) => onChange(v)}
+            onSelectSuggestion={(s) => onSelectStreetSuggestion?.(s.postalCode)}
+            onBlur={markTouched}
+          />
+        ) : (
+          <Input
+            id={field.id}
+            type={hint.type ?? "text"}
+            inputMode={hint.inputMode}
+            value={displayValue}
+            placeholder={placeholder}
+            maxLength={field.maxLength}
+            min={field.min}
+            max={field.max}
+            aria-invalid={invalid}
+            disabled={locked}
+            readOnly={locked}
+            onChange={(e) => onChange(e.target.value)}
+            onBlur={markTouched}
+            className="flex-1"
+          />
+        )}
         {showValid && (
           <CheckCircle2Icon className="size-5 shrink-0 text-emerald-600 dark:text-emerald-400" aria-label="Valide" />
         )}
@@ -367,6 +400,9 @@ export function PdfField({ field, value, error, locale, onChange, formId, formSl
       )}
       {field.readOnly && !autoToday && !isDerivedLocked && !help && (
         <FieldDescription>Champ verrouillé pour ce dossier.</FieldDescription>
+      )}
+      {field.type === "postal_be" && communeHint && (
+        <FieldDescription>→ {communeHint}</FieldDescription>
       )}
       {errorReport}
     </Field>

@@ -148,6 +148,11 @@ export interface FieldOption {
   label: Localized;
 }
 
+/// Dérivations de champ disponibles (registre pur dans field-derivations.ts,
+/// sans dépendance lourde — safe à importer côté client). Union fermée :
+/// chaque nouvelle dérivation (ex. futur code postal → commune) s'y ajoute.
+export type FieldDerivation = "niss-birth-date";
+
 export interface PdfFormField {
   /// Identifiant stable côté schéma enrichi (slug). Distinct de pdfFieldName.
   id: string;
@@ -209,6 +214,15 @@ export interface PdfFormField {
   /// reste réel et requis, mais l'utilisateur ne choisit plus parmi 4
   /// options — il choisit parmi les 5 chips concrets qui pilotent sa valeur.
   autoAnswered?: boolean;
+  /// Champ dont la valeur se RECALCULE EN DIRECT à partir d'un autre champ du
+  /// même formulaire (ex. date de naissance déduite du NISS). Contrairement à
+  /// `autoAnswered`, le champ RESTE visible et normalement éditable — il ne se
+  /// verrouille (lecture seule, valeur remplacée) que lorsque le champ source
+  /// produit ACTUELLEMENT une valeur dérivée valide ; sinon l'utilisateur peut
+  /// le remplir à la main (ex. NISS incomplet/absent). Consommé par
+  /// `lib/pdf-forms/field-derivations.ts` (registre des fonctions de
+  /// dérivation) et par le form-runner (calcul réactif + rendu verrouillé).
+  derivedFrom?: { fieldId: string; via: FieldDerivation };
 
   // Méta technique (non exposée au public)
   /// Note interne admin — JAMAIS exposée côté public.

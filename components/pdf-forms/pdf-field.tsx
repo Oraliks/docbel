@@ -50,6 +50,13 @@ interface Props {
   /// false = rendu historique inchangé. Ne concerne que checkbox et radio à
   /// 2 options ; ignoré pour les autres types.
   rowLayout?: boolean;
+  /// Valeur COURANTE calculée par `field.derivedFrom` (cf. lib/pdf-forms/
+  /// field-derivations.ts), recalculée à CHAQUE rendu par l'appelant à partir
+  /// du champ source — jamais stockée dans le state du formulaire. Non-null
+  /// = le champ se verrouille (lecture seule) et affiche CETTE valeur au lieu
+  /// de `value` ; null = le champ source ne produit rien pour l'instant,
+  /// reste normalement éditable. Ignoré si `field.derivedFrom` est absent.
+  derivedValue?: string | null;
 }
 
 /// Rend le label + une InfoTooltip si `help` est présent — remplace
@@ -65,7 +72,7 @@ function LabelWithTooltip({ label, help, required }: { label: string; help: stri
   );
 }
 
-export function PdfField({ field, value, error, locale, onChange, formId, formSlug, rowLayout = false }: Props) {
+export function PdfField({ field, value, error, locale, onChange, formId, formSlug, rowLayout = false, derivedValue = null }: Props) {
   const label = loc(field.label, locale);
   const help = loc(field.help, locale);
   const placeholder = loc(field.placeholder, locale);
@@ -318,6 +325,11 @@ export function PdfField({ field, value, error, locale, onChange, formId, formSl
   const hint = INPUT_HINTS[field.type] || {};
   // Date auto (date de génération) : pré-remplie et non éditable.
   const autoToday = field.prefillFrom === "system.today";
+  // Champ dérivé (ex. date de naissance ← NISS) : verrouillé UNIQUEMENT tant
+  // que la dérivation produit une valeur ; sinon reste normalement éditable.
+  const isDerivedLocked = field.derivedFrom != null && derivedValue != null;
+  const locked = autoToday || isDerivedLocked;
+  const displayValue = isDerivedLocked ? derivedValue : ((value as string | number) ?? "");
   return (
     <Field data-invalid={invalid} className="gap-1.5">
       <FieldLabel htmlFor={field.id}>
@@ -328,14 +340,14 @@ export function PdfField({ field, value, error, locale, onChange, formId, formSl
           id={field.id}
           type={hint.type ?? "text"}
           inputMode={hint.inputMode}
-          value={(value as string | number) ?? ""}
+          value={displayValue}
           placeholder={placeholder}
           maxLength={field.maxLength}
           min={field.min}
           max={field.max}
           aria-invalid={invalid}
-          disabled={autoToday}
-          readOnly={autoToday}
+          disabled={locked}
+          readOnly={locked}
           onChange={(e) => onChange(e.target.value)}
           onBlur={markTouched}
           className="flex-1"
@@ -346,6 +358,9 @@ export function PdfField({ field, value, error, locale, onChange, formId, formSl
       </div>
       {autoToday && !help && (
         <FieldDescription>Date de génération du document (automatique).</FieldDescription>
+      )}
+      {isDerivedLocked && (
+        <FieldDescription>Champ rempli automatiquement — modifiable si besoin en corrigeant le champ source.</FieldDescription>
       )}
       {errorReport}
     </Field>

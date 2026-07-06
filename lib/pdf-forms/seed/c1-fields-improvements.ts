@@ -132,7 +132,16 @@ export const C1_QUESTIONS: PdfFormField[] = [
     type: "date",
     required: true,
     label: { fr: "Date de naissance", nl: "", de: "" },
+    help: {
+      fr: "Déduite automatiquement de ton NISS dès qu'il est complet et valide — sinon, renseigne-la toi-même.",
+      nl: "", de: "",
+    },
     prefillFrom: "itsme.birthDate",
+    // Se recalcule en direct depuis le NISS (checksum T.I. 000, cf.
+    // lib/pdf-forms/niss-birthdate.ts) et se verrouille (lecture seule)
+    // TANT QUE le NISS produit une date valide ; redevient éditable si le
+    // NISS est vide/incomplet (jamais de champ requis inaccessible).
+    derivedFrom: { fieldId: "niss", via: "niss-birth-date" },
     section: SECTION_IDENTITE,
     order: -97,
   },

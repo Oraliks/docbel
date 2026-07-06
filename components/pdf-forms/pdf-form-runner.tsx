@@ -28,6 +28,7 @@ import { todayISO } from "@/lib/pdf-forms/system-values";
 import { resolveSignerName } from "@/lib/pdf-forms/signature";
 import { isAutoField, isCreationDateField, isSignatureField } from "@/lib/pdf-forms/auto-fields";
 import { applyMotifTransferOverride } from "@/lib/pdf-forms/c1-motif-transfer";
+import { FIELD_DERIVATIONS, applyFieldDerivations } from "@/lib/pdf-forms/field-derivations";
 import type { PublicForm, PublicField } from "@/lib/pdf-forms/public-serializer";
 import { buildSteps, buildMacroSteps, type OptionalSection, type MacroStep } from "@/lib/pdf-forms/build-steps";
 import { sectionLabel } from "@/lib/pdf-forms/section-labels";
@@ -238,7 +239,13 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, onValuesChange
     // citoyen a coché "transfert vers un autre organisme de paiement" (case
     // PDF mutuellement exclusive avec "modification", jamais soumise en
     // même temps — cf. lib/pdf-forms/c1-motif-transfer.ts).
-    const signedValues: FormPayload = applyMotifTransferOverride({ ...values });
+    // applyFieldDerivations : synchronise les champs `derivedFrom` (ex. date
+    // de naissance ← NISS) sur leur valeur ACTUELLEMENT affichée (verrouillée
+    // à l'écran), au cas où `values` garderait une saisie manuelle antérieure.
+    const signedValues: FormPayload = applyFieldDerivations(
+      applyMotifTransferOverride({ ...values }),
+      form.fields
+    );
     if (signerName) {
       for (const f of form.fields) {
         if (isSignatureField(f)) signedValues[f.id] = "confirmed";
@@ -645,6 +652,10 @@ function FieldsCluster({
   const chipFields = fields.filter((f) => f.renderAs === "chip");
   const rowFields = fields.filter(isRowField);
   const otherFields = fields.filter((f) => f.renderAs !== "chip" && !isRowField(f));
+  // Champ dérivé (ex. date de naissance ← NISS) : recalculé À CHAQUE RENDU
+  // depuis le champ source, jamais stocké dans `values` (cf. PdfField.derivedValue).
+  const deriveValueFor = (f: PublicField): string | null =>
+    f.derivedFrom ? FIELD_DERIVATIONS[f.derivedFrom.via](values[f.derivedFrom.fieldId] ?? "") : null;
 
   return (
     <div className="flex flex-col gap-4">
@@ -686,6 +697,7 @@ function FieldsCluster({
               formId={formId}
               formSlug={formSlug}
               rowLayout
+              derivedValue={deriveValueFor(f)}
             />
           ))}
         </div>
@@ -702,6 +714,7 @@ function FieldsCluster({
                 onChange={(v) => setValue(f.id, v)}
                 formId={formId}
                 formSlug={formSlug}
+                derivedValue={deriveValueFor(f)}
               />
             </div>
           ))}
@@ -1146,6 +1159,7 @@ function LegacyRunnerBody({
                       onChange={(v) => setValue(f.id, v)}
                       formId={form.id}
                       formSlug={form.slug}
+                      derivedValue={f.derivedFrom ? FIELD_DERIVATIONS[f.derivedFrom.via](values[f.derivedFrom.fieldId] ?? "") : null}
                     />
                   </div>
                 ))}

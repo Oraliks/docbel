@@ -3,14 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import {
-  ClockIcon,
-  ShieldCheckIcon,
-  HelpCircleIcon,
-  ChevronRightIcon,
-  UserIcon,
-  SparklesIcon,
-} from "lucide-react";
+import { ChevronRightIcon, UserIcon, SparklesIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { PdfFormRunner } from "./pdf-form-runner";
 import type { PublicForm } from "@/lib/pdf-forms/public-serializer";
@@ -34,11 +27,6 @@ interface Props {
 /// meta, puis 2 colonnes (formulaire à gauche, résumé live à droite).
 export function DocumentPageLayout({ form, bundlePrefill, bundleRunId, bundleSlug, dossierTypes, legacyLayout }: Props) {
   const t = useTranslations("public.dossier");
-
-  const timeEstimate = useMemo(() => {
-    const seconds = Math.max(2 * 60, Math.min(30 * 60, form.fields.length * 30));
-    return t("docPageTimeEstimateMin", { value: Math.round(seconds / 60) });
-  }, [form.fields.length, t]);
 
   // Abréviation pour l'illustration : "C32_Travailleur" → "C32".
   const docAbbrev = useMemo(() => {
@@ -92,15 +80,6 @@ export function DocumentPageLayout({ form, bundlePrefill, bundleRunId, bundleSlu
               {form.description}
             </p>
           )}
-
-          {/* Barre meta : une seule barre blanche avec 3 segments (cf. mockup) */}
-          <div className="glass-surface mt-1 flex w-fit max-w-full flex-wrap items-center gap-1 rounded-2xl px-2 py-1.5">
-            <MetaSegment icon={<ClockIcon className="size-4" />} label={t("docPageMetaTimeLabel")} value={timeEstimate} />
-            <span className="mx-1 hidden h-8 w-px bg-[color:var(--glass-border)] sm:block" />
-            <MetaSegment icon={<ShieldCheckIcon className="size-4" />} label={t("docPageMetaSecurityLabel")} value={t("docPageMetaSecurityValue")} />
-            <span className="mx-1 hidden h-8 w-px bg-[color:var(--glass-border)] sm:block" />
-            <MetaSegment icon={<HelpCircleIcon className="size-4" />} label={t("helpTitle")} value={t("docPageMetaHelpValue")} href="#aide" accent />
-          </div>
         </div>
 
         {/* Illustration décorative — masquée sur mobile.
@@ -237,45 +216,6 @@ function DocIllustration({
         }
       `}</style>
     </div>
-  );
-}
-
-function MetaSegment({
-  icon,
-  label,
-  value,
-  href,
-  accent,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-  href?: string;
-  accent?: boolean;
-}) {
-  const inner = (
-    <div className="flex items-center gap-2.5 rounded-xl px-3 py-1.5">
-      <span className="flex size-8 items-center justify-center rounded-full bg-[color:var(--glass-pop-bg)] text-[color:var(--glass-accent-deep)]">
-        {icon}
-      </span>
-      <span className="flex flex-col leading-tight">
-        <span className="text-[11px] text-[color:var(--glass-ink-faint)]">{label}</span>
-        <span
-          className={`text-[13px] font-semibold ${
-            accent ? "text-[color:var(--glass-accent-deep)]" : "text-[color:var(--glass-ink)]"
-          }`}
-        >
-          {value}
-        </span>
-      </span>
-    </div>
-  );
-  return href ? (
-    <a href={href} className="rounded-xl hover:bg-[color:var(--glass-pop-bg)]/40">
-      {inner}
-    </a>
-  ) : (
-    inner
   );
 }
 

@@ -796,6 +796,16 @@ const MACRO_TITLE_KEY: Record<string, string> = {
   final: "runnerGroupFinal",
 };
 
+/// Description courte affichée sous le titre dans le nouveau stepper
+/// (barre de progression + liste numérotée) — cf. FormStepperItem.description.
+const MACRO_DESC_KEY: Record<string, string> = {
+  motif: "runnerGroupMotifDesc",
+  identite: "runnerGroupIdentiteDesc",
+  "activites-revenus": "runnerGroupActivitesRevenusDesc",
+  famille: "runnerGroupFamilleDesc",
+  final: "runnerGroupFinalDesc",
+};
+
 interface MacroRunnerBodyProps {
   form: PublicForm;
   macroSteps: MacroStep[];
@@ -838,6 +848,10 @@ function MacroRunnerBody({
   const titleFor = (id: string) => {
     const k = MACRO_TITLE_KEY[id];
     return k ? t(k) : id;
+  };
+  const descFor = (id: string) => {
+    const k = MACRO_DESC_KEY[id];
+    return k ? t(k) : undefined;
   };
   const stepHasError = (ms: MacroStep) =>
     ms.sections.some((sec) => sec.fields.some((f) => errors[f.id])) ||
@@ -893,7 +907,7 @@ function MacroRunnerBody({
             <FormStepper
               steps={macroSteps.map((s) => {
                 const meta = computeStepMeta(stepFieldsOf(s), values, locale, (c) => t("runnerStepRemaining", { count: c }));
-                return { id: s.id, label: titleFor(s.id), hasError: stepHasError(s), ...meta };
+                return { id: s.id, label: titleFor(s.id), description: descFor(s.id), hasError: stepHasError(s), ...meta };
               })}
               activeIndex={activeIndex}
               onSelect={handleStepSelect}

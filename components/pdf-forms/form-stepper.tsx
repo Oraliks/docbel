@@ -1,6 +1,7 @@
 "use client";
 
-import { CheckIcon } from "lucide-react";
+import { ClockIcon } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 export interface FormStepperItem {
   id: string;
@@ -12,6 +13,11 @@ export interface FormStepperItem {
   /// Libellé secondaire affiché sous le titre de l'étape ACTIVE (ex. « 2
   /// champs restants »). Absent = rien.
   subLabel?: string;
+  /// Description courte et STATIQUE de l'étape (ex. « Précise l'objet de ta
+  /// demande »), affichée sous le titre pour TOUTES les étapes (pas
+  /// seulement l'active), contrairement à `subLabel`. Absent = pas de
+  /// description (ex. formulaires sans macro-étapes curées).
+  description?: string;
 }
 
 interface FormStepperProps {
@@ -20,49 +26,51 @@ interface FormStepperProps {
   onSelect: (index: number) => void;
 }
 
-/// Stepper horizontal : cercles généreux (numéro → coche une fois l'étape
-/// passée), connecteurs qui s'étirent sur la largeur disponible (violets
-/// pour le chemin déjà parcouru), libellés courts. États : passé = teinte
-/// lilas + coche ; actif = violet plein ; à venir = discret.
+/// Barre de progression (dégradé violet → rose, libellé + pastille « N / T
+/// étapes ») suivie d'une liste numérotée des étapes. Remplace l'ancien
+/// stepper à cercles/connecteurs — la navigation (clic sur une étape) reste
+/// identique, seule la représentation visuelle change.
 export function FormStepper({ steps, activeIndex, onSelect }: FormStepperProps) {
+  const t = useTranslations("public.dossier");
+  const total = steps.length;
+  const pct = total > 0 ? ((activeIndex + 1) / total) * 100 : 0;
+
   return (
-    <ol className="flex items-center overflow-x-auto px-2 py-3">
-      {steps.map((step, i) => {
-        const isActive = i === activeIndex;
-        // Coche verte pilotée par la VRAIE complétion (pas la position) ;
-        // repli : une étape passée sans complétion connue reste « faite ».
-        const done = step.complete ?? i < activeIndex;
-        const isLast = i === steps.length - 1;
-        return (
-          <li key={step.id} className={`flex min-w-fit items-center ${isLast ? "" : "flex-1"}`}>
-            <button
-              type="button"
-              onClick={() => onSelect(i)}
-              aria-current={isActive ? "step" : undefined}
-              className="flex shrink-0 items-center gap-2.5 rounded-full py-1.5 pl-1.5 pr-3 transition-colors hover:bg-[color:var(--glass-pop-bg)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
-            >
-              <span
-                className={`flex size-8 shrink-0 items-center justify-center rounded-full text-[13px] font-bold transition-colors ${
-                  done
-                    ? "bg-emerald-500 text-white shadow-[0_6px_16px_-6px_rgba(16,185,129,0.5)]"
-                    : isActive
-                    ? "bg-[color:var(--glass-accent-deep,#5B46E5)] text-white shadow-[0_6px_16px_-6px_rgba(91,70,229,0.55)]"
-                    : "border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] text-[color:var(--glass-ink-soft)]"
-                }`}
+    <div className="flex flex-col gap-4 px-2 py-3">
+      {/* Barre de progression */}
+      <div className="relative flex h-11 w-full items-center rounded-full bg-[color:var(--glass-pop-bg)] p-1">
+        <div
+          className="flex h-full min-w-fit shrink-0 items-center gap-2 rounded-full bg-gradient-to-r from-[color:var(--glass-accent-deep,#5B46E5)] to-pink-500 px-4 text-[13px] font-semibold text-white shadow-[0_4px_14px_-4px_rgba(91,70,229,0.5)] transition-[width] duration-300"
+          style={{ width: `${pct}%` }}
+        >
+          <ClockIcon className="size-4 shrink-0" aria-hidden />
+          <span className="truncate">{t("runnerProgressBarLabel")}</span>
+        </div>
+        <span className="ml-auto mr-1.5 shrink-0 rounded-full bg-[color:var(--glass-surface)] px-3 py-1.5 text-[12px] font-bold text-[color:var(--glass-ink)] shadow-sm">
+          {t("runnerStepBadge", { current: activeIndex + 1, total })}
+        </span>
+      </div>
+
+      {/* Liste des étapes */}
+      <ol className="flex flex-wrap gap-x-6 gap-y-3 overflow-x-auto">
+        {steps.map((step, i) => {
+          const isActive = i === activeIndex;
+          return (
+            <li key={step.id} className="min-w-[110px] flex-1">
+              <button
+                type="button"
+                onClick={() => onSelect(i)}
+                aria-current={isActive ? "step" : undefined}
+                className="flex w-full flex-col items-start gap-0.5 rounded-lg text-left transition-colors hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
               >
-                {done ? <CheckIcon className="size-4" strokeWidth={3} /> : i + 1}
-              </span>
-              <span className="flex min-w-0 flex-col leading-tight">
                 <span
-                  className={`max-w-[160px] truncate text-[13px] ${
+                  className={`truncate text-[13px] ${
                     isActive
-                      ? "font-bold text-[color:var(--glass-ink)]"
-                      : done
-                      ? "font-semibold text-[color:var(--glass-ink)]"
-                      : "font-medium text-[color:var(--glass-ink-soft)]"
+                      ? "border-b-2 border-[color:var(--glass-accent-deep,#5B46E5)] pb-0.5 font-bold text-[color:var(--glass-ink)]"
+                      : "font-semibold text-[color:var(--glass-ink-soft)]"
                   }`}
                 >
-                  {step.label}
+                  {String(i + 1).padStart(2, "0")}. {step.label}
                   {step.hasError && (
                     <span
                       className="ml-1.5 inline-block size-1.5 rounded-full bg-destructive align-middle"
@@ -70,26 +78,16 @@ export function FormStepper({ steps, activeIndex, onSelect }: FormStepperProps) 
                     />
                   )}
                 </span>
-                {isActive && step.subLabel && (
-                  <span className="truncate text-[11px] font-medium text-[color:var(--glass-accent-deep,#5B46E5)]">
-                    {step.subLabel}
+                {step.description && (
+                  <span className="truncate text-[11px] text-[color:var(--glass-ink-faint)]">
+                    {step.description}
                   </span>
                 )}
-              </span>
-            </button>
-            {!isLast && (
-              <span
-                aria-hidden
-                className={`mx-1 h-px min-w-5 flex-1 transition-colors ${
-                  done
-                    ? "bg-emerald-500"
-                    : "bg-[color:var(--glass-border)]"
-                }`}
-              />
-            )}
-          </li>
-        );
-      })}
-    </ol>
+              </button>
+            </li>
+          );
+        })}
+      </ol>
+    </div>
   );
 }

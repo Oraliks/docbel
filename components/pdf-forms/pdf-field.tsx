@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+import { CheckCircle2Icon } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -18,6 +20,7 @@ import { FieldErrorReport } from "./field-error-report";
 import { ArrayField } from "./array-field";
 import { loc, Locale, FieldValue, FullNameValue, isFullNameValue, FieldOption } from "@/lib/pdf-forms/types";
 import type { PublicField } from "@/lib/pdf-forms/public-serializer";
+import { validateFieldFormat, FORMAT_VALIDATABLE_TYPES } from "@/lib/pdf-forms/validation";
 
 // Type HTML + inputMode adaptés au type sémantique (clavier mobile pertinent).
 const INPUT_HINTS: Record<string, { type?: string; inputMode?: "numeric" | "tel" | "email" | "text" }> = {
@@ -66,12 +69,26 @@ export function PdfField({ field, value, error, locale, onChange, formId, formSl
   const label = loc(field.label, locale);
   const help = loc(field.help, locale);
   const placeholder = loc(field.placeholder, locale);
-  const invalid = !!error;
+
+  // Validation en direct au blur : erreur de format immédiate + ✓ vert quand
+  // le champ est rempli et valide. Une erreur serveur/soumission (`error`)
+  // reste prioritaire. Le vide ne déclenche rien (le requis se gère à l'envoi).
+  const [touched, setTouched] = useState(false);
+  const formatError = touched ? validateFieldFormat(field, value, locale) : null;
+  const effError = error ?? formatError ?? undefined;
+  const invalid = !!effError;
+  const showValid =
+    touched &&
+    !effError &&
+    FORMAT_VALIDATABLE_TYPES.has(field.type) &&
+    typeof value === "string" &&
+    value.trim() !== "";
+  const markTouched = () => setTouched(true);
 
   // Helper local : évite de répéter les mêmes props 6 fois.
   const errorReport = (
     <FieldErrorReport
-      error={error}
+      error={effError}
       fieldId={field.id}
       fieldType={field.type}
       rejectedValue={value}
@@ -279,12 +296,19 @@ export function PdfField({ field, value, error, locale, onChange, formId, formSl
         <FieldLabel htmlFor={field.id}>
           <LabelWithTooltip label={label} help={help} required={field.required} />
         </FieldLabel>
-        <NissInput
-          id={field.id}
-          value={(value as string) ?? ""}
-          aria-invalid={invalid}
-          onChange={(v) => onChange(v)}
-        />
+        <div className="flex items-center gap-2" onBlur={markTouched}>
+          <div className="flex-1">
+            <NissInput
+              id={field.id}
+              value={(value as string) ?? ""}
+              aria-invalid={invalid}
+              onChange={(v) => onChange(v)}
+            />
+          </div>
+          {showValid && (
+            <CheckCircle2Icon className="size-5 shrink-0 text-emerald-600 dark:text-emerald-400" aria-label="Valide" />
+          )}
+        </div>
         {errorReport}
       </Field>
     );
@@ -299,20 +323,27 @@ export function PdfField({ field, value, error, locale, onChange, formId, formSl
       <FieldLabel htmlFor={field.id}>
         <LabelWithTooltip label={label} help={help} required={field.required} />
       </FieldLabel>
-      <Input
-        id={field.id}
-        type={hint.type ?? "text"}
-        inputMode={hint.inputMode}
-        value={(value as string | number) ?? ""}
-        placeholder={placeholder}
-        maxLength={field.maxLength}
-        min={field.min}
-        max={field.max}
-        aria-invalid={invalid}
-        disabled={autoToday}
-        readOnly={autoToday}
-        onChange={(e) => onChange(e.target.value)}
-      />
+      <div className="flex items-center gap-2">
+        <Input
+          id={field.id}
+          type={hint.type ?? "text"}
+          inputMode={hint.inputMode}
+          value={(value as string | number) ?? ""}
+          placeholder={placeholder}
+          maxLength={field.maxLength}
+          min={field.min}
+          max={field.max}
+          aria-invalid={invalid}
+          disabled={autoToday}
+          readOnly={autoToday}
+          onChange={(e) => onChange(e.target.value)}
+          onBlur={markTouched}
+          className="flex-1"
+        />
+        {showValid && (
+          <CheckCircle2Icon className="size-5 shrink-0 text-emerald-600 dark:text-emerald-400" aria-label="Valide" />
+        )}
+      </div>
       {autoToday && !help && (
         <FieldDescription>Date de génération du document (automatique).</FieldDescription>
       )}

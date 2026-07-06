@@ -3717,6 +3717,7 @@
       "runnerConfirmationReady": "Uw aangifte is klaar om te worden verzonden.",
       "runnerConfirmationNameForSignature": "Vul uw naam bovenaan het formulier in om digitaal te ondertekenen.",
       "runnerStepCounter": "Stap {current} van {total}",
+      "runnerStepRemaining": "{count, plural, one {nog # veld} other {nog # velden}}",
       "runnerHelpPanelEyebrow": "Contextuele hulp",
       "runnerHelpExamplesLabel": "Voorbeelden",
       "runnerHelpNeedHelpTitle": "Hulp nodig?",

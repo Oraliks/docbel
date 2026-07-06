@@ -4732,6 +4732,7 @@
       "runnerConfirmationReady": "Votre déclaration est prête à être envoyée.",
       "runnerConfirmationNameForSignature": "Renseignez votre nom en début de formulaire pour signer numériquement.",
       "runnerStepCounter": "Étape {current} sur {total}",
+      "runnerStepRemaining": "{count, plural, one {# champ restant} other {# champs restants}}",
       "runnerHelpPanelEyebrow": "Aide contextuelle",
       "runnerHelpExamplesLabel": "Exemples",
       "runnerHelpNeedHelpTitle": "Besoin d'aide ?",

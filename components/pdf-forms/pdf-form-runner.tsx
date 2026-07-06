@@ -22,7 +22,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { PdfField } from "./pdf-field";
-import { buildValidator } from "@/lib/pdf-forms/validation";
+import { buildValidator, isFieldComplete } from "@/lib/pdf-forms/validation";
 import { Locale, FieldValue, FormPayload, PdfFormField, loc } from "@/lib/pdf-forms/types";
 import { todayISO } from "@/lib/pdf-forms/system-values";
 import { resolveSignerName } from "@/lib/pdf-forms/signature";
@@ -406,7 +406,11 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, onValuesChange
         <Card className="overflow-hidden rounded-3xl border-0 bg-card shadow-sm">
           <div className="border-b border-[color:var(--glass-border)] px-3">
             <FormStepper
-              steps={steps.map((s) => ({ id: s.id, label: s.title, hasError: stepHasError(s) }))}
+              steps={steps.map((s) => {
+                const fs = s.kind === "fields" ? s.fields : s.kind === "optional-group" ? s.sections.flatMap((sec) => sec.fields) : [];
+                const meta = computeStepMeta(fs, values, locale, (c) => t("runnerStepRemaining", { count: c }));
+                return { id: s.id, label: s.title, hasError: stepHasError(s), ...meta };
+              })}
               activeIndex={activeIndex}
               onSelect={setActive}
             />
@@ -670,6 +674,22 @@ function FieldsCluster({
   );
 }
 
+/// Métadonnées de complétion d'une étape pour le stepper : `complete` (tous
+/// les champs REQUIS remplis et valides) + `subLabel` (« N champs restants »).
+/// Une étape sans champ requis ne renvoie rien (ni coche, ni compteur).
+function computeStepMeta(
+  fields: PublicField[],
+  values: FormPayload,
+  locale: Locale,
+  remainingLabel: (count: number) => string
+): { complete?: boolean; subLabel?: string } {
+  const required = fields.filter((f) => f.required);
+  if (required.length === 0) return {};
+  const filled = required.filter((f) => isFieldComplete(f, values[f.id], locale)).length;
+  const remaining = required.length - filled;
+  return { complete: remaining === 0, subLabel: remaining > 0 ? remainingLabel(remaining) : undefined };
+}
+
 /// Compteur d'étape + barre de progression fine + pourcentage (pied d'étape).
 function StepProgress({ current, total, label }: { current: number; total: number; label: string }) {
   const pct = total > 0 ? Math.round((current / total) * 100) : 0;
@@ -804,7 +824,11 @@ function MacroRunnerBody({
         <Card className="overflow-hidden rounded-3xl border-0 bg-card shadow-sm">
           <div className="border-b border-[color:var(--glass-border)] px-3">
             <FormStepper
-              steps={macroSteps.map((s) => ({ id: s.id, label: titleFor(s.id), hasError: stepHasError(s) }))}
+              steps={macroSteps.map((s) => {
+                const fs = [...s.sections.flatMap((sec) => sec.fields), ...s.advanced];
+                const meta = computeStepMeta(fs, values, locale, (c) => t("runnerStepRemaining", { count: c }));
+                return { id: s.id, label: titleFor(s.id), hasError: stepHasError(s), ...meta };
+              })}
               activeIndex={activeIndex}
               onSelect={setActive}
             />

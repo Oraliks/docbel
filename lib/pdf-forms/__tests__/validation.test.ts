@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { buildValidator, isFieldVisible, anchoredRegex } from "../validation";
+import { buildValidator, isFieldVisible, anchoredRegex, validateFieldFormat, isFieldComplete } from "../validation";
 import { PdfFormField } from "../types";
 
 function field(p: Partial<PdfFormField> & Pick<PdfFormField, "id" | "type">): PdfFormField {
@@ -164,5 +164,53 @@ describe("isFieldVisible", () => {
   it("gère in / notIn", () => {
     expect(isFieldVisible({ fieldId: "t", op: "in", value: ["a", "b"] }, { t: "a" })).toBe(true);
     expect(isFieldVisible({ fieldId: "t", op: "notIn", value: ["a", "b"] }, { t: "c" })).toBe(true);
+  });
+});
+
+describe("validateFieldFormat — validation par champ (blur)", () => {
+  it("champ vide → null (pas d'erreur de format ; le requis se gère à l'envoi)", () => {
+    expect(validateFieldFormat(field({ id: "niss", type: "niss", required: true }), "", "fr")).toBeNull();
+  });
+
+  it("NISS valide → null, NISS invalide → message", () => {
+    const f = field({ id: "niss", type: "niss" });
+    expect(validateFieldFormat(f, "85073003328", "fr")).toBeNull();
+    expect(validateFieldFormat(f, "00000000000", "fr")).not.toBeNull();
+  });
+
+  it("IBAN belge invalide → message ; date invalide → message", () => {
+    expect(validateFieldFormat(field({ id: "iban", type: "iban" }), "BE00", "fr")).not.toBeNull();
+    expect(validateFieldFormat(field({ id: "d", type: "date" }), "pas-une-date", "fr")).not.toBeNull();
+  });
+
+  it("type non validable (text) → toujours null", () => {
+    expect(validateFieldFormat(field({ id: "t", type: "text" }), "n'importe quoi", "fr")).toBeNull();
+  });
+});
+
+describe("isFieldComplete — complétion d'un champ (pour le stepper)", () => {
+  it("texte non vide = complet, vide = non complet", () => {
+    const f = field({ id: "t", type: "text" });
+    expect(isFieldComplete(f, "abc", "fr")).toBe(true);
+    expect(isFieldComplete(f, "", "fr")).toBe(false);
+    expect(isFieldComplete(f, "   ", "fr")).toBe(false);
+  });
+
+  it("NISS : complet seulement si valide", () => {
+    const f = field({ id: "niss", type: "niss" });
+    expect(isFieldComplete(f, "85073003328", "fr")).toBe(true);
+    expect(isFieldComplete(f, "850730", "fr")).toBe(false);
+  });
+
+  it("checkbox : complet seulement si coché", () => {
+    const f = field({ id: "c", type: "checkbox" });
+    expect(isFieldComplete(f, true, "fr")).toBe(true);
+    expect(isFieldComplete(f, false, "fr")).toBe(false);
+  });
+
+  it("fullname : complet seulement si prénom ET nom", () => {
+    const f = field({ id: "n", type: "fullname" });
+    expect(isFieldComplete(f, { first: "Jean", last: "Dupont" }, "fr")).toBe(true);
+    expect(isFieldComplete(f, { first: "Jean", last: "" }, "fr")).toBe(false);
   });
 });

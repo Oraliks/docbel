@@ -282,4 +282,60 @@ export function buildValidator(fields: PdfFormField[], lang: Locale = DEFAULT_LO
   });
 }
 
+// ---------------------------------------------------------------------------
+// Validation par champ (temps réel au blur) + complétion d'étape.
+// Réutilise les mêmes validateurs que le schéma Zod, mais pour UN champ, sans
+// dépendre du reste du formulaire. Sert au feedback immédiat (✓ vert / erreur
+// de format) et au calcul de complétion du stepper.
+// ---------------------------------------------------------------------------
+
+/// Forme minimale d'un champ (compatible PdfFormField ET PublicField).
+type FieldLike = {
+  type: PdfFormField["type"];
+  errorMsg?: PdfFormField["errorMsg"];
+  nameOrder?: PdfFormField["nameOrder"];
+};
+
+/// Types dont le format est vérifiable en direct (les autres — text, textarea,
+/// select… — n'ont pas de format strict, pas de ✓ automatique).
+export const FORMAT_VALIDATABLE_TYPES = new Set<string>([
+  "niss", "iban", "date", "email", "phone_be", "postal_be", "tva_be", "bce",
+]);
+
+/// Valide le FORMAT d'un champ pour une valeur donnée. Renvoie un message
+/// d'erreur si la valeur est non vide ET mal formée, sinon null. Une valeur
+/// VIDE renvoie toujours null : l'obligation (champ requis vide) se signale à
+/// l'envoi, pas au blur (principe « informatif jamais bloquant »).
+export function validateFieldFormat(field: FieldLike, value: unknown, lang: Locale): string | null {
+  const v = typeof value === "string" ? value : "";
+  if (v.trim() === "") return null;
+  const custom = loc(field.errorMsg, lang);
+  switch (field.type) {
+    case "niss": return isValidNISS(v) ? null : (custom || nissErrorMessage(v, lang));
+    case "iban": return isValidBelgianIBAN(v) ? null : (custom || FALLBACK.iban[lang]);
+    case "date": return isValidISODate(v) ? null : (custom || FALLBACK.date[lang]);
+    case "email": return isValidEmail(v) ? null : (custom || FALLBACK.email[lang]);
+    case "phone_be": return isValidBelgianPhone(v) ? null : (custom || FALLBACK.phone_be[lang]);
+    case "postal_be": return isValidBelgianPostalCode(v) ? null : (custom || FALLBACK.postal_be[lang]);
+    case "tva_be": return isValidBelgianTVA(v) ? null : (custom || FALLBACK.tva_be[lang]);
+    case "bce": return isValidBelgianBCE(v) ? null : (custom || FALLBACK.bce[lang]);
+    default: return null;
+  }
+}
+
+/// Vrai si le champ est « rempli et valide » — non vide (selon son type) ET de
+/// format correct. Sert au compteur de complétion du stepper. Ne tient pas
+/// compte de `required`/`visibleIf` (au caller de filtrer).
+export function isFieldComplete(field: FieldLike, value: unknown, lang: Locale): boolean {
+  if (field.type === "checkbox") return value === true;
+  if (field.type === "fullname") {
+    if (!isFullNameValue(value)) return false;
+    return !!(value.first ?? "").trim() && !!(value.last ?? "").trim();
+  }
+  if (field.type === "signature") return typeof value === "string" && value.trim() !== "";
+  const v = typeof value === "string" || typeof value === "number" ? String(value) : "";
+  if (v.trim() === "") return false;
+  return validateFieldFormat(field, v, lang) === null;
+}
+
 export { anchoredRegex };

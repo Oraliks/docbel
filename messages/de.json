@@ -1531,6 +1531,7 @@
       "runnerConfirmationReady": "Ihre Erklärung ist bereit zum Absenden.",
       "runnerConfirmationNameForSignature": "Geben Sie Ihren Namen am Anfang des Formulars ein, um digital zu unterschreiben.",
       "runnerStepCounter": "Schritt {current} von {total}",
+      "runnerStepRemaining": "{count, plural, one {noch # Feld} other {noch # Felder}}",
       "runnerHelpPanelEyebrow": "Kontexthilfe",
       "runnerHelpExamplesLabel": "Beispiele",
       "runnerHelpNeedHelpTitle": "Brauchen Sie Hilfe?",

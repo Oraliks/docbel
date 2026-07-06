@@ -166,15 +166,13 @@ export default async function ReglementationArticlePage({ params }: PageProps) {
   const isReforme = /Loi-programme 18\.7\.2025/i.test(article.content ?? "");
   const themes = deriveThemes(article.content);
 
-  // Item dénormalisé (épingle / dossier / note) + adresse admin pour signalement.
+  // Item dénormalisé (épingle / dossier / note).
   const regItem = {
     riolexId,
     loi: meta.loi ?? "",
     articleNumber: meta.articleNumber ?? "",
     title: article.title,
   };
-  const adminEmail = process.env.CONTACT_EMAIL_FROM ?? "";
-
   // Le lien RioLex (source interne) n'est exposé qu'aux admins (demande Oraliks).
   const riolexUrl = isAdmin ? article.sourceUrl : null;
 
@@ -320,7 +318,7 @@ export default async function ReglementationArticlePage({ params }: PageProps) {
             </Link>
             <PrintButton label={t("reglPrint")} />
             <ReportButton
-              adminEmail={adminEmail}
+              riolexId={riolexId}
               loi={meta.loi ?? ""}
               articleNumber={meta.articleNumber ?? ""}
               label={t("reglReport")}

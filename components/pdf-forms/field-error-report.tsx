@@ -4,6 +4,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { FlagIcon, Loader2Icon } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { useReportSubmit } from "@/components/reports/use-report-submit";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -80,8 +81,9 @@ function ReportDialogTrigger({
   const [userMessage, setUserMessage] = useState("");
   const [email, setEmail] = useState("");
   const [consent, setConsent] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
+  const { submit: submitReport, status } = useReportSubmit("form_validation");
+  const submitting = status === "submitting";
 
   const valueAsString = stringifyValue(rejectedValue);
 
@@ -90,39 +92,22 @@ function ReportDialogTrigger({
       toast.error(t("ferConsentRequired"));
       return;
     }
-    setSubmitting(true);
-    try {
-      const res = await fetch("/api/form-validation/report", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          formId,
-          formSlug,
-          fieldId,
-          fieldType,
-          rejectedValue: valueAsString,
-          errorMessage,
-          locale,
-          userMessage: userMessage.trim() || undefined,
-          reporterEmail: email.trim() || undefined,
-        }),
-      });
-      if (res.status === 429) {
+    const result = await submitReport({
+      targetId: formId,
+      message: userMessage.trim() || undefined,
+      payload: { fieldId, fieldType, rejectedValue: valueAsString, errorMessage, formSlug, locale },
+      reporterEmail: email.trim() || undefined,
+    });
+    if (!result.ok) {
+      if (result.error.includes("Trop de signalements")) {
         toast.error(t("ferRateLimited"));
-        return;
+      } else {
+        toast.error(result.error || t("ferSendFailed"));
       }
-      if (!res.ok) {
-        const j = (await res.json().catch(() => ({}))) as { error?: string };
-        toast.error(j.error ?? t("ferSendFailed"));
-        return;
-      }
-      setDone(true);
-      toast.success(t("ferSendSuccess"));
-    } catch {
-      toast.error(t("ferNetworkError"));
-    } finally {
-      setSubmitting(false);
+      return;
     }
+    setDone(true);
+    toast.success(t("ferSendSuccess"));
   }
 
   return (

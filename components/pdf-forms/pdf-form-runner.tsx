@@ -35,6 +35,7 @@ import { sectionLabel } from "@/lib/pdf-forms/section-labels";
 import { FormStepper } from "./form-stepper";
 import { FormShell } from "./form-shell";
 import { ContextHelpPanel } from "./context-help-panel";
+import { MotifSituationPicker } from "./motif-situation-picker";
 import { CompactAccordionSection } from "./compact-accordion-section";
 import { AutoSaveNotice } from "./auto-save-notice";
 import { OptionCard } from "@/components/ui/option-card";
@@ -944,23 +945,45 @@ function MacroRunnerBody({
                 </h2>
               </div>
 
-              {current.sections.map((sec, i) => (
-                <div
-                  key={sec.key ?? `sec-${i}`}
-                  className={
-                    multiSection
-                      ? "flex flex-col gap-3 rounded-2xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] p-3.5 sm:p-4"
-                      : "flex flex-col gap-3"
-                  }
-                >
-                  {multiSection && sec.key && (
-                    <h3 className="text-[11px] font-bold uppercase tracking-[0.06em] text-[color:var(--glass-ink-soft)]">
-                      {sectionLabel(sec.key, locale)}
-                    </h3>
-                  )}
-                  {cluster(sec.fields)}
-                </div>
-              ))}
+              {current.sections.map((sec, i) => {
+                // Étape "Motif" à contrainte de groupe (ex. les 5 situations
+                // du C1 changement-situation) : rendu dédié tableau + panneau
+                // Détails (cf. mockup Oraliks, 2026-07-07), au lieu de la
+                // grille de chips générique. Détection par la présence d'un
+                // champ `requiredGroup` — pas un id de dossier en dur, ce
+                // rendu s'appliquerait à tout futur formulaire du même moule.
+                if (sec.fields.some((f) => f.requiredGroup)) {
+                  return (
+                    <MotifSituationPicker
+                      key={sec.key ?? `sec-${i}`}
+                      fields={sec.fields}
+                      values={values}
+                      errors={errors}
+                      locale={locale}
+                      setValue={setValue}
+                      formId={form.id}
+                      formSlug={form.slug}
+                    />
+                  );
+                }
+                return (
+                  <div
+                    key={sec.key ?? `sec-${i}`}
+                    className={
+                      multiSection
+                        ? "flex flex-col gap-3 rounded-2xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] p-3.5 sm:p-4"
+                        : "flex flex-col gap-3"
+                    }
+                  >
+                    {multiSection && sec.key && (
+                      <h3 className="text-[11px] font-bold uppercase tracking-[0.06em] text-[color:var(--glass-ink-soft)]">
+                        {sectionLabel(sec.key, locale)}
+                      </h3>
+                    )}
+                    {cluster(sec.fields)}
+                  </div>
+                );
+              })}
 
               {current.advanced.length > 0 && (
                 <CompactAccordionSection

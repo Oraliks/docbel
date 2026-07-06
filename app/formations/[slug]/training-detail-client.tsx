@@ -32,6 +32,7 @@ import {
 } from "@/components/formations/format";
 import { useSavedFormations } from "@/hooks/useSavedFormations";
 import { VISIBILITY_LABELS, REPORT_REASONS, REPORT_REASON_LABELS } from "@/lib/formations/constants";
+import { useReportSubmit } from "@/components/reports/use-report-submit";
 
 export interface SessionView {
   id: string;
@@ -547,32 +548,26 @@ function ReportForm({ trainingId, onDone }: { trainingId: string; onDone: () => 
   const t = useTranslations("public.formations");
   const [reason, setReason] = useState<string>(REPORT_REASONS[0]);
   const [message, setMessage] = useState("");
-  const [submitting, setSubmitting] = useState(false);
+  const { submit, status } = useReportSubmit("training");
+  const submitting = status === "submitting";
 
-  async function submit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setSubmitting(true);
-    try {
-      const res = await fetch("/api/formations/report", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ trainingId, reason, message: message || undefined }),
-      });
-      if (!res.ok) {
-        toast.error(t("reportFailed"));
-        return;
-      }
-      toast.success(t("reportSuccess"));
-      onDone();
-    } catch {
-      toast.error(t("errorGeneric"));
-    } finally {
-      setSubmitting(false);
+    const result = await submit({
+      targetId: trainingId,
+      message: message || undefined,
+      payload: { reason },
+    });
+    if (!result.ok) {
+      toast.error(t("reportFailed"));
+      return;
     }
+    toast.success(t("reportSuccess"));
+    onDone();
   }
 
   return (
-    <form onSubmit={submit} className="glass-surface flex flex-col gap-2.5 p-5">
+    <form onSubmit={handleSubmit} className="glass-surface flex flex-col gap-2.5 p-5">
       <p className="text-[13px] font-bold">{t("reportTitle")}</p>
       <select
         value={reason}

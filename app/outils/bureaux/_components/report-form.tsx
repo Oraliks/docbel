@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { X } from 'lucide-react'
+import { useReportSubmit } from '@/components/reports/use-report-submit'
 
 interface Props {
   bureauId: string
@@ -11,8 +12,8 @@ interface Props {
 
 /**
  * Formulaire inline de signalement d'erreur sur un bureau spécifique.
- * Catégorie + message libre + email optionnel. Soumis via POST
- * /api/bureaux/[id]/report.
+ * Catégorie + message libre + email optionnel. Soumis via le moteur
+ * unifié /api/reports (type "bureau").
  */
 export function ReportForm({ bureauId, onClose }: Props) {
   const t = useTranslations('public.outils')
@@ -21,35 +22,27 @@ export function ReportForm({ bureauId, onClose }: Props) {
   >('hours')
   const [message, setMessage] = useState('')
   const [email, setEmail] = useState('')
-  const [submitting, setSubmitting] = useState(false)
-  const [done, setDone] = useState(false)
   const [err, setErr] = useState<string | null>(null)
+  const { submit, status } = useReportSubmit('bureau')
+  const submitting = status === 'submitting'
+  const done = status === 'done'
 
-  const submit = async () => {
+  const handleSubmit = async () => {
     if (message.trim().length < 5) {
       setErr(t('rfErrTooShort'))
       return
     }
-    setSubmitting(true)
     setErr(null)
-    try {
-      const res = await fetch(`/api/bureaux/${bureauId}/report`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          category,
-          message: message.trim(),
-          reporterEmail: email.trim() || null,
-        }),
-      })
-      const body = await res.json()
-      if (!res.ok) throw new Error(body.error ?? t('rfErrSubmit'))
-      setDone(true)
+    const result = await submit({
+      targetId: bureauId,
+      message: message.trim(),
+      payload: { category },
+      reporterEmail: email.trim() || undefined,
+    })
+    if (result.ok) {
       setTimeout(onClose, 1500)
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : t('rfErrGeneric'))
-    } finally {
-      setSubmitting(false)
+    } else {
+      setErr(result.error)
     }
   }
 
@@ -104,7 +97,7 @@ export function ReportForm({ bureauId, onClose }: Props) {
       {err && <p className="text-[10px] text-red-600">{err}</p>}
       <button
         type="button"
-        onClick={submit}
+        onClick={handleSubmit}
         disabled={submitting}
         className="w-full text-[11px] bg-primary text-primary-foreground rounded py-1 hover:opacity-90 disabled:opacity-50"
       >

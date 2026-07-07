@@ -769,11 +769,14 @@ function FieldsCluster({
                   />
                 ));
               }
-              // checkbox : une seule carte, toggle indépendant.
+              // checkbox : une seule carte, toggle indépendant. `labelShort`
+              // pilote la version mobile (< 640px), cf. Phase 4 du plan
+              // bindings-canonical-ux.
               return (
                 <OptionCard
                   key={f.id}
                   label={loc(f.label, locale)}
+                  labelShort={f.labelShort ? loc(f.labelShort, locale) : undefined}
                   selected={values[f.id] === true}
                   onToggle={() => setValue(f.id, values[f.id] !== true)}
                   invalid={f.required === true && !!errors[f.id]}

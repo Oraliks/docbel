@@ -9,7 +9,9 @@ export interface PublicField {
   type: PdfFormField["type"];
   required: boolean;
   label: PdfFormField["label"];
+  labelShort?: PdfFormField["labelShort"];
   help?: PdfFormField["help"];
+  helpShort?: PdfFormField["helpShort"];
   placeholder?: PdfFormField["placeholder"];
   errorMsg?: PdfFormField["errorMsg"];
   options?: PdfFormField["options"];
@@ -56,7 +58,9 @@ export function toPublicField(f: PdfFormField): PublicField {
     type: f.type,
     required: f.required,
     label: f.label,
+    labelShort: f.labelShort,
     help: f.help,
+    helpShort: f.helpShort,
     placeholder: f.placeholder,
     errorMsg: f.errorMsg,
     options: f.options,

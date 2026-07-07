@@ -171,7 +171,16 @@ export interface PdfFormField {
 
   // Contenu localisé
   label: Localized;
+  /// Version courte du libellé pour l'affichage mobile (< 640px). Absent =
+  /// utiliser `label` sur tous les breakpoints. Ne s'applique pas aux
+  /// libellés d'options d'un radio (le rendu chip couvre déjà le compact).
+  /// Cf. Phase 4 du plan bindings-canonical-ux.
+  labelShort?: Localized;
   help?: Localized;
+  /// Version courte de l'aide affichée sur mobile. Rarement utile (l'aide
+  /// vit dans une InfoTooltip → même longueur affichée), mais gardé comme
+  /// pendant symétrique pour permettre un texte tooltip plus terse.
+  helpShort?: Localized;
   placeholder?: Localized;
   errorMsg?: Localized;
   options?: FieldOption[];

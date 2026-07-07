@@ -77,10 +77,34 @@ interface Props {
 /// Rend le label + une InfoTooltip si `help` est présent — remplace
 /// l'ancien affichage systématique de `help` en <FieldDescription> visible
 /// en permanence (objectif : compacité, cf. spec 2026-07-05).
-function LabelWithTooltip({ label, help, required }: { label: string; help: string; required?: boolean }) {
+///
+/// Support Phase 4 du plan bindings-canonical-ux : quand `labelShort` est
+/// fourni, on rend DEUX <span> avec des classes de visibilité — le short
+/// sur mobile (< sm), le complet à partir de sm. AUCUN hook `useMediaQuery`
+/// n'est utilisé : deux spans en parallèle évitent tout flicker au SSR/
+/// hydratation et respectent le server-first rendering (le HTML servi
+/// contient les deux versions, le CSS choisit).
+function LabelWithTooltip({
+  label,
+  labelShort,
+  help,
+  required,
+}: {
+  label: string;
+  labelShort?: string;
+  help: string;
+  required?: boolean;
+}) {
   return (
     <span className="flex items-center gap-1.5">
-      {label}
+      {labelShort && labelShort !== label ? (
+        <>
+          <span className="sm:hidden">{labelShort}</span>
+          <span className="hidden sm:inline">{label}</span>
+        </>
+      ) : (
+        label
+      )}
       {required && <span className="text-destructive"> *</span>}
       {help && <InfoTooltip text={help} />}
     </span>
@@ -92,6 +116,7 @@ export function PdfField({
   derivedValue = null, relatedPostalCode, onSelectStreetSuggestion, parentValues,
 }: Props) {
   const label = loc(field.label, locale);
+  const labelShort = field.labelShort ? loc(field.labelShort, locale) : undefined;
   const help = loc(field.help, locale);
   const placeholder = loc(field.placeholder, locale);
 
@@ -158,7 +183,7 @@ export function PdfField({
               htmlFor={field.id}
               className={`min-w-0 flex-1 ${isReadOnly ? "font-normal text-muted-foreground" : "font-normal"}`}
             >
-              <LabelWithTooltip label={label} help={help} required={field.required} />
+              <LabelWithTooltip label={label} labelShort={labelShort} help={help} required={field.required} />
             </FieldLabel>
             <Checkbox
               id={field.id}
@@ -183,7 +208,7 @@ export function PdfField({
           htmlFor={field.id}
           className={isReadOnly ? "font-normal text-muted-foreground" : "font-normal"}
         >
-          <LabelWithTooltip label={label} help={help} required={field.required} />
+          <LabelWithTooltip label={label} labelShort={labelShort} help={help} required={field.required} />
         </FieldLabel>
         {errorReport}
       </Field>
@@ -199,7 +224,7 @@ export function PdfField({
         <div className="flex flex-col gap-1 px-4 py-3" data-invalid={invalid}>
           <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
             <FieldLabel htmlFor={field.id} className="min-w-0 flex-1">
-              <LabelWithTooltip label={label} help={help} required={field.required} />
+              <LabelWithTooltip label={label} labelShort={labelShort} help={help} required={field.required} />
             </FieldLabel>
             <YesNoSegmentedControl
               id={field.id}
@@ -217,7 +242,7 @@ export function PdfField({
     return (
       <Field data-invalid={invalid} className="gap-1.5">
         <FieldLabel htmlFor={field.id} className="text-[13px]">
-          <LabelWithTooltip label={label} help={help} required={field.required} />
+          <LabelWithTooltip label={label} labelShort={labelShort} help={help} required={field.required} />
         </FieldLabel>
         <YesNoSegmentedControl
           id={field.id}
@@ -237,7 +262,7 @@ export function PdfField({
     return (
       <Field data-invalid={invalid} className="gap-1.5">
         <FieldLabel htmlFor={field.id} className="text-[13px]">
-          <LabelWithTooltip label={label} help={help} required={field.required} />
+          <LabelWithTooltip label={label} labelShort={labelShort} help={help} required={field.required} />
         </FieldLabel>
         <Select value={(value as string) ?? ""} onValueChange={(v) => onChange(v)}>
           <SelectTrigger id={field.id} className="w-full" aria-invalid={invalid}>
@@ -262,7 +287,7 @@ export function PdfField({
     return (
       <Field data-invalid={invalid} className="gap-1.5">
         <FieldLabel htmlFor={field.id} className="text-[13px]">
-          <LabelWithTooltip label={label} help={help} required={field.required} />
+          <LabelWithTooltip label={label} labelShort={labelShort} help={help} required={field.required} />
         </FieldLabel>
         <Textarea
           id={field.id}
@@ -307,7 +332,7 @@ export function PdfField({
     return (
       <Field data-invalid={invalid} className="gap-1.5">
         <FieldLabel htmlFor={field.id} className="text-[13px]">
-          <LabelWithTooltip label={label} help={help} required={field.required} />
+          <LabelWithTooltip label={label} labelShort={labelShort} help={help} required={field.required} />
         </FieldLabel>
         <div className="flex flex-col gap-2 sm:flex-row">
           {lastFirst ? lastInput : firstInput}
@@ -326,7 +351,7 @@ export function PdfField({
     return (
       <Field data-invalid={invalid} className="gap-1.5">
         <FieldLabel htmlFor={field.id} className="text-[13px]">
-          <LabelWithTooltip label={label} help={help} required={field.required} />
+          <LabelWithTooltip label={label} labelShort={labelShort} help={help} required={field.required} />
         </FieldLabel>
         <div className="flex items-center gap-2" onBlur={markTouched}>
           <div className="flex-1">
@@ -353,7 +378,7 @@ export function PdfField({
     return (
       <Field data-invalid={invalid} className="gap-1.5">
         <FieldLabel htmlFor={field.id}>
-          <LabelWithTooltip label={label} help={help} required={field.required} />
+          <LabelWithTooltip label={label} labelShort={labelShort} help={help} required={field.required} />
         </FieldLabel>
         <div className="flex items-center gap-2">
           <div className="flex-1">
@@ -393,7 +418,7 @@ export function PdfField({
   return (
     <Field data-invalid={invalid} className="gap-1.5">
       <FieldLabel htmlFor={field.id}>
-        <LabelWithTooltip label={label} help={help} required={field.required} />
+        <LabelWithTooltip label={label} labelShort={labelShort} help={help} required={field.required} />
       </FieldLabel>
       <div className="flex items-center gap-2">
         {useStreetAutocomplete ? (

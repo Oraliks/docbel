@@ -523,6 +523,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
     type: "radio",
     required: false,
     label: { fr: "Ta situation de cohabitation est ambiguë (registre national / réalité de ménage divergents) ?", nl: "", de: "" },
+    labelShort: { fr: "Cohabitation ambiguë ?", nl: "", de: "" },
     help: {
       fr: "Exemples : domiciliation à une adresse mais résidence à une autre, hébergement temporaire chez un tiers, garde alternée d'enfant non encore enregistrée… → l'Annexe REGIS sera ajoutée à ton parcours pour préciser la composition réelle du ménage.",
       nl: "", de: "",
@@ -1498,6 +1499,10 @@ export const C1_QUESTIONS: PdfFormField[] = [
       fr: "J'affirme sur l'honneur que la présente déclaration est sincère et complète",
       nl: "", de: "",
     },
+    // labelShort mobile (Phase 4 du plan bindings-canonical-ux). Le sens
+    // légal est préservé — c'est bien la même déclaration sur l'honneur,
+    // formulée plus terse pour tenir sur mobile.
+    labelShort: { fr: "Je déclare sur l'honneur que tout est exact", nl: "", de: "" },
     section: SECTION_AFFIRMATIONS,
     order: 1000,
   },
@@ -1507,6 +1512,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
     type: "checkbox",
     required: true,
     label: { fr: "J'ai lu la feuille d'informations C1", nl: "", de: "" },
+    labelShort: { fr: "J'ai lu la feuille d'info C1", nl: "", de: "" },
     section: SECTION_AFFIRMATIONS,
     order: 1001,
   },
@@ -1519,6 +1525,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
       fr: "Je sais que je dois communiquer toute modification à mon organisme de paiement et que je peux être sanctionné(e) si je ne le fais pas",
       nl: "", de: "",
     },
+    labelShort: { fr: "Je signalerai tout changement", nl: "", de: "" },
     section: SECTION_AFFIRMATIONS,
     order: 1002,
   },
@@ -1835,14 +1842,25 @@ const OPTIONAL_ACTIVITE_REVENU_IDS = new Set<string>([
 
 /// Libellés relabelés (phrasé "je/mon", Oraliks 2026-07-06) + nouvel ordre
 /// d'affichage pour les 4 chips de modification existants, appliqués
-/// uniquement quand `restrictMotifTo5Situations` est actif.
-const RESTRICTED_MOTIF_OVERRIDES: Record<string, { label: string; order: number }> = {
+/// uniquement quand `restrictMotifTo5Situations` est actif. `labelShort`
+/// = version mobile compacte (< 640px) — Phase 4 du plan
+/// bindings-canonical-ux ; laissé absent quand le label desktop tient déjà
+/// sur mobile sans wrapping problématique.
+const RESTRICTED_MOTIF_OVERRIDES: Record<
+  string,
+  { label: string; labelShort?: string; order: number }
+> = {
   modificationAdresse: { label: "J'ai changé d'adresse", order: 5 },
   modificationSituationFamiliale: {
     label: "Ma situation personnelle ou celle des membres de mon ménage a changé",
+    labelShort: "Ma situation de ménage a changé",
     order: 6,
   },
-  modificationPermisSejour: { label: "Mon permis de séjour ou mon permis de travail a changé", order: 7 },
+  modificationPermisSejour: {
+    label: "Mon permis de séjour ou mon permis de travail a changé",
+    labelShort: "Mon permis a changé",
+    order: 7,
+  },
   modificationCompte: { label: "Mon n° de compte bancaire a changé", order: 8 },
 };
 
@@ -1856,6 +1874,7 @@ const TRANSFERE_ORGANISME_FIELD: PdfFormField = {
   type: "checkbox",
   required: false,
   label: { fr: "Je transfère mon dossier vers un autre organisme de paiement", nl: "", de: "" },
+  labelShort: { fr: "Je change d'organisme de paiement", nl: "", de: "" },
   section: SECTION_DEMANDE,
   order: 8.5,
   renderAs: "chip",
@@ -2008,6 +2027,9 @@ export function applyC1Improvements(
           return {
             ...q,
             label: { ...q.label, fr: override.label },
+            labelShort: override.labelShort
+              ? { ...(q.labelShort ?? {}), fr: override.labelShort }
+              : q.labelShort,
             order: override.order,
             requiredGroup: MOTIF_SITUATION_GROUP,
             // Retire l'ancien visibleIf sur motifIntroduction === "modification" :
@@ -2047,7 +2069,12 @@ export function applyC1Improvements(
         // phrasé brut de la C1 (l'aide détaillée reste en tooltip, cf.
         // LabelWithTooltip). Oraliks, 2026-07-07.
         if (q.id === "chomeurTemporaireAlternance") {
-          return { ...q, label: { ...q.label, fr: "Chômeur temporaire suivant une formation en alternance" } };
+          return {
+            ...q,
+            label: { ...q.label, fr: "Chômeur temporaire suivant une formation en alternance" },
+            // labelShort mobile (Phase 4 du plan bindings-canonical-ux).
+            labelShort: { ...(q.labelShort ?? {}), fr: "Chômeur temporaire en alternance" },
+          };
         }
         // Libellé/aide raccourcis pour l'étape Motif (Oraliks, 2026-07-07).
         if (q.id === "dateModificationEffective") {

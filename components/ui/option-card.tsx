@@ -4,6 +4,11 @@ import { type LucideIcon } from "lucide-react";
 
 interface OptionCardProps {
   label: string;
+  /// Version courte du libellé pour l'affichage mobile (< 640px). Absent =
+  /// utiliser `label` sur tous les breakpoints. Rendu SANS media-query hook
+  /// (deux <span> sm:hidden / hidden sm:inline) pour éviter le flicker au
+  /// SSR/hydratation — Phase 4 du plan bindings-canonical-ux.
+  labelShort?: string;
   selected: boolean;
   onToggle: () => void;
   icon?: LucideIcon;
@@ -19,7 +24,7 @@ interface OptionCardProps {
 /// radio à gauche, bordure + fond lilas à la sélection. Le mode
 /// single-select vs multi-select est décidé par l'appelant via `onToggle` —
 /// composant purement présentationnel.
-export function OptionCard({ label, selected, onToggle, icon: Icon, invalid }: OptionCardProps) {
+export function OptionCard({ label, labelShort, selected, onToggle, icon: Icon, invalid }: OptionCardProps) {
   return (
     <button
       type="button"
@@ -45,7 +50,16 @@ export function OptionCard({ label, selected, onToggle, icon: Icon, invalid }: O
         {selected && <span className="size-2 rounded-full bg-[color:var(--glass-accent-deep,#5B46E5)]" />}
       </span>
       {Icon && <Icon className="size-4 shrink-0 text-[color:var(--glass-accent-deep,#5B46E5)]" />}
-      <span className="min-w-0 flex-1">{label}</span>
+      <span className="min-w-0 flex-1">
+        {labelShort && labelShort !== label ? (
+          <>
+            <span className="sm:hidden">{labelShort}</span>
+            <span className="hidden sm:inline">{label}</span>
+          </>
+        ) : (
+          label
+        )}
+      </span>
     </button>
   );
 }

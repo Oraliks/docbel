@@ -127,7 +127,15 @@ function stampScalarWidget(
     // Reformatage des dates ISO → FR au stamping : le form runner stocke en
     // ISO côté state (format standard <input type="date">), l'usager veut
     // du DD/MM/YYYY sur le PDF final.
-    const text = fieldType === "date" ? formatDateFR(raw) : raw;
+    let text = raw;
+    if (fieldType === "date") text = formatDateFR(raw);
+    // IBAN belge : le template C1 imprime « B E » statiquement en amont du
+    // numéro (widget « B E » du dump AcroForm). Sans strip, on verrait
+    // « B E BE68 5390... » doublement préfixé. Le strip est PDF-only —
+    // la valeur en state garde « BE68... » complet pour la validation Zod
+    // (Oraliks 2026-07-07). Sur le widget « SEPA étranger IBAN BIC » le
+    // préfixe est étranger (FR, DE, …) → pas de strip.
+    if (fieldType === "iban") text = raw.replace(/^\s*[Bb][Ee]\s*/, "").trim();
     pdfField.setText(text);
     // Taille uniforme partout (cf. UNIFORM_TEXT_FONT_SIZE).
     try {

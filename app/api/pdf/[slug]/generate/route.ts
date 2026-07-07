@@ -5,6 +5,8 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { readSourcePdf } from "@/lib/pdf-forms/storage";
 import { fillForm } from "@/lib/pdf-forms/filler";
+import { resolveStamps } from "@/lib/pdf-forms/bindings/engine";
+import { getRulesForSlug } from "@/lib/pdf-forms/bindings/registry";
 import { buildValidator } from "@/lib/pdf-forms/validation";
 import { renderFilename } from "@/lib/pdf-forms/filename";
 import { sha256Hex, checkRateLimit, getClientIp } from "@/lib/pdf-forms/security";
@@ -100,9 +102,17 @@ export async function POST(
   const technicalSchema =
     (form.technicalSchema as unknown as import("@/lib/pdf-forms/types").AcroFieldRaw[]) || [];
 
+  // Bindings serveur (Phase 1 du plan pdf-bindings-canonical-ux) : le
+  // registry par slug produit une Map widget→valeur appliquée par-dessus
+  // le mapping schéma. Slug inconnu → tableau vide → aucun stamp
+  // additionnel (safe par défaut). Les 6 transforms client-side
+  // historiques restent temporairement actifs côté runner : les règles
+  // sont IDEMPOTENTES par-dessus (mêmes valeurs), retrait en Phase 7.
+  const extraStamps = resolveStamps(validated, getRulesForSlug(form.slug));
+
   let pdfBytes: Buffer;
   try {
-    pdfBytes = (await fillForm(source, fields, validated, { technicalSchema })).bytes;
+    pdfBytes = (await fillForm(source, fields, validated, { technicalSchema, extraStamps })).bytes;
   } catch (err) {
     console.error("pdf-forms generate error:", err);
     await logSubmission(form.id, form.version, lang, validated, delivery, false, ip);

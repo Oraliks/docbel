@@ -25,6 +25,7 @@ import { assembleFullName } from "./system-values";
 import { resolveSignerName, buildSignatureBlock } from "./signature";
 import { isSignatureField } from "./auto-fields";
 import { isFieldVisible } from "./validation";
+import { formatDateFR } from "./bindings/format";
 
 /// Chemin d'une police TTF Unicode optionnelle. Si présente, elle est
 /// embarquée et utilisée pour réécrire les apparences des champs → support
@@ -103,14 +104,6 @@ function stampPipeRadio(
 /// Dailly » en 12pt vs « test » en 9pt sur le C1). Une seule constante ici
 /// = un seul point d'ajustement pour toute la famille.
 const UNIFORM_TEXT_FONT_SIZE = 10;
-
-/// Reformate une date ISO (YYYY-MM-DD) vers le format FR (DD/MM/YYYY) pour
-/// affichage sur le PDF. Toute autre valeur est renvoyée telle quelle
-/// (idempotent — safe si l'utilisateur a déjà saisi en format FR).
-function formatDateFR(value: string): string {
-  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
-  return m ? `${m[3]}/${m[2]}/${m[1]}` : value;
-}
 
 /// Stampe une valeur scalaire sur un widget AcroForm résolu, en dispatchant
 /// sur son type (texte / checkbox / dropdown / radio group). Centralise la
@@ -252,7 +245,16 @@ export async function fillForm(
   source: Buffer,
   fields: PdfFormField[],
   payload: FormPayload,
-  opts: { flatten?: boolean; technicalSchema?: AcroFieldRaw[] } = {}
+  opts: {
+    flatten?: boolean;
+    technicalSchema?: AcroFieldRaw[];
+    /// Stamps additionnels produits par le moteur de bindings serveur
+    /// (`lib/pdf-forms/bindings/`) — appliqués APRÈS la boucle sur `fields`,
+    /// donc gagnent en cas de collision avec le mapping schéma. Convention
+    /// `dernier gagnant par widget` (une seule valeur par entrée de Map).
+    /// Une entrée boolean cible une PDFCheckBox, string un PDFTextField.
+    extraStamps?: Map<string, string | boolean>;
+  } = {}
 ): Promise<FillResult> {
   const flatten = opts.flatten !== false;
   const doc = await PDFDocument.load(source, { ignoreEncryption: true });
@@ -378,6 +380,61 @@ export async function fillForm(
       stampScalarWidget(pdfField, value, font, unicodeFont, field.type);
     } catch {
       // champ readonly / incompatible — on ignore sans casser la génération
+    }
+  }
+
+  // Bindings serveur : `extraStamps` provient du registry par slug
+  // (`lib/pdf-forms/bindings/`) évalué par la route generate avant appel.
+  // Appliqué APRÈS la boucle fields → une règle qui cible le même widget
+  // qu'un champ schéma gagne. On logge (console.warn) les échecs par widget
+  // au lieu de les avaler silencieusement — les rules émettent souvent des
+  // stamps texte contraints par un maxLength (« B E » = 2, undefined_11 = 4)
+  // et une erreur silencieuse ferait apparaître une case blanche sans
+  // signal.
+  if (opts.extraStamps && opts.extraStamps.size > 0) {
+    for (const [widgetName, value] of opts.extraStamps) {
+      if (!widgetName) continue;
+      let widget;
+      try {
+        widget = form.getField(widgetName);
+      } catch {
+        console.warn(`[pdf-forms] extraStamp: widget introuvable "${widgetName}"`);
+        continue;
+      }
+      try {
+        if (typeof value === "boolean") {
+          if (!(widget instanceof PDFCheckBox)) {
+            console.warn(
+              `[pdf-forms] extraStamp: widget "${widgetName}" attendu checkbox pour booléen`
+            );
+            continue;
+          }
+          if (value) widget.check();
+          else widget.uncheck();
+        } else {
+          if (!(widget instanceof PDFTextField)) {
+            console.warn(
+              `[pdf-forms] extraStamp: widget "${widgetName}" attendu texte pour string`
+            );
+            continue;
+          }
+          widget.setText(value);
+          try {
+            widget.setFontSize(UNIFORM_TEXT_FONT_SIZE);
+          } catch {
+            /* certains widgets rejettent setFontSize — on garde la taille par défaut */
+          }
+          if (unicodeFont) widget.updateAppearances(font);
+        }
+      } catch (err) {
+        // Cas typique : `setText` au-delà du maxLength du widget → pdf-lib
+        // throw. Sans warn on ne verrait qu'une case vide sans indice.
+        console.warn(
+          `[pdf-forms] extraStamp: échec sur "${widgetName}" (` +
+            (err instanceof Error ? err.message : String(err)) +
+            ")"
+        );
+      }
     }
   }
 

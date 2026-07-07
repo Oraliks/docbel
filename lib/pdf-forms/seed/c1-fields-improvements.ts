@@ -1180,7 +1180,14 @@ export const C1_QUESTIONS: PdfFormField[] = [
   },
   {
     id: "titulaireCompteNom",
-    pdfFieldName: "Nom du titulaire",
+    // pdfFieldName vidé (Oraliks 2026-07-07) : le stamping du widget PDF
+    // « Nom du titulaire » est désormais assuré par `titulaireCompteNomStamp`
+    // (autoAnswered, alimenté par `applyTitulaireCompteNomDerivation` au
+    // submit). Le champ ici reste PUREMENT UI, saisie manuelle si l'usager
+    // choisit « autre-nom ». Sans cette séparation, mon fix filler-skip-
+    // visibleIf empêchait le widget de se stamper en mode « mon-nom »
+    // (invisible → skip).
+    pdfFieldName: "",
     type: "text",
     required: true,
     label: { fr: "Nom et prénom du propriétaire du compte", nl: "", de: "" },
@@ -1188,6 +1195,21 @@ export const C1_QUESTIONS: PdfFormField[] = [
     visibleIf: { fieldId: "titulaireCompte", op: "equals", value: "autre-nom" },
     section: SECTION_PAIEMENT,
     order: 604,
+  },
+  // Widget PDF « Nom du titulaire » : alimenté au submit par
+  // `applyTitulaireCompteNomDerivation` selon `titulaireCompte` :
+  //   - « mon-nom » (défaut) → « Prénom Nom » de l'utilisateur
+  //   - « autre-nom » → valeur saisie manuellement dans `titulaireCompteNom`
+  // autoAnswered = pas de contrôle UI, mais reste dans le payload et stampé.
+  {
+    id: "titulaireCompteNomStamp",
+    pdfFieldName: "Nom du titulaire",
+    type: "text",
+    required: false,
+    label: { fr: "Nom du titulaire (auto)", nl: "", de: "" },
+    autoAnswered: true,
+    section: SECTION_PAIEMENT,
+    order: 604.5,
   },
   // Widget « SEPA étranger IBAN BIC » du PDF : plus proposé à l'écran, mais
   // reste sérialisé et stampé par `applyIbanCountryRouting` au submit. Marqué

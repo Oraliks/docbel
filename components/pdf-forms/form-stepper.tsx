@@ -51,20 +51,36 @@ export function FormStepper({ steps, activeIndex, onSelect }: FormStepperProps) 
         </span>
       </div>
 
-      {/* Liste des étapes */}
-      <ol className="flex flex-wrap gap-x-6 gap-y-3 overflow-x-auto">
+      {/* Liste des étapes — sur mobile, juste le numéro (évite le scroll
+          horizontal) ; le libellé + la description reviennent à partir de
+          sm: (cf. Oraliks, 2026-07-07). */}
+      <ol className="flex flex-wrap gap-x-3 gap-y-3 sm:gap-x-6">
         {steps.map((step, i) => {
           const isActive = i === activeIndex;
           return (
-            <li key={step.id} className="min-w-[110px] flex-1">
+            <li key={step.id} className="sm:min-w-[110px] sm:flex-1">
               <button
                 type="button"
                 onClick={() => onSelect(i)}
                 aria-current={isActive ? "step" : undefined}
-                className="flex w-full flex-col items-start gap-0.5 rounded-lg text-left transition-colors hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
+                aria-label={`${String(i + 1).padStart(2, "0")}. ${step.label}`}
+                className="flex w-full items-center gap-0.5 rounded-lg text-left transition-colors hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 sm:flex-col sm:items-start"
               >
                 <span
-                  className={`truncate text-[13px] ${
+                  aria-hidden
+                  className={`relative flex size-7 shrink-0 items-center justify-center rounded-full text-[12px] font-bold transition-colors sm:hidden ${
+                    isActive
+                      ? "bg-gradient-to-r from-[color:var(--glass-accent-deep,#5B46E5)] to-pink-500 text-white"
+                      : "bg-[color:var(--glass-pop-bg)] text-[color:var(--glass-ink-soft)]"
+                  }`}
+                >
+                  {i + 1}
+                  {step.hasError && (
+                    <span className="absolute -right-0.5 -top-0.5 size-2 rounded-full bg-destructive" />
+                  )}
+                </span>
+                <span
+                  className={`hidden truncate text-[13px] sm:block ${
                     isActive
                       ? "border-b-2 border-[color:var(--glass-accent-deep,#5B46E5)] pb-0.5 font-bold text-[color:var(--glass-ink)]"
                       : "font-semibold text-[color:var(--glass-ink-soft)]"
@@ -79,7 +95,7 @@ export function FormStepper({ steps, activeIndex, onSelect }: FormStepperProps) 
                   )}
                 </span>
                 {step.description && (
-                  <span className="truncate text-[11px] text-[color:var(--glass-ink-faint)]">
+                  <span className="hidden truncate text-[11px] text-[color:var(--glass-ink-faint)] sm:block">
                     {step.description}
                   </span>
                 )}

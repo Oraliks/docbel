@@ -1747,6 +1747,22 @@ export function applyC1Improvements(
         if (q.id === "dateChangementOrganisme") {
           return { ...q, visibleIf: { fieldId: "transfereOrganismePaiement", op: "equals" as const, value: true } };
         }
+        // Question héritée de la 1ʳᵉ demande (C1), sans rapport avec un
+        // changement de situation — reste réel/requis/soumis (defaultValue
+        // "non") mais n'est plus proposée comme motif ni affichée en détail.
+        if (q.id === "chomeurTemporaireAlternance") return { ...q, autoAnswered: true };
+        // Libellé/aide raccourcis pour l'étape Motif (Oraliks, 2026-07-07) :
+        // prend la place laissée par chomeurTemporaireAlternance en Détails.
+        if (q.id === "dateModificationEffective") {
+          return {
+            ...q,
+            label: { ...q.label, fr: "Date de changement" },
+            help: {
+              ...q.help,
+              fr: "Date de la demande de changement. Une seule date pour l'adresse, la situation personnelle/du ménage et le compte bancaire. Si tes changements n'ont pas tous la même date d'effet, fais une déclaration séparée pour chaque date différente. Ne concerne pas la cotisation syndicale ni le permis de séjour (pas de date sur le formulaire officiel).",
+            },
+          };
+        }
         // Reste réel/requis/soumis (nécessaire au filler + à la validation),
         // mais n'est plus montré comme sélecteur : les 5 chips pilotent sa
         // valeur (defaultValue "modification", ou "changement-op" via

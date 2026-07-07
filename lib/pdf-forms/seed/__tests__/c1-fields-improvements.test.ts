@@ -263,6 +263,28 @@ describe("applyC1Improvements — restrictMotifTo5Situations (Oraliks, 2026-07-0
     expect(result.find((q) => q.id === "transfereOrganismePaiement")).toBeUndefined();
   });
 
+  it("actif : chomeurTemporaireAlternance devient autoAnswered (hors périmètre changement-situation)", () => {
+    const result = applyC1Improvements([], { restrictMotifTo5Situations: true });
+    const f = result.find((q) => q.id === "chomeurTemporaireAlternance");
+    expect(f?.autoAnswered).toBe(true);
+    expect(f?.required).toBe(true); // reste requis/soumis, valeur par défaut "non"
+    expect(f?.defaultValue).toBe("non");
+  });
+
+  it("absent : chomeurTemporaireAlternance n'est PAS autoAnswered (comportement c1/c1-insertion inchangé)", () => {
+    const result = applyC1Improvements([]);
+    const f = result.find((q) => q.id === "chomeurTemporaireAlternance");
+    expect(f?.autoAnswered).toBeFalsy();
+  });
+
+  it("actif : dateModificationEffective reçoit un libellé court avec l'explication en aide (tooltip)", () => {
+    const result = applyC1Improvements([], { restrictMotifTo5Situations: true });
+    const f = result.find((q) => q.id === "dateModificationEffective");
+    expect(f?.label?.fr).toBe("Date de changement");
+    expect(f?.help?.fr).toContain("Date de la demande");
+    expect(f?.visibleIf).toEqual({ fieldId: "motifIntroduction", op: "equals", value: "modification" });
+  });
+
   it("actif : C1_QUESTIONS partagé reste non muté (labels/visibleIf/hidden d'origine intacts)", () => {
     applyC1Improvements([], { restrictMotifTo5Situations: true });
     const adresse = C1_QUESTIONS.find((q) => q.id === "modificationAdresse");

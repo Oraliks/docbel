@@ -20,6 +20,12 @@ import {
   mergeSharedValues,
   type SharedBundleValues,
 } from "@/lib/bundles/shared-values";
+import {
+  canonicalToPrefill,
+  extractCanonical,
+  mergeCanonical,
+  type CanonicalMap,
+} from "@/lib/pdf-forms/canonical/extract";
 
 export const dynamic = "force-dynamic";
 
@@ -54,7 +60,7 @@ async function loadForm(slug: string): Promise<LoadFormResult> {
 async function loadBundleSharedValues(
   bundleRunId: string,
   currentFormId: string
-): Promise<{ shared: SharedBundleValues; runValid: boolean }> {
+): Promise<{ shared: SharedBundleValues; canonical: CanonicalMap; runValid: boolean }> {
   const run = await prisma.bundleRun.findUnique({
     where: { id: bundleRunId },
     include: {
@@ -69,20 +75,35 @@ async function loadBundleSharedValues(
       },
     },
   });
-  if (!run || run.status !== "in_progress") return { shared: {}, runValid: false };
+  if (!run || run.status !== "in_progress") {
+    return { shared: {}, canonical: {}, runValid: false };
+  }
 
   const payloads = (run.payloads as Record<string, Record<string, unknown>>) || {};
   // On collecte les valeurs partagées de tous les PDFs DÉJÀ complétés (qui ne
   // sont PAS le courant — sinon on annule notre propre saisie en cours).
+  //
+  // Deux mécanismes complémentaires depuis Phase 2 du plan bindings :
+  //   • `extractSharedValues` par `prefillFrom` (mécanisme historique) :
+  //     couvre les champs pré-remplissables (`profile.niss`, `itsme.*`).
+  //   • `extractCanonical` par `canonicalKey` (nouveau) : couvre le
+  //     vocabulaire canonique explicite (`identity.nom`, `banque.iban`, …)
+  //     qui ne dépend pas de la source de prefill du champ.
   const sharedMaps: SharedBundleValues[] = [];
+  const canonicalMaps: CanonicalMap[] = [];
   for (const item of run.bundle.items) {
     if (!item.pdfForm || item.pdfForm.id === currentFormId) continue;
     const payload = payloads[item.pdfForm.id];
     if (!payload) continue;
     const fields = (item.pdfForm.fields as unknown as PdfFormField[]) || [];
     sharedMaps.push(extractSharedValues(fields, payload));
+    canonicalMaps.push(extractCanonical(fields, payload));
   }
-  return { shared: mergeSharedValues(...sharedMaps), runValid: true };
+  return {
+    shared: mergeSharedValues(...sharedMaps),
+    canonical: mergeCanonical(...canonicalMaps),
+    runValid: true,
+  };
 }
 
 export async function generateMetadata({
@@ -142,14 +163,23 @@ export default async function PdfFormPage({
 
   // Contexte bundle : si on a un `bundleRun`, on récupère les valeurs déjà
   // saisies par l'utilisateur dans les autres PDFs du dossier (NISS, adresse…)
-  // et on les injecte comme valeurs par défaut dans ce PDF.
+  // et on les injecte comme valeurs par défaut dans ce PDF. Deux voies
+  // combinées (Phase 2 du plan bindings) :
+  //   • par `prefillFrom` (historique) — même clé de prefill entre 2 PDFs ;
+  //   • par `canonicalKey` (nouveau) — même clé sémantique (identity.nom,
+  //     banque.iban, …) sans devoir aligner les sources de prefill.
+  // Priorité au sein de bundlePrefill : `prefillFrom` prime (précision plus
+  // fine — un champ prefillFrom itsme.niss ne doit pas se faire injecter la
+  // valeur canonique d'un formulaire qui l'a extraite d'un profil).
   let bundlePrefill: Record<string, string> | undefined;
   let validBundleRunId: string | undefined;
   if (bundleRun) {
-    const { shared, runValid } = await loadBundleSharedValues(bundleRun, form.id);
+    const { shared, canonical, runValid } = await loadBundleSharedValues(bundleRun, form.id);
     if (runValid) {
       validBundleRunId = bundleRun;
-      bundlePrefill = applySharedValuesToForm(form.fields, shared);
+      const bySharedFrom = applySharedValuesToForm(form.fields, shared);
+      const byCanonical = canonicalToPrefill(form.fields, canonical);
+      bundlePrefill = { ...byCanonical, ...bySharedFrom };
     }
   }
 

@@ -24,6 +24,7 @@ import {
 import { assembleFullName } from "./system-values";
 import { resolveSignerName, buildSignatureBlock } from "./signature";
 import { isSignatureField } from "./auto-fields";
+import { isFieldVisible } from "./validation";
 
 /// Chemin d'une police TTF Unicode optionnelle. Si présente, elle est
 /// embarquée et utilisée pour réécrire les apparences des champs → support
@@ -278,6 +279,14 @@ export async function fillForm(
     // apparaissait cochée sur le PDF généré alors qu'elle n'existait plus
     // dans le form runner (hidden en mode restrictMotifTo5Situations).
     if (field.hidden) continue;
+    // Champ NON visible selon `visibleIf` sur le payload courant : ne pas
+    // stamper (Oraliks 2026-07-07 : la grille cohabitants était stampée avec
+    // la date de naissance de l'identité en 5 rangées, alors que l'usager
+    // avait choisi « isolé ». Cause : brouillon avec cohabitants populé avant
+    // le switch vers isolé — les rows persistaient dans le state même après
+    // que le champ soit devenu invisible). Un champ auto-answered (ex.
+    // motifIntroduction) n'a pas de visibleIf → non affecté.
+    if (field.visibleIf && !isFieldVisible(field.visibleIf, payload)) continue;
 
     // Branche dédiée aux champs `array` : stamping positionnel par ligne
     // (template `pdfFieldNameTemplate` sur chaque sous-champ) + stamping

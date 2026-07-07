@@ -8,6 +8,7 @@ import {
   DEFAULT_LOCALE,
   isFullNameValue,
 } from "./types";
+import { isAutoField } from "./auto-fields";
 import {
   isValidNISS,
   diagnoseNISS,
@@ -287,11 +288,22 @@ export function isFieldVisible(cond: VisibleIf | undefined, payload: FormPayload
 /// Les champs requis ne sont vérifiés que s'ils sont visibles.
 export function buildValidator(fields: PdfFormField[], lang: Locale = DEFAULT_LOCALE) {
   const shape: Record<string, ZodTypeAny> = {};
-  for (const f of fields) shape[f.id] = fieldToZod(f, lang).optional();
+  for (const f of fields) {
+    // Champs auto (signature, date du jour, autoAnswered) : jamais rendus
+    // comme controle interactif, remplis programmatiquement par le runner
+    // et re-injectes de maniere autoritaire cote serveur (route /generate).
+    // On les exclut totalement du schema Zod — cf. bug persistant Oraliks
+    // 2026-07-07 ou dateSignature="2026-07-05" (valide ISO, required=false)
+    // continuait a etre flag sur la path Zod sans explication, meme apres
+    // le skip conditionnel dans superRefine et required=false cote schema.
+    if (isAutoField(f)) continue;
+    shape[f.id] = fieldToZod(f, lang).optional();
+  }
 
   return z.object(shape).superRefine((data, ctx) => {
     const payload = data as FormPayload;
     for (const f of fields) {
+      if (isAutoField(f)) continue;
       if (!f.required) continue;
       if (!isFieldVisible(f.visibleIf, payload)) continue;
       // Champs auto-remplis programmatiquement par le runner AVANT la

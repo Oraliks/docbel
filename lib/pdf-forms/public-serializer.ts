@@ -36,6 +36,11 @@ export interface PublicField {
   streetAutocomplete?: PdfFormField["streetAutocomplete"];
   internationalIban?: PdfFormField["internationalIban"];
   requiredGroup?: PdfFormField["requiredGroup"];
+  /// Clé canonique — safe à exposer publiquement : c'est un identifiant
+  /// sémantique du champ (ex. "identity.nom"), pas une donnée du citoyen.
+  /// Le prefill croisé côté client s'en sert pour aligner deux formulaires
+  /// enchaînés dans un même dossier.
+  canonicalKey?: PdfFormField["canonicalKey"];
   // ---- Champ `array` ----
   itemFields?: PublicField[];
   addRowLabel?: PdfFormField["addRowLabel"];
@@ -76,6 +81,7 @@ export function toPublicField(f: PdfFormField): PublicField {
     streetAutocomplete: f.streetAutocomplete,
     internationalIban: f.internationalIban,
     requiredGroup: f.requiredGroup,
+    canonicalKey: f.canonicalKey,
     itemFields: f.itemFields ? f.itemFields.map(toPublicField) : undefined,
     addRowLabel: f.addRowLabel,
     minRows: f.minRows,

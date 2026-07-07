@@ -58,9 +58,14 @@ export const C1C_FIELDS: PdfFormField[] = [
     },
     placeholder: { fr: "00.00.00-000.00", nl: "", de: "" },
     prefillFrom: "profile.niss",
+    canonicalKey: "identity.niss",
     section: SECTION_IDENTITE,
     order: 1,
   },
+  // NOTE canonique : `pr_nom_et_nom` (type "fullname" = { first, last })
+  // n'est pas tagué canonicalKey car il combine deux clés canoniques
+  // distinctes (identity.prenom + identity.nom). Le prefillFrom "itsme"
+  // reste la voie de pré-remplissage pour ce champ composite.
 
   // ==========================================================================
   // Votre déclaration (intro) — date de début de l'activité accessoire.

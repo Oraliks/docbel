@@ -98,6 +98,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
     required: true,
     label: { fr: "Nom", nl: "", de: "" },
     prefillFrom: "profile.lastName",
+    canonicalKey: "identity.nom",
     section: SECTION_IDENTITE,
     order: -100,
   },
@@ -108,6 +109,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
     required: true,
     label: { fr: "Prénom", nl: "", de: "" },
     prefillFrom: "profile.firstName",
+    canonicalKey: "identity.prenom",
     section: SECTION_IDENTITE,
     order: -99,
   },
@@ -123,6 +125,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
     },
     placeholder: { fr: "00.00.00-000.00", nl: "", de: "" },
     prefillFrom: "profile.niss",
+    canonicalKey: "identity.niss",
     section: SECTION_IDENTITE,
     order: -98,
   },
@@ -137,6 +140,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
       nl: "", de: "",
     },
     prefillFrom: "itsme.birthDate",
+    canonicalKey: "identity.dateNaissance",
     // Se recalcule en direct depuis le NISS (checksum T.I. 000, cf.
     // lib/pdf-forms/niss-birthdate.ts) et se verrouille (lecture seule)
     // TANT QUE le NISS produit une date valide ; redevient éditable si le
@@ -155,6 +159,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
       fr: "Indique ta nationalité (ex. « Belge »). Si tu es hors EEE/Suisse, complète aussi la rubrique dédiée plus bas.",
       nl: "", de: "",
     },
+    canonicalKey: "identity.nationalite",
     section: SECTION_IDENTITE,
     order: -96,
   },
@@ -170,6 +175,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
     label: { fr: "Code postal", nl: "", de: "" },
     placeholder: { fr: "1000", nl: "", de: "" },
     prefillFrom: "profile.postalCode",
+    canonicalKey: "adresse.codePostal",
     section: SECTION_IDENTITE,
     order: -90,
   },
@@ -185,6 +191,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
     },
     prefillFrom: "profile.street",
     streetAutocomplete: { postalFieldId: "code_postal" },
+    canonicalKey: "adresse.rue",
     section: SECTION_IDENTITE,
     order: -89,
   },
@@ -194,6 +201,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
     type: "text",
     required: true,
     label: { fr: "Numéro", nl: "", de: "" },
+    canonicalKey: "adresse.numero",
     section: SECTION_IDENTITE,
     order: -88,
   },
@@ -204,6 +212,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
     required: false,
     label: { fr: "Boîte", nl: "", de: "" },
     help: { fr: "Numéro de boîte si applicable (laisser vide sinon).", nl: "", de: "" },
+    canonicalKey: "adresse.boite",
     section: SECTION_IDENTITE,
     order: -87,
   },
@@ -223,6 +232,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
     // postale UE dans le repo pour l'inférer automatiquement, cf.
     // field-derivations.ts#postal-be-country).
     derivedFrom: { fieldId: "code_postal", via: "postal-be-country" },
+    canonicalKey: "adresse.pays",
     section: SECTION_IDENTITE,
     order: -86,
   },
@@ -237,6 +247,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
     label: { fr: "Adresse e-mail (facultatif)", nl: "", de: "" },
     placeholder: { fr: "nom@exemple.be", nl: "", de: "" },
     prefillFrom: "profile.email",
+    canonicalKey: "contact.email",
     section: SECTION_IDENTITE,
     order: -85,
   },
@@ -248,6 +259,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
     label: { fr: "Numéro de téléphone (facultatif)", nl: "", de: "" },
     placeholder: { fr: "0470 12 34 56", nl: "", de: "" },
     prefillFrom: "profile.phone",
+    canonicalKey: "contact.telephone",
     section: SECTION_IDENTITE,
     order: -84,
   },
@@ -425,6 +437,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
       { value: "isole", label: { fr: "Je vis seul (isolé)", nl: "", de: "" } },
       { value: "cohabite", label: { fr: "Je cohabite avec au moins une personne", nl: "", de: "" } },
     ],
+    canonicalKey: "famille.statut",
     section: SECTION_SITUATION_FAMILIALE,
     order: 100,
   },
@@ -1194,6 +1207,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
     },
     placeholder: { fr: "BE00 0000 0000 0000", nl: "", de: "" },
     internationalIban: true,
+    canonicalKey: "banque.iban",
     visibleIf: { fieldId: "modePaiement", op: "equals", value: "virement" },
     section: SECTION_PAIEMENT,
     order: 603,
@@ -1238,6 +1252,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
     label: { fr: "Nom et prénom du propriétaire du compte", nl: "", de: "" },
     placeholder: { fr: "Nom et prénom de la personne", nl: "", de: "" },
     visibleIf: { fieldId: "titulaireCompte", op: "equals", value: "autre-nom" },
+    canonicalKey: "banque.titulaire",
     section: SECTION_PAIEMENT,
     order: 604,
   },
@@ -1289,6 +1304,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
     // l'exactitude d'un code banque réel (aucune base fiable disponible ici
     // pour ça ; le mauvais code enverrait un paiement au mauvais endroit).
     regex: "^[A-Za-z]{6}[A-Za-z0-9]{2}([A-Za-z0-9]{3})?$",
+    canonicalKey: "banque.bic",
     // Visible seulement pour un IBAN étranger (préfixe 2 lettres ≠ BE). La
     // regex `^(?![Bb][Ee])[A-Za-z]{2}` ancre 2 lettres au début de l'IBAN,
     // avec un negative-lookahead sur BE — évite d'afficher le BIC tant que

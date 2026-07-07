@@ -156,6 +156,11 @@ export interface FieldOption {
 /// chaque nouvelle dérivation (ex. futur code postal → commune) s'y ajoute.
 export type FieldDerivation = "niss-birth-date" | "postal-be-country";
 
+/// Clé du vocabulaire canonique (cf. `lib/pdf-forms/canonical/vocabulary.ts`).
+/// Type portable ici (`string`) pour éviter un import croisé : la validation
+/// stricte se fait dans le module canonical via `isCanonicalKey`.
+export type CanonicalKey = string;
+
 export interface PdfFormField {
   /// Identifiant stable côté schéma enrichi (slug). Distinct de pdfFieldName.
   id: string;
@@ -250,6 +255,14 @@ export interface PdfFormField {
   /// "situation" du C1 : aucune n'est obligatoire seule, mais il en faut au
   /// moins une). L'erreur s'attache au premier champ visible du groupe.
   requiredGroup?: string;
+  /// Clé du vocabulaire canonique (`lib/pdf-forms/canonical/vocabulary.ts`)
+  /// que ce champ REPRÉSENTE dans son formulaire. Sert au pré-remplissage
+  /// croisé quand un dossier enchaîne plusieurs PDFs (C1 → C1A → C47 → …) :
+  /// la valeur est extraite d'un formulaire A pour être injectée dans les
+  /// champs équivalents d'un formulaire B qui portent la MÊME clé.
+  ///
+  /// Absent = ce champ n'est pas partageable (spécifique à ce document).
+  canonicalKey?: CanonicalKey;
 
   // Méta technique (non exposée au public)
   /// Note interne admin — JAMAIS exposée côté public.

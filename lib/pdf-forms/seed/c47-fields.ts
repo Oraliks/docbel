@@ -72,6 +72,7 @@ export const C47_FIELDS: PdfFormField[] = [
     },
     placeholder: { fr: "00.00.00-000.00", nl: "", de: "" },
     prefillFrom: "profile.niss",
+    canonicalKey: "identity.niss",
     section: SECTION_IDENTITE,
     order: 3,
   },
@@ -83,6 +84,7 @@ export const C47_FIELDS: PdfFormField[] = [
     label: { fr: "Téléphone", nl: "", de: "" },
     help: { fr: "Facultatif.", nl: "", de: "" },
     prefillFrom: "profile.phone",
+    canonicalKey: "contact.telephone",
     section: SECTION_IDENTITE,
     order: 4,
   },
@@ -94,9 +96,14 @@ export const C47_FIELDS: PdfFormField[] = [
     label: { fr: "E-mail", nl: "", de: "" },
     help: { fr: "Facultatif.", nl: "", de: "" },
     prefillFrom: "profile.email",
+    canonicalKey: "contact.email",
     section: SECTION_IDENTITE,
     order: 5,
   },
+  // NOTE canonique : `pr_nom_et_nom` (fullname composite) et `rue` +
+  // `commune_et_code_postal` (widgets combinés « rue+numéro » et
+  // « commune+CP ») ne sont pas tagués canonicalKey — leur structure n'est
+  // pas 1-clé/1-valeur.
 
   // ==========================================================================
   // Votre demande

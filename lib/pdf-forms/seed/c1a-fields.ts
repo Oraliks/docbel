@@ -254,9 +254,15 @@ export const C1A_FIELDS: PdfFormField[] = [
     },
     placeholder: { fr: "00.00.00-000.00", nl: "", de: "" },
     prefillFrom: "profile.niss",
+    canonicalKey: "identity.niss",
     section: SECTION_IDENTITE,
     order: -99,
   },
+  // NOTE canonique : `nomEtPrenom` (nom+prénom combinés), `rue` (rue+numéro
+  // combinés) et `codePostalEtCommune` (postal+commune combinés) NE SONT
+  // PAS tagués canonicalKey — ces widgets fusionnent 2 valeurs en un seul
+  // champ texte, incompatible avec l'extraction canonique 1-clé/1-valeur.
+  // Le citoyen doit les ressaisir manuellement au-delà du NISS.
   {
     id: "rue",
     pdfFieldName: "Rue",

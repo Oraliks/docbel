@@ -71,9 +71,17 @@ export const C1_PARTENAIRE_FIELDS: PdfFormField[] = [
     },
     placeholder: { fr: "00.00.00-000.00", nl: "", de: "" },
     prefillFrom: "profile.niss",
+    // Chômeur = citoyen qui remplit ce formulaire (⇒ canonicalKey =
+    // identity.niss). ATTENTION : les champs `niss_partenaire` et
+    // `nom_partenaire` visent LE PARTENAIRE, PAS le citoyen — ne SURTOUT
+    // PAS y poser identity.* (le prefill croisé injecterait la NISS du
+    // citoyen dans le champ du partenaire).
+    canonicalKey: "identity.niss",
     section: SECTION_IDENTITE,
     order: -100,
   },
+  // NOTE canonique : `nom_ch_meur` (label « Ton nom et prénom »)
+  // combine nom + prénom en un champ texte simple — non taguable en 1 clé.
   {
     id: "nom_ch_meur",
     pdfFieldName: "Nom chômeur",

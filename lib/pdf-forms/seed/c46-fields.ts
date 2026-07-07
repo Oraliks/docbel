@@ -67,9 +67,13 @@ export const C46_FIELDS: PdfFormField[] = [
     },
     placeholder: { fr: "00.00.00-000.00", nl: "", de: "" },
     prefillFrom: "profile.niss",
+    canonicalKey: "identity.niss",
     section: SECTION_IDENTITE,
     order: -99,
   },
+  // NOTE canonique : `nom_et_pr_nom` (type "fullname" = { first, last })
+  // combine deux clés canoniques (identity.nom + identity.prenom) → non
+  // tagué. Prefill via itsme.firstName / itsme.lastName reste actif.
 
   // ====================================================================
   // SECTION — VOTRE DÉCLARATION (le/les mandat(s))

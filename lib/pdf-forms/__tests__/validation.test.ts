@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { buildValidator, isFieldVisible, anchoredRegex, validateFieldFormat, isFieldComplete, validateStepFields } from "../validation";
+import { buildValidator, isFieldVisible, anchoredRegex, validateFieldFormat, isFieldComplete, validateStepFields, findFirstInvalidStep } from "../validation";
 import { PdfFormField } from "../types";
 
 function field(p: Partial<PdfFormField> & Pick<PdfFormField, "id" | "type">): PdfFormField {
@@ -331,5 +331,37 @@ describe("validateStepFields — blocage d'avancée d'étape (bouton Continuer)"
       field({ id: "detail", type: "text", required: true, visibleIf: { fieldId: "motif", op: "equals", value: "autre" } }),
     ];
     expect(validateStepFields(fields, { motif: "standard" }, "fr")).toEqual({});
+  });
+});
+
+describe("findFirstInvalidStep — saut de plusieurs étapes via le stepper", () => {
+  it("renvoie null quand toutes les étapes fournies sont valides", () => {
+    const steps = [
+      [field({ id: "a", type: "text", required: true })],
+      [field({ id: "b", type: "text", required: true })],
+    ];
+    expect(findFirstInvalidStep(steps, { a: "x", b: "y" }, "fr")).toBeNull();
+  });
+
+  it("détecte une étape invalide qui N'EST PAS la première (bug Oraliks 2026-07-07 : cliquer 2+ crans plus loin dans le stepper devait valider TOUTES les étapes survolées, pas seulement celle qu'on quitte)", () => {
+    const steps = [
+      [field({ id: "a", type: "text", required: true })], // étape 0 : remplie
+      [field({ id: "b", type: "text", required: true })], // étape 1 : PAS remplie (sautée)
+      [field({ id: "c", type: "text", required: true })], // étape 2 : cible du clic
+    ];
+    const result = findFirstInvalidStep(steps, { a: "x" }, "fr"); // b et c vides
+    expect(result).not.toBeNull();
+    expect(result?.index).toBe(1); // la 2ᵉ étape (celle sautée), pas la dernière
+    expect(Object.keys(result?.errors ?? {})).toEqual(["b"]);
+  });
+
+  it("s'arrête à la PREMIÈRE étape invalide (n'agrège pas les erreurs des étapes suivantes)", () => {
+    const steps = [
+      [field({ id: "a", type: "text", required: true })],
+      [field({ id: "b", type: "text", required: true })],
+    ];
+    const result = findFirstInvalidStep(steps, {}, "fr"); // ni a ni b remplis
+    expect(result?.index).toBe(0);
+    expect(Object.keys(result?.errors ?? {})).toEqual(["a"]);
   });
 });

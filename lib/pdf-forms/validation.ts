@@ -350,6 +350,24 @@ export function validateStepFields(
   return errors;
 }
 
+/// Cherche la PREMIÈRE étape invalide parmi une liste (dans l'ordre fourni).
+/// Sert à gater un saut d'étape via le stepper : cliquer 2+ crans plus loin
+/// doit valider TOUTES les étapes survolées, pas seulement celle qu'on
+/// quitte — sinon des étapes intermédiaires (ex. Identité) peuvent être
+/// sautées sans jamais être remplies (bug Oraliks, 2026-07-07). Renvoie
+/// `null` si toutes les étapes passées sont valides.
+export function findFirstInvalidStep(
+  stepsFieldsList: PdfFormField[][],
+  payload: FormPayload,
+  lang: Locale = DEFAULT_LOCALE
+): { index: number; errors: Record<string, string> } | null {
+  for (let i = 0; i < stepsFieldsList.length; i++) {
+    const errors = validateStepFields(stepsFieldsList[i], payload, lang);
+    if (Object.keys(errors).length > 0) return { index: i, errors };
+  }
+  return null;
+}
+
 // ---------------------------------------------------------------------------
 // Validation par champ (temps réel au blur) + complétion d'étape.
 // Réutilise les mêmes validateurs que le schéma Zod, mais pour UN champ, sans

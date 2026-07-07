@@ -1959,7 +1959,22 @@ export function applyC1Improvements(
   // Pose `stepGroup` sur les champs sectionnés, puis cure les widgets bruts
   // non sectionnés (masque doublons / auto / junk — jamais un widget unique).
   const coveredNames = collectCoveredPdfNames(questions);
-  return [...preserved, ...questions]
+  const curated = [...preserved, ...questions]
     .map(withStepGroup)
     .map((f) => curatePreserved(f, coveredNames));
+
+  // Dossier restreint (changement-situation-personnelle) : nos questions
+  // enrichies couvrent tout ce qui est necessaire pour ce cas d'usage. Les
+  // widgets bruts non sectionnes qui subsistent ("je demande des allocations
+  // a partir du", "oui allez a la rubrique suivante", cases isolees "non_17"
+  // / "non_18", flow markers C1A, etc.) sont des DOUBLONS ou des marqueurs
+  // de flux qu'on a deja traites — Oraliks 2026-07-07 : « cette partie n'est
+  // pas necessaire en soit puisqu'on y repond deja par le form runner ».
+  // On les cache pour retirer l'accordeon « Autres informations » du step
+  // final. Ils restent dans le payload et peuvent etre stampes au submit si
+  // besoin (mais non-required, non-obligatoires).
+  if (opts?.restrictMotifTo5Situations) {
+    return curated.map((f) => (f.section || f.hidden ? f : { ...f, hidden: true }));
+  }
+  return curated;
 }

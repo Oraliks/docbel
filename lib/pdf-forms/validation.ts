@@ -294,6 +294,18 @@ export function buildValidator(fields: PdfFormField[], lang: Locale = DEFAULT_LO
     for (const f of fields) {
       if (!f.required) continue;
       if (!isFieldVisible(f.visibleIf, payload)) continue;
+      // Champs auto-remplis programmatiquement par le runner AVANT la
+      // validation (date du jour via `system.today`, signature auto-confirmée
+      // dès qu'un nom de signataire est résolu) : leur `required` sert la
+      // sémantique côté PDF (le widget existe et doit être stampé) mais ne
+      // doit pas bloquer la validation utilisateur si pour une raison
+      // quelconque le refill n'a pas eu lieu (draft restauré qui écrase la
+      // date, HMR partiel, etc.) — Oraliks 2026-07-07 : "Certains champs
+      // sont invalides — Date de signature" persistait alors que la date
+      // est censée être générée automatiquement. Le check reste appliqué
+      // sur tous les autres required.
+      if (f.prefillFrom === "system.today") continue;
+      if (f.type === "signature") continue;
       const v = payload[f.id];
       // Un champ `fullname` requis exige ses deux sous-parties (prénom + nom).
       const fullNameIncomplete =

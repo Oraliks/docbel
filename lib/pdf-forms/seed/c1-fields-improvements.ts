@@ -455,13 +455,17 @@ export const C1_QUESTIONS: PdfFormField[] = [
     pdfFieldName: "",
     type: "radio",
     required: false,
-    label: { fr: "Statut du jugement", nl: "", de: "" },
+    label: { fr: "As-tu le jugement en main ?", nl: "", de: "" },
     options: [
-      { value: "en-main", label: { fr: "J'ai le jugement (à joindre)", nl: "", de: "" } },
+      { value: "en-main", label: { fr: "Oui, j'ai le jugement (à joindre)", nl: "", de: "" } },
       { value: "en-cours", label: { fr: "Le jugement est en cours", nl: "", de: "" } },
       { value: "pas-encore-recu", label: { fr: "Je n'ai pas encore reçu mon jugement", nl: "", de: "" } },
     ],
-    defaultValue: "en-main",
+    // Pas de defaultValue (Oraliks 2026-07-07) — sinon pensionAlimentaireDejaDeclare
+    // (visible si statutJugement === "en-main") apparaît DÈS que l'utilisateur
+    // coche pensionAlimentaire = oui, sans qu'il ait explicitement confirmé
+    // avoir le jugement. On force le choix explicite pour n'afficher la
+    // question « déjà déclaré ? » qu'après un « oui » assumé.
     visibleIf: { fieldId: "pensionAlimentaire", op: "equals", value: "oui" },
     section: SECTION_SITUATION_FAMILIALE,
     order: 101.5,

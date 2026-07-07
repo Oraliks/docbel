@@ -71,6 +71,14 @@ export async function PATCH(
   if (typeof body.allowDownload === "boolean") data.allowDownload = body.allowDownload;
   if (typeof body.allowDoccle === "boolean") data.allowDoccle = body.allowDoccle;
   if (typeof body.allowItsme === "boolean") data.allowItsme = body.allowItsme;
+  if (typeof body.publicPath === "string" || body.publicPath === null) {
+    // Normalise : trim, lowercase, retire les slashes de bord. Vide = null
+    // (pas d'URL publique dédiée). L'unicité est appliquée par l'index DB.
+    const raw = typeof body.publicPath === "string"
+      ? body.publicPath.trim().toLowerCase().replace(/^\/+|\/+$/g, "")
+      : "";
+    data.publicPath = raw ? raw : null;
+  }
   if (typeof body.active === "boolean") data.active = body.active;
   if (typeof body.disabledMessage === "string" || body.disabledMessage === null) {
     data.disabledMessage = (body.disabledMessage as string | null) ?? null;

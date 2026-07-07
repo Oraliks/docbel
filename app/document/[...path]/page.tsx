@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import { headers } from "next/headers";
 import Link from "next/link";
 import { ChevronRightIcon, SparklesIcon } from "lucide-react";
@@ -34,12 +34,39 @@ type LoadFormResult =
   | { kind: "disabled"; title: string; disabledMessage: string | null }
   | {
       kind: "ok";
-      form: ReturnType<typeof toPublicForm> & { allowDoccle: boolean; allowItsme: boolean };
+      form: ReturnType<typeof toPublicForm> & {
+        allowDoccle: boolean;
+        allowItsme: boolean;
+        publicPath: string | null;
+      };
     };
 
-async function loadForm(slug: string): Promise<LoadFormResult> {
-  const form = await prisma.pdfForm.findUnique({ where: { slug } });
+/// Résolution unifiée du PdfForm à partir des segments d'URL captés par le
+/// catch-all `[...path]`. Deux formes acceptées :
+///   • 1 segment  → interprété comme `slug` interne (compat historique).
+///   • 2+ segments → interprétés comme `publicPath` (segments joints par "/").
+///
+/// La forme SLUG applique une règle supplémentaire (Phase 3 du plan bindings) :
+/// si le PdfForm cible porte un `publicPath`, on redirige 308 vers l'URL
+/// publique canonique. Ainsi `/document/c1-changement-situation` renvoie
+/// `/document/onem/c1` de manière permanente et cohérente pour les liens
+/// déjà partagés + le SEO.
+async function loadForm(
+  path: readonly string[]
+): Promise<
+  | LoadFormResult
+  | { kind: "redirect"; publicPath: string }
+> {
+  if (path.length === 0) return { kind: "missing" };
+  const form =
+    path.length === 1
+      ? await prisma.pdfForm.findUnique({ where: { slug: path[0] } })
+      : await prisma.pdfForm.findFirst({ where: { publicPath: path.join("/") } });
   if (!form || form.status !== "published") return { kind: "missing" };
+  // Redirection SLUG → publicPath quand disponible (URL publique canonique).
+  if (path.length === 1 && form.publicPath) {
+    return { kind: "redirect", publicPath: form.publicPath };
+  }
   if (form.active === false) {
     return { kind: "disabled", title: form.title, disabledMessage: form.disabledMessage };
   }
@@ -48,6 +75,7 @@ async function loadForm(slug: string): Promise<LoadFormResult> {
     kind: "ok",
     form: {
       ...pub,
+      publicPath: form.publicPath,
       allowDoccle: pub.allowDoccle && isDoccleConfigured(),
       allowItsme: pub.allowItsme && isItsmeConfigured(),
     },
@@ -109,17 +137,24 @@ async function loadBundleSharedValues(
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ slug: string }>;
+  params: Promise<{ path: string[] }>;
 }): Promise<Metadata> {
-  const { slug } = await params;
+  const { path } = await params;
   const t = await getTranslations("public.contenu");
-  const res = await loadForm(slug);
+  const res = await loadForm(path);
   if (res.kind === "missing") return { title: t("formMetaUnavailable") };
+  if (res.kind === "redirect") return { title: t("formMetaUnavailable") };
   if (res.kind === "disabled")
     return { title: t("formMetaDisabledTitle", { title: res.title }) };
+  // Canonical : URL SEO publique dès qu'un `publicPath` est disponible ;
+  // sinon fallback vers l'URL slug (compatibilité pré-Phase 3).
+  const canonical = res.form.publicPath
+    ? `/document/${res.form.publicPath}`
+    : `/document/${res.form.slug}`;
   return {
     title: t("formMetaTitle", { title: res.form.title }),
     description: res.form.description ?? undefined,
+    alternates: { canonical },
   };
 }
 
@@ -127,14 +162,15 @@ export default async function PdfFormPage({
   params,
   searchParams,
 }: {
-  params: Promise<{ slug: string }>;
+  params: Promise<{ path: string[] }>;
   searchParams: Promise<{ bundleRun?: string; bundleSlug?: string }>;
 }) {
-  const { slug } = await params;
+  const { path } = await params;
   const t = await getTranslations("public.contenu");
   const { bundleRun, bundleSlug } = await searchParams;
-  const res = await loadForm(slug);
+  const res = await loadForm(path);
   if (res.kind === "missing") notFound();
+  if (res.kind === "redirect") permanentRedirect(`/document/${res.publicPath}`);
   if (res.kind === "disabled") {
     return (
       <div className="w-full">

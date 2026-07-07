@@ -23,6 +23,9 @@ export interface EditorForm {
   allowDownload: boolean;
   allowDoccle: boolean;
   allowItsme: boolean;
+  /// URL publique stable (SEO), ex. "onem/c1". Null = pas d'URL publique
+  /// dédiée. Cf. Phase 3 du plan bindings.
+  publicPath: string | null;
   /// Disponibilité publique (publié mais "en pause" si false).
   active: boolean;
   /// Message custom affiché aux utilisateurs quand active=false. null = message générique.
@@ -105,6 +108,7 @@ export function useFormData(formId: string): UseFormData {
           issuer: form.issuer, organismeId: form.organismeId,
           locales: form.locales, defaultLocale: form.defaultLocale,
           allowDownload: form.allowDownload, allowDoccle: form.allowDoccle, allowItsme: form.allowItsme,
+          publicPath: form.publicPath,
           active: form.active, disabledMessage: form.disabledMessage,
           fields: form.fields,
           triggers: form.triggers,

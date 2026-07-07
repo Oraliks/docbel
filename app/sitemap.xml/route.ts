@@ -16,7 +16,7 @@ export async function GET(req: Request) {
   const url = new URL(req.url)
   const baseUrl = `${url.protocol}//${url.host}`
 
-  const [pages, news] = await Promise.all([
+  const [pages, news, pdfForms] = await Promise.all([
     prisma.page.findMany({
       where: { status: 'published', deletedAt: null },
       select: { slug: true, updatedAt: true },
@@ -25,6 +25,15 @@ export async function GET(req: Request) {
       where: { status: 'published' },
       select: { slug: true, updatedAt: true },
     }).catch(() => []) ?? [],
+    // Formulaires PDF avec URL publique SEO stable (Phase 3 du plan
+    // bindings). On n'expose QUE les publications qui ont un `publicPath` :
+    // les autres restent accessibles par slug interne mais ne sont pas
+    // canonisées pour indexation (le plan §3.2 réserve l'attribution au
+    // cas par cas — actuellement seul `onem/c1`).
+    prisma.pdfForm.findMany({
+      where: { status: 'published', active: true, publicPath: { not: null } },
+      select: { publicPath: true, updatedAt: true },
+    }),
   ])
 
   const entries: { loc: string; lastmod?: string; priority: number }[] = []
@@ -51,6 +60,18 @@ export async function GET(req: Request) {
       loc: `${baseUrl}/actualites/${n.slug}`,
       lastmod: n.updatedAt.toISOString(),
       priority: 0.6,
+    })
+  }
+
+  // Formulaires PDF avec URL publique (SEO). Chaque publicPath = 1 seule
+  // entrée sitemap (pas de duplicate avec le slug interne — l'URL slug
+  // renvoie un 308 vers le publicPath, canoniquement indexé).
+  for (const f of pdfForms) {
+    if (!f.publicPath) continue;
+    entries.push({
+      loc: `${baseUrl}/document/${f.publicPath}`,
+      lastmod: f.updatedAt.toISOString(),
+      priority: 0.7,
     })
   }
 

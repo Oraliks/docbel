@@ -27,6 +27,9 @@ interface SettingsForm {
   allowDownload: boolean;
   allowDoccle: boolean;
   allowItsme: boolean;
+  /// URL publique stable (SEO), ex. "onem/c1". Vide = pas d'URL dédiée
+  /// (accessible par slug interne seulement). Cf. Phase 3 du plan bindings.
+  publicPath?: string | null;
 }
 
 interface OrganismeOption {
@@ -116,6 +119,20 @@ export function FormSettings({
         <div className="flex flex-col gap-1 sm:col-span-2">
           <Label className="text-xs text-muted-foreground">{t("descriptionLabel")}</Label>
           <Textarea rows={2} value={form.description ?? ""} onChange={(e) => onChange({ description: e.target.value || null })} />
+        </div>
+
+        <div className="flex flex-col gap-1 sm:col-span-2">
+          <Label className="text-xs text-muted-foreground">{t("publicPathLabel")}</Label>
+          <Input
+            value={form.publicPath ?? ""}
+            placeholder={t("publicPathPlaceholder")}
+            onChange={(e) => {
+              // Normalise : trim, lowercase, retire les slashes de bord.
+              const raw = e.target.value.trim().toLowerCase().replace(/^\/+|\/+$/g, "");
+              onChange({ publicPath: raw || null });
+            }}
+          />
+          <p className="text-[11px] text-muted-foreground">{t("publicPathHelp")}</p>
         </div>
 
         <div className="flex flex-col gap-1.5">

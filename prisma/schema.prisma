@@ -1835,6 +1835,13 @@ enum PdfFormStatus {
 model PdfForm {
   id              String        @id @default(cuid())
   slug            String        @unique
+  /// URL publique STABLE (segments avec `/`), ex. "onem/c1".
+  /// Découple l'URL du slug interne : si le slug change, l'URL publique
+  /// reste valide. Le routing catch-all `app/document/[...path]/page.tsx`
+  /// résout d'abord par publicPath (2+ segments) puis par slug avec redirect
+  /// 308 vers publicPath quand présent (Phase 3 du plan bindings).
+  /// Null = pas d'URL publique dédiée (formulaire accessible par slug seul).
+  publicPath      String?       @unique
   title           String
   description     String?
   /// Organisme émetteur en texte libre (fallback historique : ONEM, CPAS,

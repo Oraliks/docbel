@@ -1481,7 +1481,11 @@ export const C1_QUESTIONS: PdfFormField[] = [
     id: "dateSignature",
     pdfFieldName: "",
     type: "date",
-    required: true,
+    // Volontairement non-required cote Zod (Oraliks 2026-07-07 : "Date et
+    // signatue sont generer en auto"). Auto-rempli au mount + refill submit +
+    // reinjecte serveur — Zod required ne peut que bloquer sur un champ que
+    // l'utilisateur ne voit meme pas.
+    required: false,
     label: { fr: "Date de signature", nl: "", de: "" },
     help: { fr: "Pré-remplie automatiquement avec la date du jour.", nl: "", de: "" },
     prefillFrom: "system.today",
@@ -1496,7 +1500,11 @@ export const C1_QUESTIONS: PdfFormField[] = [
     // bloc « façon Adobe » (nom + mention « Signé par » + horodatage ISO).
     pdfFieldName: "Signature",
     type: "signature",
-    required: true,
+    // Non-required cote Zod : auto-confirmee via signerName (nom+prenom
+    // resolus depuis l'identite du citoyen), bloc « facon Adobe » applique
+    // par le serveur. Le required Zod est redondant et cassait le submit
+    // quand le signerName resolution ratait au premier submit.
+    required: false,
     label: { fr: "Signature électronique", nl: "", de: "" },
     help: { fr: "Signature « façon Adobe » : ton nom + prénom + horodatage seront appliqués à la position de la signature.", nl: "", de: "" },
     section: SECTION_SIGNATURE,

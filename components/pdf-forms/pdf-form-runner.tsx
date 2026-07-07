@@ -113,7 +113,22 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, onValuesChange
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => {
         if (act && d?.draft && typeof d.draft === "object") {
-          setValues((prev) => ({ ...prev, ...(d.draft as FormPayload) }));
+          setValues((prev) => {
+            const merged: FormPayload = { ...prev, ...(d.draft as FormPayload) };
+            // Filet de sécurité (Oraliks 2026-07-07) : les brouillons pré-mes-
+            // fixes peuvent contenir des valeurs vides sur des champs auto
+            // (`system.today` / signature) exclus du rendu utilisateur — ce
+            // qui bloquait le submit avec « Date de signature » sans que
+            // l'utilisateur puisse corriger. On force le refill de ces champs
+            // ici, avant que le state React ne se propage aux composants.
+            for (const f of form.fields) {
+              if (isCreationDateField(f)) {
+                const cur = merged[f.id];
+                if (typeof cur !== "string" || cur.trim() === "") merged[f.id] = todayISO();
+              }
+            }
+            return merged;
+          });
           toast.info(t("runnerDraftRestored"));
         }
       })

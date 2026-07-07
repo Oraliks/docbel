@@ -20,6 +20,7 @@ export interface PublicField {
   regex?: string;
   defaultValue?: PdfFormField["defaultValue"];
   visibleIf?: PdfFormField["visibleIf"];
+  visibleIfParent?: PdfFormField["visibleIfParent"];
   prefillFrom?: PdfFormField["prefillFrom"];
   nameOrder?: PdfFormField["nameOrder"];
   /// Si true côté schéma : champ informatif / géré ailleurs — interdit
@@ -61,6 +62,7 @@ export function toPublicField(f: PdfFormField): PublicField {
     regex: f.regex,
     defaultValue: f.defaultValue,
     visibleIf: f.visibleIf,
+    visibleIfParent: f.visibleIfParent,
     prefillFrom: f.prefillFrom,
     nameOrder: f.nameOrder,
     readOnly: f.readOnly,

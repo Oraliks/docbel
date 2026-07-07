@@ -438,17 +438,48 @@ export const C1_QUESTIONS: PdfFormField[] = [
       nl: "", de: "",
     },
     options: YN_DECLARE,
-    visibleIf: { fieldId: "pensionAlimentaire", op: "equals", value: "oui" },
+    // Ne se pose que si l'usager a bien un jugement en main (statutJugement =
+    // "en-main"). Pour "en-cours" ou "pas-encore-recu", il n'y a rien à
+    // transmettre — l'information est reportée automatiquement en remarque
+    // via `applyRemarqueSituationFamiliale`.
+    visibleIf: { fieldId: "statutJugementPensionAlimentaire", op: "equals", value: "en-main" },
     section: SECTION_SITUATION_FAMILIALE,
     order: 102,
   },
   {
+    // Nouveau (Oraliks 2026-07-07) : distingue « j'ai le jugement » /
+    // « jugement en cours » / « pas encore reçu ». Les deux derniers statuts
+    // n'exigent pas de document à joindre — ils sont reportés en remarque
+    // interne au submit (cf. applyRemarqueSituationFamiliale).
+    id: "statutJugementPensionAlimentaire",
+    pdfFieldName: "",
+    type: "radio",
+    required: false,
+    label: { fr: "Statut du jugement", nl: "", de: "" },
+    options: [
+      { value: "en-main", label: { fr: "J'ai le jugement (à joindre)", nl: "", de: "" } },
+      { value: "en-cours", label: { fr: "Le jugement est en cours", nl: "", de: "" } },
+      { value: "pas-encore-recu", label: { fr: "Je n'ai pas encore reçu mon jugement", nl: "", de: "" } },
+    ],
+    defaultValue: "en-main",
+    visibleIf: { fieldId: "pensionAlimentaire", op: "equals", value: "oui" },
+    section: SECTION_SITUATION_FAMILIALE,
+    order: 101.5,
+  },
+  {
+    // `Remarque (situation familiale)` : ne s'affiche PLUS comme textarea à
+    // l'écran (Oraliks 2026-07-07). Reste sérialisée et stampe le widget
+    // « Remarques 1 » du PDF officiel — sa valeur est calculée au submit par
+    // `applyRemarqueSituationFamiliale` à partir de la combinaison de choix
+    // (isolé + colocation → « cohousing » ; statut jugement en cours / pas
+    // encore reçu → phrase correspondante). `autoAnswered` = jamais rendu
+    // comme contrôle interactif, mais reste dans le payload validé + soumis.
     id: "remarqueSituationFamiliale",
     pdfFieldName: "Remarques 1",
     type: "textarea",
     required: false,
     label: { fr: "Remarque (situation familiale)", nl: "", de: "" },
-    help: { fr: "Précisions utiles : emprisonnement, internement, situation ambiguë, etc.", nl: "", de: "" },
+    autoAnswered: true,
     section: SECTION_SITUATION_FAMILIALE,
     order: 103,
   },
@@ -481,11 +512,13 @@ export const C1_QUESTIONS: PdfFormField[] = [
     required: false,
     label: { fr: "Habites-tu en colocation ?", nl: "", de: "" },
     help: {
-      fr: "Colocation = tu partages un logement avec une ou plusieurs personnes SANS lien de parenté ni de couple (chacun sa vie, pas de ménage commun) — même si le registre national vous montre à la même adresse. Cette précision permet d'ajouter automatiquement l'ANNEXE REGIS à ton parcours.",
+      fr: "Colocation = tu partages un logement avec une ou plusieurs personnes SANS lien de parenté ni de couple (chacun sa vie, pas de ménage commun) — même si le registre national vous montre à la même adresse. Utile aussi si tu vis officiellement seul mais partages en pratique le logement (cohousing) — la remarque situation familiale sera annotée automatiquement. Cette précision permet d'ajouter automatiquement l'ANNEXE REGIS à ton parcours.",
       nl: "", de: "",
     },
     options: YN,
-    visibleIf: { fieldId: "statutFamilial", op: "equals", value: "cohabite" },
+    // Toujours visible (Oraliks 2026-07-07) — la colocation peut coexister
+    // avec un statut « isolé » officiel : c'est justement le cas cohousing,
+    // reporté ensuite en remarque via `applyRemarqueSituationFamiliale`.
     section: SECTION_SITUATION_FAMILIALE,
     order: 106,
   },
@@ -580,6 +613,10 @@ export const C1_QUESTIONS: PdfFormField[] = [
         required: true,
         label: { fr: "Lien familial", nl: "", de: "" },
         help: { fr: "FAC = financièrement à charge. NFAC = non financièrement à charge.", nl: "", de: "" },
+        // En mode colocation (Annexe REGIS), on ne demande que prénom + nom
+        // (Oraliks 2026-07-07). Les autres sous-champs se cachent via
+        // `visibleIfParent` évalué contre le payload du formulaire.
+        visibleIfParent: { fieldId: "habiteEnColocation", op: "notEquals", value: "oui" },
         options: [
           { value: "epoux", label: { fr: "Époux/se", nl: "", de: "" } },
           { value: "partenaire", label: { fr: "Partenaire", nl: "", de: "" } },
@@ -608,6 +645,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
         label: { fr: "Date de naissance", nl: "", de: "" },
         // Stampé en colonne 1 rangée 2 du slot N (widgets "1 2", "2 2", …).
         pdfFieldNameTemplate: "{index} 2",
+        visibleIfParent: { fieldId: "habiteEnColocation", op: "notEquals", value: "oui" },
         order: 4,
       },
       {
@@ -621,6 +659,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
           nl: "", de: "",
         },
         options: YN,
+        visibleIfParent: { fieldId: "habiteEnColocation", op: "notEquals", value: "oui" },
         order: 5,
       },
       {
@@ -635,6 +674,8 @@ export const C1_QUESTIONS: PdfFormField[] = [
           { value: "salarie-ouvrier", label: { fr: "Ouvrier", nl: "", de: "" } },
           { value: "independant", label: { fr: "Indépendant", nl: "", de: "" } },
         ],
+        defaultValue: "aucun",
+        visibleIfParent: { fieldId: "habiteEnColocation", op: "notEquals", value: "oui" },
         order: 6,
       },
       {
@@ -648,6 +689,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
           nl: "", de: "",
         },
         visibleIf: { fieldId: "typeRevenuPro", op: "notEquals", value: "aucun" },
+        visibleIfParent: { fieldId: "habiteEnColocation", op: "notEquals", value: "oui" },
         order: 7,
       },
       {
@@ -665,6 +707,13 @@ export const C1_QUESTIONS: PdfFormField[] = [
           { value: "chomage", label: { fr: "Allocations de chômage", nl: "", de: "" } },
           { value: "autre", label: { fr: "Autre", nl: "", de: "" } },
         ],
+        defaultValue: "aucun",
+        // Ne se pose que si aucun revenu professionnel : les deux axes sont
+        // exclusifs à l'écran (Oraliks 2026-07-07 — « pas besoin de montrer
+        // les deux pour gagner de la place »). L'axe pro reste prioritaire ;
+        // un cohabitant qui a les deux devra être documenté en remarque libre.
+        visibleIf: { fieldId: "typeRevenuPro", op: "equals", value: "aucun" },
+        visibleIfParent: { fieldId: "habiteEnColocation", op: "notEquals", value: "oui" },
         order: 8,
       },
       {
@@ -674,6 +723,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
         required: false,
         label: { fr: "Montant brut mensuel du revenu de remplacement (€)", nl: "", de: "" },
         visibleIf: { fieldId: "revenuRemplacement", op: "notEquals", value: "aucun" },
+        visibleIfParent: { fieldId: "habiteEnColocation", op: "notEquals", value: "oui" },
         order: 9,
       },
       {
@@ -682,6 +732,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
         type: "textarea",
         required: false,
         label: { fr: "Remarque", nl: "", de: "" },
+        visibleIfParent: { fieldId: "habiteEnColocation", op: "notEquals", value: "oui" },
         order: 10,
       },
       // Statut C1-PARTENAIRE : visible uniquement si lien = FAC. Choix
@@ -710,6 +761,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
           },
         ],
         visibleIf: { fieldId: "lien", op: "equals", value: "FAC" },
+        visibleIfParent: { fieldId: "habiteEnColocation", op: "notEquals", value: "oui" },
         order: 11,
       },
     ],

@@ -3,11 +3,16 @@ import { C1_QUESTIONS, C1_TRIGGERS, applyC1Improvements } from "../c1-fields-imp
 import { evaluateTrigger } from "../../triggers";
 
 describe("C1_QUESTIONS — habiteEnColocation", () => {
-  it("existe, est de type boolean-like (radio oui/non), et n'est visible que si cohabite", () => {
+  it("existe, est de type boolean-like (radio oui/non), et reste posée quel que soit statutFamilial", () => {
+    // Depuis 2026-07-07 : la question est désormais toujours visible — le
+    // cas « je vis officiellement seul mais je partage en pratique un
+    // logement » (cohousing) doit pouvoir être capté même pour un statut
+    // « isolé », auquel cas la remarque situation familiale est annotée
+    // automatiquement (cf. c1-remarque-derivation.ts).
     const q = C1_QUESTIONS.find((f) => f.id === "habiteEnColocation");
     expect(q).toBeDefined();
     expect(q?.type).toBe("radio");
-    expect(q?.visibleIf).toEqual({ fieldId: "statutFamilial", op: "equals", value: "cohabite" });
+    expect(q?.visibleIf).toBeUndefined();
   });
 });
 

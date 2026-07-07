@@ -22,7 +22,7 @@ import { countryNameFromIban } from "@/lib/pdf-forms/iban-country";
 import { YesNoSegmentedControl } from "@/components/ui/yes-no-segmented";
 import { FieldErrorReport } from "./field-error-report";
 import { ArrayField } from "./array-field";
-import { loc, Locale, FieldValue, FullNameValue, isFullNameValue, FieldOption } from "@/lib/pdf-forms/types";
+import { loc, Locale, FieldValue, FormPayload, FullNameValue, isFullNameValue, FieldOption } from "@/lib/pdf-forms/types";
 import type { PublicField } from "@/lib/pdf-forms/public-serializer";
 import { validateFieldFormat, FORMAT_VALIDATABLE_TYPES } from "@/lib/pdf-forms/validation";
 
@@ -68,6 +68,10 @@ interface Props {
   /// code postal : permet au formulaire de remplir le champ code postal en
   /// retour. Ignoré si `field.streetAutocomplete` est absent.
   onSelectStreetSuggestion?: (postalCode: string) => void;
+  /// Payload complet du formulaire — passé aux `array` (cohabitants) qui en
+  /// ont besoin pour évaluer `visibleIfParent` sur leurs sous-champs. Ignoré
+  /// pour les autres types.
+  parentValues?: FormPayload;
 }
 
 /// Rend le label + une InfoTooltip si `help` est présent — remplace
@@ -85,7 +89,7 @@ function LabelWithTooltip({ label, help, required }: { label: string; help: stri
 
 export function PdfField({
   field, value, error, locale, onChange, formId, formSlug, rowLayout = false,
-  derivedValue = null, relatedPostalCode, onSelectStreetSuggestion,
+  derivedValue = null, relatedPostalCode, onSelectStreetSuggestion, parentValues,
 }: Props) {
   const label = loc(field.label, locale);
   const help = loc(field.help, locale);
@@ -135,6 +139,7 @@ export function PdfField({
         onChange={onChange}
         formId={formId}
         formSlug={formSlug}
+        parentValues={parentValues}
       />
     );
   }

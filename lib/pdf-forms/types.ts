@@ -183,6 +183,12 @@ export interface PdfFormField {
   // Comportement / UX
   defaultValue?: string | number | boolean;
   visibleIf?: VisibleIf;
+  /// Comme `visibleIf`, mais évalué contre le payload du formulaire PARENT
+  /// (utile pour un sous-champ d'`itemFields` qui doit se cacher selon un
+  /// choix hors-ligne). Le parseur `visibleIf` classique se limite à la
+  /// ligne courante pour les sous-champs d'`array` — cette variante donne
+  /// accès au reste du formulaire.
+  visibleIfParent?: VisibleIf;
   prefillFrom?: PrefillSource;
   /// Pour les champs `fullname` : ordre d'assemblage des deux sous-champs.
   /// Défaut "first-last" (Prénom Nom).

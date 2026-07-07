@@ -6,8 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Field, FieldLabel, FieldDescription } from "@/components/ui/field";
 import { PdfField } from "./pdf-field";
-import { loc, type Locale, type FieldValue, type FieldValueRecord, type ConditionOp, isFieldValueRecordArray } from "@/lib/pdf-forms/types";
+import { loc, type Locale, type FieldValue, type FieldValueRecord, type FormPayload, type ConditionOp, isFieldValueRecordArray } from "@/lib/pdf-forms/types";
 import type { PublicField } from "@/lib/pdf-forms/public-serializer";
+import { isFieldVisible } from "@/lib/pdf-forms/validation";
 
 interface Props {
   field: PublicField;
@@ -16,6 +17,10 @@ interface Props {
   onChange: (value: FieldValue) => void;
   formId?: string;
   formSlug?: string;
+  /// Payload complet du formulaire parent (hors ligne courante) — nécessaire
+  /// pour évaluer `visibleIfParent` sur les sous-champs (ex. cohabitants qui
+  /// se simplifient à prénom+nom en mode colocation).
+  parentValues?: FormPayload;
 }
 
 /// Rendu d'un champ `array` : une carte par ligne, ajout / suppression de
@@ -25,7 +30,7 @@ interface Props {
 /// La règle d'auto-remplissage spécifique cohabitants (Indépendant → 999999.99,
 /// allocations familiales auto-non si > 35 ans) est centralisée dans
 /// `applyAutoRules` ci-dessous — peut être étendue pour d'autres tableaux.
-export function ArrayField({ field, value, locale, onChange, formId, formSlug }: Props) {
+export function ArrayField({ field, value, locale, onChange, formId, formSlug, parentValues }: Props) {
   const label = loc(field.label, locale);
   const help = loc(field.help, locale);
   const addLabel = loc(field.addRowLabel, locale) || "Ajouter une ligne";
@@ -71,7 +76,7 @@ export function ArrayField({ field, value, locale, onChange, formId, formSlug }:
         ) : (
           rows.map((row, idx) => (
             <Card key={idx}>
-              <CardContent className="grid gap-3 py-4 sm:grid-cols-2">
+              <CardContent className="grid gap-3 py-4 sm:grid-cols-2 xl:grid-cols-3">
                 <div className="sm:col-span-2 flex items-baseline justify-between">
                   <span className="text-xs font-medium text-muted-foreground">
                     Ligne {idx + 1}
@@ -89,6 +94,13 @@ export function ArrayField({ field, value, locale, onChange, formId, formSlug }:
                   </Button>
                 </div>
                 {itemFields.map((sub) => {
+                  // visibleIfParent : évalué contre le payload du formulaire
+                  // parent (utilisé par ex. pour cacher lien/date/revenus des
+                  // cohabitants quand `habiteEnColocation === "oui"`, où on ne
+                  // veut collecter que prénom + nom pour l'Annexe REGIS).
+                  if (sub.visibleIfParent && parentValues) {
+                    if (!isFieldVisible(sub.visibleIfParent, parentValues)) return null;
+                  }
                   // visibleIf intra-ligne : on évalue contre la ligne courante,
                   // pas contre le payload global.
                   if (sub.visibleIf) {

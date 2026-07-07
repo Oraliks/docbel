@@ -29,6 +29,7 @@ import { resolveSignerName } from "@/lib/pdf-forms/signature";
 import { isAutoField, isCreationDateField, isSignatureField } from "@/lib/pdf-forms/auto-fields";
 import { applyMotifTransferOverride } from "@/lib/pdf-forms/c1-motif-transfer";
 import { applyIbanCountryRouting } from "@/lib/pdf-forms/c1-iban-routing";
+import { applyRemarqueSituationFamiliale } from "@/lib/pdf-forms/c1-remarque-derivation";
 import { FIELD_DERIVATIONS, applyFieldDerivations } from "@/lib/pdf-forms/field-derivations";
 import type { PublicForm, PublicField } from "@/lib/pdf-forms/public-serializer";
 import { buildSteps, buildMacroSteps, type OptionalSection, type MacroStep } from "@/lib/pdf-forms/build-steps";
@@ -44,7 +45,7 @@ import { OptionCard } from "@/components/ui/option-card";
 const LOCALE_NAMES: Record<Locale, string> = { fr: "FR", nl: "NL", de: "DE" };
 
 // Types de champ qui occupent toute la largeur dans la grille 2 colonnes.
-const FULL_WIDTH_TYPES = new Set(["textarea", "signature", "fullname", "checkbox", "radio"]);
+const FULL_WIDTH_TYPES = new Set(["textarea", "signature", "fullname", "checkbox", "radio", "array"]);
 
 function defaultValues(form: PublicForm, bundlePrefill?: Record<string, string>): FormPayload {
   const v: FormPayload = {};
@@ -253,8 +254,14 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, onValuesChange
     // on route la valeur vers le bon widget PDF selon les 2 lettres de
     // préfixe pays (cf. lib/pdf-forms/c1-iban-routing.ts). No-op sur les
     // autres formulaires (l'IBAN étranger vit alors dans son champ propre).
+    // applyRemarqueSituationFamiliale : injecte « cohousing » / « jugement
+    // en cours » / « je n'ai pas encore reçu mon jugement » dans la remarque
+    // situation familiale (autoAnswered), à partir des choix concrets pris
+    // ailleurs — cf. lib/pdf-forms/c1-remarque-derivation.ts.
     const signedValues: FormPayload = applyFieldDerivations(
-      applyIbanCountryRouting(applyMotifTransferOverride({ ...values })),
+      applyRemarqueSituationFamiliale(
+        applyIbanCountryRouting(applyMotifTransferOverride({ ...values }))
+      ),
       form.fields
     );
     if (signerName) {
@@ -752,6 +759,7 @@ function FieldsCluster({
                 onSelectStreetSuggestion={(postalCode) => {
                   if (f.streetAutocomplete) setValue(f.streetAutocomplete.postalFieldId, postalCode);
                 }}
+                parentValues={values}
               />
             </div>
           ))}
@@ -1239,6 +1247,7 @@ function LegacyRunnerBody({
                       onSelectStreetSuggestion={(postalCode) => {
                         if (f.streetAutocomplete) setValue(f.streetAutocomplete.postalFieldId, postalCode);
                       }}
+                      parentValues={values}
                     />
                   </div>
                 ))}

@@ -55,20 +55,34 @@ export async function saveSourcePdf(buffer: Buffer, originalName: string): Promi
   return buildStoredFilePath(relativeDir, fileName);
 }
 
-/// Lit un PDF source par son chemin de stockage.
-export async function readSourcePdf(storagePath: string): Promise<Buffer | null> {
+/// Lit un PDF source par son chemin de stockage. Si le storagePath est
+/// obsolète / absent (ex. importé avant le passage à Vercel Blob, ou le
+/// fichier upload a été purgé), on retombe sur `private/pdfs/{fallbackName}`
+/// — les PDFs officiels de référence sont versionnés dans le repo et bundlés
+/// avec le deploy Vercel (Oraliks 2026-07-07 : "PDF source introuvable" en
+/// prod car sourceStoragePath pointait vers un fichier upload disparu).
+export async function readSourcePdf(
+  storagePath: string,
+  fallbackName?: string | null
+): Promise<Buffer | null> {
   if (isBlobPath(storagePath)) {
     try {
       const res = await fetch(storagePath.slice(BLOB_PREFIX.length));
-      if (!res.ok) return null;
-      return Buffer.from(await res.arrayBuffer());
+      if (res.ok) return Buffer.from(await res.arrayBuffer());
     } catch {
-      return null;
+      /* fall through to reference PDF fallback */
     }
+  } else {
+    const full = resolveStoredFilePath(storagePath);
+    if (full && existsSync(full)) return readFile(full);
   }
-  const full = resolveStoredFilePath(storagePath);
-  if (!full || !existsSync(full)) return null;
-  return readFile(full);
+  // Fallback : PDF officiel de référence dans le repo.
+  if (fallbackName) {
+    const safe = fallbackName.replace(/[^a-zA-Z0-9._-]/g, "_");
+    const ref = join(process.cwd(), "private", "pdfs", safe);
+    if (existsSync(ref)) return readFile(ref);
+  }
+  return null;
 }
 
 /// Supprime un PDF source (à l'archivage/hard delete d'un formulaire).

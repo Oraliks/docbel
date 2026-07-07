@@ -90,7 +90,7 @@ export async function POST(
   }
   const validated = result.data as FormPayload;
 
-  const source = await readSourcePdf(form.sourceStoragePath);
+  const source = await readSourcePdf(form.sourceStoragePath, form.sourceFileName);
   if (!source) {
     return NextResponse.json({ error: "PDF source introuvable" }, { status: 500, headers: json });
   }

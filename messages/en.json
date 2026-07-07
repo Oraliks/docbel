@@ -8752,6 +8752,7 @@
       "opNotEquals": "does not equal",
       "opIn": "is one of",
       "opNotIn": "is not one of",
+      "opMatchesRegex": "matches (regex)",
       "replacePdfTitle": "Replace the source PDF",
       "replacePdfDesc": "Import the new official version. Enrichment for retained fields is migrated automatically.",
       "newPdf": "New PDF",

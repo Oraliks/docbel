@@ -77,12 +77,13 @@ function findPrefillSource(value: PrefillSource | undefined) {
   return undefined;
 }
 
-const OPS: ConditionOp[] = ["equals", "notEquals", "in", "notIn"];
+const OPS: ConditionOp[] = ["equals", "notEquals", "in", "notIn", "matchesRegex"];
 const OP_LABEL_KEYS: Record<ConditionOp, string> = {
   equals: "opEquals",
   notEquals: "opNotEquals",
   in: "opIn",
   notIn: "opNotIn",
+  matchesRegex: "opMatchesRegex",
 };
 
 interface Props {

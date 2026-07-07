@@ -1416,6 +1416,7 @@
       "opNotEquals": "is verschillend van",
       "opIn": "behoort tot",
       "opNotIn": "behoort niet tot",
+      "opMatchesRegex": "komt overeen met (regex)",
       "replacePdfTitle": "Bron-PDF vervangen",
       "replacePdfDesc": "Importeer de nieuwe officiële versie. De verrijking van behouden velden wordt automatisch gemigreerd.",
       "newPdf": "Nieuwe PDF",

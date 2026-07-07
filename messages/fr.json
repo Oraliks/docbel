@@ -2863,6 +2863,7 @@
       "opNotEquals": "est différent de",
       "opIn": "fait partie de",
       "opNotIn": "ne fait pas partie de",
+      "opMatchesRegex": "correspond à (regex)",
       "replacePdfTitle": "Remplacer le PDF source",
       "replacePdfDesc": "Importez la nouvelle version officielle. L’enrichissement des champs conservés est migré automatiquement.",
       "newPdf": "Nouveau PDF",

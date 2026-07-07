@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Field, FieldLabel, FieldDescription } from "@/components/ui/field";
 import { PdfField } from "./pdf-field";
-import { loc, type Locale, type FieldValue, type FieldValueRecord, isFieldValueRecordArray } from "@/lib/pdf-forms/types";
+import { loc, type Locale, type FieldValue, type FieldValueRecord, type ConditionOp, isFieldValueRecordArray } from "@/lib/pdf-forms/types";
 import type { PublicField } from "@/lib/pdf-forms/public-serializer";
 
 interface Props {
@@ -136,7 +136,7 @@ export function ArrayField({ field, value, locale, onChange, formId, formSlug }:
 /// ne regarde QUE les champs de la même ligne.
 function evaluateRowVisibility(
   refValue: unknown,
-  op: "equals" | "notEquals" | "in" | "notIn",
+  op: ConditionOp,
   expected: string | number | boolean | Array<string | number>
 ): boolean {
   switch (op) {
@@ -148,6 +148,14 @@ function evaluateRowVisibility(
       return Array.isArray(expected) && expected.includes(refValue as string | number);
     case "notIn":
       return Array.isArray(expected) && !expected.includes(refValue as string | number);
+    case "matchesRegex": {
+      if (typeof expected !== "string") return false;
+      try {
+        return new RegExp(expected).test(String(refValue ?? ""));
+      } catch {
+        return false;
+      }
+    }
   }
 }
 

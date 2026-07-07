@@ -213,11 +213,16 @@ export const C1_QUESTIONS: PdfFormField[] = [
     type: "text",
     required: true,
     label: { fr: "Pays", nl: "", de: "" },
-    // Ce dossier concerne des résidents belges (C1 = déclaration à l'ONEM) :
-    // verrouillé plutôt que simplement pré-rempli, pour ne pas laisser
-    // l'utilisateur taper un autre pays par erreur sur ce champ précis.
-    defaultValue: "Belgique",
-    readOnly: true,
+    help: {
+      fr: "Rempli automatiquement à partir du code postal (belge à 4 chiffres → Belgique). Modifiable pour une adresse à l'étranger.",
+      nl: "",
+      de: "",
+    },
+    // Dérivé du code postal : belge (4 chiffres) → « Belgique » et verrouillé ;
+    // sinon éditable (le citoyen tape le pays lui-même — on n'a pas de base
+    // postale UE dans le repo pour l'inférer automatiquement, cf.
+    // field-derivations.ts#postal-be-country).
+    derivedFrom: { fieldId: "code_postal", via: "postal-be-country" },
     section: SECTION_IDENTITE,
     order: -86,
   },
@@ -1077,13 +1082,17 @@ export const C1_QUESTIONS: PdfFormField[] = [
     pdfFieldName: "oui_17|non au nom de",
     type: "radio",
     required: false,
-    label: { fr: "Le compte est…", nl: "", de: "" },
+    // Posée aussi pour le chèque circulaire (Oraliks, 2026-07-07) : même si le
+    // chèque est envoyé à l'adresse de la rubrique Identité, on veut tracer si
+    // le compte bancaire du bénéficiaire est bien à son nom (utile en cas de
+    // dépôt ultérieur du chèque).
+    label: { fr: "Le compte bancaire est à mon nom ?", nl: "", de: "" },
     options: [
-      { value: "mon-nom", label: { fr: "À mon nom", nl: "", de: "" } },
-      { value: "autre-nom", label: { fr: "Au nom d'une autre personne", nl: "", de: "" } },
+      { value: "mon-nom", label: { fr: "Oui, à mon nom", nl: "", de: "" } },
+      { value: "autre-nom", label: { fr: "Non, au nom d'une autre personne", nl: "", de: "" } },
     ],
     defaultValue: "mon-nom",
-    visibleIf: { fieldId: "modePaiement", op: "equals", value: "virement" },
+    visibleIf: { fieldId: "modePaiement", op: "in", value: ["virement", "cheque"] },
     section: SECTION_PAIEMENT,
     order: 602,
   },
@@ -1103,7 +1112,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
     pdfFieldName: "Nom du titulaire",
     type: "text",
     required: false,
-    label: { fr: "Nom du titulaire du compte", nl: "", de: "" },
+    label: { fr: "Nom et prénom du propriétaire du compte", nl: "", de: "" },
     placeholder: { fr: "Nom et prénom de la personne", nl: "", de: "" },
     visibleIf: { fieldId: "titulaireCompte", op: "equals", value: "autre-nom" },
     section: SECTION_PAIEMENT,
@@ -1532,6 +1541,33 @@ function coveredCheckboxNames(): Set<string> {
   return set;
 }
 
+/// Set des `pdfFieldName` NON pipe-séparés utilisés par C1_QUESTIONS. Sans
+/// cette couverture, les champs enrichis dont l'`id` est friendly (camelCase
+/// : `modificationAdresse`, `titulaireCompteNom`…) mais dont le pdfFieldName
+/// est la version verbeuse du PDF (« mon adresse à partir du », « Nom du
+/// titulaire »…) se dédoublonnent avec leurs jumeaux inférés uniquement par
+/// l'ID — or `makeId(pdfFieldName)` produit un slug DIFFÉRENT du camelCase,
+/// donc `newIds.has(...)` rate le doublon et l'inféré survit (bug remonté par
+/// Oraliks 2026-07-07 : chips `modificationAdresse` / `modificationCompte`
+/// réapparaissant hors du step Motif avec leur libellé PDF brut).
+function coveredSingleNames(): Set<string> {
+  const set = new Set<string>();
+  for (const q of C1_QUESTIONS) {
+    if (!q.pdfFieldName || q.pdfFieldName.includes("|")) continue;
+    set.add(q.pdfFieldName);
+  }
+  return set;
+}
+
+/// Widgets PDF « en-tête de page 2 » qui dupliquent des données déjà saisies
+/// en page 1 (Nom + Prénom + date de DA) mais que le parser AcroForm remonte
+/// comme des champs indépendants. Aucune case à ajouter en formulaire — juste
+/// à masquer visuellement pour ne pas polluer la section Identité.
+const HIDDEN_INFERRED_PDF_NAMES = new Set<string>([
+  "Nom et prénom",
+  "Date de DA",
+]);
+
 /// Applique les améliorations du schéma C1 sur la liste de champs existante
 /// (typiquement issue de l'inférence automatique au moment de l'import).
 ///
@@ -1690,8 +1726,15 @@ const POSITIONAL_PDF_RE = /^\d+( \d+|_\d+)?$/;
 /// une cellule de grille positionnelle, ou du junk. Renvoie le champ inchangé
 /// sinon (reste dans « Autres informations »). Ne touche jamais un sectionné.
 function curatePreserved(f: PdfFormField, covered: Set<string>): PdfFormField {
-  if (f.section) return f;
   const name = f.pdfFieldName || "";
+  // Contrairement aux autres règles de curation (limitées aux champs
+  // NON sectionnés), la hide-list explicite des en-têtes de page 2
+  // (« Nom et prénom », « Date de DA ») doit s'appliquer AUSSI aux champs
+  // que field-inference a sectionnés à tort en `identite` — sinon ils
+  // réapparaissent en bas de la section Identité (bug remonté par Oraliks
+  // 2026-07-07 : « Nom Et PréNom » orphelin en fin d'identité).
+  if (HIDDEN_INFERRED_PDF_NAMES.has(name)) return { ...f, hidden: true };
+  if (f.section) return f;
   const isDuplicate = covered.has(name);
   const isAutoWidget = f.type === "signature" || /^Date\d+_af_date$/i.test(name);
   const isJunk =
@@ -1704,11 +1747,17 @@ export function applyC1Improvements(
   opts?: ApplyC1ImprovementsOptions
 ): PdfFormField[] {
   const covered = coveredCheckboxNames();
+  const coveredSingle = coveredSingleNames();
   const newIds = new Set(C1_QUESTIONS.map((q) => q.id));
 
   const preserved = fields.filter((f) => {
     // Retire les anciens checkboxes individuels désormais couverts par radio.
     if (covered.has(f.pdfFieldName)) return false;
+    // Retire aussi les champs simples (non pipe-séparés) déjà couverts par un
+    // champ enrichi de C1_QUESTIONS — protège contre les inférés qui portent
+    // le même pdfFieldName mais un `id` slugifié différent du camelCase (cf.
+    // `coveredSingleNames`).
+    if (coveredSingle.has(f.pdfFieldName)) return false;
     // Retire aussi un éventuel ancien champ portant un id qu'on redéfinit.
     if (newIds.has(f.id)) return false;
     return true;

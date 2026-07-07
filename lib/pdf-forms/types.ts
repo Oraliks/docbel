@@ -151,7 +151,7 @@ export interface FieldOption {
 /// Dérivations de champ disponibles (registre pur dans field-derivations.ts,
 /// sans dépendance lourde — safe à importer côté client). Union fermée :
 /// chaque nouvelle dérivation (ex. futur code postal → commune) s'y ajoute.
-export type FieldDerivation = "niss-birth-date";
+export type FieldDerivation = "niss-birth-date" | "postal-be-country";
 
 export interface PdfFormField {
   /// Identifiant stable côté schéma enrichi (slug). Distinct de pdfFieldName.

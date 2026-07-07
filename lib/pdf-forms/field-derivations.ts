@@ -13,6 +13,15 @@ export const FIELD_DERIVATIONS: Record<FieldDerivation, (sourceValue: FieldValue
     const result = deriveBirthDateFromNiss(sourceValue);
     return result?.iso ?? null;
   },
+  /// Codes postaux belges = strictement 4 chiffres (1000–9999). France, Espagne,
+  /// Italie, Allemagne… = 5 chiffres ; Pays-Bas = 4 chiffres + 2 lettres ; UK
+  /// = alphanumérique. Un 4-chiffres nu suffit donc à identifier une adresse
+  /// belge sans base tierce. Pour les adresses étrangères, la dérivation renvoie
+  /// `null` → le champ pays reste éditable (l'utilisateur tape/choisit lui-même).
+  "postal-be-country": (sourceValue) => {
+    if (typeof sourceValue !== "string") return null;
+    return /^\d{4}$/.test(sourceValue.trim()) ? "Belgique" : null;
+  },
 };
 
 /// Forme minimale acceptée — couvre PdfFormField (serveur) ET PublicField

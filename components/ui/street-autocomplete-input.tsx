@@ -87,7 +87,19 @@ export function StreetAutocompleteInput({
         aria-autocomplete="list"
       />
       {open && suggestions.length > 0 && (
-        <ul className="absolute z-20 mt-1 w-full max-h-64 overflow-y-auto rounded-2xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface-strong)] p-1.5 shadow-lg">
+        <ul
+          className="absolute z-20 mt-1 w-full max-h-64 overflow-y-auto rounded-2xl border border-[color:var(--glass-border)] p-1.5 shadow-xl backdrop-blur-md"
+          // Fond volontairement OPAQUE (≥ 95 %) et non pas la variable
+          // `--glass-surface-strong` (62 %) : la liste de rues doit rester
+          // lisible même par-dessus des inputs déjà remplis, indépendamment
+          // du thème global (Oraliks 2026-07-07 : « affichage un peu trop
+          // transparent, on voit pas bien »). Compatible dark grâce au
+          // `light-dark()` — on ne réutilise pas de variable glass ici pour
+          // ne pas la contraindre à devenir opaque partout ailleurs.
+          style={{
+            backgroundColor: "light-dark(rgba(255,255,255,0.97), rgba(24,24,32,0.97))",
+          }}
+        >
           {suggestions.map((s) => (
             <li key={s.id}>
               <button

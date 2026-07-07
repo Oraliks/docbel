@@ -253,6 +253,12 @@ describe("applyC1Improvements — restrictMotifTo5Situations (Oraliks, 2026-07-0
     expect(f?.visibleIf).toEqual({ fieldId: "transfereOrganismePaiement", op: "equals", value: true });
   });
 
+  it("actif : dateChangementOrganisme porte le libellé contextualisé au transfert", () => {
+    const result = applyC1Improvements([], { restrictMotifTo5Situations: true });
+    const f = result.find((q) => q.id === "dateChangementOrganisme");
+    expect(f?.label?.fr).toBe("Transférer mon dossier à partir du");
+  });
+
   it("actif : les 5 chips situation partagent la même clé requiredGroup (au moins une obligatoire)", () => {
     const result = applyC1Improvements([], { restrictMotifTo5Situations: true });
     const ids = [

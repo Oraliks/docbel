@@ -1756,7 +1756,11 @@ export function applyC1Improvements(
         }
         if (q.id === "modificationCotisationSyndicale") return { ...q, hidden: true };
         if (q.id === "dateChangementOrganisme") {
-          return { ...q, visibleIf: { fieldId: "transfereOrganismePaiement", op: "equals" as const, value: true } };
+          return {
+            ...q,
+            label: { ...q.label, fr: "Transférer mon dossier à partir du" },
+            visibleIf: { fieldId: "transfereOrganismePaiement", op: "equals" as const, value: true },
+          };
         }
         // N'est plus proposée comme motif (ce n'est pas une des 5 situations),
         // mais reste posée en Détails — juste un libellé court à la place du

@@ -31,6 +31,8 @@ import { applyMotifTransferOverride } from "@/lib/pdf-forms/c1-motif-transfer";
 import { applyIbanCountryRouting } from "@/lib/pdf-forms/c1-iban-routing";
 import { applyRemarqueSituationFamiliale } from "@/lib/pdf-forms/c1-remarque-derivation";
 import { applyTitulaireCompteNomDerivation } from "@/lib/pdf-forms/c1-titulaire-derivation";
+import { applyIbanSplitDerivation } from "@/lib/pdf-forms/c1-iban-split";
+import { applyDateHeaderP2Derivation } from "@/lib/pdf-forms/c1-date-header-p2";
 import { FIELD_DERIVATIONS, applyFieldDerivations } from "@/lib/pdf-forms/field-derivations";
 import type { PublicForm, PublicField } from "@/lib/pdf-forms/public-serializer";
 import { buildSteps, buildMacroSteps, type OptionalSection, type MacroStep } from "@/lib/pdf-forms/build-steps";
@@ -282,9 +284,13 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, onValuesChange
     // situation familiale (autoAnswered), à partir des choix concrets pris
     // ailleurs — cf. lib/pdf-forms/c1-remarque-derivation.ts.
     const signedValues: FormPayload = applyFieldDerivations(
-      applyTitulaireCompteNomDerivation(
-        applyRemarqueSituationFamiliale(
-          applyIbanCountryRouting(applyMotifTransferOverride({ ...values }))
+      applyDateHeaderP2Derivation(
+        applyIbanSplitDerivation(
+          applyTitulaireCompteNomDerivation(
+            applyRemarqueSituationFamiliale(
+              applyIbanCountryRouting(applyMotifTransferOverride({ ...values }))
+            )
+          )
         )
       ),
       form.fields

@@ -377,6 +377,21 @@ export const C1_QUESTIONS: PdfFormField[] = [
     order: 9,
     renderAs: "chip",
   },
+  // Date affichée dans le header de la page 2 (widget « Date de DA », x=506).
+  // Oraliks 2026-07-07 : « c'est celle du changement donc la date que je
+  // mentionne sur le form runner ». Remplie au submit par
+  // `applyDateHeaderP2Derivation` — dateModificationEffective si présente,
+  // sinon dateDemande en fallback.
+  {
+    id: "dateHeaderP2",
+    pdfFieldName: "Date de DA",
+    type: "date",
+    required: false,
+    label: { fr: "Date en-tête page 2", nl: "", de: "" },
+    autoAnswered: true,
+    section: SECTION_DEMANDE,
+    order: 9.5,
+  },
   {
     id: "dateModificationEffective",
     pdfFieldName: "", // À stamper sur les 3 cases date réelles (adresse / situation familiale / compte) — noms AcroForm à identifier via scripts/dump-c1.ts (suivi séparé, cf. NEXT_ACTIONS).
@@ -1163,7 +1178,12 @@ export const C1_QUESTIONS: PdfFormField[] = [
   // autre → widget "SEPA étranger IBAN BIC") via `applyIbanCountryRouting`.
   {
     id: "iban",
-    pdfFieldName: "IBAN",
+    // pdfFieldName vidé (Oraliks 2026-07-07 : "le compte bancaire n'est pas
+    // dans le bon champs acroform il doit être plus haut"). Le stamping se
+    // fait maintenant via `ibanPart1/2/3` sur les 3 slots undefined_11/12/13
+    // du template (y=440, au-dessus du widget "IBAN" à y=428). Cf.
+    // `applyIbanSplitDerivation`.
+    pdfFieldName: "",
     type: "iban",
     required: true,
     label: { fr: "N° de compte bancaire (IBAN)", nl: "", de: "" },
@@ -1178,6 +1198,31 @@ export const C1_QUESTIONS: PdfFormField[] = [
     section: SECTION_PAIEMENT,
     order: 603,
   },
+  // 4 slots visuels de l'IBAN belge sur le template C1 (row y=440) :
+  // "B E ##  ####  ####  ####". Widget "B E" reçoit les 2 chiffres de
+  // contrôle (maxLength=2 confirmé par pdf-lib). Les 3 slots undefined_11/12/13
+  // reçoivent les 3 groupes de 4 chiffres du n° de compte. Alimentés par
+  // `applyIbanSplitDerivation` au submit.
+  {
+    id: "ibanCheckDigits",
+    pdfFieldName: "B E",
+    type: "text" as const,
+    required: false,
+    label: { fr: "IBAN chiffres de contrôle", nl: "", de: "" },
+    autoAnswered: true,
+    section: SECTION_PAIEMENT,
+    order: 603.05,
+  },
+  ...(["ibanPart1", "ibanPart2", "ibanPart3"].map((id, idx) => ({
+    id,
+    pdfFieldName: `undefined_1${idx + 1}`,
+    type: "text" as const,
+    required: false,
+    label: { fr: `IBAN part ${idx + 1}`, nl: "", de: "" },
+    autoAnswered: true,
+    section: SECTION_PAIEMENT,
+    order: 603.1 + idx * 0.1,
+  }))),
   {
     id: "titulaireCompteNom",
     // pdfFieldName vidé (Oraliks 2026-07-07) : le stamping du widget PDF
@@ -1298,6 +1343,35 @@ export const C1_QUESTIONS: PdfFormField[] = [
   // appartient à l'EEE / Suisse. Pour l'instant : 1 question d'orientation
   // qui rend les sous-questions conditionnelles.
   // ====================================================================
+  // Statut réfugié + apatride : autoAnswered "non" par défaut (Oraliks
+  // 2026-07-07 : ces cases devaient être « non » partout pour un citoyen
+  // européen). Cochent respectivement les widgets non_17 et non_18.
+  {
+    id: "statutRefugie",
+    pdfFieldName: "oui  allez à la rubrique suivante|non_17",
+    type: "radio",
+    required: false,
+    label: { fr: "J'ai le statut de réfugié", nl: "", de: "" },
+    options: YN,
+    defaultValue: "non",
+    autoAnswered: true,
+    section: SECTION_NON_EEE,
+    order: 799,
+    stepPriority: "optional",
+  },
+  {
+    id: "apatrideReconnu",
+    pdfFieldName: "oui  allez à la rubrique suivante_2|non_18",
+    type: "radio",
+    required: false,
+    label: { fr: "Je suis apatride reconnu", nl: "", de: "" },
+    options: YN,
+    defaultValue: "non",
+    autoAnswered: true,
+    section: SECTION_NON_EEE,
+    order: 799.5,
+    stepPriority: "optional",
+  },
   {
     id: "nationaliteHorsEEE",
     pdfFieldName: "oui_18|non_19",
@@ -1668,7 +1742,9 @@ function coveredSingleNames(): Set<string> {
 /// à masquer visuellement pour ne pas polluer la section Identité.
 const HIDDEN_INFERRED_PDF_NAMES = new Set<string>([
   "Nom et prénom",
-  "Date de DA",
+  // « Date de DA » n'est plus dans la hide-list — désormais mappée à
+  // `dateHeaderP2` (autoAnswered) qui reçoit la date de changement au submit
+  // via `applyDateHeaderP2Derivation`.
 ]);
 
 /// Applique les améliorations du schéma C1 sur la liste de champs existante

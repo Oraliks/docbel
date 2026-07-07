@@ -1730,6 +1730,17 @@ export function applyC1Improvements(
             label: { ...q.label, fr: override.label },
             order: override.order,
             requiredGroup: MOTIF_SITUATION_GROUP,
+            // Retire l'ancien visibleIf sur motifIntroduction === "modification" :
+            // motifIntroduction est autoAnswered, donc ABSENT du schéma Zod
+            // scindé par étape (validateStepFields) — son isFieldVisible()
+            // y voit toujours `undefined` et exclut ces 4 champs du groupe,
+            // laissant SEULE transfereOrganismePaiement pouvoir satisfaire
+            // "au moins une situation" → blocage bloquant à tort l'avancée
+            // d'étape (bug remonté par Oraliks, 2026-07-07). Dans ce flux
+            // restreint motifIntroduction vaut "modification" tout du long
+            // (sauf override au submit), donc ce gate était de toute façon
+            // toujours vrai : plus rien à conditionner.
+            visibleIf: undefined,
             // Message custom sur l'ANCRE (1ʳᵉ des 5, order=5) uniquement —
             // les 4 autres membres du groupe n'ont pas besoin du leur, seul
             // le 1er visible reçoit l'erreur (cf. buildValidator).

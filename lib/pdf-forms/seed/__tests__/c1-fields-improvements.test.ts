@@ -230,6 +230,23 @@ describe("applyC1Improvements — restrictMotifTo5Situations (Oraliks, 2026-07-0
     }
   });
 
+  it("actif : les 4 chips de modification perdent leur visibleIf sur motifIntroduction (bug Oraliks 2026-07-07)", () => {
+    // motifIntroduction est autoAnswered -> absent du schéma Zod scindé par
+    // étape (validateStepFields) ; garder ce visibleIf faisait passer ces
+    // 4 champs pour "invisibles" en validation d'étape, laissant SEULE
+    // transfereOrganismePaiement pouvoir satisfaire le requiredGroup et
+    // bloquant à tort l'avancée même quand un autre motif était coché.
+    const result = applyC1Improvements([], { restrictMotifTo5Situations: true });
+    for (const id of [
+      "modificationAdresse",
+      "modificationSituationFamiliale",
+      "modificationPermisSejour",
+      "modificationCompte",
+    ]) {
+      expect(result.find((q) => q.id === id)?.visibleIf, id).toBeUndefined();
+    }
+  });
+
   it("actif : dateChangementOrganisme se déclenche sur transfereOrganismePaiement, plus sur motifIntroduction", () => {
     const result = applyC1Improvements([], { restrictMotifTo5Situations: true });
     const f = result.find((q) => q.id === "dateChangementOrganisme");

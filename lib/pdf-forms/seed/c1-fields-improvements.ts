@@ -270,7 +270,10 @@ export const C1_QUESTIONS: PdfFormField[] = [
     id: "chomeurTemporaireAlternance",
     pdfFieldName: "oui|non",
     type: "radio",
-    required: true,
+    // Non-required + pas de defaultValue (Oraliks 2026-07-07 : « si j'ai pas
+    // coché alors tu dois pas coché non plus »). Sans valeur, le stamping
+    // pipe-radio uncheck les 2 cases → PDF neutre.
+    required: false,
     label: {
       fr: "… comme chômeur temporaire suivant une formation en alternance",
       nl: "", de: "",
@@ -280,7 +283,6 @@ export const C1_QUESTIONS: PdfFormField[] = [
       nl: "", de: "",
     },
     options: YN,
-    defaultValue: "non",
     section: SECTION_DEMANDE,
     order: 2,
   },

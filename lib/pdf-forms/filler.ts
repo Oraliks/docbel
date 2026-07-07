@@ -270,6 +270,15 @@ export async function fillForm(
   const obliqueFont = await doc.embedFont(StandardFonts.HelveticaOblique);
 
   for (const field of fields) {
+    // Champ marqué `hidden` par le schéma : jamais rendu à l'utilisateur ET
+    // jamais stampé sur le PDF — leur valeur (souvent `false` par défaut sur
+    // un checkbox inféré) écraserait l'apparence du template alors que
+    // l'utilisateur n'a JAMAIS eu la possibilité de la modifier. Oraliks
+    // 2026-07-07 : la checkbox « je demande des allocations à partir du »
+    // apparaissait cochée sur le PDF généré alors qu'elle n'existait plus
+    // dans le form runner (hidden en mode restrictMotifTo5Situations).
+    if (field.hidden) continue;
+
     // Branche dédiée aux champs `array` : stamping positionnel par ligne
     // (template `pdfFieldNameTemplate` sur chaque sous-champ) + stamping
     // « first-match » sur des widgets uniques (cf. firstMatchMapping). Ces

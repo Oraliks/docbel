@@ -280,18 +280,38 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, onValuesChange
     const res0 = validator.safeParse(signedValues);
     if (!res0.success) {
       const next: Record<string, string> = {};
+      const invalidIds: string[] = [];
       for (const issue of res0.error.issues) {
         const id = String(issue.path[0] ?? "");
-        if (id && !next[id]) next[id] = issue.message;
+        if (id && !next[id]) {
+          next[id] = issue.message;
+          invalidIds.push(id);
+        }
       }
       setErrors(next);
-      const firstId = String(res0.error.issues[0]?.path[0] ?? "");
+      // Log console explicite : quand l'utilisateur ne voit pas où corriger
+      // (champ dans une étape déjà validée, ou champ orphelin sans stepGroup),
+      // on lui donne au moins la liste dans la devtools.
+      // eslint-disable-next-line no-console
+      console.warn("[pdf-form-runner] validation failed on:", invalidIds.map((id) => {
+        const f = form.fields.find((x) => x.id === id);
+        return { id, label: f ? loc(f.label, locale) : id, step: fieldStepIndex[id] };
+      }));
+      const firstId = invalidIds[0];
       if (firstId) {
         const stepIdx = fieldStepIndex[firstId];
         if (stepIdx !== undefined) setActive(stepIdx);
         setTimeout(() => document.getElementById(firstId)?.scrollIntoView({ behavior: "smooth", block: "center" }), 60);
       }
-      toast.error(t("runnerSomeFieldsInvalid"));
+      // Toast enrichi : liste des libellés des 3 premiers champs invalides
+      // (au-delà, on garde le message générique — évite un toast géant).
+      const labels = invalidIds.slice(0, 3).map((id) => {
+        const f = form.fields.find((x) => x.id === id);
+        return f ? loc(f.label, locale) : id;
+      });
+      const suffix = invalidIds.length > 3 ? ` (+${invalidIds.length - 3})` : "";
+      const detail = labels.length > 0 ? ` — ${labels.join(", ")}${suffix}` : "";
+      toast.error(`${t("runnerSomeFieldsInvalid")}${detail}`);
       return;
     }
     setErrors({});

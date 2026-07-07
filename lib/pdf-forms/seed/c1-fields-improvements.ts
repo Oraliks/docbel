@@ -1771,6 +1771,12 @@ const SECTION_TO_STEP_GROUP: Record<string, string> = {
   [SECTION_DIVERS]: "final",
   [SECTION_AFFIRMATIONS]: "final",
   [SECTION_ANNEXES]: "final",
+  // La section signature (dateSignature + signature) doit vivre dans
+  // l'étape finale — sans ça, les 2 champs tombent hors stepper et deviennent
+  // invisibles ; leur prefill (system.today, signerName) s'applique mais si
+  // pour une raison quelconque le prefill rate, l'utilisateur est bloqué au
+  // submit avec un message générique et aucun champ visible à corriger.
+  [SECTION_SIGNATURE]: "final",
 };
 
 function withStepGroup(f: PdfFormField): PdfFormField {

@@ -214,6 +214,18 @@ function fieldToZod(field: PdfFormField, lang: Locale): ZodTypeAny {
       // dans superRefine gère le cas "signature manquante". Ici on accepte
       // simplement une chaîne (vide ou data URL).
       return z.string();
+    case "array":
+      // Champ tableau (cohabitants…). Chaque ligne est un enregistrement de
+      // sous-champs (validés séparément par le formulaire — pas de contrôle
+      // ligne-par-ligne dans buildValidator). Ici on accepte n'importe quel
+      // tableau ; le check "required" du superRefine est intentionnellement
+      // NEUTRE pour array (aucun cas array géré dans la boucle) — un tableau
+      // vide `[]` ne doit pas bloquer. Sans ce case, on tombait sur z.string()
+      // et un `[]` initial côté UI cassait la validation avec un message
+      // inutile sur le champ parent (Oraliks 2026-07-07 : « j'ai mis isolé
+      // sur le formulaire et j'ai pu aller au next step donc je comprend pas
+      // l'erreur » — l'erreur venait d'ici, pas de la visibilité).
+      return z.array(z.any());
     case "text":
     case "textarea":
     default: {

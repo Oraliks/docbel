@@ -267,6 +267,19 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, onValuesChange
     if (signerName) {
       for (const f of form.fields) {
         if (isSignatureField(f)) signedValues[f.id] = "confirmed";
+        // Filet de sécurité : les champs `system.today` (date de génération,
+        // date de signature) sont normalement pré-remplis au mount via
+        // defaultValues(). Mais un bundlePrefill contenant une chaîne vide
+        // pour ce champ écrase le todayISO au mount et laisse la valeur "" —
+        // Zod bloque alors sur un champ auto-field EXCLU du rendu, que
+        // l'utilisateur ne peut donc pas corriger (bug remonté par Oraliks
+        // 2026-07-07 : "Date de signature" apparaissait dans le toast alors
+        // que la date est censée être générée automatiquement). On refill
+        // ici en dernier recours, juste avant la validation.
+        if (isCreationDateField(f)) {
+          const cur = signedValues[f.id];
+          if (typeof cur !== "string" || cur.trim() === "") signedValues[f.id] = todayISO();
+        }
       }
     } else {
       // Pas de nom exploitable : on annule pour ne pas générer un document

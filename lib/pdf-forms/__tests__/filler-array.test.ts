@@ -180,9 +180,10 @@ describe("fillForm — array (cohabitants) avec pdfFieldNameTemplate", () => {
       { flatten: false }
     );
     expect(await getText(res.bytes, "1 1")).toBe("Alice");
-    expect(await getText(res.bytes, "1 2")).toBe("1990-01-15");
+    // Dates reformatées ISO → FR au stamping (cf. formatDateFR dans filler.ts).
+    expect(await getText(res.bytes, "1 2")).toBe("15/01/1990");
     expect(await getText(res.bytes, "2 1")).toBe("Bob");
-    expect(await getText(res.bytes, "2 2")).toBe("1985-07-03");
+    expect(await getText(res.bytes, "2 2")).toBe("03/07/1985");
     // Slots 3-5 jamais touchés → vides.
     expect(await getText(res.bytes, "3 1")).toBe("");
     expect(await getText(res.bytes, "5 2")).toBe("");
@@ -212,7 +213,7 @@ describe("fillForm — array (cohabitants) avec pdfFieldNameTemplate", () => {
     );
     // Per-row reste actif : le slot 1 reçoit prénom + date.
     expect(await getText(res.bytes, "1 1")).toBe("Claire");
-    expect(await getText(res.bytes, "1 2")).toBe("1992-04-10");
+    expect(await getText(res.bytes, "1 2")).toBe("10/04/1992");
     // First-match : widgets partenaire renseignés.
     expect(await getText(res.bytes, "Identité du partenaire ou de la personne à charge")).toBe("Claire");
     expect(await getDropdown(res.bytes, "Allocation familiale")).toEqual(["oui"]);

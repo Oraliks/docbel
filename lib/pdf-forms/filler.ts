@@ -94,6 +94,23 @@ function stampPipeRadio(
   return true;
 }
 
+/// Taille de police uniforme appliquée à TOUS les widgets texte du PDF
+/// généré (Oraliks 2026-07-07 : « j'aimerais que tous les champs remplis
+/// aient le même caractère de taille comme ça je change ou adapte c'est pour
+/// tous »). Sans ça, chaque widget hérite de sa font-size par défaut définie
+/// dans le template PDF — variable d'un widget à l'autre (ex. « Place
+/// Dailly » en 12pt vs « test » en 9pt sur le C1). Une seule constante ici
+/// = un seul point d'ajustement pour toute la famille.
+const UNIFORM_TEXT_FONT_SIZE = 10;
+
+/// Reformate une date ISO (YYYY-MM-DD) vers le format FR (DD/MM/YYYY) pour
+/// affichage sur le PDF. Toute autre valeur est renvoyée telle quelle
+/// (idempotent — safe si l'utilisateur a déjà saisi en format FR).
+function formatDateFR(value: string): string {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  return m ? `${m[3]}/${m[2]}/${m[1]}` : value;
+}
+
 /// Stampe une valeur scalaire sur un widget AcroForm résolu, en dispatchant
 /// sur son type (texte / checkbox / dropdown / radio group). Centralise la
 /// logique pour la réutiliser depuis le stamping de lignes d'`array`.
@@ -101,10 +118,22 @@ function stampScalarWidget(
   pdfField: unknown,
   value: FieldValue,
   font: PDFFont,
-  unicodeFont: boolean
+  unicodeFont: boolean,
+  fieldType?: string
 ): void {
   if (pdfField instanceof PDFTextField) {
-    pdfField.setText(value === false ? "" : String(value));
+    const raw = value === false ? "" : String(value);
+    // Reformatage des dates ISO → FR au stamping : le form runner stocke en
+    // ISO côté state (format standard <input type="date">), l'usager veut
+    // du DD/MM/YYYY sur le PDF final.
+    const text = fieldType === "date" ? formatDateFR(raw) : raw;
+    pdfField.setText(text);
+    // Taille uniforme partout (cf. UNIFORM_TEXT_FONT_SIZE).
+    try {
+      pdfField.setFontSize(UNIFORM_TEXT_FONT_SIZE);
+    } catch {
+      /* certains widgets rejettent setFontSize — on garde la taille par défaut */
+    }
     if (unicodeFont) pdfField.updateAppearances(font);
   } else if (pdfField instanceof PDFCheckBox) {
     if (isTruthy(value)) pdfField.check();
@@ -166,7 +195,7 @@ function stampArrayField(
         continue;
       }
       try {
-        stampScalarWidget(pdfField, subValue as FieldValue, font, unicodeFont);
+        stampScalarWidget(pdfField, subValue as FieldValue, font, unicodeFont, sub.type);
       } catch {
         /* readonly / incompatible */
       }
@@ -196,7 +225,7 @@ function stampArrayField(
       continue;
     }
     try {
-      stampScalarWidget(pdfField, subValue as FieldValue, font, unicodeFont);
+      stampScalarWidget(pdfField, subValue as FieldValue, font, unicodeFont, sub.type);
     } catch {
       /* readonly / incompatible */
     }
@@ -320,7 +349,7 @@ export async function fillForm(
         continue;
       }
 
-      stampScalarWidget(pdfField, value, font, unicodeFont);
+      stampScalarWidget(pdfField, value, font, unicodeFont, field.type);
     } catch {
       // champ readonly / incompatible — on ignore sans casser la génération
     }

@@ -308,28 +308,19 @@ export function buildValidator(fields: PdfFormField[], lang: Locale = DEFAULT_LO
       if (f.type === "signature") continue;
       const v = payload[f.id];
       // Un champ `fullname` requis exige ses deux sous-parties (prénom + nom).
+      // (Le cas `signature` est court-circuité plus haut — la refill au submit
+      // + la ré-injection serveur garantissent que le PDF sera stampé.)
       const fullNameIncomplete =
         f.type === "fullname" &&
         (!isFullNameValue(v) || !(v.first ?? "").trim() || !(v.last ?? "").trim());
-      // Signature numérique : confirmée = valeur non vide (le nom du
-      // signataire ou un marqueur de confirmation). Un champ vide = pas signé.
-      const signatureMissing =
-        f.type === "signature" && (typeof v !== "string" || v.trim() === "");
       const isEmpty =
         v === null ||
         v === undefined ||
         (typeof v === "string" && v.trim() === "") ||
         (f.type === "checkbox" && v === false) ||
-        fullNameIncomplete ||
-        signatureMissing;
+        fullNameIncomplete;
       if (isEmpty) {
-        const customMsg = loc(f.errorMsg, lang);
-        const message =
-          f.type === "signature"
-            ? customMsg ||
-              "Veuillez signer dans le cadre (au doigt sur tablette/téléphone, ou à la souris)."
-            : errMsg(f, lang, "required");
-        ctx.addIssue({ code: "custom", path: [f.id], message });
+        ctx.addIssue({ code: "custom", path: [f.id], message: errMsg(f, lang, "required") });
       }
     }
 

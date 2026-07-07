@@ -255,6 +255,17 @@ export function isFieldVisible(cond: VisibleIf | undefined, payload: FormPayload
       return Array.isArray(cond.value) && cond.value.includes(dep as string | number);
     case "notIn":
       return Array.isArray(cond.value) && !cond.value.includes(dep as string | number);
+    case "matchesRegex": {
+      // Compilation locale par appel — l'usage attendu est ponctuel (une
+      // poignée de visibleIf régex par formulaire). Si un jour on en a des
+      // dizaines dans une boucle chaude, on ajoutera un cache LRU côté runner.
+      if (typeof cond.value !== "string") return false;
+      try {
+        return new RegExp(cond.value).test(String(dep ?? ""));
+      } catch {
+        return false;
+      }
+    }
     default:
       return true;
   }

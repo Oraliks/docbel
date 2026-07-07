@@ -28,6 +28,7 @@ import { todayISO } from "@/lib/pdf-forms/system-values";
 import { resolveSignerName } from "@/lib/pdf-forms/signature";
 import { isAutoField, isCreationDateField, isSignatureField } from "@/lib/pdf-forms/auto-fields";
 import { applyMotifTransferOverride } from "@/lib/pdf-forms/c1-motif-transfer";
+import { applyIbanCountryRouting } from "@/lib/pdf-forms/c1-iban-routing";
 import { FIELD_DERIVATIONS, applyFieldDerivations } from "@/lib/pdf-forms/field-derivations";
 import type { PublicForm, PublicField } from "@/lib/pdf-forms/public-serializer";
 import { buildSteps, buildMacroSteps, type OptionalSection, type MacroStep } from "@/lib/pdf-forms/build-steps";
@@ -247,8 +248,13 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, onValuesChange
     // applyFieldDerivations : synchronise les champs `derivedFrom` (ex. date
     // de naissance ← NISS) sur leur valeur ACTUELLEMENT affichée (verrouillée
     // à l'écran), au cas où `values` garderait une saisie manuelle antérieure.
+    // applyIbanCountryRouting : sur le C1, on n'expose qu'UN champ IBAN à
+    // l'écran (accepte BE + étranger via `internationalIban`) ; au submit,
+    // on route la valeur vers le bon widget PDF selon les 2 lettres de
+    // préfixe pays (cf. lib/pdf-forms/c1-iban-routing.ts). No-op sur les
+    // autres formulaires (l'IBAN étranger vit alors dans son champ propre).
     const signedValues: FormPayload = applyFieldDerivations(
-      applyMotifTransferOverride({ ...values }),
+      applyIbanCountryRouting(applyMotifTransferOverride({ ...values })),
       form.fields
     );
     if (signerName) {

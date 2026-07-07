@@ -1081,11 +1081,13 @@ export const C1_QUESTIONS: PdfFormField[] = [
     id: "titulaireCompte",
     pdfFieldName: "oui_17|non au nom de",
     type: "radio",
-    required: false,
-    // Posée aussi pour le chèque circulaire (Oraliks, 2026-07-07) : même si le
-    // chèque est envoyé à l'adresse de la rubrique Identité, on veut tracer si
-    // le compte bancaire du bénéficiaire est bien à son nom (utile en cas de
-    // dépôt ultérieur du chèque).
+    // Obligatoire (Oraliks 2026-07-07) : la case correspondante existe sur le
+    // PDF officiel ONEM — la laisser vide côté citoyen fait remonter un doute
+    // sur la propriété du compte à l'organisme de paiement.
+    required: true,
+    // Posée aussi pour le chèque circulaire : même si le chèque est envoyé à
+    // l'adresse de la rubrique Identité, on veut tracer si le compte bancaire
+    // du bénéficiaire est bien à son nom (utile en cas de dépôt ultérieur).
     label: { fr: "Le compte bancaire est à mon nom ?", nl: "", de: "" },
     options: [
       { value: "mon-nom", label: { fr: "Oui, à mon nom", nl: "", de: "" } },
@@ -1096,13 +1098,24 @@ export const C1_QUESTIONS: PdfFormField[] = [
     section: SECTION_PAIEMENT,
     order: 602,
   },
+  // Champ IBAN UNIQUE (Oraliks 2026-07-07) : un seul input à l'écran, accepte
+  // IBAN belge (BE…) ET étranger (FR…, DE…, NL…, LT…, LU…, ES…, IT…, AL…,
+  // etc. — 31 pays via `isValidInternationalIBAN`). Au submit, la valeur est
+  // routée vers le bon widget PDF selon le préfixe pays (BE → widget "IBAN",
+  // autre → widget "SEPA étranger IBAN BIC") via `applyIbanCountryRouting`.
   {
     id: "iban",
     pdfFieldName: "IBAN",
     type: "iban",
-    required: false,
-    label: { fr: "IBAN (compte belge SEPA)", nl: "", de: "" },
+    required: true,
+    label: { fr: "N° de compte bancaire (IBAN)", nl: "", de: "" },
+    help: {
+      fr: "IBAN belge (BE…) ou étranger de la zone SEPA (FR…, DE…, NL…, LU…, ES…, IT…, LT… etc.). Le pays est détecté depuis les 2 premières lettres — pour un IBAN étranger, un BIC te sera demandé en plus.",
+      nl: "",
+      de: "",
+    },
     placeholder: { fr: "BE00 0000 0000 0000", nl: "", de: "" },
+    internationalIban: true,
     visibleIf: { fieldId: "modePaiement", op: "equals", value: "virement" },
     section: SECTION_PAIEMENT,
     order: 603,
@@ -1111,34 +1124,24 @@ export const C1_QUESTIONS: PdfFormField[] = [
     id: "titulaireCompteNom",
     pdfFieldName: "Nom du titulaire",
     type: "text",
-    required: false,
+    required: true,
     label: { fr: "Nom et prénom du propriétaire du compte", nl: "", de: "" },
     placeholder: { fr: "Nom et prénom de la personne", nl: "", de: "" },
     visibleIf: { fieldId: "titulaireCompte", op: "equals", value: "autre-nom" },
     section: SECTION_PAIEMENT,
     order: 604,
   },
-  // Compte SEPA étranger : alternative au compte belge (BE…). Si renseigné,
-  // l'utilisateur doit aussi fournir le BIC de sa banque (obligatoire hors
-  // BE). On garde les deux champs facultatifs côté schéma — la cohérence
-  // « IBAN belge OU IBAN étranger + BIC » sera vérifiée par la logique
-  // applicative en aval.
+  // Widget « SEPA étranger IBAN BIC » du PDF : plus proposé à l'écran, mais
+  // reste sérialisé et stampé par `applyIbanCountryRouting` au submit. Marqué
+  // `autoAnswered` — jamais rendu comme contrôle interactif (cf. `isAutoField`).
   {
     id: "sepa_tranger_iban_bic",
     pdfFieldName: "SEPA étranger IBAN  BIC",
     type: "iban",
     required: false,
-    label: { fr: "IBAN étranger (SEPA hors Belgique)", nl: "", de: "" },
-    help: {
-      fr: "À remplir uniquement si ton compte n'est pas un compte belge (BE…). Indique aussi le BIC ci-dessous.",
-      nl: "", de: "",
-    },
-    placeholder: { fr: "FR76 0000 0000 0000 0000 0000 000", nl: "", de: "" },
-    // Sans ce flag, ce champ utilisait (par erreur) le validateur BELGE
-    // strict — donc rejetait tout IBAN étranger, alors que c'est son seul
-    // but (Revolut/LT, FR, NL, DE… cf. isValidInternationalIBAN, 31 pays).
+    label: { fr: "IBAN étranger (compte SEPA hors Belgique)", nl: "", de: "" },
     internationalIban: true,
-    visibleIf: { fieldId: "modePaiement", op: "equals", value: "virement" },
+    autoAnswered: true,
     section: SECTION_PAIEMENT,
     order: 605,
   },
@@ -1146,10 +1149,13 @@ export const C1_QUESTIONS: PdfFormField[] = [
     id: "bic",
     pdfFieldName: "BIC",
     type: "text",
-    required: false,
+    // Obligatoire dès qu'il est visible (donc dès qu'un IBAN non-BE est
+    // saisi) — la validation Zod n'exige un champ requis que s'il est
+    // visible, cf. buildValidator + isFieldVisible dans validation.ts.
+    required: true,
     label: { fr: "BIC (code SWIFT de la banque)", nl: "", de: "" },
     help: {
-      fr: "Obligatoire si tu utilises un IBAN étranger. Le BIC se trouve sur tes extraits de compte (8 ou 11 caractères, ex. BNPAFRPP).",
+      fr: "Obligatoire pour un IBAN étranger. Le BIC se trouve sur tes extraits de compte (8 ou 11 caractères, ex. BNPAFRPP).",
       nl: "", de: "",
     },
     placeholder: { fr: "BNPAFRPP", nl: "", de: "" },
@@ -1158,7 +1164,16 @@ export const C1_QUESTIONS: PdfFormField[] = [
     // l'exactitude d'un code banque réel (aucune base fiable disponible ici
     // pour ça ; le mauvais code enverrait un paiement au mauvais endroit).
     regex: "^[A-Za-z]{6}[A-Za-z0-9]{2}([A-Za-z0-9]{3})?$",
-    visibleIf: { fieldId: "modePaiement", op: "equals", value: "virement" },
+    // Visible seulement pour un IBAN étranger (préfixe 2 lettres ≠ BE). La
+    // regex `^(?![Bb][Ee])[A-Za-z]{2}` ancre 2 lettres au début de l'IBAN,
+    // avec un negative-lookahead sur BE — évite d'afficher le BIC tant que
+    // l'IBAN est vide ou incomplet (< 2 lettres). Case-insensitive côté
+    // regex source pour absorber une saisie en minuscules.
+    visibleIf: {
+      fieldId: "iban",
+      op: "matchesRegex",
+      value: "^(?![Bb][Ee])[A-Za-z]{2}",
+    },
     section: SECTION_PAIEMENT,
     order: 606,
   },

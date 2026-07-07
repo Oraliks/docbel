@@ -134,12 +134,15 @@ export type PrefillSource =
   | "profile.postalCode"
   | "profile.city";
 
-export type ConditionOp = "equals" | "notEquals" | "in" | "notIn";
+export type ConditionOp = "equals" | "notEquals" | "in" | "notIn" | "matchesRegex";
 
 export interface VisibleIf {
   fieldId: string;
   op: ConditionOp;
-  /// Pour equals/notEquals : valeur scalaire ; pour in/notIn : tableau.
+  /// Pour equals/notEquals : valeur scalaire ; pour in/notIn : tableau ;
+  /// pour matchesRegex : source d'un RegExp ancré côté validation (le champ
+  /// est visible si la valeur DÉPENDANTE, coercée en string, matche la regex ;
+  /// utile pour détecter un préfixe pays sur un IBAN par ex.).
   value: string | number | boolean | Array<string | number>;
 }
 

@@ -233,7 +233,14 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, onValuesChange
   // le stepper.
   const attemptAdvance = useCallback(
     (stepsFieldsList: PublicField[][], startIndex: number, nextIndex: number) => {
-      const invalid = findFirstInvalidStep(stepsFieldsList as unknown as PdfFormField[][], values, locale);
+      // Applique les dérivations AVANT la validation d'étape : les champs
+      // `derivedFrom` (date de naissance ← NISS, pays ← code postal) sont
+      // calculés à la volée à l'affichage mais leur valeur n'est pas écrite
+      // dans le state React. Sans cette étape, Zod voit le champ vide et
+      // bloque l'avancée (Oraliks 2026-07-07 : « il me bloque sur des champs
+      // auto date de naissance et pays de résidence »).
+      const derivedValues = applyFieldDerivations(values, form.fields);
+      const invalid = findFirstInvalidStep(stepsFieldsList as unknown as PdfFormField[][], derivedValues, locale);
       if (invalid) {
         setErrors((prev) => ({ ...prev, ...invalid.errors }));
         setActive(startIndex + invalid.index);

@@ -1747,12 +1747,14 @@ export function applyC1Improvements(
         if (q.id === "dateChangementOrganisme") {
           return { ...q, visibleIf: { fieldId: "transfereOrganismePaiement", op: "equals" as const, value: true } };
         }
-        // Question héritée de la 1ʳᵉ demande (C1), sans rapport avec un
-        // changement de situation — reste réel/requis/soumis (defaultValue
-        // "non") mais n'est plus proposée comme motif ni affichée en détail.
-        if (q.id === "chomeurTemporaireAlternance") return { ...q, autoAnswered: true };
-        // Libellé/aide raccourcis pour l'étape Motif (Oraliks, 2026-07-07) :
-        // prend la place laissée par chomeurTemporaireAlternance en Détails.
+        // N'est plus proposée comme motif (ce n'est pas une des 5 situations),
+        // mais reste posée en Détails — juste un libellé court à la place du
+        // phrasé brut de la C1 (l'aide détaillée reste en tooltip, cf.
+        // LabelWithTooltip). Oraliks, 2026-07-07.
+        if (q.id === "chomeurTemporaireAlternance") {
+          return { ...q, label: { ...q.label, fr: "Chômeur temporaire suivant une formation en alternance" } };
+        }
+        // Libellé/aide raccourcis pour l'étape Motif (Oraliks, 2026-07-07).
         if (q.id === "dateModificationEffective") {
           return {
             ...q,

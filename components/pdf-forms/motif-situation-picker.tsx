@@ -6,6 +6,7 @@ import {
   IdCardIcon,
   LandmarkIcon,
   Building2Icon,
+  CheckIcon,
   type LucideIcon,
 } from "lucide-react";
 import { useTranslations } from "next-intl";
@@ -64,16 +65,21 @@ export function MotifSituationPicker({ fields, values, errors, locale, setValue,
               <button
                 key={f.id}
                 type="button"
+                aria-pressed={selected}
                 onClick={() => setValue(f.id, values[f.id] !== true)}
-                className="flex w-full items-center gap-3 py-3 text-left"
+                className={`flex w-full items-center gap-3 rounded-lg px-2 py-3 text-left transition-colors ${
+                  selected ? "bg-[color:var(--glass-pop-bg)]" : ""
+                }`}
               >
                 <span
                   aria-hidden
-                  className={`flex size-[18px] shrink-0 items-center justify-center rounded-full border-2 transition-colors ${
-                    selected ? "border-[color:var(--glass-accent-deep,#5B46E5)]" : "border-[color:var(--glass-border)]"
+                  className={`flex size-5 shrink-0 items-center justify-center rounded-[6px] border-2 transition-colors ${
+                    selected
+                      ? "border-[color:var(--glass-accent-deep,#5B46E5)] bg-[color:var(--glass-accent-deep,#5B46E5)]"
+                      : "border-[color:var(--glass-border)]"
                   }`}
                 >
-                  {selected && <span className="size-2 rounded-full bg-[color:var(--glass-accent-deep,#5B46E5)]" />}
+                  {selected && <CheckIcon className="size-3.5 text-white" strokeWidth={3} />}
                 </span>
                 <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-[color:var(--glass-ink)]">
                   {loc(f.label, locale)}

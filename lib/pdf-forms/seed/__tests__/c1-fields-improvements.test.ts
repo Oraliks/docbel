@@ -263,18 +263,18 @@ describe("applyC1Improvements — restrictMotifTo5Situations (Oraliks, 2026-07-0
     expect(result.find((q) => q.id === "transfereOrganismePaiement")).toBeUndefined();
   });
 
-  it("actif : chomeurTemporaireAlternance devient autoAnswered (hors périmètre changement-situation)", () => {
+  it("actif : chomeurTemporaireAlternance garde un libellé court, mais reste posée (pas autoAnswered)", () => {
     const result = applyC1Improvements([], { restrictMotifTo5Situations: true });
     const f = result.find((q) => q.id === "chomeurTemporaireAlternance");
-    expect(f?.autoAnswered).toBe(true);
-    expect(f?.required).toBe(true); // reste requis/soumis, valeur par défaut "non"
-    expect(f?.defaultValue).toBe("non");
+    expect(f?.label?.fr).toBe("Chômeur temporaire suivant une formation en alternance");
+    expect(f?.autoAnswered).toBeFalsy();
+    expect(f?.required).toBe(true);
   });
 
-  it("absent : chomeurTemporaireAlternance n'est PAS autoAnswered (comportement c1/c1-insertion inchangé)", () => {
+  it("absent : chomeurTemporaireAlternance garde son libellé d'origine (comportement c1/c1-insertion inchangé)", () => {
     const result = applyC1Improvements([]);
     const f = result.find((q) => q.id === "chomeurTemporaireAlternance");
-    expect(f?.autoAnswered).toBeFalsy();
+    expect(f?.label?.fr).toBe("… comme chômeur temporaire suivant une formation en alternance");
   });
 
   it("actif : dateModificationEffective reçoit un libellé court avec l'explication en aide (tooltip)", () => {

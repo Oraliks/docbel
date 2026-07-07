@@ -1679,6 +1679,36 @@ export interface ApplyC1ImprovementsOptions {
 /// déclarer du tout (trouvé par Oraliks, 2026-07-07).
 const MOTIF_SITUATION_GROUP = "motifSituation";
 
+/// IDs des 15 radios oui/non « Activités & revenus » qui sont required
+/// par défaut sur le C1 (déclaration initiale) mais tombent en accordéon
+/// replié (`stepPriority: "optional"`) sur les dossiers restreints — ex.
+/// « changement de situation personnelle ». Sans defaultValue, l'utilisateur
+/// qui ne déplie pas l'accordéon reste bloqué au submit (Zod exige une
+/// valeur pour un required visible). En dossier restreint, on les
+/// pré-répond « non » par défaut : le citoyen peut toujours ouvrir
+/// l'accordéon et basculer un item sur « oui » si applicable, ce qui
+/// déclenche alors le sous-formulaire adéquat via les C1_TRIGGERS.
+/// Oraliks 2026-07-07 : « on n'a pas le même parallèle entre le document
+/// C1 pdf et le form runner » — ces 15 questions font sens pour une
+/// première demande, pas pour un simple changement de situation.
+const OPTIONAL_ACTIVITE_REVENU_IDS = new Set<string>([
+  "etudesPleinExercice",
+  "apprentissageAlternance",
+  "formationStageSyntra",
+  "mandatArtistique",
+  "mandatPolitique",
+  "chapitreXIIArts",
+  "tremplinIndependants",
+  "activiteAccessoireOuAide",
+  "administrateurSociete",
+  "independantAccessoireOuPrincipal",
+  "pensionCategorieParticuliere",
+  "pensionRetraiteSurvie",
+  "indemniteMaladieInvalidite",
+  "indemniteAccidentTravail",
+  "avantageFinancierFormation",
+]);
+
 /// Libellés relabelés (phrasé "je/mon", Oraliks 2026-07-06) + nouvel ordre
 /// d'affichage pour les 4 chips de modification existants, appliqués
 /// uniquement quand `restrictMotifTo5Situations` est actif.
@@ -1906,6 +1936,15 @@ export function applyC1Improvements(
         // applyMotifTransferOverride au submit). Cf. doc de
         // `autoAnswered` dans types.ts.
         if (q.id === "motifIntroduction") return { ...q, autoAnswered: true };
+        // Les 15 radios oui/non « Activités & revenus » sont required mais
+        // vivent dans un accordéon replié — sans defaultValue, l'utilisateur
+        // qui ne l'ouvre pas est bloqué au submit (cf.
+        // OPTIONAL_ACTIVITE_REVENU_IDS pour le pourquoi). En dossier
+        // restreint, on pré-répond « non » — cliquable en « oui » si
+        // applicable (déclenche alors le sous-formulaire C1_TRIGGERS).
+        if (OPTIONAL_ACTIVITE_REVENU_IDS.has(q.id) && q.defaultValue === undefined) {
+          return { ...q, defaultValue: "non" };
+        }
         return q;
       })
       .concat(TRANSFERE_ORGANISME_FIELD);

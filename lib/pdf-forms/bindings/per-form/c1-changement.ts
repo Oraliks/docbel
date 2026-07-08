@@ -8,9 +8,14 @@
 // `scripts/dump-c1.ts`. Chaque libellé est reproduit AU CARACTÈRE PRÈS
 // (espaces multiples, apostrophes typographiques, etc.).
 
-import { formatDateFR } from "../format";
 import type { MappingRule } from "../types";
 import type { FormPayload } from "../../types";
+import {
+  ibanBelgianSplit,
+  ibanForeignRouting,
+  horsEeeTripleNon,
+  dateHeaderFallback,
+} from "../macros";
 
 // ---------------------------------------------------------------------------
 // Widgets ciblés (constantes internes — lisibilité + refactor safe).
@@ -49,27 +54,10 @@ const W_NON_APATRIDE = "non_18";
 const W_NON_HORS_EEE = "non_19";
 
 // ---------------------------------------------------------------------------
-// Helpers spécifiques à ces règles.
+// Helpers spécifiques à ces règles. La logique IBAN belge / étranger et
+// date-header vit maintenant dans `bindings/macros/` — cf. les usages plus
+// bas dans `C1_CHANGEMENT_RULES`.
 // ---------------------------------------------------------------------------
-
-/// Normalise un IBAN : espaces retirés, majuscules.
-function normalizeIban(raw: FormPayload["iban"]): string {
-  return typeof raw === "string" ? raw.replace(/\s+/g, "").toUpperCase() : "";
-}
-
-/// IBAN belge complet (BE + 14 chiffres après le préfixe pays).
-function isBelgianIban(payload: FormPayload): boolean {
-  const n = normalizeIban(payload.iban);
-  return n.startsWith("BE") && n.length >= 16;
-}
-
-/// IBAN commençant par 2 lettres pays valides, mais PAS BE : compte SEPA
-/// étranger à router vers le widget dédié.
-function isForeignIban(payload: FormPayload): boolean {
-  const n = normalizeIban(payload.iban);
-  if (!/^[A-Z]{2}/.test(n)) return false;
-  return !n.startsWith("BE");
-}
 
 /// Concatène les fragments de remarque à partir des choix de situation
 /// familiale. Ordre stable — reproduit la logique de
@@ -161,47 +149,32 @@ export const C1_CHANGEMENT_RULES: MappingRule[] = [
     stamp: [{ widget: W_CHIP_COMPTE, value: true }],
   },
 
-  // -------- IBAN belge → split en 4 groupes (parité applyIbanSplitDerivation)
+  // -------- IBAN belge → split en 4 groupes (via macro) --------
   //
   // Le template C1 imprime « B E · __ __ · __ __ __ __ · __ __ __ __ ·
-  // __ __ __ __ ». Le widget « B E » a maxLength=2 (reçoit les 2 chiffres
-  // de contrôle) ; les 3 slots undefined_11/12/13 ont maxLength=4 chacun
-  // (les 3 groupes de 4 chiffres du n° de compte).
-  {
-    name: "iban-be-split",
-    whenFn: isBelgianIban,
-    stampFn: (payload) => {
-      const digits = normalizeIban(payload.iban).slice(2);
-      if (digits.length < 14) return [];
-      return [
-        { widget: W_IBAN_CHECK, value: digits.slice(0, 2) },
-        { widget: W_IBAN_PART1, value: digits.slice(2, 6) },
-        { widget: W_IBAN_PART2, value: digits.slice(6, 10) },
-        { widget: W_IBAN_PART3, value: digits.slice(10, 14) },
-      ];
+  // __ __ __ __ ». Widget « B E » = 2 chiffres de contrôle,
+  // undefined_11/12/13 = 3 groupes de 4 chiffres. Macro réutilisable pour
+  // tout document ONEM avec le même pattern IBAN visuel.
+  ibanBelgianSplit({
+    sourceField: "iban",
+    widgets: {
+      checkDigits: W_IBAN_CHECK,
+      part1: W_IBAN_PART1,
+      part2: W_IBAN_PART2,
+      part3: W_IBAN_PART3,
     },
-    declaredWidgets: [W_IBAN_CHECK, W_IBAN_PART1, W_IBAN_PART2, W_IBAN_PART3],
-  },
+  }),
 
-  // -------- IBAN étranger → widget SEPA (parité applyIbanCountryRouting) ---
+  // -------- IBAN étranger → widget SEPA (via macro) --------
   //
-  // Pour un IBAN non-BE, on stampe la valeur SAISIE (avec espaces d'origine
-  // — l'ONEM la lit telle quelle) sur le widget « SEPA étranger IBAN BIC ».
-  // Note : contrairement à `applyIbanCountryRouting`, on ne VIDE plus
-  // `payload.iban` — le filler standard stampe déjà `iban` sur un widget
-  // dont le `pdfFieldName` est vide (côté seed), donc aucun résidu ne
-  // pollue le widget IBAN belge. Ce découplage prépare la Phase 7 (retrait
-  // du champ workaround `sepa_tranger_iban_bic`).
-  {
-    name: "iban-etranger",
-    whenFn: isForeignIban,
-    stampFn: (payload) => {
-      const raw = typeof payload.iban === "string" ? payload.iban.trim() : "";
-      if (!raw) return [];
-      return [{ widget: W_IBAN_ETRANGER, value: raw }];
-    },
-    declaredWidgets: [W_IBAN_ETRANGER],
-  },
+  // Pour un IBAN non-BE, on stampe la valeur SAISIE (avec espaces
+  // d'origine — l'ONEM la lit telle quelle) sur le widget « SEPA étranger
+  // IBAN BIC ». Le filler standard n'écrase pas le widget belge car son
+  // pdfFieldName côté `iban` est vide.
+  ibanForeignRouting({
+    sourceField: "iban",
+    widget: W_IBAN_ETRANGER,
+  }),
 
   // -------- Titulaire du compte (parité applyTitulaireCompteNomDerivation) -
   //
@@ -252,54 +225,31 @@ export const C1_CHANGEMENT_RULES: MappingRule[] = [
     declaredWidgets: [W_REMARQUE],
   },
 
-  // -------- Date en-tête page 2 (parité applyDateHeaderP2Derivation) ------
+  // -------- Date en-tête page 2 (via macro) --------
   //
-  // Le header de la page 2 porte un widget « Date de DA » — la date du
-  // changement (`dateModificationEffective`) avec `dateDemande` en fallback,
-  // formatée en FR (DD/MM/YYYY).
-  {
+  // Le header page 2 porte « Date de DA » — priorité à la date de
+  // changement (`dateModificationEffective`), fallback sur la date de
+  // demande initiale (`dateDemande`). Formatage FR (DD/MM/YYYY).
+  dateHeaderFallback({
+    widget: W_DATE_HEADER_P2,
+    sources: ["dateModificationEffective", "dateDemande"],
     name: "date-header-p2",
-    whenFn: (payload) => {
-      const mod =
-        typeof payload.dateModificationEffective === "string"
-          ? payload.dateModificationEffective.trim()
-          : "";
-      const dem =
-        typeof payload.dateDemande === "string" ? payload.dateDemande.trim() : "";
-      return !!(mod || dem);
-    },
-    stampFn: (payload) => {
-      const mod =
-        typeof payload.dateModificationEffective === "string"
-          ? payload.dateModificationEffective.trim()
-          : "";
-      const dem =
-        typeof payload.dateDemande === "string" ? payload.dateDemande.trim() : "";
-      const date = mod || dem;
-      if (!date) return [];
-      return [{ widget: W_DATE_HEADER_P2, value: formatDateFR(date) }];
-    },
-    declaredWidgets: [W_DATE_HEADER_P2],
-  },
+  }),
 
-  // -------- Rubrique HORS-EEE : cas standard "non" (§1.4 tableau) ---------
+  // -------- Rubrique HORS-EEE : cas standard "non" (via macro) --------
   //
   // Se déclenche sur la question EXPLICITE `nationaliteHorsEEE === "non"`
   // (JAMAIS sur le texte libre `nationalit_3` — décision confirmée par
-  // Oraliks pendant la session de conception du plan). Cochera les 3 cases
-  // "non" de la rubrique (réfugié / apatride / ressortissant hors-EEE),
-  // rendant redondants les 3 champs `statutRefugie` / `apatrideReconnu` /
-  // pipe-radio de `nationaliteHorsEEE` dont c'est aujourd'hui le rôle
-  // (workaround retiré en Phase 7 du plan).
-  {
-    name: "hors-eee-non",
-    when: { nationaliteHorsEEE: "non" },
-    stamp: [
-      { widget: W_NON_REFUGIE, value: true },
-      { widget: W_NON_APATRIDE, value: true },
-      { widget: W_NON_HORS_EEE, value: true },
-    ],
-  },
+  // Oraliks pendant la session de conception du plan).
+  horsEeeTripleNon({
+    sourceField: "nationaliteHorsEEE",
+    matchValue: "non",
+    widgets: {
+      nonRefugie: W_NON_REFUGIE,
+      nonApatride: W_NON_APATRIDE,
+      nonHorsEee: W_NON_HORS_EEE,
+    },
+  }),
 
   // NOTE — `niss-header-p2` mentionné dans le plan §1.4 est intentionnellement
   // OMIS : le header NISS de la page 2 n'a pas de widget AcroForm dédié

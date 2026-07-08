@@ -104,4 +104,56 @@ describe("checkPublishable", () => {
     expect(missing).toHaveLength(1);
     expect(missing[0].message).toContain("absent");
   });
+
+  // ==========================================================================
+  // Couverture AcroForm (Phase 10 des ameliorations post-plan bindings).
+  // ==========================================================================
+
+  it("couverture AcroForm : < 25% d'orphelins → aucun warning couverture", () => {
+    // 3 widgets techniques, 3 couverts par les champs enrichis, 0 orphelin.
+    const fields = [enriched("a"), enriched("b"), enriched("c")];
+    const technical = [raw("a"), raw("b"), raw("c")];
+    const issues = checkPublishable(fields, technical, ["fr"]);
+    expect(issues.some((i) => /Couverture AcroForm/.test(i.message))).toBe(false);
+  });
+
+  it("couverture AcroForm : ≥ 25% d'orphelins → warning avec pourcentage", () => {
+    // 4 widgets techniques, 1 seul couvert → 3/4 = 75% orphelins.
+    const fields = [enriched("a")];
+    const technical = [raw("a"), raw("b"), raw("c"), raw("d")];
+    const issues = checkPublishable(fields, technical, ["fr"]);
+    const coverage = issues.find((i) => /Couverture AcroForm/.test(i.message));
+    expect(coverage).toBeDefined();
+    expect(coverage!.level).toBe("warning");
+    expect(coverage!.message).toContain("75%");
+  });
+
+  it("couverture AcroForm : règle serveur couvre un widget → pas orphelin", () => {
+    // 2 widgets, 1 par un champ, 1 par une règle serveur → 0 orphelin.
+    const fields = [enriched("a")];
+    const technical = [raw("a"), raw("b")];
+    const issues = checkPublishable(fields, technical, ["fr"], {
+      bindingRules: [{ name: "rule-b", stamp: [{ widget: "b", value: true }] }],
+    });
+    expect(issues.some((i) => /Couverture AcroForm/.test(i.message))).toBe(false);
+  });
+
+  it("couverture AcroForm : règle serveur qui cible un widget absent → warning", () => {
+    const fields = [enriched("a")];
+    const technical = [raw("a")];
+    const issues = checkPublishable(fields, technical, ["fr"], {
+      bindingRules: [{ name: "rule-typo", stamp: [{ widget: "widget_absent", value: true }] }],
+    });
+    const bad = issues.find((i) => /widget absent du PDF/.test(i.message));
+    expect(bad).toBeDefined();
+    expect(bad!.level).toBe("warning");
+    expect(bad!.message).toContain("widget_absent");
+  });
+
+  it("couverture AcroForm : ne bloque JAMAIS la publication (warning uniquement)", () => {
+    const fields = [enriched("a")];
+    const technical = [raw("a"), raw("b"), raw("c"), raw("d")]; // 75% orphelins
+    const issues = checkPublishable(fields, technical, ["fr"]);
+    expect(hasBlockingIssues(issues)).toBe(false);
+  });
 });

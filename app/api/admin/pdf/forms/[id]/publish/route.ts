@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdminAuth } from "@/lib/auth-check";
 import { checkPublishable, hasBlockingIssues } from "@/lib/pdf-forms/publish-checks";
+import { getRulesForSlug } from "@/lib/pdf-forms/bindings/registry";
 import { AcroFieldRaw, Locale, PdfFormField } from "@/lib/pdf-forms/types";
 
 const json = { "Content-Type": "application/json; charset=utf-8" };
@@ -26,6 +27,7 @@ export async function GET(
       visualFieldsRaw: form.visualFields,
       visualFieldsMaterializedAt: form.visualFieldsMaterializedAt,
       updatedAt: form.updatedAt,
+      bindingRules: getRulesForSlug(form.slug),
     }
   );
   return NextResponse.json({ issues, canPublish: !hasBlockingIssues(issues) }, { headers: json });
@@ -51,6 +53,7 @@ export async function POST(
       visualFieldsRaw: form.visualFields,
       visualFieldsMaterializedAt: form.visualFieldsMaterializedAt,
       updatedAt: form.updatedAt,
+      bindingRules: getRulesForSlug(form.slug),
     }
   );
   if (hasBlockingIssues(issues)) {

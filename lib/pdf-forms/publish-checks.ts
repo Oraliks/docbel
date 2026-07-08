@@ -1,7 +1,9 @@
 import { AcroFieldRaw, PdfFormField, Locale, loc } from "./types";
+import type { MappingRule } from "./bindings/types";
 import { anchoredRegex } from "./validation";
 import { parseVisualFieldsDoc } from "./visual/types";
 import { isDocDirtyVsMaterialized } from "./visual/validation";
+import { buildMappingReport } from "./mapping-report";
 
 export interface PublishIssue {
   level: "error" | "warning";
@@ -17,7 +19,21 @@ export interface PublishContext {
   /// Date de dernière sauvegarde du form (updatedAt). Sert à détecter une
   /// matérialisation antérieure à la dernière édition visuelle.
   updatedAt?: Date | string;
+  /// Règles serveur (bindings) applicables à ce formulaire (cf.
+  /// `getRulesForSlug`). Utilisées pour le check de couverture AcroForm :
+  /// un widget stampé par une règle serveur compte comme couvert, même
+  /// s'il n'a aucune claim dans le schéma enrichi.
+  bindingRules?: readonly MappingRule[];
 }
+
+/// Seuil au-delà duquel le pourcentage de widgets orphelins déclenche un
+/// warning à la publication. 25% = tolérance raisonnable pour les templates
+/// ONEM qui contiennent souvent des widgets « junk » (dates auto, en-têtes
+/// de page 2 dupliqués, signature) qu'on masque intentionnellement.
+///
+/// Au-dessus de ce seuil, l'admin est notifié qu'il devrait passer par
+/// l'onglet Mapping AcroForm pour arbitrer.
+const ORPHAN_COVERAGE_WARN_THRESHOLD_PCT = 25;
 
 /// Vérifie qu'un formulaire est publiable. Les `error` bloquent la
 /// publication ; les `warning` sont informatifs.
@@ -112,6 +128,49 @@ export function checkPublishable(
         level: "warning",
         message: `Le champ PDF requis « ${t.pdfFieldName} » n'est pas exposé dans le formulaire.`,
       });
+    }
+  }
+
+  // Couverture AcroForm (Phase 6+10 du plan bindings-canonical-ux) :
+  // warning si trop de widgets techniques sont orphelins (aucune claim
+  // dans le schéma enrichi ni dans les règles serveur). On n'agrège pas
+  // ici les widgets « inconnus » signalés en conflit — ce sont des
+  // widgets référencés par une règle mais absents du PDF, sémantique
+  // différente d'un orphelin.
+  if (technical.length > 0) {
+    const report = buildMappingReport(fields, technical, ctx.bindingRules ?? []);
+    // On ne compte comme orphelins QUE les rangées présentes dans le
+    // technicalSchema — les lignes « unknown » (widget référencé mais
+    // absent) sont capturées ailleurs en conflict.
+    const technicalTotal = technical.length;
+    const orphanCount = report.rows.filter(
+      (r) => r.status === "orphan" && r.acroType !== "unknown"
+    ).length;
+    if (technicalTotal > 0) {
+      const pct = Math.round((orphanCount / technicalTotal) * 100);
+      if (pct >= ORPHAN_COVERAGE_WARN_THRESHOLD_PCT) {
+        issues.push({
+          level: "warning",
+          message: `Couverture AcroForm : ${orphanCount}/${technicalTotal} widget(s) orphelin(s) (${pct}%). Ouvrez l'onglet Mapping AcroForm pour les arbitrer ou les masquer.`,
+        });
+      }
+    }
+    // Conflits explicites (widget cible par plusieurs sources heterogenes,
+    // OU règle qui vise un widget absent du PDF) : toujours signalés, un
+    // par un, pour que l'admin sache exactement quoi corriger.
+    for (const row of report.rows) {
+      if (row.status !== "conflict") continue;
+      if (row.acroType === "unknown") {
+        issues.push({
+          level: "warning",
+          message: `Règle serveur cible un widget absent du PDF : « ${row.pdfFieldName} ».`,
+        });
+      } else {
+        issues.push({
+          level: "warning",
+          message: `Conflit de mapping sur « ${row.pdfFieldName} » — plusieurs sources écrivent la même case.`,
+        });
+      }
     }
   }
 

@@ -1,4 +1,4 @@
-import { AcroFieldRaw, FieldType, PdfFormField } from "./types";
+import { AcroFieldRaw, FieldType, PdfFormField, CanonicalKey } from "./types";
 
 /// Construit un id slug stable à partir d'un nom de champ PDF.
 function makeId(name: string): string {
@@ -42,6 +42,66 @@ const TYPE_HINTS: Array<{ re: RegExp; type: FieldType }> = [
 /// génération, et masqué du formulaire utilisateur.
 const CREATION_DATE_RE =
   /(date.{0,5}(cr[ée]ation|g[ée]n[ée]ration|jour|today|edit)|aanmaakdatum|datum.{0,5}aanmaak|erstellungsdatum)/i;
+
+/// Indices (nom + tooltip) → clé du vocabulaire canonique. Ordre = priorité
+/// (le 1er match gagne). Ces heuristiques n'écrasent JAMAIS un canonicalKey
+/// posé manuellement dans un seed — l'inférence agit uniquement au parse
+/// initial d'un PDF. Cf. Phase 2 du plan bindings-canonical-ux : un champ
+/// tagué canonicalKey se pré-remplit automatiquement d'un formulaire à
+/// l'autre dans un même dossier.
+///
+/// Attention aux faux positifs :
+/// - « Nom du titulaire » (banque) ≠ identity.nom → le regex `banque.titulaire`
+///   passe AVANT `identity.nom` pour intercepter ce cas ;
+/// - « nationalité » ≠ pays de résidence → `identity.nationalite` distingué
+///   de `adresse.pays` par regex plus stricte.
+const CANONICAL_HINTS: Array<{ re: RegExp; key: CanonicalKey }> = [
+  // Banque en premier — pièges typiques (« nom du titulaire », « iban BE »).
+  { re: /\btitulaire\b/i, key: "banque.titulaire" },
+  { re: /\biban\b/i, key: "banque.iban" },
+  { re: /\bbic\b|\bswift\b/i, key: "banque.bic" },
+  // Contact.
+  { re: /\b(e?.?mail|courriel|e-mail)\b/i, key: "contact.email" },
+  { re: /\b(t[ée]l|gsm|phone|telefoon|mobile)\b/i, key: "contact.telephone" },
+  // Adresse.
+  { re: /\b(code.?postal|postcode)\b/i, key: "adresse.codePostal" },
+  { re: /\b(rue|street|straat)\b/i, key: "adresse.rue" },
+  { re: /^num[ée]?ro$|\bnr\b/i, key: "adresse.numero" },
+  { re: /\b(bo[îi]te|bus|box)\b/i, key: "adresse.boite" },
+  { re: /\bpays\b/i, key: "adresse.pays" },
+  // Identité — nationalité AVANT nom pour éviter que « nationalité » soit
+  // capturé par le regex `\bnom\b` (il ne l'est pas, mais garde la garantie).
+  // `nationalit[ée]` — le `é` final n'est pas un caractère de mot pour \b
+  // en JS regex (ASCII-only), donc pas de \b trailing sur cette forme.
+  { re: /\bnationalit[ée](?=\W|$)/i, key: "identity.nationalite" },
+  // `rijksregister` peut être suivi de « nummer » (compound néerlandais) —
+  // pas de \b trailing pour ce token. Les autres alternatives (niss, rrn,
+  // registre national) restent avec \b propres.
+  { re: /\b(niss|rrn|registre.?national)\b|\brijksregister/i, key: "identity.niss" },
+  { re: /\b(date.?naissance|geboortedatum|birthdate)\b/i, key: "identity.dateNaissance" },
+  { re: /\b(pr[ée]nom|voornaam|first.?name)\b/i, key: "identity.prenom" },
+  // « Nom » en dernier — c'est le regex le plus large, il ne doit matcher
+  // que les widgets qui n'ont pas déjà été identifiés comme prénom /
+  // titulaire / nom de rue / etc.
+  { re: /\b(nom|last.?name|achternaam)\b/i, key: "identity.nom" },
+  // Famille.
+  { re: /\b(statut.?familial|situation.?familiale|burgerlijke.?staat)\b/i, key: "famille.statut" },
+];
+
+/// Infère une `canonicalKey` depuis le nom et le tooltip d'un widget PDF.
+/// Utilise `CANONICAL_HINTS` — retourne `undefined` si aucun match (le
+/// champ reste sans clé canonique, ce qui est le comportement le plus safe :
+/// pas de pré-remplissage automatique cross-form pour ce champ).
+///
+/// Contrainte de sécurité : on n'infère PAS de canonicalKey sur un champ
+/// checkbox / radio / dropdown — la sémantique canonique s'applique aux
+/// valeurs textuelles seules (identity/adresse/banque = strings).
+function inferCanonicalKey(raw: AcroFieldRaw): CanonicalKey | undefined {
+  if (raw.acroType !== "text") return undefined;
+  const hay = `${raw.pdfFieldName} ${raw.tooltip ?? ""}`;
+  for (const h of CANONICAL_HINTS) if (h.re.test(hay)) return h.key;
+  return undefined;
+}
 
 /// Indices → section de regroupement.
 const SECTION_HINTS: Array<{ re: RegExp; section: string }> = [
@@ -106,6 +166,12 @@ export function buildEnrichedSchema(raw: AcroFieldRaw[]): PdfFormField[] {
     }
     const section = inferSection(r);
     if (section) field.section = section;
+    // Auto-tagging canonicalKey depuis les heuristiques — n'écrase jamais
+    // un tag manuel (cette fonction ne tourne QU'au parse initial d'un PDF ;
+    // les seeds enrichis passent après via `applyC1Improvements` qui
+    // remplace le champ complet). Cf. Phase 2 du plan bindings.
+    const canonicalKey = inferCanonicalKey(r);
+    if (canonicalKey) field.canonicalKey = canonicalKey;
     return field;
   });
 }

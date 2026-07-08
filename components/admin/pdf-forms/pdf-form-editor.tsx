@@ -20,8 +20,9 @@ import { TabChamps } from "./tabs/tab-champs";
 import { TabDocument } from "./tabs/tab-document";
 import { TabPublication } from "./tabs/tab-publication";
 import { TabTriggers } from "./tabs/tab-triggers";
+import { TabMapping } from "./tabs/tab-mapping";
 
-const TABS = ["champs", "document", "parametres", "declencheurs", "publication"] as const;
+const TABS = ["champs", "document", "parametres", "declencheurs", "mapping", "publication"] as const;
 type TabValue = (typeof TABS)[number];
 
 export function PdfFormEditor({ formId }: { formId: string }) {
@@ -114,6 +115,7 @@ export function PdfFormEditor({ formId }: { formId: string }) {
           <TabsTrigger value="document">{t("tabDocument")}</TabsTrigger>
           <TabsTrigger value="parametres">{t("tabSettings")}</TabsTrigger>
           <TabsTrigger value="declencheurs">{t("tabTriggers")}</TabsTrigger>
+          <TabsTrigger value="mapping">{t("tabMapping")}</TabsTrigger>
           <TabsTrigger value="publication">{t("tabPublication")}</TabsTrigger>
         </TabsList>
 
@@ -128,6 +130,9 @@ export function PdfFormEditor({ formId }: { formId: string }) {
         </TabsContent>
         <TabsContent value="declencheurs" className="pt-4">
           <TabTriggers data={data} />
+        </TabsContent>
+        <TabsContent value="mapping" className="pt-4">
+          <TabMapping data={data} />
         </TabsContent>
         <TabsContent value="publication" className="pt-4">
           <TabPublication data={data} />

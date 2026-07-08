@@ -22,6 +22,7 @@ import { TabPublication } from "./tabs/tab-publication";
 import { TabTriggers } from "./tabs/tab-triggers";
 import { TabMapping } from "./tabs/tab-mapping";
 import { TabFixtures } from "./tabs/tab-fixtures";
+import { SeedDiffBanner } from "./seed-diff-banner";
 
 const TABS = ["champs", "document", "parametres", "declencheurs", "mapping", "fixtures", "publication"] as const;
 type TabValue = (typeof TABS)[number];
@@ -108,6 +109,11 @@ export function PdfFormEditor({ formId }: { formId: string }) {
           </Tooltip>
         )}
       </div>
+
+      {/* Banner "sync requis" si la DB derive du seed source. Se cache
+          silencieusement quand tout est aligne ou quand le form n'a pas
+          de seed. Cf. Feature #3 des ameliorations post-plan bindings. */}
+      <SeedDiffBanner formId={formId} refreshKey={form.version} onSynced={load} />
 
       <Tabs value={activeTab} onValueChange={onTabChange} className="mt-4 w-full">
         {/* Rangée de tabs collante sous la barre d'action (py-3 + bordure ≈ 56px). */}

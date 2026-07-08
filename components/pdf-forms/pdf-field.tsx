@@ -219,6 +219,14 @@ export function PdfField({
   // déroulante (auto-appliqué, pas d'opt-in par champ nécessaire).
   if (field.type === "radio" && (field.options || []).length === 2) {
     const opts = field.options as unknown as [FieldOption, FieldOption];
+    // Champ dérivé (ex. hors-EEE ← nationalité) : verrouillé UNIQUEMENT tant
+    // que la dérivation produit une valeur — même règle que la branche texte
+    // plus bas (cf. isDerivedLocked ~L411).
+    const isDerivedLocked = field.derivedFrom != null && derivedValue != null;
+    const displayValue = isDerivedLocked ? derivedValue : ((value as string) ?? "");
+    const derivedNote = isDerivedLocked && (
+      <FieldDescription>Champ rempli automatiquement — modifiable si besoin en corrigeant le champ source.</FieldDescription>
+    );
     if (rowLayout) {
       return (
         <div className="flex flex-col gap-1 px-4 py-3" data-invalid={invalid}>
@@ -228,13 +236,15 @@ export function PdfField({
             </FieldLabel>
             <YesNoSegmentedControl
               id={field.id}
-              value={(value as string) ?? ""}
+              value={displayValue}
               onChange={onChange}
               options={opts}
               locale={locale}
               invalid={invalid}
+              disabled={isDerivedLocked}
             />
           </div>
+          {derivedNote}
           {errorReport}
         </div>
       );
@@ -246,12 +256,14 @@ export function PdfField({
         </FieldLabel>
         <YesNoSegmentedControl
           id={field.id}
-          value={(value as string) ?? ""}
+          value={displayValue}
           onChange={onChange}
           options={opts}
           locale={locale}
           invalid={invalid}
+          disabled={isDerivedLocked}
         />
+        {derivedNote}
         {errorReport}
       </Field>
     );

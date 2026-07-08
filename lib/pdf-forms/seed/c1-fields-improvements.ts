@@ -1296,15 +1296,19 @@ export const C1_QUESTIONS: PdfFormField[] = [
 
   // ====================================================================
   // SECTION — TRAVAILLEUR NON-EEE / SUISSE
-  // À masquer automatiquement si la nationalité saisie est belge ou
-  // appartient à l'EEE / Suisse. Pour l'instant : 1 question d'orientation
-  // qui rend les sous-questions conditionnelles.
   // ====================================================================
   // NOTE Phase 7 : les widgets « non_17 » (réfugié) et « non_18 » (apatride)
   // sont cochés par la règle serveur `hors-eee-non` dès que
   // `nationaliteHorsEEE === "non"`. Les 2 champs workaround `statutRefugie`
   // et `apatrideReconnu` (autoAnswered defaultValue="non") ont été supprimés
   // du schéma.
+  // 2026-07-08 (Oraliks) : dérivé de `nationalit_3` (texte libre) via
+  // `derivedFrom` — PAS `autoAnswered`, pour ne pas casser le `visibleIf` de
+  // `accesMarcheTravail` (cf. field-derivations.ts#nationalite-hors-eee et le
+  // piège documenté sur `motifIntroduction` plus haut dans ce fichier).
+  // Verrouillé dès qu'une nationalité est saisie ; nationalité non reconnue
+  // = traitée comme hors EEE (choix assumé malgré le texte libre, cf.
+  // nationalite-eee.ts).
   {
     id: "nationaliteHorsEEE",
     pdfFieldName: "oui_18|non_19",
@@ -1315,11 +1319,12 @@ export const C1_QUESTIONS: PdfFormField[] = [
       nl: "", de: "",
     },
     help: {
-      fr: "L'EEE = UE + Islande + Liechtenstein + Norvège. Si tu es belge, français, néerlandais, etc., réponds « non ». Cette section devient inutile pour les chômeurs temporaires.",
+      fr: "Déduit automatiquement de ta nationalité (ci-dessus) dès qu'elle est renseignée. L'EEE = UE + Islande + Liechtenstein + Norvège : belge, français, néerlandais, etc. → « non » coché automatiquement.",
       nl: "", de: "",
     },
     options: YN,
     defaultValue: "non",
+    derivedFrom: { fieldId: "nationalit_3", via: "nationalite-hors-eee" },
     section: SECTION_NON_EEE,
     order: 800,
     stepPriority: "optional",

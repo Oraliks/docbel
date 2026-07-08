@@ -154,7 +154,7 @@ export interface FieldOption {
 /// Dérivations de champ disponibles (registre pur dans field-derivations.ts,
 /// sans dépendance lourde — safe à importer côté client). Union fermée :
 /// chaque nouvelle dérivation (ex. futur code postal → commune) s'y ajoute.
-export type FieldDerivation = "niss-birth-date" | "postal-be-country";
+export type FieldDerivation = "niss-birth-date" | "postal-be-country" | "nationalite-hors-eee";
 
 /// Clé du vocabulaire canonique (cf. `lib/pdf-forms/canonical/vocabulary.ts`).
 /// Type portable ici (`string`) pour éviter un import croisé : la validation

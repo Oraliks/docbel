@@ -334,6 +334,7 @@ pnpm tsx scripts/apply-c1-improvements.ts --yes
 2. Libellés courts mobiles (§4.1) — proposer la liste, attendre le OK.
 3. Ordre de migration des compagnons en Phase 7 (suggérer : c1-regis d'abord — déclenché par colocation, flux le plus fréquent).
 4. La règle `hors-eee-non` se déclenche sur `nationaliteHorsEEE === "non"` (question explicite du formulaire), PAS sur le champ texte libre `nationalit_3` — confirmé pendant la session, ne pas "améliorer" en parsant la nationalité texte.
+   **MàJ 2026-07-08 (Oraliks) : décision inversée pour l'UX du formulaire** (pas pour la règle de stamping ci-dessus, qui reste inchangée). `nationaliteHorsEEE` est maintenant `derivedFrom: nationalit_3` (verrouillé, cf. `lib/pdf-forms/nationalite-eee.ts` + `field-derivations.ts#nationalite-hors-eee`) : le texte libre EST parsé pour pré-cocher/verrouiller ce toggle, malgré le risque de faux positif documenté dans nationalite-eee.ts. La règle `hors-eee-non` elle-même continue de se déclencher sur la VALEUR de `nationaliteHorsEEE` (qui peut désormais provenir de la dérivation plutôt que d'un clic manuel) — aucun changement dans `hors-eee-triple-non.ts`.
 
 ## Ce qui est HORS périmètre (ne pas entamer sans demande)
 - Renommage des champs AcroForm dans les PDFs sources (rejeté : casse la traçabilité ONEM — l'alias table EST la solution).

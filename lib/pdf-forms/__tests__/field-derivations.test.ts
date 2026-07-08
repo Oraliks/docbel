@@ -13,6 +13,25 @@ describe("FIELD_DERIVATIONS.niss-birth-date", () => {
   });
 });
 
+describe("FIELD_DERIVATIONS.nationalite-hors-eee", () => {
+  it("renvoie 'non' pour une nationalité EEE/Suisse reconnue", () => {
+    expect(FIELD_DERIVATIONS["nationalite-hors-eee"]("Belge")).toBe("non");
+    expect(FIELD_DERIVATIONS["nationalite-hors-eee"]("Française")).toBe("non");
+    expect(FIELD_DERIVATIONS["nationalite-hors-eee"]("Suisse")).toBe("non");
+  });
+
+  it("renvoie 'oui' pour une nationalité hors EEE/Suisse (reconnue ou non)", () => {
+    expect(FIELD_DERIVATIONS["nationalite-hors-eee"]("Marocaine")).toBe("oui");
+    expect(FIELD_DERIVATIONS["nationalite-hors-eee"]("xyz123")).toBe("oui");
+  });
+
+  it("renvoie null pour une valeur vide, blanche, ou non-string (champ reste éditable)", () => {
+    expect(FIELD_DERIVATIONS["nationalite-hors-eee"]("")).toBeNull();
+    expect(FIELD_DERIVATIONS["nationalite-hors-eee"]("   ")).toBeNull();
+    expect(FIELD_DERIVATIONS["nationalite-hors-eee"](true)).toBeNull();
+  });
+});
+
 describe("applyFieldDerivations", () => {
   const fields = [
     { id: "date_de_naissance", derivedFrom: { fieldId: "niss", via: "niss-birth-date" as const } },

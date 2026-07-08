@@ -171,14 +171,21 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, onValuesChange
     () => form.fields.filter((f) => !isAutoField(f)),
     [form.fields]
   );
+  // Dérivations "virtuelles" (ex. hors-EEE ← nationalité) pour le calcul de
+  // VISIBILITÉ uniquement — jamais écrites dans `values` (cf. field-
+  // derivations.ts). Sans ça, un `visibleIf` référençant un champ
+  // `derivedFrom` encore à sa valeur par défaut ne s'affiche jamais tant que
+  // l'étape n'a pas été validée une première fois (même symptôme que le piège
+  // historique autoAnswered documenté dans c1-fields-improvements.ts).
+  const derivedValues = useMemo(() => applyFieldDerivations(values, form.fields), [values, form.fields]);
   const { coreSteps, optionalSections } = useMemo(
     () =>
-      buildSteps(dataFields, values, locale, {
+      buildSteps(dataFields, derivedValues, locale, {
         fallbackTitle: t("runnerStepInfoTitle"),
         fallbackSubtitle: t("runnerStepInfoSubtitle"),
       }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [dataFields, values, locale]
+    [dataFields, derivedValues, locale]
   );
 
   const steps = useMemo<Step[]>(() => {
@@ -200,7 +207,7 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, onValuesChange
   // Mode « macro-étapes » (ex. C1 → 5 étapes) : non-null si des champs portent
   // `stepGroup`. Supersède `steps` (pas de résumé, envoi sur la dernière
   // étape). Null pour les autres formulaires → rendu classique inchangé.
-  const macroSteps = useMemo(() => buildMacroSteps(form.fields, values), [form.fields, values]);
+  const macroSteps = useMemo(() => buildMacroSteps(form.fields, derivedValues), [form.fields, derivedValues]);
 
   // Nom du signataire résolu depuis les champs saisis (pour la signature
   // numérique). "" si aucun nom exploitable.

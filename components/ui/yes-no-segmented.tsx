@@ -9,6 +9,9 @@ interface YesNoSegmentedControlProps {
   options: [FieldOption, FieldOption];
   locale: Locale;
   invalid?: boolean;
+  /// Verrouille la bascule (champ dérivé, cf. PdfField.derivedValue) : les
+  /// boutons restent visibles (valeur lisible) mais n'appellent plus `onChange`.
+  disabled?: boolean;
 }
 
 /// Bascule à 2 boutons pour un champ radio à exactement 2 options (souvent
@@ -21,13 +24,15 @@ export function YesNoSegmentedControl({
   options,
   locale,
   invalid,
+  disabled,
 }: YesNoSegmentedControlProps) {
   return (
     <div
       id={id}
       role="radiogroup"
       aria-invalid={invalid}
-      className="inline-flex shrink-0 overflow-hidden rounded-full border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)]"
+      aria-disabled={disabled}
+      className={`inline-flex shrink-0 overflow-hidden rounded-full border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] ${disabled ? "opacity-60" : ""}`}
     >
       {options.map((opt, i) => {
         const selected = value === opt.value;
@@ -37,8 +42,9 @@ export function YesNoSegmentedControl({
             type="button"
             role="radio"
             aria-checked={selected}
+            disabled={disabled}
             onClick={() => onChange(opt.value)}
-            className={`px-4 py-1.5 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 ${i === 0 ? "" : "border-l border-[color:var(--glass-border)]"} ${
+            className={`px-4 py-1.5 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 disabled:cursor-not-allowed ${i === 0 ? "" : "border-l border-[color:var(--glass-border)]"} ${
               selected
                 ? "bg-[color:var(--glass-accent-deep,#5B46E5)] text-white"
                 : "text-[color:var(--glass-ink-soft)] hover:bg-[color:var(--glass-pop-bg)]"

@@ -1,5 +1,6 @@
 import type { FieldDerivation, FieldValue, FormPayload } from "./types";
 import { deriveBirthDateFromNiss } from "./niss-birthdate";
+import { isEeeOrSuisseNationality } from "./nationalite-eee";
 
 /// Registre des fonctions de dérivation, indexé par `FieldDerivation`.
 /// Chaque fonction prend la valeur COURANTE du champ source et renvoie la
@@ -21,6 +22,17 @@ export const FIELD_DERIVATIONS: Record<FieldDerivation, (sourceValue: FieldValue
   "postal-be-country": (sourceValue) => {
     if (typeof sourceValue !== "string") return null;
     return /^\d{4}$/.test(sourceValue.trim()) ? "Belgique" : null;
+  },
+  /// Nationalité (texte libre, ex. « Belge ») → statut « hors EEE et hors
+  /// Suisse » (C1, section 27). Vide/non-string = rien à dériver, le champ
+  /// reste éditable ; sinon "non" si un pays EEE/Suisse est reconnu (cf.
+  /// nationalite-eee.ts), "oui" sinon — y compris nationalité non reconnue
+  /// (choix assumé, cf. commentaire d'en-tête de nationalite-eee.ts).
+  "nationalite-hors-eee": (sourceValue) => {
+    if (typeof sourceValue !== "string") return null;
+    const trimmed = sourceValue.trim();
+    if (!trimmed) return null;
+    return isEeeOrSuisseNationality(trimmed) ? "non" : "oui";
   },
 };
 

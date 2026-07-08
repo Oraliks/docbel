@@ -43,6 +43,7 @@ import { ContextHelpPanel } from "./context-help-panel";
 import { MotifSituationPicker } from "./motif-situation-picker";
 import { CompactAccordionSection } from "./compact-accordion-section";
 import { AutoSaveNotice } from "./auto-save-notice";
+import { ResetFormButton } from "./reset-form-button";
 import { OptionCard } from "@/components/ui/option-card";
 
 const LOCALE_NAMES: Record<Locale, string> = { fr: "FR", nl: "NL", de: "DE" };
@@ -97,6 +98,20 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, onValuesChange
 
   useEffect(() => { onValuesChange?.(values); }, [values, onValuesChange]);
   useEffect(() => { onLocaleChange?.(locale); }, [locale, onLocaleChange]);
+
+  /// Reset complet (Phase 5 du plan bindings-canonical-ux) : purge le
+  /// brouillon serveur (best-effort — silencieux si non connecté / réseau
+  /// KO), rejoue defaultValues (systemDate/prefill remis en place), remet
+  /// les erreurs à zéro, le consentement à false et retour step 0. Ne
+  /// touche PAS la locale ni le mode delivery (choix produit conservés).
+  async function resetForm() {
+    await fetch(`/api/pdf/${form.slug}/draft`, { method: "DELETE" }).catch(() => {});
+    setValues(defaultValues(form, bundlePrefill));
+    setErrors({});
+    setConsent(false);
+    setActive(0);
+    toast.success(t("runnerResetDone"));
+  }
 
   // Retour du flux itsme (?prefill=ok|error|unavailable).
   useEffect(() => {
@@ -480,6 +495,7 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, onValuesChange
         setDoccleRef={setDoccleRef}
         submitting={submitting}
         submit={submit}
+        resetForm={resetForm}
         lastSavedAt={lastSavedAt}
         bundleRunId={bundleRunId}
         t={t}
@@ -649,7 +665,10 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, onValuesChange
                     <Checkbox checked={consent} onCheckedChange={(c) => setConsent(c === true)} className="mt-0.5" />
                     <span>{t("runnerConsentText")}</span>
                   </label>
-                  <AutoSaveNotice lastSavedAt={lastSavedAt} isPartOfBundle={!!bundleRunId} />
+                  <div className="flex items-center justify-between gap-2">
+                    <AutoSaveNotice lastSavedAt={lastSavedAt} isPartOfBundle={!!bundleRunId} />
+                    <ResetFormButton onConfirm={resetForm} disabled={submitting} />
+                  </div>
                   <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[color:var(--glass-border)] pt-4">
                     <StepProgress
                       current={activeIndex + 1}
@@ -692,7 +711,10 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, onValuesChange
                       </Button>
                     </div>
                   </div>
-                  <AutoSaveNotice lastSavedAt={lastSavedAt} isPartOfBundle={!!bundleRunId} />
+                  <div className="flex items-center justify-between gap-2">
+                    <AutoSaveNotice lastSavedAt={lastSavedAt} isPartOfBundle={!!bundleRunId} />
+                    <ResetFormButton onConfirm={resetForm} disabled={submitting} />
+                  </div>
                 </div>
               )}
             </form>
@@ -928,6 +950,7 @@ interface MacroRunnerBodyProps {
   setDoccleRef: (v: string) => void;
   submitting: boolean;
   submit: () => void;
+  resetForm: () => void | Promise<void>;
   lastSavedAt: Date | null;
   bundleRunId?: string;
   t: ReturnType<typeof useTranslations>;
@@ -942,7 +965,7 @@ interface MacroRunnerBodyProps {
 function MacroRunnerBody({
   form, macroSteps, activeIndex, setActive, attemptAdvance, locale, setLocale, values, errors,
   setValue, signerName, consent, setConsent, delivery, setDelivery, doccleRef,
-  setDoccleRef, submitting, submit, lastSavedAt, bundleRunId, t,
+  setDoccleRef, submitting, submit, resetForm, lastSavedAt, bundleRunId, t,
 }: MacroRunnerBodyProps) {
   const current = macroSteps[activeIndex];
   const isLast = activeIndex === macroSteps.length - 1;
@@ -1116,7 +1139,10 @@ function MacroRunnerBody({
                     <Checkbox checked={consent} onCheckedChange={(c) => setConsent(c === true)} className="mt-0.5" />
                     <span>{t("runnerConsentText")}</span>
                   </label>
-                  <AutoSaveNotice lastSavedAt={lastSavedAt} isPartOfBundle={!!bundleRunId} />
+                  <div className="flex items-center justify-between gap-2">
+                    <AutoSaveNotice lastSavedAt={lastSavedAt} isPartOfBundle={!!bundleRunId} />
+                    <ResetFormButton onConfirm={resetForm} disabled={submitting} />
+                  </div>
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     {progress}
                     <div className="flex flex-1 items-center justify-end gap-2 sm:flex-none">
@@ -1145,7 +1171,10 @@ function MacroRunnerBody({
                       </Button>
                     </div>
                   </div>
-                  <AutoSaveNotice lastSavedAt={lastSavedAt} isPartOfBundle={!!bundleRunId} />
+                  <div className="flex items-center justify-between gap-2">
+                    <AutoSaveNotice lastSavedAt={lastSavedAt} isPartOfBundle={!!bundleRunId} />
+                    <ResetFormButton onConfirm={resetForm} disabled={submitting} />
+                  </div>
                 </div>
               )}
             </form>

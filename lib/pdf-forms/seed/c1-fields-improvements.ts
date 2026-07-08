@@ -126,6 +126,12 @@ export const C1_QUESTIONS: PdfFormField[] = [
     placeholder: { fr: "00.00.00-000.00", nl: "", de: "" },
     prefillFrom: "profile.niss",
     canonicalKey: "identity.niss",
+    // Le widget AcroForm source impose /Helvetica 12 Tf sur une case d'à
+    // peine 11pt de haut, superposée à un guide imprimé en peigne
+    // ("__ __ __ __ __ __ / __ __ __ - __ __") — tout débordement y est très
+    // visible (Oraliks 2026-07-08). Auto-size plutôt que la taille uniforme
+    // du filler pour laisser le lecteur PDF réduire le texte à la case.
+    autoSizeFont: true,
     section: SECTION_IDENTITE,
     order: -98,
   },
@@ -146,6 +152,10 @@ export const C1_QUESTIONS: PdfFormField[] = [
     // TANT QUE le NISS produit une date valide ; redevient éditable si le
     // NISS est vide/incomplet (jamais de champ requis inaccessible).
     derivedFrom: { fieldId: "niss", via: "niss-birth-date" },
+    // Même correctif que `niss` ci-dessus : widget source en /Helvetica 12 Tf
+    // fixe sur une case ~12pt de haut, superposée à un guide imprimé en
+    // peigne — auto-size pour éviter le débordement visible.
+    autoSizeFont: true,
     section: SECTION_IDENTITE,
     order: -97,
   },

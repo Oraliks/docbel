@@ -278,6 +278,14 @@ export interface PdfFormField {
   internalNote?: string;
   acroType?: AcroFieldType;
   readOnly?: boolean;
+  /// Force la taille de police AUTO (`/DA` size 0 → le lecteur PDF réduit le
+  /// texte pour tenir dans le widget) au lieu de `UNIFORM_TEXT_FONT_SIZE`
+  /// (filler.ts). Réservé aux widgets dont le template source impose déjà une
+  /// taille fixe trop grande pour leur rectangle (ex. NISS/Date de naissance
+  /// du C1 : `/Helvetica 12 Tf` imprimé sur une case de ~11pt de haut,
+  /// superposée à un guide en peigne imprimé — tout débordement y est très
+  /// visible, contrairement aux champs texte libres sans grille imprimée).
+  autoSizeFont?: boolean;
   /// Champ MASQUÉ du formulaire citoyen : jamais rendu (filtré au sérialiseur
   /// public) ni auto-injecté (date/signature) à la génération → reste BLANC
   /// dans le PDF. Pour les formulaires complétés en partie par un tiers (ex.

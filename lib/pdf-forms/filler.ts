@@ -113,7 +113,8 @@ function stampScalarWidget(
   value: FieldValue,
   font: PDFFont,
   unicodeFont: boolean,
-  fieldType?: string
+  fieldType?: string,
+  autoSizeFont?: boolean
 ): void {
   if (pdfField instanceof PDFTextField) {
     const raw = value === false ? "" : String(value);
@@ -130,9 +131,10 @@ function stampScalarWidget(
     // préfixe est étranger (FR, DE, …) → pas de strip.
     if (fieldType === "iban") text = raw.replace(/^\s*[Bb][Ee]\s*/, "").trim();
     pdfField.setText(text);
-    // Taille uniforme partout (cf. UNIFORM_TEXT_FONT_SIZE).
+    // Taille uniforme partout (cf. UNIFORM_TEXT_FONT_SIZE), sauf
+    // `autoSizeFont` (0 = auto-fit lecteur PDF, cf. PdfFormField.autoSizeFont).
     try {
-      pdfField.setFontSize(UNIFORM_TEXT_FONT_SIZE);
+      pdfField.setFontSize(autoSizeFont ? 0 : UNIFORM_TEXT_FONT_SIZE);
     } catch {
       /* certains widgets rejettent setFontSize — on garde la taille par défaut */
     }
@@ -197,7 +199,7 @@ function stampArrayField(
         continue;
       }
       try {
-        stampScalarWidget(pdfField, subValue as FieldValue, font, unicodeFont, sub.type);
+        stampScalarWidget(pdfField, subValue as FieldValue, font, unicodeFont, sub.type, sub.autoSizeFont);
       } catch {
         /* readonly / incompatible */
       }
@@ -227,7 +229,7 @@ function stampArrayField(
       continue;
     }
     try {
-      stampScalarWidget(pdfField, subValue as FieldValue, font, unicodeFont, sub.type);
+      stampScalarWidget(pdfField, subValue as FieldValue, font, unicodeFont, sub.type, sub.autoSizeFont);
     } catch {
       /* readonly / incompatible */
     }
@@ -377,7 +379,7 @@ export async function fillForm(
         continue;
       }
 
-      stampScalarWidget(pdfField, value, font, unicodeFont, field.type);
+      stampScalarWidget(pdfField, value, font, unicodeFont, field.type, field.autoSizeFont);
     } catch {
       // champ readonly / incompatible — on ignore sans casser la génération
     }

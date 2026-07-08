@@ -104,6 +104,43 @@ describe("canonicalToPrefill — vue simple", () => {
     const targetFields: PdfFormField[] = [field("a", { canonicalKey: "identity.nom" })];
     expect(canonicalToPrefill(targetFields, { "banque.iban": "BE68" })).toEqual({});
   });
+
+  it("champ type: fullname → auto-composition depuis identity.prenom + identity.nom", () => {
+    const targetFields: PdfFormField[] = [
+      field("who", { type: "fullname" }),
+    ];
+    const prefill = canonicalToPrefill(targetFields, {
+      "identity.prenom": "Marie",
+      "identity.nom": "Dupont",
+    });
+    expect(prefill.who).toEqual({ first: "Marie", last: "Dupont" });
+  });
+
+  it("champ fullname : rempli même si UN SEUL des deux (partiel accepté)", () => {
+    const targetFields: PdfFormField[] = [field("who", { type: "fullname" })];
+    expect(canonicalToPrefill(targetFields, { "identity.nom": "Dupont" })).toEqual({
+      who: { first: "", last: "Dupont" },
+    });
+    expect(canonicalToPrefill(targetFields, { "identity.prenom": "Marie" })).toEqual({
+      who: { first: "Marie", last: "" },
+    });
+  });
+
+  it("champ fullname sans identity.prenom NI identity.nom → aucun prefill", () => {
+    const targetFields: PdfFormField[] = [field("who", { type: "fullname" })];
+    expect(canonicalToPrefill(targetFields, { "banque.iban": "BE68" })).toEqual({});
+  });
+
+  it("champ fullname ET canonicalKey en même temps → fullname prime", () => {
+    const targetFields: PdfFormField[] = [
+      field("who", { type: "fullname", canonicalKey: "identity.nom" }),
+    ];
+    const prefill = canonicalToPrefill(targetFields, {
+      "identity.prenom": "Marie",
+      "identity.nom": "Dupont",
+    });
+    expect(prefill.who).toEqual({ first: "Marie", last: "Dupont" });
+  });
 });
 
 describe("mergeCanonical / extractCanonicalFromMany", () => {

@@ -25,6 +25,7 @@ import {
   extractCanonical,
   mergeCanonical,
   type CanonicalMap,
+  type PrefillMap,
 } from "@/lib/pdf-forms/canonical/extract";
 
 export const dynamic = "force-dynamic";
@@ -207,7 +208,7 @@ export default async function PdfFormPage({
   // Priorité au sein de bundlePrefill : `prefillFrom` prime (précision plus
   // fine — un champ prefillFrom itsme.niss ne doit pas se faire injecter la
   // valeur canonique d'un formulaire qui l'a extraite d'un profil).
-  let bundlePrefill: Record<string, string> | undefined;
+  let bundlePrefill: PrefillMap | undefined;
   let validBundleRunId: string | undefined;
   if (bundleRun) {
     const { shared, canonical, runValid } = await loadBundleSharedValues(bundleRun, form.id);
@@ -215,6 +216,10 @@ export default async function PdfFormPage({
       validBundleRunId = bundleRun;
       const bySharedFrom = applySharedValuesToForm(form.fields, shared);
       const byCanonical = canonicalToPrefill(form.fields, canonical);
+      // `byCanonical` peut contenir des `FullNameValue` (composite prénom+nom
+      // pour un champ `type: "fullname"`), `bySharedFrom` uniquement des
+      // strings. Priorité `prefillFrom` (précision plus fine, contexte plus
+      // certain que la composition canonique) — donc bySharedFrom prime.
       bundlePrefill = { ...byCanonical, ...bySharedFrom };
     }
   }
@@ -222,7 +227,7 @@ export default async function PdfFormPage({
   // Précédence de fusion : le profil est la BASE, le contexte bundle ÉCRASE
   // (plus contextuel — l'utilisateur vient de saisir ces valeurs dans le
   // dossier en cours). On garde le nom de prop `bundlePrefill` pour le layout.
-  const mergedPrefill: Record<string, string> | undefined =
+  const mergedPrefill: PrefillMap | undefined =
     profilePrefill || bundlePrefill
       ? { ...profilePrefill, ...bundlePrefill }
       : undefined;

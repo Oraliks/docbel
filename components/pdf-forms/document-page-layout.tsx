@@ -7,6 +7,7 @@ import { ChevronRightIcon, UserIcon, SparklesIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { PdfFormRunner } from "./pdf-form-runner";
 import type { PublicForm } from "@/lib/pdf-forms/public-serializer";
+import type { PrefillMap } from "@/lib/pdf-forms/canonical/extract";
 
 interface Props {
   /// Si le PDF est ouvert dans le contexte d'un dossier codé, les "types"
@@ -14,7 +15,7 @@ interface Props {
   /// la liste par défaut côté composant.
   dossierTypes?: readonly string[];
   form: PublicForm;
-  bundlePrefill?: Record<string, string>;
+  bundlePrefill?: PrefillMap;
   bundleRunId?: string;
   bundleSlug?: string;
   /// Filet de sécurité : si true, affiche l'ancien rendu dense du PDF.

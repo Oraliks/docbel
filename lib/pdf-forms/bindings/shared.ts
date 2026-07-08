@@ -7,6 +7,7 @@
 
 import { bind } from "./engine";
 import type { MappingRule } from "./types";
+import type { FormPayload } from "../types";
 
 /// Widgets d'identité citoyenne. Champs `id` sur le formulaire enrichi
 /// (côté schéma `PdfFormField.id`) attendus :
@@ -35,6 +36,51 @@ export function identityBindings(w: IdentityWidgets): MappingRule[] {
   if (w.dateNaissance) rules.push(bind("date_de_naissance", w.dateNaissance, "date-fr"));
   if (w.nationalite) rules.push(bind("nationalit_3", w.nationalite));
   return rules;
+}
+
+/// Ordre d'assemblage d'un widget composite « nom + prénom ».
+///   • "prenom-nom" : « Marie Dupont » (défaut sur les compagnons ONEM
+///     dont le libellé est « Prénom et nom »).
+///   • "nom-prenom" : « Dupont Marie » (utilisé quand le libellé du widget
+///     est « Nom et prénom »).
+export type FullnameOrder = "prenom-nom" | "nom-prenom";
+
+/// Fabrique une règle qui stampe un widget UNIQUE avec le nom composite du
+/// citoyen. Pattern PDF fréquent (C1A, C1B, C1C, C46, C47, C1-Partenaire)
+/// où l'AcroForm expose un seul slot texte pour « Nom et prénom » alors que
+/// le formulaire de saisie garde `nom` et `pr_nom` séparés. Le mécanisme
+/// standard `pdfFieldName` du schéma ne peut pas stamper la concaténation
+/// tout seul — d'où cette règle.
+///
+/// Sources par défaut : ids `pr_nom` et `nom` du schéma (convention seed
+/// C1). L'appelant peut surcharger via `fromFields` pour les documents qui
+/// utilisent d'autres ids (ex. `niss_ch_meur` / `nom_ch_meur`).
+export function fullnameBinding(opts: {
+  widget: string;
+  order?: FullnameOrder;
+  fromFields?: { prenom: string; nom: string };
+}): MappingRule {
+  const order = opts.order ?? "prenom-nom";
+  const source = opts.fromFields ?? { prenom: "pr_nom", nom: "nom" };
+  return {
+    name: `fullname:${opts.widget}`,
+    stampFn: (payload: FormPayload) => {
+      const prenom =
+        typeof payload[source.prenom] === "string"
+          ? (payload[source.prenom] as string).trim()
+          : "";
+      const nom =
+        typeof payload[source.nom] === "string"
+          ? (payload[source.nom] as string).trim()
+          : "";
+      const parts =
+        order === "nom-prenom" ? [nom, prenom] : [prenom, nom];
+      const full = parts.filter(Boolean).join(" ");
+      if (!full) return [];
+      return [{ widget: opts.widget, value: full }];
+    },
+    declaredWidgets: [opts.widget],
+  };
 }
 
 export interface AddressWidgets {

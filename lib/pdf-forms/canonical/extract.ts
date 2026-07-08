@@ -18,9 +18,16 @@
 //   - Une valeur canonique VIDE ("", "   ") est ignorée : on ne polluerait
 //     que le sous-formulaire avec un « vider ce champ » qui n'apporte rien.
 
-import type { FormPayload, PdfFormField } from "../types";
+import type { FormPayload, PdfFormField, FullNameValue } from "../types";
 import type { PublicField } from "../public-serializer";
 import { isCanonicalKey, type CanonicalKey } from "./vocabulary";
+
+/// Type d'entrée d'un prefill : la plupart des champs reçoivent une chaîne,
+/// mais les champs `type: "fullname"` acceptent un objet composite qui remplit
+/// leurs deux sous-champs prénom/nom simultanément. Le runner (`defaultValues`)
+/// dispatche en fonction du type de champ.
+export type PrefillValue = string | FullNameValue;
+export type PrefillMap = Record<string, PrefillValue>;
 
 /// Payload validé côté form-runner (les valeurs peuvent être string, number,
 /// boolean, null ou fullname). Ne dépend pas de FormPayload car on veut
@@ -83,12 +90,31 @@ export function extractCanonical<F extends FieldLike>(
 /// présente dans la map d'entrée. Sert de source de pré-remplissage
 /// cross-document (le C1 remplit la map, le C1A la consomme). Renvoie un
 /// objet vide si aucun champ cible ne match.
+///
+/// Cas spécial « fullname » : un champ cible `type: "fullname"` reçoit
+/// automatiquement `{ first: identity.prenom, last: identity.nom }` si
+/// AU MOINS l'une des deux clés est présente dans la carte canonique.
+/// L'ordre `nameOrder` du champ n'importe pas — le composant runner
+/// assemble prénom/nom selon sa propre convention. Sans cette exception,
+/// les champs `fullname` des compagnons (C1A/C1C/C46/C47 « Nom et
+/// prénom » ou « Prénom et nom ») resteraient vides malgré une identité
+/// canonisée dans le run.
 export function canonicalToPrefill<F extends FieldLike>(
   targetFields: readonly F[],
   canonical: Partial<Record<CanonicalKey, string>>
-): Record<string, string> {
-  const out: Record<string, string> = {};
+): PrefillMap {
+  const out: PrefillMap = {};
+  const prenom = canonical["identity.prenom"];
+  const nom = canonical["identity.nom"];
+  const hasFullnameParts = !!(prenom || nom);
   for (const f of targetFields) {
+    // Cas fullname : auto-composition depuis identity.prenom / identity.nom.
+    // Le champ n'a PAS besoin de porter un `canonicalKey` propre — sa
+    // sémantique (composite prénom+nom) fait le lien.
+    if (f.type === "fullname" && hasFullnameParts) {
+      out[f.id] = { first: prenom ?? "", last: nom ?? "" };
+      continue;
+    }
     const key = f.canonicalKey;
     if (!key || !isCanonicalKey(key)) continue;
     const v = canonical[key];

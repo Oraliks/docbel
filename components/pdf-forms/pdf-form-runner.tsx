@@ -23,7 +23,8 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { PdfField } from "./pdf-field";
 import { buildValidator, isFieldComplete, findFirstInvalidStep } from "@/lib/pdf-forms/validation";
-import { Locale, FieldValue, FormPayload, PdfFormField, loc } from "@/lib/pdf-forms/types";
+import { Locale, FieldValue, FormPayload, PdfFormField, loc, isFullNameValue } from "@/lib/pdf-forms/types";
+import type { PrefillMap } from "@/lib/pdf-forms/canonical/extract";
 import { todayISO } from "@/lib/pdf-forms/system-values";
 import { resolveSignerName } from "@/lib/pdf-forms/signature";
 import { isAutoField, isCreationDateField, isSignatureField } from "@/lib/pdf-forms/auto-fields";
@@ -45,11 +46,24 @@ const LOCALE_NAMES: Record<Locale, string> = { fr: "FR", nl: "NL", de: "DE" };
 // Types de champ qui occupent toute la largeur dans la grille 2 colonnes.
 const FULL_WIDTH_TYPES = new Set(["textarea", "signature", "fullname", "checkbox", "radio", "array"]);
 
-function defaultValues(form: PublicForm, bundlePrefill?: Record<string, string>): FormPayload {
+function defaultValues(form: PublicForm, bundlePrefill?: PrefillMap): FormPayload {
   const v: FormPayload = {};
   for (const f of form.fields) {
-    if (bundlePrefill && bundlePrefill[f.id] !== undefined && bundlePrefill[f.id] !== "") {
-      v[f.id] = bundlePrefill[f.id];
+    const pv = bundlePrefill?.[f.id];
+    // Cas fullname : accepte un objet composite `{ first, last }` (produit
+    // par la voie canonical) OU une chaîne (fallback prefillFrom) qu'on
+    // dispatche naïvement en `last` (compat historique — les fullname
+    // prefill profil arrivaient déjà comme `lastName`).
+    if (f.type === "fullname" && pv !== undefined) {
+      if (isFullNameValue(pv)) {
+        v[f.id] = pv;
+      } else if (typeof pv === "string" && pv !== "") {
+        v[f.id] = { first: "", last: pv };
+      } else {
+        v[f.id] = { first: "", last: "" };
+      }
+    } else if (typeof pv === "string" && pv !== "") {
+      v[f.id] = pv;
     } else if (isCreationDateField(f)) v[f.id] = todayISO();
     else if (f.defaultValue !== undefined) v[f.id] = f.defaultValue as FieldValue;
     else if (f.type === "checkbox") v[f.id] = false;
@@ -66,7 +80,7 @@ type Step =
 
 interface PdfFormRunnerProps {
   form: PublicForm;
-  bundlePrefill?: Record<string, string>;
+  bundlePrefill?: PrefillMap;
   bundleRunId?: string;
   onValuesChange?: (values: FormPayload) => void;
   onLocaleChange?: (locale: Locale) => void;

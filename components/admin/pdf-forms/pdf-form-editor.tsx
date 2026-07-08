@@ -22,9 +22,10 @@ import { TabPublication } from "./tabs/tab-publication";
 import { TabTriggers } from "./tabs/tab-triggers";
 import { TabMapping } from "./tabs/tab-mapping";
 import { TabFixtures } from "./tabs/tab-fixtures";
+import { TabPreview } from "./tabs/tab-preview";
 import { SeedDiffBanner } from "./seed-diff-banner";
 
-const TABS = ["champs", "document", "parametres", "declencheurs", "mapping", "fixtures", "publication"] as const;
+const TABS = ["champs", "document", "parametres", "declencheurs", "mapping", "fixtures", "preview", "publication"] as const;
 type TabValue = (typeof TABS)[number];
 
 export function PdfFormEditor({ formId }: { formId: string }) {
@@ -124,6 +125,7 @@ export function PdfFormEditor({ formId }: { formId: string }) {
           <TabsTrigger value="declencheurs">{t("tabTriggers")}</TabsTrigger>
           <TabsTrigger value="mapping">{t("tabMapping")}</TabsTrigger>
           <TabsTrigger value="fixtures">{t("tabFixtures")}</TabsTrigger>
+          <TabsTrigger value="preview">{t("tabPreview")}</TabsTrigger>
           <TabsTrigger value="publication">{t("tabPublication")}</TabsTrigger>
         </TabsList>
 
@@ -144,6 +146,9 @@ export function PdfFormEditor({ formId }: { formId: string }) {
         </TabsContent>
         <TabsContent value="fixtures" className="pt-4">
           <TabFixtures data={data} />
+        </TabsContent>
+        <TabsContent value="preview" className="pt-4">
+          <TabPreview data={data} />
         </TabsContent>
         <TabsContent value="publication" className="pt-4">
           <TabPublication data={data} />

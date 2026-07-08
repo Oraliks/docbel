@@ -228,3 +228,28 @@ Une fois publié, le PDF est accessible :
 - `lib/pdf-forms/bindings/per-form/c1-changement.ts` — 13 règles-exemples
 - `lib/pdf-forms/seed/c1-fields-improvements.ts` — le seed le plus riche
   (~2000 l.)
+
+---
+
+## Améliorations futures (à discuter avant implémentation)
+
+**Éditeur no-code de règles serveur dans l'admin** — actuellement les
+règles vivent en TypeScript (`bindings/per-form/<slug>.ts`) + registry.
+Un éditeur admin qui persiste des règles en DB (colonne `PdfForm.customRules`)
+et les fusionne runtime avec les règles code (`getRulesForSlug`) émanciperait
+90% des cas simples (« stamp widget X quand champ Y = valeur Z ») du besoin
+de dev. Complexité : réécrire un UI de règles when/stamp + assurer la
+sérialisation JSON compatible avec le moteur pur.
+
+**Système de variantes / overlay** — quand on veut copier C1 en
+c1-insertion avec quelques différences (nouveau motif par défaut, une
+règle changée), aujourd'hui il faut dupliquer le seed complet + apply
+séparé. Un mécanisme `PdfForm.parentSlug` + `overlayFields` qui compose
+runtime le parent + les overrides éviterait la duplication. Nécessite
+un refactor du serializer + du filler + du publish-checks pour composer
+en cascade.
+
+Ces deux features attendent une session avec Oraliks pour valider les
+choix de design (structure du JSON custom-rules, résolution des
+conflits parent/overlay) avant implémentation — le coût de refactorer
+un mauvais choix est élevé sur le pipeline PDF.

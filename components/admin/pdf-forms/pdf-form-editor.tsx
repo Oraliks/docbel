@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import {
-  SaveIcon, UploadCloudIcon, FileDownIcon, HistoryIcon,
+  SaveIcon, UploadCloudIcon, HistoryIcon,
   CheckCircle2Icon, Loader2Icon, ExternalLinkIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -33,7 +33,7 @@ export function PdfFormEditor({ formId }: { formId: string }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const data = useFormData(formId);
-  const { form, issues, saving, busy, save, publish, unpublish, testPdf, patchForm, load, loadIssues } = data;
+  const { form, issues, saving, busy, save, publish, unpublish, patchForm, load, loadIssues } = data;
   const [versionOpen, setVersionOpen] = useState(false);
   const [revsOpen, setRevsOpen] = useState(false);
 
@@ -86,9 +86,6 @@ export function PdfFormEditor({ formId }: { formId: string }) {
             </a>
           )}
         </div>
-        <Button variant="outline" size="sm" onClick={testPdf} disabled={busy === "test"}>
-          {busy === "test" ? <Loader2Icon className="size-4 animate-spin" /> : <FileDownIcon className="size-4" />} {t("testPdf")}
-        </Button>
         <Button variant="outline" size="sm" onClick={() => setRevsOpen(true)}><HistoryIcon className="size-4" /> {t("history")}</Button>
         <Button variant="outline" size="sm" onClick={() => setVersionOpen(true)}><UploadCloudIcon className="size-4" /> {t("replacePdf")}</Button>
         <Button size="sm" onClick={save} disabled={saving}>

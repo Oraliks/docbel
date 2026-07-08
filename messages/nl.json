@@ -1300,7 +1300,6 @@
       "sourcesTitle": "AcroForm-bronnen",
       "sourcesIntro": "PDF's die zijn opgenomen onder <code>private/pdfs/</code>. Dient voor de mapping van dossiers (elke AcroForm-widget → canoniek veld).",
       "breadcrumbForms": "Formulieren",
-      "testPdf": "PDF test",
       "history": "Geschiedenis",
       "replacePdf": "PDF vervangen",
       "unpublish": "Depubliceren",

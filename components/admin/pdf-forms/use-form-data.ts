@@ -56,7 +56,6 @@ export interface UseFormData {
   save: () => Promise<void>;
   publish: () => Promise<void>;
   unpublish: () => Promise<void>;
-  testPdf: () => Promise<void>;
   reparse: () => Promise<void>;
   setFields: (fields: PdfFormField[]) => void;
   patchForm: (p: Partial<EditorForm>) => void;
@@ -192,25 +191,10 @@ export function useFormData(formId: string): UseFormData {
     }
   }, [form, formId, patchForm, load]);
 
-  const testPdf = useCallback(async () => {
-    if (!form) return;
-    setBusy("test");
-    try {
-      const res = await fetch(`/api/admin/pdf/forms/${formId}/test-generate`, {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ schema: form.fields }),
-      });
-      if (!res.ok) { toast.error("Échec du test."); return; }
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url; a.download = `test-${form.slug}.pdf`;
-      document.body.appendChild(a); a.click(); a.remove();
-      URL.revokeObjectURL(url);
-    } finally {
-      setBusy(null);
-    }
-  }, [form, formId]);
+  // NOTE : le helper `testPdf` (qui téléchargeait un PDF avec un payload
+  // seed) a été retiré — remplacé par l'onglet Preview live (itération
+  // WYSIWYG) et l'onglet Fixtures (scénarios sauvegardés). La route API
+  // `/test-generate` reste utilisée par ces deux onglets.
 
   const reparse = useCallback(async () => {
     setBusy("reparse");
@@ -241,6 +225,6 @@ export function useFormData(formId: string): UseFormData {
 
   return {
     form, issues, presets, saving, busy, hasForeignAcroForm,
-    load, loadIssues, save, publish, unpublish, testPdf, reparse, setFields, patchForm,
+    load, loadIssues, save, publish, unpublish, reparse, setFields, patchForm,
   };
 }

@@ -2747,7 +2747,6 @@
       "sourcesTitle": "Sources AcroForm",
       "sourcesIntro": "PDFs commités sous <code>private/pdfs/</code>. Sert au mapping des dossiers (chaque widget AcroForm → champ canonique).",
       "breadcrumbForms": "Formulaires",
-      "testPdf": "PDF test",
       "history": "Historique",
       "replacePdf": "Remplacer le PDF",
       "unpublish": "Dépublier",

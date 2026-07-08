@@ -8642,7 +8642,6 @@
       "sourcesTitle": "AcroForm sources",
       "sourcesIntro": "PDFs committed under <code>private/pdfs/</code>. Used for dossier mapping (each AcroForm widget → canonical field).",
       "breadcrumbForms": "Forms",
-      "testPdf": "Test PDF",
       "history": "History",
       "replacePdf": "Replace PDF",
       "unpublish": "Unpublish",

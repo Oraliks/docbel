@@ -27,12 +27,6 @@ import { Locale, FieldValue, FormPayload, PdfFormField, loc } from "@/lib/pdf-fo
 import { todayISO } from "@/lib/pdf-forms/system-values";
 import { resolveSignerName } from "@/lib/pdf-forms/signature";
 import { isAutoField, isCreationDateField, isSignatureField } from "@/lib/pdf-forms/auto-fields";
-import { applyMotifTransferOverride } from "@/lib/pdf-forms/c1-motif-transfer";
-import { applyIbanCountryRouting } from "@/lib/pdf-forms/c1-iban-routing";
-import { applyRemarqueSituationFamiliale } from "@/lib/pdf-forms/c1-remarque-derivation";
-import { applyTitulaireCompteNomDerivation } from "@/lib/pdf-forms/c1-titulaire-derivation";
-import { applyIbanSplitDerivation } from "@/lib/pdf-forms/c1-iban-split";
-import { applyDateHeaderP2Derivation } from "@/lib/pdf-forms/c1-date-header-p2";
 import { FIELD_DERIVATIONS, applyFieldDerivations } from "@/lib/pdf-forms/field-derivations";
 import type { PublicForm, PublicField } from "@/lib/pdf-forms/public-serializer";
 import { buildSteps, buildMacroSteps, type OptionalSection, type MacroStep } from "@/lib/pdf-forms/build-steps";
@@ -279,37 +273,21 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, onValuesChange
     }
     // Signature numérique automatique : on auto-confirme tous les champs
     // signature du formulaire si un nom de signataire est résolu depuis la
-    // saisie. Le serveur produira le bloc "Signé numériquement par X" au
+    // saisie. Le serveur produira le bloc « Signé numériquement par X » au
     // bon endroit dans le PDF.
-    // applyMotifTransferOverride : no-op pour la plupart des formulaires ;
-    // sur le C1 "changement de situation", corrige motifIntroduction si le
-    // citoyen a coché "transfert vers un autre organisme de paiement" (case
-    // PDF mutuellement exclusive avec "modification", jamais soumise en
-    // même temps — cf. lib/pdf-forms/c1-motif-transfer.ts).
+    //
     // applyFieldDerivations : synchronise les champs `derivedFrom` (ex. date
     // de naissance ← NISS) sur leur valeur ACTUELLEMENT affichée (verrouillée
     // à l'écran), au cas où `values` garderait une saisie manuelle antérieure.
-    // applyIbanCountryRouting : sur le C1, on n'expose qu'UN champ IBAN à
-    // l'écran (accepte BE + étranger via `internationalIban`) ; au submit,
-    // on route la valeur vers le bon widget PDF selon les 2 lettres de
-    // préfixe pays (cf. lib/pdf-forms/c1-iban-routing.ts). No-op sur les
-    // autres formulaires (l'IBAN étranger vit alors dans son champ propre).
-    // applyRemarqueSituationFamiliale : injecte « cohousing » / « jugement
-    // en cours » / « je n'ai pas encore reçu mon jugement » dans la remarque
-    // situation familiale (autoAnswered), à partir des choix concrets pris
-    // ailleurs — cf. lib/pdf-forms/c1-remarque-derivation.ts.
-    const signedValues: FormPayload = applyFieldDerivations(
-      applyDateHeaderP2Derivation(
-        applyIbanSplitDerivation(
-          applyTitulaireCompteNomDerivation(
-            applyRemarqueSituationFamiliale(
-              applyIbanCountryRouting(applyMotifTransferOverride({ ...values }))
-            )
-          )
-        )
-      ),
-      form.fields
-    );
+    //
+    // NOTE Phase 7 (2026-07-08) : les 6 transforms client historiques
+    // (`applyMotifTransferOverride`, `applyIbanCountryRouting`,
+    // `applyRemarqueSituationFamiliale`, `applyTitulaireCompteNomDerivation`,
+    // `applyIbanSplitDerivation`, `applyDateHeaderP2Derivation`) ont été
+    // retirés — leur comportement est désormais assuré par les règles
+    // déclaratives du moteur de bindings serveur (`lib/pdf-forms/bindings/`)
+    // évaluées dans `/api/pdf/[slug]/generate/route.ts` avant `fillForm`.
+    const signedValues: FormPayload = applyFieldDerivations({ ...values }, form.fields);
     if (signerName) {
       for (const f of form.fields) {
         if (isSignatureField(f)) signedValues[f.id] = "confirmed";

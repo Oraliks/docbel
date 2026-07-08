@@ -389,21 +389,11 @@ export const C1_QUESTIONS: PdfFormField[] = [
     order: 9,
     renderAs: "chip",
   },
-  // Date affichée dans le header de la page 2 (widget « Date de DA », x=506).
-  // Oraliks 2026-07-07 : « c'est celle du changement donc la date que je
-  // mentionne sur le form runner ». Remplie au submit par
-  // `applyDateHeaderP2Derivation` — dateModificationEffective si présente,
-  // sinon dateDemande en fallback.
-  {
-    id: "dateHeaderP2",
-    pdfFieldName: "Date de DA",
-    type: "date",
-    required: false,
-    label: { fr: "Date en-tête page 2", nl: "", de: "" },
-    autoAnswered: true,
-    section: SECTION_DEMANDE,
-    order: 9.5,
-  },
+  // NOTE Phase 7 : le widget « Date de DA » (page 2, x=506) est désormais
+  // stampé par la règle `date-header-p2` du moteur de bindings serveur
+  // (`lib/pdf-forms/bindings/per-form/c1-changement.ts`). Le champ
+  // workaround `dateHeaderP2` (autoAnswered) a été supprimé — sans utilité
+  // depuis que la règle serveur produit la valeur directement.
   {
     id: "dateModificationEffective",
     pdfFieldName: "", // À stamper sur les 3 cases date réelles (adresse / situation familiale / compte) — noms AcroForm à identifier via scripts/dump-c1.ts (suivi séparé, cf. NEXT_ACTIONS).
@@ -1188,15 +1178,14 @@ export const C1_QUESTIONS: PdfFormField[] = [
   // Champ IBAN UNIQUE (Oraliks 2026-07-07) : un seul input à l'écran, accepte
   // IBAN belge (BE…) ET étranger (FR…, DE…, NL…, LT…, LU…, ES…, IT…, AL…,
   // etc. — 31 pays via `isValidInternationalIBAN`). Au submit, la valeur est
-  // routée vers le bon widget PDF selon le préfixe pays (BE → widget "IBAN",
-  // autre → widget "SEPA étranger IBAN BIC") via `applyIbanCountryRouting`.
+  // routée vers le bon widget PDF selon le préfixe pays par les règles
+  // serveur `iban-be-split` (4 slots "B E" + undefined_11/12/13, y=440) et
+  // `iban-etranger` (widget « SEPA étranger IBAN BIC »).
   {
     id: "iban",
-    // pdfFieldName vidé (Oraliks 2026-07-07 : "le compte bancaire n'est pas
-    // dans le bon champs acroform il doit être plus haut"). Le stamping se
-    // fait maintenant via `ibanPart1/2/3` sur les 3 slots undefined_11/12/13
-    // du template (y=440, au-dessus du widget "IBAN" à y=428). Cf.
-    // `applyIbanSplitDerivation`.
+    // pdfFieldName vide : le stamping est intégralement piloté par les
+    // règles serveur (`lib/pdf-forms/bindings/per-form/c1-changement.ts`) —
+    // aucun widget cible côté schéma.
     pdfFieldName: "",
     type: "iban",
     required: true,
@@ -1213,40 +1202,20 @@ export const C1_QUESTIONS: PdfFormField[] = [
     section: SECTION_PAIEMENT,
     order: 603,
   },
-  // 4 slots visuels de l'IBAN belge sur le template C1 (row y=440) :
-  // "B E ##  ####  ####  ####". Widget "B E" reçoit les 2 chiffres de
-  // contrôle (maxLength=2 confirmé par pdf-lib). Les 3 slots undefined_11/12/13
-  // reçoivent les 3 groupes de 4 chiffres du n° de compte. Alimentés par
-  // `applyIbanSplitDerivation` au submit.
-  {
-    id: "ibanCheckDigits",
-    pdfFieldName: "B E",
-    type: "text" as const,
-    required: false,
-    label: { fr: "IBAN chiffres de contrôle", nl: "", de: "" },
-    autoAnswered: true,
-    section: SECTION_PAIEMENT,
-    order: 603.05,
-  },
-  ...(["ibanPart1", "ibanPart2", "ibanPart3"].map((id, idx) => ({
-    id,
-    pdfFieldName: `undefined_1${idx + 1}`,
-    type: "text" as const,
-    required: false,
-    label: { fr: `IBAN part ${idx + 1}`, nl: "", de: "" },
-    autoAnswered: true,
-    section: SECTION_PAIEMENT,
-    order: 603.1 + idx * 0.1,
-  }))),
+  // NOTE Phase 7 : 4 slots visuels IBAN belge ("B E", undefined_11/12/13),
+  // widget « Nom du titulaire » (via `titulaireCompteNomStamp`) et widget
+  // « SEPA étranger IBAN BIC » (via `sepa_tranger_iban_bic`) sont désormais
+  // stampés par les règles serveur `iban-be-split` / `titulaire-mon-nom` /
+  // `titulaire-autre` / `iban-etranger`
+  // (`lib/pdf-forms/bindings/per-form/c1-changement.ts`). Les 6 champs
+  // workaround `ibanCheckDigits` / `ibanPart1/2/3` / `titulaireCompteNomStamp`
+  // / `sepa_tranger_iban_bic` ont été supprimés du schéma.
   {
     id: "titulaireCompteNom",
-    // pdfFieldName vidé (Oraliks 2026-07-07) : le stamping du widget PDF
-    // « Nom du titulaire » est désormais assuré par `titulaireCompteNomStamp`
-    // (autoAnswered, alimenté par `applyTitulaireCompteNomDerivation` au
-    // submit). Le champ ici reste PUREMENT UI, saisie manuelle si l'usager
-    // choisit « autre-nom ». Sans cette séparation, mon fix filler-skip-
-    // visibleIf empêchait le widget de se stamper en mode « mon-nom »
-    // (invisible → skip).
+    // Champ PUREMENT UI : saisie manuelle du nom du titulaire quand
+    // `titulaireCompte === "autre-nom"`. Le widget PDF « Nom du titulaire »
+    // est stampé côté serveur par la règle `titulaire-autre` (ou
+    // `titulaire-mon-nom` avec la valeur "Prénom Nom" du citoyen).
     pdfFieldName: "",
     type: "text",
     required: true,
@@ -1256,35 +1225,6 @@ export const C1_QUESTIONS: PdfFormField[] = [
     canonicalKey: "banque.titulaire",
     section: SECTION_PAIEMENT,
     order: 604,
-  },
-  // Widget PDF « Nom du titulaire » : alimenté au submit par
-  // `applyTitulaireCompteNomDerivation` selon `titulaireCompte` :
-  //   - « mon-nom » (défaut) → « Prénom Nom » de l'utilisateur
-  //   - « autre-nom » → valeur saisie manuellement dans `titulaireCompteNom`
-  // autoAnswered = pas de contrôle UI, mais reste dans le payload et stampé.
-  {
-    id: "titulaireCompteNomStamp",
-    pdfFieldName: "Nom du titulaire",
-    type: "text",
-    required: false,
-    label: { fr: "Nom du titulaire (auto)", nl: "", de: "" },
-    autoAnswered: true,
-    section: SECTION_PAIEMENT,
-    order: 604.5,
-  },
-  // Widget « SEPA étranger IBAN BIC » du PDF : plus proposé à l'écran, mais
-  // reste sérialisé et stampé par `applyIbanCountryRouting` au submit. Marqué
-  // `autoAnswered` — jamais rendu comme contrôle interactif (cf. `isAutoField`).
-  {
-    id: "sepa_tranger_iban_bic",
-    pdfFieldName: "SEPA étranger IBAN  BIC",
-    type: "iban",
-    required: false,
-    label: { fr: "IBAN étranger (compte SEPA hors Belgique)", nl: "", de: "" },
-    internationalIban: true,
-    autoAnswered: true,
-    section: SECTION_PAIEMENT,
-    order: 605,
   },
   {
     id: "bic",
@@ -1360,35 +1300,11 @@ export const C1_QUESTIONS: PdfFormField[] = [
   // appartient à l'EEE / Suisse. Pour l'instant : 1 question d'orientation
   // qui rend les sous-questions conditionnelles.
   // ====================================================================
-  // Statut réfugié + apatride : autoAnswered "non" par défaut (Oraliks
-  // 2026-07-07 : ces cases devaient être « non » partout pour un citoyen
-  // européen). Cochent respectivement les widgets non_17 et non_18.
-  {
-    id: "statutRefugie",
-    pdfFieldName: "oui  allez à la rubrique suivante|non_17",
-    type: "radio",
-    required: false,
-    label: { fr: "J'ai le statut de réfugié", nl: "", de: "" },
-    options: YN,
-    defaultValue: "non",
-    autoAnswered: true,
-    section: SECTION_NON_EEE,
-    order: 799,
-    stepPriority: "optional",
-  },
-  {
-    id: "apatrideReconnu",
-    pdfFieldName: "oui  allez à la rubrique suivante_2|non_18",
-    type: "radio",
-    required: false,
-    label: { fr: "Je suis apatride reconnu", nl: "", de: "" },
-    options: YN,
-    defaultValue: "non",
-    autoAnswered: true,
-    section: SECTION_NON_EEE,
-    order: 799.5,
-    stepPriority: "optional",
-  },
+  // NOTE Phase 7 : les widgets « non_17 » (réfugié) et « non_18 » (apatride)
+  // sont cochés par la règle serveur `hors-eee-non` dès que
+  // `nationaliteHorsEEE === "non"`. Les 2 champs workaround `statutRefugie`
+  // et `apatrideReconnu` (autoAnswered defaultValue="non") ont été supprimés
+  // du schéma.
   {
     id: "nationaliteHorsEEE",
     pdfFieldName: "oui_18|non_19",
@@ -1765,9 +1681,8 @@ function coveredSingleNames(): Set<string> {
 /// à masquer visuellement pour ne pas polluer la section Identité.
 const HIDDEN_INFERRED_PDF_NAMES = new Set<string>([
   "Nom et prénom",
-  // « Date de DA » n'est plus dans la hide-list — désormais mappée à
-  // `dateHeaderP2` (autoAnswered) qui reçoit la date de changement au submit
-  // via `applyDateHeaderP2Derivation`.
+  // « Date de DA » n'est plus dans la hide-list — désormais stampée par la
+  // règle serveur `date-header-p2` (dateModificationEffective ?? dateDemande).
 ]);
 
 /// Applique les améliorations du schéma C1 sur la liste de champs existante

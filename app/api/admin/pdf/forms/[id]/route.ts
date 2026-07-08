@@ -93,6 +93,18 @@ export async function PATCH(
     // Parse + sanitise via parseTriggers (drop des éléments mal formés).
     data.triggers = parseTriggers(body.triggers) as unknown as Prisma.InputJsonValue;
   }
+  if (Array.isArray(body.testFixtures)) {
+    // Parse + normalisation via parseTestFixtures (drop des elements mal
+    // formes, no-op sur les entrees valides). Cf. lib/pdf-forms/fixtures.ts.
+    const now = new Date().toISOString();
+    const cleaned = (await import("@/lib/pdf-forms/fixtures")).parseTestFixtures(body.testFixtures);
+    const stamped = cleaned.map((f) => ({
+      ...f,
+      createdAt: f.createdAt ?? now,
+      updatedAt: now,
+    }));
+    data.testFixtures = stamped as unknown as Prisma.InputJsonValue;
+  }
 
   let createRevision = false;
   if (Array.isArray(body.fields)) {

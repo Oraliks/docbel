@@ -1890,6 +1890,13 @@ model PdfForm {
   /// du parcours, pas de mutation DB.
   triggers        Json @default("[]")
 
+  /// Fixtures de test (Feature #8 des ameliorations post-plan bindings).
+  /// Chaque fixture = { id, name, description?, payload } — le payload est
+  /// injecte dans /test-generate pour reproduire un scenario type sans
+  /// re-taper les 20+ champs. Sert aussi de non-regression : un cron peut
+  /// re-generer chaque fixture et diff les bytes.
+  testFixtures Json @default("[]")
+
   // --- Éditeur visuel d'AcroForms (v1 : text + checkbox sur PDF plats) ---
   /// Wrapper VisualFieldsDoc — cf. lib/pdf-forms/visual/types.
   visualFields               Json      @default("{\"version\":1,\"fields\":[]}")

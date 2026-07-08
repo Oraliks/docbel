@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { PdfFormField, Locale, AcroFieldRaw, PdfFormTrigger } from "@/lib/pdf-forms/types";
 import type { PublishIssue } from "@/lib/pdf-forms/publish-checks";
+import type { TestFixture } from "@/lib/pdf-forms/fixtures";
 
 export interface EditorForm {
   id: string;
@@ -33,6 +34,8 @@ export interface EditorForm {
   fields: PdfFormField[];
   /// Déclencheurs de sous-formulaires (cf. PdfFormTrigger).
   triggers: PdfFormTrigger[];
+  /// Fixtures de test — scenarios reproductibles pour /test-generate.
+  testFixtures: TestFixture[];
   pageCount: number;
   technicalSchema?: AcroFieldRaw[];
   visualFields?: { version?: number; fields?: unknown[]; materializedNames?: string[] };
@@ -112,6 +115,7 @@ export function useFormData(formId: string): UseFormData {
           active: form.active, disabledMessage: form.disabledMessage,
           fields: form.fields,
           triggers: form.triggers,
+          testFixtures: form.testFixtures,
           // Verrou optimiste : on renvoie le jeton reçu au dernier chargement.
           expectedUpdatedAt: form.updatedAt,
         }),

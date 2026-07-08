@@ -28,6 +28,19 @@ Source de vérité du routage de chrome : `resolveProSegment` + early-returns da
 - **Page-builder** : schémas Zod = source de vérité (`registry.ts`, `schemas.ts`),
   store Zustand `lib/page-builder/store.ts`.
 - **PDF Forms** : `lib/pdf-forms/`, `lib/pdf-canvas/`.
+  - **Bindings serveur** (`lib/pdf-forms/bindings/`) : moteur pur qui évalue des
+    règles déclaratives (`when` + `stampFn`) et produit une Map `widget → valeur`,
+    appliquée par `fillForm` APRÈS le mapping schéma standard. Ajouter une règle =
+    éditer `bindings/per-form/<slug>.ts` puis référencer dans `bindings/registry.ts`.
+  - **Vocabulaire canonique** (`lib/pdf-forms/canonical/`) : clés sémantiques
+    partagées entre formulaires (`identity.nom`, `banque.iban`…). `canonicalKey` sur
+    `PdfFormField` → pré-remplissage automatique cross-document dans un même run.
+  - **Rapport de mapping** (`lib/pdf-forms/mapping-report.ts`) : vue « widget par
+    widget » avec claims + statuts (bound / orphan / conflict) — consommé par
+    l'onglet admin « Mapping AcroForm » sur `/admin/pdf/[id]`.
+  - **URL publique** : PdfForm porte `publicPath` (ex. `"onem/c1"`). Le catch-all
+    `app/document/[...path]/page.tsx` résout 1-segment par slug (redirect 308 vers
+    publicPath si présent) et 2+ segments par publicPath.
 - **i18n** : `i18n/locales.ts` (registre), `lib/i18n/format.ts`, `messages/*.json`.
 - **Sanitization** : `lib/sanitize-html.ts` (isomorphe).
 - **Glass helpers** : `lib/glass-classes.ts`.

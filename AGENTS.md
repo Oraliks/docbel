@@ -49,6 +49,24 @@ next-intl 4 · Zod 4 · Tiptap 2 · pnpm 10. Détail + commandes :
 - Tout texte user-facing passe par next-intl (clés typées → une clé absente casse `tsc`).
   Jamais de locale codée en dur. Valider `pnpm i18n:check`.
 
+**PDF Forms bindings** (Phase 1-7 du plan pdf-bindings-canonical-ux, mergé)
+- 3 couches à ne pas confondre :
+  1. **Schéma enrichi** (`lib/pdf-forms/seed/*.ts`) : `PdfFormField.pdfFieldName` mappe
+     un champ à UN widget AcroForm — mécanisme historique. Support `canonicalKey`
+     (identity.nom, banque.iban…) pour prefill croisé auto entre docs d'un même run.
+  2. **Bindings serveur** (`lib/pdf-forms/bindings/`) : règles DÉCLARATIVES par slug qui
+     stampent des widgets APRÈS le mapping schéma. Ajouter une règle = éditer
+     `bindings/per-form/<slug>.ts` + référencer dans `bindings/registry.ts`.
+  3. **Transforms client historiques** (`lib/pdf-forms/c1-*.ts`) : encore actifs en
+     coexistence — retrait gaté sur validation prod (Phase 7 stricte). Les règles
+     serveur SONT IDEMPOTENTES par-dessus (mêmes valeurs mêmes widgets) — ajouter
+     une règle qui écrase une transform est safe.
+- Debug : onglet « Mapping AcroForm » sur `/admin/pdf/[id]` — compteurs bound/orphan/
+  conflict + tableau des claims (source: field/pipe/array/rule).
+- URL SEO : `PdfForm.publicPath` (ex. "onem/c1"). Attribuer une nouvelle URL = éditer
+  l'input « URL publique (SEO) » dans l'onglet Paramètres. Le catch-all
+  `app/document/[...path]/page.tsx` redirige 308 slug → publicPath quand présent.
+
 ## Modèle utilisateur (résumé)
 Rôles `UserRole` : `user`, `partner`, `employer`, `moderator`, `admin` (+ `segment`,
 `partnerType` ; accès outils via `canUseTool` [`lib/entitlements.ts`](lib/entitlements.ts)).

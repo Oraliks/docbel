@@ -2,8 +2,12 @@
 
 import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
+import { toast } from "sonner";
+import { EyeOffIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -14,7 +18,47 @@ import {
 } from "@/components/ui/select";
 import { buildMappingReport, type WidgetClaimSource } from "@/lib/pdf-forms/mapping-report";
 import { getRulesForSlug } from "@/lib/pdf-forms/bindings/registry";
+import { makeId, humanize } from "@/lib/pdf-forms/field-inference";
+import type { PdfFormField, AcroFieldType } from "@/lib/pdf-forms/types";
 import type { UseFormData } from "../use-form-data";
+
+/// Génère un `id` unique pour un nouveau champ « masqué » sans collision
+/// avec les ids déjà utilisés. Le suffixe numérique commence à _2 (comme la
+/// convention buildEnrichedSchema).
+function nextUniqueId(base: string, used: Set<string>): string {
+  if (!used.has(base)) return base;
+  for (let n = 2; n < 1000; n++) {
+    const candidate = `${base}_${n}`;
+    if (!used.has(candidate)) return candidate;
+  }
+  return `${base}_${Date.now()}`;
+}
+
+/// Fabrique un champ enrichi « caché » à poser sur un widget orphelin. La
+/// sémantique du champ = « widget reconnu mais non exposé au citoyen » :
+/// hidden=true (ne va pas dans le PublicField, jamais rendu), required=false
+/// (le validator Zod skip), label auto humanisé depuis le nom du widget.
+function orphanFieldForWidget(
+  widgetName: string,
+  acroType: AcroFieldType,
+  usedIds: Set<string>
+): PdfFormField {
+  const id = nextUniqueId(makeId(widgetName), usedIds);
+  usedIds.add(id);
+  // Match du type sémantique le plus simple selon l'acroType — pas
+  // d'inférence sophistiquée : ces champs ne s'affichent jamais, seul
+  // le stamping compte (ou l'absence de stamping, ici).
+  const type = acroType === "checkbox" ? "checkbox" : "text";
+  return {
+    id,
+    pdfFieldName: widgetName,
+    type,
+    required: false,
+    label: { fr: `[Masqué] ${humanize(widgetName)}` },
+    hidden: true,
+    acroType,
+  };
+}
 
 /// Onglet admin « Mapping AcroForm » — Phase 6 du plan bindings-canonical-ux.
 ///
@@ -29,10 +73,15 @@ import type { UseFormData } from "../use-form-data";
 /// orphelins, puis les liés — pratique pour un triage rapide en admin.
 export function TabMapping({ data }: { data: UseFormData }) {
   const t = useTranslations("admin.pdf");
-  const { form } = data;
+  const { form, setFields } = data;
 
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [query, setQuery] = useState("");
+  // Sélection multi-lignes pour actions bulk. Clé = pdfFieldName (unique
+  // par ligne). N'inclut QUE les orphelins réels (acroType != unknown) —
+  // les conflits et les widgets fantômes ne peuvent pas être masqués via
+  // ce mécanisme.
+  const [selected, setSelected] = useState<Set<string>>(new Set());
 
   const report = useMemo(() => {
     if (!form) return null;
@@ -61,6 +110,53 @@ export function TabMapping({ data }: { data: UseFormData }) {
 
   const s = report.summary;
 
+  // Widgets « sélectionnables » = orphelins réels visibles après filtres,
+  // acroType != unknown. Un widget « fantôme » (règle qui cible un widget
+  // absent du PDF) n'est PAS masquable — il faut plutôt corriger la règle.
+  const selectableRows = rows.filter((r) => r.status === "orphan" && r.acroType !== "unknown");
+  const allSelectableChecked =
+    selectableRows.length > 0 && selectableRows.every((r) => selected.has(r.pdfFieldName));
+
+  function toggleRow(name: string) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(name)) next.delete(name);
+      else next.add(name);
+      return next;
+    });
+  }
+
+  function toggleAllSelectable() {
+    setSelected((prev) => {
+      if (allSelectableChecked) {
+        const next = new Set(prev);
+        for (const r of selectableRows) next.delete(r.pdfFieldName);
+        return next;
+      }
+      const next = new Set(prev);
+      for (const r of selectableRows) next.add(r.pdfFieldName);
+      return next;
+    });
+  }
+
+  function bulkHideSelected() {
+    if (selected.size === 0) return;
+    const existingFields = (form!.fields ?? []) as PdfFormField[];
+    const usedIds = new Set(existingFields.map((f) => f.id));
+    const newFields: PdfFormField[] = [];
+    // On itère sur `report.rows` pour retrouver l'acroType (info non
+    // stockée dans la sélection).
+    for (const row of report!.rows) {
+      if (!selected.has(row.pdfFieldName)) continue;
+      if (row.status !== "orphan" || row.acroType === "unknown") continue;
+      newFields.push(orphanFieldForWidget(row.pdfFieldName, row.acroType, usedIds));
+    }
+    if (newFields.length === 0) return;
+    setFields([...existingFields, ...newFields]);
+    setSelected(new Set());
+    toast.success(t("mappingBulkHideDone", { count: newFields.length }));
+  }
+
   return (
     <div className="flex flex-col gap-4">
       {/* Compteurs */}
@@ -72,6 +168,25 @@ export function TabMapping({ data }: { data: UseFormData }) {
           <StatBlock label={t("mappingConflict")} value={s.conflict} tone="danger" />
         </CardContent>
       </Card>
+
+      {/* Barre bulk actions — visible seulement si au moins une ligne
+          orpheline est sélectionnée. Sauvegarde requise pour persister. */}
+      {selected.size > 0 && (
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-amber-500/40 bg-amber-500/5 px-3 py-2">
+          <span className="text-sm text-muted-foreground">
+            {t("mappingBulkSelectedCount", { count: selected.size })}
+          </span>
+          <div className="flex items-center gap-2">
+            <Button size="sm" variant="ghost" onClick={() => setSelected(new Set())}>
+              {t("mappingBulkClearSelection")}
+            </Button>
+            <Button size="sm" variant="secondary" onClick={bulkHideSelected}>
+              <EyeOffIcon className="size-3.5" />
+              {t("mappingBulkHideSelected", { count: selected.size })}
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Filtres */}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
@@ -99,6 +214,15 @@ export function TabMapping({ data }: { data: UseFormData }) {
         <table className="w-full text-sm">
           <thead className="bg-muted/50 text-xs uppercase tracking-wide text-muted-foreground">
             <tr>
+              <th className="w-8 px-3 py-2 text-left">
+                {selectableRows.length > 0 && (
+                  <Checkbox
+                    checked={allSelectableChecked}
+                    onCheckedChange={toggleAllSelectable}
+                    aria-label={t("mappingBulkSelectAllOrphans")}
+                  />
+                )}
+              </th>
               <th className="px-3 py-2 text-left">{t("mappingColWidget")}</th>
               <th className="px-3 py-2 text-left">{t("mappingColType")}</th>
               <th className="px-3 py-2 text-left">{t("mappingColPage")}</th>
@@ -115,8 +239,18 @@ export function TabMapping({ data }: { data: UseFormData }) {
                   : r.status === "orphan"
                   ? "bg-amber-500/5"
                   : "";
+              const isSelectable = r.status === "orphan" && r.acroType !== "unknown";
               return (
                 <tr key={r.pdfFieldName} className={`border-t ${rowClass}`}>
+                  <td className="px-3 py-2">
+                    {isSelectable && (
+                      <Checkbox
+                        checked={selected.has(r.pdfFieldName)}
+                        onCheckedChange={() => toggleRow(r.pdfFieldName)}
+                        aria-label={t("mappingBulkSelectRow", { widget: r.pdfFieldName })}
+                      />
+                    )}
+                  </td>
                   <td className="px-3 py-2 font-mono text-xs">{r.pdfFieldName}</td>
                   <td className="px-3 py-2">
                     <Badge variant="outline" className="font-mono text-[10px]">
@@ -163,7 +297,7 @@ export function TabMapping({ data }: { data: UseFormData }) {
             })}
             {rows.length === 0 && (
               <tr>
-                <td colSpan={6} className="py-6 text-center text-sm text-muted-foreground">
+                <td colSpan={7} className="py-6 text-center text-sm text-muted-foreground">
                   {t("mappingEmpty")}
                 </td>
               </tr>

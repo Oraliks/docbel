@@ -3,16 +3,44 @@ import { C1_QUESTIONS, C1_TRIGGERS, applyC1Improvements } from "../c1-fields-imp
 import { evaluateTrigger } from "../../triggers";
 
 describe("C1_QUESTIONS — habiteEnColocation", () => {
-  it("existe, est de type boolean-like (radio oui/non), et reste posée quel que soit statutFamilial", () => {
-    // Depuis 2026-07-07 : la question est désormais toujours visible — le
-    // cas « je vis officiellement seul mais je partage en pratique un
-    // logement » (cohousing) doit pouvoir être capté même pour un statut
-    // « isolé », auquel cas la remarque situation familiale est annotée
-    // automatiquement (cf. c1-remarque-derivation.ts).
+  it("existe (radio oui/non) et n'est posée QUE pour l'isolé (Oraliks 2026-07-09)", () => {
+    // 2026-07-09 : la question colocation ne concerne plus que la branche
+    // « isolé » (cas cohousing : officiellement seul mais partage en pratique).
+    // Pour la branche « cohabite », la colocation est captée en amont par
+    // `cohabiteType`, qui rebascule vers isolé + coche habiteEnColocation=oui.
     const q = C1_QUESTIONS.find((f) => f.id === "habiteEnColocation");
     expect(q).toBeDefined();
     expect(q?.type).toBe("radio");
-    expect(q?.visibleIf).toBeUndefined();
+    expect(q?.visibleIf).toEqual({ fieldId: "statutFamilial", op: "equals", value: "isole" });
+  });
+});
+
+describe("C1_QUESTIONS — cohabiteType (router colocation vs ménage commun)", () => {
+  const q = C1_QUESTIONS.find((f) => f.id === "cohabiteType");
+
+  it("existe, visible seulement si statutFamilial = cohabite, sans mapping PDF", () => {
+    expect(q).toBeDefined();
+    expect(q?.type).toBe("radio");
+    expect(q?.pdfFieldName).toBe("");
+    expect(q?.visibleIf).toEqual({ fieldId: "statutFamilial", op: "equals", value: "cohabite" });
+    expect(q?.options?.map((o) => o.value)).toEqual(["menage-commun", "colocation"]);
+  });
+
+  it("bascule vers isolé + colocation via onSelectSet quand on choisit « colocation »", () => {
+    expect(q?.onSelectSet).toEqual({
+      whenValue: "colocation",
+      set: [
+        { fieldId: "statutFamilial", value: "isole" },
+        { fieldId: "habiteEnColocation", value: "oui" },
+      ],
+    });
+  });
+
+  it("situationCohabitationAmbigue et la grille cohabitants ne s'ouvrent que pour le ménage commun", () => {
+    const ambigue = C1_QUESTIONS.find((f) => f.id === "situationCohabitationAmbigue");
+    const cohab = C1_QUESTIONS.find((f) => f.id === "cohabitants");
+    expect(ambigue?.visibleIf).toEqual({ fieldId: "cohabiteType", op: "equals", value: "menage-commun" });
+    expect(cohab?.visibleIf).toEqual({ fieldId: "cohabiteType", op: "equals", value: "menage-commun" });
   });
 });
 

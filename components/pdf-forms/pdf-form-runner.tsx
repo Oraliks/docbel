@@ -29,6 +29,7 @@ import { todayISO } from "@/lib/pdf-forms/system-values";
 import { resolveSignerName } from "@/lib/pdf-forms/signature";
 import { isAutoField, isCreationDateField, isSignatureField } from "@/lib/pdf-forms/auto-fields";
 import { FIELD_DERIVATIONS, applyFieldDerivations } from "@/lib/pdf-forms/field-derivations";
+import { resolveOnSelectSet } from "@/lib/pdf-forms/field-side-effects";
 import type { PublicForm, PublicField } from "@/lib/pdf-forms/public-serializer";
 import { buildSteps, buildMacroSteps, type OptionalSection, type MacroStep } from "@/lib/pdf-forms/build-steps";
 import { sectionLabel } from "@/lib/pdf-forms/section-labels";
@@ -236,7 +237,17 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, onValuesChange
 
   const setValue = useCallback(
     (id: string, value: FieldValue) => {
-      setValues((prev) => ({ ...prev, [id]: value }));
+      setValues((prev) => {
+        const next = { ...prev, [id]: value };
+        // Effet de bord déclaratif `onSelectSet` (ex. C1 : « c'est une
+        // colocation » ⇒ statutFamilial=isolé + habiteEnColocation=oui). Ne
+        // s'applique QUE sur saisie utilisateur (ce callback) — jamais au
+        // restore de brouillon (setValues direct) — donc pas de boucle.
+        const field = form.fields.find((f) => f.id === id);
+        const sets = field ? resolveOnSelectSet(field, value) : null;
+        if (sets) for (const s of sets) next[s.fieldId] = s.value;
+        return next;
+      });
       setErrors((prev) => (prev[id] ? { ...prev, [id]: "" } : prev));
       if (saveTimer.current) clearTimeout(saveTimer.current);
       saveTimer.current = setTimeout(() => {
@@ -251,7 +262,7 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, onValuesChange
         setLastSavedAt(new Date());
       }, 1500);
     },
-    [form.slug]
+    [form.slug, form.fields]
   );
 
   // Bloque l'avancée vers une étape ULTÉRIEURE tant que les champs REQUIS

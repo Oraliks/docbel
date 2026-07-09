@@ -35,6 +35,7 @@ export interface PublicField {
   stepGroup?: PdfFormField["stepGroup"];
   autoAnswered?: PdfFormField["autoAnswered"];
   derivedFrom?: PdfFormField["derivedFrom"];
+  onSelectSet?: PdfFormField["onSelectSet"];
   streetAutocomplete?: PdfFormField["streetAutocomplete"];
   countrySelect?: PdfFormField["countrySelect"];
   internationalIban?: PdfFormField["internationalIban"];
@@ -83,6 +84,7 @@ export function toPublicField(f: PdfFormField): PublicField {
     stepGroup: f.stepGroup,
     autoAnswered: f.autoAnswered,
     derivedFrom: f.derivedFrom,
+    onSelectSet: f.onSelectSet,
     streetAutocomplete: f.streetAutocomplete,
     countrySelect: f.countrySelect,
     internationalIban: f.internationalIban,

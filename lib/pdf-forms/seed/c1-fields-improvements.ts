@@ -526,6 +526,41 @@ export const C1_QUESTIONS: PdfFormField[] = [
     order: 103,
   },
   {
+    // Router de cohabitation (Oraliks 2026-07-09) : quand l'utilisateur
+    // déclare cohabiter, on lève l'ambiguïté colocation vs ménage commun
+    // AVANT de poser les questions détaillées. Une colocation (colocataires
+    // sans budget commun) est traitée comme ISOLÉ + Annexe REGIS côté ONEM —
+    // d'où la bascule automatique `onSelectSet` : choisir « colocation » remet
+    // statutFamilial=isolé et coche habiteEnColocation=oui (réutilise la
+    // remarque « cohousing » + le trigger REGIS existants, aucune règle en
+    // double). Seul « ménage commun » ouvre la grille cohabitants + la
+    // question d'ambiguïté ci-dessous.
+    id: "cohabiteType",
+    pdfFieldName: "",
+    type: "radio",
+    required: true,
+    label: { fr: "Avec cette ou ces personnes, formez-vous un ménage commun ?", nl: "", de: "" },
+    labelShort: { fr: "Ménage commun ?", nl: "", de: "" },
+    help: {
+      fr: "Important : une COLOCATION (colocataires qui partagent un logement mais chacun gère sa vie, sans budget commun) n'est PAS une cohabitation au sens du chômage — tu es alors considéré comme ISOLÉ, et une Annexe REGIS est ajoutée pour le préciser. Ne choisis « Oui, ménage commun » que si vous partagez réellement, au moins en partie, les dépenses courantes (loyer, courses, factures).",
+      nl: "", de: "",
+    },
+    options: [
+      { value: "menage-commun", label: { fr: "Oui — nous formons un ménage (dépenses partagées au moins en partie)", nl: "", de: "" } },
+      { value: "colocation", label: { fr: "Non — c'est une colocation (chacun sa vie, aucun budget commun)", nl: "", de: "" } },
+    ],
+    onSelectSet: {
+      whenValue: "colocation",
+      set: [
+        { fieldId: "statutFamilial", value: "isole" },
+        { fieldId: "habiteEnColocation", value: "oui" },
+      ],
+    },
+    visibleIf: { fieldId: "statutFamilial", op: "equals", value: "cohabite" },
+    section: SECTION_SITUATION_FAMILIALE,
+    order: 103.5,
+  },
+  {
     id: "situationCohabitationAmbigue",
     pdfFieldName: "",
     type: "radio",
@@ -538,6 +573,11 @@ export const C1_QUESTIONS: PdfFormField[] = [
     },
     options: YN,
     defaultValue: "non",
+    // Ne concerne que le ménage commun (Oraliks 2026-07-09) : une colocation
+    // déclenche déjà l'Annexe REGIS via la bascule ci-dessus, et un isolé
+    // n'a pas de cohabitation à préciser — la question n'a de sens que pour
+    // une vraie cohabitation.
+    visibleIf: { fieldId: "cohabiteType", op: "equals", value: "menage-commun" },
     section: SECTION_SITUATION_FAMILIALE,
     order: 104,
   },
@@ -559,9 +599,12 @@ export const C1_QUESTIONS: PdfFormField[] = [
       nl: "", de: "",
     },
     options: YN,
-    // Toujours visible (Oraliks 2026-07-07) — la colocation peut coexister
-    // avec un statut « isolé » officiel : c'est justement le cas cohousing,
-    // reporté ensuite en remarque via `applyRemarqueSituationFamiliale`.
+    // Visible uniquement pour l'ISOLÉ (Oraliks 2026-07-09) : la colocation
+    // coexiste avec un statut « isolé » officiel (cas cohousing, reporté en
+    // remarque via la règle « cohousing »). Pour la branche « cohabite », la
+    // colocation est captée en amont par `cohabiteType` (qui rebascule vers
+    // isolé) — inutile de reposer la question ici.
+    visibleIf: { fieldId: "statutFamilial", op: "equals", value: "isole" },
     section: SECTION_SITUATION_FAMILIALE,
     order: 106,
   },
@@ -604,7 +647,10 @@ export const C1_QUESTIONS: PdfFormField[] = [
       nl: "", de: "",
     },
     addRowLabel: { fr: "Ajouter un cohabitant", nl: "", de: "" },
-    visibleIf: { fieldId: "statutFamilial", op: "equals", value: "cohabite" },
+    // Ménage commun uniquement (Oraliks 2026-07-09) : une colocation rebascule
+    // vers isolé (cf. cohabiteType), on ne liste donc les membres du ménage
+    // que pour une vraie cohabitation.
+    visibleIf: { fieldId: "cohabiteType", op: "equals", value: "menage-commun" },
     section: SECTION_SITUATION_FAMILIALE,
     order: 110,
     // La grille PDF a 5 slots positionnels — au-delà, on tronque silencieusement

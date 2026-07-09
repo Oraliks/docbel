@@ -203,6 +203,15 @@ export interface PdfFormField {
   /// ligne courante pour les sous-champs d'`array` — cette variante donne
   /// accès au reste du formulaire.
   visibleIfParent?: VisibleIf;
+  /// Effet de bord déclaratif : quand CE champ prend la valeur `whenValue`
+  /// suite à une saisie utilisateur, le runner écrit aussi chaque couple de
+  /// `set` dans le payload. Sert aux bascules métier — ex. C1 : cohabite +
+  /// « c'est une colocation » ⇒ statutFamilial=isolé + habiteEnColocation=oui
+  /// (une colocation est traitée comme isolé + Annexe REGIS côté ONEM).
+  /// Appliqué UNIQUEMENT sur saisie utilisateur (jamais au restore de
+  /// brouillon) ; les champs ciblés par `set` ne doivent pas eux-mêmes porter
+  /// un `onSelectSet` visant ce champ (aucune garde anti-cycle au runtime).
+  onSelectSet?: { whenValue: FieldValue; set: { fieldId: string; value: FieldValue }[] };
   prefillFrom?: PrefillSource;
   /// Pour les champs `fullname` : ordre d'assemblage des deux sous-champs.
   /// Défaut "first-last" (Prénom Nom).

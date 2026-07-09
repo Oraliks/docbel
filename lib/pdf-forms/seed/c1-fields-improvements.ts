@@ -233,6 +233,31 @@ export const C1_QUESTIONS: PdfFormField[] = [
     order: -87,
   },
   {
+    // Commune (Oraliks 2026-07-09) : le C1 imprime une colonne « commune »
+    // entre code postal et pays MAIS sans widget AcroForm remplissable. On
+    // ajoute donc un champ auto-rempli à l'écran (résolu du code postal via
+    // /api/postal-lookup — cf. commune-select-input.tsx : 1 commune verrouillé,
+    // plusieurs = menu, étranger = libre) et on le dessine POSITIONNELLEMENT
+    // sur le PDF au blanc imprimé (drawAt). Coordonnées mesurées entre les
+    // widgets « code postal » (fin x≈209) et « pays » (début x≈260), ligne
+    // y≈628 — À CONFIRMER visuellement sur un PDF généré (rendu image
+    // indisponible dans l'env de dev).
+    id: "commune",
+    pdfFieldName: "",
+    type: "text",
+    required: false,
+    label: { fr: "Commune", nl: "", de: "" },
+    help: {
+      fr: "Remplie automatiquement à partir de ton code postal. Si le code couvre plusieurs communes, choisis la tienne ; pour une adresse à l'étranger, saisis-la à la main.",
+      nl: "", de: "",
+    },
+    communeFrom: { postalFieldId: "code_postal" },
+    drawAt: { page: 0, x: 211, y: 630.5, maxWidth: 46 },
+    canonicalKey: "adresse.commune",
+    section: SECTION_IDENTITE,
+    order: -86.5,
+  },
+  {
     id: "pays",
     pdfFieldName: "pays",
     type: "text",

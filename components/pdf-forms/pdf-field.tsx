@@ -17,6 +17,7 @@ import { NissInput } from "@/components/ui/niss-input";
 import { IbanInput } from "@/components/ui/iban-input";
 import { StreetAutocompleteInput } from "@/components/ui/street-autocomplete-input";
 import { CountrySelectInput } from "@/components/ui/country-select-input";
+import { CommuneSelectInput } from "@/components/ui/commune-select-input";
 import { usePostalCommuneHint } from "@/components/ui/use-postal-commune-hint";
 import { InfoTooltip } from "@/components/ui/info-tooltip";
 import { countryNameFromIban } from "@/lib/pdf-forms/iban-country";
@@ -429,6 +430,7 @@ export function PdfField({
   const displayValue = isDerivedLocked ? derivedValue : ((value as string | number) ?? "");
   const useStreetAutocomplete = field.streetAutocomplete != null && !locked;
   const useCountrySelect = field.countrySelect === true && !locked;
+  const useCommuneSelect = field.communeFrom != null && !locked;
   return (
     <Field data-invalid={invalid} className="gap-1.5">
       <FieldLabel htmlFor={field.id}>
@@ -454,6 +456,17 @@ export function PdfField({
             placeholder={placeholder}
             aria-invalid={invalid}
             className="flex-1"
+            onChange={(v) => onChange(v)}
+            onBlur={markTouched}
+          />
+        ) : useCommuneSelect ? (
+          <CommuneSelectInput
+            id={field.id}
+            value={String(displayValue)}
+            placeholder={placeholder}
+            aria-invalid={invalid}
+            className="flex-1"
+            postalCode={relatedPostalCode}
             onChange={(v) => onChange(v)}
             onBlur={markTouched}
           />

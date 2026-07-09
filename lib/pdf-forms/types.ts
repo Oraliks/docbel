@@ -269,6 +269,19 @@ export interface PdfFormField {
   /// `derivedFrom: postal-be-country` (qui renvoie "Belgique") et le
   /// stamping PDF existant. Cf. components/ui/country-select-input.tsx.
   countrySelect?: boolean;
+  /// Active la résolution de commune depuis un champ code postal belge du
+  /// MÊME formulaire (`postalFieldId`). Le composant interroge
+  /// `/api/postal-lookup` : 1 commune → champ verrouillé auto-rempli ;
+  /// plusieurs → menu déroulant des communes du code ; aucune (code
+  /// étranger/inconnu) → texte libre. Cf. components/ui/commune-select-input.tsx.
+  communeFrom?: { postalFieldId: string };
+  /// Dessin POSITIONNEL sur le PDF (pdf-lib `drawText`) au lieu d'un widget
+  /// AcroForm — pour les emplacements imprimés SANS champ remplissable (ex.
+  /// la colonne « commune » du C1, présente à l'impression mais sans widget).
+  /// Coordonnées en points, origine bas-gauche (repère pdf-lib). `maxWidth`
+  /// (optionnel) fait réduire la police pour tenir dans l'espace. Appliqué
+  /// APRÈS le mapping widgets, indépendamment de `pdfFieldName`.
+  drawAt?: { page: number; x: number; y: number; size?: number; maxWidth?: number };
   /// Champ `iban` dont le compte n'est PAS forcément belge : utilise le
   /// validateur ISO 13616 générique (32 pays, cf. isValidInternationalIBAN)
   /// au lieu du validateur belge strict par défaut (BE + 14 chiffres).

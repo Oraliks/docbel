@@ -440,6 +440,36 @@ export async function fillForm(
     }
   }
 
+  // Dessin POSITIONNEL `drawAt` : champs sans widget AcroForm dont la valeur
+  // doit apparaître à un emplacement IMPRIMÉ du PDF (ex. la colonne
+  // « commune » du C1, présente à l'impression mais sans champ remplissable).
+  // Indépendant des widgets — écrit directement dans le flux de la page, donc
+  // survit au flatten. Auto-réduit la police pour tenir dans `maxWidth`.
+  for (const field of fields) {
+    if (!field.drawAt || field.hidden) continue;
+    if (field.visibleIf && !isFieldVisible(field.visibleIf, payload)) continue;
+    const raw = payload[field.id];
+    if (raw === null || raw === undefined || raw === "" || raw === false) continue;
+    let text = String(raw);
+    if (field.type === "date") text = formatDateFR(text);
+    const { page: pageIdx, x, y, size, maxWidth } = field.drawAt;
+    const pIdx = Math.max(0, Math.min(doc.getPageCount() - 1, pageIdx));
+    const page = doc.getPage(pIdx);
+    let fontSize = size ?? UNIFORM_TEXT_FONT_SIZE;
+    if (maxWidth && maxWidth > 0) {
+      while (fontSize > 5 && font.widthOfTextAtSize(text, fontSize) > maxWidth) fontSize -= 0.5;
+    }
+    try {
+      page.drawText(text, { x, y, size: fontSize, font, color: rgb(0, 0, 0) });
+    } catch (err) {
+      console.warn(
+        `[pdf-forms] drawAt: échec sur "${field.id}" (` +
+          (err instanceof Error ? err.message : String(err)) +
+          ")"
+      );
+    }
+  }
+
   // Réécrit les apparences globales avec la police Unicode avant flatten.
   if (unicodeFont) {
     try {

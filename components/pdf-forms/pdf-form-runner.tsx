@@ -770,10 +770,12 @@ function FieldsCluster({
   // depuis le champ source, jamais stocké dans `values` (cf. PdfField.derivedValue).
   const deriveValueFor = (f: PublicField): string | null =>
     f.derivedFrom ? FIELD_DERIVATIONS[f.derivedFrom.via](values[f.derivedFrom.fieldId] ?? "") : null;
-  // Code postal courant du champ désigné par `f.streetAutocomplete`, pour
-  // prioriser les suggestions de rue correspondantes (cf. PdfField).
+  // Code postal courant du champ source — désigné par `f.streetAutocomplete`
+  // (priorise les suggestions de rue) OU `f.communeFrom` (résout la commune).
+  // Les deux réutilisent la même prop `relatedPostalCode` de PdfField.
   const relatedPostalCodeFor = (f: PublicField): string | undefined => {
-    const raw = f.streetAutocomplete ? values[f.streetAutocomplete.postalFieldId] : undefined;
+    const postalFieldId = f.streetAutocomplete?.postalFieldId ?? f.communeFrom?.postalFieldId;
+    const raw = postalFieldId ? values[postalFieldId] : undefined;
     return typeof raw === "string" ? raw : undefined;
   };
 
@@ -1349,7 +1351,11 @@ function LegacyRunnerBody({
                       formId={form.id}
                       formSlug={form.slug}
                       derivedValue={f.derivedFrom ? FIELD_DERIVATIONS[f.derivedFrom.via](values[f.derivedFrom.fieldId] ?? "") : null}
-                      relatedPostalCode={f.streetAutocomplete && typeof values[f.streetAutocomplete.postalFieldId] === "string" ? (values[f.streetAutocomplete.postalFieldId] as string) : undefined}
+                      relatedPostalCode={(() => {
+                        const pid = f.streetAutocomplete?.postalFieldId ?? f.communeFrom?.postalFieldId;
+                        const raw = pid ? values[pid] : undefined;
+                        return typeof raw === "string" ? raw : undefined;
+                      })()}
                       onSelectStreetSuggestion={(postalCode) => {
                         if (f.streetAutocomplete) setValue(f.streetAutocomplete.postalFieldId, postalCode);
                       }}

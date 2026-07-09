@@ -38,6 +38,7 @@ export interface PublicField {
   onSelectSet?: PdfFormField["onSelectSet"];
   streetAutocomplete?: PdfFormField["streetAutocomplete"];
   countrySelect?: PdfFormField["countrySelect"];
+  communeFrom?: PdfFormField["communeFrom"];
   internationalIban?: PdfFormField["internationalIban"];
   requiredGroup?: PdfFormField["requiredGroup"];
   /// Clé canonique — safe à exposer publiquement : c'est un identifiant
@@ -87,6 +88,7 @@ export function toPublicField(f: PdfFormField): PublicField {
     onSelectSet: f.onSelectSet,
     streetAutocomplete: f.streetAutocomplete,
     countrySelect: f.countrySelect,
+    communeFrom: f.communeFrom,
     internationalIban: f.internationalIban,
     requiredGroup: f.requiredGroup,
     canonicalKey: f.canonicalKey,

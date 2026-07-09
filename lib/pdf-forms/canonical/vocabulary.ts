@@ -29,6 +29,7 @@ export const CANONICAL_KEYS = [
   "adresse.numero",
   "adresse.boite",
   "adresse.codePostal",
+  "adresse.commune",
   "adresse.pays",
 
   // Contact — souvent facultatif mais partagé quand rempli.

@@ -42,10 +42,19 @@ const W_IBAN_PART3 = "undefined_13";
 // nom du widget (vérifié au dump — ne pas normaliser).
 const W_IBAN_ETRANGER = "SEPA étranger IBAN  BIC";
 
-// Titulaire, remarque, date en-tête page 2.
-const W_TITULAIRE = "Nom du titulaire";
+// Titulaire, remarque, dates page 2.
+// AcroForm remanié par Oraliks (2026-07-10) : noms de widgets rendus
+// sémantiques. « Date de DA » (4 widgets) a été scindé en `DateDeModification`
+// (en-tête haut) + `DateDA` (3 widgets) — on stampe la MÊME date dans les deux
+// (parité avec l'ancien comportement, cf. les 2 règles date-header plus bas).
+const W_TITULAIRE = "NomTitulaireSipasOk";
 const W_REMARQUE = "Remarques 1";
-const W_DATE_HEADER_P2 = "Date de DA";
+const W_DATE_HEADER_P2 = "DateDeModification";
+const W_DATE_DA_P2 = "DateDA";
+
+// Widget fusionné code postal + commune (nouvel AcroForm) : on y écrit
+// « 1000 Bruxelles » (cf. règle `code-postal-commune`).
+const W_CODE_POSTAL_COMMUNE = "CodePostal et Commune";
 
 // Rubrique HORS-EEE : les 3 cases « non » à cocher pour un citoyen EEE
 // (statut réfugié, apatride, ressortissant hors EEE).
@@ -225,16 +234,40 @@ export const C1_CHANGEMENT_RULES: MappingRule[] = [
     declaredWidgets: [W_REMARQUE],
   },
 
-  // -------- Date en-tête page 2 (via macro) --------
+  // -------- Dates page 2 (via macro) --------
   //
-  // Le header page 2 porte « Date de DA » — priorité à la date de
-  // changement (`dateModificationEffective`), fallback sur la date de
-  // demande initiale (`dateDemande`). Formatage FR (DD/MM/YYYY).
+  // Priorité à la date de changement (`dateModificationEffective`), fallback
+  // sur la date de demande initiale (`dateDemande`). Formatage FR (DD/MM/YYYY).
+  // Deux widgets depuis le remaniement AcroForm : l'en-tête `DateDeModification`
+  // ET les 3 champs `DateDA` reçoivent la MÊME date (Oraliks 2026-07-10).
   dateHeaderFallback({
     widget: W_DATE_HEADER_P2,
     sources: ["dateModificationEffective", "dateDemande"],
     name: "date-header-p2",
   }),
+  dateHeaderFallback({
+    widget: W_DATE_DA_P2,
+    sources: ["dateModificationEffective", "dateDemande"],
+    name: "date-da-p2",
+  }),
+
+  // -------- Code postal + commune (widget fusionné) --------
+  //
+  // Le nouvel AcroForm remplace les champs séparés « code postal » / « commune »
+  // (cette dernière sans widget) par un unique « CodePostal et Commune ». On y
+  // écrit « <code postal> <commune> » (ex. « 1000 Bruxelles ») ; la commune est
+  // résolue à l'écran depuis le code postal (cf. commune-select-input.tsx).
+  {
+    name: "code-postal-commune",
+    whenFn: (payload) => typeof payload.code_postal === "string" && payload.code_postal.trim() !== "",
+    stampFn: (payload) => {
+      const cp = typeof payload.code_postal === "string" ? payload.code_postal.trim() : "";
+      const commune = typeof payload.commune === "string" ? payload.commune.trim() : "";
+      const value = [cp, commune].filter(Boolean).join(" ");
+      return value ? [{ widget: W_CODE_POSTAL_COMMUNE, value }] : [];
+    },
+    declaredWidgets: [W_CODE_POSTAL_COMMUNE],
+  },
 
   // -------- Rubrique HORS-EEE : cas standard "non" (via macro) --------
   //

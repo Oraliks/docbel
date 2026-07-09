@@ -104,7 +104,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
   },
   {
     id: "pr_nom",
-    pdfFieldName: "Prénom",
+    pdfFieldName: "Prenom",
     type: "text",
     required: true,
     label: { fr: "Prénom", nl: "", de: "" },
@@ -137,7 +137,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
   },
   {
     id: "date_de_naissance",
-    pdfFieldName: "Date de naissance",
+    pdfFieldName: "DateNaissance",
     type: "date",
     required: true,
     label: { fr: "Date de naissance", nl: "", de: "" },
@@ -161,7 +161,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
   },
   {
     id: "nationalit_3",
-    pdfFieldName: "nationalité 3",
+    pdfFieldName: "Nationalite",
     type: "text",
     required: true,
     label: { fr: "Nationalité", nl: "", de: "" },
@@ -185,7 +185,12 @@ export const C1_QUESTIONS: PdfFormField[] = [
   // de commune (via /api/postal-lookup, données Commune/PostalCode en base).
   {
     id: "code_postal",
-    pdfFieldName: "code postal",
+    // Pas de widget direct : le widget « CodePostal et Commune » est stampé
+    // UNIQUEMENT par la règle serveur `code-postal-commune` (« 1000 Bruxelles »),
+    // qui lit la valeur de ce champ + la commune résolue. Évite un conflit
+    // champ↔règle sur le même widget (cf. mapping-report). Le champ reste
+    // validé (postal_be), prérempli et source de l'autocomplete rue + commune.
+    pdfFieldName: "",
     type: "postal_be",
     required: true,
     label: { fr: "Code postal", nl: "", de: "" },
@@ -232,7 +237,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
   },
   {
     id: "num_ro",
-    pdfFieldName: "numéro",
+    pdfFieldName: "Numero",
     type: "text",
     required: true,
     label: { fr: "Numéro", nl: "", de: "" },
@@ -242,7 +247,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
   },
   {
     id: "num_ro_de_bo_te",
-    pdfFieldName: "numéro de boîte",
+    pdfFieldName: "NumeroBoite",
     type: "text",
     required: false,
     label: { fr: "Boîte", nl: "", de: "" },
@@ -252,15 +257,13 @@ export const C1_QUESTIONS: PdfFormField[] = [
     order: -87,
   },
   {
-    // Commune (Oraliks 2026-07-09) : le C1 imprime une colonne « commune »
-    // entre code postal et pays MAIS sans widget AcroForm remplissable. On
-    // ajoute donc un champ auto-rempli à l'écran (résolu du code postal via
-    // /api/postal-lookup — cf. commune-select-input.tsx : 1 commune verrouillé,
-    // plusieurs = menu, étranger = libre) et on le dessine POSITIONNELLEMENT
-    // sur le PDF au blanc imprimé (drawAt). Coordonnées mesurées entre les
-    // widgets « code postal » (fin x≈209) et « pays » (début x≈260), ligne
-    // y≈628 — À CONFIRMER visuellement sur un PDF généré (rendu image
-    // indisponible dans l'env de dev).
+    // Commune (Oraliks 2026-07-09/10) : champ auto-rempli à l'écran depuis le
+    // code postal (cf. commune-select-input.tsx : 1 commune verrouillé,
+    // plusieurs = menu, étranger = libre). Sur le PDF, le nouvel AcroForm
+    // d'Oraliks fusionne code postal + commune dans le widget unique
+    // « CodePostal et Commune » (le champ code_postal y est mappé) → la règle
+    // serveur `codePostalCommune` (bindings) y écrit « 1000 Bruxelles ». Plus
+    // de dessin positionnel `drawAt` (le widget existe désormais).
     id: "commune",
     pdfFieldName: "",
     type: "text",
@@ -271,14 +274,13 @@ export const C1_QUESTIONS: PdfFormField[] = [
       nl: "", de: "",
     },
     communeFrom: { postalFieldId: "code_postal" },
-    drawAt: { page: 0, x: 211, y: 630.5, maxWidth: 46 },
     canonicalKey: "adresse.commune",
     section: SECTION_IDENTITE,
     order: -86.5,
   },
   {
     id: "pays",
-    pdfFieldName: "pays",
+    pdfFieldName: "Pays",
     type: "text",
     required: true,
     label: { fr: "Pays", nl: "", de: "" },
@@ -303,7 +305,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
   // ajoute un champ « ville » manuellement plus tard.
   {
     id: "adresse_email_facultatif",
-    pdfFieldName: "adresse email  facultatif",
+    pdfFieldName: "Email",
     type: "email",
     required: false,
     label: { fr: "Adresse e-mail (facultatif)", nl: "", de: "" },
@@ -315,7 +317,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
   },
   {
     id: "num_ro_de_t_l_phone_facultatif",
-    pdfFieldName: "numéro de téléphone facultatif",
+    pdfFieldName: "Telephone",
     type: "phone_be",
     required: false,
     label: { fr: "Numéro de téléphone (facultatif)", nl: "", de: "" },
@@ -331,7 +333,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
   // ====================================================================
   {
     id: "dateDemande",
-    pdfFieldName: "Date9_af_date",
+    pdfFieldName: "DateModification",
     type: "date",
     required: true,
     label: { fr: "Je demande des allocations à partir du", nl: "", de: "" },
@@ -1264,7 +1266,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
   },
   {
     id: "titulaireCompte",
-    pdfFieldName: "oui_17|non au nom de",
+    pdfFieldName: "ouiOK|non au nom de",
     type: "radio",
     // Obligatoire (Oraliks 2026-07-07) : la case correspondante existe sur le
     // PDF officiel ONEM — la laisser vide côté citoyen fait remonter un doute

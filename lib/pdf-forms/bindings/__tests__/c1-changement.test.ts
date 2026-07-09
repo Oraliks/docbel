@@ -54,10 +54,12 @@ describe("Rules C1 — scénario baseline (Oraliks repro)", () => {
     expect(stamps.has("SEPA étranger IBAN  BIC")).toBe(false);
 
     // Titulaire = « Prénom Nom » de l'utilisateur.
-    expect(stamps.get("Nom du titulaire")).toBe("Fatou N'Diaye");
+    expect(stamps.get("NomTitulaireSipasOk")).toBe("Fatou N'Diaye");
 
-    // Date en-tête page 2 : fallback dateDemande → format FR.
-    expect(stamps.get("Date de DA")).toBe("08/07/2026");
+    // Dates en-tête page 2 : fallback dateDemande → format FR, MÊME date dans
+    // les 2 widgets scindés (DateDeModification + DateDA).
+    expect(stamps.get("DateDeModification")).toBe("08/07/2026");
+    expect(stamps.get("DateDA")).toBe("08/07/2026");
 
     // Remarque non émise (pas de cohousing, jugement vide).
     expect(stamps.has("Remarques 1")).toBe(false);
@@ -120,7 +122,7 @@ describe("Rules C1 — titulaire compte", () => {
     };
     const stamps = resolveStamps(payload, C1_CHANGEMENT_RULES);
     // Trimé.
-    expect(stamps.get("Nom du titulaire")).toBe("Marie Dupont");
+    expect(stamps.get("NomTitulaireSipasOk")).toBe("Marie Dupont");
   });
 
   it("titulaire = autre-nom mais champ vide → aucun stamp", () => {
@@ -130,7 +132,7 @@ describe("Rules C1 — titulaire compte", () => {
       titulaireCompteNom: "",
     };
     const stamps = resolveStamps(payload, C1_CHANGEMENT_RULES);
-    expect(stamps.has("Nom du titulaire")).toBe(false);
+    expect(stamps.has("NomTitulaireSipasOk")).toBe(false);
   });
 
   it("modePaiement = cheque → aucun stamp titulaire même si titulaireCompte = mon-nom", () => {
@@ -140,7 +142,7 @@ describe("Rules C1 — titulaire compte", () => {
       iban: "",
     };
     const stamps = resolveStamps(payload, C1_CHANGEMENT_RULES);
-    expect(stamps.has("Nom du titulaire")).toBe(false);
+    expect(stamps.has("NomTitulaireSipasOk")).toBe(false);
   });
 });
 
@@ -195,13 +197,15 @@ describe("Rules C1 — date en-tête page 2", () => {
       dateModificationEffective: "2026-06-15",
     };
     const stamps = resolveStamps(payload, C1_CHANGEMENT_RULES);
-    expect(stamps.get("Date de DA")).toBe("15/06/2026");
+    expect(stamps.get("DateDeModification")).toBe("15/06/2026");
+    expect(stamps.get("DateDA")).toBe("15/06/2026");
   });
 
   it("aucune date → aucun stamp", () => {
     const payload = { ...baseline(), dateDemande: "", dateModificationEffective: "" };
     const stamps = resolveStamps(payload, C1_CHANGEMENT_RULES);
-    expect(stamps.has("Date de DA")).toBe(false);
+    expect(stamps.has("DateDeModification")).toBe(false);
+    expect(stamps.has("DateDA")).toBe(false);
   });
 });
 

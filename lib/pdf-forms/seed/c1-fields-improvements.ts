@@ -166,9 +166,15 @@ export const C1_QUESTIONS: PdfFormField[] = [
     required: true,
     label: { fr: "Nationalité", nl: "", de: "" },
     help: {
-      fr: "Indique ta nationalité (ex. « Belge »). Si tu es hors EEE/Suisse, complète aussi la rubrique dédiée plus bas.",
+      fr: "Tape le début du nom de ton pays (ex. « maro » → Maroc). Si tu es hors EEE/Suisse, complète aussi la rubrique dédiée plus bas.",
       nl: "", de: "",
     },
+    // Recherche + drapeau (countrySelect, cf. lib/pdf-forms/world-countries.ts
+    // — même mécanisme que le champ `pays`). La valeur stockée/stampée est le
+    // NOM du pays ("Maroc"), pas le démonyme grammatical ("Marocaine") — reste
+    // compatible avec le matching EEE de field-derivations.ts#nationalite-
+    // hors-eee (accepte déjà les deux formes, cf. nationalite-eee.ts).
+    countrySelect: true,
     canonicalKey: "identity.nationalite",
     section: SECTION_IDENTITE,
     order: -96,

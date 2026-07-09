@@ -36,6 +36,7 @@ export interface PublicField {
   autoAnswered?: PdfFormField["autoAnswered"];
   derivedFrom?: PdfFormField["derivedFrom"];
   streetAutocomplete?: PdfFormField["streetAutocomplete"];
+  countrySelect?: PdfFormField["countrySelect"];
   internationalIban?: PdfFormField["internationalIban"];
   requiredGroup?: PdfFormField["requiredGroup"];
   /// Clé canonique — safe à exposer publiquement : c'est un identifiant
@@ -83,6 +84,7 @@ export function toPublicField(f: PdfFormField): PublicField {
     autoAnswered: f.autoAnswered,
     derivedFrom: f.derivedFrom,
     streetAutocomplete: f.streetAutocomplete,
+    countrySelect: f.countrySelect,
     internationalIban: f.internationalIban,
     requiredGroup: f.requiredGroup,
     canonicalKey: f.canonicalKey,

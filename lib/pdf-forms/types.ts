@@ -253,6 +253,13 @@ export interface PdfFormField {
   /// une suggestion remplit aussi ce champ code postal en retour (cf.
   /// components/ui/street-autocomplete-input.tsx).
   streetAutocomplete?: { postalFieldId: string };
+  /// Active la recherche de pays (~195 pays du monde, cf.
+  /// lib/pdf-forms/world-countries.ts) avec drapeau affiché sur un champ
+  /// `text` — ex. taper "maro" propose "Maroc". La valeur stockée reste le
+  /// NOM du pays (pas le code ISO), pour rester compatible avec
+  /// `derivedFrom: postal-be-country` (qui renvoie "Belgique") et le
+  /// stamping PDF existant. Cf. components/ui/country-select-input.tsx.
+  countrySelect?: boolean;
   /// Champ `iban` dont le compte n'est PAS forcément belge : utilise le
   /// validateur ISO 13616 générique (32 pays, cf. isValidInternationalIBAN)
   /// au lieu du validateur belge strict par défaut (BE + 14 chiffres).

@@ -233,15 +233,17 @@ export const C1_QUESTIONS: PdfFormField[] = [
     required: true,
     label: { fr: "Pays", nl: "", de: "" },
     help: {
-      fr: "Rempli automatiquement à partir du code postal (belge à 4 chiffres → Belgique). Modifiable pour une adresse à l'étranger.",
+      fr: "Rempli automatiquement à partir du code postal (belge à 4 chiffres → Belgique). Pour une adresse à l'étranger, tape le début du nom (ex. « maro » → Maroc).",
       nl: "",
       de: "",
     },
     // Dérivé du code postal : belge (4 chiffres) → « Belgique » et verrouillé ;
-    // sinon éditable (le citoyen tape le pays lui-même — on n'a pas de base
-    // postale UE dans le repo pour l'inférer automatiquement, cf.
-    // field-derivations.ts#postal-be-country).
+    // sinon éditable via recherche (countrySelect, ~195 pays + drapeau, cf.
+    // lib/pdf-forms/world-countries.ts) — on n'a pas de base postale UE dans
+    // le repo pour dériver automatiquement un pays étranger depuis son code
+    // postal (cf. field-derivations.ts#postal-be-country).
     derivedFrom: { fieldId: "code_postal", via: "postal-be-country" },
+    countrySelect: true,
     canonicalKey: "adresse.pays",
     section: SECTION_IDENTITE,
     order: -86,

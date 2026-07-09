@@ -82,14 +82,6 @@ function buildRemarqueFragments(payload: FormPayload): string[] {
   return parts;
 }
 
-/// « Prénom Nom » propres (trim + join espace unique). Renvoie "" si les
-/// deux champs sont vides.
-function buildFullName(payload: FormPayload): string {
-  const prenom = typeof payload.pr_nom === "string" ? payload.pr_nom.trim() : "";
-  const nom = typeof payload.nom === "string" ? payload.nom.trim() : "";
-  return [prenom, nom].filter(Boolean).join(" ");
-}
-
 // ---------------------------------------------------------------------------
 // Règles.
 // ---------------------------------------------------------------------------
@@ -185,24 +177,13 @@ export const C1_CHANGEMENT_RULES: MappingRule[] = [
     widget: W_IBAN_ETRANGER,
   }),
 
-  // -------- Titulaire du compte (parité applyTitulaireCompteNomDerivation) -
+  // -------- Titulaire du compte --------
   //
-  // Sur virement, le widget « Nom du titulaire » doit être rempli DÈS QU'un
-  // compte est saisi — même quand le compte est au nom du citoyen (auquel
-  // cas le champ UI `titulaireCompteNom` reste caché pour ne pas afficher
-  // un input redondant). On distingue les deux branches :
-  //   - "mon-nom" → « Prénom Nom » du citoyen ;
-  //   - "autre-nom" → valeur saisie manuellement.
-  {
-    name: "titulaire-mon-nom",
-    when: { modePaiement: "virement", titulaireCompte: "mon-nom" },
-    stampFn: (payload) => {
-      const fullName = buildFullName(payload);
-      if (!fullName) return [];
-      return [{ widget: W_TITULAIRE, value: fullName }];
-    },
-    declaredWidgets: [W_TITULAIRE],
-  },
+  // Le widget « NomTitulaireSipasOk » (= nom du titulaire SI le compte n'est
+  // PAS au nom du citoyen) ne doit être rempli QUE pour « autre-nom » (Oraliks
+  // 2026-07-10 : « si c'est à mon nom, ne mets pas le nom de la personne »).
+  // Sur "mon-nom", aucun stamp → le compte est présumé au nom du citoyen. Plus
+  // de règle `titulaire-mon-nom` (elle stampait à tort le nom du citoyen).
   {
     name: "titulaire-autre",
     when: { modePaiement: "virement", titulaireCompte: "autre-nom" },

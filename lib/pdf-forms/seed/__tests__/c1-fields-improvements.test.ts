@@ -319,14 +319,10 @@ describe("applyC1Improvements — restrictMotifTo5Situations (Oraliks, 2026-07-0
     expect(result.find((q) => q.id === "transfereOrganismePaiement")).toBeUndefined();
   });
 
-  it("actif : chomeurTemporaireAlternance garde un libellé court, mais reste posée (pas autoAnswered)", () => {
+  it("actif : chomeurTemporaireAlternance est masquée (retirée du form runner pour ce dossier — Oraliks 2026-07-10)", () => {
     const result = applyC1Improvements([], { restrictMotifTo5Situations: true });
     const f = result.find((q) => q.id === "chomeurTemporaireAlternance");
-    expect(f?.label?.fr).toBe("Chômeur temporaire suivant une formation en alternance");
-    expect(f?.autoAnswered).toBeFalsy();
-    // required=false (Oraliks 2026-07-07) : sans réponse explicite, le
-    // stamping pipe-radio uncheck les 2 cases → PDF neutre. Cf. schéma.
-    expect(f?.required).toBe(false);
+    expect(f?.hidden).toBe(true);
   });
 
   it("absent : chomeurTemporaireAlternance garde son libellé d'origine (comportement c1/c1-insertion inchangé)", () => {

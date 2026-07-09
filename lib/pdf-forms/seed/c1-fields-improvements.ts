@@ -2098,18 +2098,11 @@ export function applyC1Improvements(
             visibleIf: { fieldId: "transfereOrganismePaiement", op: "equals" as const, value: true },
           };
         }
-        // N'est plus proposée comme motif (ce n'est pas une des 5 situations),
-        // mais reste posée en Détails — juste un libellé court à la place du
-        // phrasé brut de la C1 (l'aide détaillée reste en tooltip, cf.
-        // LabelWithTooltip). Oraliks, 2026-07-07.
-        if (q.id === "chomeurTemporaireAlternance") {
-          return {
-            ...q,
-            label: { ...q.label, fr: "Chômeur temporaire suivant une formation en alternance" },
-            // labelShort mobile (Phase 4 du plan bindings-canonical-ux).
-            labelShort: { ...(q.labelShort ?? {}), fr: "Chômeur temporaire en alternance" },
-          };
-        }
+        // Retirée du form runner pour ce type de dossier (Oraliks 2026-07-10 :
+        // « c'est pas une option pour ce type de dossier autant le retirer »).
+        // `hidden` = ni rendue à l'écran, ni stampée (les 2 cases oui/non
+        // restent neutres sur le PDF).
+        if (q.id === "chomeurTemporaireAlternance") return { ...q, hidden: true };
         // Libellé/aide raccourcis pour l'étape Motif (Oraliks, 2026-07-07).
         if (q.id === "dateModificationEffective") {
           return {

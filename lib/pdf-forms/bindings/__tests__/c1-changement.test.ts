@@ -53,8 +53,9 @@ describe("Rules C1 — scénario baseline (Oraliks repro)", () => {
     expect(stamps.get("undefined_13")).toBe("7034");
     expect(stamps.has("SEPA étranger IBAN  BIC")).toBe(false);
 
-    // Titulaire = « Prénom Nom » de l'utilisateur.
-    expect(stamps.get("NomTitulaireSipasOk")).toBe("Fatou N'Diaye");
+    // Titulaire = « mon-nom » → AUCUN stamp (le nom n'est renseigné que si le
+    // compte est au nom d'une AUTRE personne). Oraliks 2026-07-10.
+    expect(stamps.has("NomTitulaireSipasOk")).toBe(false);
 
     // Dates en-tête page 2 : fallback dateDemande → format FR, MÊME date dans
     // les 2 widgets scindés (DateDeModification + DateDA).

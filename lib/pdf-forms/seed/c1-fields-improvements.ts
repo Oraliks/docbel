@@ -706,17 +706,17 @@ export const C1_QUESTIONS: PdfFormField[] = [
       where: { fieldId: "lien", value: "FAC" },
       fields: {
         prenom: "Identité du partenaire ou de la personne à charge",
-        allocationsFamiliales: "Allocation familiale",
-        typeRevenuPro: "Activité professionnelle",
+        // allocationsFamiliales / typeRevenuPro NE sont plus en first-match :
+        // depuis le remaniement AcroForm (Oraliks 2026-07-10) ces colonnes ont
+        // un widget PAR LIGNE (« Allocation familiale Coh{N} » / « Activité
+        // professionnelle Coh{N} ») → stampées via pdfFieldNameTemplate sur les
+        // sous-champs. Montant / Revenus restent des widgets uniques (FAC).
         montantRevenuPro: "Montant",
         revenuRemplacement: "Revenus de remplacement",
-        // Pour le statut C1-PARTENAIRE : convention pipe-séparateur sur un
-        // sous-champ `radio` à 2 options — la 1ʳᵉ option ("premiere-fois")
-        // coche la case « Je le déclare pour la première fois… », la 2ᵉ
-        // ("deja-declare") coche la case « Ma déclaration précédente reste
-        // inchangée ». Cf. filler.ts#stampPipeRadio pour la convention.
-        c1PartenaireStatus:
-          "Je le déclare pour la première fois ou je déclare une modification et je joins un FORMULAIRE C1PARTENAIRE|Ma déclaration précédente sur le FORMULAIRE C1PARTENAIRE reste inchangée",
+        // Statut C1-PARTENAIRE : pipe (1ʳᵉ option "premiere-fois" → case « Je le
+        // déclare pour la première fois… », 2ᵉ "deja-declare" → « Ma déclaration
+        // précédente reste inchangée »). Widgets renommés (C1P_*).
+        c1PartenaireStatus: "C1P_FirstTime|C1P_DejaDéclaré",
       },
     },
     itemFields: [
@@ -778,8 +778,10 @@ export const C1_QUESTIONS: PdfFormField[] = [
         type: "date",
         required: true,
         label: { fr: "Date de naissance", nl: "", de: "" },
-        // Stampé en colonne 1 rangée 2 du slot N (widgets "1 2", "2 2", …).
-        pdfFieldNameTemplate: "{index} 2",
+        // Colonne « date de naissance » PAR LIGNE (widgets DateNaissCoh1..5 du
+        // nouvel AcroForm — Oraliks 2026-07-10). Avant, la date allait à tort
+        // en 2ᵉ ligne de la cellule nom (« {index} 2 »).
+        pdfFieldNameTemplate: "DateNaissCoh{index}",
         visibleIfParent: { fieldId: "habiteEnColocation", op: "notEquals", value: "oui" },
         order: 4,
       },
@@ -794,6 +796,10 @@ export const C1_QUESTIONS: PdfFormField[] = [
           nl: "", de: "",
         },
         options: YN,
+        // Colonne PAR LIGNE (dropdown « Allocation familiale Coh{N} »). Les
+        // dropdowns du nouvel AcroForm sont créés SANS options → le filler
+        // ajoute la valeur (« oui »/« non ») à la volée (cf. filler.ts).
+        pdfFieldNameTemplate: "Allocation familiale Coh{index}",
         visibleIfParent: { fieldId: "habiteEnColocation", op: "notEquals", value: "oui" },
         order: 5,
       },
@@ -810,6 +816,9 @@ export const C1_QUESTIONS: PdfFormField[] = [
           { value: "independant", label: { fr: "Indépendant", nl: "", de: "" } },
         ],
         defaultValue: "aucun",
+        // Colonne PAR LIGNE (dropdown « Activité professionnelle Coh{N} »,
+        // options ajoutées à la volée par le filler).
+        pdfFieldNameTemplate: "Activité professionnelle Coh{index}",
         visibleIfParent: { fieldId: "habiteEnColocation", op: "notEquals", value: "oui" },
         order: 6,
       },
@@ -1000,8 +1009,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
       helpText: "Si non, tu devras compléter le FORMULAIRE C46 — il sera ajouté à ton parcours.",
       section: SECTION_ACTIVITES,
       order: 231,
-      pdfFieldName:
-        "ma déclaration précédente sur le FORMULAIRE C46 reste inchangée|je le déclare pour la première fois ou je déclare une modification et je joins",
+      pdfFieldName: "Oui_PremièreFoisC45DéjàDéclaré|Oui_PremièreFoisC46",
     }),
     stepPriority: "optional",
   },
@@ -1058,8 +1066,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
         "Si non, tu devras compléter le FORMULAIRE C1C — il sera ajouté à ton parcours.",
       section: SECTION_ACTIVITES,
       order: 271,
-      pdfFieldName:
-        "ma déclaration précédente sur le FORMULAIRE C1C reste inchangée|je sollicite pour la première fois le bénéfice de lavantage  Tremplin",
+      pdfFieldName: "Oui_PremièreFoisC1CDéjàDéclaré|Oui_PremièreFoisC1C",
     }),
     stepPriority: "optional",
   },
@@ -1082,8 +1089,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
       helpText: "Si non, tu devras compléter le FORMULAIRE C1A — il sera ajouté à ton parcours.",
       section: SECTION_ACTIVITES,
       order: 281,
-      pdfFieldName:
-        "ma déclaration précédente sur le FORMULAIRE C1A reste inchangée_2|je le déclare pour la première fois ou je déclare une modification et je joins_3",
+      pdfFieldName: "Oui_PremièreFoisC1A2DejaDéclaré|Oui_PremièreFoisC1A2",
     }),
     stepPriority: "optional",
   },
@@ -1110,8 +1116,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
       // (accessoire / administrateur / indép. accessoire-principal). On pointe
       // donc sur la même paire que les autres follow-ups C1A — le dernier
       // remplissage gagne.
-      pdfFieldName:
-        "ma déclaration précédente sur le FORMULAIRE C1A reste inchangée_2|je le déclare pour la première fois ou je déclare une modification et je joins_3",
+      pdfFieldName: "Oui_PremièreFoisC1A2DejaDéclaré|Oui_PremièreFoisC1A2",
     }),
     stepPriority: "optional",
   },
@@ -1138,8 +1143,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
         "Pour une activité accessoire : si non déclarée, tu devras compléter le FORMULAIRE C1A.",
       section: SECTION_ACTIVITES,
       order: 501,
-      pdfFieldName:
-        "ma déclaration précédente sur le FORMULAIRE C1A reste inchangée_2|je le déclare pour la première fois ou je déclare une modification et je joins_3",
+      pdfFieldName: "Oui_PremièreFoisC1A2DejaDéclaré|Oui_PremièreFoisC1A2",
     }),
     stepPriority: "optional",
   },

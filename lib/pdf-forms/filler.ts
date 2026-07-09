@@ -144,9 +144,19 @@ function stampScalarWidget(
     else pdfField.uncheck();
   } else if (pdfField instanceof PDFDropdown) {
     const s = String(value);
-    if (pdfField.getOptions().includes(s)) {
-      pdfField.select(s);
-      if (unicodeFont) pdfField.updateAppearances(font);
+    if (s !== "" && s !== "false") {
+      // Certains dropdowns du template n'ont PAS d'options prédéfinies (ex.
+      // grille cohabitants du C1 remaniée par Oraliks : « Allocation familiale
+      // Coh1 »… créés vides). `select` exige la valeur dans les options → on
+      // l'ajoute d'abord si nécessaire, puis on sélectionne. No-op sur valeur
+      // vide (dropdown laissé neutre).
+      try {
+        if (!pdfField.getOptions().includes(s)) pdfField.addOptions([s]);
+        pdfField.select(s);
+        if (unicodeFont) pdfField.updateAppearances(font);
+      } catch {
+        /* dropdown readonly / incompatible — on ignore */
+      }
     }
   } else if (pdfField instanceof PDFRadioGroup) {
     const s = String(value);

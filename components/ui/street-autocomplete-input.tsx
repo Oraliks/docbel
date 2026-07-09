@@ -23,6 +23,11 @@ interface StreetAutocompleteInputProps
   /// Appelé en plus de `onChange` quand l'utilisateur choisit une suggestion
   /// — permet au formulaire d'auto-remplir le code postal à partir du choix.
   onSelectSuggestion?: (suggestion: StreetSuggestion) => void;
+  /// Notifie l'état de « vérification » de la rue : `true` quand l'utilisateur
+  /// a CHOISI une suggestion (rue réelle BeStAddress), `false` dès qu'il tape
+  /// librement. Sert au forçage `requireListMatch` (cf. lib/pdf-forms/
+  /// list-match.ts). Ignoré si absent.
+  onVerifiedChange?: (verified: boolean) => void;
 }
 
 /// Autocomplete de rue belge, source BeStAddress (BOSA, ~144k rues) via
@@ -34,6 +39,7 @@ export function StreetAutocompleteInput({
   onChange,
   postalCode,
   onSelectSuggestion,
+  onVerifiedChange,
   ...props
 }: StreetAutocompleteInputProps) {
   const [suggestions, setSuggestions] = useState<StreetSuggestion[]>([]);
@@ -73,6 +79,8 @@ export function StreetAutocompleteInput({
         value={value}
         onChange={(e) => {
           onChange(e.target.value);
+          // Frappe libre → la rue n'est (plus) vérifiée.
+          onVerifiedChange?.(false);
           setOpen(true);
         }}
         onFocus={() => setOpen(true)}
@@ -111,6 +119,8 @@ export function StreetAutocompleteInput({
                   e.preventDefault();
                   onChange(s.street);
                   onSelectSuggestion?.(s);
+                  // Sélection dans la liste → rue vérifiée (existe en base).
+                  onVerifiedChange?.(true);
                   setOpen(false);
                 }}
               >

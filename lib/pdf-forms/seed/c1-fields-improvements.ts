@@ -202,14 +202,33 @@ export const C1_QUESTIONS: PdfFormField[] = [
     required: true,
     label: { fr: "Rue", nl: "", de: "" },
     help: {
-      fr: "Commence à taper : les rues du code postal indiqué ci-dessus apparaissent en premier.",
+      fr: "Commence à taper puis CHOISIS ta rue dans la liste (noms officiels FR et NL). Si elle n'apparaît pas, coche « ma rue n'est pas dans la liste » juste en dessous.",
       nl: "", de: "",
     },
     prefillFrom: "profile.street",
     streetAutocomplete: { postalFieldId: "code_postal" },
+    // Forçage (Oraliks 2026-07-09) : évite les fautes d'orthographe — la rue
+    // doit être choisie dans les suggestions BeStAddress (FR ou NL), sauf
+    // échappatoire ci-dessous. Contrôle côté runner (cf. list-match.ts).
+    requireListMatch: { escapeFieldId: "adresse_rue_hors_liste" },
     canonicalKey: "adresse.rue",
     section: SECTION_IDENTITE,
     order: -89,
+  },
+  {
+    // Échappatoire du forçage de rue : rues neuves, rurales, ou absentes de
+    // BeStAddress ne doivent jamais bloquer un dossier légitime.
+    id: "adresse_rue_hors_liste",
+    pdfFieldName: "",
+    type: "checkbox",
+    required: false,
+    label: { fr: "Ma rue n'est pas dans la liste proposée", nl: "", de: "" },
+    help: {
+      fr: "Coche uniquement si ta rue n'apparaît pas dans les suggestions — tu pourras alors la saisir librement (vérifie bien l'orthographe).",
+      nl: "", de: "",
+    },
+    section: SECTION_IDENTITE,
+    order: -88.5,
   },
   {
     id: "num_ro",

@@ -70,6 +70,9 @@ interface Props {
   /// code postal : permet au formulaire de remplir le champ code postal en
   /// retour. Ignoré si `field.streetAutocomplete` est absent.
   onSelectStreetSuggestion?: (postalCode: string) => void;
+  /// Remonte l'état de vérification d'une rue `requireListMatch` : true si
+  /// choisie dans la liste, false si tapée librement (cf. list-match.ts).
+  onStreetVerifiedChange?: (verified: boolean) => void;
   /// Payload complet du formulaire — passé aux `array` (cohabitants) qui en
   /// ont besoin pour évaluer `visibleIfParent` sur leurs sous-champs. Ignoré
   /// pour les autres types.
@@ -115,7 +118,7 @@ function LabelWithTooltip({
 
 export function PdfField({
   field, value, error, locale, onChange, formId, formSlug, rowLayout = false,
-  derivedValue = null, relatedPostalCode, onSelectStreetSuggestion, parentValues,
+  derivedValue = null, relatedPostalCode, onSelectStreetSuggestion, onStreetVerifiedChange, parentValues,
 }: Props) {
   const label = loc(field.label, locale);
   const labelShort = field.labelShort ? loc(field.labelShort, locale) : undefined;
@@ -447,6 +450,7 @@ export function PdfField({
             postalCode={relatedPostalCode}
             onChange={(v) => onChange(v)}
             onSelectSuggestion={(s) => onSelectStreetSuggestion?.(s.postalCode)}
+            onVerifiedChange={field.requireListMatch ? onStreetVerifiedChange : undefined}
             onBlur={markTouched}
           />
         ) : useCountrySelect ? (

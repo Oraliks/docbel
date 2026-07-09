@@ -30,6 +30,7 @@ import { resolveSignerName } from "@/lib/pdf-forms/signature";
 import { isAutoField, isCreationDateField, isSignatureField } from "@/lib/pdf-forms/auto-fields";
 import { FIELD_DERIVATIONS, applyFieldDerivations } from "@/lib/pdf-forms/field-derivations";
 import { resolveOnSelectSet } from "@/lib/pdf-forms/field-side-effects";
+import { findListMatchErrors } from "@/lib/pdf-forms/list-match";
 import type { PublicForm, PublicField } from "@/lib/pdf-forms/public-serializer";
 import { buildSteps, buildMacroSteps, type OptionalSection, type MacroStep } from "@/lib/pdf-forms/build-steps";
 import { sectionLabel } from "@/lib/pdf-forms/section-labels";
@@ -104,6 +105,30 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, onValuesChange
   const [active, setActive] = useState(0);
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Rues `requireListMatch` VÉRIFIÉES (choisies dans la liste) — état local,
+  // jamais sérialisé. Init : une rue déjà non vide au montage (brouillon
+  // restauré / prefill) est considérée vérifiée, pour ne pas bloquer un
+  // retour d'utilisateur sur une valeur saisie lors d'une session précédente.
+  const [verifiedStreets, setVerifiedStreets] = useState<Set<string>>(() => {
+    const init = new Set<string>();
+    const v0 = defaultValues(form, bundlePrefill);
+    for (const f of form.fields) {
+      if (!f.requireListMatch) continue;
+      const val = v0[f.id];
+      if (typeof val === "string" && val.trim() !== "") init.add(f.id);
+    }
+    return init;
+  });
+  const handleStreetVerified = useCallback((fieldId: string, verified: boolean) => {
+    setVerifiedStreets((prev) => {
+      if (verified === prev.has(fieldId)) return prev;
+      const next = new Set(prev);
+      if (verified) next.add(fieldId);
+      else next.delete(fieldId);
+      return next;
+    });
+  }, []);
 
   useEffect(() => { onValuesChange?.(values); }, [values, onValuesChange]);
   useEffect(() => { onLocaleChange?.(locale); }, [locale, onLocaleChange]);
@@ -293,9 +318,26 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, onValuesChange
         }
         return;
       }
+      // Forçage `requireListMatch` (rue non choisie dans la liste, sans
+      // échappatoire) : contrôle asynchrone-par-nature, hors Zod — on bloque
+      // sur la 1ʳᵉ étape survolée qui contient une rue non vérifiée.
+      const listErrors = findListMatchErrors(
+        stepsFieldsList.flat() as unknown as PdfFormField[],
+        derivedValues,
+        verifiedStreets,
+        locale
+      );
+      const firstListId = Object.keys(listErrors)[0];
+      if (firstListId) {
+        setErrors((prev) => ({ ...prev, ...listErrors }));
+        const stepIdx = stepsFieldsList.findIndex((sf) => sf.some((f) => f.id === firstListId));
+        if (stepIdx >= 0) setActive(startIndex + stepIdx);
+        setTimeout(() => document.getElementById(firstListId)?.scrollIntoView({ behavior: "smooth", block: "center" }), 60);
+        return;
+      }
       setActive(nextIndex);
     },
-    [values, locale]
+    [values, locale, verifiedStreets, form.fields]
   );
 
   async function submit() {
@@ -381,6 +423,23 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, onValuesChange
       const suffix = invalidIds.length > 3 ? ` (+${invalidIds.length - 3})` : "";
       const detail = labels.length > 0 ? ` — ${labels.join(", ")}${suffix}` : "";
       toast.error(`${t("runnerSomeFieldsInvalid")}${detail}`);
+      return;
+    }
+    // Forçage `requireListMatch` au submit (dernier filet) : une rue tapée
+    // hors liste, sans échappatoire, bloque la génération même si Zod passe.
+    const listErrors = findListMatchErrors(
+      form.fields as unknown as PdfFormField[],
+      signedValues,
+      verifiedStreets,
+      locale
+    );
+    const firstListId = Object.keys(listErrors)[0];
+    if (firstListId) {
+      setErrors(listErrors);
+      const stepIdx = fieldStepIndex[firstListId];
+      if (stepIdx !== undefined) setActive(stepIdx);
+      setTimeout(() => document.getElementById(firstListId)?.scrollIntoView({ behavior: "smooth", block: "center" }), 60);
+      toast.error(listErrors[firstListId]);
       return;
     }
     setErrors({});
@@ -477,6 +536,7 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, onValuesChange
         setDoccleRef={setDoccleRef}
         submitting={submitting}
         submit={submit}
+        onStreetVerifiedChange={handleStreetVerified}
         t={t}
       />
     );
@@ -508,6 +568,7 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, onValuesChange
         resetForm={resetForm}
         lastSavedAt={lastSavedAt}
         bundleRunId={bundleRunId}
+        onStreetVerifiedChange={handleStreetVerified}
         t={t}
       />
     );
@@ -614,6 +675,7 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, onValuesChange
                       setValue={setValue}
                       formId={form.id}
                       formSlug={form.slug}
+                      onStreetVerifiedChange={handleStreetVerified}
                     />
                   )}
                 />
@@ -626,6 +688,7 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, onValuesChange
                   setValue={setValue}
                   formId={form.id}
                   formSlug={form.slug}
+                  onStreetVerifiedChange={handleStreetVerified}
                 />
               )}
 
@@ -748,6 +811,7 @@ function FieldsCluster({
   setValue,
   formId,
   formSlug,
+  onStreetVerifiedChange,
 }: {
   fields: PublicField[];
   values: FormPayload;
@@ -756,6 +820,7 @@ function FieldsCluster({
   setValue: (id: string, value: FieldValue) => void;
   formId: string;
   formSlug: string;
+  onStreetVerifiedChange?: (fieldId: string, verified: boolean) => void;
 }) {
   // Trois familles de rendu : cartes de choix (chips), lignes binaires
   // compactes (oui/non + cases, empilées dans un conteneur à séparateurs),
@@ -860,6 +925,7 @@ function FieldsCluster({
                 onSelectStreetSuggestion={(postalCode) => {
                   if (f.streetAutocomplete) setValue(f.streetAutocomplete.postalFieldId, postalCode);
                 }}
+                onStreetVerifiedChange={(v) => onStreetVerifiedChange?.(f.id, v)}
                 parentValues={values}
               />
             </div>
@@ -965,6 +1031,7 @@ interface MacroRunnerBodyProps {
   resetForm: () => void | Promise<void>;
   lastSavedAt: Date | null;
   bundleRunId?: string;
+  onStreetVerifiedChange?: (fieldId: string, verified: boolean) => void;
   t: ReturnType<typeof useTranslations>;
 }
 
@@ -977,7 +1044,7 @@ interface MacroRunnerBodyProps {
 function MacroRunnerBody({
   form, macroSteps, activeIndex, setActive, attemptAdvance, locale, setLocale, values, errors,
   setValue, signerName, consent, setConsent, delivery, setDelivery, doccleRef,
-  setDoccleRef, submitting, submit, resetForm, lastSavedAt, bundleRunId, t,
+  setDoccleRef, submitting, submit, resetForm, lastSavedAt, bundleRunId, onStreetVerifiedChange, t,
 }: MacroRunnerBodyProps) {
   const current = macroSteps[activeIndex];
   const isLast = activeIndex === macroSteps.length - 1;
@@ -1010,6 +1077,7 @@ function MacroRunnerBody({
       setValue={setValue}
       formId={form.id}
       formSlug={form.slug}
+      onStreetVerifiedChange={onStreetVerifiedChange}
     />
   );
 
@@ -1216,6 +1284,7 @@ interface LegacyRunnerBodyProps {
   setDoccleRef: (v: string) => void;
   submitting: boolean;
   submit: () => void;
+  onStreetVerifiedChange?: (fieldId: string, verified: boolean) => void;
   t: ReturnType<typeof useTranslations>;
 }
 
@@ -1243,6 +1312,7 @@ function LegacyRunnerBody({
   setDoccleRef,
   submitting,
   submit,
+  onStreetVerifiedChange,
   t,
 }: LegacyRunnerBodyProps) {
   const flatSteps = steps.map((s) =>
@@ -1359,6 +1429,7 @@ function LegacyRunnerBody({
                       onSelectStreetSuggestion={(postalCode) => {
                         if (f.streetAutocomplete) setValue(f.streetAutocomplete.postalFieldId, postalCode);
                       }}
+                      onStreetVerifiedChange={(v) => onStreetVerifiedChange?.(f.id, v)}
                       parentValues={values}
                     />
                   </div>

@@ -262,6 +262,13 @@ export interface PdfFormField {
   /// une suggestion remplit aussi ce champ code postal en retour (cf.
   /// components/ui/street-autocomplete-input.tsx).
   streetAutocomplete?: { postalFieldId: string };
+  /// Force la saisie à correspondre à une entrée de la liste d'autocomplétion
+  /// (ex. rue BeStAddress FR/NL). La valeur n'est acceptée que si l'utilisateur
+  /// l'a CHOISIE dans les suggestions (vérifiée côté runner) OU s'il coche la
+  /// case d'échappement `escapeFieldId` (« ma rue n'est pas dans la liste »).
+  /// Vérifié par le runner (pas par Zod : le contrôle « existe en base » est
+  /// asynchrone) — cf. lib/pdf-forms/list-match.ts. Absent = texte libre.
+  requireListMatch?: { escapeFieldId: string; message?: Localized };
   /// Active la recherche de pays (~195 pays du monde, cf.
   /// lib/pdf-forms/world-countries.ts) avec drapeau affiché sur un champ
   /// `text` — ex. taper "maro" propose "Maroc". La valeur stockée reste le

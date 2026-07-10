@@ -114,7 +114,8 @@ function stampScalarWidget(
   font: PDFFont,
   unicodeFont: boolean,
   fieldType?: string,
-  autoSizeFont?: boolean
+  autoSizeFont?: boolean,
+  options?: FieldOption[]
 ): void {
   if (pdfField instanceof PDFTextField) {
     const raw = value === false ? "" : String(value);
@@ -143,13 +144,18 @@ function stampScalarWidget(
     if (isTruthy(value)) pdfField.check();
     else pdfField.uncheck();
   } else if (pdfField instanceof PDFDropdown) {
-    const s = String(value);
+    // Affiche le LIBELLÉ humain, pas le code interne : un select « Employé »
+    // (value "salarie-employe") doit apparaître « Employé » sur le PDF, pas
+    // « salarie-employe » (Oraliks 2026-07-10). On résout via `options` ; à
+    // défaut on garde la valeur brute.
+    const opt = options?.find((o) => o.value === String(value));
+    const s = opt ? (opt.label.fr || opt.label.nl || opt.label.de || String(value)) : String(value);
     if (s !== "" && s !== "false") {
       // Certains dropdowns du template n'ont PAS d'options prédéfinies (ex.
-      // grille cohabitants du C1 remaniée par Oraliks : « Allocation familiale
-      // Coh1 »… créés vides). `select` exige la valeur dans les options → on
-      // l'ajoute d'abord si nécessaire, puis on sélectionne. No-op sur valeur
-      // vide (dropdown laissé neutre).
+      // grille cohabitants du C1 remaniée par Oraliks : « Personne1_Allocations
+      // Familiales »… créés vides). `select` exige la valeur dans les options →
+      // on l'ajoute d'abord si nécessaire, puis on sélectionne. No-op sur
+      // valeur vide (dropdown laissé neutre).
       try {
         if (!pdfField.getOptions().includes(s)) pdfField.addOptions([s]);
         pdfField.select(s);
@@ -209,7 +215,7 @@ function stampArrayField(
         continue;
       }
       try {
-        stampScalarWidget(pdfField, subValue as FieldValue, font, unicodeFont, sub.type, sub.autoSizeFont);
+        stampScalarWidget(pdfField, subValue as FieldValue, font, unicodeFont, sub.type, sub.autoSizeFont, sub.options);
       } catch {
         /* readonly / incompatible */
       }
@@ -239,7 +245,7 @@ function stampArrayField(
       continue;
     }
     try {
-      stampScalarWidget(pdfField, subValue as FieldValue, font, unicodeFont, sub.type, sub.autoSizeFont);
+      stampScalarWidget(pdfField, subValue as FieldValue, font, unicodeFont, sub.type, sub.autoSizeFont, sub.options);
     } catch {
       /* readonly / incompatible */
     }
@@ -389,7 +395,7 @@ export async function fillForm(
         continue;
       }
 
-      stampScalarWidget(pdfField, value, font, unicodeFont, field.type, field.autoSizeFont);
+      stampScalarWidget(pdfField, value, font, unicodeFont, field.type, field.autoSizeFont, field.options);
     } catch {
       // champ readonly / incompatible — on ignore sans casser la génération
     }

@@ -2115,10 +2115,17 @@ export function applyC1Improvements(
         // `hidden` = ni rendue à l'écran, ni stampée (les 2 cases oui/non
         // restent neutres sur le PDF).
         if (q.id === "chomeurTemporaireAlternance") return { ...q, hidden: true };
-        // Libellé/aide raccourcis pour l'étape Motif (Oraliks, 2026-07-07).
+        // Libellé/aide raccourcis pour l'étape Motif + STAMPING de la date de
+        // changement sur les lignes « à partir du » du motif (Oraliks
+        // 2026-07-10 : « tu mets pas les dates pour les motifs cochés »). Le
+        // widget `DateModification` a 5 cases (une par ligne motif) mais reste
+        // UN SEUL champ AcroForm → la MÊME date (celle saisie ici) apparaît sur
+        // toutes les lignes. Pour dater UNIQUEMENT le motif coché, il faudrait
+        // scinder ce widget en 5 (comme la grille cohabitants).
         if (q.id === "dateModificationEffective") {
           return {
             ...q,
+            pdfFieldName: "DateModification",
             label: { ...q.label, fr: "Date de changement" },
             help: {
               ...q.help,
@@ -2126,6 +2133,11 @@ export function applyC1Improvements(
             },
           };
         }
+        // « Je demande des allocations à partir du » ne s'applique PAS à un
+        // dossier de changement de situation → on ne stampe pas sa date (sinon
+        // elle écraserait `DateModification` avec la date du jour). Reste
+        // validée/auto en interne, juste non imprimée.
+        if (q.id === "dateDemande") return { ...q, pdfFieldName: "" };
         // Reste réel/requis/soumis (nécessaire au filler + à la validation),
         // mais n'est plus montré comme sélecteur : les 5 chips pilotent sa
         // valeur (defaultValue "modification", ou "changement-op" via

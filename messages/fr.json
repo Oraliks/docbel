@@ -4861,6 +4861,7 @@
       "runnerGenerating": "Génération…",
       "runnerSubmitSignAndSend": "Signer et envoyer le document",
       "runnerSubmitSignAndGenerate": "Signer et générer le document",
+      "runnerSubmitValidate": "Valider et continuer",
       "runnerSummarySigned": "Signé numériquement",
       "runnerSummarySignedWithName": "Signé numériquement — {name}",
       "runnerEmptyDash": "—",

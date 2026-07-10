@@ -590,6 +590,7 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
         setDoccleRef={setDoccleRef}
         submitting={submitting}
         submit={submit}
+        bundleRunId={bundleRunId}
         onStreetVerifiedChange={handleStreetVerified}
         t={t}
       />
@@ -749,7 +750,7 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
               {/* Pied d'étape */}
               {current.kind === "summary" ? (
                 <div className="flex flex-col gap-4">
-                  {form.allowDownload && form.allowDoccle && (
+                  {!bundleRunId && form.allowDownload && form.allowDoccle && (
                     <div className="flex flex-col gap-2">
                       <span className="text-xs font-medium text-muted-foreground">{t("runnerDeliveryModeLabel")}</span>
                       <div className="flex gap-1.5">
@@ -762,7 +763,7 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
                       </div>
                     </div>
                   )}
-                  {delivery === "doccle" && (
+                  {!bundleRunId && delivery === "doccle" && (
                     <div className="flex flex-col gap-1.5">
                       <Label htmlFor="doccle-ref">{t("runnerDoccleRecipientLabel")}</Label>
                       <Input id="doccle-ref" value={doccleRef} placeholder={t("runnerDoccleRecipientPlaceholder")} onChange={(e) => setDoccleRef(e.target.value)} />
@@ -809,9 +810,11 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
                         </Button>
                       )}
                       <Button type="submit" disabled={submitting} className="rounded-full px-6">
-                        {submitting ? <Loader2Icon className="size-4 animate-spin" /> : delivery === "doccle" ? <SendIcon className="size-4" /> : <DownloadIcon className="size-4" />}
+                        {submitting ? <Loader2Icon className="size-4 animate-spin" /> : bundleRunId ? <CheckCircle2Icon className="size-4" /> : delivery === "doccle" ? <SendIcon className="size-4" /> : <DownloadIcon className="size-4" />}
                         {submitting
                           ? t("runnerGenerating")
+                          : bundleRunId
+                          ? t("runnerSubmitValidate")
                           : delivery === "doccle"
                           ? t("runnerSubmitSignAndSend")
                           : t("runnerSubmitSignAndGenerate")}
@@ -1237,7 +1240,7 @@ function MacroRunnerBody({
 
               {isLast ? (
                 <div className="flex flex-col gap-4 border-t border-[color:var(--glass-border)] pt-4">
-                  {form.allowDownload && form.allowDoccle && (
+                  {!bundleRunId && form.allowDownload && form.allowDoccle && (
                     <div className="flex flex-col gap-2">
                       <span className="text-xs font-medium text-muted-foreground">{t("runnerDeliveryModeLabel")}</span>
                       <div className="flex gap-1.5">
@@ -1250,7 +1253,7 @@ function MacroRunnerBody({
                       </div>
                     </div>
                   )}
-                  {delivery === "doccle" && (
+                  {!bundleRunId && delivery === "doccle" && (
                     <div className="flex flex-col gap-1.5">
                       <Label htmlFor="doccle-ref-macro">{t("runnerDoccleRecipientLabel")}</Label>
                       <Input id="doccle-ref-macro" value={doccleRef} placeholder={t("runnerDoccleRecipientPlaceholder")} onChange={(e) => setDoccleRef(e.target.value)} />
@@ -1284,8 +1287,8 @@ function MacroRunnerBody({
                         <ChevronLeftIcon className="size-4" /> {t("previous")}
                       </Button>
                       <Button type="submit" disabled={submitting} className="rounded-full px-6">
-                        {submitting ? <Loader2Icon className="size-4 animate-spin" /> : delivery === "doccle" ? <SendIcon className="size-4" /> : <DownloadIcon className="size-4" />}
-                        {submitting ? t("runnerGenerating") : delivery === "doccle" ? t("runnerSubmitSignAndSend") : t("runnerSubmitSignAndGenerate")}
+                        {submitting ? <Loader2Icon className="size-4 animate-spin" /> : bundleRunId ? <CheckCircle2Icon className="size-4" /> : delivery === "doccle" ? <SendIcon className="size-4" /> : <DownloadIcon className="size-4" />}
+                        {submitting ? t("runnerGenerating") : bundleRunId ? t("runnerSubmitValidate") : delivery === "doccle" ? t("runnerSubmitSignAndSend") : t("runnerSubmitSignAndGenerate")}
                       </Button>
                     </div>
                   </div>
@@ -1338,6 +1341,7 @@ interface LegacyRunnerBodyProps {
   setDoccleRef: (v: string) => void;
   submitting: boolean;
   submit: () => void;
+  bundleRunId?: string;
   onStreetVerifiedChange?: (fieldId: string, verified: boolean) => void;
   t: ReturnType<typeof useTranslations>;
 }
@@ -1366,6 +1370,7 @@ function LegacyRunnerBody({
   setDoccleRef,
   submitting,
   submit,
+  bundleRunId,
   onStreetVerifiedChange,
   t,
 }: LegacyRunnerBodyProps) {
@@ -1493,7 +1498,7 @@ function LegacyRunnerBody({
 
             {current.kind === "summary" ? (
               <div className="flex flex-col gap-4">
-                {form.allowDownload && form.allowDoccle && (
+                {!bundleRunId && form.allowDownload && form.allowDoccle && (
                   <div className="flex flex-col gap-2">
                     <span className="text-xs font-medium text-muted-foreground">{t("runnerDeliveryModeLabel")}</span>
                     <div className="flex gap-1.5">
@@ -1506,7 +1511,7 @@ function LegacyRunnerBody({
                     </div>
                   </div>
                 )}
-                {delivery === "doccle" && (
+                {!bundleRunId && delivery === "doccle" && (
                   <div className="flex flex-col gap-1.5">
                     <Label htmlFor="doccle-ref-legacy">{t("runnerDoccleRecipientLabel")}</Label>
                     <Input id="doccle-ref-legacy" value={doccleRef} placeholder={t("runnerDoccleRecipientPlaceholder")} onChange={(e) => setDoccleRef(e.target.value)} />
@@ -1537,8 +1542,8 @@ function LegacyRunnerBody({
                     </Button>
                   )}
                   <Button type="submit" disabled={submitting} className="flex-1">
-                    {submitting ? <Loader2Icon className="size-4 animate-spin" /> : delivery === "doccle" ? <SendIcon className="size-4" /> : <DownloadIcon className="size-4" />}
-                    {submitting ? t("runnerGenerating") : delivery === "doccle" ? t("runnerSubmitSignAndSend") : t("runnerSubmitSignAndGenerate")}
+                    {submitting ? <Loader2Icon className="size-4 animate-spin" /> : bundleRunId ? <CheckCircle2Icon className="size-4" /> : delivery === "doccle" ? <SendIcon className="size-4" /> : <DownloadIcon className="size-4" />}
+                    {submitting ? t("runnerGenerating") : bundleRunId ? t("runnerSubmitValidate") : delivery === "doccle" ? t("runnerSubmitSignAndSend") : t("runnerSubmitSignAndGenerate")}
                   </Button>
                 </div>
               </div>

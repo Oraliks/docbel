@@ -221,3 +221,42 @@ export const getOpsQueue = cache(async (): Promise<OpsQueue> => {
     activeQueues: counters.filter((c) => c > 0).length,
   };
 });
+
+// ── Rangée statut ───────────────────────────────────────────────────────────
+
+export interface StatusStrip {
+  db: { ok: boolean; latencyMs: number | null };
+  traffic24h: number;
+  trafficPrev24h: number;
+  ops: { total: number; activeQueues: number };
+}
+
+export const getStatusStrip = cache(async (): Promise<StatusStrip> => {
+  const now = Date.now();
+  const h24 = new Date(now - 24 * 60 * 60 * 1000);
+  const h48 = new Date(now - 48 * 60 * 60 * 1000);
+
+  const t0 = Date.now();
+  let db: StatusStrip["db"] = { ok: false, latencyMs: null };
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    db = { ok: true, latencyMs: Date.now() - t0 };
+  } catch {
+    // db reste { ok: false } — la carte affiche l'état dégradé, jamais bloquant.
+  }
+
+  const [traffic24h, trafficPrev24h, ops] = await Promise.all([
+    withDbRetry(() => prisma.pageView.count({ where: { createdAt: { gte: h24 } } })),
+    withDbRetry(() =>
+      prisma.pageView.count({ where: { createdAt: { gte: h48, lt: h24 } } }),
+    ),
+    getOpsQueue(),
+  ]);
+
+  return {
+    db,
+    traffic24h,
+    trafficPrev24h,
+    ops: { total: ops.total, activeQueues: ops.activeQueues },
+  };
+});

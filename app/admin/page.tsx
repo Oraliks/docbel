@@ -5,6 +5,7 @@ import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { AdminDashboard } from "@/components/admin/admin-dashboard"
 import { PeriodSelector } from "@/components/admin/dashboard/period-selector"
+import { StatusStrip } from "@/components/admin/dashboard/status-strip"
 import { OpsQueue } from "@/components/admin/dashboard/ops-queue"
 import { UsageKpis } from "@/components/admin/dashboard/usage-kpis"
 import { DailyChartLazy } from "@/components/admin/dashboard/daily-chart-lazy"
@@ -96,6 +97,10 @@ export default async function AdminPage({
         <h1 className="text-xl font-bold tracking-tight">Tableau de bord</h1>
         <PeriodSelector period={period} />
       </div>
+
+      <Suspense fallback={<KpiCardsSkeleton count={4} />}>
+        <StatusStrip />
+      </Suspense>
 
       <Suspense fallback={<KpiCardsSkeleton count={4} />}>
         <OpsQueue />

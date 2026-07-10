@@ -11,6 +11,8 @@ import { resolveStamps } from "@/lib/pdf-forms/bindings/engine";
 import { getRulesForSlug } from "@/lib/pdf-forms/bindings/registry";
 import { readSourcePdf } from "@/lib/pdf-forms/storage";
 import { renderFilename } from "@/lib/pdf-forms/filename";
+import { applyServerAutoFields } from "@/lib/pdf-forms/auto-fields";
+import { todayISO } from "@/lib/pdf-forms/system-values";
 import type { PdfFormField, AcroFieldRaw, FormPayload } from "@/lib/pdf-forms/types";
 
 export interface RegeneratedDoc {
@@ -76,9 +78,16 @@ async function regenerateItems(
     }
     const fields = (form.fields as unknown as PdfFormField[]) || [];
     const technicalSchema = (form.technicalSchema as unknown as AcroFieldRaw[]) || [];
-    const extraStamps = resolveStamps(payload, getRulesForSlug(form.slug));
-    const { bytes } = await fillForm(source, fields, payload, { technicalSchema, extraStamps });
-    docs.push({ filename: renderFilename(form.slug, payload), bytes });
+    // Réinjecte les valeurs auto-imposées par le serveur (date de création =
+    // jour du téléchargement, signature = confirmée) que le payload stocké ne
+    // contient pas : ces champs sont exclus du schéma Zod (donc jamais
+    // persistés dans bundleRun.payloads). Sans ça, tous les PDF régénérés
+    // depuis un dossier (téléchargement individuel, zip, email) sortaient sans
+    // date ni signature — cf. applyServerAutoFields.
+    const filled = applyServerAutoFields(fields, payload, todayISO());
+    const extraStamps = resolveStamps(filled, getRulesForSlug(form.slug));
+    const { bytes } = await fillForm(source, fields, filled, { technicalSchema, extraStamps });
+    docs.push({ filename: renderFilename(form.slug, filled), bytes });
   }
   return docs;
 }

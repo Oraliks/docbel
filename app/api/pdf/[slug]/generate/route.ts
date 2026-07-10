@@ -12,7 +12,7 @@ import { renderFilename } from "@/lib/pdf-forms/filename";
 import { sha256Hex, checkRateLimit, getClientIp } from "@/lib/pdf-forms/security";
 import { sendToDoccle, isDoccleConfigured } from "@/lib/pdf-forms/integrations/doccle";
 import { todayISO } from "@/lib/pdf-forms/system-values";
-import { isCreationDateField, isSignatureField } from "@/lib/pdf-forms/auto-fields";
+import { applyServerAutoFields } from "@/lib/pdf-forms/auto-fields";
 import { PdfFormField, FormPayload, Locale, isLocale } from "@/lib/pdf-forms/types";
 import { ensureWriteAllowed } from "@/lib/admin/readonly-guard";
 import { loadDossierState } from "@/lib/bundles/completion";
@@ -67,21 +67,8 @@ export async function POST(
 
   const fields = (form.fields as unknown as PdfFormField[]) || [];
 
-  // Dates auto (date de création) + signatures : valeurs imposées par le
-  // serveur, qui écrasent toute valeur envoyée par le client. On utilise les
-  // helpers (label + type) pour rattraper aussi les PdfForms en DB qui n'ont
-  // pas le bon marqueur sémantique (anciens uploads).
   const incoming = ((body.payload as FormPayload) || {});
   const today = todayISO();
-  for (const f of fields) {
-    // Champs masqués (complétés par un tiers, ex. partie école du DIPLÔME) :
-    // jamais auto-injectés → ils restent BLANCS dans le PDF (le tiers signe /
-    // date à la main). Sans ce garde, la signature du citoyen serait apposée
-    // sur les lignes de signature de l'école.
-    if (f.hidden) continue;
-    if (isCreationDateField(f)) incoming[f.id] = today;
-    if (isSignatureField(f) && !incoming[f.id]) incoming[f.id] = "confirmed";
-  }
 
   const validator = buildValidator(fields, lang);
   const result = validator.safeParse(incoming);
@@ -94,7 +81,12 @@ export async function POST(
       { status: 422, headers: json }
     );
   }
-  const validated = result.data as FormPayload;
+  // Dates auto (date de création) + signatures : valeurs imposées par le
+  // serveur, appliquées APRÈS la validation. Impératif : `buildValidator`
+  // exclut ces champs de son schéma et `z.object` strippe les clés inconnues —
+  // les injecter avant `safeParse` (comme avant le 2026-07-11) les faisait
+  // disparaître de `result.data`, d'où un PDF sans date ni signature.
+  const validated = applyServerAutoFields(fields, result.data as FormPayload, today);
 
   // Propriété du run (même logique que app/api/documents/bundles/[id]/run/route.ts) :
   // userId de session si connecté, sinon cookie de session anonyme.

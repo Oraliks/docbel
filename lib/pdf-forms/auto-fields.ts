@@ -20,6 +20,7 @@ interface AutoFieldShape {
   prefillFrom?: string;
   label?: { fr?: string; nl?: string; de?: string };
   autoAnswered?: boolean;
+  hidden?: boolean;
 }
 
 const SIGNATURE_LABEL_RE = /\b(signature|handtekening|unterschrift)\w*/i;
@@ -48,4 +49,34 @@ export function isCreationDateField(f: AutoFieldShape): boolean {
 /// date de création, OU marqueur explicite `autoAnswered`).
 export function isAutoField(f: AutoFieldShape): boolean {
   return isSignatureField(f) || isCreationDateField(f) || f.autoAnswered === true;
+}
+
+/// Injecte les valeurs auto-imposées par le serveur JUSTE AVANT la génération
+/// du PDF : date de création = `today` (AAAA-MM-JJ), signature du citoyen =
+/// « confirmed ». Renvoie un NOUVEAU payload (ne mute pas l'entrée).
+///
+/// À appeler sur l'objet FINAL passé au filler, PAS avant la validation Zod :
+/// `buildValidator` EXCLUT totalement ces champs de son schéma (cf.
+/// validation.ts), et un `z.object` strippe les clés inconnues — donc toute
+/// valeur injectée avant `safeParse` est effacée par `result.data`. Le bug
+/// observé (Oraliks 2026-07-11 : « toujours pas la date du document ni la
+/// signature ») venait de là : la route /generate injectait AVANT de valider,
+/// et la régénération de dossier (lib/bundles/regenerate-pdfs.ts) ne réinjectait
+/// jamais — les deux chemins produisaient un PDF sans date ni signature.
+///
+/// Idempotent. Ne touche jamais un champ `hidden` (volet rempli par un tiers,
+/// ex. partie « école » du DIPLÔME — sans ce garde, la signature du citoyen se
+/// poserait sur les lignes de l'école) ni n'écrase une signature déjà fournie.
+export function applyServerAutoFields<T extends Record<string, unknown>>(
+  fields: AutoFieldShape[],
+  payload: T,
+  today: string,
+): T {
+  const next: Record<string, unknown> = { ...payload };
+  for (const f of fields) {
+    if (f.hidden) continue;
+    if (isCreationDateField(f)) next[f.id] = today;
+    if (isSignatureField(f) && !next[f.id]) next[f.id] = "confirmed";
+  }
+  return next as T;
 }

@@ -4,6 +4,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { loadDossierState, type DossierState } from "@/lib/bundles/completion";
+import { computeItemStatuses } from "@/components/docbel/bundle-runner/compute";
 import { fillForm } from "@/lib/pdf-forms/filler";
 import { resolveStamps } from "@/lib/pdf-forms/bindings/engine";
 import { getRulesForSlug } from "@/lib/pdf-forms/bindings/registry";
@@ -28,10 +29,21 @@ export async function regenerateAllDocuments(
   const state = await loadDossierState(bundleRunId, ownership);
   if (!state || !state.allRequiredDone) return null;
 
-  const completedIds = new Set(state.completedTemplateIds);
-  const toRegenerate = state.items.filter(
-    (it) => it.pdfFormId && completedIds.has(it.pdfFormId) && it.pdfForm,
+  // On ne régénère QUE les documents à la fois complétés ET encore éligibles
+  // (visibles). `completedTemplateIds` est append-only : un document complété
+  // puis rendu inapplicable par un changement de réponse d'aiguillage y reste,
+  // mais `computeItemStatuses` le marque `eligibility === false` — il ne doit
+  // alors pas être re-inclus dans le zip/mail. On filtre donc sur la
+  // visibilité calculée, pas sur la seule complétion.
+  const { itemStatuses } = computeItemStatuses(
+    state.items,
+    state.completedTemplateIds,
+    state.payloads,
+    state.applicableSlugs,
   );
+  const toRegenerate = itemStatuses
+    .filter((s) => s.completed && s.eligibility !== false && s.item.pdfFormId && s.item.pdfForm)
+    .map((s) => s.item);
 
   const forms = await prisma.pdfForm.findMany({
     where: { id: { in: toRegenerate.map((it) => it.pdfFormId as string) } },
@@ -49,10 +61,23 @@ export async function regenerateAllDocuments(
   const docs: RegeneratedDoc[] = [];
   for (const item of toRegenerate) {
     const form = formsById.get(item.pdfFormId as string);
-    if (!form) continue;
-    const payload = (state.payloads[form.id] as FormPayload) || {};
+    // Un skip ici fait disparaître silencieusement un document légal du
+    // bundle final (zip/mail) : on le trace, comme le fait le filler sur ses
+    // propres skips, pour que l'anomalie soit observable côté logs.
+    if (!form) {
+      console.warn(`[regenerate-pdfs] PdfForm introuvable pour l'item complété ${item.pdfFormId} — document omis du bundle`);
+      continue;
+    }
+    const payload = state.payloads[form.id] as FormPayload | undefined;
+    if (!payload) {
+      console.warn(`[regenerate-pdfs] payload manquant pour ${form.slug} (marqué complété sans données) — document omis du bundle`);
+      continue;
+    }
     const source = await readSourcePdf(form.sourceStoragePath, form.sourceFileName);
-    if (!source) continue;
+    if (!source) {
+      console.warn(`[regenerate-pdfs] PDF source introuvable pour ${form.slug} — document omis du bundle`);
+      continue;
+    }
     const fields = (form.fields as unknown as PdfFormField[]) || [];
     const technicalSchema = (form.technicalSchema as unknown as AcroFieldRaw[]) || [];
     const extraStamps = resolveStamps(payload, getRulesForSlug(form.slug));

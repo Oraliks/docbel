@@ -54,6 +54,12 @@ export interface DossierState {
   items: BundleItem[];
   completedTemplateIds: string[];
   payloads: Record<string, Record<string, unknown>>;
+  /// Slugs des documents applicables au dossier codé (branche + déclenchés),
+  /// ou `null` si le dossier n'est pas piloté par un module de code. Exposé
+  /// pour que les consommateurs (ex. régénération zip/mail) puissent
+  /// re-filtrer par éligibilité — un document complété PUIS rendu inapplicable
+  /// par un changement de réponse ne doit pas être re-inclus.
+  applicableSlugs: string[] | null;
 }
 
 /// Charge un BundleRun + vérifie sa propriété (userId de session, sinon
@@ -176,5 +182,6 @@ export async function loadDossierState(
     items,
     completedTemplateIds,
     payloads,
+    applicableSlugs,
   };
 }

@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useRef, useEffect, useCallback } from "react";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import {
   DownloadIcon,
@@ -31,6 +32,7 @@ import { isAutoField, isCreationDateField, isSignatureField } from "@/lib/pdf-fo
 import { FIELD_DERIVATIONS, applyFieldDerivations } from "@/lib/pdf-forms/field-derivations";
 import { resolveOnSelectSet } from "@/lib/pdf-forms/field-side-effects";
 import { findListMatchErrors } from "@/lib/pdf-forms/list-match";
+import { activeTriggers } from "@/lib/pdf-forms/triggers";
 import type { PublicForm, PublicField } from "@/lib/pdf-forms/public-serializer";
 import { buildSteps, buildMacroSteps, type OptionalSection, type MacroStep } from "@/lib/pdf-forms/build-steps";
 import { sectionLabel } from "@/lib/pdf-forms/section-labels";
@@ -98,6 +100,7 @@ interface PdfFormRunnerProps {
 
 export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, onValuesChange, onLocaleChange, legacyLayout = false }: PdfFormRunnerProps) {
   const t = useTranslations("public.dossier");
+  const router = useRouter();
   const [locale, setLocale] = useState<Locale>(form.defaultLocale);
   const [values, setValues] = useState<FormPayload>(() => defaultValues(form, bundlePrefill));
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -452,6 +455,11 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
       return;
     }
     setSubmitting(true);
+    // Dans un dossier (bundleRunId présent) : "Valider" — sauvegarde le
+    // payload, aucun PDF généré. Le téléchargement se fait plus tard, groupé,
+    // depuis l'écran "Mes documents" du parcours (cf. bundle-roadmap.tsx),
+    // une fois tous les documents requis (dont ceux déclenchés) complétés.
+    const effectiveDelivery: "download" | "doccle" | "save" = bundleRunId ? "save" : delivery;
     try {
       const res = await fetch(`/api/pdf/${form.slug}/generate`, {
         method: "POST",
@@ -459,12 +467,47 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
         body: JSON.stringify({
           payload: signedValues,
           locale,
-          delivery,
+          delivery: effectiveDelivery,
           consent: true,
           doccleRecipient: delivery === "doccle" ? { reference: doccleRef.trim() } : undefined,
           bundleRunId,
         }),
       });
+
+      if (effectiveDelivery === "save") {
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          toast.error(data.error || t("runnerGenerationFailed"));
+          return;
+        }
+        fetch(`/api/pdf/${form.slug}/draft`, { method: "DELETE" }).catch(() => {});
+        const newlyTriggered: Array<{ slug: string; title: string }> = data.newlyTriggered || [];
+        if (newlyTriggered.length > 0) {
+          toast.info(
+            t("runnerNewlyTriggered", {
+              titles: newlyTriggered.map((d) => d.title).join(", "),
+            }),
+          );
+        } else {
+          toast.success(t("runnerSavedSuccess"));
+        }
+        if (bundleSlug) router.push(`/d/${bundleSlug}`);
+        return;
+      }
+
+      // Hors dossier (bundleRunId absent) : la réponse au download/doccle
+      // n'a pas de connaissance serveur du contexte dossier (pas de
+      // BundleRun) — on annonce donc les triggers ACTIFS sur le payload
+      // soumis, calculés côté client (`activeTriggers`, existant), à titre
+      // purement informatif et non bloquant (le fichier est déjà généré).
+      const standaloneTriggerNotice = () => {
+        if (bundleRunId || !form.triggers || form.triggers.length === 0) return;
+        const active = activeTriggers(form.triggers, signedValues);
+        if (active.length === 0) return;
+        const titles = active.map((tr) => tr.reason?.fr || tr.requiresFormSlug).join(", ");
+        toast.info(t("runnerStandaloneTriggerNotice", { titles }));
+      };
+
       const ct = res.headers.get("content-type") || "";
       if (res.ok && ct.includes("application/pdf")) {
         const blob = await res.blob();
@@ -478,12 +521,19 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
         URL.revokeObjectURL(url);
         fetch(`/api/pdf/${form.slug}/draft`, { method: "DELETE" }).catch(() => {});
         setDone({ mode: "download" });
+        standaloneTriggerNotice();
         return;
       }
       const data = await res.json().catch(() => ({}));
       if (res.ok && data.delivery === "doccle") {
         fetch(`/api/pdf/${form.slug}/draft`, { method: "DELETE" }).catch(() => {});
         setDone({ mode: "doccle" });
+        standaloneTriggerNotice();
+        return;
+      }
+      if (res.status === 409 && data.error === "dossier_incomplete") {
+        const titles = (data.missing || []).map((m: { title: string }) => m.title).join(", ");
+        toast.error(t("runnerDossierIncomplete", { titles }));
         return;
       }
       if (res.status === 422 && Array.isArray(data.issues)) {

@@ -1,4 +1,4 @@
-import { PdfFormField, Locale } from "./types";
+import { PdfFormField, Locale, PdfFormTrigger } from "./types";
 import type { PdfForm } from "@prisma/client";
 
 /// Vue publique d'un champ : on retire toute donnée interne admin
@@ -116,6 +116,11 @@ export interface PublicForm {
   allowDoccle: boolean;
   allowItsme: boolean;
   fields: PublicField[];
+  /// Déclencheurs de sous-formulaires (cf. lib/pdf-forms/triggers.ts) — exposés
+  /// pour permettre au runner d'annoncer en direct qu'une réponse ajoute un
+  /// document (hors dossier : notice non bloquante ; dans un dossier : la
+  /// matérialisation réelle vient du serveur, cf. Task 3 `newlyTriggered`).
+  triggers: PdfFormTrigger[];
 }
 
 /// Sérialise un PdfForm (publié) pour le front. N'expose jamais le chemin de
@@ -124,7 +129,7 @@ export function toPublicForm(
   form: Pick<
     PdfForm,
     | "id" | "slug" | "title" | "description" | "issuer" | "version"
-    | "defaultLocale" | "locales" | "allowDownload" | "allowDoccle" | "allowItsme" | "fields"
+    | "defaultLocale" | "locales" | "allowDownload" | "allowDoccle" | "allowItsme" | "fields" | "triggers"
   >
 ): PublicForm {
   const fields = ((form.fields as unknown as PdfFormField[]) || [])
@@ -148,5 +153,6 @@ export function toPublicForm(
     allowDoccle: form.allowDoccle,
     allowItsme: form.allowItsme,
     fields,
+    triggers: ((form.triggers as unknown as PdfFormTrigger[]) || []),
   };
 }

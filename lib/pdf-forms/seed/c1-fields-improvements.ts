@@ -473,13 +473,17 @@ export const C1_QUESTIONS: PdfFormField[] = [
     order: 9.5,
   },
   {
-    // Date de création du dossier (Oraliks 2026-07-10 : « datededa pour date
-    // de la création du dossier »). Auto-remplie du jour à la génération —
-    // `prefillFrom: "system.today"` ⇒ `isCreationDateField` ⇒ non rendue à
-    // l'écran + injectée serveur (route /generate). Stampe le widget `DateDeDA`
-    // (en-tête page 2, renommé par Oraliks 2026-07-10 depuis `DateDeModification`).
+    // Champ dormant (Oraliks 2026-07-10) : il n'existe PLUS de widget « date de
+    // création » sur le C1. Les 3 ex-`DateDA` sont devenus les dates de
+    // formation, et l'en-tête page 2 `DateDeDA` (ex-`DateDeModification`) porte
+    // la « date DA / modification » = la date du CHANGEMENT (cf. règle
+    // `date-header-p2` dans c1-changement.ts). On garde le champ (id owné par le
+    // seed → écrase proprement l'ancienne version DB qui pointait sur DateDeDA),
+    // mais `pdfFieldName: ""` ⇒ ne stampe rien. `prefillFrom` conservé pour
+    // rester masqué (isCreationDateField) tant qu'aucune date de signature ne le
+    // réutilise.
     id: "dateCreationDossier",
-    pdfFieldName: "DateDeDA",
+    pdfFieldName: "",
     type: "date",
     required: false,
     label: { fr: "Date de création du dossier", nl: "", de: "" },

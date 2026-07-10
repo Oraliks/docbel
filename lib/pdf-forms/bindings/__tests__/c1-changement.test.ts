@@ -59,9 +59,12 @@ describe("Rules C1 — scénario baseline (Oraliks repro)", () => {
 
     // Date : baseline sans `dateModificationEffective` → la ligne adresse n'est
     // PAS datée (widget vide). Le comportement daté est couvert par le describe
-    // « dates par ligne de motif ». La date de création (DateDeDA) est gérée
-    // par un champ auto (prefillFrom system.today), pas une règle.
+    // « dates par ligne de motif ».
     expect(stamps.has("DateAdresse")).toBe(false);
+
+    // En-tête « date DA / modification » (DateDeDA) = date du motif, ici fallback
+    // sur dateDemande (dateModificationEffective vide).
+    expect(stamps.get("DateDeDA")).toBe("08/07/2026");
 
     // Remarque non émise (pas de cohousing, jugement vide).
     expect(stamps.has("Remarques 1 Haut")).toBe(false);
@@ -231,6 +234,32 @@ describe("Rules C1 — dates par ligne de motif (widgets scindés 2026-07-10)", 
     expect(stamps.has("DateBanque")).toBe(false);
     expect(stamps.has("DatePersonnelleOuMenage")).toBe(false);
     expect(stamps.has("DateDeTransfert")).toBe(false);
+  });
+});
+
+describe("Rules C1 — en-tête « date DA / modification » page 2 (DateDeDA)", () => {
+  it("= la date de modification quand c'est un changement", () => {
+    const payload = { ...baseline(), dateModificationEffective: "2026-06-15" };
+    const stamps = resolveStamps(payload, C1_CHANGEMENT_RULES);
+    // Identique à la date des lignes de motif cochées.
+    expect(stamps.get("DateDeDA")).toBe("15/06/2026");
+  });
+
+  it("= la date de transfert quand c'est un changement d'organisme (pas de date modif)", () => {
+    const payload = {
+      ...baseline(),
+      dateModificationEffective: "",
+      transfereOrganismePaiement: true,
+      dateChangementOrganisme: "2026-08-01",
+    };
+    const stamps = resolveStamps(payload, C1_CHANGEMENT_RULES);
+    expect(stamps.get("DateDeDA")).toBe("01/08/2026");
+  });
+
+  it("retombe sur la date de demande si ni modif ni transfert", () => {
+    const payload = { ...baseline(), dateDemande: "2026-05-20", dateModificationEffective: "", dateChangementOrganisme: "" };
+    const stamps = resolveStamps(payload, C1_CHANGEMENT_RULES);
+    expect(stamps.get("DateDeDA")).toBe("20/05/2026");
   });
 });
 

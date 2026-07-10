@@ -14,6 +14,7 @@ import {
   ibanBelgianSplit,
   ibanForeignRouting,
   horsEeeTripleNon,
+  dateHeaderFallback,
 } from "../macros";
 import { formatDateFR } from "../format";
 
@@ -43,11 +44,14 @@ const W_IBAN_PART3 = "undefined_13";
 const W_IBAN_ETRANGER = "SEPA étranger IBAN  BIC";
 
 // Titulaire + remarque situation familiale.
-// L'en-tête date page 2 (`DateDeModification`) a été renommé `DateDeDA` par
-// Oraliks 2026-07-10 et reçoit désormais la date de CRÉATION du dossier via le
-// champ `dateCreationDossier` (cf. seed) — plus aucune règle date ici pour lui.
 const W_TITULAIRE = "NomTitulaireSipasOk";
 const W_REMARQUE = "Remarques 1 Haut";
+
+// En-tête page 2, libellé imprimé « date DA / modification » (widget `DateDeDA`,
+// ex-`DateDeModification`). Reçoit la date du changement déclaré, IDENTIQUE à la
+// date du motif (Oraliks 2026-07-10 : « la date du motif = la date DA /
+// modification en haut de la page 2 »). Fallback : modif → transfert → demande.
+const W_DATE_HEADER_P2 = "DateDeDA";
 
 // Dates « à partir du » par ligne de motif. Oraliks a scindé le champ unique
 // `DateModification` (1 champ / 5 widgets) en 5 widgets distincts le 2026-07-10
@@ -241,10 +245,6 @@ export const C1_CHANGEMENT_RULES: MappingRule[] = [
   // la date de changement (`dateModificationEffective`) ; le transfert
   // d'organisme porte la sienne (`dateChangementOrganisme`). Ligne non cochée =
   // widget laissé vide (motifDateStamp renvoie []).
-  //
-  // L'en-tête page 2 (`DateDeDA`, ex-`DateDeModification`) et la date de
-  // création (`DateDeDA`) sont gérés par le champ auto `dateCreationDossier`
-  // (prefillFrom system.today) — plus aucune règle date pour eux ici.
   {
     name: "date-adresse",
     when: { modificationAdresse: true },
@@ -269,6 +269,18 @@ export const C1_CHANGEMENT_RULES: MappingRule[] = [
     stampFn: (p) => motifDateStamp(p, W_DATE_TRANSFERT, "dateChangementOrganisme"),
     declaredWidgets: [W_DATE_TRANSFERT],
   },
+
+  // -------- En-tête « date DA / modification » page 2 (via macro) --------
+  //
+  // Même date que le motif déclaré (Oraliks 2026-07-10 : « la date du motif =
+  // la date DA / modification en haut de la page 2 ») : date de modification si
+  // c'est un changement, date de transfert si c'est un changement d'organisme,
+  // sinon date de demande. Widget `DateDeDA` (ex-`DateDeModification`).
+  dateHeaderFallback({
+    widget: W_DATE_HEADER_P2,
+    sources: ["dateModificationEffective", "dateChangementOrganisme", "dateDemande"],
+    name: "date-header-p2",
+  }),
 
   // -------- Code postal + commune (widget fusionné) --------
   //

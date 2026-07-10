@@ -224,7 +224,7 @@ describe("mapping-report — statuts", () => {
 
 describe("mapping-report — C1 changement en conditions réelles", () => {
   // Simule un technicalSchema minimal qui contient les widgets ciblés par les
-  // règles C1 changement (16 règles) + quelques widgets orphelins (junk du
+  // règles C1 changement (17 règles) + quelques widgets orphelins (junk du
   // template). Le rapport doit lister les 13 comme bound et les orphelins
   // comme orphan.
   const ruleWidgets = [
@@ -245,6 +245,7 @@ describe("mapping-report — C1 changement en conditions réelles", () => {
     "DatePersonnelleOuMenage",
     "DateBanque",
     "DateDeTransfert",
+    "DateDeDA",
     "CodePostal et Commune",
     "non_17",
     "non_18",

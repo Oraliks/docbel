@@ -48,6 +48,10 @@ next-intl 4 · Zod 4 · Tiptap 2 · pnpm 10. Détail + commandes :
 **i18n**
 - Tout texte user-facing passe par next-intl (clés typées → une clé absente casse `tsc`).
   Jamais de locale codée en dur. Valider `pnpm i18n:check`.
+- **Dates/heures : format FIXE partout, indépendant de la langue UI** — `JJ/MM/AAAA`
+  (ex. `10/07/2026`) et heures en **24h** (ex. `14:30`, jamais AM/PM). Utiliser
+  `formatDate`/`formatDateTime` (`lib/i18n/format.ts`) sans `options` → convention
+  appliquée par défaut. Ne pas écrire de `toLocaleDateString`/réimplémentation locale.
 
 **PDF Forms bindings** (Phase 1-7 du plan pdf-bindings-canonical-ux, mergé)
 - 3 couches à ne pas confondre :

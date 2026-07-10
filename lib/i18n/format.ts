@@ -52,9 +52,35 @@ function toValidDate(value: Date | string | number): Date | null {
   return Number.isNaN(date.getTime()) ? null : date;
 }
 
+function pad2(n: number): string {
+  return String(n).padStart(2, "0");
+}
+
+/**
+ * Convention DocBel (Oraliks 2026-07-10) : dates numériques FIXES en
+ * JJ/MM/AAAA, INDÉPENDANTES de la langue de l'UI (un document administratif
+ * belge s'écrit pareil en fr/nl/en/ar…). Volontairement pas `Intl` : certaines
+ * locales du registre (de/ru/tr/ro/bg) séparent par des points, et `ar` peut
+ * rendre des chiffres arabo-indiens — construction manuelle = déterministe.
+ */
+function formatFixedDate(date: Date): string {
+  return `${pad2(date.getDate())}/${pad2(date.getMonth() + 1)}/${date.getFullYear()}`;
+}
+
+/** Heure fixe 24h `HH:mm` (même convention — jamais de AM/PM). */
+function formatFixedTime(date: Date): string {
+  return `${pad2(date.getHours())}:${pad2(date.getMinutes())}`;
+}
+
 /**
  * Formate une date (sans heure par défaut). Accepte une `Date`, une string
  * (ISO…) ou un timestamp. Retourne "" si l'entrée est invalide.
+ *
+ * Sans `options` → format FIXE JJ/MM/AAAA (convention DocBel, cf.
+ * `formatFixedDate`). Passer des `options` explicites pour un rendu
+ * alternatif volontairement locale-aware (ex. `{ day: "numeric", month:
+ * "long" }` → "10 juillet 2026" pour un article) — `locale` ne sert qu'à ce
+ * cas-là.
  */
 export function formatDate(
   value: Date | string | number,
@@ -63,12 +89,18 @@ export function formatDate(
 ): string {
   const date = toValidDate(value);
   if (!date) return "";
+  if (!options) return formatFixedDate(date);
   return new Intl.DateTimeFormat(localeTag(locale), options).format(date);
 }
 
 /**
- * Formate une date *avec* l'heure (jour + heure/minute par défaut).
- * Accepte `Date | string | number`. Retourne "" si l'entrée est invalide.
+ * Formate une date *avec* l'heure. Accepte `Date | string | number`.
+ * Retourne "" si l'entrée est invalide.
+ *
+ * Sans `options` → format FIXE "JJ/MM/AAAA HH:mm" (24h, convention DocBel).
+ * Avec `options` → rendu `Intl` locale-aware, mais l'heure reste 24h par
+ * défaut (`hourCycle: "h23"` injecté avant `options` — jamais de AM/PM,
+ * remplaçable seulement par un override explicite dans `options`).
  */
 export function formatDateTime(
   value: Date | string | number,
@@ -77,9 +109,12 @@ export function formatDateTime(
 ): string {
   const date = toValidDate(value);
   if (!date) return "";
+  if (!options) return `${formatFixedDate(date)} ${formatFixedTime(date)}`;
   const opts: Intl.DateTimeFormatOptions = {
     dateStyle: "medium",
     timeStyle: "short",
+    hourCycle: "h23",
+    hour12: false,
     ...options,
   };
   return new Intl.DateTimeFormat(localeTag(locale), opts).format(date);

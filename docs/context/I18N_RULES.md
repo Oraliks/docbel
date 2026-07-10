@@ -13,6 +13,13 @@ Lecture **quand on ajoute/modifie du texte user-facing**. Le détail complet exi
 - Clés **typées** (`i18n/global.ts`) → une clé absente casse `tsc`/`build`.
 - Dates/nombres : helpers `lib/i18n/format.ts`. **Jamais** de locale codée en dur
   (`toLocaleDateString("fr-BE")` interdit).
+- **Dates/heures = format FIXE, pas locale-aware** (Oraliks 2026-07-10) : contrairement
+  aux nombres/devises (qui suivent la langue UI), les dates suivent la convention
+  administrative belge **`JJ/MM/AAAA`** + heures **24h** (`HH:mm`), quelle que soit la
+  langue affichée — un document officiel s'écrit pareil en fr/nl/en/ar. `formatDate`/
+  `formatDateTime` appliquent ce format par défaut (sans `options`) ; ne passer des
+  `options` `Intl` que pour un rendu délibérément stylisé (ex. "10 juillet 2026" pour
+  un article) — l'heure y reste 24h par défaut (`hourCycle: "h23"`).
 - Nouveau modèle DB traduisible → pattern `ContentTranslation` (cf. rollout-plan).
 - Registre des langues : `i18n/locales.ts`.
 

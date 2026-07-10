@@ -3,11 +3,12 @@
 /// massive : counts, groupBy et date_trunc uniquement.
 
 import { cache } from "react";
-import { Prisma } from "@prisma/client";
+import { BookingStatus, Prisma } from "@prisma/client";
 import { prisma, withDbRetry } from "@/lib/prisma";
 import {
   type DayCount,
   type Period,
+  belgianDay,
   computeDelta,
   computeRate,
   periodBounds,
@@ -152,4 +153,71 @@ export const getDailySeries = cache(async (period: Period): Promise<DailyPoint[]
     visitors: v.count,
     runs: runs[i]?.count ?? 0,
   }));
+});
+
+// ── File de travail (« à traiter ») ─────────────────────────────────────────
+
+export interface OpsQueue {
+  reports: number;
+  gaps: number;
+  translationsPending: number;
+  translationsFailed: number;
+  inboxUnread: number;
+  bookingsToday: number;
+  bookingsPendingApproval: number;
+  baremesPending: number;
+  /** Somme des 6 compteurs affichés. */
+  total: number;
+  /** Nombre de files avec au moins 1 élément. */
+  activeQueues: number;
+}
+
+export const getOpsQueue = cache(async (): Promise<OpsQueue> => {
+  const today = belgianDay();
+  const [
+    reports,
+    gaps,
+    translationsPending,
+    translationsFailed,
+    inboxUnread,
+    bookingsToday,
+    bookingsPendingApproval,
+    baremesPending,
+  ] = await Promise.all([
+    withDbRetry(() => prisma.report.count({ where: { status: "pending" } })),
+    withDbRetry(() => prisma.knowledgeGap.count({ where: { status: "open" } })),
+    withDbRetry(() => prisma.translationJob.count({ where: { status: "pending" } })),
+    withDbRetry(() => prisma.translationJob.count({ where: { status: "failed" } })),
+    withDbRetry(() =>
+      prisma.inboxEmail.count({ where: { folder: "INBOX", isRead: false } }),
+    ),
+    withDbRetry(() =>
+      prisma.booking.count({
+        where: {
+          date: today,
+          status: { in: [BookingStatus.pending_approval, BookingStatus.confirmed] },
+        },
+      }),
+    ),
+    withDbRetry(() =>
+      prisma.booking.count({ where: { status: BookingStatus.pending_approval } }),
+    ),
+    withDbRetry(() =>
+      prisma.baremeFile.count({ where: { status: { in: ["draft", "pending_approval"] } } }),
+    ),
+  ]);
+
+  const counters = [reports, gaps, translationsPending, inboxUnread, bookingsToday, baremesPending];
+  return {
+    reports,
+    gaps,
+    translationsPending,
+    translationsFailed,
+    inboxUnread,
+    bookingsToday,
+    bookingsPendingApproval,
+    baremesPending,
+    total: counters.reduce((a, b) => a + b, 0),
+    activeQueues: counters.filter((c) => c > 0).length,
+  };
 });

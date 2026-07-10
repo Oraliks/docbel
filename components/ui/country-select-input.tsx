@@ -2,9 +2,27 @@
 
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
-import { searchCountries, findCountryByName, flagEmoji, type WorldCountry } from "@/lib/pdf-forms/world-countries";
+import { searchCountries, findCountryByName, type WorldCountry } from "@/lib/pdf-forms/world-countries";
+// Drapeaux en SVG (flag-icons) plutôt qu'en emoji régional : les emojis
+// drapeaux ne sont PAS rendus sous Windows (affichés « BE » au lieu de 🇧🇪),
+// alors que ces SVG s'affichent partout (PC + mobile). Même lib que le
+// sélecteur de langue.
+import "flag-icons/css/flag-icons.min.css";
 
 const MAX_SUGGESTIONS = 8;
+
+/// Drapeau SVG d'un pays (code ISO 2 lettres). Rendu cross-plateforme via
+/// flag-icons ; `null` si pas de code.
+function Flag({ code, className = "" }: { code: string; className?: string }) {
+  if (!code) return null;
+  return (
+    <span
+      aria-hidden
+      className={`fi fi-${code.toLowerCase()} rounded-sm ${className}`}
+      style={{ width: "1.25em", height: "0.9375em", display: "inline-block" }}
+    />
+  );
+}
 
 interface CountrySelectInputProps
   extends Omit<React.ComponentProps<typeof Input>, "onChange" | "value"> {
@@ -20,7 +38,7 @@ interface CountrySelectInputProps
 export function CountrySelectInput({ value, onChange, ...props }: CountrySelectInputProps) {
   const [open, setOpen] = useState(false);
   const suggestions = open ? searchCountries(value, MAX_SUGGESTIONS) : [];
-  const currentFlag = flagEmoji(findCountryByName(value)?.code ?? "");
+  const currentCode = findCountryByName(value)?.code ?? "";
 
   const selectCountry = (country: WorldCountry) => {
     onChange(country.name);
@@ -29,10 +47,11 @@ export function CountrySelectInput({ value, onChange, ...props }: CountrySelectI
 
   return (
     <div className="relative">
-      {currentFlag && (
-        <span className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-base leading-none">
-          {currentFlag}
-        </span>
+      {currentCode && (
+        <Flag
+          code={currentCode}
+          className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 shadow-sm"
+        />
       )}
       <Input
         {...props}
@@ -52,7 +71,7 @@ export function CountrySelectInput({ value, onChange, ...props }: CountrySelectI
         role="combobox"
         aria-expanded={open && suggestions.length > 0}
         aria-autocomplete="list"
-        className={currentFlag ? `pl-8 ${props.className ?? ""}` : props.className}
+        className={currentCode ? `pl-8 ${props.className ?? ""}` : props.className}
       />
       {open && suggestions.length > 0 && (
         <ul
@@ -71,7 +90,7 @@ export function CountrySelectInput({ value, onChange, ...props }: CountrySelectI
                   selectCountry(c);
                 }}
               >
-                <span className="text-base leading-none">{flagEmoji(c.code)}</span>
+                <Flag code={c.code} className="shrink-0 shadow-sm" />
                 <span className="text-[color:var(--glass-ink)]">{c.name}</span>
               </button>
             </li>

@@ -150,3 +150,38 @@ export const getHealthSummary = cache(async (): Promise<HealthSummary> => {
   const db = await pingDatabase();
   return { status: classifyOverall(db), db, checkedAt: new Date().toISOString() };
 });
+
+// ── Historique persistant (Part D) ──────────────────────────────────────────
+// Écrit par le cron /api/cron/health-snapshot ; lu par la page /admin/monitoring.
+
+/** Enregistre un instantané de santé. Best-effort : n'échoue jamais bruyamment. */
+export async function recordSnapshot(): Promise<void> {
+  const summary = await getHealthSummary();
+  try {
+    await prisma.apiHealthSnapshot.create({
+      data: {
+        status: summary.status,
+        dbUp: summary.db.status === "up",
+        dbLatencyMs: summary.db.latencyMs,
+      },
+    });
+  } catch (err) {
+    console.error("[health] recordSnapshot failed:", err);
+  }
+}
+
+export interface SnapshotPoint {
+  status: string;
+  dbLatencyMs: number | null;
+  createdAt: Date;
+}
+
+/** Les `limit` derniers instantanés, du plus ancien au plus récent (pour tracer). */
+export const getRecentSnapshots = cache(async (limit = 96): Promise<SnapshotPoint[]> => {
+  const rows = await prisma.apiHealthSnapshot.findMany({
+    select: { status: true, dbLatencyMs: true, createdAt: true },
+    orderBy: { createdAt: "desc" },
+    take: limit,
+  });
+  return rows.reverse();
+});

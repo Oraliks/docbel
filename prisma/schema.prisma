@@ -3452,3 +3452,16 @@ model Report {
   @@index([targetId])
   @@index([createdAt(sort: Desc)])
 }
+
+/// Historique de santé (monitoring Part D). Écrit par le cron health-snapshot.
+/// Table ADDITIVE (migration SQL via db execute, jamais db push). Purge conseillée :
+/// garder ~30 jours (cron de purge ou TTL applicatif — hors périmètre v1).
+model ApiHealthSnapshot {
+  id          String   @id @default(cuid())
+  status      String // "ok" | "degraded" | "down"
+  dbUp        Boolean
+  dbLatencyMs Int?
+  createdAt   DateTime @default(now())
+
+  @@index([createdAt(sort: Desc)])
+}

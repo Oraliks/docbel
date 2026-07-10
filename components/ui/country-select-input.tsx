@@ -48,10 +48,14 @@ export function CountrySelectInput({ value, onChange, ...props }: CountrySelectI
   return (
     <div className="relative">
       {currentCode && (
-        <Flag
-          code={currentCode}
-          className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 shadow-sm"
-        />
+        // Positionnement porté par un span NEUTRE, pas par l'élément `.fi` :
+        // flag-icons applique `position: relative` sur `.fi` (même spécificité
+        // que le `absolute` de Tailwind → selon l'ordre de chargement CSS, le
+        // relative gagnait et le drapeau ressortait en haut à gauche de l'input,
+        // Oraliks 2026-07-11). Le wrapper absolu isole la mise en page.
+        <span className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2">
+          <Flag code={currentCode} className="shadow-sm" />
+        </span>
       )}
       <Input
         {...props}

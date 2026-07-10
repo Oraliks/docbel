@@ -18,7 +18,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import { FolderIcon, CommandIcon, NewspaperIcon, MailIcon, Wrench, MapPinIcon, FileInputIcon, UsersIcon, CalendarClock, BriefcaseIcon, GraduationCapIcon, ImageIcon, GitBranchIcon, LanguagesIcon } from "lucide-react"
+import { FolderIcon, CommandIcon, NewspaperIcon, MailIcon, Wrench, MapPinIcon, FileInputIcon, UsersIcon, CalendarClock, BriefcaseIcon, GraduationCapIcon, ImageIcon, GitBranchIcon, LanguagesIcon, ActivityIcon } from "lucide-react"
 import Link from "next/link"
 
 const defaultUser = {
@@ -219,6 +219,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       title: t("traductions"),
       url: "/admin/i18n",
       icon: <LanguagesIcon className="size-4" />,
+    },
+    {
+      // Santé des systèmes, dépendances et configuration runtime.
+      title: t("monitoring"),
+      url: "/admin/monitoring",
+      icon: <ActivityIcon className="size-4" />,
     },
   ]
 

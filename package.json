@@ -44,6 +44,7 @@
     "postal-codes:from-bestaddress": "dotenv -e .env.local -- tsx scripts/postal-codes-from-bestaddress.ts",
     "bureaux:import-op": "dotenv -e .env.local -- tsx scripts/bureaux-import-op.ts",
     "bureaux:geocode": "dotenv -e .env.local -- tsx scripts/bureaux-geocode.ts",
+    "bureaux:audit": "dotenv -e .env.local -- tsx scripts/bureaux-audit.ts",
     "rename:cgslb-synova": "dotenv -e .env.local -- tsx scripts/rename-cgslb-synova.ts",
     "tools:cleanup-mocks": "dotenv -e .env.local -- tsx scripts/cleanup-mock-tools.ts",
     "test": "vitest run",

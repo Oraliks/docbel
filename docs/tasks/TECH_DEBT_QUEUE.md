@@ -21,22 +21,20 @@ touche déjà la zone concernée — pas de chantier dédié sauf décision.
   de types par bloc écrits à la main).
 
 ## Dates — réimplémentations locales (2026-07-10)
-- Le helper central `formatDate`/`formatDateTime` (`lib/i18n/format.ts`) applique
-  maintenant la convention DocBel (JJ/MM/AAAA + 24h fixe, cf. AGENTS.md § i18n). Mais
-  ~20 fichiers ont leur **propre** fonction locale `formatDate(...)` (souvent
-  `toLocaleDateString("fr-FR", { month: "short" })` → style "10 juil. 2026", pas
-  numérique) qui n'utilise PAS ce helper : `app/admin/newsletter/page.tsx`,
-  `components/admin/users/users-list-client.tsx`, `components/admin/activity-log.tsx`,
-  `components/docbel/commissions-paritaires-page.tsx`, `components/admin/dead-images-client.tsx`,
-  `components/admin/messagerie/email-detail.tsx`, `components/admin/news/overview/news-overview-card.tsx`,
-  `components/outils/bareme-matrix.tsx`, `components/docbel/u1-public-page.tsx`,
-  `app/admin/formations/_ui.tsx`, `components/page-builder/versions-dialog.tsx`,
-  `lib/baremes/parsers/index.ts`, `components/formations/format.ts`, `lib/employeur/documents/render.ts`,
-  `app/outils/bareme-chomage/page.tsx` (grep `^function formatDate` pour la liste complète).
-  Pas de locale suspecte trouvée (`en`/`en-US` codée en dur) — juste du style "long" non
-  centralisé. À migrer vers le helper central au fil de l'eau (pas de sweep global d'un coup —
-  certains rendus "10 juillet 2026" long-form sont un choix UX délibéré à trancher au cas par
-  cas, pas systématiquement à convertir en numérique).
+- Le helper central `formatDate`/`formatDateTime` (`lib/i18n/format.ts`) applique la
+  convention DocBel (JJ/MM/AAAA + 24h fixe, cf. AGENTS.md § i18n). ~20 fichiers ont leur
+  **propre** fonction locale `formatDate(...)` qui n'utilise PAS ce helper (grep `^function
+  formatDate`) — mais **le critère qui compte est l'ORDRE jour → mois → année, pas le style
+  numérique vs texte** (Oraliks 2026-07-10 : "10 juillet 2026" est tout aussi valide que
+  "10/07/2026"). Vérifié : toutes ces réimplémentations utilisent `fr-FR`/`fr-BE` (locale déjà
+  jour-premier) → **déjà conformes à l'ordre**, malgré la locale hardcodée qui reste une dette
+  i18n séparée (`toLocaleDateString("fr-BE")` interdit par la règle i18n existante — texte figé
+  en français même si l'UI est en NL/EN, indépendant de cette règle de date). Seule vraie
+  violation d'ORDRE trouvée et **corrigée** : `lib/baremes/parsers/index.ts` rendait
+  `AAAA-MM-JJ` (ISO) dans un texte diagnostic admin → passé en JJ/MM/AAAA (accesseurs UTC,
+  cohérent avec `Date.UTC(...)` de `detectSheetDate` — pas de décalage de fuseau).
+  Pas de sweep global prévu : migrer vers le helper central (et donc vers la vraie langue UI)
+  au fil de l'eau, quand on touche déjà ces fichiers.
 
 ## Monolithes (cf. CLEANUP lot 5)
 - `file-manager.tsx`, `chat-full-shell.tsx`, `calc-*.tsx`.

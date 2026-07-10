@@ -190,6 +190,11 @@ function detectSheetDate(sheet: ParsedSheet): Date | null {
   return null
 }
 
+// Convention DocBel (Oraliks 2026-07-10) : JJ/MM/AAAA, jamais AAAA-MM-JJ, même
+// dans un texte diagnostic admin. `detectSheetDate` construit ses dates via
+// `Date.UTC(...)` → accesseurs UTC (pas locaux) pour éviter un décalage d'un
+// jour selon le fuseau du serveur.
 function formatDate(d: Date): string {
-  return d.toISOString().slice(0, 10)
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${pad(d.getUTCDate())}/${pad(d.getUTCMonth() + 1)}/${d.getUTCFullYear()}`
 }

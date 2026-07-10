@@ -1,6 +1,10 @@
 {
   "crons": [
     {
+      "path": "/api/cron/health-snapshot",
+      "schedule": "*/15 * * * *"
+    },
+    {
       "path": "/api/documents/cron/purge",
       "schedule": "0 0 * * *"
     },

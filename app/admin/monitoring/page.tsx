@@ -1,8 +1,9 @@
 import { redirect } from "next/navigation";
 import { requireAdminAuth } from "@/lib/auth-check";
-import { getHealthReport } from "@/lib/health/checks";
+import { getHealthReport, getRecentSnapshots } from "@/lib/health/checks";
 import { getAllSettings, SETTING_KEYS } from "@/lib/app-settings";
 import { OverallBanner } from "@/components/admin/monitoring/overall-banner";
+import { HealthHistory } from "@/components/admin/monitoring/health-history";
 import { DependencyGrid } from "@/components/admin/monitoring/dependency-grid";
 import { RuntimePanel } from "@/components/admin/monitoring/runtime-panel";
 import { FlagsPanel, type FlagRow } from "@/components/admin/monitoring/flags-panel";
@@ -24,7 +25,11 @@ export default async function MonitoringPage() {
   const auth = await requireAdminAuth();
   if (!auth.isAuthorized) redirect("/login");
 
-  const [report, settings] = await Promise.all([getHealthReport(), getAllSettings()]);
+  const [report, settings, snapshots] = await Promise.all([
+    getHealthReport(),
+    getAllSettings(),
+    getRecentSnapshots(),
+  ]);
 
   // Flags booléens de AppSetting (on ne montre que les toggles "true"/"false").
   const boolKeys = Object.values(SETTING_KEYS).filter(
@@ -46,6 +51,8 @@ export default async function MonitoringPage() {
         dbLatencyMs={report.db.latencyMs}
         checkedAt={report.checkedAt}
       />
+
+      <HealthHistory points={snapshots} />
 
       <DependencyGrid dependencies={report.dependencies} />
 

@@ -20,6 +20,7 @@ import Link from "next/link";
 import { toast } from "sonner";
 import {
   Archive,
+  Download,
   ExternalLink,
   Landmark,
   ListChecks,
@@ -49,7 +50,11 @@ import {
 export interface RoadmapDocument {
   slug: string;
   title: string;
+  /// Lien de relecture/édition (rouvre le formulaire dans le dossier).
   href: string;
+  /// Id du PdfForm — cible du téléchargement individuel du PDF régénéré
+  /// (`/api/documents/bundles/{bundleRunId}/download/{pdfFormId}`).
+  pdfFormId: string;
 }
 
 /** Pièce à charge d'un tiers, reprise de l'aide-mémoire du parcours. */
@@ -132,6 +137,17 @@ export function BundleRoadmap({
             {documents.map((d) => (
               <li key={d.slug} className="flex items-center gap-2 flex-wrap">
                 <span className="text-sm font-medium">{d.title}</span>
+                {bundleRunId && (
+                  <Button
+                    size="sm"
+                    variant="default"
+                    className="h-7 text-xs"
+                    render={<a href={`/api/documents/bundles/${bundleRunId}/download/${d.pdfFormId}`} />}
+                  >
+                    <Download className="w-3 h-3 mr-1" />
+                    {t("roadmapDownloadOne")}
+                  </Button>
+                )}
                 <Button
                   size="sm"
                   variant="outline"

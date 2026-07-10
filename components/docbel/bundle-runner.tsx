@@ -383,6 +383,7 @@ export function BundleRunner({
                           slug: item.pdfForm.slug,
                           title: itemTitle(item),
                           href: `/document/${item.pdfForm.slug}?bundleRun=${encodeURIComponent(runId ?? "")}&bundleSlug=${encodeURIComponent(bundle.slug)}`,
+                          pdfFormId: item.pdfForm.id,
                         },
                       ]
                     : []

@@ -14,6 +14,11 @@ import {
 /// ⚠️ Les PDF *générés* (remplis) ne sont JAMAIS stockés ici (RGPD).
 
 const BLOB_PREFIX = "blobs:";
+// Répertoire des PDF officiels de RÉFÉRENCE, versionnés dans le repo et
+// bundlés au deploy Vercel. Un `sourceStoragePath` préfixé ainsi sert
+// directement ce fichier — pratique quand le blob stocké est obsolète après
+// un remap AcroForm (le repo reste la source de vérité).
+const REFERENCE_PREFIX = "private/pdfs/";
 
 function blobEnabled(): boolean {
   return !!process.env.BLOB_READ_WRITE_TOKEN;
@@ -72,6 +77,15 @@ export async function readSourcePdf(
     } catch {
       /* fall through to reference PDF fallback */
     }
+  } else if (storagePath.replace(/\\/g, "/").startsWith(REFERENCE_PREFIX)) {
+    // PDF officiel de référence (repo). On ne garde que le basename pour
+    // interdire toute traversée de chemin (la valeur vient de la DB admin).
+    const base = storagePath
+      .replace(/\\/g, "/")
+      .slice(REFERENCE_PREFIX.length)
+      .replace(/[^a-zA-Z0-9._-]/g, "_");
+    const ref = join(process.cwd(), "private", "pdfs", base);
+    if (existsSync(ref)) return readFile(ref);
   } else {
     const full = resolveStoredFilePath(storagePath);
     if (full && existsSync(full)) return readFile(full);

@@ -57,10 +57,9 @@ describe("Rules C1 — scénario baseline (Oraliks repro)", () => {
     // compte est au nom d'une AUTRE personne). Oraliks 2026-07-10.
     expect(stamps.has("NomTitulaireSipasOk")).toBe(false);
 
-    // Dates en-tête page 2 : fallback dateDemande → format FR, MÊME date dans
-    // les 2 widgets scindés (DateDeModification + DateDA).
+    // Date de modification en-tête page 2 (fallback dateDemande → format FR).
+    // DateDA (date de création) est gérée par un champ auto, pas une règle.
     expect(stamps.get("DateDeModification")).toBe("08/07/2026");
-    expect(stamps.get("DateDA")).toBe("08/07/2026");
 
     // Remarque non émise (pas de cohousing, jugement vide).
     expect(stamps.has("Remarques 1")).toBe(false);
@@ -199,14 +198,12 @@ describe("Rules C1 — date en-tête page 2", () => {
     };
     const stamps = resolveStamps(payload, C1_CHANGEMENT_RULES);
     expect(stamps.get("DateDeModification")).toBe("15/06/2026");
-    expect(stamps.get("DateDA")).toBe("15/06/2026");
   });
 
   it("aucune date → aucun stamp", () => {
     const payload = { ...baseline(), dateDemande: "", dateModificationEffective: "" };
     const stamps = resolveStamps(payload, C1_CHANGEMENT_RULES);
     expect(stamps.has("DateDeModification")).toBe(false);
-    expect(stamps.has("DateDA")).toBe(false);
   });
 });
 

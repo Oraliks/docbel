@@ -242,7 +242,6 @@ describe("mapping-report — C1 changement en conditions réelles", () => {
     "NomTitulaireSipasOk",
     "Remarques 1",
     "DateDeModification",
-    "DateDA",
     "CodePostal et Commune",
     "non_17",
     "non_18",

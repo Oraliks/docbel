@@ -42,15 +42,13 @@ const W_IBAN_PART3 = "undefined_13";
 // nom du widget (vérifié au dump — ne pas normaliser).
 const W_IBAN_ETRANGER = "SEPA étranger IBAN  BIC";
 
-// Titulaire, remarque, dates page 2.
-// AcroForm remanié par Oraliks (2026-07-10) : noms de widgets rendus
-// sémantiques. « Date de DA » (4 widgets) a été scindé en `DateDeModification`
-// (en-tête haut) + `DateDA` (3 widgets) — on stampe la MÊME date dans les deux
-// (parité avec l'ancien comportement, cf. les 2 règles date-header plus bas).
+// Titulaire, remarque, date de modification en-tête page 2.
+// `DateDeModification` (en-tête haut p.2) reçoit la date de modification.
+// `DateDA` (3 cases p.2) n'est PLUS ici : c'est la date de CRÉATION du dossier,
+// auto-remplie par le champ `dateCreationDossier` (cf. seed).
 const W_TITULAIRE = "NomTitulaireSipasOk";
 const W_REMARQUE = "Remarques 1";
 const W_DATE_HEADER_P2 = "DateDeModification";
-const W_DATE_DA_P2 = "DateDA";
 
 // Widget fusionné code postal + commune (nouvel AcroForm) : on y écrit
 // « 1000 Bruxelles » (cf. règle `code-postal-commune`).
@@ -226,11 +224,10 @@ export const C1_CHANGEMENT_RULES: MappingRule[] = [
     sources: ["dateModificationEffective", "dateDemande"],
     name: "date-header-p2",
   }),
-  dateHeaderFallback({
-    widget: W_DATE_DA_P2,
-    sources: ["dateModificationEffective", "dateDemande"],
-    name: "date-da-p2",
-  }),
+  // `DateDA` (page 2) n'est plus une date de modification : c'est la « date de
+  // création du dossier » (Oraliks 2026-07-10), désormais auto-remplie du jour
+  // par le champ `dateCreationDossier` (prefillFrom system.today). L'ancienne
+  // règle `date-da-p2` est retirée.
 
   // -------- Code postal + commune (widget fusionné) --------
   //

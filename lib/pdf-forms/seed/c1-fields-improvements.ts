@@ -472,6 +472,20 @@ export const C1_QUESTIONS: PdfFormField[] = [
     section: SECTION_DEMANDE,
     order: 9.5,
   },
+  {
+    // Date de création du dossier (Oraliks 2026-07-10 : « datededa pour date
+    // de la création du dossier »). Auto-remplie du jour à la génération —
+    // `prefillFrom: "system.today"` ⇒ `isCreationDateField` ⇒ non rendue à
+    // l'écran + injectée serveur (route /generate). Stampe le widget `DateDA`
+    // (3 cases page 2). Remplace l'ancienne règle `date-da-p2`.
+    id: "dateCreationDossier",
+    pdfFieldName: "DateDA",
+    type: "date",
+    required: false,
+    label: { fr: "Date de création du dossier", nl: "", de: "" },
+    prefillFrom: "system.today",
+    section: SECTION_SIGNATURE,
+  },
 
   // ====================================================================
   // SECTION 2 — SITUATION FAMILIALE (simplifié pour cette 1ʳᵉ passe)
@@ -705,17 +719,16 @@ export const C1_QUESTIONS: PdfFormField[] = [
     firstMatchMapping: {
       where: { fieldId: "lien", value: "FAC" },
       fields: {
+        // Le prénom du FAC est aussi reporté dans le widget résumé « Identité
+        // du partenaire… ». Tout le RESTE de la grille (nom, lien, date,
+        // allocations, activité type+montant, revenu type+montant) a un widget
+        // PAR LIGNE (Personne{N}_* — nouvel AcroForm Oraliks 2026-07-10) →
+        // stampé via pdfFieldNameTemplate sur les sous-champs, plus de
+        // first-match sur des widgets uniques.
         prenom: "Identité du partenaire ou de la personne à charge",
-        // allocationsFamiliales / typeRevenuPro NE sont plus en first-match :
-        // depuis le remaniement AcroForm (Oraliks 2026-07-10) ces colonnes ont
-        // un widget PAR LIGNE (« Allocation familiale Coh{N} » / « Activité
-        // professionnelle Coh{N} ») → stampées via pdfFieldNameTemplate sur les
-        // sous-champs. Montant / Revenus restent des widgets uniques (FAC).
-        montantRevenuPro: "Montant",
-        revenuRemplacement: "Revenus de remplacement",
         // Statut C1-PARTENAIRE : pipe (1ʳᵉ option "premiere-fois" → case « Je le
         // déclare pour la première fois… », 2ᵉ "deja-declare" → « Ma déclaration
-        // précédente reste inchangée »). Widgets renommés (C1P_*).
+        // précédente reste inchangée »).
         c1PartenaireStatus: "C1P_FirstTime|C1P_DejaDéclaré",
       },
     },
@@ -726,8 +739,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
         type: "text",
         required: true,
         label: { fr: "Prénom", nl: "", de: "" },
-        // Stampé en colonne 1 rangée 1 du slot N (widgets "1 1", "2 1", …).
-        pdfFieldNameTemplate: "{index} 1",
+        pdfFieldNameTemplate: "Personne{index}_Prenom",
         order: 1,
       },
       {
@@ -736,9 +748,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
         type: "text",
         required: true,
         label: { fr: "Nom", nl: "", de: "" },
-        // La colonne 2 du PDF (widgets "1", "1_2", …) a un naming irrégulier
-        // qui ne se laisse pas capter par un template unique — sous-champ
-        // gardé virtuel pour cette passe.
+        pdfFieldNameTemplate: "Personne{index}_Nom",
         order: 2,
       },
       {
@@ -747,6 +757,9 @@ export const C1_QUESTIONS: PdfFormField[] = [
         type: "select",
         required: true,
         label: { fr: "Lien familial", nl: "", de: "" },
+        // Colonne « lien de parenté » (widget texte ligne 1 par personne). On
+        // y stampe la VALEUR (ex. « FAC », « enfant ») ; la ligne 2 reste libre.
+        pdfFieldNameTemplate: "Personne{index}_LienParente_Ligne1",
         help: { fr: "FAC = financièrement à charge. NFAC = non financièrement à charge.", nl: "", de: "" },
         // En mode colocation (Annexe REGIS), on ne demande que prénom + nom
         // (Oraliks 2026-07-07). Les autres sous-champs se cachent via
@@ -778,10 +791,8 @@ export const C1_QUESTIONS: PdfFormField[] = [
         type: "date",
         required: true,
         label: { fr: "Date de naissance", nl: "", de: "" },
-        // Colonne « date de naissance » PAR LIGNE (widgets DateNaissCoh1..5 du
-        // nouvel AcroForm — Oraliks 2026-07-10). Avant, la date allait à tort
-        // en 2ᵉ ligne de la cellule nom (« {index} 2 »).
-        pdfFieldNameTemplate: "DateNaissCoh{index}",
+        // Colonne « date de naissance » PAR LIGNE (widget par personne).
+        pdfFieldNameTemplate: "Personne{index}_DateNaissance",
         visibleIfParent: { fieldId: "habiteEnColocation", op: "notEquals", value: "oui" },
         order: 4,
       },
@@ -796,10 +807,9 @@ export const C1_QUESTIONS: PdfFormField[] = [
           nl: "", de: "",
         },
         options: YN,
-        // Colonne PAR LIGNE (dropdown « Allocation familiale Coh{N} »). Les
-        // dropdowns du nouvel AcroForm sont créés SANS options → le filler
-        // ajoute la valeur (« oui »/« non ») à la volée (cf. filler.ts).
-        pdfFieldNameTemplate: "Allocation familiale Coh{index}",
+        // Colonne PAR LIGNE (dropdown « Personne{N}_AllocationsFamiliales »,
+        // créé sans options → le filler ajoute « oui »/« non » à la volée).
+        pdfFieldNameTemplate: "Personne{index}_AllocationsFamiliales",
         visibleIfParent: { fieldId: "habiteEnColocation", op: "notEquals", value: "oui" },
         order: 5,
       },
@@ -816,15 +826,15 @@ export const C1_QUESTIONS: PdfFormField[] = [
           { value: "independant", label: { fr: "Indépendant", nl: "", de: "" } },
         ],
         defaultValue: "aucun",
-        // Colonne PAR LIGNE (dropdown « Activité professionnelle Coh{N} »,
-        // options ajoutées à la volée par le filler).
-        pdfFieldNameTemplate: "Activité professionnelle Coh{index}",
+        // Colonne PAR LIGNE (dropdown « Personne{N}_ActiviteProfessionnelle_Type »).
+        pdfFieldNameTemplate: "Personne{index}_ActiviteProfessionnelle_Type",
         visibleIfParent: { fieldId: "habiteEnColocation", op: "notEquals", value: "oui" },
         order: 6,
       },
       {
         id: "montantRevenuPro",
         pdfFieldName: "",
+        pdfFieldNameTemplate: "Personne{index}_ActiviteProfessionnelle_Montant",
         type: "number",
         required: false,
         label: { fr: "Montant brut mensuel (€)", nl: "", de: "" },
@@ -839,6 +849,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
       {
         id: "revenuRemplacement",
         pdfFieldName: "",
+        pdfFieldNameTemplate: "Personne{index}_RevenuRemplacement_Type",
         type: "select",
         required: false,
         label: { fr: "Revenu de remplacement", nl: "", de: "" },
@@ -863,6 +874,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
       {
         id: "montantRevenuRemplacement",
         pdfFieldName: "",
+        pdfFieldNameTemplate: "Personne{index}_RevenuRemplacement_Montant",
         type: "number",
         required: false,
         label: { fr: "Montant brut mensuel du revenu de remplacement (€)", nl: "", de: "" },

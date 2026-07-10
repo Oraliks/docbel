@@ -15,6 +15,7 @@ import { todayISO } from "@/lib/pdf-forms/system-values";
 import { isCreationDateField, isSignatureField } from "@/lib/pdf-forms/auto-fields";
 import { PdfFormField, FormPayload, Locale, isLocale } from "@/lib/pdf-forms/types";
 import { ensureWriteAllowed } from "@/lib/admin/readonly-guard";
+import { loadDossierState } from "@/lib/bundles/completion";
 
 const json = { "Content-Type": "application/json; charset=utf-8" };
 
@@ -53,13 +54,16 @@ export async function POST(
   }
 
   const lang: Locale = isLocale(body.locale) ? body.locale : (form.defaultLocale as Locale);
-  const delivery = body.delivery === "doccle" ? "doccle" : "download";
+  const delivery: "download" | "doccle" | "save" =
+    body.delivery === "doccle" ? "doccle" : body.delivery === "save" ? "save" : "download";
   if (delivery === "doccle" && !(form.allowDoccle && isDoccleConfigured())) {
     return NextResponse.json({ error: "Envoi Doccle indisponible" }, { status: 400, headers: json });
   }
   if (delivery === "download" && !form.allowDownload) {
     return NextResponse.json({ error: "Téléchargement désactivé" }, { status: 400, headers: json });
   }
+
+  const bundleRunId = typeof body.bundleRunId === "string" ? body.bundleRunId : null;
 
   const fields = (form.fields as unknown as PdfFormField[]) || [];
 
@@ -92,6 +96,53 @@ export async function POST(
   }
   const validated = result.data as FormPayload;
 
+  // Propriété du run (même logique que app/api/documents/bundles/[id]/run/route.ts) :
+  // userId de session si connecté, sinon cookie de session anonyme.
+  const session0 = await auth.api.getSession({ headers: await headers() });
+  const ownerUserId = session0?.user?.id || null;
+  const ownerSessionId = req.cookies.get("beldoc-bundle-session")?.value || null;
+
+  // Mode "save" : valide + persiste, ne génère AUCUN PDF. Utilisé quand ce
+  // formulaire est rempli à l'intérieur d'un dossier (bundleRunId fourni) —
+  // le téléchargement se fait plus tard, groupé, une fois tout complété.
+  if (delivery === "save") {
+    if (!bundleRunId) {
+      return NextResponse.json({ error: "bundleRunId requis pour delivery=save" }, { status: 400, headers: json });
+    }
+    const before = await loadDossierState(bundleRunId, { userId: ownerUserId, sessionId: ownerSessionId });
+    if (!before) {
+      return NextResponse.json({ error: "Dossier introuvable" }, { status: 404, headers: json });
+    }
+    await prisma.bundleRun.update({
+      where: { id: bundleRunId },
+      data: {
+        payloads: { ...before.payloads, [form.id]: validated } as unknown as Prisma.InputJsonValue,
+        completedTemplateIds: (before.completedTemplateIds.includes(form.id)
+          ? before.completedTemplateIds
+          : [...before.completedTemplateIds, form.id]) as unknown as Prisma.InputJsonValue,
+      },
+    });
+    const after = await loadDossierState(bundleRunId, { userId: ownerUserId, sessionId: ownerSessionId });
+    const beforeSlugs = new Set(before.missing.map((m) => m.slug));
+    const newlyTriggered = (after?.missing ?? []).filter((m) => !beforeSlugs.has(m.slug) && m.slug !== form.slug);
+    await logSubmission(form.id, form.version, lang, validated, "save", true, ip);
+    return NextResponse.json({ ok: true, saved: true, newlyTriggered }, { headers: json });
+  }
+
+  // Verrou dossier entier : un téléchargement (download/doccle) demandé
+  // depuis un dossier (bundleRunId fourni) est refusé tant que TOUS les
+  // documents requis — de base ET déclenchés par les réponses données,
+  // dans N'IMPORTE quel formulaire du dossier — ne sont pas complétés.
+  if (bundleRunId) {
+    const state = await loadDossierState(bundleRunId, { userId: ownerUserId, sessionId: ownerSessionId });
+    if (state && !state.allRequiredDone) {
+      return NextResponse.json(
+        { error: "dossier_incomplete", missing: state.missing },
+        { status: 409, headers: json },
+      );
+    }
+  }
+
   const source = await readSourcePdf(form.sourceStoragePath, form.sourceFileName);
   if (!source) {
     return NextResponse.json({ error: "PDF source introuvable" }, { status: 500, headers: json });
@@ -123,7 +174,6 @@ export async function POST(
   // validé dans le run pour que les PDFs suivants puissent récupérer les
   // valeurs partagées (NISS, adresse, etc.). Clé = pdfFormId (cuid unique,
   // cohabite avec les templateId de l'ancien module dans le même dict).
-  const bundleRunId = typeof body.bundleRunId === "string" ? body.bundleRunId : null;
   if (bundleRunId) {
     try {
       const run = await prisma.bundleRun.findUnique({ where: { id: bundleRunId } });

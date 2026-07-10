@@ -6,6 +6,7 @@ import { cache } from "react";
 import { BookingStatus, Prisma } from "@prisma/client";
 import { prisma, withDbRetry } from "@/lib/prisma";
 import { getNoResultQueries } from "@/lib/decision-builder/analytics-queries";
+import { pingDatabase } from "@/lib/health/checks";
 import {
   type DayCount,
   type Period,
@@ -237,14 +238,9 @@ export const getStatusStrip = cache(async (): Promise<StatusStrip> => {
   const h24 = new Date(now - 24 * 60 * 60 * 1000);
   const h48 = new Date(now - 48 * 60 * 60 * 1000);
 
-  const t0 = Date.now();
-  let db: StatusStrip["db"] = { ok: false, latencyMs: null };
-  try {
-    await prisma.$queryRaw`SELECT 1`;
-    db = { ok: true, latencyMs: Date.now() - t0 };
-  } catch {
-    // db reste { ok: false } — la carte affiche l'état dégradé, jamais bloquant.
-  }
+  // Réutilise le ping DB du module santé (dédup + cohérence avec la carte).
+  const ping = await pingDatabase();
+  const db: StatusStrip["db"] = { ok: ping.status === "up", latencyMs: ping.latencyMs };
 
   const [traffic24h, trafficPrev24h, ops] = await Promise.all([
     withDbRetry(() => prisma.pageView.count({ where: { createdAt: { gte: h24 } } })),

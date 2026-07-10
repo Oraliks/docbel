@@ -897,6 +897,28 @@ function FieldsCluster({
   const chipFields = fields.filter((f) => f.renderAs === "chip");
   const rowFields = fields.filter(isRowField);
   const otherFields = fields.filter((f) => f.renderAs !== "chip" && !isRowField(f));
+
+  // Champs de suivi : un champ (ex. date « À partir du ») dont la visibilité
+  // dépend d'une question Oui/Non (rowField) de CE cluster doit s'afficher
+  // INLINE, juste sous la ligne qui l'a déclenché — pas relégué en bas dans le
+  // bloc `otherFields`. On rattache donc chaque suivi à sa ligne parente et on
+  // le retire du bloc autonome. (Seuls les champs déjà VISIBLES arrivent ici —
+  // cf. buildMacroSteps qui filtre sur `visibleIf` — donc un suivi n'est présent
+  // que quand sa condition est remplie.)
+  const rowFieldIds = new Set(rowFields.map((f) => f.id));
+  const followUpsByParent = new Map<string, PublicField[]>();
+  for (const f of otherFields) {
+    const parentId = f.visibleIf?.fieldId;
+    if (parentId && rowFieldIds.has(parentId)) {
+      const list = followUpsByParent.get(parentId) ?? [];
+      list.push(f);
+      followUpsByParent.set(parentId, list);
+    }
+  }
+  const attachedIds = new Set(
+    [...followUpsByParent.values()].flat().map((f) => f.id),
+  );
+  const standaloneOtherFields = otherFields.filter((f) => !attachedIds.has(f.id));
   // Champ dérivé (ex. date de naissance ← NISS) : recalculé À CHAQUE RENDU
   // depuis le champ source, jamais stocké dans `values` (cf. PdfField.derivedValue).
   const deriveValueFor = (f: PublicField): string | null =>
@@ -958,25 +980,50 @@ function FieldsCluster({
       )}
       {rowFields.length > 0 && (
         <div className="divide-y divide-[color:var(--glass-border)] rounded-2xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)]">
-          {rowFields.map((f) => (
-            <PdfField
-              key={f.id}
-              field={f}
-              value={values[f.id] ?? ""}
-              error={errors[f.id]}
-              locale={locale}
-              onChange={(v) => setValue(f.id, v)}
-              formId={formId}
-              formSlug={formSlug}
-              rowLayout
-              derivedValue={deriveValueFor(f)}
-            />
-          ))}
+          {rowFields.map((f) => {
+            const followUps = followUpsByParent.get(f.id) ?? [];
+            return (
+              <div key={f.id}>
+                <PdfField
+                  field={f}
+                  value={values[f.id] ?? ""}
+                  error={errors[f.id]}
+                  locale={locale}
+                  onChange={(v) => setValue(f.id, v)}
+                  formId={formId}
+                  formSlug={formSlug}
+                  rowLayout
+                  derivedValue={deriveValueFor(f)}
+                />
+                {/* Suivi(s) déclenché(s) par ce Oui/Non : rendus juste sous la
+                    ligne, en léger retrait, dans le même cadre. */}
+                {followUps.length > 0 && (
+                  <div className="flex flex-col gap-3 px-4 pb-3.5 pt-0.5 sm:pl-8">
+                    {followUps.map((sub) => (
+                      <PdfField
+                        key={sub.id}
+                        field={sub}
+                        value={values[sub.id] ?? ""}
+                        error={errors[sub.id]}
+                        locale={locale}
+                        onChange={(v) => setValue(sub.id, v)}
+                        formId={formId}
+                        formSlug={formSlug}
+                        derivedValue={deriveValueFor(sub)}
+                        relatedPostalCode={relatedPostalCodeFor(sub)}
+                        parentValues={values}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
-      {otherFields.length > 0 && (
+      {standaloneOtherFields.length > 0 && (
         <div className="grid grid-cols-1 gap-x-4 gap-y-3.5 sm:grid-cols-2 xl:grid-cols-3">
-          {otherFields.map((f) => (
+          {standaloneOtherFields.map((f) => (
             <div key={f.id} className={FULL_WIDTH_TYPES.has(f.type) ? "sm:col-span-2 xl:col-span-3" : ""}>
               <PdfField
                 field={f}

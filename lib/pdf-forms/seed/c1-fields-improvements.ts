@@ -473,20 +473,17 @@ export const C1_QUESTIONS: PdfFormField[] = [
     order: 9.5,
   },
   {
-    // Champ dormant (Oraliks 2026-07-10) : il n'existe PLUS de widget « date de
-    // création » sur le C1. Les 3 ex-`DateDA` sont devenus les dates de
-    // formation, et l'en-tête page 2 `DateDeDA` (ex-`DateDeModification`) porte
-    // la « date DA / modification » = la date du CHANGEMENT (cf. règle
-    // `date-header-p2` dans c1-changement.ts). On garde le champ (id owné par le
-    // seed → écrase proprement l'ancienne version DB qui pointait sur DateDeDA),
-    // mais `pdfFieldName: ""` ⇒ ne stampe rien. `prefillFrom` conservé pour
-    // rester masqué (isCreationDateField) tant qu'aucune date de signature ne le
-    // réutilise.
+    // Date de création du DOCUMENT (Oraliks 2026-07-10 : « date du jour tout en
+    // bas de la page 2 »). Stampe le widget `DateDeCréationDocument` (zone
+    // signature, bas de page 2). Auto-remplie du jour : `prefillFrom
+    // system.today` ⇒ `isCreationDateField` ⇒ non rendue à l'écran + injectée
+    // serveur. Distincte de l'en-tête `DateDeDA` (« date DA / modification » =
+    // date du changement, via règle binding `date-header-p2`).
     id: "dateCreationDossier",
-    pdfFieldName: "",
+    pdfFieldName: "DateDeCréationDocument",
     type: "date",
     required: false,
-    label: { fr: "Date de création du dossier", nl: "", de: "" },
+    label: { fr: "Date de création du document", nl: "", de: "" },
     prefillFrom: "system.today",
     section: SECTION_SIGNATURE,
   },
@@ -787,6 +784,25 @@ export const C1_QUESTIONS: PdfFormField[] = [
           { value: "cousine", label: { fr: "Cousine", nl: "", de: "" } },
           { value: "aucun-lien", label: { fr: "Aucun lien de parenté", nl: "", de: "" } },
         ],
+        // Widget TEXTE : on imprime le libellé pour les liens familiaux (Père,
+        // Mère, Enfant…) mais on GARDE les codes officiels FAC/NFAC tels quels
+        // (absents de la table → stampés bruts). Oraliks 2026-07-10.
+        stampMap: {
+          epoux: "Époux/se",
+          partenaire: "Partenaire",
+          enfant: "Enfant",
+          pere: "Père",
+          mere: "Mère",
+          frere: "Frère",
+          soeur: "Sœur",
+          neveu: "Neveu",
+          niece: "Nièce",
+          oncle: "Oncle",
+          tante: "Tante",
+          cousin: "Cousin",
+          cousine: "Cousine",
+          "aucun-lien": "Aucun lien",
+        },
         order: 3,
       },
       {
@@ -1666,11 +1682,13 @@ export const C1_QUESTIONS: PdfFormField[] = [
   },
   {
     id: "signature",
-    // Widget texte « Signature » ajouté au PDF par
-    // scripts/add-c1-signature-widget.ts (page 2, rect x=350,y=40,w=200,h=50).
-    // Le filler localise le rectangle via `technicalSchema` puis y dessine un
-    // bloc « façon Adobe » (nom + mention « Signé par » + horodatage ISO).
-    pdfFieldName: "Signature",
+    // Widget signature « SignatureDuChômeur » d'Oraliks (page 2, bas, rect
+    // ~x257 y48 w150 h32). Le filler localise le rectangle via `technicalSchema`
+    // puis y dessine la signature manuscrite « façon Adobe » (nom en police
+    // cursive Dancing Script) + mention « Signé par » + horodatage. L'ancien
+    // widget « Signature » (ajouté jadis par scripts/add-c1-signature-widget.ts)
+    // n'existe plus dans l'AcroForm remanié par Oraliks.
+    pdfFieldName: "SignatureDuChômeur",
     type: "signature",
     // Non-required cote Zod : auto-confirmee via signerName (nom+prenom
     // resolus depuis l'identite du citoyen), bloc « facon Adobe » applique

@@ -322,6 +322,12 @@ export interface PdfFormField {
   /// superposée à un guide en peigne imprimé — tout débordement y est très
   /// visible, contrairement aux champs texte libres sans grille imprimée).
   autoSizeFont?: boolean;
+  /// Table de correspondance valeur interne → texte imprimé sur le PDF, pour un
+  /// champ `select` mappé sur un widget TEXTE (pas un dropdown). Ex. le `lien`
+  /// de parenté du C1 : `pere` → « Père », `enfant` → « Enfant », mais `FAC`/
+  /// `NFAC` (absents de la table) restent stampés tels quels (codes officiels).
+  /// Une valeur absente de la table est imprimée brute.
+  stampMap?: Record<string, string>;
   /// Champ MASQUÉ du formulaire citoyen : jamais rendu (filtré au sérialiseur
   /// public) ni auto-injecté (date/signature) à la génération → reste BLANC
   /// dans le PDF. Pour les formulaires complétés en partie par un tiers (ex.

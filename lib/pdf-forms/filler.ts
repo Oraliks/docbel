@@ -22,7 +22,7 @@ import {
   isFieldValueRecordArray,
 } from "./types";
 import { assembleFullName } from "./system-values";
-import { resolveSignerName, buildSignatureBlock } from "./signature";
+import { resolveSignerName, buildSignatureBlock, signatureTimestamp } from "./signature";
 import { isSignatureField } from "./auto-fields";
 import { isFieldVisible } from "./validation";
 import { formatDateFR } from "./bindings/format";
@@ -36,6 +36,20 @@ const UNICODE_FONT_PATH = join(process.cwd(), "public", "fonts", "NotoSans-Regul
 async function loadUnicodeFont(): Promise<Buffer | null> {
   try {
     if (existsSync(UNICODE_FONT_PATH)) return await readFile(UNICODE_FONT_PATH);
+  } catch {
+    /* ignore */
+  }
+  return null;
+}
+
+/// Police cursive (OFL Dancing Script) pour la signature manuscrite « façon
+/// Adobe ». Embarquée dans le repo (fonctionne côté serveur Linux, contrairement
+/// aux polices système). Absente → repli sur l'oblique standard.
+const SIGNATURE_FONT_PATH = join(process.cwd(), "public", "fonts", "SignatureScript.ttf");
+
+async function loadSignatureFont(): Promise<Buffer | null> {
+  try {
+    if (existsSync(SIGNATURE_FONT_PATH)) return await readFile(SIGNATURE_FONT_PATH);
   } catch {
     /* ignore */
   }
@@ -122,22 +136,27 @@ function stampScalarWidget(
   unicodeFont: boolean,
   fieldType?: string,
   autoSizeFont?: boolean,
-  options?: FieldOption[]
+  options?: FieldOption[],
+  stampMap?: Record<string, string>
 ): void {
   if (pdfField instanceof PDFTextField) {
+    // `stampMap` : correspondance valeur interne → libellé imprimé (ex. lien de
+    // parenté `pere` → « Père »). Une valeur absente de la table est stampée
+    // brute (ex. codes officiels `FAC`/`NFAC`). Court-circuite date/iban.
+    const mapped = stampMap ? stampMap[String(value)] : undefined;
     const raw = value === false ? "" : String(value);
     // Reformatage des dates ISO → FR au stamping : le form runner stocke en
     // ISO côté state (format standard <input type="date">), l'usager veut
     // du DD/MM/YYYY sur le PDF final.
-    let text = raw;
-    if (fieldType === "date") text = formatDateFR(raw);
+    let text = mapped !== undefined ? mapped : raw;
+    if (stampMap === undefined && fieldType === "date") text = formatDateFR(raw);
     // IBAN belge : le template C1 imprime « B E » statiquement en amont du
     // numéro (widget « B E » du dump AcroForm). Sans strip, on verrait
     // « B E BE68 5390... » doublement préfixé. Le strip est PDF-only —
     // la valeur en state garde « BE68... » complet pour la validation Zod
     // (Oraliks 2026-07-07). Sur le widget « SEPA étranger IBAN BIC » le
     // préfixe est étranger (FR, DE, …) → pas de strip.
-    if (fieldType === "iban") text = raw.replace(/^\s*[Bb][Ee]\s*/, "").trim();
+    if (stampMap === undefined && fieldType === "iban") text = raw.replace(/^\s*[Bb][Ee]\s*/, "").trim();
     pdfField.setText(text);
     // Taille uniforme partout (cf. UNIFORM_TEXT_FONT_SIZE), sauf
     // `autoSizeFont` (0 = auto-fit lecteur PDF, cf. PdfFormField.autoSizeFont).
@@ -222,7 +241,7 @@ function stampArrayField(
         continue;
       }
       try {
-        stampScalarWidget(pdfField, subValue as FieldValue, font, unicodeFont, sub.type, sub.autoSizeFont, sub.options);
+        stampScalarWidget(pdfField, subValue as FieldValue, font, unicodeFont, sub.type, sub.autoSizeFont, sub.options, sub.stampMap);
       } catch {
         /* readonly / incompatible */
       }
@@ -252,7 +271,7 @@ function stampArrayField(
       continue;
     }
     try {
-      stampScalarWidget(pdfField, subValue as FieldValue, font, unicodeFont, sub.type, sub.autoSizeFont, sub.options);
+      stampScalarWidget(pdfField, subValue as FieldValue, font, unicodeFont, sub.type, sub.autoSizeFont, sub.options, sub.stampMap);
     } catch {
       /* readonly / incompatible */
     }
@@ -302,8 +321,21 @@ export async function fillForm(
     font = await doc.embedFont(StandardFonts.Helvetica);
   }
 
-  // Police oblique pour la ligne "nom" du bloc de signature (effet manuscrit).
+  // Police oblique (repli) pour la ligne "nom" du bloc de signature.
   const obliqueFont = await doc.embedFont(StandardFonts.HelveticaOblique);
+  // Police cursive Dancing Script pour la signature manuscrite « façon Adobe ».
+  // Repli sur l'oblique si absente / non embarquable.
+  let cursiveFont = obliqueFont;
+  const sigTtf = await loadSignatureFont();
+  if (sigTtf) {
+    try {
+      const fk = (await import("@pdf-lib/fontkit")).default;
+      doc.registerFontkit(fk);
+      cursiveFont = await doc.embedFont(sigTtf, { subset: true });
+    } catch {
+      cursiveFont = obliqueFont;
+    }
+  }
 
   for (const field of fields) {
     // Champ marqué `hidden` par le schéma : jamais rendu à l'utilisateur ET
@@ -379,30 +411,49 @@ export async function fillForm(
         const [bx, by, bw, bh] = tech.rect;
         const pad = 4;
 
-        // Cadre léger.
-        page.drawRectangle({
-          x: bx,
-          y: by,
-          width: bw,
-          height: bh,
-          color: rgb(0.96, 0.95, 1),
-          opacity: 0.5,
-          borderColor: rgb(0.42, 0.4, 0.62),
-          borderWidth: 0.5,
+        // Nom en cursive Dancing Script, auto-ajusté à la largeur ET à la
+        // hauteur utile du widget (au-dessus de la ligne d'horodatage). Sans
+        // cadre : la signature se pose sur la ligne « Signature » imprimée.
+        const smallSize = Math.max(4.5, Math.min(6.5, bh / 5.5));
+        const targetW = Math.max(10, bw - 2 * pad);
+        const nameAreaH = Math.max(8, bh - smallSize - 2.5 * pad);
+        const widthAt1 = Math.max(0.01, cursiveFont.widthOfTextAtSize(block.name, 1));
+        const heightAt1 = Math.max(0.5, cursiveFont.heightAtSize(1));
+        let nameSize = Math.min(targetW / widthAt1, nameAreaH / heightAt1);
+        nameSize = Math.max(9, Math.min(28, nameSize));
+        const nameW = cursiveFont.widthOfTextAtSize(block.name, nameSize);
+        const nameX = bx + pad + Math.max(0, (targetW - nameW) / 2);
+        page.drawText(block.name, {
+          x: nameX,
+          y: by + smallSize + 1.5 * pad,
+          size: nameSize,
+          font: cursiveFont,
+          color: rgb(0.06, 0.08, 0.36),
         });
 
-        const nameSize = Math.min(13, Math.max(8, bh / 3.2));
-        const small = Math.max(5.5, Math.min(7.5, bh / 6));
-        let cy = by + bh - pad - nameSize;
-        page.drawText(block.name, { x: bx + pad, y: cy, size: nameSize, font: obliqueFont, color: rgb(0.1, 0.1, 0.3) });
-        cy -= small + 4;
-        page.drawText(block.by, { x: bx + pad, y: cy, size: small, font, color: rgb(0.32, 0.32, 0.42) });
-        cy -= small + 2;
-        page.drawText(block.date, { x: bx + pad, y: cy, size: small, font, color: rgb(0.32, 0.32, 0.42) });
+        // Trait de signature + ligne d'authenticité horodatée (façon Adobe).
+        page.drawLine({
+          start: { x: bx + pad, y: by + smallSize + pad },
+          end: { x: bx + bw - pad, y: by + smallSize + pad },
+          thickness: 0.4,
+          color: rgb(0.55, 0.55, 0.62),
+        });
+        // Ligne d'authenticité discrète : mention « Docbel.be » (accent violet
+        // léger, façon marque) + horodatage Bruxelles. Rendue en 3 segments
+        // pour colorer seulement la marque.
+        const authY = by + pad - 1.5;
+        const segPrefix = "Signé via ";
+        const segBrand = "Docbel.be";
+        const segSuffix = ` · ${signatureTimestamp()}`;
+        const wOf = (t: string) => font.widthOfTextAtSize(t, smallSize);
+        const gris = rgb(0.45, 0.45, 0.55);
+        page.drawText(segPrefix, { x: bx + pad, y: authY, size: smallSize, font, color: gris });
+        page.drawText(segBrand, { x: bx + pad + wOf(segPrefix), y: authY, size: smallSize, font, color: rgb(0.42, 0.35, 0.62) });
+        page.drawText(segSuffix, { x: bx + pad + wOf(segPrefix) + wOf(segBrand), y: authY, size: smallSize, font, color: gris });
         continue;
       }
 
-      stampScalarWidget(pdfField, value, font, unicodeFont, field.type, field.autoSizeFont, field.options);
+      stampScalarWidget(pdfField, value, font, unicodeFont, field.type, field.autoSizeFont, field.options, field.stampMap);
     } catch {
       // champ readonly / incompatible — on ignore sans casser la génération
     }

@@ -894,9 +894,30 @@ function FieldsCluster({
   const isRowField = (f: PublicField) =>
     f.renderAs !== "chip" &&
     (f.type === "checkbox" || (f.type === "radio" && (f.options || []).length === 2));
+
+  // Échappatoires `requireListMatch` (ex. « ma rue n'est pas dans la liste ») :
+  // le help du champ liste promet la case « juste en dessous ». On la rattache
+  // donc INLINE sous son champ parent (dans la grille), au lieu de la reléguer
+  // dans le bloc des cases oui/non où elle serait visuellement détachée de la
+  // rue (Oraliks 2026-07-11 : « tu dis coche si la rue n'est pas dans la liste
+  // mais y a pas de coche »).
+  const escapeByParent = new Map<string, PublicField>();
+  const escapeFieldIds = new Set<string>();
+  for (const f of fields) {
+    const escId = f.requireListMatch?.escapeFieldId;
+    if (!escId) continue;
+    const escField = fields.find((x) => x.id === escId);
+    if (escField) {
+      escapeByParent.set(f.id, escField);
+      escapeFieldIds.add(escId);
+    }
+  }
+
   const chipFields = fields.filter((f) => f.renderAs === "chip");
-  const rowFields = fields.filter(isRowField);
-  const otherFields = fields.filter((f) => f.renderAs !== "chip" && !isRowField(f));
+  const rowFields = fields.filter((f) => isRowField(f) && !escapeFieldIds.has(f.id));
+  const otherFields = fields.filter(
+    (f) => f.renderAs !== "chip" && !isRowField(f) && !escapeFieldIds.has(f.id),
+  );
 
   // Champs de suivi : un champ (ex. date « À partir du ») dont la visibilité
   // dépend d'une question Oui/Non (rowField) de CE cluster doit s'afficher
@@ -1023,26 +1044,44 @@ function FieldsCluster({
       )}
       {standaloneOtherFields.length > 0 && (
         <div className="grid grid-cols-1 gap-x-4 gap-y-3.5 sm:grid-cols-2 xl:grid-cols-3">
-          {standaloneOtherFields.map((f) => (
-            <div key={f.id} className={FULL_WIDTH_TYPES.has(f.type) ? "sm:col-span-2 xl:col-span-3" : f.wide ? "sm:col-span-2 xl:col-span-2" : ""}>
-              <PdfField
-                field={f}
-                value={values[f.id] ?? ""}
-                error={errors[f.id]}
-                locale={locale}
-                onChange={(v) => setValue(f.id, v)}
-                formId={formId}
-                formSlug={formSlug}
-                derivedValue={deriveValueFor(f)}
-                relatedPostalCode={relatedPostalCodeFor(f)}
-                onSelectStreetSuggestion={(postalCode) => {
-                  if (f.streetAutocomplete) setValue(f.streetAutocomplete.postalFieldId, postalCode);
-                }}
-                onStreetVerifiedChange={(v) => onStreetVerifiedChange?.(f.id, v)}
-                parentValues={values}
-              />
-            </div>
-          ))}
+          {standaloneOtherFields.map((f) => {
+            const escapeField = escapeByParent.get(f.id);
+            return (
+              <div key={f.id} className={FULL_WIDTH_TYPES.has(f.type) ? "sm:col-span-2 xl:col-span-3" : f.wide ? "sm:col-span-2 xl:col-span-2" : ""}>
+                <PdfField
+                  field={f}
+                  value={values[f.id] ?? ""}
+                  error={errors[f.id]}
+                  locale={locale}
+                  onChange={(v) => setValue(f.id, v)}
+                  formId={formId}
+                  formSlug={formSlug}
+                  derivedValue={deriveValueFor(f)}
+                  relatedPostalCode={relatedPostalCodeFor(f)}
+                  onSelectStreetSuggestion={(postalCode) => {
+                    if (f.streetAutocomplete) setValue(f.streetAutocomplete.postalFieldId, postalCode);
+                  }}
+                  onStreetVerifiedChange={(v) => onStreetVerifiedChange?.(f.id, v)}
+                  parentValues={values}
+                />
+                {/* Case échappatoire (« ma rue n'est pas dans la liste »)
+                    rendue juste sous l'input auquel elle se rapporte. */}
+                {escapeField && (
+                  <div className="mt-2 pl-1">
+                    <PdfField
+                      field={escapeField}
+                      value={values[escapeField.id] ?? false}
+                      error={errors[escapeField.id]}
+                      locale={locale}
+                      onChange={(v) => setValue(escapeField.id, v)}
+                      formId={formId}
+                      formSlug={formSlug}
+                    />
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
     </div>

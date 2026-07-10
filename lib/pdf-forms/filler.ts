@@ -42,8 +42,15 @@ async function loadUnicodeFont(): Promise<Buffer | null> {
   return null;
 }
 
+/// Vrai = case à cocher COCHÉE. Gère le booléen ET les valeurs texte des
+/// radios oui/non (une allocation familiale « non » ne doit PAS cocher la
+/// case — Oraliks 2026-07-10). Falsy : false, 0, "", "false", "0", "non", "no".
 function isTruthy(v: unknown): boolean {
-  return !!v && v !== "false" && v !== "0" && v !== 0;
+  if (typeof v === "string") {
+    const s = v.trim().toLowerCase();
+    return s !== "" && s !== "false" && s !== "0" && s !== "non" && s !== "no";
+  }
+  return !!v;
 }
 
 /// Récupère un widget checkbox par son nom. Renvoie null si introuvable ou

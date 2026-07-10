@@ -4842,6 +4842,7 @@
       "runnerNewlyTriggered": "Ce choix ajoute un document obligatoire à votre dossier : {titles}",
       "runnerDossierIncomplete": "Complétez d'abord : {titles}",
       "runnerStandaloneTriggerNotice": "N'oublie pas de joindre aussi : {titles}",
+      "runnerLiveTriggerNotice": "Cette réponse ajoutera un document à votre dossier : {titles}",
       "runnerDoneDownload": "Prévisualiser et signer",
       "runnerDoneDoccle": "Envoyer vers Doccle",
       "runnerGenerateAnother": "Générer un autre document",

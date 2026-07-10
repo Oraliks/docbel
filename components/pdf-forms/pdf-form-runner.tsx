@@ -24,7 +24,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { PdfField } from "./pdf-field";
 import { buildValidator, isFieldComplete, findFirstInvalidStep } from "@/lib/pdf-forms/validation";
-import { Locale, FieldValue, FormPayload, PdfFormField, loc, isFullNameValue } from "@/lib/pdf-forms/types";
+import { Locale, FieldValue, FormPayload, PdfFormField, PdfFormTrigger, loc, isFullNameValue } from "@/lib/pdf-forms/types";
 import type { PrefillMap } from "@/lib/pdf-forms/canonical/extract";
 import { todayISO } from "@/lib/pdf-forms/system-values";
 import { resolveSignerName } from "@/lib/pdf-forms/signature";
@@ -103,6 +103,13 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
   const router = useRouter();
   const [locale, setLocale] = useState<Locale>(form.defaultLocale);
   const [values, setValues] = useState<FormPayload>(() => defaultValues(form, bundlePrefill));
+  // Triggers actifs en direct (avant même soumission) sur les valeurs
+  // courantes, pour prévenir l'utilisateur qu'un compagnon sera ajouté au
+  // dossier — purement informatif, ne bloque rien (cf. runnerLiveTriggerNotice).
+  const liveTriggers = useMemo(
+    () => (form.triggers.length > 0 ? activeTriggers(form.triggers, values) : []),
+    [form.triggers, values],
+  );
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [consent, setConsent] = useState(false);
   const [delivery, setDelivery] = useState<"download" | "doccle">(form.allowDownload ? "download" : "doccle");
@@ -590,6 +597,7 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
         setDoccleRef={setDoccleRef}
         submitting={submitting}
         submit={submit}
+        liveTriggers={liveTriggers}
         bundleRunId={bundleRunId}
         onStreetVerifiedChange={handleStreetVerified}
         t={t}
@@ -622,6 +630,7 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
         submit={submit}
         resetForm={resetForm}
         lastSavedAt={lastSavedAt}
+        liveTriggers={liveTriggers}
         bundleRunId={bundleRunId}
         onStreetVerifiedChange={handleStreetVerified}
         t={t}
@@ -1087,6 +1096,7 @@ interface MacroRunnerBodyProps {
   submit: () => void;
   resetForm: () => void | Promise<void>;
   lastSavedAt: Date | null;
+  liveTriggers: PdfFormTrigger[];
   bundleRunId?: string;
   onStreetVerifiedChange?: (fieldId: string, verified: boolean) => void;
   t: ReturnType<typeof useTranslations>;
@@ -1101,7 +1111,7 @@ interface MacroRunnerBodyProps {
 function MacroRunnerBody({
   form, macroSteps, activeIndex, setActive, attemptAdvance, locale, setLocale, values, errors,
   setValue, signerName, consent, setConsent, delivery, setDelivery, doccleRef,
-  setDoccleRef, submitting, submit, resetForm, lastSavedAt, bundleRunId, onStreetVerifiedChange, t,
+  setDoccleRef, submitting, submit, resetForm, lastSavedAt, liveTriggers, bundleRunId, onStreetVerifiedChange, t,
 }: MacroRunnerBodyProps) {
   const current = macroSteps[activeIndex];
   const isLast = activeIndex === macroSteps.length - 1;
@@ -1276,6 +1286,13 @@ function MacroRunnerBody({
                     <Checkbox checked={consent} onCheckedChange={(c) => setConsent(c === true)} className="mt-0.5" />
                     <span>{t("runnerConsentText")}</span>
                   </label>
+                  {liveTriggers.length > 0 && (
+                    <p className="text-xs text-amber-700 dark:text-amber-300 mt-2">
+                      {t("runnerLiveTriggerNotice", {
+                        titles: liveTriggers.map((tr) => tr.reason?.fr || tr.requiresFormSlug).join(", "),
+                      })}
+                    </p>
+                  )}
                   <div className="flex items-center justify-between gap-2">
                     <AutoSaveNotice lastSavedAt={lastSavedAt} isPartOfBundle={!!bundleRunId} />
                     <ResetFormButton onConfirm={resetForm} disabled={submitting} />
@@ -1341,6 +1358,7 @@ interface LegacyRunnerBodyProps {
   setDoccleRef: (v: string) => void;
   submitting: boolean;
   submit: () => void;
+  liveTriggers: PdfFormTrigger[];
   bundleRunId?: string;
   onStreetVerifiedChange?: (fieldId: string, verified: boolean) => void;
   t: ReturnType<typeof useTranslations>;
@@ -1370,6 +1388,7 @@ function LegacyRunnerBody({
   setDoccleRef,
   submitting,
   submit,
+  liveTriggers,
   bundleRunId,
   onStreetVerifiedChange,
   t,
@@ -1535,6 +1554,13 @@ function LegacyRunnerBody({
                   <Checkbox checked={consent} onCheckedChange={(c) => setConsent(c === true)} className="mt-0.5" />
                   <span>{t("runnerConsentText")}</span>
                 </label>
+                {liveTriggers.length > 0 && (
+                  <p className="text-xs text-amber-700 dark:text-amber-300 mt-2">
+                    {t("runnerLiveTriggerNotice", {
+                      titles: liveTriggers.map((tr) => tr.reason?.fr || tr.requiresFormSlug).join(", "),
+                    })}
+                  </p>
+                )}
                 <div className="flex items-center gap-2">
                   {activeIdx > 0 && (
                     <Button type="button" variant="outline" onClick={() => setActive(activeIdx - 1)}>

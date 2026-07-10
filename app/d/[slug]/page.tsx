@@ -301,6 +301,7 @@ export default async function BundleRoute({
           fieldLabels,
           applicableSlugs: finalApplicableSlugs,
           externalDocuments,
+          userEmail: session?.user?.email ?? null,
         };
 
         // Écran d'explication : uniquement si le dossier codé fournit un

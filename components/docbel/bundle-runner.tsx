@@ -86,6 +86,8 @@ interface BundleRunnerProps {
   /// Documents obligatoires au dossier mais à charge d'un tiers (employeur,
   /// ONEM, mutuelle…). Listés à part — pas de bouton « Compléter ».
   externalDocuments?: ExternalDocument[];
+  /// Email de la session connectée (pré-remplissage du dialogue d'envoi).
+  userEmail?: string | null;
 }
 
 const RESPONSIBILITY_LABEL_KEYS: Record<ExternalDocument["responsibility"], string> = {
@@ -107,6 +109,7 @@ export function BundleRunner({
   fieldLabels,
   applicableSlugs = null,
   externalDocuments = [],
+  userEmail = null,
 }: BundleRunnerProps) {
   const t = useTranslations("public.dossier");
   const router = useRouter();
@@ -385,6 +388,8 @@ export function BundleRunner({
               )}
               externalDocuments={externalDocuments}
               resumeCode={resumeCode}
+              bundleRunId={runId}
+              userEmail={userEmail}
             />
           )}
 

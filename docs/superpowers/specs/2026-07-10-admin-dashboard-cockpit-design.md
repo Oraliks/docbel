@@ -23,23 +23,56 @@ Décisions actées avec Oraliks (2026-07-10) :
 - Orientation : cockpit 2 étages (validé).
 - Périmètre v1 : **tous les domaines** (socle citoyen + file opérationnelle complète
   + RDV/formations + IA/employeur).
-- Design validé sur maquette (6 étages, voir Structure ci-dessous).
+- Style : grammaire compacte « ops » inspirée de la référence Nerqis fournie par
+  Oraliks (maquette v2 sombre validée), **déclinée en clair** — l'admin reste
+  blanc + violet (maquette v3 = cible). Peu de texte, dense mais lisible.
 
-## Structure de la page (6 étages)
+## Structure de la page (6 étages, maquette v3)
 
-1. **Header** : titre + sélecteur de période `7 j / 30 j / 90 j` (searchParam
-   `?period=`) + bandeau `ApiHealthCheck` existant conservé.
-2. **À traiter** : 6 cartes compactes cliquables (compteur + libellé + lien section).
-3. **KPI usage** : 6 tuiles avec valeur, delta vs période précédente, sparkline SVG.
-4. **Trafic & dossiers par jour** (area chart 2 séries) + **funnel dossiers**.
-5. **Listes actionnables** : top pages vues, top dossiers démarrés, recherches sans
-   résultat (mise en avant accent : c'est la roadmap de contenu).
-6. **Modules** (4 cartes compactes : RDV, Formations, IA, Employeur) + **activité
-   admin** existante conservée en bas.
+1. **Header** : titre + pastille santé inline (`● API 88 ms`) + sélecteur de
+   période segmenté `7 j / 30 j / 90 j` (searchParam `?period=`).
+2. **Rangée statut** (4 cartes façon « ops ») : Santé API (réutilise la logique de
+   `ApiHealthCheck`, le gros bandeau disparaît), Base de données (ping chronométré),
+   À traiter (total + « n files actives »), Trafic aujourd'hui (vs hier).
+3. **File de travail** : UNE carte contenant 6 items compacts (icône ambre +
+   compteur + libellé, chacun cliquable) + lien « Tout voir ».
+4. **KPI usage** : UNE carte, grille 3×2 à séparateurs hairline — valeur, badge
+   delta, sparkline SVG pur.
+5. **Trafic & dossiers par jour** (area chart 2 séries, gridlines) + **funnel
+   dossiers** (barres horizontales + conversions inter-étapes « ↓ x % »).
+6. **Listes actionnables** (top pages, top dossiers, recherches sans résultat avec
+   bordure accent + badge « à créer ») puis **modules** (4 cartes paires de
+   chiffres) puis **activité admin** ultra-compacte.
+
+## Langage visuel (validé sur maquettes v2/v3)
+
+- Thème : **clair**, blanc + violet existant de l'admin. Cartes blanches, bordures
+  hairline, radius ~10 px, paddings réduits (11-14 px).
+- Carte statut : libellé 11 px + icône teintée en coin (carré arrondi 26 px) +
+  valeur 20 px + sous-info technique en monospace muted.
+- Zéro phrase explicative : libellés seuls, `tabular-nums` partout, valeurs
+  techniques (routes, latences) en monospace.
+- Barres de volume fines (3 px) intégrées sous chaque ligne des tops — le visuel
+  remplace le texte.
+- Sémantique couleur stricte : violet = accent/data, ambre = pending (file de
+  travail), vert/rouge = deltas et santé, teal = 2ᵉ série du chart. Pas d'autres
+  couleurs.
+- Compteurs à zéro affichés en état neutre, jamais masqués.
+- Les composants `MetricTile`/`ActionTile` de l'ancien overview ne sont **pas**
+  réutilisés (grammaire différente).
 
 ## Sources de données (champs vérifiés dans prisma/schema.prisma)
 
-### Étage « À traiter » — `getOpsQueue()`
+### Rangée statut — `getStatusStrip()`
+
+- Santé API : réutiliser la source de `ApiHealthCheck` (état overall + latence) —
+  côté serveur, sans le bandeau client actuel.
+- Base de données : `SELECT 1` chronométré (latence ms) — best-effort, état
+  « indisponible » propre si échec (Neon cold start).
+- À traiter : somme des compteurs de `getOpsQueue()` + nombre de files > 0.
+- Trafic aujourd'hui : `PageView` count du jour vs même compteur d'hier.
+
+### Étage « File de travail » — `getOpsQueue()`
 
 | Carte | Requête | Lien |
 |---|---|---|
@@ -107,8 +140,8 @@ jamais bloquant.
 ## Architecture technique
 
 - **`lib/admin/dashboard-stats.ts`** (nouveau) : une fonction exportée par étage
-  (`getOpsQueue`, `getUsageKpis`, `getDailySeries`, `getBundleFunnel`,
-  `getTopLists`, `getModuleStats`), types de retour exportés, période paramétrée
+  (`getStatusStrip`, `getOpsQueue`, `getUsageKpis`, `getDailySeries`,
+  `getBundleFunnel`, `getTopLists`, `getModuleStats`), types de retour exportés, période paramétrée
   `'7d' | '30d' | '90d'` (défaut `30d`). Tout en agrégats SQL
   (count/groupBy/`$queryRaw` `date_trunc`) — aucune liste massive.
 - **`lib/admin/dashboard-stats-helpers.ts`** (nouveau) : helpers purs (calcul de
@@ -117,10 +150,11 @@ jamais bloquant.
   `searchParams.period`, rend les 6 étages chacun dans un `<Suspense>` avec les
   skeletons existants (`KpiCardsSkeleton`, `ChartSkeleton`) — streaming progressif.
 - **`components/admin/dashboard/`** (nouveau dossier) : `period-selector.tsx`
-  (client, `router.replace` du searchParam), `ops-queue.tsx`, `usage-kpis.tsx`
-  (sparklines = SVG pur, pas recharts), `daily-chart.tsx` (client, recharts en
-  dynamic import comme aujourd'hui), `bundle-funnel.tsx`, `top-lists.tsx`,
-  `module-cards.tsx`.
+  (client, `router.replace` du searchParam), `status-strip.tsx`, `ops-queue.tsx`
+  (une carte, 6 items), `usage-kpis.tsx` (une carte, grille hairline, sparklines =
+  SVG pur, pas recharts), `daily-chart.tsx` (client, recharts en dynamic import
+  comme aujourd'hui), `bundle-funnel.tsx`, `top-lists.tsx` (barres de volume
+  intégrées), `module-cards.tsx`.
 - **`components/admin/admin-dashboard.tsx`** : conserve uniquement les vues
   alternatives `?view=filemanager|activity|changelog|users`. La vue par défaut est
   rendue directement par `page.tsx`. La vue `?view=users` bascule sur son propre
@@ -143,7 +177,8 @@ jamais bloquant.
 1. **Lib stats socle** : `dashboard-stats.ts` (KPI + séries) + helpers + tests.
 2. **Refonte page** : `app/admin/page.tsx` + `period-selector` + `usage-kpis` +
    `daily-chart`.
-3. **File opérationnelle** : `getOpsQueue` + `ops-queue.tsx` (+ vérif des hrefs).
+3. **Statut + file opérationnelle** : `getStatusStrip` + `getOpsQueue` +
+   `status-strip.tsx` + `ops-queue.tsx` (+ vérif des hrefs).
 4. **Funnel + listes** : `getBundleFunnel` + `getTopLists` + `bundle-funnel.tsx` +
    `top-lists.tsx` (+ confirmation clé `metadataJson`).
 5. **Modules + nettoyage** : `getModuleStats` + `module-cards.tsx` + bascule

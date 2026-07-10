@@ -1,43 +1,12 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useSearchParams } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ActivityLog, ActivityItem } from "@/components/admin/activity-log";
-import dynamic from "next/dynamic";
-import { KpiCardsSkeleton, ChartSkeleton } from "@/components/ui/skeletons";
 import { FileManager } from "@/components/docbel/file-manager";
 import { ChangelogManager } from "@/components/admin/changelog-manager";
-
-// recharts (~300 Ko) ne sert qu'à la vue dashboard par défaut. dynamic ssr:false
-// le sort du bundle initial de /admin (chargé sur toutes les pages admin via ce
-// composant), avec un skeleton de forme proche (KPI + graphique).
-const AdminDashboardOverview = dynamic(
-  () =>
-    import("@/components/admin/admin-dashboard-overview").then((m) => ({
-      default: m.AdminDashboardOverview,
-    })),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="flex flex-col gap-6">
-        <KpiCardsSkeleton count={4} />
-        <ChartSkeleton />
-      </div>
-    ),
-  }
-);
-
-interface Page {
-  id: string;
-  title: string;
-  slug: string;
-  status: string;
-  createdAt: string;
-  updatedAt: string;
-}
 
 interface User {
   id: string;
@@ -46,29 +15,6 @@ interface User {
   role: string;
   status?: string;
   lastLoginAt?: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
-
-interface Tool {
-  id: string;
-  name: string;
-  slug: string;
-  description: string;
-  type: string;
-  icon?: string;
-  popular: boolean;
-  timeMin?: number;
-  order: number;
-}
-
-interface ToolSection {
-  id: string;
-  name: string;
-  description?: string | null;
-  icon?: string | null;
-  order: number;
-  tools: Tool[];
   createdAt: string;
   updatedAt: string;
 }
@@ -87,22 +33,25 @@ function formatRelativeTime(dateString: string): string {
 }
 
 interface AdminDashboardProps {
-  pages: Page[];
-  users: User[];
-  sections: ToolSection[];
+  view: string;
+  /** Uniquement pour view === "users". */
+  users?: User[];
 }
 
-export function AdminDashboard({ pages, users, sections }: AdminDashboardProps) {
-  const searchParams = useSearchParams();
-  const view = searchParams.get("view") || "dashboard";
+/**
+ * Vues alternatives de /admin (`?view=filemanager|activity|changelog|users`).
+ * La vue par défaut (cockpit) est rendue directement par app/admin/page.tsx.
+ */
+export function AdminDashboard({ view, users = [] }: AdminDashboardProps) {
   const [activities, setActivities] = useState<ActivityItem[]>([]);
 
   const totalUsers = users.length;
 
   useEffect(() => {
+    if (view !== "activity") return;
     async function fetchActivities() {
       try {
-        const response = await fetch("/api/activities?limit=20");
+        const response = await fetch("/api/activities?limit=50");
         if (response.ok) {
           const data = await response.json();
           const formattedData: ActivityItem[] = data.map((activity: { id: string; user: string; action: string; resource: string; resourceName: string; createdAt: string; details: string }) => ({
@@ -122,9 +71,8 @@ export function AdminDashboard({ pages, users, sections }: AdminDashboardProps) 
     }
 
     fetchActivities();
-  }, []);
+  }, [view]);
 
-  // Afficher les vues alternatives
   if (view === "filemanager") {
     return <FileManager />
   }
@@ -140,10 +88,6 @@ export function AdminDashboard({ pages, users, sections }: AdminDashboardProps) 
   if (view === "changelog") {
     return <ChangelogManager />
   }
-
-  // `?view=tools` retiré : ToolsManager est désormais accessible via
-  // /admin/chomage/outils (sidebar canonique). Aucun lien n'utilisait
-  // cette branche, c'était du dead code.
 
   if (view === "users") {
     return (
@@ -192,13 +136,6 @@ export function AdminDashboard({ pages, users, sections }: AdminDashboardProps) 
     )
   }
 
-  // Vue par défaut: Dashboard
-  return (
-    <AdminDashboardOverview
-      pages={pages}
-      users={users}
-      sections={sections}
-      activities={activities}
-    />
-  );
+  // Vue inconnue : rien (le cockpit est rendu par app/admin/page.tsx).
+  return null;
 }

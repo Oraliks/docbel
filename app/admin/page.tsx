@@ -45,50 +45,29 @@ export default async function AdminPage({
 
   const { period: rawPeriod, view } = await searchParams
 
-  // Vues alternatives (?view=filemanager|activity|changelog|users) : branche
-  // legacy inchangée — les props massives disparaîtront en Task 8.
+  // Vues alternatives (?view=filemanager|activity|changelog|users). Seule la
+  // vue "users" a besoin de données (bornées, server-side).
   if (view) {
-    const [rawPages, rawUsers, rawSections] = await Promise.all([
-      prisma.page.findMany({
-        select: { id: true, title: true, slug: true, status: true, createdAt: true, updatedAt: true },
-        orderBy: { createdAt: "desc" },
-        take: 200,
-      }),
-      prisma.user.findMany({
-        select: {
-          id: true, name: true, email: true, role: true, status: true,
-          lastLoginAt: true, createdAt: true, updatedAt: true,
-        },
-        orderBy: { createdAt: "desc" },
-        take: 500,
-      }),
-      prisma.toolSection.findMany({
-        include: { tools: { orderBy: { order: "asc" } } },
-        orderBy: { order: "asc" },
-      }),
-    ])
-    const pages = rawPages.map((p) => ({
-      id: p.id, title: p.title, slug: p.slug, status: p.status,
-      createdAt: p.createdAt.toISOString(), updatedAt: p.updatedAt.toISOString(),
-    }))
-    const users = rawUsers.map((u) => ({
-      id: u.id, name: u.name ?? "", email: u.email, role: u.role, status: u.status,
-      lastLoginAt: u.lastLoginAt?.toISOString() ?? null,
-      createdAt: u.createdAt.toISOString(), updatedAt: u.updatedAt.toISOString(),
-    }))
-    const sections = rawSections.map((s) => ({
-      id: s.id, name: s.name, description: s.description, icon: s.icon ?? undefined,
-      order: s.order,
-      tools: s.tools.map((tool) => ({
-        id: tool.id, name: tool.name, slug: tool.slug, description: tool.description,
-        type: tool.type, icon: tool.icon ?? undefined, popular: tool.popular,
-        timeMin: tool.timeMin ?? undefined, order: tool.order,
-      })),
-      createdAt: s.createdAt.toISOString(), updatedAt: s.updatedAt.toISOString(),
-    }))
+    const users =
+      view === "users"
+        ? (
+            await prisma.user.findMany({
+              select: {
+                id: true, name: true, email: true, role: true, status: true,
+                lastLoginAt: true, createdAt: true, updatedAt: true,
+              },
+              orderBy: { createdAt: "desc" },
+              take: 500,
+            })
+          ).map((u) => ({
+            id: u.id, name: u.name ?? "", email: u.email, role: u.role, status: u.status,
+            lastLoginAt: u.lastLoginAt?.toISOString() ?? null,
+            createdAt: u.createdAt.toISOString(), updatedAt: u.updatedAt.toISOString(),
+          }))
+        : undefined
     return (
       <div className="flex flex-1 flex-col gap-6 px-4 py-6 lg:px-6">
-        <AdminDashboard pages={pages} users={users} sections={sections} />
+        <AdminDashboard view={view} users={users} />
       </div>
     )
   }

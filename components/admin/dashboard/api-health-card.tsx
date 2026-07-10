@@ -1,7 +1,7 @@
 "use client";
 
-// Carte compacte « Santé API » : ping des mêmes endpoints critiques que
-// l'ancien bandeau ApiHealthCheck (supprimé en Task 8), refresh 60 s.
+// Carte compacte « Santé API » : ping en parallèle des endpoints critiques
+// (bureaux, lookup, activités, inbox, organismes), refresh 60 s.
 import { useCallback, useEffect, useState } from "react";
 import { Activity } from "lucide-react";
 import { cn } from "@/lib/utils";

@@ -52,7 +52,7 @@ function shortDay(isoDay: string): string {
   return `${day}/${month}`;
 }
 
-/// Style commun aux tooltips recharts (aligné sur admin-dashboard-overview).
+/// Style commun aux tooltips recharts.
 const tooltipContentStyle = {
   backgroundColor: "var(--popover)",
   border: "1px solid var(--border)",

@@ -32,6 +32,14 @@ Légende priorité : **P0** critique · **P1** important · **P2** souhaitable �
 | 21 | P2 | Dette | Identifier les 3 vrais noms AcroForm des dates de modification C1 (adresse/situation familiale/compte) via `scripts/dump-c1.ts` et stamper `dateModificationEffective` dessus à la génération PDF | `lib/pdf-forms/seed/c1-fields-improvements.ts`, `lib/pdf-forms/filler.ts` | Faible | `pnpm test` + génération PDF réelle | à faire |
 
 ## Plans en attente de validation
+- **Refonte admin « partie users »** (liste serveur + fiche 360° + actions admin + hub
+  Comptes & accès) → [spec 2026-07-10](../superpowers/specs/2026-07-10-admin-users-refonte-design.md).
+  Spec validé par Oraliks 2026-07-10, 7 lots de 3-5 fichiers, **rien codé**. Aucune migration DB.
+  1 décision métier ouverte : anonymisation vs hard delete (liée à l'item 12).
+- **Qualité bureaux** (adresses officielles + liens complets + anti-dérive) →
+  [BUREAUX_QUALITY_PLAN.md](BUREAUX_QUALITY_PLAN.md). Diagnostic chiffré 2026-07-10
+  (`pnpm bureaux:audit`) : 910 adresses stub, 42 groupes de doublons OSM, 421/587 communes
+  sans assignment chômage, 0 bureau vérifié. 5 lots, 3 décisions à trancher.
 - **Réglementation V3** (« texte de loi vivant ») → [REGLEMENTATION_V3_PLAN.md](REGLEMENTATION_V3_PLAN.md) —
   **vagues 1-5 LIVRÉES 2026-07-03** (commits `ff2d26a`→`9028c45`, build+909 tests verts).
 - **Réglementation V4** (« lecture augmentée & outils du conseiller » : glossaire au survol,

@@ -26,7 +26,7 @@ import { FieldErrorReport } from "./field-error-report";
 import { ArrayField } from "./array-field";
 import { loc, Locale, FieldValue, FormPayload, FullNameValue, isFullNameValue, FieldOption } from "@/lib/pdf-forms/types";
 import type { PublicField } from "@/lib/pdf-forms/public-serializer";
-import { validateFieldFormat, FORMAT_VALIDATABLE_TYPES } from "@/lib/pdf-forms/validation";
+import { validateFieldFormat, validateFieldWarning, FORMAT_VALIDATABLE_TYPES } from "@/lib/pdf-forms/validation";
 
 // Type HTML + inputMode adaptés au type sémantique (clavier mobile pertinent).
 const INPUT_HINTS: Record<string, { type?: string; inputMode?: "numeric" | "tel" | "email" | "text" }> = {
@@ -136,12 +136,18 @@ export function PdfField({
   // reste prioritaire. Le vide ne déclenche rien (le requis se gère à l'envoi).
   const [touched, setTouched] = useState(false);
   const formatError = touched ? validateFieldFormat(field, value, locale) : null;
+  // Avertissement NON bloquant (ambre) — ex. NISS au checksum douteux mais date
+  // cohérente : on prévient sans bloquer ni afficher le ✓ vert (cf. #4).
+  const formatWarning = touched ? validateFieldWarning(field, value, locale) : null;
   const effError = error ?? formatError ?? undefined;
   const invalid = !!effError;
+  // ✓ vert : sur tout champ SAISI (texte libre inclus) touché, non vide, sans
+  // erreur ni avertissement — plus seulement les types à format (#5).
   const showValid =
     touched &&
     !effError &&
-    FORMAT_VALIDATABLE_TYPES.has(field.type) &&
+    !formatWarning &&
+    (FORMAT_VALIDATABLE_TYPES.has(field.type) || field.type === "text") &&
     typeof value === "string" &&
     value.trim() !== "";
   const markTouched = () => setTouched(true);
@@ -507,6 +513,11 @@ export function PdfField({
       )}
       {field.type === "postal_be" && communeHint && (
         <FieldDescription>→ {communeHint}</FieldDescription>
+      )}
+      {/* Avertissement non bloquant (ambre) — ex. NISS checksum douteux mais
+          date cohérente (#4). L'erreur rouge bloquante reste dans errorReport. */}
+      {formatWarning && !effError && (
+        <p className="text-[13px] text-amber-700 dark:text-amber-300">{formatWarning}</p>
       )}
       {errorReport}
     </Field>

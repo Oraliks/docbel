@@ -7,10 +7,13 @@ function field(p: Partial<PdfFormField> & Pick<PdfFormField, "id" | "type">): Pd
 }
 
 describe("buildValidator", () => {
-  it("valide un NISS correct et rejette un mauvais", () => {
+  it("NISS : valide OK ; bloque longueur + date impossible ; laisse passer un checksum douteux (#4)", () => {
     const v = buildValidator([field({ id: "niss", type: "niss", required: true })], "fr");
-    expect(v.safeParse({ niss: "85073003328" }).success).toBe(true);
-    expect(v.safeParse({ niss: "00000000000" }).success).toBe(false);
+    expect(v.safeParse({ niss: "85073003328" }).success).toBe(true); // valide
+    expect(v.safeParse({ niss: "123" }).success).toBe(false); // longueur
+    expect(v.safeParse({ niss: "85153003328" }).success).toBe(false); // mois 15 impossible
+    // Checksum douteux mais date cohérente → NON bloquant (avertissement seul).
+    expect(v.safeParse({ niss: "85073003329" }).success).toBe(true);
   });
 
   it("iban sans internationalIban : rejette un IBAN étranger valide (belge strict par défaut)", () => {
@@ -106,11 +109,11 @@ describe("buildValidator", () => {
     }
   });
 
-  it("explique un NISS à 11 chiffres mais mauvais checksum (erreur de frappe)", () => {
+  it("explique un NISS à date impossible (confusion année/mois/jour) et le BLOQUE", () => {
     const v = buildValidator([field({ id: "niss", type: "niss", required: true })], "fr");
-    const res = v.safeParse({ niss: "85073003329" }); // 1 chiffre faux
+    const res = v.safeParse({ niss: "85153003328" }); // mois 15 impossible
     expect(res.success).toBe(false);
-    if (!res.success) expect(res.error.issues[0].message).toMatch(/erreur de frappe/i);
+    if (!res.success) expect(res.error.issues[0].message).toMatch(/année.*mois.*jour|impossible/i);
   });
 
   it("respecte un message NISS personnalisé par l'admin", () => {
@@ -255,10 +258,11 @@ describe("validateFieldFormat — validation par champ (blur)", () => {
     expect(validateFieldFormat(field({ id: "niss", type: "niss", required: true }), "", "fr")).toBeNull();
   });
 
-  it("NISS valide → null, NISS invalide → message", () => {
+  it("NISS valide → null ; date impossible → message (bloquant) ; checksum douteux → null (non bloquant)", () => {
     const f = field({ id: "niss", type: "niss" });
     expect(validateFieldFormat(f, "85073003328", "fr")).toBeNull();
-    expect(validateFieldFormat(f, "00000000000", "fr")).not.toBeNull();
+    expect(validateFieldFormat(f, "85153003328", "fr")).not.toBeNull(); // mois 15 impossible
+    expect(validateFieldFormat(f, "85073003329", "fr")).toBeNull(); // checksum seul → pas d'erreur bloquante
   });
 
   it("IBAN belge invalide → message ; date invalide → message", () => {

@@ -12,6 +12,7 @@ import { isAutoField } from "./auto-fields";
 import {
   isValidNISS,
   diagnoseNISS,
+  nissBlocking,
   isValidBelgianIBAN,
   isValidInternationalIBAN,
   isValidBelgianPostalCode,
@@ -121,6 +122,11 @@ const NISS_MESSAGES = {
     nl: "Het rijksregisternummer moet 11 cijfers bevatten, maar u hebt er {n} ingevuld. U vindt het op de achterkant van uw identiteitskaart (eID), boven de streepjescode.",
     de: "Die NISS-Nummer muss 11 Ziffern enthalten, aber Sie haben {n} eingegeben. Sie finden sie auf der Rückseite Ihres Personalausweises (eID), über dem Strichcode.",
   },
+  date: {
+    fr: "La date encodée dans ce NISS est impossible (mois ou jour hors limites). As-tu inversé l'ordre année / mois / jour ? Recopie-le exactement depuis ta carte d'identité (eID).",
+    nl: "De datum in dit rijksregisternummer is onmogelijk (maand of dag buiten bereik). Heb je de volgorde jaar / maand / dag verwisseld? Neem het exact over van je identiteitskaart (eID).",
+    de: "Das in dieser NISS-Nummer kodierte Datum ist unmöglich (Monat oder Tag außerhalb des Bereichs). Hast du die Reihenfolge Jahr / Monat / Tag vertauscht? Übernimm sie genau von deinem Personalausweis (eID).",
+  },
   checksum: {
     fr: "Ce numéro NISS contient probablement une erreur de frappe : les chiffres ne correspondent pas. Vérifiez-le chiffre par chiffre au dos de votre carte d'identité (eID).",
     nl: "Dit rijksregisternummer bevat waarschijnlijk een typefout: de cijfers kloppen niet. Controleer het cijfer voor cijfer op de achterkant van uw identiteitskaart (eID).",
@@ -128,12 +134,15 @@ const NISS_MESSAGES = {
   },
 } as const;
 
-/// Construit le message NISS adapté à la cause de l'erreur (longueur vs frappe).
-/// Un `errorMsg` personnalisé côté admin reste prioritaire (cf. appelant).
+/// Construit le message NISS adapté à la cause (longueur / date impossible /
+/// frappe). Un `errorMsg` personnalisé côté admin reste prioritaire (appelant).
 export function nissErrorMessage(raw: string, lang: Locale): string {
   const d = diagnoseNISS(raw);
   if (d.reason === "length") {
     return NISS_MESSAGES.length[lang].replace("{n}", String(d.digitCount));
+  }
+  if (d.reason === "date") {
+    return NISS_MESSAGES.date[lang];
   }
   return NISS_MESSAGES.checksum[lang];
 }
@@ -174,9 +183,12 @@ function fieldToZod(field: PdfFormField, lang: Locale): ZodTypeAny {
     case "date":
       return z.string().refine((v) => empty(v) || isValidISODate(v), { message: errMsg(field, lang, "date") });
     case "niss":
-      // Message dynamique selon la cause (longueur / frappe), sauf si l'admin
-      // a défini un message personnalisé qui reste prioritaire.
-      return z.string().refine((v) => empty(v) || isValidNISS(v), {
+      // Ne BLOQUE l'envoi que sur une longueur incorrecte ou une date impossible
+      // (confusion année/mois/jour). Un échec de checksum seul n'est PAS bloquant
+      // (cf. nissBlocking + validateFieldWarning) : certains NISS légitimes —
+      // date de naissance non déclarée — ne doivent pas coincer le citoyen.
+      // Message dynamique selon la cause, sauf `errorMsg` admin prioritaire.
+      return z.string().refine((v) => empty(v) || !nissBlocking(v), {
         error: (issue) => loc(field.errorMsg, lang) || nissErrorMessage(String(issue.input ?? ""), lang),
       });
     case "iban":
@@ -436,7 +448,10 @@ export function validateFieldFormat(field: FieldLike, value: unknown, lang: Loca
   if (v.trim() === "") return null;
   const custom = loc(field.errorMsg, lang);
   switch (field.type) {
-    case "niss": return isValidNISS(v) ? null : (custom || nissErrorMessage(v, lang));
+    // NISS : n'affiche une ERREUR (rouge, bloquante) que sur longueur ou date
+    // impossible. Le checksum seul est un AVERTISSEMENT non bloquant, rendu par
+    // `validateFieldWarning` (ambre) — cf. #4.
+    case "niss": return nissBlocking(v) ? (custom || nissErrorMessage(v, lang)) : null;
     case "iban":
       return field.internationalIban
         ? (isValidInternationalIBAN(v) ? null : (custom || FALLBACK.iban_international[lang]))
@@ -449,6 +464,20 @@ export function validateFieldFormat(field: FieldLike, value: unknown, lang: Loca
     case "bce": return isValidBelgianBCE(v) ? null : (custom || FALLBACK.bce[lang]);
     default: return null;
   }
+}
+
+/// Avertissement NON bloquant pour un champ (ambre) — distinct de l'erreur
+/// (rouge, bloquante) de `validateFieldFormat`. Aujourd'hui : un NISS dont la
+/// date est cohérente mais dont le checksum échoue (on prévient l'utilisateur
+/// de vérifier sa saisie sans l'empêcher de continuer — #4). Renvoie `null`
+/// si rien à signaler. Une valeur vide ne déclenche jamais d'avertissement.
+export function validateFieldWarning(field: FieldLike, value: unknown, lang: Locale): string | null {
+  const v = typeof value === "string" ? value : "";
+  if (v.trim() === "") return null;
+  if (field.type === "niss" && !nissBlocking(v) && !isValidNISS(v)) {
+    return loc(field.errorMsg, lang) || NISS_MESSAGES.checksum[lang];
+  }
+  return null;
 }
 
 /// Vrai si le champ est « rempli et valide » — non vide (selon son type) ET de

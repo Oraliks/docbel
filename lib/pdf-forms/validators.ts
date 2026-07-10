@@ -1,8 +1,9 @@
 // Validateurs belges (NISS, BCE/TVA, téléphone) utilisés par le module pdf-forms.
 
 /// Raison d'invalidité d'un NISS — sert à produire un message d'erreur
-/// pédagogique (longueur vs. erreur de frappe).
-export type NissInvalidReason = "length" | "checksum";
+/// pédagogique et à distinguer ce qui BLOQUE (longueur, date impossible) de ce
+/// qui n'est qu'un AVERTISSEMENT (checksum).
+export type NissInvalidReason = "length" | "date" | "checksum";
 
 export interface NissDiagnosis {
   ok: boolean;
@@ -11,11 +12,28 @@ export interface NissDiagnosis {
   reason?: NissInvalidReason;
 }
 
-/// Diagnostique un NISS : longueur (11 chiffres) puis checksum modulo 97.
+/// Diagnostique un NISS : longueur (11 chiffres) → cohérence de la date encodée
+/// (positions 3-4 mois, 5-6 jour) → checksum modulo 97.
+///
+/// Cohérence date : un mois/jour IMPOSSIBLE trahit une confusion année/mois/jour
+/// (erreur bloquante). On tolère : mois `00` (date de naissance non déclarée),
+/// mois `01-12` (normal), et les NUMÉROS BIS où le mois est incrémenté de 20
+/// (sexe connu → `21-32`) ou de 40 (date incomplète → `41-52`) ; jour `00-31`.
 export function diagnoseNISS(raw: string): NissDiagnosis {
   const digits = raw.replace(/[^0-9]/g, "");
   if (digits.length !== 11) {
     return { ok: false, digitCount: digits.length, reason: "length" };
+  }
+  const month = parseInt(digits.slice(2, 4), 10);
+  const day = parseInt(digits.slice(4, 6), 10);
+  const monthOk =
+    month === 0 ||
+    (month >= 1 && month <= 12) ||
+    (month >= 21 && month <= 32) ||
+    (month >= 41 && month <= 52);
+  const dayOk = day >= 0 && day <= 31;
+  if (!monthOk || !dayOk) {
+    return { ok: false, digitCount: 11, reason: "date" };
   }
   const base = digits.slice(0, 9);
   const check = parseInt(digits.slice(9, 11), 10);
@@ -25,9 +43,21 @@ export function diagnoseNISS(raw: string): NissDiagnosis {
   return { ok, digitCount: 11, reason: ok ? undefined : "checksum" };
 }
 
-/// NISS (numéro de registre national) — validation checksum modulo 97.
+/// NISS (numéro de registre national) — entièrement valide (date + checksum).
 export function isValidNISS(raw: string): boolean {
   return diagnoseNISS(raw).ok;
+}
+
+/// Vrai si le NISS doit BLOQUER l'envoi : mauvaise longueur OU date impossible
+/// (confusion année/mois/jour). Un simple échec de checksum n'est PAS bloquant
+/// (certains NISS légitimes — date de naissance non déclarée — peuvent
+/// surprendre le contrôle) : il est signalé en avertissement, cf.
+/// `validateFieldWarning`. Un NISS vide n'est jamais bloquant ici (le requis
+/// se gère à l'envoi).
+export function nissBlocking(raw: string): boolean {
+  if (raw.replace(/[^0-9]/g, "") === "") return false;
+  const reason = diagnoseNISS(raw).reason;
+  return reason === "length" || reason === "date";
 }
 
 function ibanChecksumValid(cleaned: string): boolean {

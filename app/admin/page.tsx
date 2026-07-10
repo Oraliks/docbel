@@ -10,6 +10,8 @@ import { OpsQueue } from "@/components/admin/dashboard/ops-queue"
 import { UsageKpis } from "@/components/admin/dashboard/usage-kpis"
 import { BundleFunnel } from "@/components/admin/dashboard/bundle-funnel"
 import { TopLists } from "@/components/admin/dashboard/top-lists"
+import { ModuleCards } from "@/components/admin/dashboard/module-cards"
+import { RecentActivity } from "@/components/admin/dashboard/recent-activity"
 import { DailyChartLazy } from "@/components/admin/dashboard/daily-chart-lazy"
 import { getDailySeries } from "@/lib/admin/dashboard-stats"
 import { parsePeriod, type Period } from "@/lib/admin/dashboard-stats-helpers"
@@ -127,6 +129,14 @@ export default async function AdminPage({
 
       <Suspense fallback={<KpiCardsSkeleton count={3} />}>
         <TopLists period={period} />
+      </Suspense>
+
+      <Suspense fallback={<KpiCardsSkeleton count={4} />}>
+        <ModuleCards period={period} />
+      </Suspense>
+
+      <Suspense fallback={null}>
+        <RecentActivity />
       </Suspense>
     </div>
   )

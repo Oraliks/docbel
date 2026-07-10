@@ -349,3 +349,77 @@ export const getTopLists = cache(async (period: Period): Promise<TopLists> => {
     noResult,
   };
 });
+
+// ── Modules secondaires ─────────────────────────────────────────────────────
+
+export interface ModuleStats {
+  rdv: { upcoming7d: number; activeTenants: number };
+  formations: { enrollments: number; upcomingSessions: number };
+  ia: { sessions: number; openGaps: number };
+  employeur: { simulations: number; drafts: number };
+}
+
+export const getModuleStats = cache(async (period: Period): Promise<ModuleStats> => {
+  const { start } = periodBounds(period);
+  const now = new Date();
+  const today = belgianDay(now);
+  const in7days = belgianDay(new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000));
+
+  const [
+    upcoming7d,
+    activeTenants,
+    enrollments,
+    upcomingSessions,
+    sessions,
+    openGaps,
+    simulations,
+    drafts,
+  ] = await Promise.all([
+    withDbRetry(() =>
+      prisma.booking.count({
+        where: {
+          date: { gte: today, lt: in7days },
+          status: { in: [BookingStatus.pending_approval, BookingStatus.confirmed] },
+        },
+      }),
+    ),
+    withDbRetry(() => prisma.bookingTenant.count({ where: { active: true } })),
+    withDbRetry(() => prisma.trainingEnrollment.count({ where: { createdAt: { gte: start } } })),
+    withDbRetry(() =>
+      prisma.trainingSession.count({
+        where: { startsAt: { gte: now }, status: { in: ["scheduled", "open"] } },
+      }),
+    ),
+    withDbRetry(() => prisma.chatSession.count({ where: { createdAt: { gte: start } } })),
+    withDbRetry(() => prisma.knowledgeGap.count({ where: { status: "open" } })),
+    withDbRetry(() => prisma.costSimulation.count({ where: { createdAt: { gte: start } } })),
+    withDbRetry(() => prisma.documentDraft.count({ where: { status: "draft" } })),
+  ]);
+
+  return {
+    rdv: { upcoming7d, activeTenants },
+    formations: { enrollments, upcomingSessions },
+    ia: { sessions, openGaps },
+    employeur: { simulations, drafts },
+  };
+});
+
+// ── Activité admin récente ──────────────────────────────────────────────────
+
+export interface RecentActivityItem {
+  id: string;
+  user: string;
+  action: string;
+  resourceName: string;
+  createdAt: Date;
+}
+
+export const getRecentActivity = cache(async (limit = 6): Promise<RecentActivityItem[]> => {
+  return withDbRetry(() =>
+    prisma.activity.findMany({
+      select: { id: true, user: true, action: true, resourceName: true, createdAt: true },
+      orderBy: { createdAt: "desc" },
+      take: limit,
+    }),
+  );
+});

@@ -70,7 +70,8 @@ Décisions actées avec Oraliks (2026-07-10) :
 - Base de données : `SELECT 1` chronométré (latence ms) — best-effort, état
   « indisponible » propre si échec (Neon cold start).
 - À traiter : somme des compteurs de `getOpsQueue()` + nombre de files > 0.
-- Trafic aujourd'hui : `PageView` count du jour vs même compteur d'hier.
+- Trafic 24 h : `PageView` count sur 24 h glissantes vs les 24 h précédentes
+  (évite les maths de bord de journée côté serveur).
 
 ### Étage « File de travail » — `getOpsQueue()`
 

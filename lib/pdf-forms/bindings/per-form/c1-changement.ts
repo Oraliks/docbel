@@ -14,8 +14,8 @@ import {
   ibanBelgianSplit,
   ibanForeignRouting,
   horsEeeTripleNon,
-  dateHeaderFallback,
 } from "../macros";
+import { formatDateFR } from "../format";
 
 // ---------------------------------------------------------------------------
 // Widgets ciblés (constantes internes — lisibilité + refactor safe).
@@ -42,13 +42,22 @@ const W_IBAN_PART3 = "undefined_13";
 // nom du widget (vérifié au dump — ne pas normaliser).
 const W_IBAN_ETRANGER = "SEPA étranger IBAN  BIC";
 
-// Titulaire, remarque, date de modification en-tête page 2.
-// `DateDeModification` (en-tête haut p.2) reçoit la date de modification.
-// `DateDA` (3 cases p.2) n'est PLUS ici : c'est la date de CRÉATION du dossier,
-// auto-remplie par le champ `dateCreationDossier` (cf. seed).
+// Titulaire + remarque situation familiale.
+// L'en-tête date page 2 (`DateDeModification`) a été renommé `DateDeDA` par
+// Oraliks 2026-07-10 et reçoit désormais la date de CRÉATION du dossier via le
+// champ `dateCreationDossier` (cf. seed) — plus aucune règle date ici pour lui.
 const W_TITULAIRE = "NomTitulaireSipasOk";
-const W_REMARQUE = "Remarques 1";
-const W_DATE_HEADER_P2 = "DateDeModification";
+const W_REMARQUE = "Remarques 1 Haut";
+
+// Dates « à partir du » par ligne de motif. Oraliks a scindé le champ unique
+// `DateModification` (1 champ / 5 widgets) en 5 widgets distincts le 2026-07-10
+// (« dates identiques sauf pour transfert ») → on date UNIQUEMENT la ligne du
+// motif coché. Les 3 modifications partagent `dateModificationEffective` ; le
+// transfert d'organisme porte sa propre date (`dateChangementOrganisme`).
+const W_DATE_ADRESSE = "DateAdresse";
+const W_DATE_SITUATION = "DatePersonnelleOuMenage";
+const W_DATE_BANQUE = "DateBanque";
+const W_DATE_TRANSFERT = "DateDeTransfert";
 
 // Widget fusionné code postal + commune (nouvel AcroForm) : on y écrit
 // « 1000 Bruxelles » (cf. règle `code-postal-commune`).
@@ -78,6 +87,16 @@ function buildRemarqueFragments(payload: FormPayload): string[] {
   if (jugement === "en-cours") parts.push("jugement en cours");
   else if (jugement === "pas-encore-recu") parts.push("je n'ai pas encore reçu mon jugement");
   return parts;
+}
+
+/// Date d'effet d'une ligne de motif : ne stampe le widget QUE si le champ
+/// source (date saisie) est non vide, après formatage FR (DD/MM/YYYY). Renvoie
+/// un tableau vide sinon → la ligne du motif non renseigné reste vierge.
+function motifDateStamp(payload: FormPayload, widget: string, source: string) {
+  const v = payload[source];
+  const raw = typeof v === "string" ? v.trim() : "";
+  if (!raw) return [];
+  return [{ widget, value: formatDateFR(raw) }];
 }
 
 // ---------------------------------------------------------------------------
@@ -213,21 +232,43 @@ export const C1_CHANGEMENT_RULES: MappingRule[] = [
     declaredWidgets: [W_REMARQUE],
   },
 
-  // -------- Dates page 2 (via macro) --------
+  // -------- Dates « à partir du » par ligne de motif (widgets scindés) --------
   //
-  // Priorité à la date de changement (`dateModificationEffective`), fallback
-  // sur la date de demande initiale (`dateDemande`). Formatage FR (DD/MM/YYYY).
-  // Deux widgets depuis le remaniement AcroForm : l'en-tête `DateDeModification`
-  // ET les 3 champs `DateDA` reçoivent la MÊME date (Oraliks 2026-07-10).
-  dateHeaderFallback({
-    widget: W_DATE_HEADER_P2,
-    sources: ["dateModificationEffective", "dateDemande"],
-    name: "date-header-p2",
-  }),
-  // `DateDA` (page 2) n'est plus une date de modification : c'est la « date de
-  // création du dossier » (Oraliks 2026-07-10), désormais auto-remplie du jour
-  // par le champ `dateCreationDossier` (prefillFrom system.today). L'ancienne
-  // règle `date-da-p2` est retirée.
+  // Oraliks a scindé le champ unique `DateModification` (1 champ / 5 widgets)
+  // en 5 widgets distincts le 2026-07-10 (« des dates différentes à l'AcroForm
+  // mais identiques sauf pour transfert »). On date UNIQUEMENT la ligne du
+  // motif COCHÉ : les 3 modifications (adresse / situation / compte) partagent
+  // la date de changement (`dateModificationEffective`) ; le transfert
+  // d'organisme porte la sienne (`dateChangementOrganisme`). Ligne non cochée =
+  // widget laissé vide (motifDateStamp renvoie []).
+  //
+  // L'en-tête page 2 (`DateDeDA`, ex-`DateDeModification`) et la date de
+  // création (`DateDeDA`) sont gérés par le champ auto `dateCreationDossier`
+  // (prefillFrom system.today) — plus aucune règle date pour eux ici.
+  {
+    name: "date-adresse",
+    when: { modificationAdresse: true },
+    stampFn: (p) => motifDateStamp(p, W_DATE_ADRESSE, "dateModificationEffective"),
+    declaredWidgets: [W_DATE_ADRESSE],
+  },
+  {
+    name: "date-situation",
+    when: { modificationSituationFamiliale: true },
+    stampFn: (p) => motifDateStamp(p, W_DATE_SITUATION, "dateModificationEffective"),
+    declaredWidgets: [W_DATE_SITUATION],
+  },
+  {
+    name: "date-banque",
+    when: { modificationCompte: true },
+    stampFn: (p) => motifDateStamp(p, W_DATE_BANQUE, "dateModificationEffective"),
+    declaredWidgets: [W_DATE_BANQUE],
+  },
+  {
+    name: "date-transfert",
+    when: { transfereOrganismePaiement: true },
+    stampFn: (p) => motifDateStamp(p, W_DATE_TRANSFERT, "dateChangementOrganisme"),
+    declaredWidgets: [W_DATE_TRANSFERT],
+  },
 
   // -------- Code postal + commune (widget fusionné) --------
   //

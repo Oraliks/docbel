@@ -143,7 +143,7 @@ describe("C1_QUESTIONS — habillage renderAs / stepPriority", () => {
     const expectations: Record<string, { pdfFieldName: string; section: string; order: number; visibleIf?: unknown }> = {
       motifIntroduction: {
         pdfFieldName:
-          "pour la première fois 5|après une interruption de mes allocations 5|je déclare une modification concernant|je change dorganisme de paiement à partir du 5",
+          "PremièreFois|après une interruption de mes allocations 5|je déclare une modification concernant|je change dorganisme de paiement à partir du 5",
         section: "demande",
         order: 3,
       },
@@ -209,7 +209,7 @@ describe("applyC1Improvements — restrictMotifTo5Situations (Oraliks, 2026-07-0
     const motif = result.find((f) => f.id === "motifIntroduction");
     expect(motif?.options).toHaveLength(4);
     expect(motif?.pdfFieldName).toBe(
-      "pour la première fois 5|après une interruption de mes allocations 5|je déclare une modification concernant|je change dorganisme de paiement à partir du 5"
+      "PremièreFois|après une interruption de mes allocations 5|je déclare une modification concernant|je change dorganisme de paiement à partir du 5"
     );
   });
 

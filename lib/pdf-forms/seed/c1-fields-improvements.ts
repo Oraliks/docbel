@@ -333,7 +333,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
   // ====================================================================
   {
     id: "dateDemande",
-    pdfFieldName: "DateModification",
+    pdfFieldName: "DateAllocation",
     type: "date",
     required: true,
     label: { fr: "Je demande des allocations à partir du", nl: "", de: "" },
@@ -365,7 +365,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
   {
     id: "motifIntroduction",
     pdfFieldName:
-      "pour la première fois 5|après une interruption de mes allocations 5|je déclare une modification concernant|je change dorganisme de paiement à partir du 5",
+      "PremièreFois|après une interruption de mes allocations 5|je déclare une modification concernant|je change dorganisme de paiement à partir du 5",
     type: "radio",
     required: true,
     label: { fr: "Motif d'introduction de cette demande", nl: "", de: "" },
@@ -460,7 +460,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
   // depuis que la règle serveur produit la valeur directement.
   {
     id: "dateModificationEffective",
-    pdfFieldName: "", // À stamper sur les 3 cases date réelles (adresse / situation familiale / compte) — noms AcroForm à identifier via scripts/dump-c1.ts (suivi séparé, cf. NEXT_ACTIONS).
+    pdfFieldName: "", // Stampé par bindings (c1-changement.ts) sur DateAdresse / DatePersonnelleOuMenage / DateBanque — une par chip modif COCHÉ. Le transfert porte sa propre date (dateChangementOrganisme → DateDeTransfert).
     type: "date",
     required: false,
     label: { fr: "Date d'effet de la ou des modification(s) cochée(s) ci-dessus", nl: "", de: "" },
@@ -476,10 +476,10 @@ export const C1_QUESTIONS: PdfFormField[] = [
     // Date de création du dossier (Oraliks 2026-07-10 : « datededa pour date
     // de la création du dossier »). Auto-remplie du jour à la génération —
     // `prefillFrom: "system.today"` ⇒ `isCreationDateField` ⇒ non rendue à
-    // l'écran + injectée serveur (route /generate). Stampe le widget `DateDA`
-    // (3 cases page 2). Remplace l'ancienne règle `date-da-p2`.
+    // l'écran + injectée serveur (route /generate). Stampe le widget `DateDeDA`
+    // (en-tête page 2, renommé par Oraliks 2026-07-10 depuis `DateDeModification`).
     id: "dateCreationDossier",
-    pdfFieldName: "DateDA",
+    pdfFieldName: "DateDeDA",
     type: "date",
     required: false,
     label: { fr: "Date de création du dossier", nl: "", de: "" },
@@ -577,7 +577,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
     // encore reçu → phrase correspondante). `autoAnswered` = jamais rendu
     // comme contrôle interactif, mais reste dans le payload validé + soumis.
     id: "remarqueSituationFamiliale",
-    pdfFieldName: "Remarques 1",
+    pdfFieldName: "Remarques 1 Haut",
     type: "textarea",
     required: false,
     label: { fr: "Remarque (situation familiale)", nl: "", de: "" },
@@ -990,7 +990,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
   },
   {
     id: "formationStageSyntraDate",
-    pdfFieldName: "",
+    pdfFieldName: "DateFormationStageSyntraIfapmeEpepmeIawm",
     type: "date",
     required: false,
     label: { fr: "À partir du", nl: "", de: "" },
@@ -2115,17 +2115,18 @@ export function applyC1Improvements(
         // `hidden` = ni rendue à l'écran, ni stampée (les 2 cases oui/non
         // restent neutres sur le PDF).
         if (q.id === "chomeurTemporaireAlternance") return { ...q, hidden: true };
-        // Libellé/aide raccourcis pour l'étape Motif + STAMPING de la date de
-        // changement sur les lignes « à partir du » du motif (Oraliks
-        // 2026-07-10 : « tu mets pas les dates pour les motifs cochés »). Le
-        // widget `DateModification` a 5 cases (une par ligne motif) mais reste
-        // UN SEUL champ AcroForm → la MÊME date (celle saisie ici) apparaît sur
-        // toutes les lignes. Pour dater UNIQUEMENT le motif coché, il faudrait
-        // scinder ce widget en 5 (comme la grille cohabitants).
+        // Libellé/aide raccourcis pour l'étape Motif. La date de changement
+        // (saisie ici) est stampée par BINDINGS (c1-changement.ts) sur la ligne
+        // « à partir du » du/des motif(s) COCHÉ(s) uniquement. Oraliks a scindé
+        // le champ unique `DateModification` (1 champ / 5 widgets) en 5 widgets
+        // distincts le 2026-07-10 : « dates identiques sauf pour transfert ».
+        // → DateAdresse / DatePersonnelleOuMenage / DateBanque reçoivent CETTE
+        // date ; le transfert porte la sienne (dateChangementOrganisme →
+        // DateDeTransfert). Le champ garde donc `pdfFieldName: ""` (pas de
+        // stamp direct 1↔1, tout passe par les règles conditionnelles).
         if (q.id === "dateModificationEffective") {
           return {
             ...q,
-            pdfFieldName: "DateModification",
             label: { ...q.label, fr: "Date de changement" },
             help: {
               ...q.help,
@@ -2134,9 +2135,9 @@ export function applyC1Improvements(
           };
         }
         // « Je demande des allocations à partir du » ne s'applique PAS à un
-        // dossier de changement de situation → on ne stampe pas sa date (sinon
-        // elle écraserait `DateModification` avec la date du jour). Reste
-        // validée/auto en interne, juste non imprimée.
+        // dossier de changement de situation → on n'imprime pas sa date (elle
+        // vaut aujourd'hui par défaut, prefill system.today). Reste validée/auto
+        // en interne, juste non stampée (widget DateAllocation laissé vide).
         if (q.id === "dateDemande") return { ...q, pdfFieldName: "" };
         // Reste réel/requis/soumis (nécessaire au filler + à la validation),
         // mais n'est plus montré comme sélecteur : les 5 chips pilotent sa

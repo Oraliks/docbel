@@ -57,12 +57,14 @@ describe("Rules C1 — scénario baseline (Oraliks repro)", () => {
     // compte est au nom d'une AUTRE personne). Oraliks 2026-07-10.
     expect(stamps.has("NomTitulaireSipasOk")).toBe(false);
 
-    // Date de modification en-tête page 2 (fallback dateDemande → format FR).
-    // DateDA (date de création) est gérée par un champ auto, pas une règle.
-    expect(stamps.get("DateDeModification")).toBe("08/07/2026");
+    // Date : baseline sans `dateModificationEffective` → la ligne adresse n'est
+    // PAS datée (widget vide). Le comportement daté est couvert par le describe
+    // « dates par ligne de motif ». La date de création (DateDeDA) est gérée
+    // par un champ auto (prefillFrom system.today), pas une règle.
+    expect(stamps.has("DateAdresse")).toBe(false);
 
     // Remarque non émise (pas de cohousing, jugement vide).
-    expect(stamps.has("Remarques 1")).toBe(false);
+    expect(stamps.has("Remarques 1 Haut")).toBe(false);
 
     // Rubrique hors-EEE : 3 « non » cochés.
     expect(stamps.get("non_17")).toBe(true);
@@ -154,7 +156,7 @@ describe("Rules C1 — remarque situation familiale", () => {
       habiteEnColocation: "oui",
     };
     const stamps = resolveStamps(payload, C1_CHANGEMENT_RULES);
-    expect(stamps.get("Remarques 1")).toBe("cohousing");
+    expect(stamps.get("Remarques 1 Haut")).toBe("cohousing");
   });
 
   it("jugement en-cours et pas-encore-recu concaténés avec « ; »", () => {
@@ -164,15 +166,15 @@ describe("Rules C1 — remarque situation familiale", () => {
       statutFamilial: "isole",
       habiteEnColocation: "oui",
     };
-    expect(resolveStamps(cohousingOnly, C1_CHANGEMENT_RULES).get("Remarques 1")).toBe("cohousing");
+    expect(resolveStamps(cohousingOnly, C1_CHANGEMENT_RULES).get("Remarques 1 Haut")).toBe("cohousing");
 
     // Cas jugement en cours seul.
     const enCours = { ...baseline(), statutJugementPensionAlimentaire: "en-cours" };
-    expect(resolveStamps(enCours, C1_CHANGEMENT_RULES).get("Remarques 1")).toBe("jugement en cours");
+    expect(resolveStamps(enCours, C1_CHANGEMENT_RULES).get("Remarques 1 Haut")).toBe("jugement en cours");
 
     // Cas « pas encore reçu ».
     const pasRecu = { ...baseline(), statutJugementPensionAlimentaire: "pas-encore-recu" };
-    expect(resolveStamps(pasRecu, C1_CHANGEMENT_RULES).get("Remarques 1")).toBe(
+    expect(resolveStamps(pasRecu, C1_CHANGEMENT_RULES).get("Remarques 1 Haut")).toBe(
       "je n'ai pas encore reçu mon jugement"
     );
 
@@ -183,27 +185,52 @@ describe("Rules C1 — remarque situation familiale", () => {
       habiteEnColocation: "oui",
       statutJugementPensionAlimentaire: "en-cours",
     };
-    expect(resolveStamps(combo, C1_CHANGEMENT_RULES).get("Remarques 1")).toBe(
+    expect(resolveStamps(combo, C1_CHANGEMENT_RULES).get("Remarques 1 Haut")).toBe(
       "cohousing ; jugement en cours"
     );
   });
 });
 
-describe("Rules C1 — date en-tête page 2", () => {
-  it("dateModificationEffective prime sur dateDemande", () => {
+describe("Rules C1 — dates par ligne de motif (widgets scindés 2026-07-10)", () => {
+  it("date la ligne de CHAQUE chip modification coché avec dateModificationEffective", () => {
     const payload = {
       ...baseline(),
-      dateDemande: "2026-07-08",
+      modificationAdresse: true,
+      modificationCompte: true,
+      modificationSituationFamiliale: false,
       dateModificationEffective: "2026-06-15",
     };
     const stamps = resolveStamps(payload, C1_CHANGEMENT_RULES);
-    expect(stamps.get("DateDeModification")).toBe("15/06/2026");
+    expect(stamps.get("DateAdresse")).toBe("15/06/2026");
+    expect(stamps.get("DateBanque")).toBe("15/06/2026");
+    // Situation familiale non cochée → sa ligne reste vide.
+    expect(stamps.has("DatePersonnelleOuMenage")).toBe(false);
+    // Le transfert n'est pas concerné.
+    expect(stamps.has("DateDeTransfert")).toBe(false);
   });
 
-  it("aucune date → aucun stamp", () => {
-    const payload = { ...baseline(), dateDemande: "", dateModificationEffective: "" };
+  it("le transfert d'organisme porte SA propre date (dateChangementOrganisme), pas celle de modif", () => {
+    const payload = {
+      ...baseline(),
+      modificationAdresse: false,
+      transfereOrganismePaiement: true,
+      dateChangementOrganisme: "2026-08-01",
+      dateModificationEffective: "2026-06-15",
+    };
     const stamps = resolveStamps(payload, C1_CHANGEMENT_RULES);
-    expect(stamps.has("DateDeModification")).toBe(false);
+    expect(stamps.get("DateDeTransfert")).toBe("01/08/2026");
+    // La date de modif ne fuit pas sur les lignes modification (chips décochés).
+    expect(stamps.has("DateAdresse")).toBe(false);
+    expect(stamps.has("DateBanque")).toBe(false);
+  });
+
+  it("aucune date saisie → aucune ligne datée", () => {
+    const payload = { ...baseline(), dateModificationEffective: "", dateChangementOrganisme: "" };
+    const stamps = resolveStamps(payload, C1_CHANGEMENT_RULES);
+    expect(stamps.has("DateAdresse")).toBe(false);
+    expect(stamps.has("DateBanque")).toBe(false);
+    expect(stamps.has("DatePersonnelleOuMenage")).toBe(false);
+    expect(stamps.has("DateDeTransfert")).toBe(false);
   });
 });
 

@@ -53,6 +53,12 @@ const W_REMARQUE = "Remarques 1 Haut";
 // modification en haut de la page 2 »). Fallback : modif → transfert → demande.
 const W_DATE_HEADER_P2 = "DateDeDA";
 
+// En-tête page 2 : le PDF officiel duplique l'identité dans un unique widget
+// `NomPrenom`. Le champ `nom_et_pr_nom` qui le cible est `hidden` (jamais saisi)
+// et le citoyen ne remplit que `pr_nom` (Prénom) + `nom` séparément (page 1) →
+// on compose « Prénom Nom » ici (règle `nom-prenom-header-p2`).
+const W_NOM_PRENOM_P2 = "NomPrenom";
+
 // Dates « à partir du » par ligne de motif. Oraliks a scindé le champ unique
 // `DateModification` (1 champ / 5 widgets) en 5 widgets distincts le 2026-07-10
 // (« dates identiques sauf pour transfert ») → on date UNIQUEMENT la ligne du
@@ -90,6 +96,22 @@ function buildRemarqueFragments(payload: FormPayload): string[] {
   const jugement = payload.statutJugementPensionAlimentaire;
   if (jugement === "en-cours") parts.push("jugement en cours");
   else if (jugement === "pas-encore-recu") parts.push("je n'ai pas encore reçu mon jugement");
+  // Remarques saisies par ligne de cohabitant (grille « Personnes avec qui je
+  // cohabite ») : le sous-champ `remarque` n'a AUCUN widget PDF propre
+  // (pdfFieldName vide, pas de template) — sans cette agrégation il tombe dans
+  // le vide. On les déverse dans la zone « Remarques » globale du bas de page,
+  // préfixées du nom pour rester lisibles quand il y a plusieurs cohabitants.
+  const cohabitants = Array.isArray(payload.cohabitants) ? payload.cohabitants : [];
+  for (const c of cohabitants) {
+    if (!c || typeof c !== "object") continue;
+    const row = c as Record<string, unknown>;
+    const remarque = typeof row.remarque === "string" ? row.remarque.trim() : "";
+    if (!remarque) continue;
+    const prenom = typeof row.prenom === "string" ? row.prenom.trim() : "";
+    const nom = typeof row.nom === "string" ? row.nom.trim() : "";
+    const who = [prenom, nom].filter(Boolean).join(" ");
+    parts.push(who ? `${who} : ${remarque}` : remarque);
+  }
   return parts;
 }
 
@@ -281,6 +303,28 @@ export const C1_CHANGEMENT_RULES: MappingRule[] = [
     sources: ["dateModificationEffective", "dateChangementOrganisme", "dateDemande"],
     name: "date-header-p2",
   }),
+
+  // -------- Nom + prénom en-tête page 2 (widget `NomPrenom`) --------
+  //
+  // Le citoyen saisit `pr_nom` (Prénom) et `nom` séparément (page 1, widgets
+  // `Prenom`/`Nom`). L'en-tête de page 2 a un widget unique `NomPrenom` dont le
+  // champ cible (`nom_et_pr_nom`) est `hidden` → jamais alimenté. On compose
+  // « Prénom Nom » ici pour que l'identité apparaisse aussi en page 2.
+  {
+    name: "nom-prenom-header-p2",
+    whenFn: (payload) => {
+      const p = typeof payload.pr_nom === "string" ? payload.pr_nom.trim() : "";
+      const n = typeof payload.nom === "string" ? payload.nom.trim() : "";
+      return p !== "" || n !== "";
+    },
+    stampFn: (payload) => {
+      const p = typeof payload.pr_nom === "string" ? payload.pr_nom.trim() : "";
+      const n = typeof payload.nom === "string" ? payload.nom.trim() : "";
+      const value = [p, n].filter(Boolean).join(" ");
+      return value ? [{ widget: W_NOM_PRENOM_P2, value }] : [];
+    },
+    declaredWidgets: [W_NOM_PRENOM_P2],
+  },
 
   // -------- Code postal + commune (widget fusionné) --------
   //

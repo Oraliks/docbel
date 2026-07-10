@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 import { searchCountries, findCountryByName, type WorldCountry } from "@/lib/pdf-forms/world-countries";
 // Drapeaux en SVG (flag-icons) plutôt qu'en emoji régional : les emojis
 // drapeaux ne sont PAS rendus sous Windows (affichés « BE » au lieu de 🇧🇪),
@@ -35,7 +36,7 @@ interface CountrySelectInputProps
 /// une correspondance exacte trouvée. Même mécanique d'interaction que
 /// StreetAutocompleteInput (liste sous l'input, sélection au clic), sans le
 /// debounce/fetch : le filtrage est synchrone.
-export function CountrySelectInput({ value, onChange, ...props }: CountrySelectInputProps) {
+export function CountrySelectInput({ value, onChange, className, ...props }: CountrySelectInputProps) {
   const [open, setOpen] = useState(false);
   const suggestions = open ? searchCountries(value, MAX_SUGGESTIONS) : [];
   const currentCode = findCountryByName(value)?.code ?? "";
@@ -45,8 +46,11 @@ export function CountrySelectInput({ value, onChange, ...props }: CountrySelectI
     setOpen(false);
   };
 
+  // Le className de mise en page (`flex-1`) va sur le WRAPPER : sinon le
+  // `.relative`, enfant flex de la ligne, se réduit à la largeur naturelle de
+  // l'input et le champ ne remplit pas sa cellule (Oraliks 2026-07-11).
   return (
-    <div className="relative">
+    <div className={cn("relative", className)}>
       {currentCode && (
         // Positionnement porté par un span NEUTRE, pas par l'élément `.fi` :
         // flag-icons applique `position: relative` sur `.fi` (même spécificité
@@ -75,7 +79,7 @@ export function CountrySelectInput({ value, onChange, ...props }: CountrySelectI
         role="combobox"
         aria-expanded={open && suggestions.length > 0}
         aria-autocomplete="list"
-        className={currentCode ? `pl-8 ${props.className ?? ""}` : props.className}
+        className={cn("w-full", currentCode && "pl-8")}
       />
       {open && suggestions.length > 0 && (
         <ul

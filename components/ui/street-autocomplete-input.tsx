@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 import {
   parseStreetSuggestions,
   prioritizeByPostalCode,
@@ -40,6 +41,7 @@ export function StreetAutocompleteInput({
   postalCode,
   onSelectSuggestion,
   onVerifiedChange,
+  className,
   ...props
 }: StreetAutocompleteInputProps) {
   const [suggestions, setSuggestions] = useState<StreetSuggestion[]>([]);
@@ -72,11 +74,16 @@ export function StreetAutocompleteInput({
     };
   }, [value, postalCode]);
 
+  // Le className de mise en page (`flex-1`, fourni par PdfField) va sur le
+  // WRAPPER, pas sur l'input : sinon le `.relative` — enfant flex de la ligne
+  // — se réduit à la largeur naturelle de l'input et le champ ne remplit pas sa
+  // cellule (Oraliks 2026-07-11 : « la rue tu la pas élargie, regarde le vide »).
   return (
-    <div className="relative">
+    <div className={cn("relative", className)}>
       <Input
         {...props}
         value={value}
+        className="w-full"
         onChange={(e) => {
           onChange(e.target.value);
           // Frappe libre → la rue n'est (plus) vérifiée.

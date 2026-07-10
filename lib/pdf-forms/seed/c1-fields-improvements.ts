@@ -212,10 +212,14 @@ export const C1_QUESTIONS: PdfFormField[] = [
     },
     prefillFrom: "profile.street",
     streetAutocomplete: { postalFieldId: "code_postal" },
-    // Forçage (Oraliks 2026-07-09) : évite les fautes d'orthographe — la rue
-    // doit être choisie dans les suggestions BeStAddress (FR ou NL), sauf
-    // échappatoire ci-dessous. Contrôle côté runner (cf. list-match.ts).
-    requireListMatch: { escapeFieldId: "adresse_rue_hors_liste" },
+    // Input plus large (Oraliks 2026-07-11) : le nom de rue est souvent long.
+    wide: true,
+    // Forçage (Oraliks 2026-07-09/11) : la rue doit être choisie dans les
+    // suggestions BeStAddress (FR ou NL) POUR une adresse belge — sauf
+    // échappatoire ci-dessous. Pour un pays étranger (`pays` ≠ Belgique), la
+    // saisie libre est autorisée (BeStAddress ne couvre que la Belgique).
+    // Contrôle côté runner (cf. list-match.ts).
+    requireListMatch: { escapeFieldId: "adresse_rue_hors_liste", countryFieldId: "pays" },
     canonicalKey: "adresse.rue",
     section: SECTION_IDENTITE,
     order: -89,
@@ -308,6 +312,10 @@ export const C1_QUESTIONS: PdfFormField[] = [
     pdfFieldName: "Email",
     type: "email",
     required: false,
+    // Masqué du form runner (Oraliks 2026-07-11) : champ optionnel, retiré de
+    // l'UI mais conservé dans le schéma (widget PDF `Email` toujours mappé si
+    // un jour on le réactive). `hidden` = ni affiché, ni soumis.
+    hidden: true,
     label: { fr: "Adresse e-mail (facultatif)", nl: "", de: "" },
     placeholder: { fr: "nom@exemple.be", nl: "", de: "" },
     prefillFrom: "profile.email",
@@ -320,6 +328,9 @@ export const C1_QUESTIONS: PdfFormField[] = [
     pdfFieldName: "Telephone",
     type: "phone_be",
     required: false,
+    // Masqué du form runner (Oraliks 2026-07-11) : optionnel, retiré de l'UI
+    // mais conservé dans le schéma.
+    hidden: true,
     label: { fr: "Numéro de téléphone (facultatif)", nl: "", de: "" },
     placeholder: { fr: "0470 12 34 56", nl: "", de: "" },
     prefillFrom: "profile.phone",
@@ -1291,7 +1302,11 @@ export const C1_QUESTIONS: PdfFormField[] = [
     id: "modePaiementChequeWarning",
     pdfFieldName: "",
     type: "checkbox",
-    required: false,
+    // Obligatoire quand le chèque circulaire est choisi (Oraliks 2026-07-11) :
+    // le citoyen DOIT confirmer avoir compris avant de continuer. `required`
+    // sur un champ `visibleIf` ne s'applique que lorsque le champ est visible
+    // (cf. superRefine) → n'exige la case que si mode = chèque.
+    required: true,
     label: {
       fr: "Je confirme avoir compris : le chèque circulaire est rare, plus lent et envoyé à l'adresse de la rubrique « MON IDENTITÉ ».",
       nl: "", de: "",
@@ -1308,16 +1323,16 @@ export const C1_QUESTIONS: PdfFormField[] = [
     // PDF officiel ONEM — la laisser vide côté citoyen fait remonter un doute
     // sur la propriété du compte à l'organisme de paiement.
     required: true,
-    // Posée aussi pour le chèque circulaire : même si le chèque est envoyé à
-    // l'adresse de la rubrique Identité, on veut tracer si le compte bancaire
-    // du bénéficiaire est bien à son nom (utile en cas de dépôt ultérieur).
+    // Uniquement pour le VIREMENT (Oraliks 2026-07-11) : la question de la
+    // propriété du compte n'a plus de sens pour le chèque circulaire (envoyé à
+    // l'adresse, pas viré sur un compte) → masquée quand mode = chèque.
     label: { fr: "Le compte bancaire est à mon nom ?", nl: "", de: "" },
     options: [
       { value: "mon-nom", label: { fr: "Oui, à mon nom", nl: "", de: "" } },
       { value: "autre-nom", label: { fr: "Non, au nom d'une autre personne", nl: "", de: "" } },
     ],
     defaultValue: "mon-nom",
-    visibleIf: { fieldId: "modePaiement", op: "in", value: ["virement", "cheque"] },
+    visibleIf: { fieldId: "modePaiement", op: "equals", value: "virement" },
     section: SECTION_PAIEMENT,
     order: 602,
   },

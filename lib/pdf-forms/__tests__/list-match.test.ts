@@ -6,6 +6,26 @@ const street = {
   requireListMatch: { escapeFieldId: "adresse_rue_hors_liste" },
 };
 
+const streetBE = {
+  id: "adresse_rue",
+  requireListMatch: { escapeFieldId: "adresse_rue_hors_liste", countryFieldId: "pays" },
+};
+
+describe("findListMatchErrors — conditionnel pays (#2)", () => {
+  it("Belgique : force la liste (rue non vérifiée → erreur)", () => {
+    const errs = findListMatchErrors([streetBE], { adresse_rue: "Xyz", pays: "Belgique" }, new Set(), "fr");
+    expect(errs.adresse_rue).toBeTruthy();
+  });
+  it("pays vide (défaut Belgique) : force la liste", () => {
+    const errs = findListMatchErrors([streetBE], { adresse_rue: "Xyz" }, new Set(), "fr");
+    expect(errs.adresse_rue).toBeTruthy();
+  });
+  it("pays étranger : saisie libre autorisée (pas d'erreur)", () => {
+    const errs = findListMatchErrors([streetBE], { adresse_rue: "10 Downing Street", pays: "Royaume-Uni" }, new Set(), "fr");
+    expect(errs.adresse_rue).toBeUndefined();
+  });
+});
+
 describe("findListMatchErrors", () => {
   it("signale une rue tapée non vérifiée et sans échappatoire", () => {
     const errs = findListMatchErrors([street], { adresse_rue: "test" }, new Set(), "fr");

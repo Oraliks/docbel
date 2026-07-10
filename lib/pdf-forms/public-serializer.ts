@@ -31,6 +31,7 @@ export interface PublicField {
   section?: string;
   order?: number;
   renderAs?: PdfFormField["renderAs"];
+  wide?: PdfFormField["wide"];
   stepPriority?: PdfFormField["stepPriority"];
   stepGroup?: PdfFormField["stepGroup"];
   autoAnswered?: PdfFormField["autoAnswered"];
@@ -82,6 +83,7 @@ export function toPublicField(f: PdfFormField): PublicField {
     section: f.section,
     order: f.order,
     renderAs: f.renderAs,
+    wide: f.wide,
     stepPriority: f.stepPriority,
     stepGroup: f.stepGroup,
     autoAnswered: f.autoAnswered,

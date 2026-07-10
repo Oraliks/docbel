@@ -5,8 +5,16 @@ import { loc, type FormPayload, type Locale, type Localized } from "./types";
 /// (client) sans cast.
 interface ListMatchFieldShape {
   id: string;
-  requireListMatch?: { escapeFieldId: string; message?: Localized };
+  requireListMatch?: { escapeFieldId: string; message?: Localized; countryFieldId?: string };
   visibleIf?: Parameters<typeof isFieldVisible>[0];
+}
+
+/// Adresse belge ? (pour conditionner le forçage de la liste BeStAddress).
+/// Vide/absent = on suppose la Belgique (défaut) ; « Belgique »/« België »/
+/// « Belgium » = belge ; toute autre valeur non vide = étranger.
+function isBelgianCountry(value: unknown): boolean {
+  if (typeof value !== "string" || value.trim() === "") return true;
+  return /belg/i.test(value);
 }
 
 const DEFAULT_MESSAGE: Localized = {
@@ -34,6 +42,14 @@ export function findListMatchErrors(
     const v = values[f.id];
     const filled = typeof v === "string" && v.trim() !== "";
     if (!filled) continue;
+    // Conditionnel pays : la liste n'est forcée que pour les adresses belges.
+    // Un pays étranger → saisie libre autorisée (Oraliks 2026-07-11).
+    if (
+      f.requireListMatch.countryFieldId &&
+      !isBelgianCountry(values[f.requireListMatch.countryFieldId])
+    ) {
+      continue;
+    }
     if (values[f.requireListMatch.escapeFieldId] === true) continue;
     if (verified.has(f.id)) continue;
     errors[f.id] = loc(f.requireListMatch.message ?? DEFAULT_MESSAGE, locale);

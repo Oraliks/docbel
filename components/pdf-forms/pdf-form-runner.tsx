@@ -1024,7 +1024,7 @@ function FieldsCluster({
       {standaloneOtherFields.length > 0 && (
         <div className="grid grid-cols-1 gap-x-4 gap-y-3.5 sm:grid-cols-2 xl:grid-cols-3">
           {standaloneOtherFields.map((f) => (
-            <div key={f.id} className={FULL_WIDTH_TYPES.has(f.type) ? "sm:col-span-2 xl:col-span-3" : ""}>
+            <div key={f.id} className={FULL_WIDTH_TYPES.has(f.type) ? "sm:col-span-2 xl:col-span-3" : f.wide ? "sm:col-span-2 xl:col-span-2" : ""}>
               <PdfField
                 field={f}
                 value={values[f.id] ?? ""}

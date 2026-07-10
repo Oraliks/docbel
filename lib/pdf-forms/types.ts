@@ -224,6 +224,10 @@ export interface PdfFormField {
   /// réservé aux champs où un choix visuel fait sens (ex. motif d'un C1).
   /// N'affecte ni la validation ni la valeur stockée.
   renderAs?: "chip";
+  /// Champ plus large dans la grille du form runner : occupe 2 colonnes au lieu
+  /// d'une (utile pour les valeurs longues, ex. nom de rue). Sans effet sur les
+  /// types déjà pleine largeur (textarea, radio, array…).
+  wide?: boolean;
   /// Priorité d'affichage de la SECTION de ce champ (tous les champs d'une
   /// même section doivent porter la même valeur). Absent/"core" = toujours
   /// une étape séquentielle obligatoire (comportement actuel). "optional" =
@@ -268,7 +272,15 @@ export interface PdfFormField {
   /// case d'échappement `escapeFieldId` (« ma rue n'est pas dans la liste »).
   /// Vérifié par le runner (pas par Zod : le contrôle « existe en base » est
   /// asynchrone) — cf. lib/pdf-forms/list-match.ts. Absent = texte libre.
-  requireListMatch?: { escapeFieldId: string; message?: Localized };
+  requireListMatch?: {
+    escapeFieldId: string;
+    message?: Localized;
+    /// Si défini : le forçage de la liste ne s'applique QUE pour une adresse
+    /// belge (valeur de ce champ vide ou « Belgique »). Pour un pays étranger,
+    /// saisie libre autorisée (BeStAddress ne couvre que la Belgique). Ex.
+    /// `{ escapeFieldId, countryFieldId: "pays" }`.
+    countryFieldId?: string;
+  };
   /// Active la recherche de pays (~195 pays du monde, cf.
   /// lib/pdf-forms/world-countries.ts) avec drapeau affiché sur un champ
   /// `text` — ex. taper "maro" propose "Maroc". La valeur stockée reste le

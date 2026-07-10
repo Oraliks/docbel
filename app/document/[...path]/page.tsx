@@ -1,5 +1,5 @@
 import { notFound, permanentRedirect } from "next/navigation";
-import { headers } from "next/headers";
+import { headers, cookies } from "next/headers";
 import Link from "next/link";
 import { ChevronRightIcon, SparklesIcon } from "lucide-react";
 import type { Metadata } from "next";
@@ -88,7 +88,8 @@ async function loadForm(
 /// valeur en re-passant par le schéma des PDFs déjà complétés.
 async function loadBundleSharedValues(
   bundleRunId: string,
-  currentFormId: string
+  currentFormId: string,
+  ownership: { userId: string | undefined; sessionId: string | null }
 ): Promise<{ shared: SharedBundleValues; canonical: CanonicalMap; runValid: boolean }> {
   const run = await prisma.bundleRun.findUnique({
     where: { id: bundleRunId },
@@ -105,6 +106,17 @@ async function loadBundleSharedValues(
     },
   });
   if (!run || run.status !== "in_progress") {
+    return { shared: {}, canonical: {}, runValid: false };
+  }
+  // Propriété du run (même logique que app/api/documents/bundles/[id]/run/route.ts) :
+  // sans ce contrôle, un `bundleRunId` deviné suffirait à lire les valeurs
+  // partagées (NISS, adresse…) d'un autre citoyen.
+  const owns = ownership.userId
+    ? run.userId === ownership.userId
+    : ownership.sessionId
+      ? run.sessionId === ownership.sessionId
+      : false;
+  if (!owns) {
     return { shared: {}, canonical: {}, runValid: false };
   }
 
@@ -211,7 +223,11 @@ export default async function PdfFormPage({
   let bundlePrefill: PrefillMap | undefined;
   let validBundleRunId: string | undefined;
   if (bundleRun) {
-    const { shared, canonical, runValid } = await loadBundleSharedValues(bundleRun, form.id);
+    const sessionId = (await cookies()).get("beldoc-bundle-session")?.value || null;
+    const { shared, canonical, runValid } = await loadBundleSharedValues(bundleRun, form.id, {
+      userId,
+      sessionId,
+    });
     if (runValid) {
       validBundleRunId = bundleRun;
       const bySharedFrom = applySharedValuesToForm(form.fields, shared);

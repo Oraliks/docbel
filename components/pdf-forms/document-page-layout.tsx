@@ -100,6 +100,7 @@ export function DocumentPageLayout({ form, bundlePrefill, bundleRunId, bundleSlu
         form={form}
         bundlePrefill={bundlePrefill}
         bundleRunId={bundleRunId}
+        bundleSlug={bundleSlug}
         legacyLayout={legacyLayout}
       />
     </div>

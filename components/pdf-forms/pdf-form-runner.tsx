@@ -84,6 +84,10 @@ interface PdfFormRunnerProps {
   form: PublicForm;
   bundlePrefill?: PrefillMap;
   bundleRunId?: string;
+  /// Slug du dossier (bundle) ouvrant — présent uniquement quand le
+  /// formulaire est rempli DANS un dossier. Sert à rediriger vers le
+  /// parcours après une validation (delivery="save"), cf. submit().
+  bundleSlug?: string;
   onValuesChange?: (values: FormPayload) => void;
   onLocaleChange?: (locale: Locale) => void;
   /// Filet de sécurité : force l'ancien rendu (grille dense + résumé
@@ -92,7 +96,7 @@ interface PdfFormRunnerProps {
   legacyLayout?: boolean;
 }
 
-export function PdfFormRunner({ form, bundlePrefill, bundleRunId, onValuesChange, onLocaleChange, legacyLayout = false }: PdfFormRunnerProps) {
+export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, onValuesChange, onLocaleChange, legacyLayout = false }: PdfFormRunnerProps) {
   const t = useTranslations("public.dossier");
   const [locale, setLocale] = useState<Locale>(form.defaultLocale);
   const [values, setValues] = useState<FormPayload>(() => defaultValues(form, bundlePrefill));

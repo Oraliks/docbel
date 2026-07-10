@@ -2010,6 +2010,24 @@ function withStepGroup(f: PdfFormField): PdfFormField {
   return group ? { ...f, stepGroup: group } : f;
 }
 
+/// Dates d'INTRODUCTION / D'EFFET d'un dossier — refusent le week-end (#7b,
+/// Oraliks 2026-07-11 : « impossible de faire un dossier le samedi/dimanche »).
+/// Exclut les dates de naissance et les dates automatiques (création/signature,
+/// system.today) qui ne sont pas des choix utilisateur.
+const NO_WEEKEND_DATE_IDS = new Set<string>([
+  "dateDemande",
+  "dateChangementOrganisme",
+  "dateModificationEffective",
+  "etudesPleinExerciceDate",
+  "apprentissageAlternanceDate",
+  "formationStageSyntraDate",
+  "congeSansSoldeDate",
+]);
+
+function withNoWeekend(f: PdfFormField): PdfFormField {
+  return NO_WEEKEND_DATE_IDS.has(f.id) ? { ...f, noWeekend: true } : f;
+}
+
 // ---------------------------------------------------------------------------
 // Curation des widgets bruts non sectionnés (le « long-tail » inféré du PDF).
 // Principe SÛR : on ne masque un champ que si son `pdfFieldName` est DÉJÀ
@@ -2201,6 +2219,7 @@ export function applyC1Improvements(
   const coveredNames = collectCoveredPdfNames(questions);
   const curated = [...preserved, ...questions]
     .map(withStepGroup)
+    .map(withNoWeekend)
     .map((f) => curatePreserved(f, coveredNames));
 
   // Dossier restreint (changement-situation-personnelle) : nos questions

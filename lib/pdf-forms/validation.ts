@@ -181,7 +181,14 @@ function fieldToZod(field: PdfFormField, lang: Locale): ZodTypeAny {
       return z.preprocess((v) => (v === "" ? null : v), n.nullable());
     }
     case "date":
-      return z.string().refine((v) => empty(v) || isValidISODate(v), { message: errMsg(field, lang, "date") });
+      return z
+        .string()
+        .refine((v) => empty(v) || isValidISODate(v), { message: errMsg(field, lang, "date") })
+        // Refus du week-end (#7b) : bloque le samedi/dimanche pour les dates
+        // marquées `noWeekend` (introduction / effet d'un dossier).
+        .refine((v) => empty(v) || !field.noWeekend || !isWeekendISO(v), {
+          message: WEEKEND_MESSAGE[lang],
+        });
     case "niss":
       // Ne BLOQUE l'envoi que sur une longueur incorrecte ou une date impossible
       // (confusion année/mois/jour). Un échec de checksum seul n'est PAS bloquant
@@ -431,6 +438,21 @@ type FieldLike = {
   errorMsg?: PdfFormField["errorMsg"];
   nameOrder?: PdfFormField["nameOrder"];
   internationalIban?: PdfFormField["internationalIban"];
+  noWeekend?: PdfFormField["noWeekend"];
+};
+
+/// Vrai si la date ISO (YYYY-MM-DD) tombe un samedi ou un dimanche. Parse en
+/// UTC pour éviter tout décalage de fuseau. Une chaîne non-ISO → false.
+export function isWeekendISO(iso: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return false;
+  const day = new Date(iso + "T00:00:00Z").getUTCDay();
+  return day === 0 || day === 6;
+}
+
+const WEEKEND_MESSAGE: Record<Locale, string> = {
+  fr: "Cette date tombe un week-end. Aucun dossier ne peut être introduit un samedi ou un dimanche — choisis un jour de semaine (renseigne-toi auprès de ton organisme de paiement pour une exception).",
+  nl: "Deze datum valt in het weekend. Een dossier kan niet worden ingediend op zaterdag of zondag — kies een weekdag (vraag je uitbetalingsinstelling om een uitzondering).",
+  de: "Dieses Datum fällt auf ein Wochenende. Ein Antrag kann nicht an einem Samstag oder Sonntag eingereicht werden — wähle einen Wochentag (frage deine Zahlstelle nach einer Ausnahme).",
 };
 
 /// Types dont le format est vérifiable en direct (les autres — text, textarea,
@@ -456,7 +478,11 @@ export function validateFieldFormat(field: FieldLike, value: unknown, lang: Loca
       return field.internationalIban
         ? (isValidInternationalIBAN(v) ? null : (custom || FALLBACK.iban_international[lang]))
         : (isValidBelgianIBAN(v) ? null : (custom || FALLBACK.iban[lang]));
-    case "date": return isValidISODate(v) ? null : (custom || FALLBACK.date[lang]);
+    case "date":
+      if (!isValidISODate(v)) return custom || FALLBACK.date[lang];
+      // Refus du week-end pour les dates d'introduction/effet (#7b).
+      if (field.noWeekend && isWeekendISO(v)) return WEEKEND_MESSAGE[lang];
+      return null;
     case "email": return isValidEmail(v) ? null : (custom || FALLBACK.email[lang]);
     case "phone_be": return isValidBelgianPhone(v) ? null : (custom || FALLBACK.phone_be[lang]);
     case "postal_be": return isValidBelgianPostalCode(v) ? null : (custom || FALLBACK.postal_be[lang]);

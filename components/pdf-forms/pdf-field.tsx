@@ -18,6 +18,7 @@ import { IbanInput } from "@/components/ui/iban-input";
 import { StreetAutocompleteInput } from "@/components/ui/street-autocomplete-input";
 import { CountrySelectInput } from "@/components/ui/country-select-input";
 import { CommuneSelectInput } from "@/components/ui/commune-select-input";
+import { DatePickerInput } from "@/components/ui/date-picker-input";
 import { usePostalCommuneHint } from "@/components/ui/use-postal-commune-hint";
 import { InfoTooltip } from "@/components/ui/info-tooltip";
 import { countryNameFromIban } from "@/lib/pdf-forms/iban-country";
@@ -440,6 +441,9 @@ export function PdfField({
   const useStreetAutocomplete = field.streetAutocomplete != null && !locked;
   const useCountrySelect = field.countrySelect === true && !locked;
   const useCommuneSelect = field.communeFrom != null && !locked;
+  // Calendrier moderne pour les dates saisies par l'utilisateur (les dates
+  // AUTO — system.today — restent en input verrouillé). Cf. #7a.
+  const useDatePicker = field.type === "date" && !locked;
   return (
     <Field data-invalid={invalid} className="gap-1.5">
       <FieldLabel htmlFor={field.id}>
@@ -477,6 +481,17 @@ export function PdfField({
             aria-invalid={invalid}
             className="flex-1"
             postalCode={relatedPostalCode}
+            onChange={(v) => onChange(v)}
+            onBlur={markTouched}
+          />
+        ) : useDatePicker ? (
+          <DatePickerInput
+            id={field.id}
+            value={String(displayValue)}
+            placeholder={placeholder}
+            invalid={invalid}
+            noWeekend={field.noWeekend}
+            className="flex-1"
             onChange={(v) => onChange(v)}
             onBlur={markTouched}
           />

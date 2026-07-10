@@ -228,6 +228,11 @@ export interface PdfFormField {
   /// d'une (utile pour les valeurs longues, ex. nom de rue). Sans effet sur les
   /// types déjà pleine largeur (textarea, radio, array…).
   wide?: boolean;
+  /// Champ `date` : refuse une date tombant un samedi ou un dimanche. Pour les
+  /// dates d'introduction / d'effet d'un dossier (pas de traitement le week-end —
+  /// le citoyen doit se renseigner auprès de son OP). Le calendrier désactive
+  /// aussi ces jours. Jamais posé sur une date de naissance.
+  noWeekend?: boolean;
   /// Priorité d'affichage de la SECTION de ce champ (tous les champs d'une
   /// même section doivent porter la même valeur). Absent/"core" = toujours
   /// une étape séquentielle obligatoire (comportement actuel). "optional" =

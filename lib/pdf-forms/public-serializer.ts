@@ -32,6 +32,7 @@ export interface PublicField {
   order?: number;
   renderAs?: PdfFormField["renderAs"];
   wide?: PdfFormField["wide"];
+  noWeekend?: PdfFormField["noWeekend"];
   stepPriority?: PdfFormField["stepPriority"];
   stepGroup?: PdfFormField["stepGroup"];
   autoAnswered?: PdfFormField["autoAnswered"];
@@ -84,6 +85,7 @@ export function toPublicField(f: PdfFormField): PublicField {
     order: f.order,
     renderAs: f.renderAs,
     wide: f.wide,
+    noWeekend: f.noWeekend,
     stepPriority: f.stepPriority,
     stepGroup: f.stepGroup,
     autoAnswered: f.autoAnswered,

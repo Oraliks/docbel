@@ -46,6 +46,16 @@ Lecture **quand on touche aux routes / à l'auth / aux données sensibles**.
   ⚠️ `lib/utils/rate-limit.ts` est **in-memory** (inefficace en serverless) → cible Upstash.
 - Ne pas exposer de PII via une route GET non authentifiée (vérifier `baremes/export`).
 
+## Convention de réponse API (2026-07)
+Helpers dans `lib/api/` — à utiliser pour toute NOUVELLE route et toute route qu'on
+modifie (adoption incrémentale, pas de migration de masse des 300+ routes) :
+- Erreur : `apiError(status, message, { code?, details?, headers? })` → body
+  `{ error, code?, details? }` + `Content-Type` JSON.
+- Succès : `apiOk(data, { status?, headers? })` → corps brut (convention de facto conservée).
+- Rate-limit : sur un refus `checkRateLimit`, renvoyer `tooManyRequests({ limit, resetAt })`
+  (émet `Retry-After` + `X-RateLimit-*`). Ne jamais renvoyer un 429 nu sans `Retry-After`.
+- Route de référence convertie : `app/api/newsletter/route.ts`.
+
 ## Ne pas faire
 - ❌ Committer `.env*` / `.db`.
 - ❌ Hardcoder `createdBy: "admin"` / `logActivity("Admin", …)` → `authCheck.user.id/.name`.

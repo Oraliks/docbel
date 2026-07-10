@@ -177,7 +177,19 @@ export async function POST(
   if (bundleRunId) {
     try {
       const run = await prisma.bundleRun.findUnique({ where: { id: bundleRunId } });
-      if (run && run.status === "in_progress") {
+      // Propriété du run : ne JAMAIS écrire dans le dossier d'un autre citoyen.
+      // Sans ce garde, une requête `download` portant un bundleRunId ÉTRANGER
+      // (deviné via l'URL `?bundleRun=`) injecterait le payload de l'appelant
+      // dans le run de la victime (écriture cross-tenant). Même logique de
+      // propriété que loadDossierState.
+      const owns = run
+        ? ownerUserId
+          ? run.userId === ownerUserId
+          : ownerSessionId
+            ? run.sessionId === ownerSessionId
+            : false
+        : false;
+      if (run && run.status === "in_progress" && owns) {
         const currentPayloads = (run.payloads as Record<string, unknown>) || {};
         const currentCompleted = (run.completedTemplateIds as string[]) || [];
         const newPayloads = { ...currentPayloads, [form.id]: validated };

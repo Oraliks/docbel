@@ -8,6 +8,8 @@ import { PeriodSelector } from "@/components/admin/dashboard/period-selector"
 import { StatusStrip } from "@/components/admin/dashboard/status-strip"
 import { OpsQueue } from "@/components/admin/dashboard/ops-queue"
 import { UsageKpis } from "@/components/admin/dashboard/usage-kpis"
+import { BundleFunnel } from "@/components/admin/dashboard/bundle-funnel"
+import { TopLists } from "@/components/admin/dashboard/top-lists"
 import { DailyChartLazy } from "@/components/admin/dashboard/daily-chart-lazy"
 import { getDailySeries } from "@/lib/admin/dashboard-stats"
 import { parsePeriod, type Period } from "@/lib/admin/dashboard-stats-helpers"
@@ -110,8 +112,21 @@ export default async function AdminPage({
         <UsageKpis period={period} />
       </Suspense>
 
-      <Suspense fallback={<ChartSkeleton />}>
-        <ChartSection period={period} />
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-5">
+        <div className="lg:col-span-3">
+          <Suspense fallback={<ChartSkeleton />}>
+            <ChartSection period={period} />
+          </Suspense>
+        </div>
+        <div className="lg:col-span-2">
+          <Suspense fallback={<ChartSkeleton />}>
+            <BundleFunnel period={period} />
+          </Suspense>
+        </div>
+      </div>
+
+      <Suspense fallback={<KpiCardsSkeleton count={3} />}>
+        <TopLists period={period} />
       </Suspense>
     </div>
   )

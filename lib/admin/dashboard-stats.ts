@@ -5,6 +5,7 @@
 import { cache } from "react";
 import { BookingStatus, Prisma } from "@prisma/client";
 import { prisma, withDbRetry } from "@/lib/prisma";
+import { getNoResultQueries } from "@/lib/decision-builder/analytics-queries";
 import {
   type DayCount,
   type Period,
@@ -258,5 +259,93 @@ export const getStatusStrip = cache(async (): Promise<StatusStrip> => {
     traffic24h,
     trafficPrev24h,
     ops: { total: ops.total, activeQueues: ops.activeQueues },
+  };
+});
+
+// ── Funnel dossiers ─────────────────────────────────────────────────────────
+// Événements best-effort (feature flag "analytics") : des zéros partout
+// signifient probablement flag off → l'UI affiche un état vide explicite.
+
+export interface BundleFunnel {
+  searches: number;
+  opened: number;
+  created: number;
+  completed: number;
+}
+
+export const getBundleFunnel = cache(async (period: Period): Promise<BundleFunnel> => {
+  const { start } = periodBounds(period);
+  const [events, completed] = await Promise.all([
+    withDbRetry(() =>
+      prisma.bundleAnalyticsEvent.groupBy({
+        by: ["eventType"],
+        where: {
+          createdAt: { gte: start },
+          eventType: { in: ["search_performed", "bundle_opened", "run_created"] },
+        },
+        _count: { _all: true },
+      }),
+    ),
+    withDbRetry(() => prisma.bundleRun.count({ where: { completedAt: { gte: start } } })),
+  ]);
+  const m = new Map(events.map((e) => [e.eventType, e._count._all]));
+  return {
+    searches: m.get("search_performed") ?? 0,
+    opened: m.get("bundle_opened") ?? 0,
+    created: m.get("run_created") ?? 0,
+    completed,
+  };
+});
+
+// ── Listes actionnables ─────────────────────────────────────────────────────
+
+export interface TopLists {
+  pages: { slug: string; count: number }[];
+  bundles: { name: string; count: number }[];
+  noResult: { query: string; count: number }[];
+}
+
+export const getTopLists = cache(async (period: Period): Promise<TopLists> => {
+  const { start, days } = periodBounds(period);
+  const [pageRows, runRows, noResult] = await Promise.all([
+    withDbRetry(() =>
+      prisma.pageView.groupBy({
+        by: ["slug"],
+        where: { createdAt: { gte: start } },
+        _count: { _all: true },
+        orderBy: { _count: { slug: "desc" } },
+        take: 5,
+      }),
+    ),
+    withDbRetry(() =>
+      prisma.bundleRun.groupBy({
+        by: ["bundleId"],
+        where: { startedAt: { gte: start } },
+        _count: { _all: true },
+        orderBy: { _count: { bundleId: "desc" } },
+        take: 5,
+      }),
+    ),
+    getNoResultQueries(days, 5),
+  ]);
+
+  const bundleIds = runRows.map((r) => r.bundleId);
+  const bundleNames = bundleIds.length
+    ? await withDbRetry(() =>
+        prisma.documentBundle.findMany({
+          where: { id: { in: bundleIds } },
+          select: { id: true, name: true },
+        }),
+      )
+    : [];
+  const nameById = new Map(bundleNames.map((b) => [b.id, b.name]));
+
+  return {
+    pages: pageRows.map((r) => ({ slug: r.slug, count: r._count._all })),
+    bundles: runRows.map((r) => ({
+      name: nameById.get(r.bundleId) ?? r.bundleId,
+      count: r._count._all,
+    })),
+    noResult,
   };
 });

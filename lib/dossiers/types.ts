@@ -88,6 +88,11 @@ export interface DossierDocument {
   /// Note explicative affichée quand `responsibility ≠ "user"` (ex. « À
   /// réclamer à ton employeur dès la fin du contrat »).
   responsibilityNote?: Localized;
+  /// Lien externe optionnel expliquant comment obtenir le document (ex. A15
+  /// → page Actiris). Affiché en complément de `responsibilityNote`, jamais
+  /// à sa place — le lien peut casser (page tierce), la note reste la
+  /// source d'info stable.
+  responsibilityUrl?: Localized;
   /// Inclusion conditionnelle selon les réponses d'orientation. Absent =
   /// toujours inclus.
   includeWhen?: (answers: DossierAnswers) => boolean;

@@ -347,6 +347,9 @@ export const allocationsInsertion: DossierDefinition = {
       responsibilityNote: {
         fr: "À demander à ton service régional de l'emploi : ACTIRIS (Bruxelles), Forem (Wallonie), VDAB (Flandre) ou ADG (Communauté germanophone). Toujours à joindre à ta demande.",
       },
+      responsibilityUrl: {
+        fr: "https://www.actiris.brussels/fr/citoyens/",
+      },
       internalRef: "A15 historique — attestation d'inscription. Toujours requise.",
       fields: [],
     },

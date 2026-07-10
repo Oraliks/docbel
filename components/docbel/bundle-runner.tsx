@@ -66,6 +66,7 @@ export interface ExternalDocument {
   required: boolean;
   responsibility: "employer" | "onem" | "external";
   responsibilityNote: string | null;
+  responsibilityUrl: string | null;
 }
 
 interface BundleRunnerProps {
@@ -525,6 +526,16 @@ export function BundleRunner({
                         <p className="text-xs text-muted-foreground mt-1">
                           {d.responsibilityNote}
                         </p>
+                      )}
+                      {d.responsibilityUrl && (
+                        <a
+                          href={d.responsibilityUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs text-primary underline underline-offset-2 mt-1 inline-block"
+                        >
+                          {t("runnerResponsibilityLinkLabel")}
+                        </a>
                       )}
                     </div>
                     {(d.responsibility === "employer" ||

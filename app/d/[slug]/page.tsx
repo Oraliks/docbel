@@ -253,6 +253,7 @@ export default async function BundleRoute({
             required: d.required ?? true,
             responsibility: r,
             responsibilityNote: d.responsibilityNote?.fr ?? null,
+            responsibilityUrl: d.responsibilityUrl?.fr ?? null,
           },
         ];
       }) ?? [];

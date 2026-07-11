@@ -18,7 +18,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import { FolderIcon, CommandIcon, NewspaperIcon, MailIcon, Wrench, MapPinIcon, FileInputIcon, UsersIcon, CalendarClock, BriefcaseIcon, GraduationCapIcon, ImageIcon, GitBranchIcon, LanguagesIcon, ActivityIcon } from "lucide-react"
+import { FolderIcon, CommandIcon, NewspaperIcon, MailIcon, Wrench, MapPinIcon, UsersIcon, CalendarClock, BriefcaseIcon, GraduationCapIcon, ImageIcon, GitBranchIcon, LanguagesIcon, ActivityIcon } from "lucide-react"
 import Link from "next/link"
 
 const defaultUser = {
@@ -101,27 +101,43 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       ],
     },
     {
-      // Tout ce qui touche aux formulaires PDF + dossiers vit sous /admin/pdf/.
-      title: t("pdfForms"),
-      url: "/admin/pdf",
-      icon: <FileInputIcon className="size-4" />,
-      items: [
-        { title: t("pdfAll"), url: "/admin/pdf" },
-        { title: t("pdfNew"), url: "/admin/pdf/new" },
-        { title: t("dossiers"), url: "/admin/pdf/dossiers" },
-        { title: t("organismes"), url: "/admin/pdf/organismes" },
-        { title: t("presets"), url: "/admin/pdf/presets" },
-        { title: t("acroformSources"), url: "/admin/pdf-sources" },
-      ],
-    },
-    {
-      // Decision Builder : arbres d'orientation versionnés vers les dossiers.
-      title: t("decisionBuilder"),
-      url: "/admin/decision-trees",
+      // « Parcours & dossiers » : un seul module pensé par ÉTAPE du parcours
+      // citoyen (orienter → constituer le dossier → gérer les formulaires PDF),
+      // au lieu de découper par techno. Fusionne les ex-groupes « PDF Forms » et
+      // « Decision Builder », qui partagent déjà le moteur de conditions et se
+      // chaînent au runtime (arbre → bundleSlug → run). Rattache aussi les deux
+      // pages jusque-là absentes de la nav (analytics PDF + soumissions).
+      title: "Parcours & dossiers",
+      url: "/admin/pdf/dossiers",
       icon: <GitBranchIcon className="size-4" />,
       items: [
-        { title: t("decisionTrees"), url: "/admin/decision-trees" },
-        { title: t("analytics"), url: "/admin/decision-trees/analytics" },
+        // 1. Orienter — arbres d'orientation versionnés qui pointent vers un dossier.
+        { title: "Orientation", url: "/admin/decision-trees" },
+        // 2. Le cœur — les dossiers (événements de vie) assemblés de formulaires.
+        { title: t("dossiers"), url: "/admin/pdf/dossiers" },
+        // 3. Les briques — formulaires PDF + tuyauterie technique (repliée).
+        {
+          title: t("pdfForms"),
+          url: "/admin/pdf",
+          children: [
+            { title: t("pdfAll"), url: "/admin/pdf" },
+            { title: t("pdfNew"), url: "/admin/pdf/new" },
+            { title: t("acroformSources"), url: "/admin/pdf-sources" },
+            { title: t("presets"), url: "/admin/pdf/presets" },
+            { title: "Soumissions", url: "/admin/form-submissions" },
+          ],
+        },
+        // 4. Référentiel partagé.
+        { title: t("organismes"), url: "/admin/pdf/organismes" },
+        // 5. Mesure — un seul point d'entrée vers les deux tableaux de bord.
+        {
+          title: "Statistiques",
+          url: "/admin/pdf/analytics",
+          children: [
+            { title: "Dossiers & formulaires", url: "/admin/pdf/analytics" },
+            { title: "Orientation", url: "/admin/decision-trees/analytics" },
+          ],
+        },
       ],
     },
     {

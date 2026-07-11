@@ -10,6 +10,7 @@ import type { BundleCondition } from "@/lib/bundles/conditions";
 import { parseEligibilityQuestions } from "@/lib/bundles/eligibility";
 import { getDossier } from "@/lib/dossiers/registry";
 import { dossierQuestionsToEligibility } from "@/lib/dossiers/types";
+import { findTreesReferencingBundle } from "@/lib/decision-builder/references";
 import type { PdfFormField } from "@/lib/pdf-forms/types";
 
 export const dynamic = "force-dynamic";
@@ -41,6 +42,9 @@ export default async function EditBundlePage({
   ]);
 
   if (!bundle) notFound();
+
+  // Intégrité référentielle : arbres d'orientation pointant vers ce dossier.
+  const references = await findTreesReferencingBundle(bundle.slug);
 
   const availablePdfForms: AvailablePdfForm[] = pdfForms.map((p) => ({
     id: p.id,
@@ -121,6 +125,7 @@ export default async function EditBundlePage({
         availableTemplates={[]}
         availablePdfForms={availablePdfForms}
         templateSchemas={templateSchemas}
+        references={references}
       />
     </div>
   );

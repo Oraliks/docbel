@@ -22,8 +22,10 @@ export interface DossierQuestion {
   id: string;
   label: Localized;
   type: "select" | "boolean";
-  /// Options pour `select`.
-  options?: Array<{ value: string; label: Localized }>;
+  /// Options pour `select`. `canonicalValue` (optionnel) = valeur canonique
+  /// que cette option affirme (cf. lib/parcours/canonical-keys) — sert au
+  /// pré-remplissage depuis l'orientation.
+  options?: Array<{ value: string; label: Localized; canonicalValue?: string }>;
   /// Note pédagogique (bulle d'info) en langage simple, accessible aux
   /// personnes avec faible alphabétisation ou difficultés de compréhension.
   /// Évite le jargon ; explique les termes officiels par leur sens concret.
@@ -39,6 +41,13 @@ export interface DossierQuestion {
   /// de documents, calcul de natureDA…). Non transmise au prequalifier.
   /// Utiliser `visibleIf` pour les questions du parcours citoyen.
   visibleWhen?: (answers: DossierAnswers) => boolean;
+  /// Clé canonique (cf. lib/parcours/canonical-keys) : relie cette question à
+  /// un fait connu de l'orientation → pré-remplissage modifiable. Transmise au
+  /// prequalifier via `dossierQuestionsToEligibility`.
+  canonicalKey?: string;
+  /// Valeurs canoniques correspondant à « oui » / « non » (questions boolean).
+  canonicalTrue?: string;
+  canonicalFalse?: string;
 }
 
 /// Un champ d'un document : soit une référence au catalogue, soit un champ
@@ -404,17 +413,26 @@ export function dossierQuestionsToEligibility(
       label: string;
       helpText?: string;
       visibleIf?: SerializedVisibleIf;
+      canonicalKey?: string;
       type: "boolean";
       verdictTrue: "neutral";
       verdictFalse: "neutral";
+      canonicalTrue?: string;
+      canonicalFalse?: string;
     }
   | {
       id: string;
       label: string;
       helpText?: string;
       visibleIf?: SerializedVisibleIf;
+      canonicalKey?: string;
       type: "select";
-      options: Array<{ value: string; label: string; verdict: "neutral" }>;
+      options: Array<{
+        value: string;
+        label: string;
+        verdict: "neutral";
+        canonicalValue?: string;
+      }>;
     }
 > {
   const pickLabel = (l: { fr?: string; nl?: string; de?: string } | undefined): string => {
@@ -428,6 +446,7 @@ export function dossierQuestionsToEligibility(
       label: pickLabel(q.label),
       helpText: q.helpText ? pickLabel(q.helpText) || undefined : undefined,
       visibleIf: q.visibleIf,
+      canonicalKey: q.canonicalKey,
     };
     if (q.type === "boolean") {
       return {
@@ -435,6 +454,8 @@ export function dossierQuestionsToEligibility(
         type: "boolean" as const,
         verdictTrue: "neutral" as const,
         verdictFalse: "neutral" as const,
+        canonicalTrue: q.canonicalTrue,
+        canonicalFalse: q.canonicalFalse,
       };
     }
     return {
@@ -444,6 +465,7 @@ export function dossierQuestionsToEligibility(
         value: o.value,
         label: pickLabel(o.label),
         verdict: "neutral" as const,
+        canonicalValue: o.canonicalValue,
       })),
     };
   });

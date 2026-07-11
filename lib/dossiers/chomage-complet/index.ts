@@ -171,15 +171,26 @@ export const chomageComplet: DossierDefinition = {
         fr: "Salarié = tu avais un patron et tu travaillais pour lui contre un salaire. Indépendant qui cotise volontairement = tu travaillais à ton compte et tu as choisi de payer des cotisations pour avoir droit au chômage. Première inscription = tu sors juste de l'école et tu n'as encore jamais reçu de chômage.",
       },
       type: "select",
+      // Pré-remplissage depuis l'orientation (clés canoniques). Mapping À VALIDER
+      // par Oraliks : salarié/indépendant = a déjà travaillé ; première
+      // inscription (sortie d'études) = non. Ne se déclenche que si l'option
+      // d'arbre correspondante est taguée `a_deja_travaille` en admin.
+      canonicalKey: "a_deja_travaille",
       options: [
-        { value: "salarie", label: { fr: "Salarié (j'avais un patron)" } },
+        {
+          value: "salarie",
+          label: { fr: "Salarié (j'avais un patron)" },
+          canonicalValue: "oui",
+        },
         {
           value: "independant-cotisant-volontaire",
           label: { fr: "Indépendant ayant cotisé volontairement au chômage" },
+          canonicalValue: "oui",
         },
         {
           value: "premiere-inscription",
           label: { fr: "Première inscription (je sors des études)" },
+          canonicalValue: "non",
         },
       ],
     },

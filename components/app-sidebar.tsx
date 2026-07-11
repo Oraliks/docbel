@@ -3,6 +3,7 @@
 import * as React from "react"
 import { useTranslations } from "next-intl"
 import { useAuthSession } from "@/components/auth-session-provider"
+import { useSiteSettings } from "@/components/site-settings/site-settings-provider"
 import { useState, useEffect } from "react"
 
 import { NavMain } from "@/components/nav-main"
@@ -33,6 +34,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   // "Utilisateur user@example.com" à chaque refresh rapide / cold-start Neon.
   const { data: session } = useAuthSession()
   const t = useTranslations("admin.nav")
+  const siteName = useSiteSettings()?.identity.name ?? "Docbel"
   const [unreadCount, setUnreadCount] = useState(0)
   const [pendingReportsCount, setPendingReportsCount] = useState(0)
 
@@ -323,7 +325,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               render={<Link href="/admin" />}
             >
               <CommandIcon className="size-5!" />
-              <span className="text-base font-semibold">Docbel</span>
+              <span className="text-base font-semibold">{siteName}</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>

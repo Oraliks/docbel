@@ -142,6 +142,11 @@ export const OptionNodeSchema = z.object({
   icon: z.string().optional(),
   /// Conditions de visibilité/activation (réutilise BundleCondition).
   conditions: BundleConditionSchema.optional(),
+  /// Tag canonique : choisir cette option affirme `key = value` (cf.
+  /// lib/parcours/canonical-keys). Sert au pré-remplissage de la pré-qual.
+  canonical: z
+    .object({ key: z.string().min(1), value: z.string().min(1) })
+    .optional(),
   /// ID du nœud suivant (question ou result). Validé par `validator.ts`.
   nextId: z.string().min(1),
 });

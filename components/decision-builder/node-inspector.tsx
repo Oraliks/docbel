@@ -35,6 +35,10 @@ import {
   setNodeConditions,
   setOptionNext,
 } from "@/lib/decision-builder/mutations";
+import {
+  CANONICAL_KEYS,
+  canonicalValues,
+} from "@/lib/parcours/canonical-keys";
 import type {
   BundleCondition,
   DecisionTreeContent,
@@ -265,6 +269,53 @@ function OptionFields({
           onChange={(e) => update({ icon: e.target.value || undefined })}
           placeholder="Briefcase"
         />
+      </Field>
+
+      <Field label="Clé canonique (optionnel) — pré-remplit la pré-qualification">
+        <div className="flex gap-2">
+          <Select
+            value={node.canonical?.key ?? ""}
+            onValueChange={(k) =>
+              update({
+                canonical: k
+                  ? { key: k, value: canonicalValues(k)[0]?.value ?? "" }
+                  : undefined,
+              })
+            }
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Aucune" />
+            </SelectTrigger>
+            <SelectContent>
+              {CANONICAL_KEYS.map((d) => (
+                <SelectItem key={d.key} value={d.key}>
+                  {d.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {node.canonical?.key && (
+            <Select
+              value={node.canonical.value}
+              onValueChange={(v) =>
+                update({
+                  canonical: { key: node.canonical!.key, value: v ?? "" },
+                })
+              }
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {canonicalValues(node.canonical.key).map((val) => (
+                  <SelectItem key={val.value} value={val.value}>
+                    {val.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+        </div>
       </Field>
 
       <Separator />

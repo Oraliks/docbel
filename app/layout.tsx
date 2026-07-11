@@ -22,6 +22,8 @@ import { AuthSessionProvider } from "@/components/auth-session-provider";
 import { ImpersonationBanner } from "@/components/impersonation-banner";
 import { WelcomeLocaleModal } from "@/components/welcome-locale-modal";
 import { getServerAuthSession } from "@/lib/auth-session";
+import { getSiteSettings } from "@/lib/site-settings.server";
+import { canonicalUrl } from "@/lib/site-settings";
 import "./globals.css";
 
 const plusJakarta = Plus_Jakarta_Sans({
@@ -48,13 +50,53 @@ const manrope = Manrope({
   display: "swap",
 });
 
-export const metadata: Metadata = {
-  // Resolves relative OG/Twitter image URLs and silences Next's
-  // metadataBase warning. Override via NEXT_PUBLIC_SITE_URL per environment.
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://docbel.be"),
-  title: "Docbel — Documents administratifs belges",
-  description: "Portail officieux des documents administratifs belges (chômage)",
-};
+/**
+ * Métadonnées racine dérivées des Paramètres globaux (admin) — nom, slogan,
+ * URL, description, image OG, désindexation, vérifications. Lecture cachée
+ * (memo-cache 60 s) ; retombe sur les défauts en cas d'indisponibilité DB.
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  const s = await getSiteSettings();
+  const base = canonicalUrl(s);
+  const title = s.identity.tagline
+    ? `${s.identity.name} — ${s.identity.tagline}`
+    : s.identity.name;
+  const description = s.seo.defaultDescription;
+  const ogImages = s.seo.ogImageUrl ? [{ url: s.seo.ogImageUrl }] : undefined;
+
+  return {
+    metadataBase: new URL(base),
+    title: { default: title, template: s.seo.titleTemplate || "%s" },
+    description,
+    openGraph: {
+      type: "website",
+      siteName: s.identity.name,
+      title,
+      description,
+      url: base,
+      images: ogImages,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: ogImages,
+    },
+    ...(s.seo.noindex ? { robots: { index: false, follow: false } } : {}),
+    ...(s.seo.verification.google || s.seo.verification.bing
+      ? {
+          verification: {
+            ...(s.seo.verification.google
+              ? { google: s.seo.verification.google }
+              : {}),
+            ...(s.seo.verification.bing
+              ? { other: { "msvalidate.01": s.seo.verification.bing } }
+              : {}),
+          },
+        }
+      : {}),
+  };
+}
 
 export default async function RootLayout({
   children,

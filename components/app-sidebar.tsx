@@ -129,13 +129,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         },
         // 4. Référentiel partagé.
         { title: t("organismes"), url: "/admin/pdf/organismes" },
-        // 5. Mesure — un seul point d'entrée vers les deux tableaux de bord.
+        // 5. Mesure — funnel unifié en tête, dashboards détaillés en dessous.
         {
           title: "Statistiques",
-          url: "/admin/pdf/analytics",
+          url: "/admin/parcours/analytics",
           children: [
-            { title: "Dossiers & formulaires", url: "/admin/pdf/analytics" },
+            { title: "Parcours (funnel)", url: "/admin/parcours/analytics" },
             { title: "Orientation", url: "/admin/decision-trees/analytics" },
+            { title: "Formulaires PDF", url: "/admin/pdf/analytics" },
           ],
         },
       ],

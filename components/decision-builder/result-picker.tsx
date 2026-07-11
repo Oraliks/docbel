@@ -5,7 +5,15 @@
 /// `value` = slug du bundle, ou `null` pour « bientôt disponible ».
 
 import { useEffect, useMemo, useState } from "react";
-import { Check, ChevronsUpDown, FolderOpen, CircleDashed } from "lucide-react";
+import Link from "next/link";
+import {
+  Check,
+  ChevronsUpDown,
+  FolderOpen,
+  CircleDashed,
+  ExternalLink,
+  TriangleAlert,
+} from "lucide-react";
 import {
   Command,
   CommandEmpty,
@@ -19,12 +27,16 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
 interface BundleOption {
   slug: string;
   name: string;
   organism: string | null;
+  id: string | null;
+  /// Nombre de formulaires PDF publiés inclus dans ce dossier.
+  formCount: number;
 }
 
 export function ResultPicker({
@@ -38,14 +50,25 @@ export function ResultPicker({
   const [bundles, setBundles] = useState<BundleOption[]>([]);
 
   useEffect(() => {
+    type Row = {
+      id?: string;
+      slug: string;
+      name: string;
+      organism?: string | null;
+      items?: { pdfForm?: { status?: string } | null }[];
+    };
     fetch("/api/documents/bundles")
       .then((r) => (r.ok ? r.json() : []))
-      .then((rows: { slug: string; name: string; organism?: string | null }[]) =>
+      .then((rows: Row[]) =>
         setBundles(
           (Array.isArray(rows) ? rows : []).map((b) => ({
             slug: b.slug,
             name: b.name,
             organism: b.organism ?? null,
+            id: b.id ?? null,
+            formCount: Array.isArray(b.items)
+              ? b.items.filter((it) => it.pdfForm?.status === "published").length
+              : 0,
           })),
         ),
       )
@@ -57,7 +80,12 @@ export function ResultPicker({
     [bundles, value],
   );
 
+  // Le dossier ciblé existe-t-il et est-il actif ? La liste ne contient que les
+  // dossiers actifs → un `value` absent = dossier inactif ou supprimé (alerte).
+  const missing = value !== null && bundles.length > 0 && selected === null;
+
   return (
+    <div className="space-y-1.5">
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger
         role="combobox"
@@ -131,5 +159,34 @@ export function ResultPicker({
         </Command>
       </PopoverContent>
     </Popover>
+
+      {/* État du dossier ciblé : garde-fou d'intégrité (inactif/introuvable)
+          + accès direct à l'éditeur du dossier. */}
+      {value !== null && (
+        <div className="flex flex-wrap items-center gap-2 text-xs">
+          {missing ? (
+            <Badge variant="destructive" className="gap-1">
+              <TriangleAlert className="size-3" />
+              Dossier inactif ou introuvable
+            </Badge>
+          ) : selected ? (
+            <>
+              <Badge variant={selected.formCount > 0 ? "success" : "secondary"}>
+                {selected.formCount} formulaire{selected.formCount > 1 ? "s" : ""}
+              </Badge>
+              {selected.id && (
+                <Link
+                  href={`/admin/pdf/dossiers/${selected.id}`}
+                  className="inline-flex items-center gap-1 text-primary hover:underline"
+                >
+                  Ouvrir le dossier
+                  <ExternalLink className="size-3" />
+                </Link>
+              )}
+            </>
+          ) : null}
+        </div>
+      )}
+    </div>
   );
 }

@@ -97,11 +97,14 @@ export const getUsageKpis = cache(async (period: Period): Promise<UsageKpis> => 
     withDbRetry(() => prisma.bundleRun.count({ where: { startedAt: cur } })),
     withDbRetry(() => prisma.bundleRun.count({ where: { startedAt: prev } })),
     dailyCounts("bundleRun", period),
+    // Complétion = `completedAt` renseigné (horodaté à allRequiredDone dans
+    // app/api/pdf/[slug]/generate). `status: "completed"` n'est JAMAIS écrit —
+    // ne pas s'en servir (donnait toujours 0). Fenêtre par cohorte de démarrage.
     withDbRetry(() =>
-      prisma.bundleRun.count({ where: { startedAt: cur, status: "completed" } }),
+      prisma.bundleRun.count({ where: { startedAt: cur, completedAt: { not: null } } }),
     ),
     withDbRetry(() =>
-      prisma.bundleRun.count({ where: { startedAt: prev, status: "completed" } }),
+      prisma.bundleRun.count({ where: { startedAt: prev, completedAt: { not: null } } }),
     ),
     withDbRetry(() =>
       prisma.pdfFormSubmissionLog.count({ where: { createdAt: cur, success: true } }),

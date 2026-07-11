@@ -6,6 +6,7 @@ import { parseEligibilityQuestions } from "@/lib/bundles/eligibility";
 import { parseVocabularyTags } from "@/lib/bundles/vocabulary";
 import { parseBundleWarnings } from "@/lib/bundles/types";
 import { scheduleAutoTranslate } from "@/lib/i18n/auto-translate";
+import { findTreesReferencingBundle } from "@/lib/decision-builder/references";
 
 export async function GET(
   _req: NextRequest,
@@ -40,6 +41,34 @@ export async function PUT(
     body = await req.json();
   } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
+
+  // Garde-fou d'intégrité : désactiver via ce PUT (active:false) casserait un
+  // arbre PUBLIÉ pointant vers ce dossier. Refuser sauf ?force=true (même règle
+  // que le DELETE). Une simple édition (sans toucher `active`) n'est pas gênée.
+  if (body.active === false) {
+    const force = new URL(req.url).searchParams.get("force") === "true";
+    if (!force) {
+      const bundle = await prisma.documentBundle.findUnique({
+        where: { id },
+        select: { slug: true },
+      });
+      if (bundle) {
+        const refs = (await findTreesReferencingBundle(bundle.slug)).filter(
+          (r) => r.inPublished,
+        );
+        if (refs.length > 0) {
+          return NextResponse.json(
+            {
+              error: "referenced_by_published_tree",
+              message: `Ce dossier est référencé par ${refs.length} arbre(s) d'orientation publié(s). Le désactiver casserait ces parcours.`,
+              trees: refs.map((r) => ({ id: r.treeId, title: r.treeTitle })),
+            },
+            { status: 409 },
+          );
+        }
+      }
+    }
   }
 
   const data: Record<string, unknown> = {};
@@ -120,6 +149,31 @@ export async function DELETE(
   // Soft-delete par défaut (préserve l'historique). Hard-delete si ?hard=true.
   const url = new URL(req.url);
   const hard = url.searchParams.get("hard") === "true";
+  const force = url.searchParams.get("force") === "true";
+
+  // Garde-fou d'intégrité : refuser (sauf ?force=true) si un arbre d'orientation
+  // PUBLIÉ pointe vers ce dossier — le désactiver casserait ce parcours en prod.
+  if (!force) {
+    const bundle = await prisma.documentBundle.findUnique({
+      where: { id },
+      select: { slug: true },
+    });
+    if (bundle) {
+      const refs = (await findTreesReferencingBundle(bundle.slug)).filter(
+        (r) => r.inPublished,
+      );
+      if (refs.length > 0) {
+        return NextResponse.json(
+          {
+            error: "referenced_by_published_tree",
+            message: `Ce dossier est référencé par ${refs.length} arbre(s) d'orientation publié(s). Le désactiver casserait ces parcours.`,
+            trees: refs.map((r) => ({ id: r.treeId, title: r.treeTitle })),
+          },
+          { status: 409 },
+        );
+      }
+    }
+  }
 
   if (hard) {
     await prisma.documentBundle.delete({ where: { id } });

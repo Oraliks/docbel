@@ -99,14 +99,28 @@ export function BundlesList({ initialBundles }: Props) {
     });
   }, [bundles, search, categoryFilter, statusFilter]);
 
-  async function toggleActive(b: BundleRow) {
+  async function toggleActive(b: BundleRow, force = false) {
     setBusy(b.id);
     try {
-      const res = await fetch(`/api/documents/bundles/${b.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ active: !b.active }),
-      });
+      const res = await fetch(
+        `/api/documents/bundles/${b.id}${force ? "?force=true" : ""}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ active: !b.active }),
+        }
+      );
+      // Garde-fou : dossier référencé par un arbre publié → proposer de forcer.
+      if (res.status === 409 && !force) {
+        const data = await res.json().catch(() => ({}));
+        if (data?.error === "referenced_by_published_tree") {
+          setBusy(null);
+          if (window.confirm(`${data.message}\n\nDésactiver quand même ?`)) {
+            void toggleActive(b, true);
+          }
+          return;
+        }
+      }
       if (!res.ok) throw new Error(t("failed"));
       setBundles((prev) =>
         prev.map((x) => (x.id === b.id ? { ...x, active: !b.active } : x))
@@ -120,10 +134,25 @@ export function BundlesList({ initialBundles }: Props) {
     }
   }
 
-  async function handleDelete(b: BundleRow) {
+  async function handleDelete(b: BundleRow, force = false) {
     setBusy(b.id);
     try {
-      const res = await fetch(`/api/documents/bundles/${b.id}`, { method: "DELETE" });
+      const res = await fetch(
+        `/api/documents/bundles/${b.id}${force ? "?force=true" : ""}`,
+        { method: "DELETE" }
+      );
+      // Garde-fou : dossier référencé par un arbre publié → proposer de forcer.
+      if (res.status === 409 && !force) {
+        const info = await res.json().catch(() => ({}));
+        if (info?.error === "referenced_by_published_tree") {
+          setBusy(null);
+          setDeleteTarget(null);
+          if (window.confirm(`${info.message}\n\nDésactiver quand même ?`)) {
+            void handleDelete(b, true);
+          }
+          return;
+        }
+      }
       if (!res.ok) throw new Error(t("failed"));
       const data = await res.json();
       if (data.softDeleted) {

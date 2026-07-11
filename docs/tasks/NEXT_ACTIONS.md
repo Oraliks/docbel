@@ -52,6 +52,23 @@ Légende priorité : **P0** critique · **P1** important · **P2** souhaitable �
   rien codé. 5 décisions à trancher (périmètre, bundle-analyzer, blocs legacy,
   rétention révisions, presets DB).
 
+## Module « Paramètres globaux » — LIVRÉ (branche `feat/parametres-globaux`, non poussée)
+Page admin `/admin/parametres` type SaaS/CMS + câblage live. Spec :
+[2026-07-11](../superpowers/specs/2026-07-11-parametres-globaux-design.md). Commits
+`3e3fbce`→`693df42`, 1383 tests verts, vérifié end-to-end en dev (nom custom → titre
+d'onglet + `og:site_name` + logo header).
+- **Fait** : socle `lib/site-settings*.ts` (Zod + memo-cache, 21 tests) + API
+  `/api/admin/site-settings` ; onglets Général/SEO/Maintenance+annonces ; métadonnées
+  racine (`generateMetadata`) ; gate maintenance + bannière ; nom du site branché sur
+  header/sidebar/OG (plus aucun « Docbel » codé en dur dans les métadonnées).
+- **Suites (P2/P3, non faites)** : onglets de regroupement Emails/Intégrations/Conformité
+  (surfacer les clés `AppSetting` existantes : toggles IA, `billing_enabled`, RGPD) ;
+  templatiser le copyright du footer (nom encore dans `messages/*.copyright`) ;
+  `app/robots.ts` lisant `noindex` ; libellé de nav i18n (actuellement hardcodé FR).
+- ⚠️ **P0 BLOCAGE BUILD (pré-existant, PAS ce module)** : `app/api/documents/bundles/`
+  a deux slugs différents (`[bundleRunId]` et `[id]`) au même niveau → Next refuse
+  (`next dev` plante exit 1, `pnpm build` cassé). À uniformiser avant tout déploiement.
+
 ## Quick wins déjà faits cette session (cf. rapport)
 - `.env.example` complété (clés réellement utilisées).
 - `CLAUDE.md` créé ; `docs/` réorganisé ; `AGENTS.md` allégé.

@@ -23,7 +23,8 @@ import { ImpersonationBanner } from "@/components/impersonation-banner";
 import { WelcomeLocaleModal } from "@/components/welcome-locale-modal";
 import { getServerAuthSession } from "@/lib/auth-session";
 import { getSiteSettings } from "@/lib/site-settings.server";
-import { canonicalUrl } from "@/lib/site-settings";
+import { canonicalUrl, toPublicSiteSettings } from "@/lib/site-settings";
+import { SiteSettingsProvider } from "@/components/site-settings/site-settings-provider";
 import "./globals.css";
 
 const plusJakarta = Plus_Jakarta_Sans({
@@ -122,6 +123,10 @@ export default async function RootLayout({
   // monté avant accord). `null` = pas de décision → la bannière s'affichera.
   const initialConsent = parseConsent((await cookies()).get(CONSENT_COOKIE)?.value);
 
+  // Paramètres globaux (tranche publique) : identité, maintenance, annonce —
+  // exposés au client pour la bannière + le gate maintenance. Lecture cachée.
+  const publicSiteSettings = toPublicSiteSettings(await getSiteSettings());
+
   return (
     <html
       lang={locale}
@@ -149,7 +154,9 @@ export default async function RootLayout({
             <CookieConsentProvider initialConsent={initialConsent}>
               <AuthSessionProvider initialSession={initialSession}>
                 <ImpersonationBanner />
-                <AppLayoutClient>{children}</AppLayoutClient>
+                <SiteSettingsProvider value={publicSiteSettings}>
+                  <AppLayoutClient>{children}</AppLayoutClient>
+                </SiteSettingsProvider>
               </AuthSessionProvider>
               <Toaster richColors position="bottom-right" duration={3500} />
               <ConfirmDialog />

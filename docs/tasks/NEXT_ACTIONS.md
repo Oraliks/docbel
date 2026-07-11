@@ -77,10 +77,22 @@ unifiés sous `/api/bundles/runs/[runId]`, conflit `[bundleRunId]`/`[id]` résol
   `completedAt` au bon endroit (transition allRequiredDone), soit retirer la métrique
   « complété » du cockpit. Historique non backfillé → « documents obtenus » se remplit
   à partir de maintenant.
-- **Restant** : **Lot 4** (métier, décision Oraliks) — vocabulaire de clés de réponses
-  canoniques partagé entre options d'arbre et `DocumentBundle.eligibilityQuestions`
-  (dédupliquer orientation ↔ pré-qualif, préremplir C1). Les 2 systèmes de questions
-  ne sont PAS synchronisés (colonnes `orientationAnswers` vs `eligibilityAnswers`).
+- **Lot 4 — LIVRÉ** (branche `feat/parcours-canonical-keys`, spec+plan+10 commits code) :
+  vocabulaire de clés canoniques (`lib/parcours/canonical-keys.ts`, starter à valider) +
+  tags sur options d'arbre (`canonical`) et questions de pré-qual (`canonicalKey`/valeurs) +
+  cœur pur `canonical-facts` (dérivation + prefill, testés) + UI de tagging admin
+  (inspecteur de nœud, éditeur d'éligibilité, sentinel « Aucune ») + runtime serveur
+  (`app/d/[slug]/page.tsx` résout les IDs d'OptionNode du cookie d'orientation contre
+  l'arbre publié → prefill modifiable + badge « d'après vos réponses »). Repli sûr partout,
+  zéro migration, exécuté en subagent-driven (tous reviews verts + revue finale opus).
+  - ⚠️ **Suivi pour ACTIVER sur les dossiers CODÉS** (dont `allocations-insertion`, live) :
+    aujourd'hui le mécanisme ne délivre que sur les dossiers pilotés **DB** — les dossiers
+    codés affichent `dossierQuestionsToEligibility(...)` qui **strippe** les champs canoniques.
+    Pour préremplir la pré-qual des dossiers codés, propager `canonicalKey`/`canonicalValue`
+    dans `DossierQuestion` (`lib/dossiers/types.ts`) + `dossierQuestionsToEligibility`.
+  - Suivis mineurs (non bloquants, revue finale) : reset des valeurs canoniques stale au
+    changement de clé dans l'éditeur ; type-guard au lieu du cast `nodes[id]` ; badge aussi
+    sur les réponses issues de `prefillFromOrientation` (dossiers codés).
 
 ## Quick wins déjà faits cette session (cf. rapport)
 - `.env.example` complété (clés réellement utilisées).

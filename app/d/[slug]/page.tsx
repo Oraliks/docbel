@@ -11,7 +11,12 @@ import { parseOfficialSources } from "@/lib/bundles/types";
 import type { PdfFormField } from "@/lib/pdf-forms/types";
 import { collectAllTriggeredSlugs } from "@/lib/pdf-forms/triggers";
 import type { BundleCondition } from "@/lib/bundles/conditions";
-import { parseEligibilityAnswers } from "@/lib/bundles/eligibility";
+import { parseEligibilityAnswers, parseEligibilityQuestions } from "@/lib/bundles/eligibility";
+import { loadPublishedTreeContent } from "@/lib/decision-builder/loader";
+import {
+  collectCanonicalFacts,
+  prefillEligibilityAnswers,
+} from "@/lib/parcours/canonical-facts";
 import { getDossier } from "@/lib/dossiers/registry";
 import { parseOrientationAnswers } from "@/lib/dossiers/orientation";
 import { dossierQuestionsToEligibility, selectDocuments, type DossierAnswers } from "@/lib/dossiers/types";
@@ -208,22 +213,50 @@ export default async function BundleRoute({
 
   const dossier = getDossier(slug);
   let eligibilityAnswers = parseEligibilityAnswers(effectiveRun?.eligibilityAnswers);
+  // Ids des questions pré-remplies depuis l'orientation (badge « d'après vos réponses »).
+  const orientationAnswerIds: string[] = [];
 
   // Chaînage orientation → pré-qualification : si l'utilisateur arrive du
   // wizard (cookie `beldoc-orientation`, consommé plus tard à la création du
   // run) et qu'aucun run réel n'existe encore, on PRÉ-SÉLECTIONNE les réponses
-  // que le wizard connaît déjà — uniquement si le wizard a résolu vers CE
-  // dossier. L'utilisateur voit ces réponses dans la pré-qualification et peut
-  // les modifier avant de démarrer (informatif, jamais bloquant).
-  if (!effectiveRun && dossier?.prefillFromOrientation) {
+  // que le wizard connaît déjà — informatif, jamais bloquant.
+  if (!effectiveRun) {
     const orientation = parseOrientationAnswers(
       cookieStore.get(ORIENTATION_COOKIE)?.value,
     );
     if (orientation && orientation.slug === slug) {
-      eligibilityAnswers = {
-        ...dossier.prefillFromOrientation(orientation),
-        ...eligibilityAnswers,
-      };
+      // (a) Prefill existant des dossiers CODÉS (inchangé).
+      if (dossier?.prefillFromOrientation) {
+        eligibilityAnswers = {
+          ...dossier.prefillFromOrientation(orientation),
+          ...eligibilityAnswers,
+        };
+      }
+      // (b) Prefill par CLÉS CANONIQUES depuis l'arbre publié. Repli sûr :
+      // arbre indisponible / options sans tag / questions sans tag → aucun fait.
+      const treeContent = await loadPublishedTreeContent("chomage");
+      if (treeContent) {
+        const chosenIds = [
+          orientation.situation,
+          orientation.subOption,
+          orientation.refine,
+        ].filter((v): v is string => typeof v === "string");
+        const chosenOptions = chosenIds
+          .map((id) => treeContent.nodes[id])
+          .filter((n) => n?.type === "option") as {
+          canonical?: { key: string; value: string };
+        }[];
+        const facts = collectCanonicalFacts(chosenOptions);
+        const questions = parseEligibilityQuestions(bundle.eligibilityQuestions);
+        const canonicalPrefill = prefillEligibilityAnswers(questions, facts);
+        for (const qid of Object.keys(canonicalPrefill)) {
+          // Ne pas écraser une réponse déjà présente (run/prefill code).
+          if (eligibilityAnswers[qid] === undefined) {
+            eligibilityAnswers[qid] = canonicalPrefill[qid];
+            orientationAnswerIds.push(qid);
+          }
+        }
+      }
     }
   }
   const selectedDocs = dossier
@@ -296,6 +329,7 @@ export default async function BundleRoute({
           resumeCodeExpiresAt: effectiveRun?.resumeCodeExpiresAt?.toISOString() ?? null,
           resumeEmail: effectiveRun?.resumeEmail ?? null,
           eligibilityAnswers,
+          orientationAnswerIds,
           completedTemplateIds: (effectiveRun?.completedTemplateIds as string[]) || [],
           payloads,
           templateNames,

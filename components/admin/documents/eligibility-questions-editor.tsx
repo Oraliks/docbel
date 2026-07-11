@@ -18,6 +18,7 @@ import type {
   EligibilityQuestion,
   EligibilityVerdict,
 } from "@/lib/bundles/eligibility";
+import { CANONICAL_KEYS, canonicalValues } from "@/lib/parcours/canonical-keys";
 
 interface Props {
   value: EligibilityQuestion[];
@@ -74,6 +75,7 @@ export function EligibilityQuestionsEditor({ value, onChange }: Props) {
         label: q.label,
         helpText: q.helpText,
         helpUrl: q.helpUrl,
+        canonicalKey: q.canonicalKey,
         type: "boolean",
         verdictTrue: "eligible",
         verdictFalse: "neutral",
@@ -87,6 +89,7 @@ export function EligibilityQuestionsEditor({ value, onChange }: Props) {
         label: q.label,
         helpText: q.helpText,
         helpUrl: q.helpUrl,
+        canonicalKey: q.canonicalKey,
         type: "select",
         options: [newOption()],
       };
@@ -220,6 +223,32 @@ export function EligibilityQuestionsEditor({ value, onChange }: Props) {
                 </div>
               </div>
 
+              <div className="space-y-1.5">
+                <Label className="text-xs">
+                  Clé canonique (optionnel) — pré-remplie depuis l&apos;orientation
+                </Label>
+                <Select
+                  value={q.canonicalKey ?? "__none__"}
+                  onValueChange={(k) =>
+                    updateQ(idx, { canonicalKey: k && k !== "__none__" ? k : undefined })
+                  }
+                >
+                  <SelectTrigger className="h-8 text-xs">
+                    <SelectValue placeholder="Aucune" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__" className="text-xs">
+                      Aucune
+                    </SelectItem>
+                    {CANONICAL_KEYS.map((d) => (
+                      <SelectItem key={d.key} value={d.key} className="text-xs">
+                        {d.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
               {q.type === "boolean" ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2 pt-1 border-t">
                   <div className="space-y-1">
@@ -262,6 +291,48 @@ export function EligibilityQuestionsEditor({ value, onChange }: Props) {
                       </SelectContent>
                     </Select>
                   </div>
+                  <div className="space-y-1">
+                    <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                      Valeur canon. si « oui »
+                    </Label>
+                    <Select
+                      value={q.canonicalTrue ?? ""}
+                      onValueChange={(v) => updateQ(idx, { canonicalTrue: v || undefined })}
+                      disabled={!q.canonicalKey}
+                    >
+                      <SelectTrigger className="h-8 text-xs">
+                        <SelectValue placeholder="—" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {canonicalValues(q.canonicalKey ?? "").map((val) => (
+                          <SelectItem key={val.value} value={val.value} className="text-xs">
+                            {val.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                      Valeur canon. si « non »
+                    </Label>
+                    <Select
+                      value={q.canonicalFalse ?? ""}
+                      onValueChange={(v) => updateQ(idx, { canonicalFalse: v || undefined })}
+                      disabled={!q.canonicalKey}
+                    >
+                      <SelectTrigger className="h-8 text-xs">
+                        <SelectValue placeholder="—" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {canonicalValues(q.canonicalKey ?? "").map((val) => (
+                          <SelectItem key={val.value} value={val.value} className="text-xs">
+                            {val.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
               ) : (
                 <div className="space-y-1.5 pt-1 border-t">
@@ -284,7 +355,7 @@ export function EligibilityQuestionsEditor({ value, onChange }: Props) {
                     </p>
                   )}
                   {q.options.map((opt, oIdx) => (
-                    <div key={oIdx} className="grid grid-cols-[1fr_1fr_140px_auto] gap-1.5">
+                    <div key={oIdx} className="grid grid-cols-[1fr_1fr_140px_150px_auto] gap-1.5">
                       <Input
                         value={opt.value}
                         onChange={(e) => updateOption(idx, oIdx, { value: e.target.value })}
@@ -308,6 +379,24 @@ export function EligibilityQuestionsEditor({ value, onChange }: Props) {
                           {VERDICT_OPTIONS.map((o) => (
                             <SelectItem key={o.value} value={o.value} className="text-xs">
                               {t(o.labelKey)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Select
+                        value={opt.canonicalValue ?? ""}
+                        onValueChange={(v) =>
+                          updateOption(idx, oIdx, { canonicalValue: v || undefined })
+                        }
+                        disabled={!q.canonicalKey}
+                      >
+                        <SelectTrigger className="h-7 text-xs">
+                          <SelectValue placeholder="Valeur canon." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {canonicalValues(q.canonicalKey ?? "").map((val) => (
+                            <SelectItem key={val.value} value={val.value} className="text-xs">
+                              {val.label}
                             </SelectItem>
                           ))}
                         </SelectContent>

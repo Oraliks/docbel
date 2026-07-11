@@ -32,6 +32,8 @@ interface Props {
   onContinue: (answers: EligibilityAnswers, result: EligibilityResult) => void;
   /// Bouton "Continuer quand même" affiché en cas de verdict défavorable.
   continueLabel?: string;
+  /// Questions pré-remplies depuis l'orientation → badge informatif.
+  orientationAnswerIds?: string[];
 }
 
 /// Pré-qualification informative affichée AVANT le parcours.
@@ -45,10 +47,12 @@ export function EligibilityPrequalifier({
   onAnswersChange,
   onContinue,
   continueLabel,
+  orientationAnswerIds = [],
 }: Props) {
   const t = useTranslations("public.dossier");
   const [answers, setAnswers] = useState<EligibilityAnswers>(initialAnswers);
   const resolvedContinueLabel = continueLabel ?? t("continue");
+  const fromOrientation = new Set(orientationAnswerIds);
 
   const result = useMemo(
     () => evaluateEligibility(questions, answers),
@@ -84,8 +88,16 @@ export function EligibilityPrequalifier({
           if (!evaluateVisibleIf(q.visibleIf, answers)) return null;
           return (
           <div key={q.id} className="space-y-1.5">
-            <Label htmlFor={`q-${q.id}`} className="text-sm font-medium">
+            <Label
+              htmlFor={`q-${q.id}`}
+              className="flex flex-wrap items-center gap-2 text-sm font-medium"
+            >
               {q.label}
+              {fromOrientation.has(q.id) && (
+                <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-normal text-primary">
+                  d&apos;après vos réponses
+                </span>
+              )}
             </Label>
             {q.helpText && (
               <p className="rounded-md border-l-2 border-blue-300 bg-blue-50/60 px-2.5 py-1.5 text-xs text-blue-900 dark:bg-blue-950/30 dark:text-blue-200 dark:border-blue-700">

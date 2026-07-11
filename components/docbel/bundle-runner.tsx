@@ -89,6 +89,8 @@ interface BundleRunnerProps {
   externalDocuments?: ExternalDocument[];
   /// Email de la session connectée (pré-remplissage du dialogue d'envoi).
   userEmail?: string | null;
+  /// Ids des questions de pré-qual pré-remplies depuis l'orientation (badge).
+  orientationAnswerIds?: string[];
 }
 
 const RESPONSIBILITY_LABEL_KEYS: Record<ExternalDocument["responsibility"], string> = {
@@ -111,6 +113,7 @@ export function BundleRunner({
   applicableSlugs = null,
   externalDocuments = [],
   userEmail = null,
+  orientationAnswerIds = [],
 }: BundleRunnerProps) {
   const t = useTranslations("public.dossier");
   const router = useRouter();
@@ -329,6 +332,7 @@ export function BundleRunner({
           questions={eligibilityQuestions}
           initialAnswers={eligibilityAnswers}
           onAnswersChange={setEligibilityAnswers}
+          orientationAnswerIds={orientationAnswerIds}
           onContinue={handlePrequalifierContinue}
           continueLabel={runId ? t("save") : t("runnerStartFlow")}
         />

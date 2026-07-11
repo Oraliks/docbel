@@ -85,11 +85,12 @@ unifiés sous `/api/bundles/runs/[runId]`, conflit `[bundleRunId]`/`[id]` résol
   (`app/d/[slug]/page.tsx` résout les IDs d'OptionNode du cookie d'orientation contre
   l'arbre publié → prefill modifiable + badge « d'après vos réponses »). Repli sûr partout,
   zéro migration, exécuté en subagent-driven (tous reviews verts + revue finale opus).
-  - ⚠️ **Suivi pour ACTIVER sur les dossiers CODÉS** (dont `allocations-insertion`, live) :
-    aujourd'hui le mécanisme ne délivre que sur les dossiers pilotés **DB** — les dossiers
-    codés affichent `dossierQuestionsToEligibility(...)` qui **strippe** les champs canoniques.
-    Pour préremplir la pré-qual des dossiers codés, propager `canonicalKey`/`canonicalValue`
-    dans `DossierQuestion` (`lib/dossiers/types.ts`) + `dossierQuestionsToEligibility`.
+  - **Dossiers codés — plomberie FAITE** (`ccccaf9`) : `DossierQuestion` porte `canonicalKey`/
+    `canonicalTrue`/`canonicalFalse`/`canonicalValue`, transmis par `dossierQuestionsToEligibility`
+    (question `statut` de chomage-complet taguée `a_deja_travaille` en démo, **mapping à valider**).
+    **Reste pour voir le prefill se déclencher** (hors code) : (1) taguer les **options d'arbre**
+    correspondantes en admin (inspecteur de nœud) ; (2) `DECISION_TREE_RUNTIME_ENABLED=true` ;
+    (3) valider/étendre les mappings métier (dont les autres dossiers codés + la situation familiale).
   - Suivis mineurs (non bloquants, revue finale) : reset des valeurs canoniques stale au
     changement de clé dans l'éditeur ; type-guard au lieu du cast `nodes[id]` ; badge aussi
     sur les réponses issues de `prefillFromOrientation` (dossiers codés).

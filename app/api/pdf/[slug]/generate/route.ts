@@ -117,6 +117,18 @@ export async function POST(
     const after = await loadDossierState(bundleRunId, { userId: ownerUserId, sessionId: ownerSessionId });
     const beforeSlugs = new Set(before.missing.map((m) => m.slug));
     const newlyTriggered = (after?.missing ?? []).filter((m) => !beforeSlugs.has(m.slug) && m.slug !== form.slug);
+    // Complétion : dès que TOUS les documents requis sont remplis, on horodate
+    // `completedAt` (idempotent via `updateMany` sur completedAt:null → posé une
+    // seule fois, sans course). Alimente les métriques de complétion du cockpit.
+    // On NE touche PAS `status` : un dossier complété doit rester éditable (le
+    // garde `status === "in_progress"` du chemin download autorise encore
+    // l'écriture des payloads).
+    if (after?.allRequiredDone) {
+      await prisma.bundleRun.updateMany({
+        where: { id: bundleRunId, completedAt: null },
+        data: { completedAt: new Date() },
+      });
+    }
     await logSubmission(form.id, form.version, lang, validated, "save", true, ip);
     return NextResponse.json({ ok: true, saved: true, newlyTriggered }, { headers: json });
   }

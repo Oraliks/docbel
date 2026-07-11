@@ -142,15 +142,33 @@ export function PdfField({
   const formatWarning = touched ? validateFieldWarning(field, value, locale) : null;
   const effError = error ?? formatError ?? undefined;
   const invalid = !!effError;
-  // ✓ vert : sur tout champ SAISI (texte libre inclus) touché, non vide, sans
-  // erreur ni avertissement — plus seulement les types à format (#5).
+  // Champ AUTO-REMPLI : dérivé (date de naissance ← NISS), verrouillé
+  // (« Belgique »), commune résolue du code postal, ou date auto. L'utilisateur
+  // ne le « touche » jamais et, pour un dérivé, la valeur affichée vient de
+  // `derivedValue` (pas de `value`). Sans traitement dédié, ces champs
+  // n'obtiennent jamais le ✓ vert (Oraliks 2026-07-11 : « les champs
+  // automatiques n'ont pas la coche verte »).
+  const isDerived = field.derivedFrom != null && derivedValue != null;
+  const isAutoFilled =
+    isDerived ||
+    field.readOnly === true ||
+    field.communeFrom != null ||
+    field.prefillFrom === "system.today";
+  // Valeur réellement affichée par le champ (dérivée si dispo, sinon saisie).
+  const shownValue = isDerived
+    ? String(derivedValue ?? "")
+    : typeof value === "string"
+      ? value
+      : "";
+  // ✓ vert : champ rempli + valide, sans erreur ni avertissement. Affiché soit
+  // APRÈS interaction (`touched`, saisie libre incluse — #5), soit D'EMBLÉE
+  // pour un champ auto-rempli que l'utilisateur ne touchera pas.
   const showValid =
-    touched &&
     !effError &&
     !formatWarning &&
     (FORMAT_VALIDATABLE_TYPES.has(field.type) || field.type === "text") &&
-    typeof value === "string" &&
-    value.trim() !== "";
+    shownValue.trim() !== "" &&
+    (touched || isAutoFilled);
   const markTouched = () => setTouched(true);
 
   // Helper local : évite de répéter les mêmes props 6 fois.

@@ -64,7 +64,7 @@ describe("applyServerAutoFields", () => {
   ];
 
   it("injecte la date du jour + la signature confirmée, sans toucher aux autres champs", () => {
-    const out = applyServerAutoFields(fields, { nom: "Devos" }, "2026-07-11");
+    const out = applyServerAutoFields(fields, { nom: "Devos" } as Record<string, unknown>, "2026-07-11");
     expect(out.dateDoc).toBe("2026-07-11");
     expect(out.sig).toBe("confirmed");
     expect(out.nom).toBe("Devos");
@@ -77,7 +77,7 @@ describe("applyServerAutoFields", () => {
   });
 
   it("n'écrase pas une signature déjà fournie, mais réécrit toujours la date de création", () => {
-    const out = applyServerAutoFields(fields, { sig: "deja-signe", dateDoc: "2020-01-01" }, "2026-07-11");
+    const out = applyServerAutoFields(fields, { sig: "deja-signe", dateDoc: "2020-01-01" } as Record<string, unknown>, "2026-07-11");
     expect(out.sig).toBe("deja-signe"); // signature préexistante préservée
     expect(out.dateDoc).toBe("2026-07-11"); // date TOUJOURS = jour de génération
   });

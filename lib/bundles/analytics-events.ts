@@ -13,6 +13,10 @@ export const BUNDLE_EVENT_TYPES = [
   "wizard_result_shown",
   "bundle_opened",
   "run_created",
+  /// L'usager a récupéré ses documents complétés (zip ou email). Posé
+  /// UNIQUEMENT côté serveur (routes download-all / email) — étape finale du
+  /// funnel « Parcours ». Non émissible depuis le navigateur.
+  "documents_downloaded",
   "resume_success",
   "resume_failed",
 ] as const;

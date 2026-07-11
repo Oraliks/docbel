@@ -5,6 +5,7 @@ import { auth } from "@/lib/auth";
 import { loadDossierState } from "@/lib/bundles/completion";
 import { regenerateAllDocuments } from "@/lib/bundles/regenerate-pdfs";
 import { checkRateLimit, getClientIp } from "@/lib/pdf-forms/security";
+import { trackBundleEvent } from "@/lib/bundles/analytics";
 
 const json = { "Content-Type": "application/json; charset=utf-8" };
 
@@ -65,6 +66,13 @@ export async function GET(
   // création du bundle, mais on re-sanitize ici pour ne pas dépendre d'un
   // invariant distant dans un en-tête HTTP.
   const safeSlug = state.run.bundleSlug.replace(/[^a-zA-Z0-9-]/g, "_");
+
+  // Étape finale du funnel « Parcours » : l'usager a récupéré ses documents.
+  await trackBundleEvent("documents_downloaded", {
+    sessionId,
+    userId,
+    metadata: { bundleSlug: state.run.bundleSlug, via: "download-all" },
+  });
 
   return new NextResponse(new Uint8Array(zipBytes), {
     headers: {

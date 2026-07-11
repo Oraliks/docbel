@@ -5,6 +5,7 @@ import { auth } from "@/lib/auth";
 import { loadDossierState } from "@/lib/bundles/completion";
 import { regenerateAllDocuments } from "@/lib/bundles/regenerate-pdfs";
 import { checkRateLimit, getClientIp } from "@/lib/pdf-forms/security";
+import { trackBundleEvent } from "@/lib/bundles/analytics";
 
 const json = { "Content-Type": "application/json; charset=utf-8" };
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -93,6 +94,13 @@ export async function POST(
     console.error("[bundles/email] exception:", err);
     return NextResponse.json({ error: "Échec de l'envoi" }, { status: 502, headers: json });
   }
+
+  // Étape finale du funnel « Parcours » : documents récupérés (par email).
+  await trackBundleEvent("documents_downloaded", {
+    sessionId,
+    userId,
+    metadata: { bundleSlug: state.run.bundleSlug, via: "email" },
+  });
 
   return NextResponse.json({ ok: true }, { headers: json });
 }

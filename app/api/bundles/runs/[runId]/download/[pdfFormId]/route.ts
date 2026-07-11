@@ -10,15 +10,15 @@ const json = { "Content-Type": "application/json; charset=utf-8" };
 /// GET → un seul document complété d'un dossier, régénéré à la volée (aucun PDF
 /// n'est jamais stocké). Verrouillé tant que le dossier n'est pas entièrement
 /// complété (même verrou que le zip / l'email). Propriété du run vérifiée :
-/// un bundleRunId étranger ne peut pas récupérer les documents d'un autre
+/// un runId étranger ne peut pas récupérer les documents d'un autre
 /// citoyen (cf. lib/bundles/completion.ts).
 export async function GET(
   req: NextRequest,
-  { params }: { params: Promise<{ bundleRunId: string; pdfFormId: string }> },
+  { params }: { params: Promise<{ runId: string; pdfFormId: string }> },
 ) {
-  const { bundleRunId, pdfFormId } = await params;
+  const { runId, pdfFormId } = await params;
   const ip = getClientIp(req);
-  const rl = checkRateLimit(`bundle-download-one:${ip}:${bundleRunId}`, { windowMs: 60_000, max: 10 });
+  const rl = checkRateLimit(`bundle-download-one:${ip}:${runId}`, { windowMs: 60_000, max: 10 });
   if (!rl.ok) {
     return NextResponse.json({ error: "Trop de requêtes, réessayez plus tard" }, { status: 429, headers: json });
   }
@@ -30,7 +30,7 @@ export async function GET(
   // Pré-vérification : distingue « introuvable / pas à toi » (404, jamais de
   // fuite d'existence) de « dossier incomplet » (409 + liste des manquants) —
   // même schéma que la route zip et la route generate.
-  const state = await loadDossierState(bundleRunId, { userId, sessionId });
+  const state = await loadDossierState(runId, { userId, sessionId });
   if (!state) {
     return NextResponse.json({ error: "Dossier introuvable" }, { status: 404, headers: json });
   }
@@ -43,7 +43,7 @@ export async function GET(
 
   let result: Awaited<ReturnType<typeof regenerateOneDocument>>;
   try {
-    result = await regenerateOneDocument(bundleRunId, pdfFormId, { userId, sessionId });
+    result = await regenerateOneDocument(runId, pdfFormId, { userId, sessionId });
   } catch (err) {
     // Cold-start Neon (P1001) : erreur JSON propre plutôt qu'exception brute.
     console.error("[bundle-download-one] regeneration error:", err);

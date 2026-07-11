@@ -53,7 +53,7 @@ export interface RoadmapDocument {
   /// Lien de relecture/édition (rouvre le formulaire dans le dossier).
   href: string;
   /// Id du PdfForm — cible du téléchargement individuel du PDF régénéré
-  /// (`/api/documents/bundles/{bundleRunId}/download/{pdfFormId}`).
+  /// (`/api/bundles/runs/{runId}/download/{pdfFormId}`).
   pdfFormId: string;
 }
 
@@ -102,7 +102,7 @@ export function BundleRoadmap({
     if (!bundleRunId) return;
     setSendingEmail(true);
     try {
-      const res = await fetch(`/api/documents/bundles/${bundleRunId}/email`, {
+      const res = await fetch(`/api/bundles/runs/${bundleRunId}/email`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ to: emailTo.trim(), consent: emailConsent }),
@@ -142,7 +142,7 @@ export function BundleRoadmap({
                     size="sm"
                     variant="default"
                     className="h-7 text-xs"
-                    render={<a href={`/api/documents/bundles/${bundleRunId}/download/${d.pdfFormId}`} />}
+                    render={<a href={`/api/bundles/runs/${bundleRunId}/download/${d.pdfFormId}`} />}
                   >
                     <Download className="w-3 h-3 mr-1" />
                     {t("roadmapDownloadOne")}
@@ -166,7 +166,7 @@ export function BundleRoadmap({
                 size="sm"
                 variant="default"
                 className="h-8 text-xs"
-                render={<a href={`/api/documents/bundles/${bundleRunId}/download-all`} />}
+                render={<a href={`/api/bundles/runs/${bundleRunId}/download-all`} />}
               >
                 <Archive className="w-3.5 h-3.5 mr-1" />
                 {t("roadmapDownloadAll")}

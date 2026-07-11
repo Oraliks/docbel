@@ -247,7 +247,13 @@ export default async function BundleRoute({
           canonical?: { key: string; value: string };
         }[];
         const facts = collectCanonicalFacts(chosenOptions);
-        const questions = parseEligibilityQuestions(bundle.eligibilityQuestions);
+        // Source = l'ensemble RÉELLEMENT AFFICHÉ au runner
+        // (`eligibilityQuestionsSerialized`), pas le JSON DB brut : pour un
+        // dossier CODÉ, l'affiché vient du code (sans champ canonique → prefill
+        // vide, aucune clé fantôme injectée dans selectDocuments) ; pour un
+        // dossier DB, c'est le même JSON avec les tags. On préremplit donc
+        // uniquement des questions effectivement montrées.
+        const questions = parseEligibilityQuestions(eligibilityQuestionsSerialized);
         const canonicalPrefill = prefillEligibilityAnswers(questions, facts);
         for (const qid of Object.keys(canonicalPrefill)) {
           // Ne pas écraser une réponse déjà présente (run/prefill code).

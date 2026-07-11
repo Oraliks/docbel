@@ -13,11 +13,11 @@ const json = { "Content-Type": "application/json; charset=utf-8" };
 /// n'est pas entièrement complété (cf. lib/bundles/completion.ts).
 export async function GET(
   req: NextRequest,
-  { params }: { params: Promise<{ bundleRunId: string }> },
+  { params }: { params: Promise<{ runId: string }> },
 ) {
-  const { bundleRunId } = await params;
+  const { runId } = await params;
   const ip = getClientIp(req);
-  const rl = checkRateLimit(`bundle-download-all:${ip}:${bundleRunId}`, { windowMs: 60_000, max: 5 });
+  const rl = checkRateLimit(`bundle-download-all:${ip}:${runId}`, { windowMs: 60_000, max: 5 });
   if (!rl.ok) {
     return NextResponse.json({ error: "Trop de requêtes, réessayez plus tard" }, { status: 429, headers: json });
   }
@@ -31,7 +31,7 @@ export async function GET(
   // pour que l'UI puisse dire QUOI compléter). `regenerateAllDocuments`
   // écrase ces deux cas en `null`, d'où ce pré-check dédié — même schéma que
   // la route generate (app/api/pdf/[slug]/generate/route.ts).
-  const state = await loadDossierState(bundleRunId, { userId, sessionId });
+  const state = await loadDossierState(runId, { userId, sessionId });
   if (!state) {
     return NextResponse.json({ error: "Dossier introuvable" }, { status: 404, headers: json });
   }
@@ -44,7 +44,7 @@ export async function GET(
 
   let result: Awaited<ReturnType<typeof regenerateAllDocuments>>;
   try {
-    result = await regenerateAllDocuments(bundleRunId, { userId, sessionId });
+    result = await regenerateAllDocuments(runId, { userId, sessionId });
   } catch (err) {
     // La base Neon partagée a des cold-starts (P1001) : on renvoie une erreur
     // JSON propre plutôt que de laisser une exception remonter en 500 brut.

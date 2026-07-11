@@ -14,11 +14,11 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 /// que le dossier n'est pas entièrement complété.
 export async function POST(
   req: NextRequest,
-  { params }: { params: Promise<{ bundleRunId: string }> },
+  { params }: { params: Promise<{ runId: string }> },
 ) {
-  const { bundleRunId } = await params;
+  const { runId } = await params;
   const ip = getClientIp(req);
-  const rl = checkRateLimit(`bundle-email:${ip}:${bundleRunId}`, { windowMs: 60_000, max: 3 });
+  const rl = checkRateLimit(`bundle-email:${ip}:${runId}`, { windowMs: 60_000, max: 3 });
   if (!rl.ok) {
     return NextResponse.json({ error: "Trop de requêtes, réessayez plus tard" }, { status: 429, headers: json });
   }
@@ -51,8 +51,8 @@ export async function POST(
   // fuite d'existence) de « dossier incomplet » (409 + liste des manquants,
   // pour que l'UI puisse dire QUOI compléter). `regenerateAllDocuments`
   // écrase ces deux cas en `null`, d'où ce pré-check dédié — même schéma que
-  // la route zip (app/api/documents/bundles/[bundleRunId]/download-all/route.ts).
-  const state = await loadDossierState(bundleRunId, { userId, sessionId });
+  // la route zip (app/api/bundles/runs/[runId]/download-all/route.ts).
+  const state = await loadDossierState(runId, { userId, sessionId });
   if (!state) {
     return NextResponse.json({ error: "Dossier introuvable" }, { status: 404, headers: json });
   }
@@ -65,7 +65,7 @@ export async function POST(
 
   let result: Awaited<ReturnType<typeof regenerateAllDocuments>>;
   try {
-    result = await regenerateAllDocuments(bundleRunId, { userId, sessionId });
+    result = await regenerateAllDocuments(runId, { userId, sessionId });
   } catch (err) {
     // La base Neon partagée a des cold-starts (P1001) : on renvoie une erreur
     // JSON propre plutôt que de laisser une exception remonter en 500 brut.

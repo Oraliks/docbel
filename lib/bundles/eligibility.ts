@@ -21,6 +21,8 @@ export interface EligibilityOption {
   label: string;
   /// Verdict que cette option fait remonter au calcul global.
   verdict: EligibilityVerdict;
+  /// Valeur canonique que cette option affirme (cf. lib/parcours/canonical-keys).
+  canonicalValue?: string;
 }
 
 /// Condition de visibilité d'une question — sérialisable (pour pouvoir
@@ -73,6 +75,9 @@ export interface EligibilityQuestionBase {
   /// Visibilité conditionnelle — la question n'est affichée que si la
   /// condition est vraie. Si absent, toujours visible.
   visibleIf?: EligibilityVisibleIf;
+  /// Clé canonique à laquelle cette question répond (pré-remplissage depuis
+  /// l'orientation). Cf. lib/parcours/canonical-keys.
+  canonicalKey?: string;
 }
 
 export interface EligibilityBooleanQuestion extends EligibilityQuestionBase {
@@ -81,6 +86,9 @@ export interface EligibilityBooleanQuestion extends EligibilityQuestionBase {
   verdictTrue: EligibilityVerdict;
   /// Verdict si réponse = non.
   verdictFalse: EligibilityVerdict;
+  /// Valeur canonique correspondant à « oui » / « non ».
+  canonicalTrue?: string;
+  canonicalFalse?: string;
 }
 
 export interface EligibilitySelectQuestion extends EligibilityQuestionBase {
@@ -257,9 +265,12 @@ export function parseEligibilityQuestions(input: unknown): EligibilityQuestion[]
         helpText: typeof r.helpText === "string" ? r.helpText : undefined,
         helpUrl: typeof r.helpUrl === "string" ? r.helpUrl : undefined,
         visibleIf,
+        canonicalKey: typeof r.canonicalKey === "string" ? r.canonicalKey : undefined,
         type: "boolean",
         verdictTrue: parseVerdict(r.verdictTrue) ?? "neutral",
         verdictFalse: parseVerdict(r.verdictFalse) ?? "neutral",
+        canonicalTrue: typeof r.canonicalTrue === "string" ? r.canonicalTrue : undefined,
+        canonicalFalse: typeof r.canonicalFalse === "string" ? r.canonicalFalse : undefined,
       });
     } else if (r.type === "select" && Array.isArray(r.options)) {
       const opts: EligibilityOption[] = [];
@@ -271,6 +282,7 @@ export function parseEligibilityQuestions(input: unknown): EligibilityQuestion[]
           value: oo.value,
           label: oo.label,
           verdict: parseVerdict(oo.verdict) ?? "neutral",
+          canonicalValue: typeof oo.canonicalValue === "string" ? oo.canonicalValue : undefined,
         });
       }
       if (opts.length > 0) {
@@ -280,6 +292,7 @@ export function parseEligibilityQuestions(input: unknown): EligibilityQuestion[]
           helpText: typeof r.helpText === "string" ? r.helpText : undefined,
           helpUrl: typeof r.helpUrl === "string" ? r.helpUrl : undefined,
           visibleIf,
+          canonicalKey: typeof r.canonicalKey === "string" ? r.canonicalKey : undefined,
           type: "select",
           options: opts,
         });

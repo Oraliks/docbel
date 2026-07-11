@@ -13,6 +13,7 @@ import type { BlockProps } from '@/lib/page-builder/types'
 import { RenderedPage, resolveGlobalBlocks } from '@/lib/page-builder/render-page'
 import { ec32DefaultContent } from '@/lib/ec32/content'
 import { Ec32Experience } from '@/components/docbel/ec32/ec32-experience'
+import { getSiteSettings } from '@/lib/site-settings.server'
 
 const BUILDER_SLUG = 'onem-ec32'
 
@@ -43,6 +44,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const title = page?.metaTitle || ec32DefaultContent.seo.title
   const description = page?.metaDesc || ec32DefaultContent.seo.description
   const ogImages = page?.ogImage ? [{ url: page.ogImage }] : undefined
+  const siteName = (await getSiteSettings()).identity.name
 
   return {
     title,
@@ -54,7 +56,7 @@ export async function generateMetadata(): Promise<Metadata> {
       title,
       description,
       url: '/onem/ec32',
-      siteName: 'Docbel',
+      siteName,
       images: ogImages,
     },
   }

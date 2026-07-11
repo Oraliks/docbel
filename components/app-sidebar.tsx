@@ -3,6 +3,7 @@
 import * as React from "react"
 import { useTranslations } from "next-intl"
 import { useAuthSession } from "@/components/auth-session-provider"
+import { useSiteSettings } from "@/components/site-settings/site-settings-provider"
 import { useState, useEffect } from "react"
 
 import { NavMain } from "@/components/nav-main"
@@ -18,7 +19,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import { FolderIcon, CommandIcon, NewspaperIcon, MailIcon, Wrench, MapPinIcon, UsersIcon, CalendarClock, BriefcaseIcon, GraduationCapIcon, ImageIcon, GitBranchIcon, LanguagesIcon, ActivityIcon } from "lucide-react"
+import { FolderIcon, CommandIcon, NewspaperIcon, MailIcon, Wrench, MapPinIcon, UsersIcon, CalendarClock, BriefcaseIcon, GraduationCapIcon, ImageIcon, GitBranchIcon, LanguagesIcon, ActivityIcon, SettingsIcon } from "lucide-react"
 import Link from "next/link"
 
 const defaultUser = {
@@ -33,6 +34,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   // "Utilisateur user@example.com" à chaque refresh rapide / cold-start Neon.
   const { data: session } = useAuthSession()
   const t = useTranslations("admin.nav")
+  const siteName = useSiteSettings()?.identity.name ?? "Docbel"
   const [unreadCount, setUnreadCount] = useState(0)
   const [pendingReportsCount, setPendingReportsCount] = useState(0)
 
@@ -243,6 +245,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       url: "/admin/monitoring",
       icon: <ActivityIcon className="size-4" />,
     },
+    {
+      // Paramètres globaux du site (identité, SEO, maintenance, annonces).
+      // Libellé hardcodé (pas de clé i18n) — cohérent avec le cockpit admin.
+      title: "Paramètres",
+      url: "/admin/parametres",
+      icon: <SettingsIcon className="size-4" />,
+    },
   ]
 
   useEffect(() => {
@@ -333,7 +342,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               render={<Link href="/admin" />}
             >
               <CommandIcon className="size-5!" />
-              <span className="text-base font-semibold">Docbel</span>
+              <span className="text-base font-semibold">{siteName}</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>

@@ -22,6 +22,9 @@ import { AuthSessionProvider } from "@/components/auth-session-provider";
 import { ImpersonationBanner } from "@/components/impersonation-banner";
 import { WelcomeLocaleModal } from "@/components/welcome-locale-modal";
 import { getServerAuthSession } from "@/lib/auth-session";
+import { getSiteSettings } from "@/lib/site-settings.server";
+import { canonicalUrl, toPublicSiteSettings } from "@/lib/site-settings";
+import { SiteSettingsProvider } from "@/components/site-settings/site-settings-provider";
 import "./globals.css";
 
 const plusJakarta = Plus_Jakarta_Sans({
@@ -48,13 +51,53 @@ const manrope = Manrope({
   display: "swap",
 });
 
-export const metadata: Metadata = {
-  // Resolves relative OG/Twitter image URLs and silences Next's
-  // metadataBase warning. Override via NEXT_PUBLIC_SITE_URL per environment.
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://docbel.be"),
-  title: "Docbel — Documents administratifs belges",
-  description: "Portail officieux des documents administratifs belges (chômage)",
-};
+/**
+ * Métadonnées racine dérivées des Paramètres globaux (admin) — nom, slogan,
+ * URL, description, image OG, désindexation, vérifications. Lecture cachée
+ * (memo-cache 60 s) ; retombe sur les défauts en cas d'indisponibilité DB.
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  const s = await getSiteSettings();
+  const base = canonicalUrl(s);
+  const title = s.identity.tagline
+    ? `${s.identity.name} — ${s.identity.tagline}`
+    : s.identity.name;
+  const description = s.seo.defaultDescription;
+  const ogImages = s.seo.ogImageUrl ? [{ url: s.seo.ogImageUrl }] : undefined;
+
+  return {
+    metadataBase: new URL(base),
+    title: { default: title, template: s.seo.titleTemplate || "%s" },
+    description,
+    openGraph: {
+      type: "website",
+      siteName: s.identity.name,
+      title,
+      description,
+      url: base,
+      images: ogImages,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: ogImages,
+    },
+    ...(s.seo.noindex ? { robots: { index: false, follow: false } } : {}),
+    ...(s.seo.verification.google || s.seo.verification.bing
+      ? {
+          verification: {
+            ...(s.seo.verification.google
+              ? { google: s.seo.verification.google }
+              : {}),
+            ...(s.seo.verification.bing
+              ? { other: { "msvalidate.01": s.seo.verification.bing } }
+              : {}),
+          },
+        }
+      : {}),
+  };
+}
 
 export default async function RootLayout({
   children,
@@ -79,6 +122,10 @@ export default async function RootLayout({
   // RGPD : état de consentement lu côté serveur (anti-flash + aucun traceur
   // monté avant accord). `null` = pas de décision → la bannière s'affichera.
   const initialConsent = parseConsent((await cookies()).get(CONSENT_COOKIE)?.value);
+
+  // Paramètres globaux (tranche publique) : identité, maintenance, annonce —
+  // exposés au client pour la bannière + le gate maintenance. Lecture cachée.
+  const publicSiteSettings = toPublicSiteSettings(await getSiteSettings());
 
   return (
     <html
@@ -107,7 +154,9 @@ export default async function RootLayout({
             <CookieConsentProvider initialConsent={initialConsent}>
               <AuthSessionProvider initialSession={initialSession}>
                 <ImpersonationBanner />
-                <AppLayoutClient>{children}</AppLayoutClient>
+                <SiteSettingsProvider value={publicSiteSettings}>
+                  <AppLayoutClient>{children}</AppLayoutClient>
+                </SiteSettingsProvider>
               </AuthSessionProvider>
               <Toaster richColors position="bottom-right" duration={3500} />
               <ConfirmDialog />

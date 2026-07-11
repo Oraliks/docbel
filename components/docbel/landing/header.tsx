@@ -6,6 +6,7 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { authClient } from "@/lib/auth-client";
 import { useAuthSession } from "@/components/auth-session-provider";
+import { useSiteSettings } from "@/components/site-settings/site-settings-provider";
 import { useTheme } from "@/components/theme-provider";
 import { useScrollReveal } from "@/hooks/useScrollReveal";
 import { NotificationBell } from "@/components/docbel/notification-bell";
@@ -104,6 +105,7 @@ export function LandingHeader({ persona, onSearchOpen }: LandingHeaderProps) {
   const visible = useScrollReveal();
   const { resolvedTheme, setTheme } = useTheme();
   const { data: session } = useAuthSession();
+  const siteName = useSiteSettings()?.identity.name ?? "Docbel";
   const activeNav = resolveActiveNav(pathname);
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -146,7 +148,7 @@ export function LandingHeader({ persona, onSearchOpen }: LandingHeaderProps) {
         >
           <SheetHeader className="border-b border-[color:var(--glass-ink-line)] p-5">
             <SheetTitle className="text-[18px] font-extrabold tracking-tight">
-              Docbel
+              {siteName}
             </SheetTitle>
             <SheetDescription className="text-[11px] font-bold uppercase tracking-[0.14em] text-[color:var(--glass-ink-soft)]">
               {current.label}
@@ -237,7 +239,7 @@ export function LandingHeader({ persona, onSearchOpen }: LandingHeaderProps) {
           className="flex items-center gap-2 rounded-2xl px-2 py-1 text-left transition hover:bg-white/40 dark:hover:bg-white/5"
         >
           <span className="hidden flex-col leading-tight sm:flex">
-            <span className="text-[18px] font-extrabold tracking-tight">Docbel</span>
+            <span className="text-[18px] font-extrabold tracking-tight">{siteName}</span>
             <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-[color:var(--glass-ink-soft)]">
               <span
                 className="mr-1.5 inline-block size-1.5 rounded-full align-middle"

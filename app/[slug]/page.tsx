@@ -8,6 +8,7 @@ import { buildPageJsonLd } from "@/lib/page-builder/schema-org";
 // a accepté dans la bannière cookies.
 import { ConsentedPageViewBeacon } from "@/components/cookie-consent/analytics-gate";
 import { RenderedPage, resolveGlobalBlocks } from "@/lib/page-builder/render-page";
+import { getSiteSettings } from "@/lib/site-settings.server";
 
 export const dynamicParams = true;
 export const revalidate = 60;
@@ -58,6 +59,7 @@ export async function generateMetadata({
   const title = page.metaTitle || page.title;
   const description = page.metaDesc || undefined;
   const ogImages = page.ogImage ? [{ url: page.ogImage }] : undefined;
+  const siteName = (await getSiteSettings()).identity.name;
 
   const siteUrl =
     process.env.NEXT_PUBLIC_BETTER_AUTH_URL ||
@@ -80,7 +82,7 @@ export async function generateMetadata({
       title,
       description,
       url: `/${page.slug}`,
-      siteName: "Docbel",
+      siteName,
       images: ogImages,
     },
     twitter: {

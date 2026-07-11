@@ -9,6 +9,7 @@ import { ArticleView } from "@/components/docbel/article-view";
 import { SuggestCorrection } from "@/components/i18n/suggest-correction";
 import type { NewsItem } from "@/lib/docbel-data";
 import { resolveArticleImage } from "@/lib/featured-image";
+import { getSiteSettings } from "@/lib/site-settings.server";
 
 export const dynamic = "force-dynamic";
 
@@ -112,6 +113,7 @@ export async function generateMetadata({ params }: RouteParams): Promise<Metadat
 
   const canonical = `${base}/actualites/${slug}`;
   const description = article.excerpt;
+  const siteName = (await getSiteSettings()).identity.name;
 
   // Fetch the category's color + illustration for the branded OG image.
   const cat = article.category
@@ -142,7 +144,7 @@ export async function generateMetadata({ params }: RouteParams): Promise<Metadat
       description,
       type: "article",
       url: canonical,
-      siteName: "Docbel",
+      siteName,
       publishedTime: article.publishedAt?.toISOString(),
       images: [
         { url: ogImage, width: 1280, height: 720, alt: article.title },

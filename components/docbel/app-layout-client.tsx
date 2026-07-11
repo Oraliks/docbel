@@ -11,6 +11,9 @@ import { getAudienceFromPath } from "@/lib/audience";
 import { TOOLS_DATA, getToolSlug } from "@/lib/docbel-data";
 import { useInactiveTools } from "@/hooks/useInactiveTools";
 import { useAuthSession } from "@/components/auth-session-provider";
+import { useSiteSettings } from "@/components/site-settings/site-settings-provider";
+import { AnnouncementBanner } from "./announcement-banner";
+import { MaintenanceScreen } from "./maintenance-screen";
 import { ProShell } from "./pro/pro-shell";
 import type { ProSegment } from "@/lib/pro-nav";
 
@@ -50,6 +53,7 @@ export function AppLayoutClient({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { resolvedTheme, setTheme } = useTheme();
   const { data: session } = useAuthSession();
+  const siteSettings = useSiteSettings();
   const [toolsCat, setToolsCat] = useState("Tous");
   const [paletteOpen, setPaletteOpen] = useState(false);
   const inactiveSlugs = useInactiveTools();
@@ -85,6 +89,20 @@ export function AppLayoutClient({ children }: { children: React.ReactNode }) {
   // or footer.
   const audience = getAudienceFromPath(pathname);
 
+  // Mode maintenance : coupe le shell public pour les non-admins. Ne s'applique
+  // JAMAIS à /admin, /login ni aux espaces pros (branches retournées plus haut),
+  // donc un admin peut toujours se connecter pour reprendre la main.
+  const role = (session?.user as { role?: string } | undefined)?.role ?? null;
+  const maint = siteSettings?.maintenance;
+  if (maint?.enabled && !(maint.allowAdminBypass && role === "admin")) {
+    return (
+      <MaintenanceScreen
+        siteName={siteSettings?.identity.name ?? "Docbel"}
+        message={maint.message}
+      />
+    );
+  }
+
   return (
     <AppStateContext.Provider
       value={{
@@ -99,6 +117,7 @@ export function AppLayoutClient({ children }: { children: React.ReactNode }) {
     >
       <div className="glass-root">
         <main className="mx-auto flex min-h-svh w-full max-w-[1840px] flex-col gap-4 px-4 pt-4 pb-10 sm:gap-6 sm:px-6 sm:pt-6 sm:pb-12 lg:px-12 2xl:px-16">
+          <AnnouncementBanner />
           <LandingHeader
             persona={audience}
             onSearchOpen={() => setPaletteOpen(true)}

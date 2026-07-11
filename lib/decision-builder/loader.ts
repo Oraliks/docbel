@@ -11,6 +11,7 @@
 
 import { prisma, withDbRetry } from "@/lib/prisma";
 import type { WizardSituation } from "@/lib/dossier-wizard/config";
+import type { DecisionTreeContent } from "@/lib/decision-builder/types";
 import { treeContentToWizardSituations } from "./adapter";
 import { safeParseTreeContent } from "./schema";
 
@@ -46,6 +47,30 @@ export async function loadPublishedDecisionTree(
     return situations.length > 0 ? situations : null;
   } catch (e) {
     console.error("[decision-builder/loader] fallback TS (erreur):", e);
+    return null;
+  }
+}
+
+/// Contenu BRUT (nœuds) de l'arbre publié d'un segment — pour marcher les tags
+/// `canonical` des options côté serveur. Même garde flag que
+/// `loadPublishedDecisionTree` : quand le flag runtime est OFF, l'orientation
+/// n'est pas pilotée par l'arbre DB → on renvoie `null` (repli sûr, aucun fait).
+export async function loadPublishedTreeContent(
+  segment: string,
+): Promise<DecisionTreeContent | null> {
+  if (!isDecisionTreeRuntimeEnabled()) return null;
+
+  try {
+    const tree = await withDbRetry(() =>
+      prisma.decisionTree.findFirst({
+        where: { segment, status: "published" },
+        orderBy: { publishedAt: "desc" },
+        select: { publishedContent: true },
+      }),
+    );
+    if (!tree?.publishedContent) return null;
+    return safeParseTreeContent(tree.publishedContent);
+  } catch {
     return null;
   }
 }

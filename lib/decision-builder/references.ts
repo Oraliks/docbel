@@ -1,9 +1,12 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
-import { safeParseTreeContent } from "./schema";
+import {
+  contentReferencesBundle,
+  type BundleReference,
+} from "./references-core";
 
 /**
- * Intégrité référentielle Arbres ↔ Dossiers.
+ * Intégrité référentielle Arbres ↔ Dossiers (lecture DB).
  *
  * Une feuille de résultat d'arbre pointe vers un `DocumentBundle` par son
  * `bundleSlug` (chaîne libre, pas de FK DB). Ce module scanne les arbres pour
@@ -11,39 +14,11 @@ import { safeParseTreeContent } from "./schema";
  * (panneau « Référencé par ») et garde-fous (désactivation / publication).
  *
  * Les arbres sont des données de configuration (faible volume) → un scan complet
- * en mémoire est acceptable. Résilient : toute erreur DB → liste vide.
+ * en mémoire est acceptable. Résilient : toute erreur DB → liste vide. Le cœur
+ * pur (détection de référence) vit dans `references-core.ts` (testé).
  */
 
-export type BundleReference = {
-  treeId: string;
-  treeSlug: string;
-  treeTitle: string;
-  status: string; // draft | published | archived
-  /** Référencé dans le brouillon en cours d'édition. */
-  inDraft: boolean;
-  /** Référencé dans la version publiée (celle servie au public). */
-  inPublished: boolean;
-  /** Cible principale (`result.bundleSlug`). */
-  asPrimary: boolean;
-  /** Cité en dossier connexe (`result.related[]`). */
-  asRelated: boolean;
-};
-
-function scanContent(
-  content: unknown,
-  slug: string,
-): { primary: boolean; related: boolean } {
-  const parsed = safeParseTreeContent(content);
-  if (!parsed) return { primary: false, related: false };
-  let primary = false;
-  let related = false;
-  for (const node of Object.values(parsed.nodes)) {
-    if (node.type !== "result") continue;
-    if (node.bundleSlug === slug) primary = true;
-    if (node.related?.includes(slug)) related = true;
-  }
-  return { primary, related };
-}
+export type { BundleReference };
 
 /** Liste des arbres qui référencent un dossier (par son slug), brouillon OU publié. */
 export async function findTreesReferencingBundle(
@@ -63,9 +38,9 @@ export async function findTreesReferencingBundle(
     });
     const refs: BundleReference[] = [];
     for (const t of trees) {
-      const d = scanContent(t.draftContent, slug);
+      const d = contentReferencesBundle(t.draftContent, slug);
       const p = t.publishedContent
-        ? scanContent(t.publishedContent, slug)
+        ? contentReferencesBundle(t.publishedContent, slug)
         : { primary: false, related: false };
       const inDraft = d.primary || d.related;
       const inPublished = p.primary || p.related;

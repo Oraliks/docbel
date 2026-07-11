@@ -277,9 +277,10 @@ function OptionFields({
             value={node.canonical?.key ?? ""}
             onValueChange={(k) =>
               update({
-                canonical: k
-                  ? { key: k, value: canonicalValues(k)[0]?.value ?? "" }
-                  : undefined,
+                canonical:
+                  k && k !== "__none__"
+                    ? { key: k, value: canonicalValues(k)[0]?.value ?? "" }
+                    : undefined,
               })
             }
           >
@@ -287,6 +288,7 @@ function OptionFields({
               <SelectValue placeholder="Aucune" />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="__none__">Aucune</SelectItem>
               {CANONICAL_KEYS.map((d) => (
                 <SelectItem key={d.key} value={d.key}>
                   {d.label}

@@ -8,38 +8,10 @@ import { Textarea } from '@/components/ui/textarea'
 import { Field, Group, Pills } from '@/components/page-builder/inspector/controls'
 import { RepeaterList } from '@/components/page-builder/inspector/repeater-list'
 import { defineBlock } from '@/lib/page-builder/block-definition'
+import { evalFormula } from '@/lib/page-builder/expression'
 import { calculatorFieldSchema, calculatorSchema as schema } from './schemas'
 
 type FieldDef = z.infer<typeof calculatorFieldSchema>
-
-// Caractères autorisés dans une expression arithmétique une fois les variables
-// substituées : chiffres, opérateurs, parenthèses, espaces, séparateurs décimaux.
-const ARITHMETIC_ONLY = /^[\d+\-*/%.,()\s]*$/
-// Appels Math.<method>(…) autorisés (round, min, max, abs, ceil, floor, pow, sqrt…).
-const MATH_CALL = /Math\.[a-zA-Z]+/g
-
-function safeEval(expression: string, vars: Record<string, number | string>): number | null {
-  try {
-    let safe = expression
-    for (const [k, v] of Object.entries(vars)) {
-      // On n'injecte que des valeurs numériques : une valeur texte (option select)
-      // pourrait sinon contenir du code arbitraire interpolé dans l'expression.
-      const num = typeof v === 'number' ? v : Number(v)
-      if (!Number.isFinite(num)) return null
-      const regex = new RegExp(`\\b${k}\\b`, 'g')
-      safe = safe.replace(regex, String(num))
-    }
-    // Après substitution, l'expression ne doit plus contenir que de l'arithmétique
-    // (les Math.* sont tolérés). Tout identifiant résiduel (window, fetch, constructor…)
-    // signale une formule non fiable → on refuse plutôt que d'exécuter du JS arbitraire.
-    if (!ARITHMETIC_ONLY.test(safe.replace(MATH_CALL, ''))) return null
-    const fn = new Function('Math', `"use strict"; return (${safe})`)
-    const result = fn(Math)
-    return typeof result === 'number' && !Number.isNaN(result) ? result : null
-  } catch {
-    return null
-  }
-}
 
 export const calculator = defineBlock({
   type: 'calculator',
@@ -87,7 +59,7 @@ export const calculator = defineBlock({
       return out
     }, [fields])
     const [values, setValues] = useState(initial)
-    const result = safeEval(formula, values)
+    const result = evalFormula(formula, values)
 
     return (
       <div
@@ -236,7 +208,10 @@ export const calculator = defineBlock({
         />
       </Group>
       <Group title="Formule">
-        <Field label="Expression JS" hint="Utilisez les noms des champs (ex: salary * 0.65)">
+        <Field
+          label="Formule"
+          hint="Noms des champs + - * / % **, parenthèses et Math.round/min/max/abs… (ex : Math.round(salary * 0.65))"
+        >
           <Textarea
             value={props.formula}
             onChange={(e) => onChange({ formula: e.target.value })}

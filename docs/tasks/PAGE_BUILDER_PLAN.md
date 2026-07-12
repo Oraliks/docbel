@@ -12,12 +12,17 @@ D4 rétention 30+1/jour · D5 presets DB via AppSetting.
 | **E1** (safeEval) | ✅ **LIVRÉ** | `lib/page-builder/expression.ts` (parseur récursif fermé) remplace `new Function`. 20 tests (dont refus injections). Clôt audit 05-29 §6. |
 | **C1** (audit contenu) | ✅ **LIVRÉ** | `pnpm pages:audit`. Baseline : 6 pages / 83 blocs / **0 problème**. |
 | **C2** (quarantaine) | ✅ **LIVRÉ** | Bloc inconnu → carte ambre visible en editorMode (null en public). |
-| **C3** (rétention) | ✅ **LIVRÉ** | `planRetention` pur (6 tests) + `pnpm pages:prune-revisions` (dry-run défaut). Statut page = déjà enum. **Purge réelle NON exécutée** (DB partagée → attend `--apply` validé). Dry-run : `pourquoi-docbel` 79 rév → 48 purgeables. |
-| **B** (code-splitting) | ⏸️ **DIFFÉRÉ** | Next 16 `next build` **n'émet plus** les tailles First Load JS (Turbopack) → mesure avant/après impossible sans `@next/bundle-analyzer` (D2 à rouvrir). De plus screenshot preview timeout dans l'env → hydratation non vérifiable. Refus de shipper un refactor visiteur risqué à l'aveugle. **Rouvrir D2** (autoriser l'analyzer) avant de coder. |
+| **C3** (rétention) | ✅ **LIVRÉ + PURGE APPLIQUÉE** | `planRetention` pur (6 tests) + `pnpm pages:prune-revisions`. Statut page = déjà enum. **Purge exécutée (autorisée) : 48 révisions supprimées** (81→33), état désormais propre. |
+| **B** (code-splitting) | ✅ **LIVRÉ + vérifié Chrome** | Mesuré dans Chrome (pas besoin de l'analyzer) : `/davy` (4 blocs) embarquait calculatrice/eC3.2(1557 l)/quiz/évaluateur/Unsplash. Fix : `block-renderer` ne dépend plus du registry → `LazyBlockContent` (18 `next/dynamic` par catégorie, `ssr:true`), map pur `block-categories.ts`. **Après** : `/davy` markers ec32/calculator/évaluateur = 0, SSR HTML complet, 0 erreur hydratation ; `/onem-ec32` charge son chunk ec32 à la demande. Résiduel assumé : Fields + schémas des catégories utilisées (split Render/Fields par bloc = plus tard). |
 | **D** (monolithes) | ⏸️ **DIFFÉRÉ** | D1 (slices store) faisable sous le filet du lot A, mais D2/D3 (block-wrapper, liste admin) = risque UI pur non vérifiable dans cet env. À faire en session interactive avec QA visuelle. |
 | **E2** (presets DB) | ⏸️ **DIFFÉRÉ** | P3, touche localStorage→AppSetting + route API + UI ; non vérifiable ici. |
 
-Validation : `pnpm test` = **1596 tests verts** · `pnpm build` OK.
+Reste différé : **D** (découpe monolithes — QA visuelle éditeur) et **E2** (presets
+DB). Amélioration future du lot B : split `Render`/`Fields` par bloc (retirer les
+inspecteurs Unsplash/… du bundle public) — gain supplémentaire, plus invasif.
+
+Validation : `pnpm test` = **1599 tests verts** · `pnpm build` OK · rendu public
+vérifié dans Chrome (SSR + hydratation + code-splitting).
 Commits locaux `ae01969` → `HEAD` (non poussés — workdir partagé, PDF non poussés en attente).
 
 ---

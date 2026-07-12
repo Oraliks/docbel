@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { usePathname, useSearchParams } from "next/navigation"
 import { useState } from "react"
-import { ActivityIcon, FlagIcon, FolderIcon, MailIcon, ScrollTextIcon, ChevronRightIcon, LayoutDashboardIcon, UsersIcon } from "lucide-react"
+import { ActivityIcon, FlagIcon, FolderIcon, MailIcon, ScrollTextIcon, ChevronRightIcon, LayoutDashboardIcon } from "lucide-react"
 import {
   SidebarGroup,
   SidebarGroupContent,
@@ -44,7 +44,6 @@ interface NavItem {
 
 const QUICK_LINKS = [
   { label: "Dashboard", url: "/admin", icon: LayoutDashboardIcon },
-  { label: "Utilisateurs", url: "/admin/users", icon: UsersIcon },
   { label: "Fichiers", url: "/admin?view=filemanager", icon: FolderIcon },
   { label: "Messagerie", url: "/admin/messagerie", icon: MailIcon },
   { label: "Signalements", url: "/admin/signalements", icon: FlagIcon },

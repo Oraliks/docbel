@@ -9,7 +9,6 @@ import { useState, useEffect } from "react"
 import { NavMain } from "@/components/nav-main"
 import { NavSecondary } from "@/components/nav-secondary"
 import { NavUser } from "@/components/nav-user"
-import { LocaleSwitcher } from "@/components/locale-switcher"
 import {
   Sidebar,
   SidebarContent,
@@ -375,7 +374,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavSecondary items={[]} className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>
-        <LocaleSwitcher />
         <NavUser user={userData} />
       </SidebarFooter>
     </Sidebar>

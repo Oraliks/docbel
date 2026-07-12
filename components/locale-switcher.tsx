@@ -50,15 +50,26 @@ export function LocaleSwitcher({
   localeList = locales,
   className = "",
   compact = false,
+  open: controlledOpen,
+  onOpenChange: controlledOnOpenChange,
+  renderTrigger = true,
 }: {
   localeList?: readonly Locale[];
   className?: string;
   /** Drapeau + trigger réduits — pour les emplacements discrets (footer). */
   compact?: boolean;
+  /** Ouverture pilotée par le parent (ex: item de menu). Si fourni, le composant
+   *  devient contrôlé et n'utilise plus son state interne. */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  /** false = ne rend pas le drapeau-trigger (le parent ouvre le dialog). */
+  renderTrigger?: boolean;
 } = {}) {
   const current = useLocale() as Locale;
   const [pending, startTransition] = useTransition();
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  const isControlled = controlledOpen !== undefined;
+  const open = isControlled ? controlledOpen : internalOpen;
   const [selected, setSelected] = useState<Locale>(current);
   const [search, setSearch] = useState("");
 
@@ -67,12 +78,13 @@ export function LocaleSwitcher({
       setSelected(current);
       setSearch("");
     }
-    setOpen(v);
+    if (isControlled) controlledOnOpenChange?.(v);
+    else setInternalOpen(v);
   }
 
   function confirm() {
-    if (selected === current) { setOpen(false); return; }
-    setOpen(false);
+    if (selected === current) { handleOpenChange(false); return; }
+    handleOpenChange(false);
     startTransition(async () => {
       await setLocale(selected);
       window.location.reload();
@@ -94,23 +106,25 @@ export function LocaleSwitcher({
   return (
     <>
       <Dialog open={open} onOpenChange={handleOpenChange}>
-        <DialogTrigger
-          aria-label={t("title", current)}
-          className={`inline-flex cursor-pointer items-center gap-1.5 rounded-lg font-medium outline-none transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 ${
-            compact ? "px-1.5 py-1 text-xs" : "px-2.5 py-1.5 text-sm"
-          } ${className}`}
-          disabled={pending}
-        >
-          <span
-            className={`fi fi-${localeCountryCodes[current]} rounded-sm`}
-            style={
-              compact
-                ? { width: "1em", height: "0.75em", display: "inline-block" }
-                : { width: "1.25em", height: "0.9375em", display: "inline-block" }
-            }
-          />
-          {pending && <LoaderCircleIcon className="size-3.5 animate-spin opacity-60" />}
-        </DialogTrigger>
+        {renderTrigger && (
+          <DialogTrigger
+            aria-label={t("title", current)}
+            className={`inline-flex cursor-pointer items-center gap-1.5 rounded-lg font-medium outline-none transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 ${
+              compact ? "px-1.5 py-1 text-xs" : "px-2.5 py-1.5 text-sm"
+            } ${className}`}
+            disabled={pending}
+          >
+            <span
+              className={`fi fi-${localeCountryCodes[current]} rounded-sm`}
+              style={
+                compact
+                  ? { width: "1em", height: "0.75em", display: "inline-block" }
+                  : { width: "1.25em", height: "0.9375em", display: "inline-block" }
+              }
+            />
+            {pending && <LoaderCircleIcon className="size-3.5 animate-spin opacity-60" />}
+          </DialogTrigger>
+        )}
 
         {/* showCloseButton=false : on gère notre propre croix pour éviter le chevauchement */}
         <DialogContent showCloseButton={false} className="gap-0 overflow-hidden p-0 sm:max-w-2xl">

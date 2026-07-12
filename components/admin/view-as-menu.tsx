@@ -10,6 +10,9 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { EyeIcon, EyeOffIcon, SearchIcon } from "lucide-react"
@@ -36,11 +39,20 @@ const ROLE_LABELS: Record<string, string> = {
   employer: "Employeur",
 }
 
-/// Dropdown "Voir en tant que" intégré au SiteHeader admin. Liste les
-/// comptes demo (cf. scripts/seed-demo-accounts.ts) et déclenche une
-/// impersonation côté serveur, puis recharge la page pour que tous les
-/// Server Components soient re-rendus avec la nouvelle session.
-export function ViewAsMenu() {
+/// Dropdown "Voir en tant que" — liste les comptes demo (cf.
+/// scripts/seed-demo-accounts.ts) et déclenche une impersonation côté serveur,
+/// puis recharge la page pour que tous les Server Components soient re-rendus
+/// avec la nouvelle session.
+///
+/// Deux rendus :
+///   - variant="header"  → dropdown autonome (bouton "Voir en tant que")
+///   - variant="submenu" → sous-menu à intégrer dans un autre DropdownMenu
+///     (ex: le menu compte de la sidebar admin).
+export function ViewAsMenu({
+  variant = "header",
+}: {
+  variant?: "header" | "submenu"
+} = {}) {
   const router = useRouter()
   const [accounts, setAccounts] = useState<DemoAccount[] | null>(null)
   const [loading, setLoading] = useState(false)
@@ -194,26 +206,10 @@ export function ViewAsMenu() {
     await runImpersonate(account, null)
   }
 
-  return (
+  // Corps partagé (recent + recherche + modes + comptes demo), rendu soit dans
+  // un dropdown autonome (variant header), soit dans un sous-menu (variant submenu).
+  const body = (
     <>
-      <DropdownMenu>
-      <DropdownMenuTrigger
-        render={
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => {
-              void ensureLoaded()
-              void ensureRecent()
-            }}
-          >
-            <EyeIcon className="mr-1.5 size-4" />
-            <span className="hidden sm:inline">Voir en tant que</span>
-            <span className="sm:hidden">Voir</span>
-          </Button>
-        }
-      />
-      <DropdownMenuContent align="end" className="w-80">
         {recent !== null && recent.length > 0 && (
           <>
             <DropdownMenuLabel>Récemment vu comme</DropdownMenuLabel>
@@ -349,8 +345,49 @@ export function ViewAsMenu() {
               </span>
             </DropdownMenuItem>
           ))}
-      </DropdownMenuContent>
-      </DropdownMenu>
+    </>
+  )
+
+  return (
+    <>
+      {variant === "submenu" ? (
+        <DropdownMenuSub
+          onOpenChange={(open) => {
+            if (open) {
+              void ensureLoaded()
+              void ensureRecent()
+            }
+          }}
+        >
+          <DropdownMenuSubTrigger>
+            <EyeIcon className="size-4" />
+            Voir en tant que
+          </DropdownMenuSubTrigger>
+          <DropdownMenuSubContent className="w-80">{body}</DropdownMenuSubContent>
+        </DropdownMenuSub>
+      ) : (
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            render={
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  void ensureLoaded()
+                  void ensureRecent()
+                }}
+              >
+                <EyeIcon className="mr-1.5 size-4" />
+                <span className="hidden sm:inline">Voir en tant que</span>
+                <span className="sm:hidden">Voir</span>
+              </Button>
+            }
+          />
+          <DropdownMenuContent align="end" className="w-80">
+            {body}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )}
 
       <ImpersonationReasonDialog
         target={reasonTarget}

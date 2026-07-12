@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma, withDbRetry } from "@/lib/prisma";
 import { requireAdminAuth } from "@/lib/auth-check";
 import { memoCache } from "@/lib/memo-cache";
+import { groupDuplicates, type DedupCandidate } from "@/lib/bureaus/dedupe";
 
 const jsonHeaders = { "Content-Type": "application/json; charset=utf-8" };
 
@@ -47,6 +48,13 @@ interface HealthPayload {
   };
   reports: { pending: number; total: number };
   byRegion: RegionMap;
+  integrity: {
+    realDuplicates: number;
+    cpCommuneMismatches: number;
+    communesWithoutChomage: number;
+    totalCommunes: number;
+    assignmentsByService: Record<string, number>;
+  };
 }
 
 async function buildHealthPayload(): Promise<HealthPayload> {
@@ -148,6 +156,63 @@ async function buildHealthPayload(): Promise<HealthPayload> {
     ),
   ]);
 
+  // ── Intégrité & liens (tuiles anti-dérive) ────────────────────────────
+  const [
+    integrityBureaus,
+    postalCodes,
+    chomageAssignRows,
+    activeCommunes,
+    assignmentGroups,
+  ] = await Promise.all([
+    withDbRetry(() =>
+      prisma.bureau.findMany({
+        where: { active: true, type: { in: ["CPAS", "COMMUNE"] } },
+        select: {
+          id: true, name: true, type: true, street: true, postalCode: true,
+          communeId: true, phone: true, hours: true, lat: true, verified: true, updatedAt: true,
+        },
+      })
+    ),
+    withDbRetry(() => prisma.postalCode.findMany({ select: { code: true, communeId: true } })),
+    withDbRetry(() =>
+      prisma.bureauAssignment.findMany({
+        where: { serviceType: "chomage" },
+        select: { communeId: true },
+        distinct: ["communeId"],
+      })
+    ),
+    withDbRetry(() => prisma.commune.count({ where: { mergedIntoId: null } })),
+    withDbRetry(() =>
+      prisma.bureauAssignment.groupBy({ by: ["serviceType"], _count: { _all: true } })
+    ),
+  ]);
+
+  const dedupCandidates: DedupCandidate[] = integrityBureaus.map((b) => ({
+    id: b.id, name: b.name, type: b.type, street: b.street, postalCode: b.postalCode,
+    communeId: b.communeId, phone: b.phone,
+    hoursCount: Array.isArray(b.hours) ? b.hours.length : 0,
+    lat: b.lat, verified: b.verified, updatedAt: b.updatedAt,
+  }));
+  const realDuplicates = groupDuplicates(dedupCandidates).length;
+
+  // CP↔commune : le CP du bureau doit appartenir aux CP de sa commune liée.
+  const knownCps = new Set(postalCodes.map((p) => p.code));
+  const cpsByCommune = new Map<string, Set<string>>();
+  for (const p of postalCodes) {
+    if (!cpsByCommune.has(p.communeId)) cpsByCommune.set(p.communeId, new Set());
+    cpsByCommune.get(p.communeId)!.add(p.code);
+  }
+  const cpCommuneMismatches = integrityBureaus.filter((b) => {
+    if (!b.communeId || !knownCps.has(b.postalCode)) return false;
+    const set = cpsByCommune.get(b.communeId);
+    return set != null && set.size > 0 && !set.has(b.postalCode);
+  }).length;
+
+  const communesWithoutChomage = Math.max(0, activeCommunes - chomageAssignRows.length);
+  const assignmentsByService: Record<string, number> = Object.fromEntries(
+    assignmentGroups.map((g) => [g.serviceType, g._count._all])
+  );
+
   function toRecord(items: { type: string; _count: { _all: number } }[]): TypeCount {
     return Object.fromEntries(items.map((i) => [i.type, i._count._all]));
   }
@@ -178,6 +243,13 @@ async function buildHealthPayload(): Promise<HealthPayload> {
     },
     reports: { pending: reportsPending, total: reportsTotal },
     byRegion,
+    integrity: {
+      realDuplicates,
+      cpCommuneMismatches,
+      communesWithoutChomage,
+      totalCommunes: activeCommunes,
+      assignmentsByService,
+    },
   };
 }
 

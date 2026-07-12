@@ -12,6 +12,8 @@ import {
   CheckCircle2,
   Database,
   Globe,
+  Copy,
+  Link2,
   Loader2,
   MapPin,
   Phone,
@@ -45,6 +47,13 @@ interface HealthData {
   };
   reports: { pending: number; total: number };
   byRegion: Record<string, Record<string, number>>;
+  integrity: {
+    realDuplicates: number;
+    cpCommuneMismatches: number;
+    communesWithoutChomage: number;
+    totalCommunes: number;
+    assignmentsByService: Record<string, number>;
+  };
 }
 
 /**
@@ -159,6 +168,58 @@ export function HealthDashboard() {
             missing={data.coverage.missingCommune}
             pct={communePct}
           />
+        </CardContent>
+      </Card>
+
+      {/* Intégrité & liens (anti-dérive) */}
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Link2 className="size-4" /> {t("integrityTitle")}
+          </CardTitle>
+          <p className="text-xs text-muted-foreground">{t("integrityDescription")}</p>
+        </CardHeader>
+        <CardContent className="space-y-3 pt-0">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <StatCard
+              icon={<Copy className="size-4" />}
+              label={t("integrityDuplicates")}
+              value={data.integrity.realDuplicates}
+              tone={data.integrity.realDuplicates > 0 ? "warn" : "success"}
+            />
+            <StatCard
+              icon={<MapPin className="size-4" />}
+              label={t("integrityCpMismatch")}
+              value={data.integrity.cpCommuneMismatches}
+              tone={data.integrity.cpCommuneMismatches > 0 ? "warn" : "success"}
+            />
+            <StatCard
+              icon={<AlertTriangle className="size-4" />}
+              label={t("integrityNoChomage")}
+              value={data.integrity.communesWithoutChomage}
+              suffix={`/ ${data.integrity.totalCommunes}`}
+              tone={data.integrity.communesWithoutChomage > 0 ? "warn" : "success"}
+            />
+          </div>
+          {/* Assignments par service */}
+          <div className="rounded-md border p-3">
+            <p className="text-[11px] uppercase font-semibold text-muted-foreground mb-2">
+              {t("integrityAssignments")}
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {Object.entries(data.integrity.assignmentsByService)
+                .sort(([a], [b]) => a.localeCompare(b))
+                .map(([svc, count]) => (
+                  <Badge key={svc} variant="outline" className="text-[11px] gap-1.5">
+                    <span className="font-medium">{svc}</span>
+                    <span className="tabular-nums text-muted-foreground">{count}</span>
+                  </Badge>
+                ))}
+              {Object.keys(data.integrity.assignmentsByService).length === 0 && (
+                <span className="text-xs text-muted-foreground italic">{t("integrityNoAssignments")}</span>
+              )}
+            </div>
+          </div>
         </CardContent>
       </Card>
 

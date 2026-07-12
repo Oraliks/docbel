@@ -5,6 +5,7 @@
 // Usage : pnpm bureaux:audit   (aucune écriture en base)
 
 import { prisma } from '@/lib/prisma'
+import { groupDuplicates, type DedupCandidate } from '@/lib/bureaus/dedupe'
 
 function normalize(s: string): string {
   return s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, ' ').trim()
@@ -18,7 +19,7 @@ async function main() {
       id: true, type: true, name: true, street: true, streetNum: true,
       postalCode: true, city: true, lat: true, lng: true, communeId: true,
       phone: true, email: true, website: true, hours: true, active: true,
-      verified: true, lastVerifiedAt: true, numeroOnem: true,
+      verified: true, lastVerifiedAt: true, numeroOnem: true, updatedAt: true,
       organisme: { select: { code: true } },
     },
   })
@@ -77,7 +78,8 @@ async function main() {
   const cpInconnu = active.filter(b => !knownCps.has(b.postalCode))
   out.cpInconnus = { count: cpInconnu.length, sample: cpInconnu.slice(0, 10).map(b => `${b.type} ${b.name} CP=${b.postalCode}`) }
 
-  // Doublons stricts (type + CP + nom normalisé)
+  // Doublons stricts naïfs (type + CP + nom normalisé) — sur-compte les paires
+  // cross-communes (même nom générique, CP partagé, communes différentes).
   const groups = new Map<string, string[]>()
   for (const b of active) {
     const key = `${b.type}|${b.postalCode}|${normalize(b.name)}`
@@ -86,6 +88,22 @@ async function main() {
   }
   const dups = [...groups.entries()].filter(([, g]) => g.length > 1)
   out.doublonsStricts = { count: dups.length, sample: dups.slice(0, 10).map(([k, g]) => `${k} ×${g.length}`) }
+
+  // Vrais doublons (logique partagée avec bureaux:dedupe) : ne compte QUE les
+  // grappes réellement fusionnables (même commune, ou jumeau lié/orphelin) —
+  // exclut les communes distinctes au nom générique. Métrique de référence.
+  const dedupCandidates: DedupCandidate[] = active
+    .filter(b => b.type === 'CPAS' || b.type === 'COMMUNE')
+    .map(b => ({
+      id: b.id, name: b.name, type: b.type, street: b.street, postalCode: b.postalCode,
+      communeId: b.communeId, phone: b.phone, hoursCount: Array.isArray(b.hours) ? b.hours.length : 0,
+      lat: b.lat, verified: b.verified, updatedAt: b.updatedAt,
+    }))
+  const realDupGroups = groupDuplicates(dedupCandidates)
+  out.vraisDoublons = {
+    count: realDupGroups.length,
+    sample: realDupGroups.slice(0, 10).map(g => `${g[0].type}|${g[0].postalCode} ${g.map(x => x.name).join(' / ')}`),
+  }
 
   // Plusieurs CPAS / maisons communales pour la même commune (bruit d'import)
   const byTypeCommune = new Map<string, string[]>()

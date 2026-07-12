@@ -5,31 +5,14 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { PageData } from '@/lib/page-builder/types'
-import { PAGE_TEMPLATES, getTemplateBlocks } from '@/lib/page-builder/page-templates'
+import { getTemplateBlocks } from '@/lib/page-builder/page-templates'
+import { CreatePageDialogs } from './_components/create-page-dialogs'
+import { DeletePagesDialogs } from './_components/delete-pages-dialogs'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Checkbox } from '@/components/ui/checkbox'
 import { toast } from 'sonner'
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog'
-import { TypeToConfirmField, typeToConfirmMatches } from '@/components/ui/type-to-confirm-field'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from '@/components/ui/dialog'
 import {
   Table,
   TableBody,
@@ -729,158 +712,30 @@ export default function PagesListPage() {
         </>
       )}
 
-      {/* Create Page Dialog */}
-      <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{t('createDialogTitle')}</DialogTitle>
-            <DialogDescription>
-              {t('createDialogDescription')}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">{t('pageTitleLabel')}</label>
-              <Input
-                placeholder={t('pageTitlePlaceholder')}
-                value={newPageTitle}
-                onChange={(e) => setNewPageTitle(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && newPageTitle.trim()) {
-                    handleCreatePage()
-                  }
-                }}
-                disabled={isCreating}
-                autoFocus
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">{t('templateLabel')}</label>
-              <Button
-                variant="outline"
-                className="w-full justify-start text-left"
-                onClick={() => setShowTemplateDialog(true)}
-              >
-                {PAGE_TEMPLATES.find((tpl) => tpl.id === selectedTemplate)?.name ||
-                  t('chooseTemplate')}
-              </Button>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setShowCreateDialog(false)
-                setNewPageTitle('')
-              }}
-              disabled={isCreating}
-            >
-              {t('cancel')}
-            </Button>
-            <Button
-              onClick={handleCreatePage}
-              disabled={isCreating || !newPageTitle.trim()}
-              className=""
-            >
-              {isCreating ? t('creating') : t('create')}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <CreatePageDialogs
+        createOpen={showCreateDialog}
+        onCreateOpenChange={setShowCreateDialog}
+        templateOpen={showTemplateDialog}
+        onTemplateOpenChange={setShowTemplateDialog}
+        title={newPageTitle}
+        onTitleChange={setNewPageTitle}
+        selectedTemplate={selectedTemplate}
+        onSelectTemplate={setSelectedTemplate}
+        isCreating={isCreating}
+        onCreate={handleCreatePage}
+      />
 
-      {/* Template Selection Dialog */}
-      <Dialog open={showTemplateDialog} onOpenChange={setShowTemplateDialog}>
-        <DialogContent className="sm:max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>{t('chooseTemplate')}</DialogTitle>
-            <DialogDescription>
-              {t('chooseTemplateDescription')}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 py-4">
-            {PAGE_TEMPLATES.map((template) => (
-              <button
-                key={template.id}
-                onClick={() => {
-                  setSelectedTemplate(template.id)
-                  setShowTemplateDialog(false)
-                }}
-                className={`p-4 border rounded-lg text-left transition-all ${
-                  selectedTemplate === template.id
-                    ? 'border-primary bg-primary/10'
-                    : 'border-border hover:border-muted-foreground'
-                }`}
-              >
-                <h3 className="font-semibold text-sm">{template.name}</h3>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {template.description}
-                </p>
-                {template.blocks.length > 0 && (
-                  <p className="text-xs text-muted-foreground mt-2">
-                    {t('blocksCount', { count: template.blocks.length })}
-                  </p>
-                )}
-              </button>
-            ))}
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Delete Dialog */}
-      <AlertDialog open={deleteId !== null} onOpenChange={() => setDeleteId(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{t('deleteDialogTitle')}</AlertDialogTitle>
-            <AlertDialogDescription>
-              {t('deleteDialogDescription')}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <TypeToConfirmField
-            requireText={t('confirmWord')}
-            value={deleteTyped}
-            onChange={setDeleteTyped}
-          />
-          <AlertDialogFooter>
-            <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDelete}
-              variant="destructive"
-              disabled={!typeToConfirmMatches(deleteTyped, t('confirmWord'))}
-            >
-              {t('delete')}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Bulk Delete Dialog */}
-      <AlertDialog open={bulkDeleteOpen} onOpenChange={setBulkDeleteOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              {t('bulkDeleteDialogTitle', { count: selectedIds.size })}
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              {t('bulkDeleteDialogDescription')}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <TypeToConfirmField
-            requireText={t('confirmWord')}
-            value={deleteTyped}
-            onChange={setDeleteTyped}
-          />
-          <AlertDialogFooter>
-            <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleBulkDelete}
-              variant="destructive"
-              disabled={!typeToConfirmMatches(deleteTyped, t('confirmWord'))}
-            >
-              {t('delete')}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <DeletePagesDialogs
+        deleteOpen={deleteId !== null}
+        onDeleteOpenChange={() => setDeleteId(null)}
+        onConfirmDelete={handleDelete}
+        bulkOpen={bulkDeleteOpen}
+        onBulkOpenChange={setBulkDeleteOpen}
+        bulkCount={selectedIds.size}
+        onConfirmBulkDelete={handleBulkDelete}
+        typed={deleteTyped}
+        onTypedChange={setDeleteTyped}
+      />
     </div>
   )
 }

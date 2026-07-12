@@ -7,6 +7,18 @@
 > Mesure : `pnpm bureaux:audit` (script read-only, créé 2026-07-10). Chaque lot a un
 > critère de sortie chiffré — on ne passe pas au lot suivant sans l'atteindre.
 
+## Journal d'exécution (2026-07-12)
+
+| Lot | Statut | Résultat mesuré |
+|-----|--------|-----------------|
+| **1 — Dédoublonnage** | ✅ **LIVRÉ** (commit 51eb923) | 30 doublons désactivés (réversibles), `vraisDoublons` 27→**0**, `multiParCommune` 27→**0**, couverture intacte (0 trou). Module pur `lib/bureaus/dedupe.ts` (18 tests). |
+| **2 — Adresses officielles** | ⚠️ **Infra livrée, données EN ATTENTE** | Auto-import du PDF officiel mi-is.be **rejeté** : extraction trop peu fiable (6 % de cohérence CP mesurée) → risque d'adresses fausses sur outil public. Scaffold sûr `bureaux:apply-official` livré (cross-check CP, non destructif, provenance, révisions) ; attend un JSON propre dans `lib/data/cpas-officiels.json`. **910 stubs restants.** |
+| **3 — Liens & assignments** | ✅ **LIVRÉ** (commit 1a844ff) | Communes sans chômage 421→**34**, paiement_* 0→**579**/organisme, résolveur **déterministe** (0 warning, Mons→MONS, Anvers→ANVERS). Module `assignment-plan.ts` (7 tests). Relink communeId **reporté** (mapping CP→commune peu fiable Bruxelles/CP partagés → 141 mismatches en attente du lot 2). |
+| **4 — Vérification** | ⏸️ **Dépend du lot 2** | Traçabilité (`verifiedBy=import:<source>`) intégrée au scaffold du lot 2 ; rien à marquer tant que les adresses officielles ne sont pas posées. |
+| **5 — Anti-dérive** | ✅ **LIVRÉ** (commit b4f97c2) | Tuiles « Intégrité & liens » dans l'onglet Santé (doublons / CP↔commune / communes sans chômage / assignments par service) + garde-fou blocklist dans l'import OSM (ne recrée plus les non-guichets). |
+
+**Reste à faire (dépend d'Oraliks) :** produire `lib/data/cpas-officiels.json` (adresses CPAS/communes vérifiées — le PDF mi-is.be n'est pas auto-parsable de façon sûre), puis `pnpm bureaux:apply-official --yes`. Une fois les vraies adresses posées + CP corrigés, relancer `pnpm bureaux:relink --include-mismatches` puis `pnpm bureaux:dedupe` pour résorber les 141 mismatches et les 34 communes sans chômage.
+
 ## État des lieux mesuré (2026-07-10)
 
 1592 bureaux actifs : 613 COMMUNE · 591 CPAS · 317 SYNDICAT/OP · 38 ONEM · 4 PERMANENCE · 29 AUTRE.

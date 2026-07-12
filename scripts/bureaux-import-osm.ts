@@ -16,6 +16,7 @@
 //   pnpm bureaux:import-osm --cpas         (que les CPAS)
 
 import { prisma } from '@/lib/prisma'
+import { isNonGuichetName } from '@/lib/bureaus/dedupe'
 
 const APPLY = process.argv.includes('--yes')
 const ONLY_TOWNHALLS = process.argv.includes('--townhalls')
@@ -173,9 +174,10 @@ async function importOsm(kind: 'COMMUNE' | 'CPAS', elements: OsmElement[]) {
     cpToCommunes.set(pc.code, list)
   }
 
-  // Bureaux existants pour ce type
+  // Bureaux existants pour ce type. On ne matche QUE les bureaux ACTIFS pour ne
+  // pas ressusciter / réécrire un doublon désactivé par bureaux:dedupe.
   const existing = await prisma.bureau.findMany({
-    where: { type: kind, organismeId: org.id },
+    where: { type: kind, organismeId: org.id, active: true },
     select: { id: true, name: true, communeId: true, postalCode: true },
   })
 
@@ -183,12 +185,21 @@ async function importOsm(kind: 'COMMUNE' | 'CPAS', elements: OsmElement[]) {
   let updates = 0
   let skipsNoMatch = 0
   let skipsMultipleCommunes = 0
+  let skipsNonGuichet = 0
 
   const actions: { kind: 'create' | 'update'; id?: string; data: Record<string, unknown> }[] = []
 
   for (const el of elements) {
     const p = prepareBureau(el)
     if (!p) continue
+
+    // Garde-fou anti-doublons : OSM tague comme "townhall"/"CPAS" des bâtiments
+    // annexes (archives, police, musées, cloîtres). On ne les crée pas en
+    // nouveaux bureaux (ils réintroduiraient le bruit nettoyé par le lot 1).
+    if (isNonGuichetName(p.name)) {
+      skipsNonGuichet++
+      continue
+    }
 
     // Find commune via postal code (préférence : commune dont le nom matche addr:city)
     const candidates = cpToCommunes.get(p.postalCode) ?? []
@@ -237,7 +248,7 @@ async function importOsm(kind: 'COMMUNE' | 'CPAS', elements: OsmElement[]) {
   }
 
   console.log(`  ${kind}: ${updates} updates, ${creates} créations`)
-  console.log(`           ${skipsNoMatch} skips (CP inconnu), ${skipsMultipleCommunes} CP ambigus`)
+  console.log(`           ${skipsNoMatch} skips (CP inconnu), ${skipsMultipleCommunes} CP ambigus, ${skipsNonGuichet} non-guichets écartés`)
 
   if (!APPLY) return
 

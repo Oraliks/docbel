@@ -34,24 +34,15 @@ import {
 import type { BlockProps } from '@/lib/page-builder/types'
 import { BLOCK_REGISTRY } from '@/lib/page-builder/registry'
 import { childLayoutClass, type ChildLayout } from '@/components/page-blocks/layout/container-layout'
-import { saveSnippet } from '@/lib/page-builder/snippets'
 import {
   listStylePresets,
   saveStylePreset,
   type StylePreset,
 } from '@/lib/page-builder/style-presets'
 import { BlockRenderer } from './block-renderer'
+import { BlockSnippetDialog } from './block-snippet-dialog'
+import { useBlockResize, useBlockFreeMove } from './block-wrapper-interactions'
 import { Button } from '@/components/ui/button'
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
-import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
-import { Label } from '@/components/ui/label'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -134,35 +125,8 @@ export function BlockWrapper({ block, siblingIndex, siblingCount }: BlockWrapper
     listStylePresets()
   )
 
-  // ── "Save as snippet" dialog ──
+  // ── "Save as snippet" dialog (state owned here; UI in BlockSnippetDialog) ──
   const [snippetDialogOpen, setSnippetDialogOpen] = React.useState(false)
-  const [snippetName, setSnippetName] = React.useState('')
-  const [snippetDescription, setSnippetDescription] = React.useState('')
-  const [savingSnippet, setSavingSnippet] = React.useState(false)
-
-  const openSnippetDialog = React.useCallback(() => {
-    setSnippetName(BLOCK_REGISTRY[block.type]?.name ?? '')
-    setSnippetDescription('')
-    setSnippetDialogOpen(true)
-  }, [block.type])
-
-  const handleSaveSnippet = React.useCallback(async () => {
-    const name = snippetName.trim()
-    if (!name) {
-      toast.error('Un nom est requis')
-      return
-    }
-    setSavingSnippet(true)
-    try {
-      await saveSnippet(name, block, snippetDescription.trim() || undefined)
-      toast.success('Snippet enregistré')
-      setSnippetDialogOpen(false)
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Échec de l'enregistrement")
-    } finally {
-      setSavingSnippet(false)
-    }
-  }, [snippetName, snippetDescription, block])
 
   // ── "Convertir en bloc global" ──
   // Persiste le bloc comme GlobalBlock, l'ajoute à la map (résolution immédiate)
@@ -263,125 +227,34 @@ export function BlockWrapper({ block, siblingIndex, siblingCount }: BlockWrapper
   const canResize = isSelected && !isLocked && !isContainer
   // Non-container blocks are draggable from their whole body (not just the grip).
   const bodyDrag = !isContainer && !isLocked && !freeAbsolute
-  const [handleX, setHandleX] = React.useState<number | null>(null)
-  const [liveWidthPct, setLiveWidthPct] = React.useState<number | null>(null)
-  const resizeStart = React.useRef<{ availPx: number; wrapLeft: number } | null>(null)
 
-  React.useLayoutEffect(() => {
-    if (!canResize) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setHandleX(null)
-      return
-    }
-    const measure = () => {
-      const wrap = wrapperRef.current
-      const inner = innerRef.current?.firstElementChild as HTMLElement | null
-      if (!wrap || !inner) return
-      const wrapRect = wrap.getBoundingClientRect()
-      const blockRect = inner.getBoundingClientRect()
-      setHandleX(blockRect.right - wrapRect.left)
-    }
-    measure()
-    const wrap = wrapperRef.current
-    if (!wrap || typeof ResizeObserver === 'undefined') return
-    const ro = new ResizeObserver(measure)
-    ro.observe(wrap)
-    return () => ro.disconnect()
-  }, [canResize, block.layout?.width, block.layout?.align, device])
+  const {
+    handleX,
+    liveWidthPct,
+    onResizePointerDown,
+    onResizePointerMove,
+    onResizePointerUp,
+  } = useBlockResize({
+    canResize,
+    blockId: block.id,
+    wrapperRef,
+    innerRef,
+    width: block.layout?.width,
+    align: block.layout?.align,
+    device,
+    pushHistoryCheckpoint,
+    updateBlockLayoutLive,
+  })
 
-  function onResizePointerDown(e: React.PointerEvent) {
-    e.preventDefault()
-    e.stopPropagation()
-    const wrap = wrapperRef.current
-    if (!wrap) return
-    const rect = wrap.getBoundingClientRect()
-    resizeStart.current = { availPx: rect.width, wrapLeft: rect.left }
-    pushHistoryCheckpoint()
-    try {
-      ;(e.target as HTMLElement).setPointerCapture(e.pointerId)
-    } catch {
-      // ignore
-    }
-  }
-  function onResizePointerMove(e: React.PointerEvent) {
-    const start = resizeStart.current
-    if (!start) return
-    let pct = Math.round(((e.clientX - start.wrapLeft) / start.availPx) * 100)
-    pct = Math.max(10, Math.min(100, pct))
-    for (const snap of [25, 33, 50, 66, 75, 100]) {
-      if (Math.abs(pct - snap) <= 2) {
-        pct = snap
-        break
-      }
-    }
-    setLiveWidthPct(pct)
-    updateBlockLayoutLive(block.id, {
-      width: pct >= 100 ? '100%' : `${pct}%`,
-      align: 'left',
-    })
-  }
-  function onResizePointerUp(e: React.PointerEvent) {
-    if (!resizeStart.current) return
-    resizeStart.current = null
-    setLiveWidthPct(null)
-    try {
-      ;(e.target as HTMLElement).releasePointerCapture(e.pointerId)
-    } catch {
-      // ignore
-    }
-  }
-
-  // ── Drag-to-move for free (absolute) blocks — mirrors the resize handler. ──
-  const moveStart = React.useRef<{
-    x: number
-    y: number
-    left: number
-    top: number
-    moved: boolean
-  } | null>(null)
-  const [movePos, setMovePos] = React.useState<{ left: number; top: number } | null>(null)
-
-  function onMovePointerDown(e: React.PointerEvent) {
-    if (!freeAbsolute || isLocked) return
-    // Only when pressing the block body itself (overlay controls are children).
-    if (e.target !== e.currentTarget) return
-    moveStart.current = {
-      x: e.clientX,
-      y: e.clientY,
-      left: block.layout?.left ?? 0,
-      top: block.layout?.top ?? 0,
-      moved: false,
-    }
-    try {
-      ;(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)
-    } catch {
-      // ignore
-    }
-  }
-  function onMovePointerMove(e: React.PointerEvent) {
-    const s = moveStart.current
-    if (!s) return
-    if (!s.moved) {
-      if (Math.abs(e.clientX - s.x) < 3 && Math.abs(e.clientY - s.y) < 3) return
-      s.moved = true
-      pushHistoryCheckpoint() // one undo step per drag, only once movement starts
-    }
-    // Snap to an 8px grid for tidy alignment.
-    const left = Math.max(0, Math.round((s.left + (e.clientX - s.x)) / 8) * 8)
-    const top = Math.max(0, Math.round((s.top + (e.clientY - s.y)) / 8) * 8)
-    setMovePos({ left, top })
-    updateBlockLayoutLive(block.id, { left, top })
-  }
-  function onMovePointerUp(e: React.PointerEvent) {
-    if (!moveStart.current) return
-    moveStart.current = null
-    setMovePos(null)
-    try {
-      ;(e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId)
-    } catch {
-      // ignore
-    }
-  }
+  const { movePos, onMovePointerDown, onMovePointerMove, onMovePointerUp } = useBlockFreeMove({
+    freeAbsolute,
+    isLocked,
+    blockId: block.id,
+    left: block.layout?.left,
+    top: block.layout?.top,
+    pushHistoryCheckpoint,
+    updateBlockLayoutLive,
+  })
 
   const wrapperStyle: React.CSSProperties = freeAbsolute
     ? {
@@ -580,7 +453,7 @@ export function BlockWrapper({ block, siblingIndex, siblingCount }: BlockWrapper
                 <Scissors className="mr-2 size-4" />
                 Couper
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={openSnippetDialog}>
+              <DropdownMenuItem onClick={() => setSnippetDialogOpen(true)}>
                 <BookmarkPlus className="mr-2 size-4" />
                 Enregistrer comme snippet
               </DropdownMenuItem>
@@ -842,7 +715,7 @@ export function BlockWrapper({ block, siblingIndex, siblingCount }: BlockWrapper
           Coller
           <ContextMenuShortcut>⌘V</ContextMenuShortcut>
         </ContextMenuItem>
-        <ContextMenuItem onClick={openSnippetDialog}>
+        <ContextMenuItem onClick={() => setSnippetDialogOpen(true)}>
           <BookmarkPlus />
           Enregistrer comme snippet
         </ContextMenuItem>
@@ -988,59 +861,9 @@ export function BlockWrapper({ block, siblingIndex, siblingCount }: BlockWrapper
       </ContextMenuContent>
     </ContextMenu>
 
-    <Dialog open={snippetDialogOpen} onOpenChange={setSnippetDialogOpen}>
-      <DialogContent
-        className="sm:max-w-md"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <DialogHeader>
-          <DialogTitle>Enregistrer comme snippet</DialogTitle>
-        </DialogHeader>
-        <div className="flex flex-col gap-4 py-1">
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="snippet-name">Nom</Label>
-            <Input
-              id="snippet-name"
-              autoFocus
-              value={snippetName}
-              onChange={(e) => setSnippetName(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !savingSnippet) {
-                  e.preventDefault()
-                  void handleSaveSnippet()
-                }
-              }}
-              placeholder="Nom du snippet"
-              maxLength={120}
-            />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="snippet-description">Description (optionnel)</Label>
-            <Textarea
-              id="snippet-description"
-              value={snippetDescription}
-              onChange={(e) => setSnippetDescription(e.target.value)}
-              placeholder="À quoi sert ce bloc réutilisable ?"
-              rows={3}
-              maxLength={500}
-            />
-          </div>
-        </div>
-        <DialogFooter>
-          <Button
-            variant="outline"
-            onClick={() => setSnippetDialogOpen(false)}
-            disabled={savingSnippet}
-          >
-            Annuler
-          </Button>
-          <Button onClick={handleSaveSnippet} disabled={savingSnippet}>
-            <BookmarkPlus className="mr-2 size-4" />
-            {savingSnippet ? 'Enregistrement…' : 'Enregistrer'}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    {snippetDialogOpen && (
+      <BlockSnippetDialog block={block} onOpenChange={setSnippetDialogOpen} />
+    )}
     </>
   )
 }

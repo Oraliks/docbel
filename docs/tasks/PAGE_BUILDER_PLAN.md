@@ -1,5 +1,27 @@
 # PAGE_BUILDER_PLAN — Plan d'amélioration du page-builder
 
+## Journal d'exécution — 2026-07-12 (session autonome)
+
+Décisions prises seul (Oraliks endormi, « go recommandations ») :
+D1 hardening-first ✅ · D2 mesure via build standard · D3 quarantaine visible ·
+D4 rétention 30+1/jour · D5 presets DB via AppSetting.
+
+| Lot | État | Détail |
+|-----|------|--------|
+| **A** (tests) | ✅ **LIVRÉ** | +142 tests page-builder (4→146). interpolate, validation, block-styles, page-health, schema-org, preview-token, file-usage, store Zustand headless, invariant registry (defaults des 133 blocs ⊨ schéma). Commit `…` |
+| **E1** (safeEval) | ✅ **LIVRÉ** | `lib/page-builder/expression.ts` (parseur récursif fermé) remplace `new Function`. 20 tests (dont refus injections). Clôt audit 05-29 §6. |
+| **C1** (audit contenu) | ✅ **LIVRÉ** | `pnpm pages:audit`. Baseline : 6 pages / 83 blocs / **0 problème**. |
+| **C2** (quarantaine) | ✅ **LIVRÉ** | Bloc inconnu → carte ambre visible en editorMode (null en public). |
+| **C3** (rétention) | ✅ **LIVRÉ** | `planRetention` pur (6 tests) + `pnpm pages:prune-revisions` (dry-run défaut). Statut page = déjà enum. **Purge réelle NON exécutée** (DB partagée → attend `--apply` validé). Dry-run : `pourquoi-docbel` 79 rév → 48 purgeables. |
+| **B** (code-splitting) | ⏸️ **DIFFÉRÉ** | Next 16 `next build` **n'émet plus** les tailles First Load JS (Turbopack) → mesure avant/après impossible sans `@next/bundle-analyzer` (D2 à rouvrir). De plus screenshot preview timeout dans l'env → hydratation non vérifiable. Refus de shipper un refactor visiteur risqué à l'aveugle. **Rouvrir D2** (autoriser l'analyzer) avant de coder. |
+| **D** (monolithes) | ⏸️ **DIFFÉRÉ** | D1 (slices store) faisable sous le filet du lot A, mais D2/D3 (block-wrapper, liste admin) = risque UI pur non vérifiable dans cet env. À faire en session interactive avec QA visuelle. |
+| **E2** (presets DB) | ⏸️ **DIFFÉRÉ** | P3, touche localStorage→AppSetting + route API + UI ; non vérifiable ici. |
+
+Validation : `pnpm test` = **1596 tests verts** · `pnpm build` OK.
+Commits locaux `ae01969` → `HEAD` (non poussés — workdir partagé, PDF non poussés en attente).
+
+---
+
 > Proposition 2026-07-10 — **rien codé**, en attente de validation Oraliks.
 > Positionnement : **hardening + perf**, pas de nouvelles features éditeur
 > (MVP_SCOPE : « page-builder avancé au-delà des pages légales » = hors V1).

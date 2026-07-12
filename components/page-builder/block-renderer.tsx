@@ -16,7 +16,7 @@ import {
   ANIMATION_CLASS,
 } from '@/lib/page-builder/block-styles'
 import { interpolateBlock, type InterpolationContext } from '@/lib/page-builder/interpolate'
-import { getBlockDef } from '@/lib/page-builder/registry'
+import { LazyBlockContent } from './block-render-lazy'
 import { useGlobalBlocks } from './global-blocks-context'
 import { cn } from '@/lib/utils'
 
@@ -48,27 +48,19 @@ function BlockContent({
   slotByIndex?: (idx: number) => React.ReactNode
   editorMode?: boolean
 }) {
-  const def = getBlockDef(block.type)
-  if (!def) {
-    // Type absent du registry (bloc legacy, renommé ou supprimé). Côté public on
-    // ne montre rien au visiteur ; dans l'éditeur on affiche une quarantaine
-    // VISIBLE — plutôt qu'un bloc vide silencieux — pour que l'admin le repère et
-    // le supprime/remplace via le menu contextuel du bloc.
-    if (!editorMode) return null
-    return (
-      <div className="rounded-lg border border-dashed border-amber-500/50 bg-amber-500/5 px-4 py-3 text-xs text-amber-700 dark:text-amber-400">
-        <span className="font-medium">Bloc inconnu</span>{' '}
-        <code className="rounded bg-amber-500/10 px-1 py-0.5 font-mono">{block.type}</code> — type
-        absent du registry. Supprimez-le ou remplacez-le.
-      </div>
-    )
-  }
-  const Render = def.Render as React.FC<{
-    props: unknown
-    slot?: React.ReactNode
-    slotByIndex?: (idx: number) => React.ReactNode
-  }>
-  return <Render props={block.props} slot={slot} slotByIndex={slotByIndex} />
+  // Le rendu réel est délégué à LazyBlockContent : il charge le chunk de la
+  // catégorie du bloc à la demande (code-splitting) au lieu de tirer les 133
+  // blocs dans le bundle public. La quarantaine des types inconnus (parité C2)
+  // y est gérée aussi.
+  return (
+    <LazyBlockContent
+      type={block.type}
+      props={block.props}
+      slot={slot}
+      slotByIndex={slotByIndex}
+      editorMode={editorMode}
+    />
+  )
 }
 
 class BlockBoundary extends React.Component<

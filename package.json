@@ -46,6 +46,8 @@
     "bureaux:geocode": "dotenv -e .env.local -- tsx scripts/bureaux-geocode.ts",
     "bureaux:audit": "dotenv -e .env.local -- tsx scripts/bureaux-audit.ts",
     "bureaux:dedupe": "dotenv -e .env.local -- tsx scripts/bureaux-dedupe.ts",
+    "bureaux:assign": "dotenv -e .env.local -- tsx scripts/bureaux-assign.ts",
+    "bureaux:relink": "dotenv -e .env.local -- tsx scripts/bureaux-relink-communes.ts",
     "pages:audit": "dotenv -e .env.local -- tsx scripts/audit-page-content.ts",
     "pages:prune-revisions": "dotenv -e .env.local -- tsx scripts/prune-page-revisions.ts",
     "rename:cgslb-synova": "dotenv -e .env.local -- tsx scripts/rename-cgslb-synova.ts",

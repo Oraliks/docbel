@@ -13,6 +13,9 @@ export default defineConfig({
     // un secret factice aux tests purs de crypto-nrn / dedupe.
     env: {
       BOOKING_NRN_SECRET: "vitest-nrn-secret-not-for-prod",
+      // Secret factice pour les tests du token d'aperçu page-builder
+      // (preview-token lit BETTER_AUTH_SECRET au chargement du module).
+      BETTER_AUTH_SECRET: "vitest-preview-secret-not-for-prod",
     },
     include: [
       "lib/**/__tests__/**/*.test.ts",

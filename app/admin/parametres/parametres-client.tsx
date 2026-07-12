@@ -451,6 +451,17 @@ export function ParametresClient({
               </CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col gap-5">
+              {draft.maintenance.enabled && draft.announcement.enabled && (
+                <div className="flex items-start gap-2.5 rounded-xl border border-amber-300 bg-amber-50/60 p-3 text-sm text-amber-900">
+                  <Wrench className="mt-0.5 size-4 shrink-0" />
+                  <p>
+                    Le mode maintenance est actif : la bannière ne s'affiche{" "}
+                    <strong>pas</strong> aux visiteurs (seul un administrateur
+                    connecté voit le site). Désactivez la maintenance ci-dessus
+                    pour la rendre visible.
+                  </p>
+                </div>
+              )}
               <ToggleRow
                 label="Afficher la bannière"
                 checked={draft.announcement.enabled}
@@ -504,32 +515,12 @@ export function ParametresClient({
                   </Field>
                 </div>
               </div>
-              <div className="grid gap-5 sm:grid-cols-2">
-                <Field
-                  label="Début (optionnel)"
-                  htmlFor="ann-start"
-                  hint="Avant cette date, la bannière reste masquée."
-                >
-                  <Input
-                    id="ann-start"
-                    type="datetime-local"
-                    value={draft.announcement.startsAt}
-                    onChange={(e) => updAnn({ startsAt: e.target.value })}
-                  />
-                </Field>
-                <Field
-                  label="Fin (optionnel)"
-                  htmlFor="ann-end"
-                  hint="Après cette date, la bannière disparaît automatiquement."
-                >
-                  <Input
-                    id="ann-end"
-                    type="datetime-local"
-                    value={draft.announcement.endsAt}
-                    onChange={(e) => updAnn({ endsAt: e.target.value })}
-                  />
-                </Field>
-              </div>
+              <ToggleRow
+                label="Autoriser les visiteurs à masquer la bannière"
+                hint="Affiche une croix pour fermer la bannière (le temps de la session). Désactivé, la bannière reste toujours visible."
+                checked={draft.announcement.dismissible}
+                onChange={(v) => updAnn({ dismissible: v })}
+              />
               <div className="flex flex-col gap-2">
                 <Label className="text-sm font-medium">
                   Cibler des segments{" "}

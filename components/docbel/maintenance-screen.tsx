@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { Wrench } from "lucide-react";
 
 /**
@@ -25,12 +24,6 @@ export function MaintenanceScreen({
             {message}
           </p>
         </div>
-        <Link
-          href="/login"
-          className="text-sm text-muted-foreground underline underline-offset-2 hover:text-foreground"
-        >
-          Espace administrateur
-        </Link>
       </main>
     </div>
   );

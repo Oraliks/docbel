@@ -116,8 +116,10 @@ export function AppLayoutClient({ children }: { children: React.ReactNode }) {
       }}
     >
       <div className="glass-root">
+        {/* Bandeau d'annonce : barre pleine largeur collée en haut, HORS du
+            <main> (qui a une largeur max + padding) pour être edge-to-edge. */}
+        <AnnouncementBanner />
         <main className="mx-auto flex min-h-svh w-full max-w-[1840px] flex-col gap-4 px-4 pt-4 pb-10 sm:gap-6 sm:px-6 sm:pt-6 sm:pb-12 lg:px-12 2xl:px-16">
-          <AnnouncementBanner />
           <LandingHeader
             persona={audience}
             onSearchOpen={() => setPaletteOpen(true)}

@@ -115,46 +115,24 @@ describe("canonicalUrl", () => {
 });
 
 describe("isAnnouncementLive", () => {
-  const now = new Date("2026-07-11T12:00:00Z");
   const base = SITE_SETTINGS_DEFAULTS.announcement;
 
   it("is false when disabled", () => {
-    expect(isAnnouncementLive({ ...base, enabled: false, message: "x" }, now)).toBe(
+    expect(isAnnouncementLive({ ...base, enabled: false, message: "x" })).toBe(
       false
     );
   });
 
   it("is false when message is blank even if enabled", () => {
-    expect(isAnnouncementLive({ ...base, enabled: true, message: "  " }, now)).toBe(
+    expect(isAnnouncementLive({ ...base, enabled: true, message: "  " })).toBe(
       false
     );
   });
 
-  it("is true when enabled, has a message, and no bounds", () => {
-    expect(isAnnouncementLive({ ...base, enabled: true, message: "Hi" }, now)).toBe(
+  it("is true when enabled and has a message", () => {
+    expect(isAnnouncementLive({ ...base, enabled: true, message: "Hi" })).toBe(
       true
     );
-  });
-
-  it("respects startsAt / endsAt window", () => {
-    const a = { ...base, enabled: true, message: "Hi" };
-    expect(
-      isAnnouncementLive({ ...a, startsAt: "2026-07-12T00:00:00Z" }, now)
-    ).toBe(false); // pas encore commencé
-    expect(
-      isAnnouncementLive({ ...a, endsAt: "2026-07-10T00:00:00Z" }, now)
-    ).toBe(false); // déjà terminé
-    expect(
-      isAnnouncementLive(
-        { ...a, startsAt: "2026-07-10T00:00:00Z", endsAt: "2026-07-12T00:00:00Z" },
-        now
-      )
-    ).toBe(true); // dans la fenêtre
-  });
-
-  it("ignores unparseable date bounds", () => {
-    const a = { ...base, enabled: true, message: "Hi", startsAt: "pas-une-date" };
-    expect(isAnnouncementLive(a, now)).toBe(true);
   });
 });
 

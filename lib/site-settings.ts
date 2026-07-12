@@ -92,9 +92,8 @@ const announcementSchema = z.object({
   /** Lien optionnel « En savoir plus ». */
   linkHref: z.string().trim().max(2048),
   linkLabel: z.string().trim().max(120),
-  /** Planification ISO (vide = pas de borne). */
-  startsAt: z.string().trim().max(40),
-  endsAt: z.string().trim().max(40),
+  /** Autorise le visiteur à masquer la bannière (croix, le temps de la session). */
+  dismissible: z.boolean(),
   /** Segments ciblés (vide = tous). */
   segments: z.array(audienceSegment),
 });
@@ -160,8 +159,7 @@ export const SITE_SETTINGS_DEFAULTS: SiteSettings = {
     message: "",
     linkHref: "",
     linkLabel: "",
-    startsAt: "",
-    endsAt: "",
+    dismissible: true,
     segments: [],
   },
   legal: {
@@ -227,20 +225,11 @@ export function canonicalUrl(settings: Pick<SiteSettings, "identity">): string {
 }
 
 /**
- * L'annonce est-elle active à l'instant `now` (bornes de planification) ?
+ * L'annonce est-elle active (activée + message non vide) ?
  * Le ciblage par segment est appliqué séparément côté rendu.
  */
-export function isAnnouncementLive(a: SiteAnnouncement, now: Date): boolean {
-  if (!a.enabled || !a.message.trim()) return false;
-  if (a.startsAt) {
-    const s = new Date(a.startsAt);
-    if (!Number.isNaN(s.getTime()) && now < s) return false;
-  }
-  if (a.endsAt) {
-    const e = new Date(a.endsAt);
-    if (!Number.isNaN(e.getTime()) && now > e) return false;
-  }
-  return true;
+export function isAnnouncementLive(a: SiteAnnouncement): boolean {
+  return a.enabled && a.message.trim().length > 0;
 }
 
 /** L'annonce cible-t-elle ce segment ? (liste vide = tous). */

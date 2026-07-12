@@ -34,6 +34,12 @@ interface NavItem {
   url: string
   icon?: React.ReactNode
   items?: NavSubItem[]
+  /**
+   * Section d'appartenance (intitulé de groupe). Les entrées sont regroupées
+   * sous ce libellé dans la sidebar ; l'ordre des sections suit `sectionOrder`.
+   * Une entrée sans section retombe dans la dernière section de `sectionOrder`.
+   */
+  section?: string
 }
 
 const QUICK_LINKS = [
@@ -72,21 +78,37 @@ function useIsQuickLinkActive() {
 
 export function NavMain({
   items,
+  sectionOrder,
   unreadCount = 0,
   pendingReportsCount = 0,
 }: {
   items: NavItem[]
+  /** Ordre d'affichage des sections. Toute section citée mais vide est masquée. */
+  sectionOrder: string[]
   unreadCount?: number
   pendingReportsCount?: number
 }) {
   const isActive = useIsQuickLinkActive()
+  // Toutes les entrées, tous groupes confondus — pour amorcer l'état d'ouverture.
+  const allItems = items
+  // Regroupe la liste plate en sections ordonnées. Une entrée sans `section`
+  // (ou avec une section absente de `sectionOrder`) rejoint la dernière section.
+  const fallback = sectionOrder[sectionOrder.length - 1]
+  const sections = sectionOrder
+    .map((label) => ({
+      label,
+      items: items.filter((item) => (
+        sectionOrder.includes(item.section ?? "") ? item.section : fallback
+      ) === label),
+    }))
+    .filter((section) => section.items.length > 0)
   // Seed : ouvre d'emblée le(s) groupe(s) contenant la route active pour que
   // l'utilisateur voie où il se trouve dès le premier rendu. Initializer lazy
   // (s'exécute une fois au montage) → pas de setState en effect (règle ESLint
   // react-hooks/set-state-in-effect du projet).
   const [openItems, setOpenItems] = useState<string[]>(() => {
     const open: string[] = []
-    for (const item of items) {
+    for (const item of allItems) {
       if (!item.items?.length) continue
       let groupOpen = false
       for (const sub of item.items) {
@@ -157,11 +179,12 @@ export function NavMain({
         </SidebarGroupContent>
       </SidebarGroup>
 
-      <SidebarGroup>
-        <SidebarGroupLabel>Navigation</SidebarGroupLabel>
+      {sections.map((section) => (
+      <SidebarGroup key={section.label}>
+        <SidebarGroupLabel>{section.label}</SidebarGroupLabel>
         <SidebarGroupContent>
           <SidebarMenu>
-            {items.map((item) => (
+            {section.items.map((item) => (
               <SidebarMenuItem key={item.title}>
                 {item.items && item.items.length > 0 ? (
                   <>
@@ -262,6 +285,7 @@ export function NavMain({
           </SidebarMenu>
         </SidebarGroupContent>
       </SidebarGroup>
+      ))}
     </div>
   )
 }

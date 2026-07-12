@@ -28,6 +28,15 @@ const defaultUser = {
   avatar: "",
 }
 
+// Ordre d'affichage des sections de la sidebar. Chaque entrée de `navMain`
+// déclare sa `section` ; NavMain regroupe et masque toute section vide.
+const SECTION_ORDER = [
+  "Contenu",
+  "Métier chômage",
+  "Employeurs & partenaires",
+  "Administration",
+] as const
+
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   // useAuthSession() (vs authClient.useSession direct) garde initialSession
   // en fallback quand le re-fetch client échoue — sinon le footer affiche
@@ -43,6 +52,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     {
       title: t("actualites"),
       url: "/admin/news",
+      section: "Contenu",
       icon: <NewspaperIcon className="size-4" />,
       items: [
         { title: t("articles"), url: "/admin/news" },
@@ -53,11 +63,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     {
       title: t("builder"),
       url: "/admin/pages",
+      section: "Contenu",
       icon: <FolderIcon className="size-4" />,
     },
     {
       title: t("chomage"),
       url: "/admin/chomage",
+      section: "Métier chômage",
       icon: <Wrench className="size-4" />,
       items: [
         {
@@ -111,6 +123,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       // pages jusque-là absentes de la nav (analytics PDF + soumissions).
       title: "Parcours & dossiers",
       url: "/admin/pdf/dossiers",
+      section: "Métier chômage",
       icon: <GitBranchIcon className="size-4" />,
       items: [
         // 1. Orienter — arbres d'orientation versionnés qui pointent vers un dossier.
@@ -146,6 +159,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     {
       title: t("comptesAcces"),
       url: "/admin/users",
+      section: "Administration",
       icon: <UsersIcon className="size-4" />,
       items: [
         { title: t("utilisateurs"), url: "/admin/users" },
@@ -180,6 +194,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       // règles déterministe).
       title: t("assistantEmployeur"),
       url: "/admin/employeur/sources",
+      section: "Employeurs & partenaires",
       icon: <BriefcaseIcon className="size-4" />,
       items: [
         { title: t("sourcesOfficielles"), url: "/admin/employeur/sources" },
@@ -189,6 +204,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     {
       title: t("bureaux"),
       url: "/admin/bureaux",
+      section: "Métier chômage",
       icon: <MapPinIcon className="size-4" />,
       items: [
         { title: t("santeDonnees"), url: "/admin/bureaux#sante" },
@@ -202,6 +218,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       // Module Docbel Formations : catalogue, modération, taxonomie, permissions.
       title: t("formations"),
       url: "/admin/formations",
+      section: "Employeurs & partenaires",
       icon: <GraduationCapIcon className="size-4" />,
       items: [
         { title: t("formationsOverview"), url: "/admin/formations" },
@@ -216,6 +233,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       // Plateforme de prise de RDV (multi-tenant) + outil privé FGTB (.ics).
       title: t("rendezVous"),
       url: "/admin/booking",
+      section: "Employeurs & partenaires",
       icon: <CalendarClock className="size-4" />,
       items: [
         { title: t("plateformeBooking"), url: "/admin/booking" },
@@ -225,24 +243,28 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     {
       title: t("newsletter"),
       url: "/admin/newsletter",
+      section: "Contenu",
       icon: <MailIcon className="size-4" />,
     },
     {
       // Santé des médias : scan des images cassées (link-rot) sur toute la base.
       title: t("medias"),
       url: "/admin/medias",
+      section: "Contenu",
       icon: <ImageIcon className="size-4" />,
     },
     {
       // Édition des traductions de contenu DB (NL/EN) en regard de la source FR.
       title: t("traductions"),
       url: "/admin/i18n",
+      section: "Contenu",
       icon: <LanguagesIcon className="size-4" />,
     },
     {
       // Santé des systèmes, dépendances et configuration runtime.
       title: t("monitoring"),
       url: "/admin/monitoring",
+      section: "Administration",
       icon: <ActivityIcon className="size-4" />,
     },
     {
@@ -250,6 +272,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       // Libellé hardcodé (pas de clé i18n) — cohérent avec le cockpit admin.
       title: "Paramètres",
       url: "/admin/parametres",
+      section: "Administration",
       icon: <SettingsIcon className="size-4" />,
     },
   ]
@@ -348,7 +371,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={navMain} unreadCount={unreadCount} pendingReportsCount={pendingReportsCount} />
+        <NavMain items={navMain} sectionOrder={[...SECTION_ORDER]} unreadCount={unreadCount} pendingReportsCount={pendingReportsCount} />
         <NavSecondary items={[]} className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>

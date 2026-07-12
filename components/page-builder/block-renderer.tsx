@@ -41,13 +41,28 @@ function BlockContent({
   block,
   slot,
   slotByIndex,
+  editorMode = false,
 }: {
   block: BlockProps
   slot?: React.ReactNode
   slotByIndex?: (idx: number) => React.ReactNode
+  editorMode?: boolean
 }) {
   const def = getBlockDef(block.type)
-  if (!def) return null
+  if (!def) {
+    // Type absent du registry (bloc legacy, renommé ou supprimé). Côté public on
+    // ne montre rien au visiteur ; dans l'éditeur on affiche une quarantaine
+    // VISIBLE — plutôt qu'un bloc vide silencieux — pour que l'admin le repère et
+    // le supprime/remplace via le menu contextuel du bloc.
+    if (!editorMode) return null
+    return (
+      <div className="rounded-lg border border-dashed border-amber-500/50 bg-amber-500/5 px-4 py-3 text-xs text-amber-700 dark:text-amber-400">
+        <span className="font-medium">Bloc inconnu</span>{' '}
+        <code className="rounded bg-amber-500/10 px-1 py-0.5 font-mono">{block.type}</code> — type
+        absent du registry. Supprimez-le ou remplacez-le.
+      </div>
+    )
+  }
   const Render = def.Render as React.FC<{
     props: unknown
     slot?: React.ReactNode
@@ -357,7 +372,12 @@ function RegularBlockRenderer({
       {...attrs}
     >
       <BlockBoundary type={resolvedBlock.type}>
-        <BlockContent block={resolvedBlock} slot={slot} slotByIndex={slotByIndex} />
+        <BlockContent
+          block={resolvedBlock}
+          slot={slot}
+          slotByIndex={slotByIndex}
+          editorMode={editorMode}
+        />
       </BlockBoundary>
     </div>
   )

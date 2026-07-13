@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest"
-import { isLockActive, isBanActive } from "./user-360"
+// Importe depuis le module PUR (user-flags), pas user-360 qui est server-only.
+import { isLockActive, isBanActive } from "./user-flags"
 
 const future = new Date(Date.now() + 60 * 60 * 1000).toISOString()
 const past = new Date(Date.now() - 60 * 60 * 1000).toISOString()

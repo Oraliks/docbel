@@ -17,7 +17,8 @@ import {
 import { toast } from "sonner"
 
 import { cn } from "@/lib/utils"
-import { isBanActive, type User360, type UserSecurity } from "@/lib/admin/user-360"
+import type { User360, UserSecurity } from "@/lib/admin/user-360"
+import { isBanActive } from "@/lib/admin/user-flags"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Input } from "@/components/ui/input"

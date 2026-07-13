@@ -4,6 +4,12 @@
 /// déchiffré). Étendu par lots : loadUser360 (Aperçu, Lot 3), loadUserSecurity
 /// (Lot 4), loadUserActivity / loadUserProfileDetail (Lot 6).
 
+// GARDE-FOU : ce module importe prisma → il ne doit JAMAIS finir dans le bundle
+// client. `server-only` fait échouer le BUILD si un composant client fait un
+// import de VALEUR ici (les `import type` restent autorisés, ils sont effacés).
+// Les helpers purs (isBanActive/isLockActive) vivent dans ./user-flags pour les
+// composants client.
+import "server-only"
 import { prisma, withDbRetry } from "@/lib/prisma"
 import type { UserRole, UserStatus } from "@prisma/client"
 
@@ -523,18 +529,7 @@ export async function loadUserActivity(userId: string): Promise<UserActivity> {
   }
 }
 
-/// Vrai si le verrouillage anti-bruteforce est actif à l'instant présent.
-export function isLockActive(lockedUntil: string | null): boolean {
-  if (!lockedUntil) return false
-  return new Date(lockedUntil).getTime() > Date.now()
-}
-
-/// Vrai si le bannissement est actif (permanent ou non encore expiré).
-export function isBanActive(
-  banned: boolean,
-  banExpires: string | null,
-): boolean {
-  if (!banned) return false
-  if (!banExpires) return true
-  return new Date(banExpires).getTime() > Date.now()
-}
+// Helpers de statut (isLockActive/isBanActive) : PURS et CLIENT-SAFE, définis
+// dans lib/admin/user-flags.ts pour que les composants client puissent les
+// importer sans tirer prisma. Ré-exportés ici pour le confort côté serveur.
+export { isBanActive, isLockActive } from "./user-flags"

@@ -24,11 +24,8 @@ import {
 import { toast } from "sonner"
 
 import { cn } from "@/lib/utils"
-import {
-  isBanActive,
-  isLockActive,
-  type User360,
-} from "@/lib/admin/user-360"
+import type { User360 } from "@/lib/admin/user-360"
+import { isBanActive, isLockActive } from "@/lib/admin/user-flags"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {

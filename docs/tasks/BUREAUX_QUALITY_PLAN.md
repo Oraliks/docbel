@@ -34,13 +34,26 @@ Corrigé au passage : des **mappings PostalCode erronés préexistants** (Bochol
 possédait à tort 3700=Tongeren et 3740=Bilzen ; Tongres avait 3980=Tessenderlo)
 — les CP officiels des fusions les écrasent désormais.
 
-**Reste (mineur, dépend d'Oraliks) :** 1) **6 communes INS-drift** (Wingene,
-Tielt, Lochristi, Lokeren, Hasselt, Bastogne) ont un code INS différent de REFNIS
-2025 dans notre table (pas des fusions — matchées par nom, fonctionnent) →
-optionnel : réaligner les codes INS. 2) ~55 `cpCommuneIncoherents` résiduels =
-**gaps de la table PostalCode** (bureau bien lié, CP officiel absent de
-PostalCode), PAS de mauvais liens → relink toujours inutile/risqué. 3) 21 communes
-sans chômage = CP hors `parametres-onem-cp` (fallback proximité OK).
+### 6 « INS-drift » = en fait 6 FUSIONS — réalignées (2026-07-13)
+
+Les 6 communes signalées « INS-drift » étaient en réalité des **fusions 2025 où
+la survivante a gardé son nom en absorbant une voisine** (vérifié VRT/L'Avenir +
+REFNIS) : Wingene←Ruiselede, Tielt←Meulebeke, Lochristi←Wachtebeke,
+Lokeren←Moerbeke, Hasselt←Kortessem, Bastogne←Bertogne (1re fusion wallonne).
+`pnpm bureaux:realign-ins` renumérote la survivante (code INS REFNIS) + absorbe
+la voisine (CP/bureaux/assignments déplacés, voisine `mergedIntoId`), puis
+dedupe/apply-official/assign. Vérifié : les 6 CP officiels résolvent vers la
+survivante au bon code INS, CPAS/commune officiels, 0 warning. `stubs` 20→**9**,
+`communesSansChomage` 21→**10**, communes actives 578→**572** (6 voisines absorbées).
+
+**Reste (mineur, hors demande initiale) :** 7 communes actives ont encore un code
+INS ≠ REFNIS, découvertes par la réconciliation complète — **PAS des fusions,
+non traitées** : La Louvière [55022→58001], Mouscron [54007→57096], Soignies
+[55039→55040], Binche [56011→58002], Maasmechelen [71047→73107] = renumérotations
+d'arrondissement (Hainaut/Limbourg) ; Diegem/Zaventem [23107] et Borsbeek [11007]
+= artefacts à investiguer. Simple renumérotation possible pour les 5 premières.
+Aussi : ~50 `cpCommuneIncoherents` = **gaps table PostalCode** (bien liés) ;
+10 communes sans chômage = CP hors `parametres-onem-cp` (fallback proximité OK).
 
 ## État des lieux mesuré (2026-07-10)
 

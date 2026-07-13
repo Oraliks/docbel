@@ -46,14 +46,24 @@ dedupe/apply-official/assign. Vérifié : les 6 CP officiels résolvent vers la
 survivante au bon code INS, CPAS/commune officiels, 0 warning. `stubs` 20→**9**,
 `communesSansChomage` 21→**10**, communes actives 578→**572** (6 voisines absorbées).
 
-**Reste (mineur, hors demande initiale) :** 7 communes actives ont encore un code
-INS ≠ REFNIS, découvertes par la réconciliation complète — **PAS des fusions,
-non traitées** : La Louvière [55022→58001], Mouscron [54007→57096], Soignies
-[55039→55040], Binche [56011→58002], Maasmechelen [71047→73107] = renumérotations
-d'arrondissement (Hainaut/Limbourg) ; Diegem/Zaventem [23107] et Borsbeek [11007]
-= artefacts à investiguer. Simple renumérotation possible pour les 5 premières.
-Aussi : ~50 `cpCommuneIncoherents` = **gaps table PostalCode** (bien liés) ;
-10 communes sans chômage = CP hors `parametres-onem-cp` (fallback proximité OK).
+### « Renumérotations d'arrondissement » = LIGNES DUPLIQUÉES — consolidées (2026-07-13)
+
+Les 5 « renumérotations » (+ Diegem) étaient en fait des **lignes de commune
+DUPLIQUÉES** : pour chacune, la table avait une ligne à l'ancien code INS (retiré
+de REFNIS) ET une ligne au nouveau code INS REFNIS (canonique, portant déjà les
+codes postaux). `pnpm bureaux:dedup-communes` **absorbe la ligne obsolète dans la
+ligne REFNIS** (CP/bureaux/assignments déplacés, obsolète `mergedIntoId`, CP
+officiel forcé) : La Louvière [55022→58001], Mouscron [54007→57096], Soignies
+[55039→55040], Binche [56011→58002], Maasmechelen [71047→73107], Zaventem/Diegem
+[23107→23094]. Vérifié : les 6 CP officiels résolvent vers la ligne REFNIS avec
+CPAS officiel, 0 warning. **Communes actives 572→566 (REFNIS = 565).**
+
+**Reste : 1 seule commune** — **Borsbeek [11007]**, ABSENTE du fichier REFNIS
+officiel fourni (validé « strictement identique au REFNIS »). Impossible à
+trancher sans savoir si le fichier l'a omise ou si Borsbeek a fusionné — **à
+clarifier par Oraliks**. Aussi : ~50 `cpCommuneIncoherents` = gaps table
+PostalCode (bien liés) ; 5 communes sans chômage = CP hors `parametres-onem-cp`
+(fallback proximité OK).
 
 ## État des lieux mesuré (2026-07-10)
 

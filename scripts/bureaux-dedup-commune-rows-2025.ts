@@ -39,6 +39,9 @@ const PAIRS: { name: string; obsolete: string; refnis: string }[] = [
   // Diegem = section de Zaventem, ligne dupliquée (nameNl "Zaventem") : REFNIS
   // ne connaît que Zaventem [23094], déjà présent → on absorbe le doublon.
   { name: "Zaventem (Diegem)", obsolete: "23107", refnis: "23094" },
+  // Borsbeek : fusion 2025 dans Anvers (devient le 10e district) → absente de
+  // REFNIS. Antwerpen [11002] garde son INS et absorbe Borsbeek [11007].
+  { name: "Borsbeek → Anvers", obsolete: "11007", refnis: "11002" },
 ];
 
 interface CommuneRaw {

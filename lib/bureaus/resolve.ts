@@ -35,6 +35,9 @@ export type ResolveResult = {
      * /outils/bureaux pour que l'utilisateur choisisse via tabs. */
     organismesPaiement: SerializedBureau[];
     mutuelle: SerializedBureau | null;
+    /** Service public régional de l'emploi compétent (Actiris/Forem/VDAB/ADG)
+     * selon la commune de domicile — office le plus proche. */
+    emploiRegional: SerializedBureau | null;
   };
   proximite: {
     syndicats: SerializedBureauWithDistance[];
@@ -102,6 +105,7 @@ export async function resolveBureausForPostalCode(
   let paiementRow: BureauWithRelations | null = null;
   const paiementsRows: BureauWithRelations[] = [];
   let mutuelleRow: BureauWithRelations | null = null;
+  let emploiRow: BureauWithRelations | null = null;
 
   if (commune) {
     const direct = await withDbRetry(() =>
@@ -238,6 +242,16 @@ export async function resolveBureausForPostalCode(
       );
       mutuelleRow = mutAssign?.bureau ?? null;
     }
+
+    // Service régional de l'emploi compétent (Actiris/Forem/VDAB/ADG) — un seul
+    // par commune de domicile (compétence territoriale officielle).
+    const emploiAssign = await withDbRetry(() =>
+      prisma.bureauAssignment.findFirst({
+        where: { communeId: commune.id, serviceType: "emploi_regional" },
+        include: { bureau: { include: { organisme: true, commune: true } } },
+      })
+    );
+    emploiRow = emploiAssign?.bureau ?? null;
   }
 
   // Bloc commission paritaire (sectoriel) supprimé : la feature n'était
@@ -324,6 +338,7 @@ export async function resolveBureausForPostalCode(
       organismePaiement: paiementRow ? serializeBureau(paiementRow) : null,
       organismesPaiement: paiementsRows.map(serializeBureau),
       mutuelle: mutuelleRow ? serializeBureau(mutuelleRow) : null,
+      emploiRegional: emploiRow ? serializeBureau(emploiRow) : null,
     },
     proximite: { syndicats, permanences, autres },
     warnings,
@@ -339,7 +354,7 @@ function emptyResult(
   return {
     query: { postalCode, organismePaiement: org, mutuelleCode: mut },
     commune: null,
-    attitre: { cpas: null, commune: null, onem: null, organismePaiement: null, organismesPaiement: [], mutuelle: null },
+    attitre: { cpas: null, commune: null, onem: null, organismePaiement: null, organismesPaiement: [], mutuelle: null, emploiRegional: null },
     proximite: { syndicats: [], permanences: [], autres: [] },
     warnings,
   };

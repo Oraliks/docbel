@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { Input } from '@/components/ui/input'
-import { MapPin, AlertCircle } from 'lucide-react'
+import { MapPin, AlertCircle, Briefcase } from 'lucide-react'
 
 import { BureauCard } from './_components/bureau-card'
 import { OpTabsCard } from './_components/op-tabs-card'
@@ -167,6 +167,7 @@ export function BureauxFinder() {
             data.attitre.onem,
             data.attitre.cpas,
             data.attitre.commune,
+            data.attitre.emploiRegional,
             ...data.attitre.organismesPaiement,
           ]
         : [],
@@ -261,6 +262,13 @@ export function BureauxFinder() {
                 logo={<CommuneLogo size={48} />}
                 bureau={data.attitre.commune}
                 distanceKm={distance(data.attitre.commune)}
+                fromUserLocation={!!userGeoloc}
+              />
+              <BureauCard
+                label={t('bureauxLabelEmploi')}
+                logo={<Briefcase size={40} className="text-violet-600" aria-hidden />}
+                bureau={data.attitre.emploiRegional}
+                distanceKm={distance(data.attitre.emploiRegional)}
                 fromUserLocation={!!userGeoloc}
               />
               {data.attitre.organismesPaiement.length > 0 ? (

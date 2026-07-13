@@ -54,6 +54,7 @@ export interface ResolveResponse {
     organismePaiement: BureauResult | null
     organismesPaiement: BureauResult[]
     mutuelle: BureauResult | null
+    emploiRegional: BureauResult | null
   }
   warnings: string[]
 }

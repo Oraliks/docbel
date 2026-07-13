@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import {
+  Ban,
   CheckCircle2,
   Eye,
   KeyRound,
@@ -16,8 +17,11 @@ import {
 import { toast } from "sonner"
 
 import { cn } from "@/lib/utils"
-import type { User360, UserSecurity } from "@/lib/admin/user-360"
+import { isBanActive, type User360, type UserSecurity } from "@/lib/admin/user-360"
 import { Button } from "@/components/ui/button"
+import { Textarea } from "@/components/ui/textarea"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import {
   Tooltip,
   TooltipContent,
@@ -66,7 +70,11 @@ export function UserSecurityTab({ userId, user, security }: UserSecurityTabProps
   const router = useRouter()
   const readOnly = useImpersonationReadOnly()
   const [pending, setPending] = useState<string | null>(null)
+  const [banOpen, setBanOpen] = useState(false)
+  const [banReason, setBanReason] = useState("")
+  const [banExpires, setBanExpires] = useState("")
 
+  const banned = isBanActive(user.banned, user.banExpires)
   const emailVerified = user.emailVerified || !!user.emailVerifiedAt
   const isLocked =
     !!user.lockedUntil && new Date(user.lockedUntil).getTime() > Date.now()
@@ -112,6 +120,59 @@ export function UserSecurityTab({ userId, user, security }: UserSecurityTabProps
           ? `${data.revoked} sessions révoquées`
           : "Session révoquée",
       )
+      router.refresh()
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erreur")
+    } finally {
+      setPending(null)
+    }
+  }
+
+  async function runBan() {
+    if (banReason.trim().length < 3) {
+      toast.error("Indiquez une raison de bannissement.")
+      return
+    }
+    setPending("ban")
+    try {
+      const res = await fetch(`/api/users/${userId}/actions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "ban",
+          reason: banReason.trim(),
+          expiresAt: banExpires ? new Date(banExpires).toISOString() : null,
+        }),
+      })
+      if (!res.ok) {
+        const error = (await res.json().catch(() => ({}))) as { error?: string }
+        throw new Error(error.error || "Bannissement impossible")
+      }
+      toast.success("Compte banni (sessions révoquées)")
+      setBanOpen(false)
+      setBanReason("")
+      setBanExpires("")
+      router.refresh()
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erreur")
+    } finally {
+      setPending(null)
+    }
+  }
+
+  async function runUnban() {
+    setPending("unban")
+    try {
+      const res = await fetch(`/api/users/${userId}/actions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "unban" }),
+      })
+      if (!res.ok) {
+        const error = (await res.json().catch(() => ({}))) as { error?: string }
+        throw new Error(error.error || "Débannissement impossible")
+      }
+      toast.success("Compte débanni")
       router.refresh()
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erreur")
@@ -250,6 +311,107 @@ export function UserSecurityTab({ userId, user, security }: UserSecurityTabProps
           counterpartLabel="Cible"
         />
       </div>
+
+      {/* Bannissement */}
+      <section className="overflow-hidden rounded-xl border border-red-300 bg-card dark:border-red-900/50">
+        <div className="border-b border-red-200 px-4 py-3 dark:border-red-900/50">
+          <h2 className="flex items-center gap-2 text-sm font-semibold text-red-600 dark:text-red-400">
+            <Ban className="size-4" />
+            Bannissement
+          </h2>
+        </div>
+        <div className="p-4">
+          {banned ? (
+            <div className="flex flex-col gap-3">
+              <p className="text-sm">
+                Compte banni
+                {user.banReason ? (
+                  <>
+                    {" "}
+                    — <span className="italic">« {user.banReason} »</span>
+                  </>
+                ) : null}
+                {user.banExpires
+                  ? ` (jusqu'au ${new Date(user.banExpires).toLocaleDateString("fr-FR")})`
+                  : " (permanent)"}
+              </p>
+              <div>
+                <GatedButton
+                  readOnly={readOnly}
+                  variant="outline"
+                  disabled={pending !== null}
+                  loading={pending === "unban"}
+                  onClick={runUnban}
+                  icon={<CheckCircle2 className="size-4" />}
+                >
+                  Débannir le compte
+                </GatedButton>
+              </div>
+            </div>
+          ) : !banOpen ? (
+            <GatedButton
+              readOnly={readOnly}
+              variant="outline"
+              disabled={pending !== null}
+              onClick={() => setBanOpen(true)}
+              icon={<Ban className="size-4" />}
+            >
+              Bannir le compte
+            </GatedButton>
+          ) : (
+            <div className="flex flex-col gap-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="ban-reason">Raison (obligatoire)</Label>
+                <Textarea
+                  id="ban-reason"
+                  value={banReason}
+                  onChange={(e) => setBanReason(e.target.value)}
+                  placeholder="Motif du bannissement (visible dans l'audit)…"
+                  rows={2}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="ban-expires">Expiration (optionnel)</Label>
+                <Input
+                  id="ban-expires"
+                  type="datetime-local"
+                  value={banExpires}
+                  onChange={(e) => setBanExpires(e.target.value)}
+                  className="w-fit"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Vide = bannissement permanent. Le ban révoque immédiatement les
+                  sessions actives.
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setBanOpen(false)}
+                  disabled={pending !== null}
+                >
+                  Annuler
+                </Button>
+                <Button
+                  type="button"
+                  variant="destructive"
+                  onClick={runBan}
+                  disabled={pending !== null || banReason.trim().length < 3}
+                  className="gap-1.5"
+                >
+                  {pending === "ban" ? (
+                    <Loader2 className="size-4 animate-spin" />
+                  ) : (
+                    <Ban className="size-4" />
+                  )}
+                  Confirmer le bannissement
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
+      </section>
     </div>
   )
 }

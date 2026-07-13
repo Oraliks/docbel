@@ -291,6 +291,238 @@ export async function loadUserSecurity(userId: string): Promise<UserSecurity> {
   }
 }
 
+// ── Profil (Lot 6) ─────────────────────────────────────────────────────────
+
+export interface CitizenProfileDetail {
+  firstName: string | null
+  lastName: string | null
+  /// NISS masqué : seuls les 4 derniers chiffres (RGPD — pas de NRN en clair).
+  nissLast4: string | null
+  birthDate: string | null
+  birthPlace: string | null
+  nationality: string | null
+  gender: string | null
+  street: string | null
+  streetNum: string | null
+  postalCode: string | null
+  city: string | null
+  country: string
+  phone: string | null
+  mobilePhone: string | null
+  /// IBAN masqué (4 derniers).
+  ibanMasked: string | null
+  maritalStatus: string | null
+  householdMembersCount: number
+  employer: string | null
+  jobTitle: string | null
+  contractType: string | null
+  organismePaiement: string | null
+  mutuelleCode: string | null
+  commissionParitaireCode: string | null
+  updatedAt: string
+}
+
+export interface EmployerProfileSummary {
+  organisationName: string | null
+  legalForm: string | null
+  enterpriseNumber: string | null
+  region: string | null
+  sector: string | null
+  naceCode: string | null
+  jointCommitteeNumber: string | null
+  hasEmployees: boolean | null
+  scenarioCount: number
+}
+
+export interface UserProfileData {
+  citizen: CitizenProfileDetail | null
+  employer: EmployerProfileSummary | null
+}
+
+const maskTail = (value: string | null, keep = 4): string | null => {
+  if (!value) return null
+  const trimmed = value.replace(/\s+/g, "")
+  if (trimmed.length <= keep) return trimmed
+  return `•••• ${trimmed.slice(-keep)}`
+}
+
+/// Détail des profils rattachés (citoyen UserProfile + employeur
+/// EmployerProfile). Données sensibles masquées (NISS/IBAN → 4 derniers).
+export async function loadUserProfileDetail(
+  userId: string,
+): Promise<UserProfileData> {
+  const [profile, employer] = await Promise.all([
+    withDbRetry(() =>
+      prisma.userProfile.findUnique({ where: { userId } }),
+    ).catch(() => null),
+    withDbRetry(() =>
+      prisma.employerProfile.findFirst({
+        where: { userId },
+        include: { _count: { select: { scenarios: true } } },
+      }),
+    ).catch(() => null),
+  ])
+
+  const citizen: CitizenProfileDetail | null = profile
+    ? {
+        firstName: profile.firstName,
+        lastName: profile.lastName,
+        nissLast4: profile.niss ? profile.niss.replace(/\D/g, "").slice(-4) : null,
+        birthDate: profile.birthDate ? profile.birthDate.toISOString() : null,
+        birthPlace: profile.birthPlace,
+        nationality: profile.nationality,
+        gender: profile.gender,
+        street: profile.street,
+        streetNum: profile.streetNum,
+        postalCode: profile.postalCode,
+        city: profile.city,
+        country: profile.country,
+        phone: profile.phone,
+        mobilePhone: profile.mobilePhone,
+        ibanMasked: maskTail(profile.iban),
+        maritalStatus: profile.maritalStatus,
+        householdMembersCount: Array.isArray(profile.householdMembers)
+          ? profile.householdMembers.length
+          : 0,
+        employer: profile.employer,
+        jobTitle: profile.jobTitle,
+        contractType: profile.contractType,
+        organismePaiement: profile.organismePaiement,
+        mutuelleCode: profile.mutuelleCode,
+        commissionParitaireCode: profile.commissionParitaireCode,
+        updatedAt: profile.updatedAt.toISOString(),
+      }
+    : null
+
+  const employerSummary: EmployerProfileSummary | null = employer
+    ? {
+        organisationName: employer.organisationName,
+        legalForm: employer.legalForm,
+        enterpriseNumber: employer.enterpriseNumber,
+        region: employer.region,
+        sector: employer.sector,
+        naceCode: employer.naceCode,
+        jointCommitteeNumber: employer.jointCommitteeNumber,
+        hasEmployees: employer.hasEmployees,
+        scenarioCount: employer._count.scenarios,
+      }
+    : null
+
+  return { citizen, employer: employerSummary }
+}
+
+// ── Activité (Lot 6) ─────────────────────────────────────────────────────────
+
+export interface ActivityRun {
+  id: string
+  bundleName: string
+  bundleSlug: string
+  status: string
+  startedAt: string
+  updatedAt: string
+  completedAt: string | null
+}
+
+export interface ActivityDraft {
+  id: string
+  formTitle: string
+  formSlug: string
+  updatedAt: string
+}
+
+export interface ActivityBooking {
+  id: string
+  tenantName: string
+  date: string
+  startTime: string
+  status: string
+}
+
+export interface UserActivity {
+  runs: ActivityRun[]
+  drafts: ActivityDraft[]
+  bookings: ActivityBooking[]
+  totals: { runs: number; drafts: number; bookings: number }
+}
+
+/// Activité récente du compte (dossiers, brouillons PDF, RDV). Listes bornées
+/// (10 dernières) + total, pas de pagination dans la fiche.
+export async function loadUserActivity(userId: string): Promise<UserActivity> {
+  const [runs, drafts, bookings, runsTotal, draftsTotal, bookingsTotal] =
+    await Promise.all([
+      withDbRetry(() =>
+        prisma.bundleRun.findMany({
+          where: { userId },
+          select: {
+            id: true,
+            status: true,
+            startedAt: true,
+            updatedAt: true,
+            completedAt: true,
+            bundle: { select: { name: true, slug: true } },
+          },
+          orderBy: { startedAt: "desc" },
+          take: 10,
+        }),
+      ),
+      withDbRetry(() =>
+        prisma.pdfFormDraft.findMany({
+          where: { userId },
+          select: {
+            id: true,
+            updatedAt: true,
+            form: { select: { title: true, slug: true } },
+          },
+          orderBy: { updatedAt: "desc" },
+          take: 10,
+        }),
+      ),
+      withDbRetry(() =>
+        prisma.booking.findMany({
+          where: { userId },
+          select: {
+            id: true,
+            date: true,
+            startTime: true,
+            status: true,
+            tenant: { select: { name: true } },
+          },
+          orderBy: { createdAt: "desc" },
+          take: 10,
+        }),
+      ),
+      withDbRetry(() => prisma.bundleRun.count({ where: { userId } })),
+      withDbRetry(() => prisma.pdfFormDraft.count({ where: { userId } })),
+      withDbRetry(() => prisma.booking.count({ where: { userId } })),
+    ])
+
+  return {
+    runs: runs.map((r) => ({
+      id: r.id,
+      bundleName: r.bundle?.name ?? "Dossier",
+      bundleSlug: r.bundle?.slug ?? "",
+      status: r.status,
+      startedAt: r.startedAt.toISOString(),
+      updatedAt: r.updatedAt.toISOString(),
+      completedAt: r.completedAt ? r.completedAt.toISOString() : null,
+    })),
+    drafts: drafts.map((d) => ({
+      id: d.id,
+      formTitle: d.form?.title ?? "Formulaire",
+      formSlug: d.form?.slug ?? "",
+      updatedAt: d.updatedAt.toISOString(),
+    })),
+    bookings: bookings.map((b) => ({
+      id: b.id,
+      tenantName: b.tenant?.name ?? "—",
+      date: b.date,
+      startTime: b.startTime,
+      status: String(b.status),
+    })),
+    totals: { runs: runsTotal, drafts: draftsTotal, bookings: bookingsTotal },
+  }
+}
+
 /// Vrai si le verrouillage anti-bruteforce est actif à l'instant présent.
 export function isLockActive(lockedUntil: string | null): boolean {
   if (!lockedUntil) return false

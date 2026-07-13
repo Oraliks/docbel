@@ -8,10 +8,13 @@ import { UserStatus } from "@prisma/client"
 
 const jsonHeaders = { "Content-Type": "application/json; charset=utf-8" }
 
-// Actions admin ponctuelles sur un compte. Union Zod étendue au Lot 6
-// (ban/unban). Toute action inconnue → 400 (schéma).
+// Actions admin ponctuelles sur un compte. Toute action inconnue → 400 (schéma).
 const actionSchema = z.object({
-  action: z.enum(["unlock", "verify-email"]),
+  action: z.enum(["unlock", "verify-email", "ban", "unban"]),
+  /// Obligatoire pour "ban".
+  reason: z.string().trim().optional(),
+  /// ISO ; null/absent = bannissement permanent.
+  expiresAt: z.string().datetime().nullish(),
 })
 
 export async function POST(
@@ -46,7 +49,47 @@ export async function POST(
       )
     }
 
-    const { action } = parsed.data
+    const { action, reason, expiresAt } = parsed.data
+
+    if (action === "ban") {
+      if (authCheck.user?.id === id) {
+        return NextResponse.json(
+          { error: "Vous ne pouvez pas bannir votre propre compte." },
+          { status: 400, headers: jsonHeaders },
+        )
+      }
+      if (!reason) {
+        return NextResponse.json(
+          { error: "La raison du bannissement est obligatoire." },
+          { status: 400, headers: jsonHeaders },
+        )
+      }
+      // Ban + révocation des sessions dans la même transaction : better-auth
+      // lit `banned` au getSession, mais on coupe aussi les sessions existantes
+      // pour un effet immédiat garanti.
+      const [updated] = await prisma.$transaction([
+        prisma.user.update({
+          where: { id },
+          data: {
+            banned: true,
+            banReason: reason,
+            banExpires: expiresAt ? new Date(expiresAt) : null,
+          },
+          select: SAFE_USER_SELECT,
+        }),
+        prisma.session.deleteMany({ where: { userId: id } }),
+      ])
+      return NextResponse.json(serializeUser(updated), { headers: jsonHeaders })
+    }
+
+    if (action === "unban") {
+      const updated = await prisma.user.update({
+        where: { id },
+        data: { banned: false, banReason: null, banExpires: null },
+        select: SAFE_USER_SELECT,
+      })
+      return NextResponse.json(serializeUser(updated), { headers: jsonHeaders })
+    }
 
     if (action === "unlock") {
       const updated = await prisma.user.update({

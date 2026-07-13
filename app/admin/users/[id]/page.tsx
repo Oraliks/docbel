@@ -43,12 +43,19 @@ export default async function UserDetailPage({
       }
       editionSlot={
         <EditUserForm
+          embedded
           user={{
             id: user.id,
             name: user.name,
             email: user.email,
             role: user.role,
             status: user.status,
+            segment: user.segment,
+            partnerType: user.partnerType,
+            partnerOrganization: user.partnerOrganization,
+            vatNumber: user.vatNumber,
+            isOrgManager: user.isOrgManager,
+            canViewRdvHistory: user.canViewRdvHistory,
           }}
         />
       }

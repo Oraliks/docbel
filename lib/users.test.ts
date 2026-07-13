@@ -4,6 +4,7 @@ import {
   buildUsersWhere,
   buildUsersOrderBy,
   usersQueryToSearchParams,
+  resolveUserSegmentFields,
   DEFAULT_USER_PAGE_SIZE,
   DEFAULT_USER_SORT,
 } from "./users"
@@ -112,6 +113,77 @@ describe("buildUsersOrderBy", () => {
     expect(buildUsersOrderBy("-lastLoginAt")).toEqual({
       lastLoginAt: { sort: "desc", nulls: "last" },
     })
+  })
+})
+
+describe("resolveUserSegmentFields", () => {
+  it("segment employeur : TVA normalisée requise, partnerType/flags nettoyés", () => {
+    const res = resolveUserSegmentFields({
+      segment: "employeur",
+      vatNumber: "BE 0123.456.749",
+      partnerType: "onem", // ignoré pour un employeur
+      partnerOrganization: "  ACME  ",
+      isOrgManager: true,
+    })
+    expect(res.ok).toBe(true)
+    if (res.ok) {
+      expect(res.fields.segment).toBe("employeur")
+      expect(res.fields.vatNumber).toBe("BE0123456749")
+      expect(res.fields.partnerType).toBeNull()
+      expect(res.fields.partnerOrganization).toBe("ACME")
+      expect(res.fields.isOrgManager).toBe(false)
+    }
+  })
+
+  it("segment employeur : TVA invalide → erreur", () => {
+    const res = resolveUserSegmentFields({ segment: "employeur", vatNumber: "BE123" })
+    expect(res.ok).toBe(false)
+  })
+
+  it("segment partenaire : partnerType validé, flags conservés, TVA nulle", () => {
+    const res = resolveUserSegmentFields({
+      segment: "partenaire",
+      partnerType: "organisme_paiement",
+      vatNumber: "BE0123456749", // ignoré pour un partenaire
+      isOrgManager: true,
+      canViewRdvHistory: true,
+    })
+    expect(res.ok).toBe(true)
+    if (res.ok) {
+      expect(res.fields.segment).toBe("partenaire")
+      expect(res.fields.partnerType).toBe("organisme_paiement")
+      expect(res.fields.vatNumber).toBeNull()
+      expect(res.fields.isOrgManager).toBe(true)
+      expect(res.fields.canViewRdvHistory).toBe(true)
+    }
+  })
+
+  it("segment partenaire : partnerType invalide → erreur", () => {
+    const res = resolveUserSegmentFields({
+      segment: "partenaire",
+      partnerType: "banque",
+    })
+    expect(res.ok).toBe(false)
+  })
+
+  it("sans segment : tout est remis à null/false", () => {
+    const res = resolveUserSegmentFields({
+      segment: null,
+      partnerType: "onem",
+      vatNumber: "BE0123456749",
+      isOrgManager: true,
+    })
+    expect(res.ok).toBe(true)
+    if (res.ok) {
+      expect(res.fields).toEqual({
+        segment: null,
+        partnerType: null,
+        vatNumber: null,
+        partnerOrganization: null,
+        isOrgManager: false,
+        canViewRdvHistory: false,
+      })
+    }
   })
 })
 

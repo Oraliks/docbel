@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Switch } from "@/components/ui/switch"
 import { TypeToConfirmField, typeToConfirmMatches } from "@/components/ui/type-to-confirm-field"
 import {
   Select,
@@ -40,6 +41,8 @@ import {
   useImpersonationReadOnly,
 } from "@/components/admin/use-impersonation-read-only"
 
+type Segment = "" | "partenaire" | "employeur"
+
 interface EditUserFormProps {
   user: {
     id: string
@@ -47,10 +50,26 @@ interface EditUserFormProps {
     email: string
     role: string
     status: string
+    segment?: string | null
+    partnerType?: string | null
+    partnerOrganization?: string | null
+    vatNumber?: string | null
+    isOrgManager?: boolean
+    canViewRdvHistory?: boolean
   }
+  /// true = rendu dans un onglet de la fiche (masque le back + le gros titre,
+  /// déjà fournis par le header de la fiche 360°).
+  embedded?: boolean
 }
 
-export function EditUserForm({ user }: EditUserFormProps) {
+const PARTNER_TYPE_OPTIONS: Array<{ value: string; label: string }> = [
+  { value: "onem", label: "ONEM" },
+  { value: "organisme_paiement", label: "Organisme de paiement" },
+  { value: "service_public", label: "Service public" },
+  { value: "prive_asbl", label: "Privé / ASBL" },
+]
+
+export function EditUserForm({ user, embedded = false }: EditUserFormProps) {
   const router = useRouter()
   const readOnly = useImpersonationReadOnly()
   const [loading, setLoading] = useState(false)
@@ -64,21 +83,36 @@ export function EditUserForm({ user }: EditUserFormProps) {
     confirmPassword: "",
     role: user.role,
     status: user.status,
+    segment: (user.segment === "partenaire" || user.segment === "employeur"
+      ? user.segment
+      : "") as Segment,
+    partnerType: user.partnerType ?? "",
+    partnerOrganization: user.partnerOrganization ?? "",
+    vatNumber: user.vatNumber ?? "",
+    isOrgManager: Boolean(user.isOrgManager),
+    canViewRdvHistory: Boolean(user.canViewRdvHistory),
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
+
+  const update = (patch: Partial<typeof formData>) =>
+    setFormData((prev) => ({ ...prev, ...patch }))
+
+  /// Changer le rôle vers partner/employer aligne le segment (réduction de
+  /// friction ; l'admin peut toujours ajuster ensuite).
+  const onRoleChange = (role: string) => {
+    if (role === "partner") update({ role, segment: "partenaire" })
+    else if (role === "employer") update({ role, segment: "employeur" })
+    else update({ role })
+  }
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {}
 
-    if (!formData.name.trim()) {
-      newErrors.name = "Le nom est requis"
-    }
+    if (!formData.name.trim()) newErrors.name = "Le nom est requis"
 
-    if (!formData.email.trim()) {
-      newErrors.email = "L'email est requis"
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+    if (!formData.email.trim()) newErrors.email = "L'email est requis"
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email))
       newErrors.email = "Email invalide"
-    }
 
     if (formData.password && formData.password.length < 10) {
       newErrors.password = "Le mot de passe doit contenir au moins 10 caractères"
@@ -98,6 +132,10 @@ export function EditUserForm({ user }: EditUserFormProps) {
       }
     }
 
+    if (formData.segment === "employeur" && !formData.vatNumber.trim()) {
+      newErrors.vatNumber = "Le numéro de TVA est requis pour un employeur"
+    }
+
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
@@ -108,17 +146,18 @@ export function EditUserForm({ user }: EditUserFormProps) {
 
     setLoading(true)
     try {
-      const updateData: {
-        name: string
-        email: string
-        role: string
-        status: string
-        password?: string
-      } = {
+      const updateData: Record<string, unknown> = {
         name: formData.name,
         email: formData.email,
         role: formData.role,
         status: formData.status,
+        // Toujours "segment-aware" : le back applique resolveUserSegmentFields.
+        segment: formData.segment || "none",
+        partnerType: formData.partnerType || null,
+        partnerOrganization: formData.partnerOrganization || null,
+        vatNumber: formData.vatNumber || null,
+        isOrgManager: formData.isOrgManager,
+        canViewRdvHistory: formData.canViewRdvHistory,
       }
       if (formData.password) updateData.password = formData.password
 
@@ -134,7 +173,6 @@ export function EditUserForm({ user }: EditUserFormProps) {
         )
       }
       toast.success("Utilisateur mis à jour avec succès")
-      router.push("/admin/users")
       router.refresh()
     } catch (error) {
       const message = error instanceof Error ? error.message : "Erreur inconnue"
@@ -168,22 +206,24 @@ export function EditUserForm({ user }: EditUserFormProps) {
   }
 
   return (
-    <div className="flex flex-col gap-6 py-6 px-4 md:px-6">
-      <div>
-        <Button
-          render={<Link href="/admin/users" />}
-          variant="ghost"
-          size="sm"
-          className="mb-3 gap-2 -ml-2"
-        >
-          <ArrowLeftIcon className="size-4" />
-          Retour aux utilisateurs
-        </Button>
-        <h1 className="text-3xl font-bold tracking-tight">
-          Modifier l&apos;utilisateur
-        </h1>
-        <p className="text-muted-foreground mt-1">{user.email}</p>
-      </div>
+    <div className={embedded ? "flex flex-col gap-6" : "flex flex-col gap-6 px-4 py-6 md:px-6"}>
+      {!embedded && (
+        <div>
+          <Button
+            render={<Link href="/admin/users" />}
+            variant="ghost"
+            size="sm"
+            className="mb-3 gap-2 -ml-2"
+          >
+            <ArrowLeftIcon className="size-4" />
+            Retour aux utilisateurs
+          </Button>
+          <h1 className="text-3xl font-bold tracking-tight">
+            Modifier l&apos;utilisateur
+          </h1>
+          <p className="text-muted-foreground mt-1">{user.email}</p>
+        </div>
+      )}
 
       <Card>
         <CardHeader>
@@ -193,16 +233,14 @@ export function EditUserForm({ user }: EditUserFormProps) {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-5" id="edit-user-form">
             <div className="grid gap-5 sm:grid-cols-2">
               <div className="space-y-2 sm:col-span-2">
                 <Label htmlFor="name">Nom complet</Label>
                 <Input
                   id="name"
                   value={formData.name}
-                  onChange={(e) =>
-                    setFormData({ ...formData, name: e.target.value })
-                  }
+                  onChange={(e) => update({ name: e.target.value })}
                   disabled={loading}
                   className={errors.name ? "border-red-500" : ""}
                 />
@@ -217,9 +255,7 @@ export function EditUserForm({ user }: EditUserFormProps) {
                   id="email"
                   type="email"
                   value={formData.email}
-                  onChange={(e) =>
-                    setFormData({ ...formData, email: e.target.value })
-                  }
+                  onChange={(e) => update({ email: e.target.value })}
                   disabled={loading}
                   className={errors.email ? "border-red-500" : ""}
                 />
@@ -235,9 +271,7 @@ export function EditUserForm({ user }: EditUserFormProps) {
                   type="password"
                   placeholder="Laisser vide pour ne pas changer"
                   value={formData.password}
-                  onChange={(e) =>
-                    setFormData({ ...formData, password: e.target.value })
-                  }
+                  onChange={(e) => update({ password: e.target.value })}
                   disabled={loading}
                   className={errors.password ? "border-red-500" : ""}
                 />
@@ -253,9 +287,7 @@ export function EditUserForm({ user }: EditUserFormProps) {
                   type="password"
                   placeholder="••••••••"
                   value={formData.confirmPassword}
-                  onChange={(e) =>
-                    setFormData({ ...formData, confirmPassword: e.target.value })
-                  }
+                  onChange={(e) => update({ confirmPassword: e.target.value })}
                   disabled={loading || !formData.password}
                   className={errors.confirmPassword ? "border-red-500" : ""}
                 />
@@ -269,7 +301,7 @@ export function EditUserForm({ user }: EditUserFormProps) {
                 <Select
                   value={formData.role}
                   onValueChange={(value: string | null) =>
-                    value && setFormData({ ...formData, role: value })
+                    value && onRoleChange(value)
                   }
                   disabled={loading}
                 >
@@ -278,6 +310,7 @@ export function EditUserForm({ user }: EditUserFormProps) {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="user">Utilisateur</SelectItem>
+                    <SelectItem value="partner">Partenaire</SelectItem>
                     <SelectItem value="employer">Employeur</SelectItem>
                     <SelectItem value="moderator">Modérateur</SelectItem>
                     <SelectItem value="admin">Administrateur</SelectItem>
@@ -290,7 +323,7 @@ export function EditUserForm({ user }: EditUserFormProps) {
                 <Select
                   value={formData.status}
                   onValueChange={(value: string | null) =>
-                    value && setFormData({ ...formData, status: value })
+                    value && update({ status: value })
                   }
                   disabled={loading}
                 >
@@ -307,21 +340,140 @@ export function EditUserForm({ user }: EditUserFormProps) {
               </div>
             </div>
 
+            {/* Segment & accès */}
+            <div className="space-y-5 border-t pt-5">
+              <div className="grid gap-5 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="segment">Segment d&apos;accès</Label>
+                  <Select
+                    value={formData.segment || "none"}
+                    onValueChange={(value: string | null) => {
+                      if (!value) return
+                      update({ segment: value === "none" ? "" : (value as Segment) })
+                    }}
+                    disabled={loading}
+                  >
+                    <SelectTrigger id="segment">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Aucun (citoyen / admin)</SelectItem>
+                      <SelectItem value="partenaire">Partenaire</SelectItem>
+                      <SelectItem value="employeur">Employeur</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {formData.segment !== "" && (
+                  <div className="space-y-2">
+                    <Label htmlFor="org">Organisation</Label>
+                    <Input
+                      id="org"
+                      value={formData.partnerOrganization}
+                      onChange={(e) => update({ partnerOrganization: e.target.value })}
+                      placeholder="Nom de l'organisation"
+                      disabled={loading}
+                    />
+                  </div>
+                )}
+              </div>
+
+              {formData.segment === "partenaire" && (
+                <div className="grid gap-5 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="partnerType">Type de partenaire</Label>
+                    <Select
+                      value={formData.partnerType || "none"}
+                      onValueChange={(value: string | null) => {
+                        if (!value) return
+                        update({ partnerType: value === "none" ? "" : value })
+                      }}
+                      disabled={loading}
+                    >
+                      <SelectTrigger id="partnerType">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">—</SelectItem>
+                        {PARTNER_TYPE_OPTIONS.map((o) => (
+                          <SelectItem key={o.value} value={o.value}>
+                            {o.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="flex flex-col justify-center gap-3 pt-1">
+                    <label className="flex items-center justify-between gap-3 text-sm">
+                      <span>
+                        Responsable du service
+                        <span className="block text-xs text-muted-foreground">
+                          Accès par défaut à l&apos;historique des RDV
+                        </span>
+                      </span>
+                      <Switch
+                        checked={formData.isOrgManager}
+                        onCheckedChange={(v) => update({ isOrgManager: v })}
+                        disabled={loading}
+                      />
+                    </label>
+                    <label className="flex items-center justify-between gap-3 text-sm">
+                      <span>
+                        Accès historique RDV
+                        <span className="block text-xs text-muted-foreground">
+                          Autorisation individuelle (non-responsable)
+                        </span>
+                      </span>
+                      <Switch
+                        checked={formData.canViewRdvHistory}
+                        onCheckedChange={(v) => update({ canViewRdvHistory: v })}
+                        disabled={loading}
+                      />
+                    </label>
+                  </div>
+                </div>
+              )}
+
+              {formData.segment === "employeur" && (
+                <div className="grid gap-5 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="vatNumber">Numéro de TVA</Label>
+                    <Input
+                      id="vatNumber"
+                      value={formData.vatNumber}
+                      onChange={(e) => update({ vatNumber: e.target.value })}
+                      placeholder="BE0123456789"
+                      disabled={loading}
+                      className={errors.vatNumber ? "border-red-500" : ""}
+                    />
+                    {errors.vatNumber ? (
+                      <p className="text-sm text-destructive">{errors.vatNumber}</p>
+                    ) : (
+                      <p className="text-xs text-muted-foreground">
+                        Obligatoire, unique, validé (checksum mod-97).
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
             <div className="flex justify-end gap-3 border-t pt-5">
-              <Button
-                type="button"
-                variant="outline"
-                render={<Link href="/admin/users" />}
-              >
-                Annuler
-              </Button>
+              {!embedded && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  render={<Link href="/admin/users" />}
+                >
+                  Annuler
+                </Button>
+              )}
               {readOnly ? (
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger
                       render={
-                        // Span wrapper : un <Button disabled> ne déclenche pas
-                        // les events souris/focus → le tooltip ne s'ouvre jamais.
                         <span tabIndex={0}>
                           <Button type="button" disabled className="gap-2">
                             <SaveIcon className="size-4" />
@@ -348,14 +500,15 @@ export function EditUserForm({ user }: EditUserFormProps) {
         </CardContent>
       </Card>
 
-      <Card className="border-red-300 dark:border-red-900/50">
+      <Card id="danger" className="border-red-300 dark:border-red-900/50">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base text-red-600 dark:text-red-400">
             <AlertTriangleIcon className="size-4" />
             Zone de danger
           </CardTitle>
           <CardDescription>
-            La suppression du compte est définitive et irréversible.
+            La suppression du compte est définitive et irréversible. Les traces
+            pseudonymes (dossiers, RDV) restent en base.
           </CardDescription>
         </CardHeader>
         <CardContent>

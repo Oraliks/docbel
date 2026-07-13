@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Switch } from "@/components/ui/switch"
 import {
   Select,
   SelectContent,
@@ -23,6 +24,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+
+type Segment = "" | "partenaire" | "employeur"
+
+const PARTNER_TYPE_OPTIONS: Array<{ value: string; label: string }> = [
+  { value: "onem", label: "ONEM" },
+  { value: "organisme_paiement", label: "Organisme de paiement" },
+  { value: "service_public", label: "Service public" },
+  { value: "prive_asbl", label: "Privé / ASBL" },
+]
 
 export default function NewUserPage() {
   const router = useRouter()
@@ -35,8 +45,23 @@ export default function NewUserPage() {
     confirmPassword: "",
     role: "user",
     status: "active",
+    segment: "" as Segment,
+    partnerType: "",
+    partnerOrganization: "",
+    vatNumber: "",
+    isOrgManager: false,
+    canViewRdvHistory: false,
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
+
+  const update = (patch: Partial<typeof formData>) =>
+    setFormData((prev) => ({ ...prev, ...patch }))
+
+  const onRoleChange = (role: string) => {
+    if (role === "partner") update({ role, segment: "partenaire" })
+    else if (role === "employer") update({ role, segment: "employeur" })
+    else update({ role })
+  }
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {}
@@ -67,6 +92,10 @@ export default function NewUserPage() {
       newErrors.confirmPassword = t("errorPasswordMismatch")
     }
 
+    if (formData.segment === "employeur" && !formData.vatNumber.trim()) {
+      newErrors.vatNumber = "Le numéro de TVA est requis pour un employeur"
+    }
+
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
@@ -89,6 +118,12 @@ export default function NewUserPage() {
           password: formData.password,
           role: formData.role,
           status: formData.status,
+          segment: formData.segment || "none",
+          partnerType: formData.partnerType || null,
+          partnerOrganization: formData.partnerOrganization || null,
+          vatNumber: formData.vatNumber || null,
+          isOrgManager: formData.isOrgManager,
+          canViewRdvHistory: formData.canViewRdvHistory,
         }),
       })
 
@@ -216,7 +251,7 @@ export default function NewUserPage() {
                 <Select
                   value={formData.role}
                   onValueChange={(value: string | null) =>
-                    value && setFormData({ ...formData, role: value })
+                    value && onRoleChange(value)
                   }
                   disabled={loading}
                 >
@@ -225,6 +260,7 @@ export default function NewUserPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="user">{t("roleUser")}</SelectItem>
+                    <SelectItem value="partner">{t("rolePartner")}</SelectItem>
                     <SelectItem value="employer">{t("roleEmployer")}</SelectItem>
                     <SelectItem value="moderator">{t("roleModerator")}</SelectItem>
                     <SelectItem value="admin">{t("roleAdmin")}</SelectItem>
@@ -252,6 +288,114 @@ export default function NewUserPage() {
                   </SelectContent>
                 </Select>
               </div>
+            </div>
+
+            {/* Segment & accès */}
+            <div className="space-y-5 border-t pt-5">
+              <div className="grid gap-5 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="segment">Segment d&apos;accès</Label>
+                  <Select
+                    value={formData.segment || "none"}
+                    onValueChange={(value: string | null) => {
+                      if (!value) return
+                      update({ segment: value === "none" ? "" : (value as Segment) })
+                    }}
+                    disabled={loading}
+                  >
+                    <SelectTrigger id="segment">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Aucun (citoyen / admin)</SelectItem>
+                      <SelectItem value="partenaire">Partenaire</SelectItem>
+                      <SelectItem value="employeur">Employeur</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {formData.segment !== "" && (
+                  <div className="space-y-2">
+                    <Label htmlFor="org">Organisation</Label>
+                    <Input
+                      id="org"
+                      value={formData.partnerOrganization}
+                      onChange={(e) => update({ partnerOrganization: e.target.value })}
+                      placeholder="Nom de l'organisation"
+                      disabled={loading}
+                    />
+                  </div>
+                )}
+              </div>
+
+              {formData.segment === "partenaire" && (
+                <div className="grid gap-5 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="partnerType">Type de partenaire</Label>
+                    <Select
+                      value={formData.partnerType || "none"}
+                      onValueChange={(value: string | null) => {
+                        if (!value) return
+                        update({ partnerType: value === "none" ? "" : value })
+                      }}
+                      disabled={loading}
+                    >
+                      <SelectTrigger id="partnerType">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">—</SelectItem>
+                        {PARTNER_TYPE_OPTIONS.map((o) => (
+                          <SelectItem key={o.value} value={o.value}>
+                            {o.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex flex-col justify-center gap-3 pt-1">
+                    <label className="flex items-center justify-between gap-3 text-sm">
+                      <span>Responsable du service</span>
+                      <Switch
+                        checked={formData.isOrgManager}
+                        onCheckedChange={(v) => update({ isOrgManager: v })}
+                        disabled={loading}
+                      />
+                    </label>
+                    <label className="flex items-center justify-between gap-3 text-sm">
+                      <span>Accès historique RDV</span>
+                      <Switch
+                        checked={formData.canViewRdvHistory}
+                        onCheckedChange={(v) => update({ canViewRdvHistory: v })}
+                        disabled={loading}
+                      />
+                    </label>
+                  </div>
+                </div>
+              )}
+
+              {formData.segment === "employeur" && (
+                <div className="grid gap-5 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="vatNumber">Numéro de TVA</Label>
+                    <Input
+                      id="vatNumber"
+                      value={formData.vatNumber}
+                      onChange={(e) => update({ vatNumber: e.target.value })}
+                      placeholder="BE0123456789"
+                      disabled={loading}
+                      className={errors.vatNumber ? "border-destructive" : ""}
+                    />
+                    {errors.vatNumber ? (
+                      <p className="text-sm text-destructive">{errors.vatNumber}</p>
+                    ) : (
+                      <p className="text-xs text-muted-foreground">
+                        Obligatoire, unique, validé (checksum mod-97).
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="flex justify-end gap-3 border-t pt-5">

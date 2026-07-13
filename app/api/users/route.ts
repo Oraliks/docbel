@@ -1,12 +1,13 @@
+import { Prisma } from "@prisma/client"
+import { z } from "zod"
 import { prisma } from "@/lib/prisma"
 import { requireAdminAuth } from "@/lib/auth-check"
 import {
   buildUsersOrderBy,
   buildUsersWhere,
-  isUserRole,
-  isUserStatus,
   normalizeEmail,
   parseUsersQuery,
+  resolveUserSegmentFields,
   SAFE_USER_SELECT,
   serializeUser,
   validatePassword,
@@ -15,6 +16,31 @@ import { NextRequest, NextResponse } from "next/server"
 import * as bcrypt from "bcryptjs"
 
 const jsonHeaders = { "Content-Type": "application/json; charset=utf-8" }
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+// Champs de segment partagés (create + update). Optionnels/nullish côté Zod ;
+// la cohérence (TVA employeur, partnerType partenaire) est appliquée par
+// resolveUserSegmentFields.
+const segmentFields = {
+  segment: z.string().nullish(),
+  partnerType: z.string().nullish(),
+  vatNumber: z.string().nullish(),
+  partnerOrganization: z.string().nullish(),
+  isOrgManager: z.boolean().optional(),
+  canViewRdvHistory: z.boolean().optional(),
+}
+
+const createUserSchema = z.object({
+  name: z.string().trim().min(1, "Le nom est requis"),
+  email: z.string().trim().min(1, "L'email est requis"),
+  password: z.string().min(1, "Le mot de passe est requis"),
+  role: z
+    .enum(["user", "partner", "employer", "moderator", "admin"])
+    .default("user"),
+  status: z.enum(["active", "pending", "disabled", "locked"]).default("active"),
+  ...segmentFields,
+})
 
 export async function GET(request: NextRequest) {
   const authCheck = await requireAdminAuth()
@@ -60,22 +86,19 @@ export async function POST(request: Request) {
   if (!authCheck.isAuthorized) return authCheck.error
 
   try {
-    const body = await request.json()
-    const name = typeof body.name === "string" ? body.name.trim() : ""
-    const email = typeof body.email === "string" ? normalizeEmail(body.email) : ""
-    const password = typeof body.password === "string" ? body.password : ""
-    const role = typeof body.role === "string" ? body.role : "user"
-    const status = typeof body.status === "string" ? body.status : "active"
-
-    if (!name || !email || !password) {
+    const parsed = createUserSchema.safeParse(await request.json().catch(() => null))
+    if (!parsed.success) {
       return NextResponse.json(
-        { error: "Name, email, and password are required" },
-        { status: 400, headers: jsonHeaders }
+        { error: parsed.error.issues[0]?.message ?? "Données invalides" },
+        { status: 400, headers: jsonHeaders },
       )
     }
 
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      return NextResponse.json({ error: "Invalid email" }, { status: 400, headers: jsonHeaders })
+    const { name, role, status, password } = parsed.data
+    const email = normalizeEmail(parsed.data.email)
+
+    if (!EMAIL_REGEX.test(email)) {
+      return NextResponse.json({ error: "Email invalide" }, { status: 400, headers: jsonHeaders })
     }
 
     const passwordError = validatePassword(password)
@@ -86,18 +109,18 @@ export async function POST(request: Request) {
       )
     }
 
-    if (!isUserRole(role)) {
-      return NextResponse.json({ error: "Invalid role" }, { status: 400, headers: jsonHeaders })
-    }
-
-    if (!isUserStatus(status)) {
-      return NextResponse.json({ error: "Invalid status" }, { status: 400, headers: jsonHeaders })
+    const segment = resolveUserSegmentFields(parsed.data)
+    if (!segment.ok) {
+      return NextResponse.json(
+        { error: segment.error },
+        { status: 400, headers: jsonHeaders },
+      )
     }
 
     const existingUser = await prisma.user.findUnique({ where: { email } })
     if (existingUser) {
       return NextResponse.json(
-        { error: "Email is already taken" },
+        { error: "Cet email est déjà utilisé" },
         { status: 409, headers: jsonHeaders }
       )
     }
@@ -106,11 +129,12 @@ export async function POST(request: Request) {
     const user = await prisma.$transaction(async (tx) => {
       const created = await tx.user.create({
         data: {
-          name,
+          name: name.trim(),
           email,
           password: hashedPassword,
           role,
           status,
+          ...segment.fields,
         },
         select: SAFE_USER_SELECT,
       })
@@ -133,6 +157,20 @@ export async function POST(request: Request) {
       headers: jsonHeaders,
     })
   } catch (error) {
+    // Contrainte d'unicité TVA (vatNumber @unique) → 409 lisible.
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2002"
+    ) {
+      const target = error.meta?.target
+      const onVat = Array.isArray(target)
+        ? target.includes("vatNumber")
+        : typeof target === "string" && target.includes("vatNumber")
+      return NextResponse.json(
+        { error: onVat ? "Ce numéro de TVA est déjà utilisé" : "Contrainte d'unicité" },
+        { status: 409, headers: jsonHeaders },
+      )
+    }
     console.error("Failed to create user:", error)
     return NextResponse.json(
       { error: "Failed to create user" },

@@ -37,7 +37,7 @@ import {
   usersQueryToSearchParams,
   type UserListSort,
   type UsersQuery,
-} from "@/lib/users"
+} from "@/lib/users-query"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {

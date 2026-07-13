@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server"
+import { Prisma } from "@prisma/client"
+import { z } from "zod"
 import { prisma } from "@/lib/prisma"
 import { requireAdminAuth } from "@/lib/auth-check"
 import {
-  isUserRole,
-  isUserStatus,
   normalizeEmail,
+  resolveUserSegmentFields,
   SAFE_USER_SELECT,
   serializeUser,
   validatePassword,
@@ -12,6 +13,24 @@ import {
 import * as bcrypt from "bcryptjs"
 
 const jsonHeaders = { "Content-Type": "application/json; charset=utf-8" }
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+const updateUserSchema = z.object({
+  name: z.string().trim().min(1, "Le nom est requis").optional(),
+  email: z.string().trim().min(1).optional(),
+  password: z.string().optional(),
+  role: z
+    .enum(["user", "partner", "employer", "moderator", "admin"])
+    .optional(),
+  status: z.enum(["active", "pending", "disabled", "locked"]).optional(),
+  segment: z.string().nullish(),
+  partnerType: z.string().nullish(),
+  vatNumber: z.string().nullish(),
+  partnerOrganization: z.string().nullish(),
+  isOrgManager: z.boolean().optional(),
+  canViewRdvHistory: z.boolean().optional(),
+})
 
 export async function GET(
   _request: NextRequest,
@@ -49,12 +68,19 @@ export async function PUT(
 
   try {
     const { id } = await params
-    const body = await request.json()
-    const name = typeof body.name === "string" ? body.name.trim() : undefined
-    const email = typeof body.email === "string" ? normalizeEmail(body.email) : undefined
-    const password = typeof body.password === "string" ? body.password : undefined
-    const role = typeof body.role === "string" ? body.role : undefined
-    const status = typeof body.status === "string" ? body.status : undefined
+    const rawBody = (await request.json().catch(() => null)) as
+      | Record<string, unknown>
+      | null
+    const parsed = updateUserSchema.safeParse(rawBody ?? {})
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: parsed.error.issues[0]?.message ?? "Données invalides" },
+        { status: 400, headers: jsonHeaders },
+      )
+    }
+
+    const { name, role, status, password } = parsed.data
+    const email = parsed.data.email ? normalizeEmail(parsed.data.email) : undefined
 
     const user = await prisma.user.findUnique({
       where: { id },
@@ -64,12 +90,8 @@ export async function PUT(
       return NextResponse.json({ error: "User not found" }, { status: 404, headers: jsonHeaders })
     }
 
-    if (name !== undefined && !name) {
-      return NextResponse.json({ error: "Name is required" }, { status: 400, headers: jsonHeaders })
-    }
-
-    if (email !== undefined && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      return NextResponse.json({ error: "Invalid email" }, { status: 400, headers: jsonHeaders })
+    if (email !== undefined && !EMAIL_REGEX.test(email)) {
+      return NextResponse.json({ error: "Email invalide" }, { status: 400, headers: jsonHeaders })
     }
 
     if (email) {
@@ -82,18 +104,10 @@ export async function PUT(
 
       if (emailExists) {
         return NextResponse.json(
-          { error: "Email is already taken" },
+          { error: "Cet email est déjà utilisé" },
           { status: 409, headers: jsonHeaders }
         )
       }
-    }
-
-    if (role && !isUserRole(role)) {
-      return NextResponse.json({ error: "Invalid role" }, { status: 400, headers: jsonHeaders })
-    }
-
-    if (status && !isUserStatus(status)) {
-      return NextResponse.json({ error: "Invalid status" }, { status: 400, headers: jsonHeaders })
     }
 
     const passwordError = password ? validatePassword(password) : null
@@ -104,20 +118,25 @@ export async function PUT(
       )
     }
 
-    const updateData: {
-      name: string
-      email: string
-      role: typeof user.role
-      status: typeof user.status
-      password?: string
-      passwordChangedAt?: Date
-      failedLoginAttempts?: number
-      lockedUntil?: Date | null
-    } = {
-      name: name || user.name,
-      email: email || user.email,
-      role: role || user.role,
-      status: status || user.status,
+    const updateData: Prisma.UserUpdateInput = {
+      name: name ?? user.name,
+      email: email ?? user.email,
+      role: role ?? user.role,
+      status: status ?? user.status,
+    }
+
+    // Champs de segment : appliqués seulement si le body est "segment-aware"
+    // (clé `segment` présente), pour ne pas écraser des comptes édités par un
+    // ancien client qui n'envoie pas ces champs.
+    if (rawBody && typeof rawBody === "object" && "segment" in rawBody) {
+      const segment = resolveUserSegmentFields(parsed.data)
+      if (!segment.ok) {
+        return NextResponse.json(
+          { error: segment.error },
+          { status: 400, headers: jsonHeaders },
+        )
+      }
+      Object.assign(updateData, segment.fields)
     }
 
     let newPasswordHash: string | undefined
@@ -127,6 +146,8 @@ export async function PUT(
       updateData.passwordChangedAt = new Date()
     }
 
+    // Réinitialise le compteur anti-bruteforce quand l'admin change le statut
+    // vers autre chose que "locked" (déverrouillage explicite).
     if (status && status !== "locked") {
       updateData.failedLoginAttempts = 0
       updateData.lockedUntil = null
@@ -160,6 +181,19 @@ export async function PUT(
 
     return NextResponse.json(serializeUser(updatedUser), { headers: jsonHeaders })
   } catch (error) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2002"
+    ) {
+      const target = error.meta?.target
+      const onVat = Array.isArray(target)
+        ? target.includes("vatNumber")
+        : typeof target === "string" && target.includes("vatNumber")
+      return NextResponse.json(
+        { error: onVat ? "Ce numéro de TVA est déjà utilisé" : "Contrainte d'unicité" },
+        { status: 409, headers: jsonHeaders },
+      )
+    }
     console.error("Error updating user:", error)
     return NextResponse.json(
       { error: "Failed to update user" },

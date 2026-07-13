@@ -1,4 +1,5 @@
-import { Prisma, UserRole, UserStatus } from "@prisma/client"
+import { UserRole, UserStatus } from "@prisma/client"
+import { normalizeBelgianTVA } from "@/lib/pdf-forms/validators"
 
 export const USER_ROLES: readonly UserRole[] = [
   UserRole.user,
@@ -44,6 +45,121 @@ export function isUserStatus(value: string): value is UserStatus {
   return USER_STATUSES.includes(value as UserStatus)
 }
 
+// Sous-types partenaire autorisés (cf. User.partnerType). Bornés ici pour
+// valider la saisie admin.
+export const PARTNER_TYPES = [
+  "onem",
+  "organisme_paiement",
+  "service_public",
+  "prive_asbl",
+] as const
+
+export type PartnerType = (typeof PARTNER_TYPES)[number]
+
+export function isPartnerType(value: string): value is PartnerType {
+  return (PARTNER_TYPES as readonly string[]).includes(value)
+}
+
+/// Segment de COMPTE (les citoyens n'ont pas de compte → pas de "citoyen").
+export function isAccountSegment(value: string): value is "partenaire" | "employeur" {
+  return value === "partenaire" || value === "employeur"
+}
+
+/// Champs liés au segment d'un compte, normalisés de façon cohérente.
+export interface UserSegmentFields {
+  segment: string | null
+  partnerType: string | null
+  vatNumber: string | null
+  partnerOrganization: string | null
+  isOrgManager: boolean
+  canViewRdvHistory: boolean
+}
+
+export interface UserSegmentInput {
+  segment?: string | null
+  partnerType?: string | null
+  vatNumber?: string | null
+  partnerOrganization?: string | null
+  isOrgManager?: boolean
+  canViewRdvHistory?: boolean
+}
+
+/// Normalise les champs dépendants du segment et garantit leur cohérence
+/// (fonction PURE, testée) :
+///   - segment "employeur"  → TVA obligatoire+valide (mod-97), partnerType null,
+///     flags RDV à false.
+///   - segment "partenaire" → partnerType optionnel mais validé, TVA null.
+///   - pas de segment       → tout est remis à null/false.
+/// Retourne { ok:false, error } si la TVA employeur ou le partnerType est invalide.
+export function resolveUserSegmentFields(
+  input: UserSegmentInput,
+): { ok: true; fields: UserSegmentFields } | { ok: false; error: string } {
+  const rawSegment =
+    typeof input.segment === "string" && isAccountSegment(input.segment)
+      ? input.segment
+      : null
+
+  const org =
+    typeof input.partnerOrganization === "string" &&
+    input.partnerOrganization.trim()
+      ? input.partnerOrganization.trim()
+      : null
+
+  if (rawSegment === "employeur") {
+    const vat = normalizeBelgianTVA(
+      typeof input.vatNumber === "string" ? input.vatNumber : "",
+    )
+    if (!vat) {
+      return { ok: false, error: "Numéro de TVA belge invalide (BE + 10 chiffres)" }
+    }
+    return {
+      ok: true,
+      fields: {
+        segment: "employeur",
+        partnerType: null,
+        vatNumber: vat,
+        partnerOrganization: org,
+        isOrgManager: false,
+        canViewRdvHistory: false,
+      },
+    }
+  }
+
+  if (rawSegment === "partenaire") {
+    let partnerType: string | null = null
+    if (typeof input.partnerType === "string" && input.partnerType.trim()) {
+      if (!isPartnerType(input.partnerType)) {
+        return { ok: false, error: "Type de partenaire invalide" }
+      }
+      partnerType = input.partnerType
+    }
+    return {
+      ok: true,
+      fields: {
+        segment: "partenaire",
+        partnerType,
+        vatNumber: null,
+        partnerOrganization: org,
+        isOrgManager: Boolean(input.isOrgManager),
+        canViewRdvHistory: Boolean(input.canViewRdvHistory),
+      },
+    }
+  }
+
+  // Aucun segment : compte legacy/admin/citoyen — on nettoie tout.
+  return {
+    ok: true,
+    fields: {
+      segment: null,
+      partnerType: null,
+      vatNumber: null,
+      partnerOrganization: org,
+      isOrgManager: false,
+      canViewRdvHistory: false,
+    },
+  }
+}
+
 export function validatePassword(password: string) {
   if (password.length < 10) {
     return "Password must contain at least 10 characters"
@@ -73,159 +189,22 @@ export function serializeUser<T extends {
   }
 }
 
-// ===========================================================================
-// Requête liste admin (Lot 1 refonte users) : parsing des query params +
-// construction du `where`/`orderBy` Prisma. Extrait ici pour être PARTAGÉ entre
-// la page serveur (app/admin/users/page.tsx) et l'API (GET /api/users), et
-// testé unitairement. Aucune valeur invalide ne lève d'erreur : on retombe
-// toujours sur les défauts (une URL bidouillée ne casse pas la page admin).
-// ===========================================================================
-
-/// Tri autorisé (préfixe "-" = ordre décroissant). Défaut = "-createdAt".
-export const USER_LIST_SORTS = [
-  "createdAt",
-  "-createdAt",
-  "name",
-  "-name",
-  "lastLoginAt",
-  "-lastLoginAt",
-] as const
-
-export type UserListSort = (typeof USER_LIST_SORTS)[number]
-
-/// Tailles de page autorisées (bornage : jamais de `take` arbitraire).
-export const USER_PAGE_SIZES = [10, 20, 50, 100] as const
-
-export const DEFAULT_USER_PAGE_SIZE = 20
-export const DEFAULT_USER_SORT: UserListSort = "-createdAt"
-
-/// Filtre segment : "none" = compte SANS segment (legacy/admin/citoyen).
-export type UserSegmentFilter = "partenaire" | "employeur" | "none"
-
-export interface UsersQuery {
-  q: string
-  role: UserRole | null
-  segment: UserSegmentFilter | null
-  status: UserStatus | null
-  sort: UserListSort
-  page: number
-  pageSize: number
-}
-
-/// Accepte soit un URLSearchParams, soit l'objet `searchParams` d'une page Next
-/// (valeurs string | string[] | undefined). Renvoie une requête normalisée.
-export function parseUsersQuery(
-  input:
-    | URLSearchParams
-    | Record<string, string | string[] | undefined>
-    | undefined
-    | null,
-): UsersQuery {
-  const get = (key: string): string => {
-    if (!input) return ""
-    if (input instanceof URLSearchParams) return input.get(key) ?? ""
-    const v = input[key]
-    if (Array.isArray(v)) return v[0] ?? ""
-    return v ?? ""
-  }
-
-  const rawRole = get("role")
-  const role = isUserRole(rawRole) ? rawRole : null
-
-  const rawSegment = get("segment")
-  const segment: UserSegmentFilter | null =
-    rawSegment === "partenaire" ||
-    rawSegment === "employeur" ||
-    rawSegment === "none"
-      ? rawSegment
-      : null
-
-  const rawStatus = get("status")
-  const status = isUserStatus(rawStatus) ? rawStatus : null
-
-  const rawSort = get("sort")
-  const sort = (USER_LIST_SORTS as readonly string[]).includes(rawSort)
-    ? (rawSort as UserListSort)
-    : DEFAULT_USER_SORT
-
-  const rawPage = Number.parseInt(get("page"), 10)
-  const page = Number.isFinite(rawPage) && rawPage >= 1 ? rawPage : 1
-
-  const rawPageSize = Number.parseInt(get("pageSize"), 10)
-  const pageSize = (USER_PAGE_SIZES as readonly number[]).includes(rawPageSize)
-    ? rawPageSize
-    : DEFAULT_USER_PAGE_SIZE
-
-  return {
-    q: get("q").trim(),
-    role,
-    segment,
-    status,
-    sort,
-    page,
-    pageSize,
-  }
-}
-
-/// `where` Prisma dérivé des filtres (hors pagination/tri). `q` cherche sur
-/// name + email (insensible à la casse).
-export function buildUsersWhere(query: UsersQuery): Prisma.UserWhereInput {
-  const where: Prisma.UserWhereInput = {}
-
-  if (query.role) where.role = query.role
-  if (query.status) where.status = query.status
-
-  if (query.segment === "none") {
-    where.segment = null
-  } else if (query.segment) {
-    where.segment = query.segment
-  }
-
-  if (query.q) {
-    where.OR = [
-      { name: { contains: query.q, mode: "insensitive" } },
-      { email: { contains: query.q, mode: "insensitive" } },
-    ]
-  }
-
-  return where
-}
-
-/// `orderBy` Prisma dérivé du tri. Les valeurs null (ex: lastLoginAt jamais
-/// connecté) sont poussées en fin de liste via `nulls: "last"`.
-export function buildUsersOrderBy(
-  sort: UserListSort,
-): Prisma.UserOrderByWithRelationInput {
-  const desc = sort.startsWith("-")
-  const field = (desc ? sort.slice(1) : sort) as
-    | "createdAt"
-    | "name"
-    | "lastLoginAt"
-  const dir: Prisma.SortOrder = desc ? "desc" : "asc"
-
-  if (field === "lastLoginAt") {
-    return { lastLoginAt: { sort: dir, nulls: "last" } }
-  }
-  return { [field]: dir }
-}
-
-/// Sérialise la requête en querystring canonique (omet les valeurs par défaut)
-/// pour piloter l'URL de la liste. Utilisé côté client (router.replace) et pour
-/// construire les liens d'export.
-export function usersQueryToSearchParams(
-  query: Partial<UsersQuery>,
-): URLSearchParams {
-  const params = new URLSearchParams()
-  if (query.q) params.set("q", query.q)
-  if (query.role) params.set("role", query.role)
-  if (query.segment) params.set("segment", query.segment)
-  if (query.status) params.set("status", query.status)
-  if (query.sort && query.sort !== DEFAULT_USER_SORT) {
-    params.set("sort", query.sort)
-  }
-  if (query.page && query.page > 1) params.set("page", String(query.page))
-  if (query.pageSize && query.pageSize !== DEFAULT_USER_PAGE_SIZE) {
-    params.set("pageSize", String(query.pageSize))
-  }
-  return params
-}
+// Logique de requête de la liste (parse/where/orderBy/querystring) extraite
+// dans lib/users-query.ts (CLIENT-SAFE, imports @prisma/client type-only) pour
+// pouvoir être importée par le composant client de la liste sans tirer
+// PrismaClient dans le bundle. Ré-exportée ici pour le confort côté serveur.
+export {
+  USER_LIST_SORTS,
+  USER_PAGE_SIZES,
+  DEFAULT_USER_PAGE_SIZE,
+  DEFAULT_USER_SORT,
+  parseUsersQuery,
+  buildUsersWhere,
+  buildUsersOrderBy,
+  usersQueryToSearchParams,
+} from "./users-query"
+export type {
+  UserListSort,
+  UserSegmentFilter,
+  UsersQuery,
+} from "./users-query"

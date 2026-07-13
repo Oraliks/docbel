@@ -1,10 +1,11 @@
 import { notFound } from "next/navigation"
-import { loadUser360 } from "@/lib/admin/user-360"
+import { loadUser360, loadUserSecurity } from "@/lib/admin/user-360"
 import {
   UserDetailShell,
   USER_TABS,
   type UserTab,
 } from "@/components/admin/users/user-detail-shell"
+import { UserSecurityTab } from "@/components/admin/users/user-security-tab"
 import { EditUserForm } from "@/components/users/edit-user-form"
 
 export const dynamic = "force-dynamic"
@@ -31,11 +32,15 @@ export default async function UserDetailPage({
   if (!data) notFound()
 
   const { user } = data
+  const security = await loadUserSecurity(id)
 
   return (
     <UserDetailShell
       data={data}
       initialTab={resolveTab(tab)}
+      securitySlot={
+        <UserSecurityTab userId={user.id} user={user} security={security} />
+      }
       editionSlot={
         <EditUserForm
           user={{

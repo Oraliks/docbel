@@ -169,6 +169,128 @@ export async function loadUser360(userId: string): Promise<User360 | null> {
   }
 }
 
+// ── Sécurité (Lot 4) ─────────────────────────────────────────────────────
+
+export interface UserSessionRow {
+  id: string
+  ipAddress: string | null
+  userAgent: string | null
+  createdAt: string
+  expiresAt: string
+  /// Non-null = session ouverte par un admin en impersonation.
+  impersonatedBy: string | null
+}
+
+export interface ImpersonationLogRow {
+  id: string
+  /// Contrepartie affichée : l'admin (pour les impersonations subies) ou la
+  /// cible (pour les impersonations menées).
+  counterpartName: string | null
+  counterpartEmail: string | null
+  startedAt: string
+  stoppedAt: string | null
+  reason: string | null
+  ipAddress: string | null
+}
+
+export interface UserSecurity {
+  activeSessions: UserSessionRow[]
+  /// Sessions expirées récentes (contexte), bornées.
+  expiredSessionsCount: number
+  /// Impersonations dont ce compte a été la CIBLE (qui l'a vu "en tant que").
+  impersonationsReceived: ImpersonationLogRow[]
+  /// Impersonations que ce compte (admin) a MENÉES sur d'autres.
+  impersonationsMade: ImpersonationLogRow[]
+}
+
+/// Données de l'onglet Sécurité : sessions actives + historique d'impersonation.
+/// Listes bornées (take), aucune donnée sensible (jamais le token de session).
+export async function loadUserSecurity(userId: string): Promise<UserSecurity> {
+  const now = new Date()
+
+  const [activeSessions, expiredSessionsCount, received, made] =
+    await Promise.all([
+      withDbRetry(() =>
+        prisma.session.findMany({
+          where: { userId, expiresAt: { gt: now } },
+          select: {
+            id: true,
+            ipAddress: true,
+            userAgent: true,
+            createdAt: true,
+            expiresAt: true,
+            impersonatedBy: true,
+          },
+          orderBy: { createdAt: "desc" },
+          take: 25,
+        }),
+      ),
+      withDbRetry(() =>
+        prisma.session.count({ where: { userId, expiresAt: { lte: now } } }),
+      ),
+      withDbRetry(() =>
+        prisma.adminImpersonationLog.findMany({
+          where: { targetId: userId },
+          select: {
+            id: true,
+            startedAt: true,
+            stoppedAt: true,
+            reason: true,
+            ipAddress: true,
+            admin: { select: { name: true, email: true } },
+          },
+          orderBy: { startedAt: "desc" },
+          take: 10,
+        }),
+      ),
+      withDbRetry(() =>
+        prisma.adminImpersonationLog.findMany({
+          where: { adminId: userId },
+          select: {
+            id: true,
+            startedAt: true,
+            stoppedAt: true,
+            reason: true,
+            ipAddress: true,
+            target: { select: { name: true, email: true } },
+          },
+          orderBy: { startedAt: "desc" },
+          take: 10,
+        }),
+      ),
+    ])
+
+  return {
+    activeSessions: activeSessions.map((s) => ({
+      id: s.id,
+      ipAddress: s.ipAddress,
+      userAgent: s.userAgent,
+      createdAt: s.createdAt.toISOString(),
+      expiresAt: s.expiresAt.toISOString(),
+      impersonatedBy: s.impersonatedBy,
+    })),
+    expiredSessionsCount,
+    impersonationsReceived: received.map((l) => ({
+      id: l.id,
+      counterpartName: l.admin?.name ?? null,
+      counterpartEmail: l.admin?.email ?? null,
+      startedAt: l.startedAt.toISOString(),
+      stoppedAt: l.stoppedAt ? l.stoppedAt.toISOString() : null,
+      reason: l.reason,
+      ipAddress: l.ipAddress,
+    })),
+    impersonationsMade: made.map((l) => ({
+      id: l.id,
+      counterpartName: l.target?.name ?? null,
+      counterpartEmail: l.target?.email ?? null,
+      startedAt: l.startedAt.toISOString(),
+      stoppedAt: l.stoppedAt ? l.stoppedAt.toISOString() : null,
+      reason: l.reason,
+      ipAddress: l.ipAddress,
+    })),
+  }
+}
+
 /// Vrai si le verrouillage anti-bruteforce est actif à l'instant présent.
 export function isLockActive(lockedUntil: string | null): boolean {
   if (!lockedUntil) return false

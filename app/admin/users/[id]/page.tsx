@@ -1,21 +1,52 @@
 import { notFound } from "next/navigation"
-import { prisma } from "@/lib/prisma"
+import { loadUser360 } from "@/lib/admin/user-360"
+import {
+  UserDetailShell,
+  USER_TABS,
+  type UserTab,
+} from "@/components/admin/users/user-detail-shell"
 import { EditUserForm } from "@/components/users/edit-user-form"
 
 export const dynamic = "force-dynamic"
 
-export default async function EditUserPage({
+function resolveTab(raw: string | string[] | undefined): UserTab {
+  const value = Array.isArray(raw) ? raw[0] : raw
+  if (value && (USER_TABS as readonly string[]).includes(value)) {
+    return value as UserTab
+  }
+  return "apercu"
+}
+
+export default async function UserDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>
+  searchParams: Promise<Record<string, string | string[] | undefined>>
 }) {
   const { id } = await params
-  const user = await prisma.user.findUnique({
-    where: { id },
-    select: { id: true, name: true, email: true, role: true, status: true },
-  })
+  const { tab } = await searchParams
 
-  if (!user) notFound()
+  const data = await loadUser360(id)
+  if (!data) notFound()
 
-  return <EditUserForm user={user} />
+  const { user } = data
+
+  return (
+    <UserDetailShell
+      data={data}
+      initialTab={resolveTab(tab)}
+      editionSlot={
+        <EditUserForm
+          user={{
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            role: user.role,
+            status: user.status,
+          }}
+        />
+      }
+    />
+  )
 }

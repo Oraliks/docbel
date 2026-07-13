@@ -12,7 +12,7 @@
 //   4xx → mutlibres  (Mutualités libérales)
 //   5xx → mloz       (Mutualités libres : MLOZ, Partenamut, Helan, Freie KK)
 //   6xx → caami      (CAAMI/HZIV — caisse auxiliaire publique + offices régionaux)
-// Ignorés : 9xx (CSS HR Rail), service santé propre aux cheminots.
+//   9xx → hr-rail    (Caisse des Soins de Santé HR Rail — RÉSERVÉ aux cheminots)
 //
 // Chaque point → bureau vérifié (verified=true, verifiedBy=import:<source>),
 // commune reliée via le code INS officiel. L'ancien seed (bureaux mutuelle non
@@ -32,7 +32,12 @@ const APPLY = process.argv.includes("--yes");
 const SOURCE = "INAMI/OCM 2026-07-13";
 const POINTS_PATH = path.resolve(process.cwd(), "lib/data/mutuelles-points-contact-2026-07.jsonl");
 
-const FAMILY_ORG: Record<string, string> = { "1": "mc", "2": "neutrales", "3": "solidaris", "4": "mutlibres", "5": "mloz", "6": "caami" };
+const FAMILY_ORG: Record<string, string> = { "1": "mc", "2": "neutrales", "3": "solidaris", "4": "mutlibres", "5": "mloz", "6": "caami", "9": "hr-rail" };
+
+// Note affichée sur les offices à accès restreint (pas ouverts à tout public).
+const FAMILY_NOTES: Record<string, string> = {
+  "9": "Réservé au personnel des chemins de fer (cheminots) — Caisse des Soins de Santé HR Rail.",
+};
 
 interface Addr {
   rue_et_numero?: string;
@@ -73,6 +78,17 @@ async function main() {
       order: 60,
     },
   });
+  // HR Rail : caisse de soins de santé RÉSERVÉE au personnel des chemins de fer.
+  await prisma.organisme.upsert({
+    where: { code: "hr-rail" },
+    update: {},
+    create: {
+      code: "hr-rail", name: "Caisse des Soins de Santé HR Rail (personnel des chemins de fer)",
+      shortName: "HR Rail", type: "social", website: "https://www.hr-rail.be",
+      description: "Régime santé propre au personnel des chemins de fer (cheminots) — non ouvert au grand public.",
+      order: 90,
+    },
+  });
 
   const orgs = await prisma.organisme.findMany({ where: { code: { in: Object.values(FAMILY_ORG) } }, select: { id: true, code: true } });
   const orgIdByCode = new Map(orgs.map((o) => [o.code, o.id]));
@@ -82,7 +98,7 @@ async function main() {
   type Plan = {
     orgCode: string; orgId: string; name: string; street: string; streetNum: null;
     postalCode: string; city: string; communeId: string | null; phone: string | null;
-    email: string | null; website: string | null;
+    email: string | null; website: string | null; notes: string | null;
   };
   const plans: Plan[] = [];
   let skipped = 0, noCommune = 0;
@@ -103,13 +119,14 @@ async function main() {
       postalCode: a.code_postal.trim(), city: stripParen(a.localite ?? "").trim() || a.localite || "",
       communeId, phone: p.telephones?.[0]?.valeur?.trim() ?? null,
       email: p.emails?.[0]?.trim() ?? null, website: p.sites_web?.[0]?.trim() ?? null,
+      notes: FAMILY_NOTES[fam] ?? null,
     });
   }
 
   const byOrg: Record<string, number> = {};
   for (const p of plans) byOrg[p.orgCode] = (byOrg[p.orgCode] ?? 0) + 1;
   console.log(`${plans.length} offices officiels à importer (${Object.entries(byOrg).map(([k, v]) => `${k}=${v}`).join(", ")})`);
-  console.log(`  ${skipped} points ignorés (HR Rail 9xx / incomplets), ${noCommune} sans commune INS`);
+  console.log(`  ${skipped} points ignorés (incomplets), ${noCommune} sans commune INS`);
   for (const p of plans) console.log(`  [${p.orgCode}] ${p.name} @ ${p.street}, ${p.postalCode} ${p.city}`);
 
   // Ancien seed à désactiver : bureaux mutuelle actifs dont le nom ne correspond
@@ -134,8 +151,8 @@ async function main() {
     const data = {
       organismeId: p.orgId, type: "AUTRE" as const, name: p.name, street: p.street, streetNum: p.streetNum,
       postalCode: p.postalCode, city: p.city, communeId: p.communeId, phone: p.phone, email: p.email,
-      website: p.website, active: true, verified: true, verifiedBy: `import:${SOURCE}`, lastVerifiedAt: new Date(),
-      updatedBy: "script:import-mutuelles",
+      website: p.website, notes: p.notes, active: true, verified: true, verifiedBy: `import:${SOURCE}`,
+      lastVerifiedAt: new Date(), updatedBy: "script:import-mutuelles",
     };
     if (existing) { await prisma.bureau.update({ where: { id: existing.id }, data }); updated++; }
     else { await prisma.bureau.create({ data }); created++; }

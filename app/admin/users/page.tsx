@@ -6,6 +6,8 @@ import {
   SAFE_USER_SELECT,
   serializeUser,
 } from "@/lib/users"
+import { getComptesTabCounts } from "@/lib/admin/comptes-counts"
+import { ComptesTabs } from "@/components/admin/comptes-tabs"
 import {
   UsersListClient,
   type UsersListUser,
@@ -39,9 +41,10 @@ export default async function UsersPage({
   // Stats globales (tout le parc, hors filtres) : agrégats groupBy plutôt que
   // de charger toutes les lignes en mémoire. Hors transaction (pas besoin de
   // cohérence transactionnelle avec la page affichée).
-  const [byStatus, byRole] = await Promise.all([
+  const [byStatus, byRole, tabCounts] = await Promise.all([
     prisma.user.groupBy({ by: ["status"], _count: { _all: true } }),
     prisma.user.groupBy({ by: ["role"], _count: { _all: true } }),
+    getComptesTabCounts(),
   ])
 
   const statusCount = (s: string) =>
@@ -80,19 +83,22 @@ export default async function UsersPage({
   }))
 
   return (
-    <UsersListClient
-      users={users}
-      stats={stats}
-      total={total}
-      page={query.page}
-      pageSize={query.pageSize}
-      query={{
-        q: query.q,
-        role: query.role,
-        segment: query.segment,
-        status: query.status,
-        sort: query.sort,
-      }}
-    />
+    <>
+      <ComptesTabs counts={tabCounts} />
+      <UsersListClient
+        users={users}
+        stats={stats}
+        total={total}
+        page={query.page}
+        pageSize={query.pageSize}
+        query={{
+          q: query.q,
+          role: query.role,
+          segment: query.segment,
+          status: query.status,
+          sort: query.sort,
+        }}
+      />
+    </>
   )
 }

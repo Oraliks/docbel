@@ -3,6 +3,7 @@
 import {
   AtSignIcon,
   CheckCircle2Icon,
+  ExternalLinkIcon,
   FlaskConicalIcon,
   GlobeIcon,
   HistoryIcon,
@@ -18,6 +19,7 @@ import {
   XCircleIcon,
   ZapIcon,
 } from "lucide-react";
+import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -301,6 +303,14 @@ export function PartnerOverviewDetails({
                     </TableCell>
                     <TableCell>
                       <div className="flex justify-end gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          render={<Link href={`/admin/users/${u.id}`} />}
+                          title="Ouvrir la fiche 360°"
+                        >
+                          <ExternalLinkIcon className="size-4" />
+                        </Button>
                         {isPendingUser && (
                           <Button
                             variant="ghost"

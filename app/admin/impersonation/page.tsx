@@ -4,6 +4,8 @@ import { getTranslations } from "next-intl/server"
 import { auth } from "@/lib/auth"
 import { prisma, withDbRetry } from "@/lib/prisma"
 import { UserRole, UserStatus, Prisma } from "@prisma/client"
+import { getComptesTabCounts } from "@/lib/admin/comptes-counts"
+import { ComptesTabs } from "@/components/admin/comptes-tabs"
 import { ForceStopButton } from "@/components/admin/force-stop-button"
 
 const PAGE_SIZE = 20
@@ -154,8 +156,12 @@ export default async function ImpersonationAuditPage({
     return `?${sp.toString()}`
   }
 
+  const tabCounts = await getComptesTabCounts()
+
   return (
-    <div className="mx-auto w-full max-w-6xl px-4 py-8 lg:px-6">
+    <>
+      <ComptesTabs counts={tabCounts} />
+      <div className="mx-auto w-full max-w-6xl px-4 py-8 lg:px-6">
       <header className="mb-6">
         <h1 className="text-2xl font-semibold tracking-tight">
           {t("title")}
@@ -387,7 +393,8 @@ export default async function ImpersonationAuditPage({
           </a>
         </nav>
       )}
-    </div>
+      </div>
+    </>
   )
 }
 

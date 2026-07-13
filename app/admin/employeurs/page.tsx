@@ -1,5 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { listExistingOrganizationNames, listOrganizations } from "@/lib/partner-domains";
+import { getComptesTabCounts } from "@/lib/admin/comptes-counts";
+import { ComptesTabs } from "@/components/admin/comptes-tabs";
 import { PartnerOverviewShell } from "@/components/admin/partenaires/overview/partner-overview-shell";
 
 /**
@@ -23,9 +25,10 @@ export const dynamic = "force-dynamic";
 
 export default async function EmployeursAdminPage() {
   const t = await getTranslations("admin.employeurs");
-  const [initialOrganizations, existingOrgNames] = await Promise.all([
+  const [initialOrganizations, existingOrgNames, tabCounts] = await Promise.all([
     listOrganizations("employeur"),
     listExistingOrganizationNames(),
+    getComptesTabCounts(),
   ]);
 
   // Sérialisation des dates (Date → ISO string) pour passer au client.
@@ -53,7 +56,9 @@ export default async function EmployeursAdminPage() {
   }));
 
   return (
-    <PartnerOverviewShell
+    <>
+      <ComptesTabs counts={tabCounts} />
+      <PartnerOverviewShell
       initialOrganizations={serialized}
       existingOrganizationNames={existingOrgNames}
       // billingEnabled non pertinent ici (verrou global masqué via showBilling).
@@ -67,6 +72,7 @@ export default async function EmployeursAdminPage() {
         { href: "/admin/employeurs/email", label: t("linkEmail"), icon: "mail" },
       ]}
       createDefaultSegment="employeur"
-    />
+      />
+    </>
   );
 }

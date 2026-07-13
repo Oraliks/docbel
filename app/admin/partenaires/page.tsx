@@ -3,6 +3,8 @@ import {
   listOrganizations,
 } from "@/lib/partner-domains";
 import { getSetting, SETTING_KEYS } from "@/lib/app-settings";
+import { getComptesTabCounts } from "@/lib/admin/comptes-counts";
+import { ComptesTabs } from "@/components/admin/comptes-tabs";
 import { PartnerOverviewShell } from "@/components/admin/partenaires/overview/partner-overview-shell";
 
 /**
@@ -25,11 +27,12 @@ import { PartnerOverviewShell } from "@/components/admin/partenaires/overview/pa
 export const dynamic = "force-dynamic";
 
 export default async function PartenairesAdminPage() {
-  const [initialOrganizations, existingOrgNames, billingValue] =
+  const [initialOrganizations, existingOrgNames, billingValue, tabCounts] =
     await Promise.all([
       listOrganizations("partenaire"),
       listExistingOrganizationNames(),
       getSetting(SETTING_KEYS.BILLING_ENABLED),
+      getComptesTabCounts(),
     ]);
 
   // Sérialisation des dates (Date → ISO string) pour passer au client. Les
@@ -59,10 +62,13 @@ export default async function PartenairesAdminPage() {
   }));
 
   return (
-    <PartnerOverviewShell
-      initialOrganizations={serialized}
-      existingOrganizationNames={existingOrgNames}
-      billingEnabled={billingValue === "true"}
-    />
+    <>
+      <ComptesTabs counts={tabCounts} />
+      <PartnerOverviewShell
+        initialOrganizations={serialized}
+        existingOrganizationNames={existingOrgNames}
+        billingEnabled={billingValue === "true"}
+      />
+    </>
   );
 }

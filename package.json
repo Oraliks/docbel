@@ -56,6 +56,7 @@
     "bureaux:fix-bxl-cp": "dotenv -e .env.local -- tsx scripts/bureaux-fix-bxl-postalcodes.ts",
     "bureaux:relink-syndicats": "dotenv -e .env.local -- tsx scripts/bureaux-relink-syndicats.ts",
     "bureaux:import-mutuelles": "dotenv -e .env.local -- tsx scripts/bureaux-import-mutuelles.ts",
+    "bureaux:assign-mutuelles": "dotenv -e .env.local -- tsx scripts/bureaux-assign-mutuelles.ts",
     "pages:audit": "dotenv -e .env.local -- tsx scripts/audit-page-content.ts",
     "pages:prune-revisions": "dotenv -e .env.local -- tsx scripts/prune-page-revisions.ts",
     "rename:cgslb-synova": "dotenv -e .env.local -- tsx scripts/rename-cgslb-synova.ts",

@@ -265,7 +265,10 @@ export async function resolveBureausForPostalCode(
           : {}),
       },
       include: { organisme: true, commune: true },
-      take: 200,
+      // Couvre l'ensemble des SYNDICAT/PERMANENCE/AUTRE (~450) : un take trop bas
+      // tronquait la liste AVANT le tri par distance → offices exclus au hasard
+      // (les mutuelles/CAAMI n'apparaissaient jamais).
+      take: 1000,
     })
   );
 

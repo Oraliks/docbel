@@ -52,6 +52,7 @@
     "bureaux:merge-2025": "dotenv -e .env.local -- tsx scripts/bureaux-merge-communes-2025.ts",
     "bureaux:realign-ins": "dotenv -e .env.local -- tsx scripts/bureaux-realign-ins-2025.ts",
     "bureaux:dedup-communes": "dotenv -e .env.local -- tsx scripts/bureaux-dedup-commune-rows-2025.ts",
+    "bureaux:fix-fgtb": "dotenv -e .env.local -- tsx scripts/bureaux-fix-fgtb-links.ts",
     "pages:audit": "dotenv -e .env.local -- tsx scripts/audit-page-content.ts",
     "pages:prune-revisions": "dotenv -e .env.local -- tsx scripts/prune-page-revisions.ts",
     "rename:cgslb-synova": "dotenv -e .env.local -- tsx scripts/rename-cgslb-synova.ts",

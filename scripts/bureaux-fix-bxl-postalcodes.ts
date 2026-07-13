@@ -17,11 +17,21 @@ import { prisma } from "@/lib/prisma";
 const APPLY = process.argv.includes("--yes");
 
 // code postal → code INS de la commune correcte
+// Résidentiels : commune de délivrance (dominante) — confirmé opendata.brussels.be.
+// Institutionnels/boîtes postales : ABSENTS du tableau territorial officiel ;
+// on ne trie que ceux à attribution sûre (1052 av. Louise côté Saint-Gilles ;
+// 1031/1071 = plages 103x/107x propres à Schaerbeek/Anderlecht). Les codes
+// « grand usager » de Bruxelles-Ville (1010 Cité administrative, 1041/1047
+// quartier européen, 1051 av. Louise côté Bruxelles, 1100 SPF Finances) restent
+// sur Ville de Bruxelles — c'est correct.
 const FIX: { cp: string; insCode: string; commune: string }[] = [
   { cp: "1040", insCode: "21005", commune: "Etterbeek" },
   { cp: "1050", insCode: "21009", commune: "Ixelles" },
   { cp: "1060", insCode: "21013", commune: "Saint-Gilles" },
   { cp: "1070", insCode: "21001", commune: "Anderlecht" },
+  { cp: "1052", insCode: "21013", commune: "Saint-Gilles" }, // av. Louise côté Saint-Gilles
+  { cp: "1031", insCode: "21015", commune: "Schaerbeek" }, // plage 103x = Schaerbeek
+  { cp: "1071", insCode: "21001", commune: "Anderlecht" }, // plage 107x = Anderlecht
 ];
 
 async function main() {

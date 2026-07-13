@@ -137,17 +137,24 @@ async function main() {
     officesByOrg.set(o.organisme.code, arr);
   }
   const assignments: { bureauId: string; communeId: string }[] = [];
-  let noOffice = 0, noCommune = 0;
+  let noOffice = 0, noCommune = 0, noGeoFallback = 0;
   for (const c of comps) {
     const orgCode = SERVICE_ORG[c.service_emploi_id];
     const commune = communeByIns.get(c.code_ins);
     if (!commune) { noCommune++; continue; }
     const pool = officesByOrg.get(orgCode) ?? [];
-    if (pool.length === 0 || commune.lat == null || commune.lng == null) { noOffice++; continue; }
-    let best = pool[0], bestD = Infinity;
-    for (const o of pool) {
-      const d = haversineKm({ lat: commune.lat, lng: commune.lng }, { lat: o.lat, lng: o.lng });
-      if (d < bestD) { bestD = d; best = o; }
+    if (pool.length === 0) { noOffice++; continue; }
+    // Commune géolocalisée → office le plus proche ; sinon → 1er office du
+    // service compétent (le SERVICE reste correct, seule la proximité manque).
+    let best = pool[0];
+    if (commune.lat != null && commune.lng != null) {
+      let bestD = Infinity;
+      for (const o of pool) {
+        const d = haversineKm({ lat: commune.lat, lng: commune.lng }, { lat: o.lat, lng: o.lng });
+        if (d < bestD) { bestD = d; best = o; }
+      }
+    } else {
+      noGeoFallback++;
     }
     assignments.push({ bureauId: best.id, communeId: commune.id });
   }
@@ -155,7 +162,7 @@ async function main() {
     await tx.bureauAssignment.deleteMany({ where: { serviceType: "emploi_regional" } });
     await tx.bureauAssignment.createMany({ data: assignments.map((a) => ({ ...a, serviceType: "emploi_regional" })), skipDuplicates: true });
   });
-  console.log(`  ✓ ${assignments.length} communes assignées à leur service emploi (${noCommune} commune inconnue, ${noOffice} sans office)`);
+  console.log(`  ✓ ${assignments.length} communes assignées à leur service emploi (${noGeoFallback} repli sans géo, ${noCommune} commune inconnue, ${noOffice} sans office)`);
 }
 
 main().catch((e) => { console.error(e); process.exit(1); }).finally(() => prisma.$disconnect());

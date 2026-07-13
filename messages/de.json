@@ -1,4 +1,15 @@
 {
+  "admin": {
+    "bureaux": {
+      "integrityTitle": "Integrität & Verknüpfungen",
+      "integrityDescription": "Anti-Drift-Schutz: Diese Zähler sollten auf null bleiben. Ein Duplikat oder eine PLZ↔Gemeinde-Inkonsistenz verfälscht die Auflösung auf Nutzerseite.",
+      "integrityDuplicates": "Echte Duplikate",
+      "integrityCpMismatch": "PLZ ↔ Gemeinde inkonsistent",
+      "integrityNoChomage": "Gemeinden ohne Arbeitslosenbüro",
+      "integrityAssignments": "Zuweisungen pro Dienst",
+      "integrityNoAssignments": "Keine Zuweisung — pnpm bureaux:assign ausführen"
+    }
+  },
   "public": {
     "chrome": {
       "navHome": "Startseite",

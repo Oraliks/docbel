@@ -1,32 +1,51 @@
 import { prisma } from "@/lib/prisma"
 import { requireAdminAuth } from "@/lib/auth-check"
 import {
+  buildUsersOrderBy,
+  buildUsersWhere,
   isUserRole,
   isUserStatus,
   normalizeEmail,
+  parseUsersQuery,
   SAFE_USER_SELECT,
   serializeUser,
   validatePassword,
 } from "@/lib/users"
-import { NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
 import * as bcrypt from "bcryptjs"
 
 const jsonHeaders = { "Content-Type": "application/json; charset=utf-8" }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   const authCheck = await requireAdminAuth()
   if (!authCheck.isAuthorized) return authCheck.error
 
   try {
-    // take borné (convention AGENTS : findMany toujours borné). 1000 = marge
-    // large vs le nombre réel de comptes, sans tronquer l'affichage admin.
-    const users = await prisma.user.findMany({
-      select: SAFE_USER_SELECT,
-      orderBy: { createdAt: "desc" },
-      take: 1000,
-    })
+    const query = parseUsersQuery(request.nextUrl.searchParams)
+    const where = buildUsersWhere(query)
 
-    return NextResponse.json(users.map(serializeUser), { headers: jsonHeaders })
+    // Pagination serveur (fin du take: 1000 filtré client). count + page dans
+    // une seule transaction pour un total cohérent avec la page renvoyée.
+    const [total, rows] = await prisma.$transaction([
+      prisma.user.count({ where }),
+      prisma.user.findMany({
+        where,
+        select: SAFE_USER_SELECT,
+        orderBy: buildUsersOrderBy(query.sort),
+        skip: (query.page - 1) * query.pageSize,
+        take: query.pageSize,
+      }),
+    ])
+
+    return NextResponse.json(
+      {
+        users: rows.map(serializeUser),
+        total,
+        page: query.page,
+        pageSize: query.pageSize,
+      },
+      { headers: jsonHeaders },
+    )
   } catch (error) {
     console.error("Failed to fetch users:", error)
     return NextResponse.json(

@@ -1,9 +1,14 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useEffect, useRef, useState, useTransition } from "react"
 import Link from "next/link"
+import { usePathname, useRouter } from "next/navigation"
 import { useTranslations } from "next-intl"
 import {
+  ArrowDown,
+  ArrowUp,
+  ArrowUpDown,
+  BadgeCheck,
   Briefcase,
   CheckCircle2,
   ChevronLeft,
@@ -11,8 +16,11 @@ import {
   ChevronsLeft,
   ChevronsRight,
   CircleSlash,
+  Download,
   Edit2,
+  Eye,
   Handshake,
+  Loader2,
   MoreVertical,
   Plus,
   RefreshCcw,
@@ -24,6 +32,12 @@ import {
 } from "lucide-react"
 
 import { cn } from "@/lib/utils"
+import {
+  DEFAULT_USER_SORT,
+  usersQueryToSearchParams,
+  type UserListSort,
+  type UsersQuery,
+} from "@/lib/users"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -49,12 +63,40 @@ export type UsersListUser = {
   status: "active" | "pending" | "locked" | "disabled"
   segment: "partenaire" | "employeur" | null
   partnerType: string | null
+  partnerOrganization: string | null
+  vatNumber: string | null
+  emailVerifiedAt: string | null
   lastLoginAt: string | null
   createdAt: string
 }
 
+export type UsersListStats = {
+  total: number
+  active: number
+  inactive: number
+  admin: number
+  employer: number
+  partner: number
+  user: number
+}
+
+/// Filtres résolus côté serveur (source de vérité = URL). `q` est répliqué en
+/// state local pour le champ de recherche (debounce), le reste pilote l'URL.
+export type UsersListQuery = {
+  q: string
+  role: UsersListUser["role"] | null
+  segment: "partenaire" | "employeur" | "none" | null
+  status: UsersListUser["status"] | null
+  sort: UserListSort
+}
+
 interface UsersListClientProps {
   users: UsersListUser[]
+  stats: UsersListStats
+  total: number
+  page: number
+  pageSize: number
+  query: UsersListQuery
 }
 
 const ROLE_LABEL_KEYS: Record<UsersListUser["role"], string> = {
@@ -163,73 +205,101 @@ function statusTextClass(status: UsersListUser["status"]): string {
   }
 }
 
-export function UsersListClient({ users }: UsersListClientProps) {
+export function UsersListClient({
+  users,
+  stats,
+  total,
+  page,
+  pageSize,
+  query,
+}: UsersListClientProps) {
   const t = useTranslations("admin.users")
+  const router = useRouter()
+  const pathname = usePathname()
+  const [isPending, startTransition] = useTransition()
 
-  const [search, setSearch] = useState("")
-  const [roleFilter, setRoleFilter] = useState<string>("all")
-  const [segmentFilter, setSegmentFilter] = useState<string>("all")
-  const [statusFilter, setStatusFilter] = useState<string>("all")
-  const [page, setPage] = useState(1)
-  const [pageSize, setPageSize] = useState<number>(20)
-
-  const stats = useMemo(() => {
-    const counts = {
-      total: users.length,
-      active: 0,
-      inactive: 0,
-      admin: 0,
-      employer: 0,
-      partner: 0,
-      user: 0,
+  // Recherche : state local (frappe fluide) synchronisé vers l'URL en debounce.
+  const [search, setSearch] = useState(query.q)
+  // Réinitialise le champ si la query serveur change hors frappe (reset filtres).
+  const lastPushedSearch = useRef(query.q)
+  useEffect(() => {
+    if (query.q !== lastPushedSearch.current) {
+      setSearch(query.q)
+      lastPushedSearch.current = query.q
     }
-    for (const u of users) {
-      if (u.status === "active") counts.active++
-      else counts.inactive++
-      if (u.role === "admin") counts.admin++
-      else if (u.role === "employer") counts.employer++
-      else if (u.role === "partner") counts.partner++
-      else if (u.role === "user") counts.user++
-    }
-    return counts
-  }, [users])
+  }, [query.q])
 
-  const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase()
-    return users.filter((u) => {
-      if (roleFilter !== "all" && u.role !== roleFilter) return false
-      if (segmentFilter !== "all") {
-        if (segmentFilter === "none" && u.segment) return false
-        if (segmentFilter !== "none" && u.segment !== segmentFilter) return false
-      }
-      if (statusFilter !== "all" && u.status !== statusFilter) return false
-      if (q) {
-        const name = (u.name ?? "").toLowerCase()
-        const email = u.email.toLowerCase()
-        if (!name.includes(q) && !email.includes(q)) return false
-      }
-      return true
+  /// Construit l'URL cible depuis la query courante + un patch, puis navigue
+  /// (replace = pas d'entrée d'historique par frappe). La page serveur re-résout
+  /// filtres/tri/pagination.
+  function navigate(patch: Partial<UsersQuery>, resetPage = true) {
+    const next: Partial<UsersQuery> = {
+      q: query.q,
+      role: query.role,
+      segment: query.segment,
+      status: query.status,
+      sort: query.sort,
+      page,
+      pageSize,
+      ...patch,
+    }
+    if (resetPage && patch.page === undefined) next.page = 1
+    const params = usersQueryToSearchParams(next)
+    const qs = params.toString()
+    startTransition(() => {
+      router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false })
     })
-  }, [users, search, roleFilter, segmentFilter, statusFilter])
+  }
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize))
-  const currentPage = Math.min(page, totalPages)
-  const start = (currentPage - 1) * pageSize
-  const pageRows = filtered.slice(start, start + pageSize)
+  // Debounce de la recherche (300ms). On ne pousse que si la valeur diffère de
+  // ce que le serveur connaît déjà, pour éviter une navigation au montage.
+  useEffect(() => {
+    const term = search.trim()
+    if (term === query.q) return
+    const timer = setTimeout(() => {
+      lastPushedSearch.current = term
+      navigate({ q: term })
+    }, 300)
+    return () => clearTimeout(timer)
+    // navigate/query capturés volontairement à chaque rendu ; seul `search`
+    // déclenche le debounce.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search])
 
   const filtersActive =
-    search.trim() !== "" ||
-    roleFilter !== "all" ||
-    segmentFilter !== "all" ||
-    statusFilter !== "all"
+    query.q !== "" ||
+    query.role !== null ||
+    query.segment !== null ||
+    query.status !== null ||
+    query.sort !== DEFAULT_USER_SORT
 
   function resetFilters() {
     setSearch("")
-    setRoleFilter("all")
-    setSegmentFilter("all")
-    setStatusFilter("all")
-    setPage(1)
+    lastPushedSearch.current = ""
+    navigate({
+      q: "",
+      role: null,
+      segment: null,
+      status: null,
+      sort: DEFAULT_USER_SORT,
+      page: 1,
+    })
   }
+
+  const totalPages = Math.max(1, Math.ceil(total / pageSize))
+  const rangeStart = total === 0 ? 0 : (page - 1) * pageSize + 1
+  const rangeEnd = Math.min(page * pageSize, total)
+
+  const exportParams = usersQueryToSearchParams({
+    q: query.q,
+    role: query.role,
+    segment: query.segment,
+    status: query.status,
+    sort: query.sort,
+  }).toString()
+  const exportHref = exportParams
+    ? `/api/users/export?${exportParams}`
+    : "/api/users/export"
 
   return (
     <div className="flex flex-1 flex-col gap-6 px-4 py-6 lg:px-6">
@@ -238,7 +308,13 @@ export function UsersListClient({ users }: UsersListClientProps) {
         <p className="mt-1 text-muted-foreground">{t("subtitle")}</p>
       </div>
 
-      <StatsCards stats={stats} t={t as (key: string) => string} />
+      <StatsStrip
+        stats={stats}
+        query={query}
+        t={t as (key: string) => string}
+        onFilterRole={(role) => navigate({ role })}
+        onFilterStatus={(status) => navigate({ status })}
+      />
 
       <div className="rounded-xl border bg-card p-3 ring-1 ring-foreground/10">
         <div className="flex flex-wrap items-center gap-3">
@@ -246,22 +322,21 @@ export function UsersListClient({ users }: UsersListClientProps) {
             <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               value={search}
-              onChange={(e) => {
-                setSearch(e.target.value)
-                setPage(1)
-              }}
+              onChange={(e) => setSearch(e.target.value)}
               placeholder={t("searchPlaceholder")}
               className="h-10 pl-9"
             />
+            {isPending && (
+              <Loader2 className="absolute right-3 top-1/2 size-4 -translate-y-1/2 animate-spin text-muted-foreground" />
+            )}
           </div>
 
           <FloatingSelect
             label={t("filterRole")}
-            value={roleFilter}
-            onValueChange={(v) => {
-              setRoleFilter(v)
-              setPage(1)
-            }}
+            value={query.role ?? "all"}
+            onValueChange={(v) =>
+              navigate({ role: v === "all" ? null : (v as UsersListUser["role"]) })
+            }
             items={[
               { value: "all", label: t("filterAll") },
               { value: "admin", label: t("roleAdmin") },
@@ -273,11 +348,12 @@ export function UsersListClient({ users }: UsersListClientProps) {
           />
           <FloatingSelect
             label={t("filterSegment")}
-            value={segmentFilter}
-            onValueChange={(v) => {
-              setSegmentFilter(v)
-              setPage(1)
-            }}
+            value={query.segment ?? "all"}
+            onValueChange={(v) =>
+              navigate({
+                segment: v === "all" ? null : (v as UsersListQuery["segment"]),
+              })
+            }
             items={[
               { value: "all", label: t("filterAll") },
               { value: "partenaire", label: t("segmentPartenaire") },
@@ -287,11 +363,12 @@ export function UsersListClient({ users }: UsersListClientProps) {
           />
           <FloatingSelect
             label={t("filterStatus")}
-            value={statusFilter}
-            onValueChange={(v) => {
-              setStatusFilter(v)
-              setPage(1)
-            }}
+            value={query.status ?? "all"}
+            onValueChange={(v) =>
+              navigate({
+                status: v === "all" ? null : (v as UsersListUser["status"]),
+              })
+            }
             items={[
               { value: "all", label: t("filterAll") },
               { value: "active", label: t("statusActive") },
@@ -313,6 +390,15 @@ export function UsersListClient({ users }: UsersListClientProps) {
           </Button>
 
           <div className="ml-auto flex items-center gap-2">
+            <Button
+              render={<a href={exportHref} />}
+              variant="outline"
+              size="lg"
+              className="gap-1.5"
+            >
+              <Download className="size-4" />
+              Exporter CSV
+            </Button>
             <Button
               render={<Link href="/admin/users/new" />}
               size="lg"
@@ -346,7 +432,7 @@ export function UsersListClient({ users }: UsersListClientProps) {
       </div>
 
       <div className="overflow-hidden rounded-xl border bg-card ring-1 ring-foreground/10">
-        {filtered.length === 0 ? (
+        {total === 0 ? (
           <div className="flex h-64 items-center justify-center text-muted-foreground">
             <p>{t("emptyState")}</p>
           </div>
@@ -355,19 +441,39 @@ export function UsersListClient({ users }: UsersListClientProps) {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b text-muted-foreground">
-                  <th className="px-4 py-3 text-left font-medium">{t("colName")}</th>
+                  <SortableHeader
+                    label={t("colName")}
+                    field="name"
+                    sort={query.sort}
+                    onSort={(sort) => navigate({ sort })}
+                  />
                   <th className="px-4 py-3 text-left font-medium">{t("colEmail")}</th>
                   <th className="px-4 py-3 text-left font-medium">{t("colRole")}</th>
                   <th className="px-4 py-3 text-left font-medium">{t("colSegment")}</th>
+                  <th className="px-4 py-3 text-left font-medium">Organisation</th>
                   <th className="px-4 py-3 text-left font-medium">{t("colStatus")}</th>
-                  <th className="px-4 py-3 text-left font-medium">{t("colLastLogin")}</th>
-                  <th className="px-4 py-3 text-left font-medium">{t("colCreatedAt")}</th>
+                  <SortableHeader
+                    label={t("colLastLogin")}
+                    field="lastLoginAt"
+                    sort={query.sort}
+                    onSort={(sort) => navigate({ sort })}
+                  />
+                  <SortableHeader
+                    label={t("colCreatedAt")}
+                    field="createdAt"
+                    sort={query.sort}
+                    onSort={(sort) => navigate({ sort })}
+                  />
                   <th className="px-4 py-3 text-right font-medium">{t("colActions")}</th>
                 </tr>
               </thead>
               <tbody>
-                {pageRows.map((u) => (
-                  <UserRow key={u.id} user={u} t={t as (key: string, vars?: Record<string, string | number>) => string} />
+                {users.map((u) => (
+                  <UserRow
+                    key={u.id}
+                    user={u}
+                    t={t as (key: string, vars?: Record<string, string | number>) => string}
+                  />
                 ))}
               </tbody>
             </table>
@@ -376,7 +482,9 @@ export function UsersListClient({ users }: UsersListClientProps) {
 
         <div className="flex flex-wrap items-center gap-3 border-t bg-card px-4 py-3 text-sm">
           <span className="text-muted-foreground">
-            {t("rowsCount", { count: filtered.length })}
+            {total === 0
+              ? t("rowsCount", { count: 0 })
+              : `${rangeStart}–${rangeEnd} sur ${total}`}
           </span>
           <div className="ml-auto flex items-center gap-2">
             <span className="text-muted-foreground">{t("rowsPerPage")}</span>
@@ -384,8 +492,7 @@ export function UsersListClient({ users }: UsersListClientProps) {
               value={String(pageSize)}
               onValueChange={(v) => {
                 if (!v) return
-                setPageSize(Number(v))
-                setPage(1)
+                navigate({ pageSize: Number(v), page: 1 })
               }}
             >
               <SelectTrigger size="sm" className="h-8 w-fit min-w-[68px]">
@@ -403,13 +510,13 @@ export function UsersListClient({ users }: UsersListClientProps) {
 
           <div className="flex items-center gap-1">
             <span className="mr-2 text-muted-foreground">
-              {currentPage} / {totalPages}
+              {page} / {totalPages}
             </span>
             <Button
               variant="ghost"
               size="icon-sm"
-              onClick={() => setPage(1)}
-              disabled={currentPage === 1}
+              onClick={() => navigate({ page: 1 }, false)}
+              disabled={page === 1}
               aria-label={t("pageFirst")}
             >
               <ChevronsLeft />
@@ -417,23 +524,23 @@ export function UsersListClient({ users }: UsersListClientProps) {
             <Button
               variant="ghost"
               size="icon-sm"
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={currentPage === 1}
+              onClick={() => navigate({ page: Math.max(1, page - 1) }, false)}
+              disabled={page === 1}
               aria-label={t("pagePrev")}
             >
               <ChevronLeft />
             </Button>
             <span
-              className="grid h-7 min-w-[32px] place-items-center rounded-[10px] border bg-background px-2 text-xs"
+              className="grid h-7 min-w-[32px] place-items-center rounded-[10px] border bg-background px-2 text-xs tabular-nums"
               aria-current="page"
             >
-              {currentPage}
+              {page}
             </span>
             <Button
               variant="ghost"
               size="icon-sm"
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              disabled={currentPage === totalPages}
+              onClick={() => navigate({ page: Math.min(totalPages, page + 1) }, false)}
+              disabled={page >= totalPages}
               aria-label={t("pageNext")}
             >
               <ChevronRight />
@@ -441,8 +548,8 @@ export function UsersListClient({ users }: UsersListClientProps) {
             <Button
               variant="ghost"
               size="icon-sm"
-              onClick={() => setPage(totalPages)}
-              disabled={currentPage === totalPages}
+              onClick={() => navigate({ page: totalPages }, false)}
+              disabled={page >= totalPages}
               aria-label={t("pageLast")}
             >
               <ChevronsRight />
@@ -454,75 +561,97 @@ export function UsersListClient({ users }: UsersListClientProps) {
   )
 }
 
-interface StatsCardsProps {
-  stats: {
-    total: number
-    active: number
-    inactive: number
-    admin: number
-    employer: number
-    partner: number
-    user: number
-  }
+interface StatsStripProps {
+  stats: UsersListStats
+  query: UsersListQuery
   t: (key: string) => string
+  onFilterRole: (role: UsersListUser["role"] | null) => void
+  onFilterStatus: (status: UsersListUser["status"] | null) => void
 }
 
-function StatsCards({ stats, t }: StatsCardsProps) {
+/// Bandeau de stats en grammaire cockpit (cartes compactes, valeurs tabulaires,
+/// cliquables pour filtrer). Reprend la densité de components/admin/dashboard/*.
+function StatsStrip({
+  stats,
+  query,
+  t,
+  onFilterRole,
+  onFilterStatus,
+}: StatsStripProps) {
   const cards: Array<{
+    key: string
     label: string
     value: number
     icon: React.ComponentType<{ className?: string }>
-    bg: string
     fg: string
+    active: boolean
+    onClick: () => void
   }> = [
     {
+      key: "total",
       label: t("statTotal"),
       value: stats.total,
       icon: UsersIcon,
-      bg: "bg-violet-500/15",
       fg: "text-violet-600 dark:text-violet-300",
+      active:
+        query.role === null && query.status === null && query.segment === null,
+      onClick: () => {
+        onFilterRole(null)
+      },
     },
     {
+      key: "active",
       label: t("statActive"),
       value: stats.active,
       icon: CheckCircle2,
-      bg: "bg-emerald-500/15",
       fg: "text-emerald-600 dark:text-emerald-300",
+      active: query.status === "active",
+      onClick: () => onFilterStatus(query.status === "active" ? null : "active"),
     },
     {
+      key: "inactive",
       label: t("statInactive"),
       value: stats.inactive,
       icon: CircleSlash,
-      bg: "bg-slate-500/15",
       fg: "text-slate-600 dark:text-slate-300",
+      active: false,
+      onClick: () => onFilterStatus(null),
     },
     {
+      key: "admin",
       label: t("statAdmins"),
       value: stats.admin,
       icon: Shield,
-      bg: "bg-red-500/15",
       fg: "text-red-600 dark:text-red-300",
+      active: query.role === "admin",
+      onClick: () => onFilterRole(query.role === "admin" ? null : "admin"),
     },
     {
+      key: "employer",
       label: t("statEmployers"),
       value: stats.employer,
       icon: Briefcase,
-      bg: "bg-teal-500/15",
       fg: "text-teal-600 dark:text-teal-300",
+      active: query.role === "employer",
+      onClick: () => onFilterRole(query.role === "employer" ? null : "employer"),
     },
     {
+      key: "partner",
       label: t("statPartners"),
       value: stats.partner,
       icon: Handshake,
-      bg: "bg-fuchsia-500/15",
       fg: "text-fuchsia-600 dark:text-fuchsia-300",
+      active: query.role === "partner",
+      onClick: () => onFilterRole(query.role === "partner" ? null : "partner"),
     },
     {
+      key: "user",
       label: t("statUsers"),
       value: stats.user,
       icon: UserIcon,
-      bg: "bg-blue-500/15",
       fg: "text-blue-600 dark:text-blue-300",
+      active: query.role === "user",
+      onClick: () => onFilterRole(query.role === "user" ? null : "user"),
     },
   ]
 
@@ -531,29 +660,65 @@ function StatsCards({ stats, t }: StatsCardsProps) {
       {cards.map((card) => {
         const Icon = card.icon
         return (
-          <div
-            key={card.label}
-            className="flex items-center gap-3 rounded-xl border bg-card px-4 py-3 ring-1 ring-foreground/10"
+          <button
+            key={card.key}
+            type="button"
+            onClick={card.onClick}
+            className={cn(
+              "flex items-center gap-3 rounded-xl border bg-card px-4 py-3 text-left ring-1 transition-colors hover:bg-muted/40",
+              card.active
+                ? "ring-2 ring-primary/60"
+                : "ring-foreground/10",
+            )}
           >
-            <div
-              className={cn(
-                "grid size-10 shrink-0 place-items-center rounded-full",
-                card.bg,
-                card.fg,
-              )}
-            >
+            <div className={cn("grid size-9 shrink-0 place-items-center rounded-lg bg-muted/60", card.fg)}>
               <Icon className="size-5" />
             </div>
             <div className="flex min-w-0 flex-col">
-              <span className="truncate text-xs font-medium text-muted-foreground">
+              <span className="truncate text-[11px] font-medium text-muted-foreground">
                 {card.label}
               </span>
-              <span className="text-xl font-bold leading-tight">{card.value}</span>
+              <span className="text-xl font-semibold leading-tight tabular-nums">
+                {card.value}
+              </span>
             </div>
-          </div>
+          </button>
         )
       })}
     </div>
+  )
+}
+
+interface SortableHeaderProps {
+  label: string
+  field: "name" | "createdAt" | "lastLoginAt"
+  sort: UserListSort
+  onSort: (sort: UserListSort) => void
+}
+
+/// En-tête de colonne triable : clique = bascule asc/desc sur ce champ.
+function SortableHeader({ label, field, sort, onSort }: SortableHeaderProps) {
+  const isActive = sort === field || sort === `-${field}`
+  const isDesc = sort === `-${field}`
+  const next: UserListSort = isActive && isDesc ? field : (`-${field}` as UserListSort)
+
+  return (
+    <th className="px-4 py-3 text-left font-medium">
+      <button
+        type="button"
+        onClick={() => onSort(next)}
+        className="inline-flex items-center gap-1 hover:text-foreground"
+      >
+        {label}
+        {!isActive ? (
+          <ArrowUpDown className="size-3.5 opacity-50" />
+        ) : isDesc ? (
+          <ArrowDown className="size-3.5" />
+        ) : (
+          <ArrowUp className="size-3.5" />
+        )}
+      </button>
+    </th>
   )
 }
 
@@ -617,12 +782,25 @@ function UserRow({ user, t }: UserRowProps) {
           >
             {initials}
           </div>
-          <span className="font-medium">
+          <Link
+            href={`/admin/users/${user.id}`}
+            className="font-medium hover:underline"
+          >
             {user.name?.trim() || t("unnamed")}
-          </span>
+          </Link>
         </div>
       </td>
-      <td className="px-4 py-3 text-muted-foreground">{user.email}</td>
+      <td className="px-4 py-3">
+        <span className="inline-flex items-center gap-1.5 text-muted-foreground">
+          {user.email}
+          {user.emailVerifiedAt ? (
+            <BadgeCheck
+              className="size-3.5 text-emerald-500"
+              aria-label="Email vérifié"
+            />
+          ) : null}
+        </span>
+      </td>
       <td className="px-4 py-3">
         <span
           className={cn(
@@ -642,6 +820,20 @@ function UserRow({ user, t }: UserRowProps) {
             {user.partnerType && PARTNER_TYPE_LABEL_KEYS[user.partnerType] && (
               <span className="text-xs text-muted-foreground">
                 {t(PARTNER_TYPE_LABEL_KEYS[user.partnerType])}
+              </span>
+            )}
+          </div>
+        ) : (
+          <span className="text-sm text-muted-foreground">—</span>
+        )}
+      </td>
+      <td className="px-4 py-3">
+        {user.partnerOrganization ? (
+          <div className="flex flex-col gap-0.5">
+            <span className="text-sm">{user.partnerOrganization}</span>
+            {user.vatNumber && (
+              <span className="font-mono text-xs text-muted-foreground">
+                {user.vatNumber}
               </span>
             )}
           </div>
@@ -681,13 +873,17 @@ function UserRow({ user, t }: UserRowProps) {
           />
           <DropdownMenuContent align="end">
             <DropdownMenuItem render={<Link href={`/admin/users/${user.id}`} />}>
+              <Eye />
+              Ouvrir la fiche
+            </DropdownMenuItem>
+            <DropdownMenuItem render={<Link href={`/admin/users/${user.id}?tab=edition`} />}>
               <Edit2 />
               {t("edit")}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
               variant="destructive"
-              render={<Link href={`/admin/users/${user.id}#danger`} />}
+              render={<Link href={`/admin/users/${user.id}?tab=securite#danger`} />}
             >
               <Trash2 />
               {t("delete")}

@@ -49,6 +49,7 @@
     "bureaux:assign": "dotenv -e .env.local -- tsx scripts/bureaux-assign.ts",
     "bureaux:relink": "dotenv -e .env.local -- tsx scripts/bureaux-relink-communes.ts",
     "bureaux:apply-official": "dotenv -e .env.local -- tsx scripts/bureaux-apply-official.ts",
+    "bureaux:merge-2025": "dotenv -e .env.local -- tsx scripts/bureaux-merge-communes-2025.ts",
     "pages:audit": "dotenv -e .env.local -- tsx scripts/audit-page-content.ts",
     "pages:prune-revisions": "dotenv -e .env.local -- tsx scripts/prune-page-revisions.ts",
     "rename:cgslb-synova": "dotenv -e .env.local -- tsx scripts/rename-cgslb-synova.ts",

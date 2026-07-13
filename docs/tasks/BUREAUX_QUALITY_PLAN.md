@@ -17,7 +17,30 @@
 | **4 — Vérification** | ✅ **LIVRÉ de fait** (via lot 2) | 1145 bureaux `verified=true` avec `verifiedBy=import:<source>` + `lastVerifiedAt`. Traçabilité + réversibilité (BureauRevision) en place. Reste : file de re-vérification manuelle des 447 non vérifiés (petites permanences / OP peu consultés). |
 | **5 — Anti-dérive** | ✅ **LIVRÉ** (commit b4f97c2) | Tuiles « Intégrité & liens » dans l'onglet Santé (doublons / CP↔commune / communes sans chômage / assignments par service) + garde-fou blocklist dans l'import OSM (ne recrée plus les non-guichets). |
 
-**Reste (mineur, dépend d'Oraliks) :** 1) **7 communes fusionnées 2025** (Beveren-Kruibeke-Zwijndrecht, Bilzen-Hoeselt, Merelbeke-Melle, Nazareth-De Pinte, Pajottegem, Tessenderlo-Ham, Tongeren-Borgloon) absentes de la table `Commune` → 14 stubs non remplis + INS drift ; nécessite d'aligner la table Commune sur REFNIS 2025 (change le résolveur → décision métier). 2) 55 `cpCommuneIncoherents` résiduels = **gaps de la table PostalCode** (bureau bien lié, mais son CP officiel absent de PostalCode), PAS de mauvais liens → le relink reste inutile/risqué. 3) 34 communes sans chômage = CP hors `parametres-onem-cp` (fallback proximité OK).
+### Fusions 2025 — ALIGNÉES (2026-07-13)
+
+Les **7 fusions communales flamandes du 01/01/2025** sont alignées sur REFNIS 2025
+via `pnpm bureaux:merge-2025` + la chaîne `dedupe`/`apply-official`/`assign` :
+Beveren-Kruibeke-Zwijndrecht [46030], Bilzen-Hoeselt [73110], Merelbeke-Melle
+[44088], Nazareth-De Pinte [44086], Pajottegem [23106], Tessenderlo-Ham [71071],
+Tongeren-Borgloon [73111]. Pour chacune : commune fusionnée créée (nouveau code
+INS, `fusedFrom`), codes postaux + bureaux + assignments déplacés depuis les 16
+anciennes communes (marquées `mergedIntoId`), adresse + nom officiels posés.
+Vérifié : les 7 CP officiels résolvent vers la bonne commune fusionnée, CPAS +
+maison communale vérifiés, **0 warning, 0 stub**. `stubs` 48→**20**,
+`communesSansChomage` 34→**21**, communes actives 587→**578**.
+
+Corrigé au passage : des **mappings PostalCode erronés préexistants** (Bocholt
+possédait à tort 3700=Tongeren et 3740=Bilzen ; Tongres avait 3980=Tessenderlo)
+— les CP officiels des fusions les écrasent désormais.
+
+**Reste (mineur, dépend d'Oraliks) :** 1) **6 communes INS-drift** (Wingene,
+Tielt, Lochristi, Lokeren, Hasselt, Bastogne) ont un code INS différent de REFNIS
+2025 dans notre table (pas des fusions — matchées par nom, fonctionnent) →
+optionnel : réaligner les codes INS. 2) ~55 `cpCommuneIncoherents` résiduels =
+**gaps de la table PostalCode** (bureau bien lié, CP officiel absent de
+PostalCode), PAS de mauvais liens → relink toujours inutile/risqué. 3) 21 communes
+sans chômage = CP hors `parametres-onem-cp` (fallback proximité OK).
 
 ## État des lieux mesuré (2026-07-10)
 

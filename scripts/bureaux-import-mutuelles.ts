@@ -11,8 +11,8 @@
 //   3xx → solidaris  (Mutualités socialistes / Solidaris)
 //   4xx → mutlibres  (Mutualités libérales)
 //   5xx → mloz       (Mutualités libres : MLOZ, Partenamut, Helan, Freie KK)
-// Ignorés : 6xx (CAAMI/HZIV — caisse auxiliaire publique) et 9xx (CSS HR Rail),
-// qui ne sont pas des mutualités et n'ont pas d'organisme dédié.
+//   6xx → caami      (CAAMI/HZIV — caisse auxiliaire publique + offices régionaux)
+// Ignorés : 9xx (CSS HR Rail), service santé propre aux cheminots.
 //
 // Chaque point → bureau vérifié (verified=true, verifiedBy=import:<source>),
 // commune reliée via le code INS officiel. L'ancien seed (bureaux mutuelle non
@@ -32,7 +32,7 @@ const APPLY = process.argv.includes("--yes");
 const SOURCE = "INAMI/OCM 2026-07-13";
 const POINTS_PATH = path.resolve(process.cwd(), "lib/data/mutuelles-points-contact-2026-07.jsonl");
 
-const FAMILY_ORG: Record<string, string> = { "1": "mc", "2": "neutrales", "3": "solidaris", "4": "mutlibres", "5": "mloz" };
+const FAMILY_ORG: Record<string, string> = { "1": "mc", "2": "neutrales", "3": "solidaris", "4": "mutlibres", "5": "mloz", "6": "caami" };
 
 interface Addr {
   rue_et_numero?: string;
@@ -60,6 +60,20 @@ async function main() {
   console.log(`Mode : ${APPLY ? "🔥 APPLY" : "👀 DRY RUN"}\n`);
 
   const lines = readFileSync(POINTS_PATH, "utf8").split("\n").filter(Boolean);
+
+  // Garantit l'organisme caami (caisse auxiliaire publique — équivalent santé de
+  // la CAPAC). Idempotent ; nécessaire au mapping de la famille 6xx.
+  await prisma.organisme.upsert({
+    where: { code: "caami" },
+    update: {},
+    create: {
+      code: "caami", name: "Caisse Auxiliaire d'Assurance Maladie-Invalidité (CAAMI/HZIV)",
+      shortName: "CAAMI", type: "social", website: "https://www.caami-hziv.fgov.be",
+      description: "Organisme assureur public — soins de santé et indemnités pour les personnes non affiliées à une mutualité.",
+      order: 60,
+    },
+  });
+
   const orgs = await prisma.organisme.findMany({ where: { code: { in: Object.values(FAMILY_ORG) } }, select: { id: true, code: true } });
   const orgIdByCode = new Map(orgs.map((o) => [o.code, o.id]));
   const communes = await prisma.commune.findMany({ where: { mergedIntoId: null }, select: { id: true, insCode: true } });
@@ -95,7 +109,7 @@ async function main() {
   const byOrg: Record<string, number> = {};
   for (const p of plans) byOrg[p.orgCode] = (byOrg[p.orgCode] ?? 0) + 1;
   console.log(`${plans.length} offices officiels à importer (${Object.entries(byOrg).map(([k, v]) => `${k}=${v}`).join(", ")})`);
-  console.log(`  ${skipped} points ignorés (CAAMI 6xx / HR Rail 9xx / incomplets), ${noCommune} sans commune INS`);
+  console.log(`  ${skipped} points ignorés (HR Rail 9xx / incomplets), ${noCommune} sans commune INS`);
   for (const p of plans) console.log(`  [${p.orgCode}] ${p.name} @ ${p.street}, ${p.postalCode} ${p.city}`);
 
   // Ancien seed à désactiver : bureaux mutuelle actifs dont le nom ne correspond

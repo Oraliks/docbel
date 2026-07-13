@@ -27,11 +27,18 @@ import {
 
 type Segment = "" | "partenaire" | "employeur"
 
-const PARTNER_TYPE_OPTIONS: Array<{ value: string; label: string }> = [
-  { value: "onem", label: "ONEM" },
-  { value: "organisme_paiement", label: "Organisme de paiement" },
-  { value: "service_public", label: "Service public" },
-  { value: "prive_asbl", label: "Privé / ASBL" },
+const PARTNER_TYPE_OPTIONS: Array<{
+  value: string
+  labelKey:
+    | "partnerTypeOnem"
+    | "partnerTypeOrganismePaiement"
+    | "partnerTypeServicePublic"
+    | "partnerTypePriveAsbl"
+}> = [
+  { value: "onem", labelKey: "partnerTypeOnem" },
+  { value: "organisme_paiement", labelKey: "partnerTypeOrganismePaiement" },
+  { value: "service_public", labelKey: "partnerTypeServicePublic" },
+  { value: "prive_asbl", labelKey: "partnerTypePriveAsbl" },
 ]
 
 export default function NewUserPage() {
@@ -93,7 +100,7 @@ export default function NewUserPage() {
     }
 
     if (formData.segment === "employeur" && !formData.vatNumber.trim()) {
-      newErrors.vatNumber = "Le numéro de TVA est requis pour un employeur"
+      newErrors.vatNumber = t("vatRequired")
     }
 
     setErrors(newErrors)
@@ -294,7 +301,7 @@ export default function NewUserPage() {
             <div className="space-y-5 border-t pt-5">
               <div className="grid gap-5 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="segment">Segment d&apos;accès</Label>
+                  <Label htmlFor="segment">{t("segmentLabel")}</Label>
                   <Select
                     value={formData.segment || "none"}
                     onValueChange={(value: string | null) => {
@@ -307,21 +314,21 @@ export default function NewUserPage() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="none">Aucun (citoyen / admin)</SelectItem>
-                      <SelectItem value="partenaire">Partenaire</SelectItem>
-                      <SelectItem value="employeur">Employeur</SelectItem>
+                      <SelectItem value="none">{t("segmentNoneOption")}</SelectItem>
+                      <SelectItem value="partenaire">{t("segmentPartenaire")}</SelectItem>
+                      <SelectItem value="employeur">{t("segmentEmployeur")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
                 {formData.segment !== "" && (
                   <div className="space-y-2">
-                    <Label htmlFor="org">Organisation</Label>
+                    <Label htmlFor="org">{t("orgLabel")}</Label>
                     <Input
                       id="org"
                       value={formData.partnerOrganization}
                       onChange={(e) => update({ partnerOrganization: e.target.value })}
-                      placeholder="Nom de l'organisation"
+                      placeholder={t("orgPlaceholder")}
                       disabled={loading}
                     />
                   </div>
@@ -331,7 +338,7 @@ export default function NewUserPage() {
               {formData.segment === "partenaire" && (
                 <div className="grid gap-5 sm:grid-cols-2">
                   <div className="space-y-2">
-                    <Label htmlFor="partnerType">Type de partenaire</Label>
+                    <Label htmlFor="partnerType">{t("partnerTypeLabel")}</Label>
                     <Select
                       value={formData.partnerType || "none"}
                       onValueChange={(value: string | null) => {
@@ -344,10 +351,10 @@ export default function NewUserPage() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="none">—</SelectItem>
+                        <SelectItem value="none">{t("partnerTypeNone")}</SelectItem>
                         {PARTNER_TYPE_OPTIONS.map((o) => (
                           <SelectItem key={o.value} value={o.value}>
-                            {o.label}
+                            {t(o.labelKey)}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -355,7 +362,7 @@ export default function NewUserPage() {
                   </div>
                   <div className="flex flex-col justify-center gap-3 pt-1">
                     <label className="flex items-center justify-between gap-3 text-sm">
-                      <span>Responsable du service</span>
+                      <span>{t("orgManagerLabel")}</span>
                       <Switch
                         checked={formData.isOrgManager}
                         onCheckedChange={(v) => update({ isOrgManager: v })}
@@ -363,7 +370,7 @@ export default function NewUserPage() {
                       />
                     </label>
                     <label className="flex items-center justify-between gap-3 text-sm">
-                      <span>Accès historique RDV</span>
+                      <span>{t("rdvHistoryLabel")}</span>
                       <Switch
                         checked={formData.canViewRdvHistory}
                         onCheckedChange={(v) => update({ canViewRdvHistory: v })}
@@ -377,7 +384,7 @@ export default function NewUserPage() {
               {formData.segment === "employeur" && (
                 <div className="grid gap-5 sm:grid-cols-2">
                   <div className="space-y-2">
-                    <Label htmlFor="vatNumber">Numéro de TVA</Label>
+                    <Label htmlFor="vatNumber">{t("vatLabel")}</Label>
                     <Input
                       id="vatNumber"
                       value={formData.vatNumber}
@@ -389,9 +396,7 @@ export default function NewUserPage() {
                     {errors.vatNumber ? (
                       <p className="text-sm text-destructive">{errors.vatNumber}</p>
                     ) : (
-                      <p className="text-xs text-muted-foreground">
-                        Obligatoire, unique, validé (checksum mod-97).
-                      </p>
+                      <p className="text-xs text-muted-foreground">{t("vatHint")}</p>
                     )}
                   </div>
                 </div>

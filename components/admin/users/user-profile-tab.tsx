@@ -6,20 +6,29 @@ import {
   Landmark,
   Users,
 } from "lucide-react"
+import { getTranslations } from "next-intl/server"
 import type { UserProfileData } from "@/lib/admin/user-360"
 
-/// Onglet Profil : lecture seule. Données sensibles (NISS/IBAN) déjà masquées
-/// côté loader (loadUserProfileDetail) — on n'affiche jamais le NRN en clair.
-export function UserProfileTab({ profile }: { profile: UserProfileData }) {
+/// Onglet Profil : lecture seule (server component). Données sensibles
+/// (NISS/IBAN) déjà masquées côté loader — on n'affiche jamais le NRN en clair.
+export async function UserProfileTab({ profile }: { profile: UserProfileData }) {
+  const t = await getTranslations("admin.userDetail")
   const { citizen, employer } = profile
 
   if (!citizen && !employer) {
     return (
       <div className="flex h-40 items-center justify-center rounded-xl border bg-card text-sm text-muted-foreground">
-        Aucun profil enrichi pour ce compte.
+        {t("profNoProfile")}
       </div>
     )
   }
+
+  const hasEmployeesLabel =
+    employer?.hasEmployees === null || employer?.hasEmployees === undefined
+      ? t("unknown")
+      : employer.hasEmployees
+        ? t("yes")
+        : t("no")
 
   return (
     <div className="flex flex-col gap-4">
@@ -28,57 +37,57 @@ export function UserProfileTab({ profile }: { profile: UserProfileData }) {
           <div className="border-b px-4 py-3">
             <h2 className="flex items-center gap-2 text-sm font-semibold">
               <IdCard className="size-4" />
-              Profil citoyen
+              {t("profCitizenTitle")}
             </h2>
           </div>
           <div className="grid gap-x-8 gap-y-4 p-4 sm:grid-cols-2 lg:grid-cols-3">
-            <Group title="Identité" icon={<IdCard className="size-3.5" />}>
-              <Field label="Prénom" value={citizen.firstName} />
-              <Field label="Nom" value={citizen.lastName} />
-              <Field label="NISS" value={citizen.nissLast4 ? `•••• ${citizen.nissLast4}` : null} />
-              <Field label="Naissance" value={formatDate(citizen.birthDate)} />
-              <Field label="Lieu de naissance" value={citizen.birthPlace} />
-              <Field label="Nationalité" value={citizen.nationality} />
-              <Field label="Genre" value={citizen.gender} />
+            <Group title={t("profGroupIdentity")} icon={<IdCard className="size-3.5" />}>
+              <Field label={t("profFirstName")} value={citizen.firstName} />
+              <Field label={t("profLastName")} value={citizen.lastName} />
+              <Field label={t("profNiss")} value={citizen.nissLast4 ? `•••• ${citizen.nissLast4}` : null} />
+              <Field label={t("profBirthDate")} value={formatDate(citizen.birthDate)} />
+              <Field label={t("profBirthPlace")} value={citizen.birthPlace} />
+              <Field label={t("profNationality")} value={citizen.nationality} />
+              <Field label={t("profGender")} value={citizen.gender} />
             </Group>
-            <Group title="Adresse" icon={<MapPin className="size-3.5" />}>
+            <Group title={t("profGroupAddress")} icon={<MapPin className="size-3.5" />}>
               <Field
-                label="Rue"
+                label={t("profStreet")}
                 value={
                   [citizen.street, citizen.streetNum].filter(Boolean).join(" ") ||
                   null
                 }
               />
               <Field
-                label="Localité"
+                label={t("profCity")}
                 value={
                   [citizen.postalCode, citizen.city].filter(Boolean).join(" ") ||
                   null
                 }
               />
-              <Field label="Pays" value={citizen.country} />
+              <Field label={t("profCountry")} value={citizen.country} />
             </Group>
-            <Group title="Contact" icon={<Phone className="size-3.5" />}>
-              <Field label="Téléphone" value={citizen.phone} />
-              <Field label="Mobile" value={citizen.mobilePhone} />
+            <Group title={t("profGroupContact")} icon={<Phone className="size-3.5" />}>
+              <Field label={t("profPhone")} value={citizen.phone} />
+              <Field label={t("profMobile")} value={citizen.mobilePhone} />
             </Group>
-            <Group title="Bancaire" icon={<Landmark className="size-3.5" />}>
-              <Field label="IBAN" value={citizen.ibanMasked} />
+            <Group title={t("profGroupBank")} icon={<Landmark className="size-3.5" />}>
+              <Field label={t("profIban")} value={citizen.ibanMasked} />
             </Group>
-            <Group title="Civil" icon={<Users className="size-3.5" />}>
-              <Field label="État civil" value={citizen.maritalStatus} />
+            <Group title={t("profGroupCivil")} icon={<Users className="size-3.5" />}>
+              <Field label={t("profMaritalStatus")} value={citizen.maritalStatus} />
               <Field
-                label="Membres du ménage"
+                label={t("profHouseholdMembers")}
                 value={String(citizen.householdMembersCount)}
               />
             </Group>
-            <Group title="Professionnel" icon={<Building2 className="size-3.5" />}>
-              <Field label="Employeur" value={citizen.employer} />
-              <Field label="Fonction" value={citizen.jobTitle} />
-              <Field label="Contrat" value={citizen.contractType} />
-              <Field label="Organisme paiement" value={citizen.organismePaiement} />
-              <Field label="Mutuelle" value={citizen.mutuelleCode} />
-              <Field label="Commission paritaire" value={citizen.commissionParitaireCode} />
+            <Group title={t("profGroupPro")} icon={<Building2 className="size-3.5" />}>
+              <Field label={t("profEmployer")} value={citizen.employer} />
+              <Field label={t("profJobTitle")} value={citizen.jobTitle} />
+              <Field label={t("profContractType")} value={citizen.contractType} />
+              <Field label={t("profOrganismePaiement")} value={citizen.organismePaiement} />
+              <Field label={t("profMutuelle")} value={citizen.mutuelleCode} />
+              <Field label={t("profCommissionParitaire")} value={citizen.commissionParitaireCode} />
             </Group>
           </div>
         </section>
@@ -89,28 +98,19 @@ export function UserProfileTab({ profile }: { profile: UserProfileData }) {
           <div className="border-b px-4 py-3">
             <h2 className="flex items-center gap-2 text-sm font-semibold">
               <Building2 className="size-4" />
-              Profil employeur
+              {t("profEmployerTitle")}
             </h2>
           </div>
           <div className="grid gap-x-8 gap-y-2 p-4 sm:grid-cols-2 lg:grid-cols-3">
-            <Field label="Organisation" value={employer.organisationName} />
-            <Field label="Forme juridique" value={employer.legalForm} />
-            <Field label="N° entreprise (BCE)" value={employer.enterpriseNumber} />
-            <Field label="Région" value={employer.region} />
-            <Field label="Secteur" value={employer.sector} />
-            <Field label="Code NACE" value={employer.naceCode} />
-            <Field label="Commission paritaire" value={employer.jointCommitteeNumber} />
-            <Field
-              label="Emploie du personnel"
-              value={
-                employer.hasEmployees === null
-                  ? "Inconnu"
-                  : employer.hasEmployees
-                    ? "Oui"
-                    : "Non"
-              }
-            />
-            <Field label="Scénarios d'engagement" value={String(employer.scenarioCount)} />
+            <Field label={t("profOrganisation")} value={employer.organisationName} />
+            <Field label={t("profLegalForm")} value={employer.legalForm} />
+            <Field label={t("profEnterpriseNumber")} value={employer.enterpriseNumber} />
+            <Field label={t("profRegion")} value={employer.region} />
+            <Field label={t("profSector")} value={employer.sector} />
+            <Field label={t("profNaceCode")} value={employer.naceCode} />
+            <Field label={t("profCommissionParitaire")} value={employer.jointCommitteeNumber} />
+            <Field label={t("profHasEmployees")} value={hasEmployeesLabel} />
+            <Field label={t("profScenarioCount")} value={String(employer.scenarioCount)} />
           </div>
         </section>
       )}

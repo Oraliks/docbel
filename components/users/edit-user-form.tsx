@@ -3,6 +3,7 @@
 import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { useTranslations } from "next-intl"
 import {
   ArrowLeftIcon,
   Loader2,
@@ -62,15 +63,23 @@ interface EditUserFormProps {
   embedded?: boolean
 }
 
-const PARTNER_TYPE_OPTIONS: Array<{ value: string; label: string }> = [
-  { value: "onem", label: "ONEM" },
-  { value: "organisme_paiement", label: "Organisme de paiement" },
-  { value: "service_public", label: "Service public" },
-  { value: "prive_asbl", label: "Privé / ASBL" },
+const PARTNER_TYPE_OPTIONS: Array<{
+  value: string
+  labelKey:
+    | "partnerTypeOnem"
+    | "partnerTypeOrganismePaiement"
+    | "partnerTypeServicePublic"
+    | "partnerTypePriveAsbl"
+}> = [
+  { value: "onem", labelKey: "partnerTypeOnem" },
+  { value: "organisme_paiement", labelKey: "partnerTypeOrganismePaiement" },
+  { value: "service_public", labelKey: "partnerTypeServicePublic" },
+  { value: "prive_asbl", labelKey: "partnerTypePriveAsbl" },
 ]
 
 export function EditUserForm({ user, embedded = false }: EditUserFormProps) {
   const router = useRouter()
+  const t = useTranslations("admin.users")
   const readOnly = useImpersonationReadOnly()
   const [loading, setLoading] = useState(false)
   const [deleting, setDeleting] = useState(false)
@@ -108,32 +117,31 @@ export function EditUserForm({ user, embedded = false }: EditUserFormProps) {
   const validateForm = () => {
     const newErrors: Record<string, string> = {}
 
-    if (!formData.name.trim()) newErrors.name = "Le nom est requis"
+    if (!formData.name.trim()) newErrors.name = t("errorNameRequired")
 
-    if (!formData.email.trim()) newErrors.email = "L'email est requis"
+    if (!formData.email.trim()) newErrors.email = t("errorEmailRequired")
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email))
-      newErrors.email = "Email invalide"
+      newErrors.email = t("errorEmailInvalid")
 
     if (formData.password && formData.password.length < 10) {
-      newErrors.password = "Le mot de passe doit contenir au moins 10 caractères"
+      newErrors.password = t("errorPasswordTooShort")
     } else if (
       formData.password &&
       (!/[a-z]/.test(formData.password) ||
         !/[A-Z]/.test(formData.password) ||
         !/\d/.test(formData.password))
     ) {
-      newErrors.password =
-        "Le mot de passe doit contenir une minuscule, une majuscule et un chiffre"
+      newErrors.password = t("errorPasswordComplexity")
     }
 
     if (formData.password || formData.confirmPassword) {
       if (formData.password !== formData.confirmPassword) {
-        newErrors.confirmPassword = "Les mots de passe ne correspondent pas"
+        newErrors.confirmPassword = t("errorPasswordMismatch")
       }
     }
 
     if (formData.segment === "employeur" && !formData.vatNumber.trim()) {
-      newErrors.vatNumber = "Le numéro de TVA est requis pour un employeur"
+      newErrors.vatNumber = t("vatRequired")
     }
 
     setErrors(newErrors)
@@ -168,14 +176,12 @@ export function EditUserForm({ user, embedded = false }: EditUserFormProps) {
       })
       if (!response.ok) {
         const error = await response.json()
-        throw new Error(
-          error.error || "Erreur lors de la mise à jour de l'utilisateur",
-        )
+        throw new Error(error.error || t("errorUpdateFailed"))
       }
-      toast.success("Utilisateur mis à jour avec succès")
+      toast.success(t("toastUpdated"))
       router.refresh()
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Erreur inconnue"
+      const message = error instanceof Error ? error.message : t("errorUnknown")
       toast.error(message)
     } finally {
       setLoading(false)
@@ -190,15 +196,13 @@ export function EditUserForm({ user, embedded = false }: EditUserFormProps) {
       })
       if (!response.ok) {
         const error = await response.json()
-        throw new Error(
-          error.error || "Erreur lors de la suppression de l'utilisateur",
-        )
+        throw new Error(error.error || t("errorDeleteFailed"))
       }
-      toast.success("Utilisateur supprimé avec succès")
+      toast.success(t("toastDeleted"))
       router.push("/admin/users")
       router.refresh()
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Erreur inconnue"
+      const message = error instanceof Error ? error.message : t("errorUnknown")
       toast.error(message)
       setDeleting(false)
       setConfirmDelete(false)
@@ -216,27 +220,23 @@ export function EditUserForm({ user, embedded = false }: EditUserFormProps) {
             className="mb-3 gap-2 -ml-2"
           >
             <ArrowLeftIcon className="size-4" />
-            Retour aux utilisateurs
+            {t("backToUsers")}
           </Button>
-          <h1 className="text-3xl font-bold tracking-tight">
-            Modifier l&apos;utilisateur
-          </h1>
+          <h1 className="text-3xl font-bold tracking-tight">{t("editUserTitle")}</h1>
           <p className="text-muted-foreground mt-1">{user.email}</p>
         </div>
       )}
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Informations du compte</CardTitle>
-          <CardDescription>
-            Laissez le mot de passe vide pour ne pas le changer.
-          </CardDescription>
+          <CardTitle className="text-base">{t("accountInfo")}</CardTitle>
+          <CardDescription>{t("passwordEmptyHint")}</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-5" id="edit-user-form">
             <div className="grid gap-5 sm:grid-cols-2">
               <div className="space-y-2 sm:col-span-2">
-                <Label htmlFor="name">Nom complet</Label>
+                <Label htmlFor="name">{t("labelFullName")}</Label>
                 <Input
                   id="name"
                   value={formData.name}
@@ -250,7 +250,7 @@ export function EditUserForm({ user, embedded = false }: EditUserFormProps) {
               </div>
 
               <div className="space-y-2 sm:col-span-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">{t("colEmail")}</Label>
                 <Input
                   id="email"
                   type="email"
@@ -265,11 +265,11 @@ export function EditUserForm({ user, embedded = false }: EditUserFormProps) {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password">Nouveau mot de passe</Label>
+                <Label htmlFor="password">{t("labelNewPassword")}</Label>
                 <Input
                   id="password"
                   type="password"
-                  placeholder="Laisser vide pour ne pas changer"
+                  placeholder={t("passwordKeepPlaceholder")}
                   value={formData.password}
                   onChange={(e) => update({ password: e.target.value })}
                   disabled={loading}
@@ -281,7 +281,7 @@ export function EditUserForm({ user, embedded = false }: EditUserFormProps) {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Confirmer le mot de passe</Label>
+                <Label htmlFor="confirmPassword">{t("labelConfirmPassword")}</Label>
                 <Input
                   id="confirmPassword"
                   type="password"
@@ -297,7 +297,7 @@ export function EditUserForm({ user, embedded = false }: EditUserFormProps) {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="role">Rôle</Label>
+                <Label htmlFor="role">{t("colRole")}</Label>
                 <Select
                   value={formData.role}
                   onValueChange={(value: string | null) =>
@@ -309,17 +309,17 @@ export function EditUserForm({ user, embedded = false }: EditUserFormProps) {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="user">Utilisateur</SelectItem>
-                    <SelectItem value="partner">Partenaire</SelectItem>
-                    <SelectItem value="employer">Employeur</SelectItem>
-                    <SelectItem value="moderator">Modérateur</SelectItem>
-                    <SelectItem value="admin">Administrateur</SelectItem>
+                    <SelectItem value="user">{t("roleUser")}</SelectItem>
+                    <SelectItem value="partner">{t("rolePartner")}</SelectItem>
+                    <SelectItem value="employer">{t("roleEmployer")}</SelectItem>
+                    <SelectItem value="moderator">{t("roleModerator")}</SelectItem>
+                    <SelectItem value="admin">{t("roleAdmin")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="status">Statut</Label>
+                <Label htmlFor="status">{t("colStatus")}</Label>
                 <Select
                   value={formData.status}
                   onValueChange={(value: string | null) =>
@@ -331,10 +331,10 @@ export function EditUserForm({ user, embedded = false }: EditUserFormProps) {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="active">Actif</SelectItem>
-                    <SelectItem value="pending">En attente</SelectItem>
-                    <SelectItem value="disabled">Désactivé</SelectItem>
-                    <SelectItem value="locked">Verrouillé</SelectItem>
+                    <SelectItem value="active">{t("statusActive")}</SelectItem>
+                    <SelectItem value="pending">{t("statusPending")}</SelectItem>
+                    <SelectItem value="disabled">{t("statusDisabled")}</SelectItem>
+                    <SelectItem value="locked">{t("statusLocked")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -344,7 +344,7 @@ export function EditUserForm({ user, embedded = false }: EditUserFormProps) {
             <div className="space-y-5 border-t pt-5">
               <div className="grid gap-5 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="segment">Segment d&apos;accès</Label>
+                  <Label htmlFor="segment">{t("segmentLabel")}</Label>
                   <Select
                     value={formData.segment || "none"}
                     onValueChange={(value: string | null) => {
@@ -357,21 +357,21 @@ export function EditUserForm({ user, embedded = false }: EditUserFormProps) {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="none">Aucun (citoyen / admin)</SelectItem>
-                      <SelectItem value="partenaire">Partenaire</SelectItem>
-                      <SelectItem value="employeur">Employeur</SelectItem>
+                      <SelectItem value="none">{t("segmentNoneOption")}</SelectItem>
+                      <SelectItem value="partenaire">{t("segmentPartenaire")}</SelectItem>
+                      <SelectItem value="employeur">{t("segmentEmployeur")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
                 {formData.segment !== "" && (
                   <div className="space-y-2">
-                    <Label htmlFor="org">Organisation</Label>
+                    <Label htmlFor="org">{t("orgLabel")}</Label>
                     <Input
                       id="org"
                       value={formData.partnerOrganization}
                       onChange={(e) => update({ partnerOrganization: e.target.value })}
-                      placeholder="Nom de l'organisation"
+                      placeholder={t("orgPlaceholder")}
                       disabled={loading}
                     />
                   </div>
@@ -381,7 +381,7 @@ export function EditUserForm({ user, embedded = false }: EditUserFormProps) {
               {formData.segment === "partenaire" && (
                 <div className="grid gap-5 sm:grid-cols-2">
                   <div className="space-y-2">
-                    <Label htmlFor="partnerType">Type de partenaire</Label>
+                    <Label htmlFor="partnerType">{t("partnerTypeLabel")}</Label>
                     <Select
                       value={formData.partnerType || "none"}
                       onValueChange={(value: string | null) => {
@@ -394,10 +394,10 @@ export function EditUserForm({ user, embedded = false }: EditUserFormProps) {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="none">—</SelectItem>
+                        <SelectItem value="none">{t("partnerTypeNone")}</SelectItem>
                         {PARTNER_TYPE_OPTIONS.map((o) => (
                           <SelectItem key={o.value} value={o.value}>
-                            {o.label}
+                            {t(o.labelKey)}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -407,9 +407,9 @@ export function EditUserForm({ user, embedded = false }: EditUserFormProps) {
                   <div className="flex flex-col justify-center gap-3 pt-1">
                     <label className="flex items-center justify-between gap-3 text-sm">
                       <span>
-                        Responsable du service
+                        {t("orgManagerLabel")}
                         <span className="block text-xs text-muted-foreground">
-                          Accès par défaut à l&apos;historique des RDV
+                          {t("orgManagerHint")}
                         </span>
                       </span>
                       <Switch
@@ -420,9 +420,9 @@ export function EditUserForm({ user, embedded = false }: EditUserFormProps) {
                     </label>
                     <label className="flex items-center justify-between gap-3 text-sm">
                       <span>
-                        Accès historique RDV
+                        {t("rdvHistoryLabel")}
                         <span className="block text-xs text-muted-foreground">
-                          Autorisation individuelle (non-responsable)
+                          {t("rdvHistoryHint")}
                         </span>
                       </span>
                       <Switch
@@ -438,7 +438,7 @@ export function EditUserForm({ user, embedded = false }: EditUserFormProps) {
               {formData.segment === "employeur" && (
                 <div className="grid gap-5 sm:grid-cols-2">
                   <div className="space-y-2">
-                    <Label htmlFor="vatNumber">Numéro de TVA</Label>
+                    <Label htmlFor="vatNumber">{t("vatLabel")}</Label>
                     <Input
                       id="vatNumber"
                       value={formData.vatNumber}
@@ -450,9 +450,7 @@ export function EditUserForm({ user, embedded = false }: EditUserFormProps) {
                     {errors.vatNumber ? (
                       <p className="text-sm text-destructive">{errors.vatNumber}</p>
                     ) : (
-                      <p className="text-xs text-muted-foreground">
-                        Obligatoire, unique, validé (checksum mod-97).
-                      </p>
+                      <p className="text-xs text-muted-foreground">{t("vatHint")}</p>
                     )}
                   </div>
                 </div>
@@ -466,7 +464,7 @@ export function EditUserForm({ user, embedded = false }: EditUserFormProps) {
                   variant="outline"
                   render={<Link href="/admin/users" />}
                 >
-                  Annuler
+                  {t("cancel")}
                 </Button>
               )}
               {readOnly ? (
@@ -477,7 +475,7 @@ export function EditUserForm({ user, embedded = false }: EditUserFormProps) {
                         <span tabIndex={0}>
                           <Button type="button" disabled className="gap-2">
                             <SaveIcon className="size-4" />
-                            Enregistrer
+                            {t("save")}
                           </Button>
                         </span>
                       }
@@ -492,7 +490,7 @@ export function EditUserForm({ user, embedded = false }: EditUserFormProps) {
                   ) : (
                     <SaveIcon className="size-4" />
                   )}
-                  Enregistrer
+                  {t("save")}
                 </Button>
               )}
             </div>
@@ -504,12 +502,9 @@ export function EditUserForm({ user, embedded = false }: EditUserFormProps) {
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base text-red-600 dark:text-red-400">
             <AlertTriangleIcon className="size-4" />
-            Zone de danger
+            {t("dangerZone")}
           </CardTitle>
-          <CardDescription>
-            La suppression du compte est définitive et irréversible. Les traces
-            pseudonymes (dossiers, RDV) restent en base.
-          </CardDescription>
+          <CardDescription>{t("deleteWarning")}</CardDescription>
         </CardHeader>
         <CardContent>
           {!confirmDelete ? (
@@ -526,7 +521,7 @@ export function EditUserForm({ user, embedded = false }: EditUserFormProps) {
                           className="gap-2 border-red-300 text-red-600 dark:border-red-900/50 dark:text-red-400"
                         >
                           <Trash2Icon className="size-4" />
-                          Supprimer cet utilisateur
+                          {t("deleteUser")}
                         </Button>
                       </span>
                     }
@@ -545,14 +540,13 @@ export function EditUserForm({ user, embedded = false }: EditUserFormProps) {
                 className="gap-2 border-red-300 text-red-600 hover:bg-red-50 dark:border-red-900/50 dark:text-red-400 dark:hover:bg-red-950/30"
               >
                 <Trash2Icon className="size-4" />
-                Supprimer cet utilisateur
+                {t("deleteUser")}
               </Button>
             )
           ) : (
             <div className="flex flex-col gap-3 rounded-lg border border-red-300 bg-red-50/60 p-4 dark:border-red-900/50 dark:bg-red-950/20">
               <p className="text-sm">
-                Confirmer la suppression définitive de{" "}
-                <strong>{user.name}</strong> ({user.email}) ?
+                {t("deleteConfirmPrompt", { name: user.name, email: user.email })}
               </p>
               <TypeToConfirmField
                 requireText={user.email}
@@ -567,7 +561,7 @@ export function EditUserForm({ user, embedded = false }: EditUserFormProps) {
                   onClick={() => setConfirmDelete(false)}
                   disabled={deleting}
                 >
-                  Annuler
+                  {t("cancel")}
                 </Button>
                 <Button
                   type="button"
@@ -577,7 +571,7 @@ export function EditUserForm({ user, embedded = false }: EditUserFormProps) {
                   className="gap-2"
                 >
                   {deleting && <Loader2 className="size-4 animate-spin" />}
-                  Oui, supprimer définitivement
+                  {t("deleteConfirmButton")}
                 </Button>
               </div>
             </div>

@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import { useTranslations } from "next-intl"
 import {
   Ban,
   CheckCircle2,
@@ -36,8 +37,9 @@ import {
 import { formatDateTime } from "@/components/admin/users/user-detail-shell"
 
 /// Abrège un user-agent en "Navigateur · OS" lisible (heuristique simple).
-function shortUserAgent(ua: string | null): string {
-  if (!ua) return "Client inconnu"
+/// Les noms Navigateur/OS sont des noms propres → non traduits.
+function shortUserAgent(ua: string | null, unknown: string): string {
+  if (!ua) return unknown
   const browser = /Edg/.test(ua)
     ? "Edge"
     : /Chrome/.test(ua)
@@ -69,6 +71,7 @@ interface UserSecurityTabProps {
 
 export function UserSecurityTab({ userId, user, security }: UserSecurityTabProps) {
   const router = useRouter()
+  const t = useTranslations("admin.userDetail")
   const readOnly = useImpersonationReadOnly()
   const [pending, setPending] = useState<string | null>(null)
   const [banOpen, setBanOpen] = useState(false)
@@ -91,14 +94,12 @@ export function UserSecurityTab({ userId, user, security }: UserSecurityTabProps
       })
       if (!res.ok) {
         const error = (await res.json().catch(() => ({}))) as { error?: string }
-        throw new Error(error.error || "Action impossible")
+        throw new Error(error.error || t("secActionFailed"))
       }
-      toast.success(
-        action === "unlock" ? "Compte déverrouillé" : "Email marqué comme vérifié",
-      )
+      toast.success(action === "unlock" ? t("secToastUnlocked") : t("secToastVerified"))
       router.refresh()
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Erreur")
+      toast.error(e instanceof Error ? e.message : t("error"))
     } finally {
       setPending(null)
     }
@@ -113,17 +114,17 @@ export function UserSecurityTab({ userId, user, security }: UserSecurityTabProps
       const res = await fetch(url, { method: "DELETE" })
       if (!res.ok) {
         const error = (await res.json().catch(() => ({}))) as { error?: string }
-        throw new Error(error.error || "Révocation impossible")
+        throw new Error(error.error || t("secRevokeFailed"))
       }
       const data = (await res.json()) as { revoked: number }
       toast.success(
         data.revoked > 1
-          ? `${data.revoked} sessions révoquées`
-          : "Session révoquée",
+          ? t("secToastRevokedMany", { count: data.revoked })
+          : t("secToastRevokedOne"),
       )
       router.refresh()
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Erreur")
+      toast.error(e instanceof Error ? e.message : t("error"))
     } finally {
       setPending(null)
     }
@@ -131,7 +132,7 @@ export function UserSecurityTab({ userId, user, security }: UserSecurityTabProps
 
   async function runBan() {
     if (banReason.trim().length < 3) {
-      toast.error("Indiquez une raison de bannissement.")
+      toast.error(t("secBanReasonRequired"))
       return
     }
     setPending("ban")
@@ -147,15 +148,15 @@ export function UserSecurityTab({ userId, user, security }: UserSecurityTabProps
       })
       if (!res.ok) {
         const error = (await res.json().catch(() => ({}))) as { error?: string }
-        throw new Error(error.error || "Bannissement impossible")
+        throw new Error(error.error || t("secBanFailed"))
       }
-      toast.success("Compte banni (sessions révoquées)")
+      toast.success(t("secToastBanned"))
       setBanOpen(false)
       setBanReason("")
       setBanExpires("")
       router.refresh()
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Erreur")
+      toast.error(e instanceof Error ? e.message : t("error"))
     } finally {
       setPending(null)
     }
@@ -171,12 +172,12 @@ export function UserSecurityTab({ userId, user, security }: UserSecurityTabProps
       })
       if (!res.ok) {
         const error = (await res.json().catch(() => ({}))) as { error?: string }
-        throw new Error(error.error || "Débannissement impossible")
+        throw new Error(error.error || t("secUnbanFailed"))
       }
-      toast.success("Compte débanni")
+      toast.success(t("secToastUnbanned"))
       router.refresh()
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Erreur")
+      toast.error(e instanceof Error ? e.message : t("error"))
     } finally {
       setPending(null)
     }
@@ -188,25 +189,25 @@ export function UserSecurityTab({ userId, user, security }: UserSecurityTabProps
       <section className="overflow-hidden rounded-xl border bg-card">
         <div className="grid grid-cols-2 gap-px border-b bg-border sm:grid-cols-4">
           <SecCell
-            label="Mot de passe changé"
+            label={t("secPasswordChanged")}
             value={formatDateTime(user.passwordChangedAt)}
             icon={KeyRound}
           />
           <SecCell
-            label="Tentatives échouées"
+            label={t("secFailedAttempts")}
             value={String(user.failedLoginAttempts)}
             icon={ShieldCheck}
             tone={user.failedLoginAttempts > 0 ? "warn" : undefined}
           />
           <SecCell
-            label="Verrouillage"
-            value={isLocked ? `jusqu'au ${formatDateTime(user.lockedUntil)}` : "Aucun"}
+            label={t("secLock")}
+            value={isLocked ? t("secLockUntil", { date: formatDateTime(user.lockedUntil) }) : t("secNone")}
             icon={LockKeyhole}
             tone={isLocked ? "warn" : undefined}
           />
           <SecCell
-            label="Email vérifié"
-            value={emailVerified ? formatDateTime(user.emailVerifiedAt) || "Oui" : "Non"}
+            label={t("secEmailVerified")}
+            value={emailVerified ? formatDateTime(user.emailVerifiedAt) || t("yes") : t("no")}
             icon={MailCheck}
             tone={emailVerified ? undefined : "warn"}
           />
@@ -219,7 +220,7 @@ export function UserSecurityTab({ userId, user, security }: UserSecurityTabProps
             onClick={() => runAction("unlock", "unlock")}
             icon={<Unlock className="size-4" />}
           >
-            Déverrouiller le compte
+            {t("secUnlock")}
           </GatedButton>
           <GatedButton
             readOnly={readOnly}
@@ -228,7 +229,7 @@ export function UserSecurityTab({ userId, user, security }: UserSecurityTabProps
             onClick={() => runAction("verify-email", "verify-email")}
             icon={<CheckCircle2 className="size-4" />}
           >
-            Marquer l'email vérifié
+            {t("secVerifyEmail")}
           </GatedButton>
         </div>
       </section>
@@ -238,10 +239,10 @@ export function UserSecurityTab({ userId, user, security }: UserSecurityTabProps
         <div className="flex items-center justify-between border-b px-4 py-3">
           <h2 className="flex items-center gap-2 text-sm font-semibold">
             <Monitor className="size-4" />
-            Sessions actives ({security.activeSessions.length})
+            {t("secSessions", { count: security.activeSessions.length })}
             {security.expiredSessionsCount > 0 && (
               <span className="text-xs font-normal text-muted-foreground">
-                · {security.expiredSessionsCount} expirée(s)
+                {t("secExpired", { count: security.expiredSessionsCount })}
               </span>
             )}
           </h2>
@@ -254,13 +255,13 @@ export function UserSecurityTab({ userId, user, security }: UserSecurityTabProps
               loading={pending === "revoke-all"}
               onClick={() => revoke(null, "revoke-all")}
             >
-              Révoquer toutes
+              {t("secRevokeAll")}
             </GatedButton>
           )}
         </div>
         {security.activeSessions.length === 0 ? (
           <p className="px-4 py-6 text-center text-sm text-muted-foreground">
-            Aucune session active.
+            {t("secNoSessions")}
           </p>
         ) : (
           <div className="divide-y">
@@ -268,17 +269,20 @@ export function UserSecurityTab({ userId, user, security }: UserSecurityTabProps
               <div key={s.id} className="flex items-center gap-3 px-4 py-3 text-sm">
                 <div className="min-w-0 flex-1">
                   <p className="flex items-center gap-2 font-medium">
-                    {shortUserAgent(s.userAgent)}
+                    {shortUserAgent(s.userAgent, t("secUnknownClient"))}
                     {s.impersonatedBy && (
                       <span className="inline-flex items-center gap-1 rounded-full bg-violet-500/10 px-2 py-px text-[11px] text-violet-600 dark:text-violet-300">
                         <Eye className="size-3" />
-                        Impersonation
+                        {t("secImpersonationBadge")}
                       </span>
                     )}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    {s.ipAddress || "IP inconnue"} · ouverte {formatDateTime(s.createdAt)} ·
-                    expire {formatDateTime(s.expiresAt)}
+                    {(s.ipAddress || t("secUnknownIp")) + " · "}
+                    {t("secSessionMeta", {
+                      opened: formatDateTime(s.createdAt),
+                      expires: formatDateTime(s.expiresAt),
+                    })}
                   </p>
                 </div>
                 <GatedButton
@@ -289,7 +293,7 @@ export function UserSecurityTab({ userId, user, security }: UserSecurityTabProps
                   loading={pending === `revoke-${s.id}`}
                   onClick={() => revoke(s.id, `revoke-${s.id}`)}
                 >
-                  Révoquer
+                  {t("secRevoke")}
                 </GatedButton>
               </div>
             ))}
@@ -300,16 +304,18 @@ export function UserSecurityTab({ userId, user, security }: UserSecurityTabProps
       {/* Historique d'impersonation */}
       <div className="grid gap-4 lg:grid-cols-2">
         <ImpersonationList
-          title="Vu « en tant que » (subies)"
-          empty="Ce compte n'a jamais été impersonné."
+          title={t("secImpReceivedTitle")}
+          empty={t("secImpReceivedEmpty")}
           rows={security.impersonationsReceived}
-          counterpartLabel="Par"
+          counterpartLabel={t("secBy")}
+          ongoingLabel={t("secOngoing")}
         />
         <ImpersonationList
-          title="Impersonations menées"
-          empty="Ce compte n'a mené aucune impersonation."
+          title={t("secImpMadeTitle")}
+          empty={t("secImpMadeEmpty")}
           rows={security.impersonationsMade}
-          counterpartLabel="Cible"
+          counterpartLabel={t("secTarget")}
+          ongoingLabel={t("secOngoing")}
         />
       </div>
 
@@ -318,14 +324,14 @@ export function UserSecurityTab({ userId, user, security }: UserSecurityTabProps
         <div className="border-b border-red-200 px-4 py-3 dark:border-red-900/50">
           <h2 className="flex items-center gap-2 text-sm font-semibold text-red-600 dark:text-red-400">
             <Ban className="size-4" />
-            Bannissement
+            {t("secBanTitle")}
           </h2>
         </div>
         <div className="p-4">
           {banned ? (
             <div className="flex flex-col gap-3">
               <p className="text-sm">
-                Compte banni
+                {t("secBanned")}
                 {user.banReason ? (
                   <>
                     {" "}
@@ -333,8 +339,8 @@ export function UserSecurityTab({ userId, user, security }: UserSecurityTabProps
                   </>
                 ) : null}
                 {user.banExpires
-                  ? ` (jusqu'au ${new Date(user.banExpires).toLocaleDateString("fr-FR")})`
-                  : " (permanent)"}
+                  ? ` ${t("secBanUntilShort", { date: new Date(user.banExpires).toLocaleDateString("fr-FR") })}`
+                  : ` ${t("secBanPermanentShort")}`}
               </p>
               <div>
                 <GatedButton
@@ -345,7 +351,7 @@ export function UserSecurityTab({ userId, user, security }: UserSecurityTabProps
                   onClick={runUnban}
                   icon={<CheckCircle2 className="size-4" />}
                 >
-                  Débannir le compte
+                  {t("secUnban")}
                 </GatedButton>
               </div>
             </div>
@@ -357,22 +363,22 @@ export function UserSecurityTab({ userId, user, security }: UserSecurityTabProps
               onClick={() => setBanOpen(true)}
               icon={<Ban className="size-4" />}
             >
-              Bannir le compte
+              {t("secBan")}
             </GatedButton>
           ) : (
             <div className="flex flex-col gap-3">
               <div className="space-y-1.5">
-                <Label htmlFor="ban-reason">Raison (obligatoire)</Label>
+                <Label htmlFor="ban-reason">{t("secBanReasonLabel")}</Label>
                 <Textarea
                   id="ban-reason"
                   value={banReason}
                   onChange={(e) => setBanReason(e.target.value)}
-                  placeholder="Motif du bannissement (visible dans l'audit)…"
+                  placeholder={t("secBanReasonPlaceholder")}
                   rows={2}
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="ban-expires">Expiration (optionnel)</Label>
+                <Label htmlFor="ban-expires">{t("secBanExpiresLabel")}</Label>
                 <Input
                   id="ban-expires"
                   type="datetime-local"
@@ -380,10 +386,7 @@ export function UserSecurityTab({ userId, user, security }: UserSecurityTabProps
                   onChange={(e) => setBanExpires(e.target.value)}
                   className="w-fit"
                 />
-                <p className="text-xs text-muted-foreground">
-                  Vide = bannissement permanent. Le ban révoque immédiatement les
-                  sessions actives.
-                </p>
+                <p className="text-xs text-muted-foreground">{t("secBanHint")}</p>
               </div>
               <div className="flex gap-2">
                 <Button
@@ -392,7 +395,7 @@ export function UserSecurityTab({ userId, user, security }: UserSecurityTabProps
                   onClick={() => setBanOpen(false)}
                   disabled={pending !== null}
                 >
-                  Annuler
+                  {t("cancel")}
                 </Button>
                 <Button
                   type="button"
@@ -406,7 +409,7 @@ export function UserSecurityTab({ userId, user, security }: UserSecurityTabProps
                   ) : (
                     <Ban className="size-4" />
                   )}
-                  Confirmer le bannissement
+                  {t("secBanConfirm")}
                 </Button>
               </div>
             </div>
@@ -452,11 +455,13 @@ function ImpersonationList({
   empty,
   rows,
   counterpartLabel,
+  ongoingLabel,
 }: {
   title: string
   empty: string
   rows: UserSecurity["impersonationsReceived"]
   counterpartLabel: string
+  ongoingLabel: string
 }) {
   return (
     <section className="overflow-hidden rounded-xl border bg-card">
@@ -478,7 +483,7 @@ function ImpersonationList({
               </p>
               <p className="text-xs text-muted-foreground">
                 {formatDateTime(l.startedAt)}
-                {l.stoppedAt ? ` → ${formatDateTime(l.stoppedAt)}` : " · en cours"}
+                {l.stoppedAt ? ` → ${formatDateTime(l.stoppedAt)}` : ` · ${ongoingLabel}`}
               </p>
               {l.reason && (
                 <p className="mt-0.5 text-xs italic text-muted-foreground">

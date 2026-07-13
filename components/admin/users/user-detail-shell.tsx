@@ -3,8 +3,8 @@
 import { type ReactNode, useState } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
+import { useTranslations } from "next-intl"
 import {
-  AlertTriangleIcon,
   ArrowLeftIcon,
   BadgeCheck,
   Ban,
@@ -33,24 +33,30 @@ import {
   type ImpersonationTarget,
 } from "@/components/admin/impersonation-reason-dialog"
 
-const ROLE_LABELS: Record<string, string> = {
-  user: "Citoyen",
-  partner: "Partenaire",
-  employer: "Employeur",
-  moderator: "Modérateur",
-  admin: "Administrateur",
+const ROLE_KEYS: Record<
+  string,
+  "roleUser" | "rolePartner" | "roleEmployer" | "roleModerator" | "roleAdmin"
+> = {
+  user: "roleUser",
+  partner: "rolePartner",
+  employer: "roleEmployer",
+  moderator: "roleModerator",
+  admin: "roleAdmin",
 }
 
-const STATUS_LABELS: Record<string, string> = {
-  active: "Actif",
-  pending: "En attente",
-  locked: "Verrouillé",
-  disabled: "Désactivé",
+const STATUS_KEYS: Record<
+  string,
+  "statusActive" | "statusPending" | "statusLocked" | "statusDisabled"
+> = {
+  active: "statusActive",
+  pending: "statusPending",
+  locked: "statusLocked",
+  disabled: "statusDisabled",
 }
 
-const SEGMENT_LABELS: Record<string, string> = {
-  partenaire: "Partenaire",
-  employeur: "Employeur",
+const SEGMENT_KEYS: Record<string, "segmentPartenaire" | "segmentEmployeur"> = {
+  partenaire: "segmentPartenaire",
+  employeur: "segmentEmployeur",
 }
 
 export const USER_TABS = [
@@ -138,6 +144,8 @@ export function UserDetailShell({
 }: UserDetailShellProps) {
   const router = useRouter()
   const pathname = usePathname()
+  const t = useTranslations("admin.userDetail")
+  const tu = useTranslations("admin.users")
   const [tab, setTab] = useState<UserTab>(initialTab)
 
   const { user } = data
@@ -161,6 +169,14 @@ export function UserDetailShell({
         ? "/admin/partenaires"
         : null
 
+  const banDetail = user.banReason
+    ? user.banExpires
+      ? t("alertBanReasonUntil", { reason: user.banReason, date: formatDateTime(user.banExpires) })
+      : t("alertBanReasonPermanent", { reason: user.banReason })
+    : user.banExpires
+      ? t("alertBanUntil", { date: formatDateTime(user.banExpires) })
+      : t("alertBanPermanent")
+
   return (
     <div className="flex flex-1 flex-col gap-6 px-4 py-6 lg:px-6">
       <div>
@@ -171,7 +187,7 @@ export function UserDetailShell({
           className="mb-3 -ml-2 gap-2"
         >
           <ArrowLeftIcon className="size-4" />
-          Retour aux utilisateurs
+          {tu("backToUsers")}
         </Button>
 
         <div className="flex flex-wrap items-start gap-4">
@@ -186,12 +202,12 @@ export function UserDetailShell({
           </div>
           <div className="min-w-0 flex-1">
             <h1 className="truncate text-2xl font-bold tracking-tight">
-              {user.name?.trim() || "(Sans nom)"}
+              {user.name?.trim() || t("noName")}
             </h1>
             <p className="flex items-center gap-1.5 text-muted-foreground">
               {user.email}
               {user.emailVerifiedAt ? (
-                <BadgeCheck className="size-4 text-emerald-500" aria-label="Email vérifié" />
+                <BadgeCheck className="size-4 text-emerald-500" aria-label={tu("emailVerified")} />
               ) : null}
             </p>
             <div className="mt-2 flex flex-wrap items-center gap-2">
@@ -201,17 +217,17 @@ export function UserDetailShell({
                   roleBadgeClass(user.role),
                 )}
               >
-                {ROLE_LABELS[user.role] ?? user.role}
+                {tu(ROLE_KEYS[user.role] ?? "roleUser")}
               </span>
-              {user.segment && (
+              {user.segment && SEGMENT_KEYS[user.segment] && (
                 <span className="inline-flex h-6 items-center gap-1 rounded-full bg-muted px-2.5 text-xs font-medium">
                   <Building2 className="size-3" />
-                  {SEGMENT_LABELS[user.segment] ?? user.segment}
+                  {tu(SEGMENT_KEYS[user.segment])}
                 </span>
               )}
               <span className="inline-flex items-center gap-1.5 text-xs">
                 <span className={cn("size-1.5 rounded-full", statusDotClass(user.status))} />
-                {STATUS_LABELS[user.status] ?? user.status}
+                {tu(STATUS_KEYS[user.status] ?? "statusActive")}
               </span>
               {user.partnerOrganization &&
                 (orgHref ? (
@@ -243,7 +259,7 @@ export function UserDetailShell({
             )}
             <Button size="sm" className="gap-1.5" onClick={() => changeTab("edition")}>
               <PencilLine className="size-4" />
-              Modifier
+              {tu("edit")}
             </Button>
           </div>
         </div>
@@ -254,34 +270,27 @@ export function UserDetailShell({
               <Alert
                 icon={<Ban className="size-4" />}
                 tone="danger"
-                title="Compte banni"
-                detail={
-                  user.banReason
-                    ? `${user.banReason}${
-                        user.banExpires
-                          ? ` — jusqu'au ${formatDateTime(user.banExpires)}`
-                          : " — permanent"
-                      }`
-                    : user.banExpires
-                      ? `Jusqu'au ${formatDateTime(user.banExpires)}`
-                      : "Bannissement permanent"
-                }
+                title={t("alertBannedTitle")}
+                detail={banDetail}
               />
             )}
             {lockActive && (
               <Alert
                 icon={<LockKeyhole className="size-4" />}
                 tone="warning"
-                title="Compte verrouillé (anti-bruteforce)"
-                detail={`${user.failedLoginAttempts} tentative(s) échouée(s) — déverrouillage automatique le ${formatDateTime(user.lockedUntil)}`}
+                title={t("alertLockedTitle")}
+                detail={t("alertLockedDetail", {
+                  count: user.failedLoginAttempts,
+                  date: formatDateTime(user.lockedUntil),
+                })}
               />
             )}
             {emailUnverified && (
               <Alert
                 icon={<MailWarning className="size-4" />}
                 tone="warning"
-                title="Email non vérifié"
-                detail="L'adresse n'a jamais été confirmée."
+                title={t("alertEmailTitle")}
+                detail={t("alertEmailDetail")}
               />
             )}
           </div>
@@ -290,27 +299,27 @@ export function UserDetailShell({
 
       <Tabs value={tab} onValueChange={changeTab}>
         <TabsList variant="line" className="h-9 w-full justify-start gap-1 border-b">
-          <TabsTrigger value="apercu">Aperçu</TabsTrigger>
-          <TabsTrigger value="securite">Sécurité</TabsTrigger>
-          <TabsTrigger value="profil">Profil</TabsTrigger>
-          <TabsTrigger value="activite">Activité</TabsTrigger>
-          <TabsTrigger value="edition">Édition</TabsTrigger>
+          <TabsTrigger value="apercu">{t("tabApercu")}</TabsTrigger>
+          <TabsTrigger value="securite">{t("tabSecurite")}</TabsTrigger>
+          <TabsTrigger value="profil">{t("tabProfil")}</TabsTrigger>
+          <TabsTrigger value="activite">{t("tabActivite")}</TabsTrigger>
+          <TabsTrigger value="edition">{t("tabEdition")}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="apercu" className="pt-4">
           <OverviewPanel data={data} />
         </TabsContent>
         <TabsContent value="securite" className="pt-4">
-          {securitySlot ?? <ComingSoon label="Sécurité" />}
+          {securitySlot ?? <ComingSoon label={t("tabSecurite")} />}
         </TabsContent>
         <TabsContent value="profil" className="pt-4">
-          {profileSlot ?? <ComingSoon label="Profil" />}
+          {profileSlot ?? <ComingSoon label={t("tabProfil")} />}
         </TabsContent>
         <TabsContent value="activite" className="pt-4">
-          {activitySlot ?? <ComingSoon label="Activité" />}
+          {activitySlot ?? <ComingSoon label={t("tabActivite")} />}
         </TabsContent>
         <TabsContent value="edition" className="pt-4">
-          {editionSlot ?? <ComingSoon label="Édition" />}
+          {editionSlot ?? <ComingSoon label={t("tabEdition")} />}
         </TabsContent>
       </Tabs>
     </div>
@@ -347,20 +356,21 @@ function Alert({
 }
 
 function OverviewPanel({ data }: { data: User360 }) {
+  const t = useTranslations("admin.userDetail")
   const { user, counts } = data
   const cells: Array<{
     label: string
     value: string
     icon: React.ComponentType<{ className?: string }>
   }> = [
-    { label: "Dernier login", value: formatDateTime(user.lastLoginAt), icon: KeyRound },
-    { label: "Sessions actives", value: String(counts.activeSessions), icon: ShieldAlert },
-    { label: "Compte créé le", value: formatDateTime(user.createdAt), icon: CalendarClock },
-    { label: "Mot de passe changé le", value: formatDateTime(user.passwordChangedAt), icon: KeyRound },
-    { label: "Dossiers", value: String(counts.dossiers), icon: FolderOpen },
-    { label: "Brouillons PDF", value: String(counts.drafts), icon: FileText },
-    { label: "Rendez-vous", value: String(counts.bookings), icon: CalendarClock },
-    { label: "Impersonations subies", value: String(counts.impersonationsAsTarget), icon: Eye },
+    { label: t("kpiLastLogin"), value: formatDateTime(user.lastLoginAt), icon: KeyRound },
+    { label: t("kpiActiveSessions"), value: String(counts.activeSessions), icon: ShieldAlert },
+    { label: t("kpiCreatedAt"), value: formatDateTime(user.createdAt), icon: CalendarClock },
+    { label: t("kpiPasswordChanged"), value: formatDateTime(user.passwordChangedAt), icon: KeyRound },
+    { label: t("kpiDossiers"), value: String(counts.dossiers), icon: FolderOpen },
+    { label: t("kpiDrafts"), value: String(counts.drafts), icon: FileText },
+    { label: t("kpiBookings"), value: String(counts.bookings), icon: CalendarClock },
+    { label: t("kpiImpersonationsReceived"), value: String(counts.impersonationsAsTarget), icon: Eye },
   ]
 
   return (
@@ -387,10 +397,10 @@ function OverviewPanel({ data }: { data: User360 }) {
           counts.documentDrafts > 0 ||
           counts.impersonationsAsAdmin > 0) && (
           <div className="grid grid-cols-2 gap-px bg-border sm:grid-cols-3 lg:grid-cols-4">
-            <MiniCell label="Simulations de coût" value={counts.costSimulations} icon={UserCog} />
-            <MiniCell label="Documents (brouillons)" value={counts.documentDrafts} icon={FileText} />
+            <MiniCell label={t("kpiCostSimulations")} value={counts.costSimulations} icon={UserCog} />
+            <MiniCell label={t("kpiDocumentDrafts")} value={counts.documentDrafts} icon={FileText} />
             <MiniCell
-              label="Impersonations menées"
+              label={t("kpiImpersonationsMade")}
               value={counts.impersonationsAsAdmin}
               icon={Eye}
             />
@@ -422,9 +432,10 @@ function MiniCell({
 }
 
 function ComingSoon({ label }: { label: string }) {
+  const t = useTranslations("admin.userDetail")
   return (
     <div className="flex h-40 items-center justify-center rounded-xl border bg-card text-sm text-muted-foreground">
-      {label} — bientôt disponible
+      {t("comingSoon", { label })}
     </div>
   )
 }
@@ -434,6 +445,7 @@ function ComingSoon({ label }: { label: string }) {
 /// ViewAsMenu), qui alimente AdminImpersonationLog.reason.
 function ImpersonateButton({ target }: { target: ImpersonationTarget }) {
   const router = useRouter()
+  const t = useTranslations("admin.userDetail")
   const [pending, setPending] = useState(false)
   const [reasonOpen, setReasonOpen] = useState(false)
 
@@ -447,13 +459,13 @@ function ImpersonateButton({ target }: { target: ImpersonationTarget }) {
       })
       if (!res.ok) {
         const error = (await res.json().catch(() => ({}))) as { error?: string }
-        toast.error(error.error || "Impersonation impossible")
+        toast.error(error.error || t("impersonateError"))
         return
       }
       router.push("/")
       router.refresh()
     } catch {
-      toast.error("Erreur réseau")
+      toast.error(t("networkError"))
     } finally {
       setPending(false)
     }
@@ -472,7 +484,7 @@ function ImpersonateButton({ target }: { target: ImpersonationTarget }) {
         }}
       >
         {pending ? <Loader2 className="size-4 animate-spin" /> : <Eye className="size-4" />}
-        Voir en tant que
+        {t("impersonate")}
       </Button>
       <ImpersonationReasonDialog
         target={reasonOpen ? target : null}

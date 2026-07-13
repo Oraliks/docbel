@@ -1,12 +1,16 @@
 import Link from "next/link"
 import { CalendarClock, FileText, FolderOpen } from "lucide-react"
+import { getTranslations } from "next-intl/server"
 import { cn } from "@/lib/utils"
 import type { UserActivity } from "@/lib/admin/user-360"
 
-const RUN_STATUS_LABELS: Record<string, string> = {
-  in_progress: "En cours",
-  completed: "Terminé",
-  abandoned: "Abandonné",
+const RUN_STATUS_KEYS: Record<
+  string,
+  "actStatusInProgress" | "actStatusCompleted" | "actStatusAbandoned"
+> = {
+  in_progress: "actStatusInProgress",
+  completed: "actStatusCompleted",
+  abandoned: "actStatusAbandoned",
 }
 
 function runStatusClass(status: string): string {
@@ -30,27 +34,31 @@ function formatDateTime(iso: string): string {
   })
 }
 
-/// Onglet Activité : dossiers, brouillons PDF, rendez-vous. Listes bornées (10
-/// dernières) + total, sans pagination interne.
-export function UserActivityTab({ activity }: { activity: UserActivity }) {
+/// Onglet Activité : dossiers, brouillons PDF, rendez-vous (server component).
+/// Listes bornées (10 dernières) + total, sans pagination interne.
+export async function UserActivityTab({ activity }: { activity: UserActivity }) {
+  const t = await getTranslations("admin.userDetail")
   const { runs, drafts, bookings, totals } = activity
 
   return (
     <div className="flex flex-col gap-4">
       <Section
-        title="Dossiers"
+        title={t("actDossiers")}
         icon={<FolderOpen className="size-4" />}
         total={totals.runs}
         shown={runs.length}
-        empty="Aucun dossier."
+        empty={t("actEmptyRuns")}
+        shownLabel={t("actShownRecent", { count: runs.length })}
       >
         {runs.map((r) => (
           <div key={r.id} className="flex items-center gap-3 px-4 py-2.5 text-sm">
             <div className="min-w-0 flex-1">
               <p className="truncate font-medium">{r.bundleName}</p>
               <p className="text-xs text-muted-foreground">
-                Démarré {formatDateTime(r.startedAt)}
-                {r.completedAt ? ` · terminé ${formatDateTime(r.completedAt)}` : ""}
+                {t("actStartedAt", { date: formatDateTime(r.startedAt) })}
+                {r.completedAt
+                  ? " · " + t("actCompletedAt", { date: formatDateTime(r.completedAt) })
+                  : ""}
               </p>
             </div>
             <span
@@ -59,18 +67,19 @@ export function UserActivityTab({ activity }: { activity: UserActivity }) {
                 runStatusClass(r.status),
               )}
             >
-              {RUN_STATUS_LABELS[r.status] ?? r.status}
+              {t(RUN_STATUS_KEYS[r.status] ?? "actStatusInProgress")}
             </span>
           </div>
         ))}
       </Section>
 
       <Section
-        title="Brouillons PDF"
+        title={t("actDrafts")}
         icon={<FileText className="size-4" />}
         total={totals.drafts}
         shown={drafts.length}
-        empty="Aucun brouillon."
+        empty={t("actEmptyDrafts")}
+        shownLabel={t("actShownRecent", { count: drafts.length })}
       >
         {drafts.map((d) => (
           <div key={d.id} className="flex items-center gap-3 px-4 py-2.5 text-sm">
@@ -86,7 +95,7 @@ export function UserActivityTab({ activity }: { activity: UserActivity }) {
                 <p className="truncate font-medium">{d.formTitle}</p>
               )}
               <p className="text-xs text-muted-foreground">
-                Modifié {formatDateTime(d.updatedAt)}
+                {t("actModifiedAt", { date: formatDateTime(d.updatedAt) })}
               </p>
             </div>
           </div>
@@ -94,11 +103,12 @@ export function UserActivityTab({ activity }: { activity: UserActivity }) {
       </Section>
 
       <Section
-        title="Rendez-vous"
+        title={t("actBookings")}
         icon={<CalendarClock className="size-4" />}
         total={totals.bookings}
         shown={bookings.length}
-        empty="Aucun rendez-vous."
+        empty={t("actEmptyBookings")}
+        shownLabel={t("actShownRecent", { count: bookings.length })}
       >
         {bookings.map((b) => (
           <div key={b.id} className="flex items-center gap-3 px-4 py-2.5 text-sm">
@@ -122,6 +132,7 @@ function Section({
   total,
   shown,
   empty,
+  shownLabel,
   children,
 }: {
   title: string
@@ -129,6 +140,7 @@ function Section({
   total: number
   shown: number
   empty: string
+  shownLabel: string
   children: React.ReactNode
 }) {
   return (
@@ -140,9 +152,7 @@ function Section({
           <span className="text-xs font-normal text-muted-foreground">({total})</span>
         </h2>
         {total > shown && (
-          <span className="text-xs text-muted-foreground">
-            {shown} plus récents affichés
-          </span>
+          <span className="text-xs text-muted-foreground">{shownLabel}</span>
         )}
       </div>
       {total === 0 ? (

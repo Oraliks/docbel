@@ -397,7 +397,7 @@ export function UsersListClient({
               className="gap-1.5"
             >
               <Download className="size-4" />
-              Exporter CSV
+              {t("exportCsv")}
             </Button>
             <Button
               render={<Link href="/admin/users/new" />}
@@ -450,7 +450,7 @@ export function UsersListClient({
                   <th className="px-4 py-3 text-left font-medium">{t("colEmail")}</th>
                   <th className="px-4 py-3 text-left font-medium">{t("colRole")}</th>
                   <th className="px-4 py-3 text-left font-medium">{t("colSegment")}</th>
-                  <th className="px-4 py-3 text-left font-medium">Organisation</th>
+                  <th className="px-4 py-3 text-left font-medium">{t("colOrganisation")}</th>
                   <th className="px-4 py-3 text-left font-medium">{t("colStatus")}</th>
                   <SortableHeader
                     label={t("colLastLogin")}
@@ -484,7 +484,7 @@ export function UsersListClient({
           <span className="text-muted-foreground">
             {total === 0
               ? t("rowsCount", { count: 0 })
-              : `${rangeStart}–${rangeEnd} sur ${total}`}
+              : t("rowsRange", { start: rangeStart, end: rangeEnd, total })}
           </span>
           <div className="ml-auto flex items-center gap-2">
             <span className="text-muted-foreground">{t("rowsPerPage")}</span>
@@ -796,7 +796,7 @@ function UserRow({ user, t }: UserRowProps) {
           {user.emailVerifiedAt ? (
             <BadgeCheck
               className="size-3.5 text-emerald-500"
-              aria-label="Email vérifié"
+              aria-label={t("emailVerified")}
             />
           ) : null}
         </span>
@@ -874,7 +874,7 @@ function UserRow({ user, t }: UserRowProps) {
           <DropdownMenuContent align="end">
             <DropdownMenuItem render={<Link href={`/admin/users/${user.id}`} />}>
               <Eye />
-              Ouvrir la fiche
+              {t("openProfile")}
             </DropdownMenuItem>
             <DropdownMenuItem render={<Link href={`/admin/users/${user.id}?tab=edition`} />}>
               <Edit2 />

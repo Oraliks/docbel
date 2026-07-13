@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { useTranslations } from "next-intl"
 import { Building2, Eye, Handshake, Users } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -13,24 +14,24 @@ export interface ComptesTabCounts {
 
 const TABS: Array<{
   href: string
-  label: string
+  labelKey: "tabUsers" | "tabPartenaires" | "tabEmployeurs" | "tabAudit"
   icon: React.ComponentType<{ className?: string }>
   countKey?: keyof ComptesTabCounts
 }> = [
-  { href: "/admin/users", label: "Utilisateurs", icon: Users, countKey: "users" },
+  { href: "/admin/users", labelKey: "tabUsers", icon: Users, countKey: "users" },
   {
     href: "/admin/partenaires",
-    label: "Partenaires",
+    labelKey: "tabPartenaires",
     icon: Handshake,
     countKey: "partenaires",
   },
   {
     href: "/admin/employeurs",
-    label: "Employeurs",
+    labelKey: "tabEmployeurs",
     icon: Building2,
     countKey: "employeurs",
   },
-  { href: "/admin/impersonation", label: "Audit impersonations", icon: Eye },
+  { href: "/admin/impersonation", labelKey: "tabAudit", icon: Eye },
 ]
 
 /// Bandeau d'onglets partagé du hub « Comptes & accès », posé en tête des 4
@@ -40,6 +41,7 @@ const TABS: Array<{
 /// optionnels (fournis par la page qui a déjà chargé la donnée).
 export function ComptesTabs({ counts }: { counts?: ComptesTabCounts }) {
   const pathname = usePathname()
+  const t = useTranslations("admin.comptes")
 
   return (
     <nav className="flex flex-wrap items-center gap-1 border-b px-4 lg:px-6">
@@ -62,7 +64,7 @@ export function ComptesTabs({ counts }: { counts?: ComptesTabCounts }) {
             )}
           >
             <Icon className="size-4" />
-            {tab.label}
+            {t(tab.labelKey)}
             {typeof count === "number" && (
               <span
                 className={cn(

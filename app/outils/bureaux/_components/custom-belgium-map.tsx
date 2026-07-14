@@ -14,6 +14,13 @@ interface MapBureau {
   lat: number
   lng: number
   color: string
+  /** Rang à afficher dans le pin (1 = bureau recommandé, puis 2, 3…).
+   *  Optionnel : les appelants existants (ex. CommunePanel) sans
+   *  numérotation gardent le dot simple, sans texte dessus. */
+  number?: number
+  /** Bureau n°1 recommandé pour la démarche en cours : pin plus grand +
+   *  présence renforcée. Optionnel, absent/`false` = dot standard. */
+  recommended?: boolean
 }
 
 interface Props {
@@ -30,6 +37,10 @@ interface Props {
   /** Callback au clic sur un pin — permet la sélection pin ↔ liste. Optionnel :
    *  si absent, les pins restent non cliquables (comportement inchangé). */
   onPinClick?: (id: string) => void
+  /** Callback au survol d'un pin (entrée → id, sortie → null) — permet la
+   *  synchronisation hover pin ↔ liste. Optionnel : si absent, aucun
+   *  handler n'est posé (comportement inchangé). */
+  onPinHover?: (id: string | null) => void
 }
 
 interface MunicipalityProps {
@@ -43,6 +54,13 @@ interface MunicipalityProps {
 }
 
 type MunicipalityFeature = Feature<Polygon | MultiPolygon, MunicipalityProps>
+
+/** Position écran mémoïsée d'un bureau (résultat de la projection d3-geo). */
+interface MapMarker {
+  bureau: MapBureau
+  x: number
+  y: number
+}
 
 /**
  * Carte custom 100% SVG construite à partir du TopoJSON Belgique
@@ -75,6 +93,7 @@ export function CustomBelgiumMap({
   height = 420,
   selectedId = null,
   onPinClick,
+  onPinHover,
 }: Props) {
   const t = useTranslations('public.outils')
   const [topo, setTopo] = useState<Topology | null>(null)
@@ -204,6 +223,24 @@ export function CustomBelgiumMap({
     }
   }, [topo, selectedInsCode, size.w, size.h, level])
 
+  // Positions écran mémoïsées des bureaux : évite de reprojeter chaque pin
+  // à chaque re-render du parent (ex. frappe dans un champ de recherche)
+  // tant que la projection et la liste de bureaux ne changent pas réellement.
+  // Pas besoin de size.w/size.h ici : `projection` change déjà d'identité
+  // quand la taille change (cf. ses propres deps ci-dessus), donc ces
+  // dépendances seraient redondantes (et signalées comme telles par eslint).
+  const markers = useMemo<MapMarker[]>(() => {
+    if (!projection) return []
+    const out: MapMarker[] = []
+    for (const b of bureaus) {
+      const xy = projection.proj([b.lng, b.lat])
+      if (xy && Number.isFinite(xy[0])) {
+        out.push({ bureau: b, x: xy[0], y: xy[1] })
+      }
+    }
+    return out
+  }, [projection, bureaus])
+
   if (!topo) {
     return (
       <div
@@ -270,11 +307,13 @@ export function CustomBelgiumMap({
               vectorEffect="non-scaling-stroke"
             />
           ))}
-          {/* Commune sélectionnée en violet */}
+          {/* Commune sélectionnée : contour violet net, mais remplissage
+              très discret — les marqueurs numérotés doivent rester le
+              point focal de la carte, pas le polygone. */}
           {sel && (
             <path
               d={projection!.path(sel as unknown as GeoPermissibleObjects) ?? undefined}
-              fill="color-mix(in oklab, var(--primary) 18%, transparent)"
+              fill="color-mix(in oklab, var(--primary) 8%, transparent)"
               stroke="var(--primary)"
               strokeWidth={1.6}
               vectorEffect="non-scaling-stroke"
@@ -329,24 +368,30 @@ export function CustomBelgiumMap({
             </text>
           )}
 
-          {/* Dots bureaux (simple cercle coloré, couleur par type d'org).
-              Cliquables si onPinClick est fourni : synchronise la sélection
-              avec la liste. Le pin sélectionné (selectedId) est agrandi
-              + halo, cf. Dot ci-dessous. */}
-          {bureaus.map((b) => {
-            const xy = projection?.proj([b.lng, b.lat])
-            if (!xy || !Number.isFinite(xy[0])) return null
-            return (
-              <g key={b.id} transform={`translate(${xy[0]}, ${xy[1]})`}>
-                <Dot
-                  color={b.color}
-                  title={b.name}
-                  selected={b.id === selectedId}
-                  onClick={onPinClick ? () => onPinClick(b.id) : undefined}
-                />
-              </g>
-            )
-          })}
+          {/* Dots bureaux (cercle coloré par type d'org, numéroté si
+              `number` est fourni ; le n°1 recommandé est agrandi). Cliquables
+              si onPinClick est fourni : synchronise la sélection avec la
+              liste. Survolables si onPinHover est fourni : synchronise le
+              hover avec la liste. Le pin sélectionné (selectedId) est
+              agrandi + halo, cf. Dot ci-dessous. Positions pré-calculées
+              dans `markers` (mémoïsé, cf. plus haut). */}
+          {markers.map(({ bureau: b, x, y }) => (
+            <g
+              key={b.id}
+              transform={`translate(${x}, ${y})`}
+              onMouseEnter={() => onPinHover?.(b.id)}
+              onMouseLeave={() => onPinHover?.(null)}
+            >
+              <Dot
+                color={b.color}
+                title={b.name}
+                selected={b.id === selectedId}
+                number={b.number}
+                recommended={b.recommended}
+                onClick={onPinClick ? () => onPinClick(b.id) : undefined}
+              />
+            </g>
+          ))}
 
           {/* Pas de dot sur le centroïde : le polygone violet entoure
               déjà la commune sélectionnée, ce dot ne fait que doubler
@@ -410,16 +455,23 @@ export function CustomBelgiumMap({
  * Marqueur simple : un cercle plein coloré avec un fin halo pour le détacher
  * du fond. La taille `large` est utilisée pour le centroïde de la commune
  * sélectionnée — distingue le repère "ma zone" des bureaux individuels.
+ * `number` affiche un rang dans le pin (liste ↔ carte partagent le même
+ * numéro) ; `recommended` (le n°1) agrandit encore le pin et lui donne un
+ * halo doux pour qu'il se distingue immédiatement des autres.
  *
  * Stroke contrastant : noir pour les couleurs claires (blanc CPAS/Commune),
  * blanc pour les couleurs vives (ONEM rouge clair, syndicats colorés). Ça
- * garantit la lisibilité sur le fond pastel et sur le polygone violet.
+ * garantit la lisibilité sur le fond pastel et sur le polygone violet. Le
+ * texte du numéro suit la même logique (via `isLightColor`) pour rester
+ * lisible même sur un pin blanc (COMMUNE).
  */
 function Dot({
   color,
   title,
   large = false,
   selected = false,
+  number,
+  recommended = false,
   onClick,
 }: {
   color: string
@@ -427,10 +479,14 @@ function Dot({
   large?: boolean
   /** État sélectionné (sync liste ↔ carte) : rayon agrandi + halo. */
   selected?: boolean
+  /** Rang affiché dans le pin (1, 2, 3…). Absent = dot simple sans texte. */
+  number?: number
+  /** Bureau n°1 recommandé : pin plus grand + présence renforcée. */
+  recommended?: boolean
   /** Si fourni, le pin devient cliquable (curseur pointer). */
   onClick?: () => void
 }) {
-  const r = large ? 6 : 4.5
+  const r = recommended ? 7.5 : large ? 6 : 4.5
   const displayR = selected ? r * 1.35 : r
   const isLight = isLightColor(color)
   return (
@@ -452,6 +508,12 @@ function Dot({
           }}
         />
       )}
+      {recommended && !selected && (
+        // Halo doux (propre couleur du pin) pour le n°1 recommandé quand il
+        // n'est pas sélectionné — évite un double-anneau avec le halo sombre
+        // ci-dessus si les deux états coïncident.
+        <circle cx={0} cy={0} r={displayR + 3} fill="none" stroke={color} strokeWidth={1} opacity={0.35} />
+      )}
       <circle
         cx={0}
         cy={0}
@@ -467,8 +529,25 @@ function Dot({
               ? 'rgba(0,0,0,0.4)'
               : 'rgba(255,255,255,0.95)'
         }
-        strokeWidth={selected ? 2.5 : 1.2}
+        strokeWidth={selected ? 2.5 : recommended ? 2 : 1.2}
       />
+      {number != null && (
+        <text
+          x={0}
+          y={0.5}
+          textAnchor="middle"
+          dominantBaseline="middle"
+          fontSize={recommended ? (number >= 10 ? 8.5 : 10) : number >= 10 ? 6.5 : 7.5}
+          fontWeight={700}
+          fill={isLight ? '#1b1530' : '#ffffff'}
+          style={{
+            pointerEvents: 'none',
+            fontFamily: 'var(--font-sans), system-ui, sans-serif',
+          }}
+        >
+          {number}
+        </text>
+      )}
     </g>
   )
 }

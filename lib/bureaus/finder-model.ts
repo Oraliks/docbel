@@ -95,3 +95,39 @@ export function filterOffices(
 export function estimateTravel(km: number): { walkMin: number; driveMin: number } {
   return { walkMin: Math.max(1, Math.round(km * 12)), driveMin: Math.max(1, Math.round(km * 2)) }
 }
+
+/** Codes organisme → famille de guichet. Signal le plus fiable pour typer un
+ * bureau ISOLÉ récupéré par id (le `type` DB brut est plus grossier :
+ * SYNDICAT/PERMANENCE/AUTRE couvrent paiement, emploi ET mutuelle). */
+const ORG_CODE_TO_TYPE: Record<string, OfficeType> = {
+  onem: 'ONEM',
+  actiris: 'SRE', forem: 'SRE', vdab: 'SRE', adg: 'SRE',
+  capac: 'PAIEMENT', fgtb: 'PAIEMENT', csc: 'PAIEMENT', cgslb: 'PAIEMENT', synova: 'PAIEMENT',
+  solidaris: 'MUTUELLE', mc: 'MUTUELLE', mloz: 'MUTUELLE', helan: 'MUTUELLE',
+  partenamut: 'MUTUELLE', caami: 'MUTUELLE',
+}
+
+/**
+ * Détermine le `OfficeType` d'un bureau isolé (récupéré par id via
+ * /api/bureaux/[id], ex. clic dans l'autocomplete) pour l'affichage de la
+ * fiche : icône, couleur et libellé de famille. Priorité au code organisme
+ * (signal fin) ; repli sur le `type` DB brut. Best-effort et purement
+ * COSMÉTIQUE — jamais un filtre de compétence territoriale.
+ */
+export function officeTypeOfBureau(input: { type: string; organismeCode: string | null }): OfficeType {
+  const code = input.organismeCode?.toLowerCase() ?? ''
+  if (code && ORG_CODE_TO_TYPE[code]) return ORG_CODE_TO_TYPE[code]
+  switch (input.type) {
+    case 'ONEM':
+      return 'ONEM'
+    case 'CPAS':
+      return 'CPAS'
+    case 'COMMUNE':
+      return 'COMMUNE'
+    case 'SYNDICAT':
+    case 'PERMANENCE':
+      return 'PAIEMENT'
+    default:
+      return 'COMMUNE'
+  }
+}

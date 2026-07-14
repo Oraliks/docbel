@@ -31,6 +31,10 @@ export interface ServicePick {
   key: string
   label: string
 }
+export interface OfficePick {
+  id: string
+  label: string
+}
 
 interface Props {
   value: string
@@ -39,6 +43,8 @@ interface Props {
   onSelectCommune: (c: CommuneSuggestion) => void
   onSelectOrganisme: (o: OrganismePick) => void
   onSelectService: (s: ServicePick) => void
+  /** Sélection d'un bureau nommé (autocomplete) → ouvre sa fiche côté parent. */
+  onSelectOffice: (o: OfficePick) => void
   onUseLocation: () => void
   locating?: boolean
   /** Message d'échec géoloc déjà traduit par l'orchestrateur (refus, HTTP non
@@ -90,6 +96,7 @@ function fetchAddresses(q: string, signal: AbortSignal): Promise<AddressSuggesti
 type ResultRow =
   | { kind: 'address'; id: string; label: string; pick: AddressPick }
   | { kind: 'commune'; id: string; label: string; sub: string; pick: CommuneSuggestion }
+  | { kind: 'office'; id: string; label: string; sub: string; pick: OfficePick }
   | { kind: 'organisme'; id: string; label: string; pick: OrganismePick }
   | { kind: 'service'; id: string; label: string; pick: ServicePick }
 type Row = ResultRow | { kind: 'geoloc'; id: string }
@@ -101,11 +108,11 @@ type Group = { key: string; labelKey: string; rows: ResultRow[] }
  * + bouton pleine largeur « Utiliser ma position ». La résolution CP (4 chiffres
  * tapés) reste côté orchestrateur ; ce composant ajoute un autocomplete GROUPÉ
  * universel réutilisant deux endpoints existants :
- *  - `/api/bureaux/suggest` (TOUJOURS) → communes + organismes + services ;
+ *  - `/api/bureaux/suggest` (TOUJOURS) → communes + bureaux + organismes + services ;
  *  - `/api/geocode/suggest` (SI la requête ressemble à une adresse ≥4 chars) →
  *    adresses précises (label + CP + coords lat/lng → distances exactes).
  * Les résultats sont fusionnés en groupes ordonnés (Adresses, Communes,
- * Organismes, Services). Le groupe `offices` est volontairement DIFFÉRÉ.
+ * Bureaux, Organismes, Services). Sélectionner un bureau nommé ouvre sa fiche.
  *
  * `eligible` (≥2 caractères, PAS un CP à 4 chiffres) sert de garde DÉRIVÉE :
  * on ne déclenche jamais de fetch pour un CP tapé directement (résolu sans
@@ -122,6 +129,7 @@ export function AddressSearch({
   onSelectCommune,
   onSelectOrganisme,
   onSelectService,
+  onSelectOffice,
   onUseLocation,
   locating = false,
   geolocError = null,
@@ -134,6 +142,7 @@ export function AddressSearch({
 
   const [addresses, setAddresses] = useState<AddressSuggestion[]>([])
   const [communes, setCommunes] = useState<SuggestResponse['municipalities']>([])
+  const [offices, setOffices] = useState<SuggestResponse['offices']>([])
   const [organizations, setOrganizations] = useState<SuggestResponse['organizations']>([])
   const [services, setServices] = useState<SuggestResponse['services']>([])
   const [loading, setLoading] = useState(false)
@@ -191,6 +200,7 @@ export function AddressSearch({
           if (ac.signal.aborted) return
           setAddresses(addr)
           setCommunes(suggest.municipalities)
+          setOffices(suggest.offices)
           setOrganizations(suggest.organizations)
           setServices(suggest.services)
           setActiveIndex(-1)
@@ -200,6 +210,7 @@ export function AddressSearch({
           if (ac.signal.aborted) return
           setAddresses([])
           setCommunes([])
+          setOffices([])
           setOrganizations([])
           setServices([])
           setLoading(false)
@@ -237,6 +248,13 @@ export function AddressSearch({
       sub: c.cp,
       pick: c,
     }))
+    const officeRows: ResultRow[] = offices.map((o) => ({
+      kind: 'office',
+      id: `${ID_PREFIX}-office-${o.id}`,
+      label: o.label,
+      sub: o.secondaryLabel ?? '',
+      pick: { id: o.id, label: o.label },
+    }))
     const orgRows: ResultRow[] = organizations.map((o) => ({
       kind: 'organisme',
       id: `${ID_PREFIX}-org-${o.code}`,
@@ -254,12 +272,13 @@ export function AddressSearch({
     const g: Group[] = []
     if (addressRows.length) g.push({ key: 'address', labelKey: 'suggestGroupAddresses', rows: addressRows })
     if (communeRows.length) g.push({ key: 'commune', labelKey: 'suggestGroupCommunes', rows: communeRows })
+    if (officeRows.length) g.push({ key: 'office', labelKey: 'suggestGroupOffices', rows: officeRows })
     if (orgRows.length) g.push({ key: 'organisme', labelKey: 'suggestGroupOrganismes', rows: orgRows })
     if (serviceRows.length) g.push({ key: 'service', labelKey: 'suggestGroupServices', rows: serviceRows })
 
-    const flat: Row[] = [...addressRows, ...communeRows, ...orgRows, ...serviceRows, geolocRow]
+    const flat: Row[] = [...addressRows, ...communeRows, ...officeRows, ...orgRows, ...serviceRows, geolocRow]
     return { rows: flat, groups: g }
-  }, [addresses, communes, organizations, services])
+  }, [addresses, communes, offices, organizations, services])
 
   const indexById = useMemo(() => {
     const m = new Map<string, number>()
@@ -277,6 +296,7 @@ export function AddressSearch({
     setActiveIndex(-1)
     setAddresses([])
     setCommunes([])
+    setOffices([])
     setOrganizations([])
     setServices([])
   }
@@ -291,6 +311,11 @@ export function AddressSearch({
       case 'commune':
         skipNextFetchRef.current = true
         onSelectCommune(row.pick)
+        closeList()
+        break
+      case 'office':
+        // N'écrit pas `value` (ouvre la fiche) → pas de garde skip.
+        onSelectOffice(row.pick)
         closeList()
         break
       case 'organisme':
@@ -414,7 +439,7 @@ export function AddressSearch({
                       }}
                       className={rowClass(active)}
                     >
-                      {row.kind === 'commune' ? (
+                      {(row.kind === 'commune' || row.kind === 'office') && row.sub ? (
                         <>
                           <span className="font-medium text-[color:var(--glass-ink)]">{row.label}</span>{' '}
                           <span className="text-[color:var(--glass-ink-soft)]">· {row.sub}</span>

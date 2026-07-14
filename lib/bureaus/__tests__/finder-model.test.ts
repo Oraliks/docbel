@@ -4,6 +4,7 @@ import {
   buildOffices,
   filterOffices,
   estimateTravel,
+  officeTypeOfBureau,
   TYPE_META,
   TYPE_ORDER,
   type OfficeType,
@@ -102,5 +103,25 @@ describe('TYPE_META', () => {
       expect(TYPE_META[t].color).toMatch(/^#/)
       expect(TYPE_META[t].icon).toBeTruthy()
     }
+  })
+})
+
+describe('officeTypeOfBureau', () => {
+  it('priorise le code organisme (type DB grossier)', () => {
+    expect(officeTypeOfBureau({ type: 'AUTRE', organismeCode: 'forem' })).toBe('SRE')
+    expect(officeTypeOfBureau({ type: 'AUTRE', organismeCode: 'Solidaris' })).toBe('MUTUELLE')
+    expect(officeTypeOfBureau({ type: 'SYNDICAT', organismeCode: 'capac' })).toBe('PAIEMENT')
+  })
+  it('retombe sur le type DB quand le code est absent/inconnu', () => {
+    expect(officeTypeOfBureau({ type: 'ONEM', organismeCode: null })).toBe('ONEM')
+    expect(officeTypeOfBureau({ type: 'CPAS', organismeCode: null })).toBe('CPAS')
+    expect(officeTypeOfBureau({ type: 'COMMUNE', organismeCode: 'inconnu' })).toBe('COMMUNE')
+    expect(officeTypeOfBureau({ type: 'SYNDICAT', organismeCode: null })).toBe('PAIEMENT')
+    expect(officeTypeOfBureau({ type: 'PERMANENCE', organismeCode: null })).toBe('PAIEMENT')
+    expect(officeTypeOfBureau({ type: 'AUTRE', organismeCode: null })).toBe('COMMUNE')
+  })
+  it('ne renvoie que des OfficeType connus', () => {
+    const known = new Set<OfficeType>(TYPE_ORDER)
+    expect(known.has(officeTypeOfBureau({ type: 'AUTRE', organismeCode: null }))).toBe(true)
   })
 })

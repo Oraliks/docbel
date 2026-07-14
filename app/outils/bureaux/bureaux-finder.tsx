@@ -18,9 +18,9 @@ import { TrustBar } from './_components/trust-bar'
 import { MobileViewSwitcher, type MobileView } from './_components/mobile-view-switcher'
 import { EmptyState, ErrorState, SkeletonResults } from './_components/finder-states'
 import { reverseGeocodeBE, type UserGeoloc } from './_components/geoloc-banner'
-import { type ResolveResponse } from './_components/types'
+import { type ResolveResponse, type BureauResult } from './_components/types'
 import type { OfficeMapMarker } from './_components/office-map-types'
-import { buildOffices, TYPE_META } from '@/lib/bureaus/finder-model'
+import { buildOffices, officeTypeOfBureau, TYPE_META, type OfficeItem } from '@/lib/bureaus/finder-model'
 import { rankOffices } from '@/lib/bureaus/office-ranking'
 import { DEMARCHE_META, DEMARCHE_ORDER, type Demarche } from '@/lib/bureaus/demarche-map'
 import { computeOpenStatus } from '@/lib/bureaus/types'
@@ -121,7 +121,11 @@ export function BureauxFinder() {
   // reload restaure le filtre actif (cf. sync dans l'effet de résolution).
   const [demarche, setDemarche] = useState<Demarche>(() => parseDemarcheParam(params?.get('demarche')))
   const [activeId, setActiveId] = useState<string | null>(null) // survol liste ↔ carte
-  const [detailId, setDetailId] = useState<string | null>(null) // fiche ouverte
+  const [detailId, setDetailId] = useState<string | null>(null) // fiche ouverte (résolution CP)
+  // Fiche « détachée » : un bureau choisi dans l'autocomplete (recherche par
+  // nom) n'est pas forcément dans la résolution CP courante → on le récupère
+  // par id (/api/bureaux/[id]) et on l'affiche hors de `ranked`.
+  const [externalDetail, setExternalDetail] = useState<OfficeItem | null>(null)
   const [mobileView, setMobileView] = useState<MobileView>('liste')
 
   // --- Résolution : cache mémoire par CP + annulation + debounce (conservé) --
@@ -233,6 +237,42 @@ export function BureauxFinder() {
     setUserGeoloc(null)
   }, [])
 
+  // Ouvre la fiche d'un bureau de la résolution courante (liste/carte) ; ferme
+  // une éventuelle fiche « détachée » (autocomplete) pour ne pas cumuler.
+  const openDetail = useCallback((id: string) => {
+    setExternalDetail(null)
+    setDetailId(id)
+  }, [])
+
+  const closeDetail = useCallback(() => {
+    setDetailId(null)
+    setExternalDetail(null)
+  }, [])
+
+  // Bureau choisi dans l'autocomplete (recherche par NOM) : il n'est pas
+  // forcément dans la résolution CP courante → on récupère sa fiche par id et
+  // on l'ouvre en « détaché ». Best-effort : échec réseau silencieux (le champ
+  // reste utilisable). Le type (icône/couleur, purement cosmétique) est déduit
+  // via `officeTypeOfBureau` ; la distance est laissée nulle (le bureau cherché
+  // peut être loin de l'adresse en cours — pas de distance trompeuse).
+  const openOfficeById = useCallback(async (id: string) => {
+    setDetailId(null)
+    try {
+      const res = await fetch(`/api/bureaux/${id}`)
+      if (!res.ok) return
+      const b = (await res.json()) as BureauResult
+      setExternalDetail({
+        id: b.id,
+        type: officeTypeOfBureau({ type: b.type, organismeCode: b.organismeCode }),
+        bureau: b,
+        distanceKm: null,
+        isCompetent: false,
+      })
+    } catch {
+      /* silencieux : autocomplete best-effort */
+    }
+  }, [])
+
   const removeFilter = useCallback((key: string) => {
     if (key === 'demarche') setDemarche('inconnu')
     else if (key === 'cp') {
@@ -269,6 +309,10 @@ export function BureauxFinder() {
   // (jeu de données changé) ne matche plus `ranked` → `null` → la fiche se
   // ferme d'elle-même, sans effet synchrone.
   const detail = useMemo(() => ranked.find((o) => o.id === detailId) ?? null, [ranked, detailId])
+
+  // Fiche affichée = « détachée » (autocomplete, hors résolution) en priorité,
+  // sinon celle de la résolution CP courante.
+  const activeDetail = externalDetail ?? detail
 
   // Marqueurs carte — mémo perf-critique (STABLE) : `OfficeMap`/`CustomBelgiumMap`
   // mémoïsent leur projection sur l'identité de ce tableau. Ne dépend que de
@@ -340,12 +384,12 @@ export function BureauxFinder() {
   } else if (data) {
     results = hasRanked ? (
       <div className="space-y-4">
-        {recommended && <RecommendedOfficeCard office={recommended} onView={setDetailId} />}
+        {recommended && <RecommendedOfficeCard office={recommended} onView={openDetail} />}
         {others.length > 0 && (
           <OfficeResultsList
             offices={others}
             selectedId={activeId}
-            onView={setDetailId}
+            onView={openDetail}
             onHover={setActiveId}
           />
         )}
@@ -372,7 +416,7 @@ export function BureauxFinder() {
       resultCount={ranked.length}
       onHover={setActiveId}
       onSelect={setActiveId}
-      onView={setDetailId}
+      onView={openDetail}
     />
   ) : (
     <MapPlaceholder text={error ?? (data ? emptyBody : t('bureauxSubtitle'))} />
@@ -405,6 +449,7 @@ export function BureauxFinder() {
             onSelectService={(s) => {
               setDemarche(s.key as Demarche)
             }}
+            onSelectOffice={(o) => void openOfficeById(o.id)}
             onUseLocation={handleUseLocation}
             locating={locating}
             geolocError={geolocError}
@@ -438,16 +483,16 @@ export function BureauxFinder() {
       </div>
 
       {/* ===== Fiche bureau (overlay) : mobile = bottom-sheet, desktop = modale ===== */}
-      {detail && (
+      {activeDetail && (
         <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-4">
           <button
             type="button"
             aria-label={t('bureauxClose')}
             className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-            onClick={() => setDetailId(null)}
+            onClick={closeDetail}
           />
           <div className="relative w-full glass-surface rounded-t-3xl sm:w-auto sm:max-w-md sm:rounded-3xl max-h-[85vh] overflow-hidden">
-            <OfficeDetail item={detail} onClose={() => setDetailId(null)} variant="sheet" />
+            <OfficeDetail item={activeDetail} onClose={closeDetail} variant="sheet" />
           </div>
         </div>
       )}

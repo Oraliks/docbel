@@ -11,6 +11,7 @@ import 'leaflet/dist/leaflet.css'
 // default sur le namespace `L`.
 import L from 'leaflet'
 import { useEffect, useRef } from 'react'
+import { clusterPoints, type ClusterPoint } from '@/lib/bureaus/map-clustering'
 import type { OfficeMapProps, OfficeMapMarker } from './office-map-types'
 
 /**
@@ -32,33 +33,66 @@ import type { OfficeMapProps, OfficeMapMarker } from './office-map-types'
  * défaut de Leaflet (images cassées quand les assets ne sont pas résolus par
  * le bundler).
  *
- * NON couvert dans cette passe (suivi documenté) : le clustering natif Leaflet
- * (`leaflet.markercluster`). Le zoom natif sépare déjà les pins ; le clustering
- * sera ajouté ultérieurement si nécessaire.
+ * PARITÉ avec la carte SVG :
+ *  - Clic sur un pin → `onView(id)` (ouvre la fiche du bureau) ; survol →
+ *    `onHover(id)` (sync liste ↔ carte). Le tooltip natif Leaflet tient
+ *    l'aperçu au survol, d'où l'absence de popup pinnée côté tuiles (cf.
+ *    `office-map.tsx`).
+ *  - Clustering des marqueurs qui se CHEVAUCHENT au zoom courant (via
+ *    `clusterPoints`, la même primitive déterministe que la carte SVG) :
+ *    une pastille de comptage remplace les pins superposés et, au clic, zoome
+ *    pour les séparer. Le n°1 recommandé n'est JAMAIS absorbé — il reste
+ *    toujours rendu comme pin individuel au-dessus des clusters.
  */
 
 /** Vue initiale : Belgique entière (repli tant qu'aucun marqueur localisé). */
 const BELGIUM_CENTER: L.LatLngExpression = [50.85, 4.35]
 const BELGIUM_ZOOM = 8
 
+/**
+ * Seuil de chevauchement (en pixels ÉCRAN) au-delà duquel deux pins sont
+ * fusionnés en cluster. Calibré un peu au-dessus du diamètre d'un pin standard
+ * (26–34 px) pour ne regrouper QUE des marqueurs qui se recouvrent réellement.
+ * La distance pixel entre deux positions dépend UNIQUEMENT du zoom (invariante
+ * au pan), d'où le reclustering seulement sur `zoomend`.
+ */
+const CLUSTER_RADIUS_PX = 34
+
+/** Zoom marqueur agrandi/pin recommandé — juste au-dessus des clusters. */
+const Z_CLUSTER = 500
+
+/** Marqueur déjà localisé (lat/lng non nuls) — évite les gardes null en aval. */
+type LocatedMarker = OfficeMapMarker & { lat: number; lng: number }
+const isLocated = (m: OfficeMapMarker): m is LocatedMarker =>
+  m.lat != null && m.lng != null
+
+/** prefers-reduced-motion : coupe les animations (zoom/fondu) — vue instantanée. */
+function prefersReducedMotion(): boolean {
+  return (
+    typeof window !== 'undefined' &&
+    typeof window.matchMedia === 'function' &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  )
+}
+
 export function OfficeMapLeaflet(props: OfficeMapProps & { tileUrl: string }) {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const mapRef = useRef<L.Map | null>(null)
-  // Marqueurs vivants indexés par id — permet de tous les retirer/reconstruire
-  // proprement (pas de fuite) à chaque changement de `markers`/`selectedId`.
-  const markersRef = useRef<Map<string, L.Marker>>(new Map())
+  // Groupe de couches STABLE (créé au montage, jamais réassigné) qui contient
+  // TOUS les calques dessinés (pins + pastilles de cluster). Le rendu se fait
+  // par `clearLayers()` puis ré-ajout : pas de fuite, pas d'index à maintenir.
+  const layerGroupRef = useRef<L.LayerGroup | null>(null)
   // Clé du DERNIER jeu de marqueurs localisés déjà cadré (fitBounds), pour ne
   // PAS recadrer quand seule la sélection change (cf. plus bas). `null` = jamais
   // cadré encore.
   const fittedKeyRef = useRef<string | null>(null)
 
-  // Miroir des dernières props. Les handlers de marqueur (clic/survol) et
-  // l'effet d'init lisent `latestProps.current.*` : ils voient donc toujours
-  // les callbacks/tileUrl à jour même si l'effet de (re)construction des
-  // marqueurs n'a pas re-tourné (ex. l'orchestrateur passe un nouvel `onView`
-  // sans changer `markers`). Évite les closures périmées SANS mettre les
-  // callbacks dans les deps de l'effet (ce qui reconstruirait tous les pins à
-  // chaque changement d'identité de callback).
+  // Miroir des dernières props. Les handlers de marqueur (clic/survol) lisent
+  // `latestProps.current.*` : ils voient donc toujours les callbacks à jour
+  // même si l'effet de (re)construction des marqueurs n'a pas re-tourné (ex.
+  // l'orchestrateur passe un nouvel `onView` sans changer `markers`). Évite les
+  // closures périmées SANS mettre les callbacks dans les deps de l'effet (ce
+  // qui reconstruirait tous les pins à chaque changement d'identité de callback).
   const latestProps = useRef(props)
   // Synchronisée dans un effet APRÈS chaque rendu — jamais en phase de rendu :
   // la règle react-hooks/refs interdit d'écrire `.current` pendant le rendu.
@@ -76,18 +110,11 @@ export function OfficeMapLeaflet(props: OfficeMapProps & { tileUrl: string }) {
   useEffect(() => {
     const container = containerRef.current
     if (!container) return
-    // `markersRef.current` est un Map STABLE (jamais réassigné, seulement
-    // muté) : on le capture pour l'utiliser dans le cleanup sans lire
-    // `.current` au démontage (react-hooks/exhaustive-deps).
-    const markersMap = markersRef.current
 
     // prefers-reduced-motion : coupe TOUTES les animations Leaflet (zoom,
     // fondu des tuiles, zoom des marqueurs) — les transitions deviennent
     // instantanées, comme la carte SVG qui applique sa vue sans animation.
-    const reduceMotion =
-      typeof window !== 'undefined' &&
-      typeof window.matchMedia === 'function' &&
-      window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    const reduceMotion = prefersReducedMotion()
 
     const mapOptions: L.MapOptions = {
       zoomControl: true,
@@ -107,6 +134,8 @@ export function OfficeMapLeaflet(props: OfficeMapProps & { tileUrl: string }) {
     }).addTo(map)
     map.setView(BELGIUM_CENTER, BELGIUM_ZOOM)
     mapRef.current = map
+    // Le groupe qui portera pins + clusters, ajouté une fois pour toutes.
+    layerGroupRef.current = L.layerGroup().addTo(map)
 
     // Dans un conteneur flex/grid, la hauteur réelle peut n'être connue qu'après
     // le premier layout : Leaflet mesure alors 0px et rend une carte grise.
@@ -118,70 +147,140 @@ export function OfficeMapLeaflet(props: OfficeMapProps & { tileUrl: string }) {
 
     return () => {
       cancelAnimationFrame(raf)
-      // `map.remove()` détruit la carte, TOUTES ses couches (tuiles + marqueurs)
-      // et leurs écouteurs (clic/survol des pins, tooltips) : aucune fuite.
+      // `map.remove()` détruit la carte, TOUTES ses couches (tuiles, groupe de
+      // marqueurs + leurs écouteurs clic/survol/tooltip) : aucune fuite.
       map.remove()
       mapRef.current = null
-      markersMap.clear()
+      layerGroupRef.current = null
       fittedKeyRef.current = null
     }
   }, [])
 
-  // ─── (Re)construction des marqueurs à chaque changement du jeu de marqueurs
-  // ou de la sélection. Pour ~10 pins, tout reconstruire est trivial ; le
-  // garde-fou `fittedKeyRef` évite juste le RECADRAGE quand seule la sélection
-  // change. ───
+  // ─── (Re)construction des calques à chaque changement du jeu de marqueurs ou
+  // de la sélection, ET à chaque changement de zoom (le clustering dépend de la
+  // distance ÉCRAN entre pins). Pour ~10 pins, tout reconstruire est trivial ;
+  // le garde-fou `fittedKeyRef` évite juste le RECADRAGE quand seule la
+  // sélection change. ───
   useEffect(() => {
     const map = mapRef.current
-    if (!map) return
+    const group = layerGroupRef.current
+    if (!map || !group) return
 
-    // Retire tous les marqueurs existants + vide l'index (chaque `remove()`
-    // détache aussi les écouteurs et le tooltip du marqueur : pas de fuite).
-    for (const marker of markersRef.current.values()) marker.remove()
-    markersRef.current.clear()
+    // Ne place JAMAIS un bureau sans coordonnées connues à une position devinée :
+    // il est simplement absent de la carte (honnêteté, comme la carte SVG). Sa
+    // présence est signalée ailleurs par le boundary (`OfficeMap`).
+    const located = props.markers.filter(isLocated)
 
-    const coords: L.LatLngExpression[] = []
-    for (const marker of props.markers) {
-      const { lat, lng } = marker
-      // Un bureau sans coordonnées connues n'est JAMAIS placé à une position
-      // devinée : il est simplement absent de la carte (honnêteté, comme la
-      // carte SVG). Sa présence est signalée ailleurs par le boundary.
-      if (lat == null || lng == null) continue
-
-      const latlng: L.LatLngExpression = [lat, lng]
-      coords.push(latlng)
-      const selected = marker.id === props.selectedId
-
-      const lMarker = L.marker(latlng, {
-        icon: makeDivIcon(marker, selected),
+    // Ajoute un pin individuel (clic → fiche, survol → sync liste). Réutilisé
+    // pour les singletons de cluster ET pour le n°1 recommandé (jamais absorbé).
+    const addPin = (m: LocatedMarker) => {
+      const selected = m.id === latestProps.current.selectedId
+      const lMarker = L.marker([m.lat, m.lng], {
+        icon: makeDivIcon(m, selected),
         riseOnHover: true,
         // Le n°1 recommandé domine toujours l'empilement ; le sélectionné passe
         // au-dessus des pins standard ; les autres au niveau de base.
-        zIndexOffset: marker.recommended ? 1000 : selected ? 900 : 0,
+        zIndexOffset: m.recommended ? 1000 : selected ? 900 : 0,
       })
-
       // Clic sur un pin → ouvre la fiche du bureau (équivalent « Voir le
       // bureau » de la liste). Survol → synchronise le surlignage liste ↔ carte
-      // via `onHover`. Les callbacks sont lus sur `latestProps` (jamais périmés).
-      lMarker.on('click', () => latestProps.current.onView(marker.id))
-      lMarker.on('mouseover', () => latestProps.current.onHover(marker.id))
+      // via `onHover`. Callbacks lus sur `latestProps` (jamais périmés).
+      lMarker.on('click', () => latestProps.current.onView(m.id))
+      lMarker.on('mouseover', () => latestProps.current.onHover(m.id))
       lMarker.on('mouseout', () => latestProps.current.onHover(null))
-      lMarker.bindTooltip(marker.label)
-      lMarker.addTo(map)
-      markersRef.current.set(marker.id, lMarker)
+      lMarker.bindTooltip(m.label)
+      lMarker.addTo(group)
     }
+
+    // Ajoute une pastille de comptage à la position centroïde du cluster. Au
+    // clic : zoome pour cadrer ses membres (les pins se séparent alors au
+    // reclustering déclenché par `zoomend`). Cas dégénéré (membres à coords
+    // identiques → bounds ponctuelle) : simple zoom-in autour du point.
+    const addCluster = (
+      center: L.LatLng,
+      count: number,
+      members: LocatedMarker[],
+    ) => {
+      const cMarker = L.marker(center, {
+        icon: makeClusterIcon(count),
+        riseOnHover: true,
+        zIndexOffset: Z_CLUSTER,
+      })
+      cMarker.on('click', () => {
+        const latlngs = members.map((m): L.LatLngExpression => [m.lat, m.lng])
+        if (latlngs.length === 0) return
+        const animate = !prefersReducedMotion()
+        const bounds = L.latLngBounds(latlngs)
+        if (bounds.getNorthEast().equals(bounds.getSouthWest())) {
+          map.setView(bounds.getCenter(), Math.min(map.getZoom() + 3, 18), { animate })
+        } else {
+          map.fitBounds(bounds, { padding: [60, 60], maxZoom: 18, animate })
+        }
+      })
+      cMarker.addTo(group)
+    }
+
+    // Reconstruit tous les calques au zoom courant. Séparé du cadrage
+    // (fitBounds) pour pouvoir être rappelé sur `zoomend` SANS refitter (ce qui
+    // écraserait le zoom de l'utilisateur).
+    const renderLayers = () => {
+      group.clearLayers()
+
+      // Le n°1 recommandé est TOUJOURS rendu à part, jamais soumis au
+      // clustering : sa position est garantie visible et cliquable.
+      const clusterable: LocatedMarker[] = []
+      const recommended: LocatedMarker[] = []
+      for (const m of located) {
+        if (m.recommended) recommended.push(m)
+        else clusterable.push(m)
+      }
+
+      // Projette chaque marqueur clusterable en point de calque (distances
+      // relatives = pixels écran au zoom courant, invariantes au pan).
+      const byId = new Map<string, LocatedMarker>()
+      const points: ClusterPoint[] = []
+      for (const m of clusterable) {
+        byId.set(m.id, m)
+        const pt = map.latLngToLayerPoint([m.lat, m.lng])
+        points.push({ id: m.id, x: pt.x, y: pt.y })
+      }
+
+      for (const cluster of clusterPoints(points, CLUSTER_RADIUS_PX)) {
+        const members: LocatedMarker[] = []
+        for (const id of cluster.ids) {
+          const m = byId.get(id)
+          if (m) members.push(m)
+        }
+        if (members.length === 0) continue
+        if (members.length === 1) {
+          addPin(members[0])
+        } else {
+          // Centroïde renvoyé en point de calque → reconverti en lat/lng.
+          addCluster(map.layerPointToLatLng([cluster.x, cluster.y]), cluster.count, members)
+        }
+      }
+
+      // Recommandé(s) dessiné(s) EN DERNIER et au-dessus : jamais absorbé(s).
+      for (const m of recommended) addPin(m)
+    }
+
+    renderLayers()
 
     // fitBounds seulement quand le JEU de marqueurs localisés change réellement
     // (clé = ids triés joints). Sinon (changement de sélection uniquement, ou
     // simple mise à jour de libellés sans changement d'ids), on NE recadre PAS :
     // le zoom/pan de l'utilisateur est préservé.
-    const idKey = [...markersRef.current.keys()].sort().join('|')
+    const idKey = located
+      .map((m) => m.id)
+      .sort()
+      .join('|')
     if (idKey !== fittedKeyRef.current) {
       fittedKeyRef.current = idKey
-      if (coords.length >= 1) {
+      if (located.length >= 1) {
         // `maxZoom` garde un cadrage raisonnable même avec un seul pin (sinon
         // fitBounds zoomerait à fond sur un point unique). `animate: false` =
         // cadrage direct (respecte aussi l'esprit reduced-motion).
+        const coords = located.map((m): L.LatLngExpression => [m.lat, m.lng])
         map.fitBounds(L.latLngBounds(coords), {
           padding: [40, 40],
           maxZoom: 15,
@@ -189,6 +288,14 @@ export function OfficeMapLeaflet(props: OfficeMapProps & { tileUrl: string }) {
         })
       }
       // 0 marqueur localisé → on garde la vue Belgique posée au montage.
+    }
+
+    // Le clustering dépend du zoom : on recluste après chaque changement de
+    // zoom (le pan est sans effet sur les distances pixel entre pins). Le
+    // listener est nettoyé au re-run/démontage de l'effet.
+    map.on('zoomend', renderLayers)
+    return () => {
+      map.off('zoomend', renderLayers)
     }
   }, [props.markers, props.selectedId])
 
@@ -263,5 +370,36 @@ function makeDivIcon(m: OfficeMapMarker, selected: boolean): L.DivIcon {
     iconSize: [size, size],
     iconAnchor: [size / 2, size / 2],
     tooltipAnchor: [0, -size / 2],
+  })
+}
+
+/**
+ * Pastille de COMPTAGE d'un cluster de pins superposés. Fond violet foncé
+ * translucide (même teinte que le halo de sélection, `rgba(27,21,48,…)`) +
+ * bordure et chiffre blancs : c'est de la LISIBILITÉ de marqueur au-dessus d'un
+ * fond de tuiles quelconque (comme les pins), pas une surface d'app — d'où le
+ * blanc assumé ici, cohérent avec `makeDivIcon`. Visuellement distincte des
+ * pins catégoriels pour signaler « plusieurs bureaux, cliquer pour dézoomer ».
+ */
+function makeClusterIcon(count: number): L.DivIcon {
+  const size = count >= 10 ? 44 : 38
+  const fontSize = count >= 10 ? 15 : 16
+  const html =
+    `<div style="` +
+    `width:${size}px;height:${size}px;` +
+    `display:flex;align-items:center;justify-content:center;` +
+    `box-sizing:border-box;border-radius:9999px;` +
+    `background:rgba(27,21,48,0.90);border:2px solid #fff;` +
+    `box-shadow:0 2px 8px rgba(0,0,0,0.45);` +
+    `color:#fff;font-weight:800;line-height:1;` +
+    `font-size:${fontSize}px;` +
+    `font-family:var(--font-sans),system-ui,sans-serif;` +
+    `">${String(count)}</div>`
+
+  return L.divIcon({
+    html,
+    className: 'oml-cluster',
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size / 2],
   })
 }

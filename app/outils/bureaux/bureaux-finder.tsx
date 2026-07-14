@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useMemo, useRef, type ReactNode } fro
 import dynamic from 'next/dynamic'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
-import { MapPin } from 'lucide-react'
+import { MapPin, Info } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 
@@ -359,6 +359,33 @@ export function BureauxFinder() {
     return f
   }, [data, cp, demarche, t])
 
+  // Avertissements du résolveur (`data.warnings`) : la plupart sont des notes de
+  // provenance INTERNES (« trouvé via le mapping officiel ONEM », « estimé par
+  // proximité ») sans intérêt pour le public. On ne surface QUE celui qui change
+  // ce que l'utilisateur voit : code postal absent de l'annuaire → aucun bureau
+  // officiellement attitré, résultats simplement classés par proximité. On mappe
+  // vers une copie propre (pas la chaîne technique brute). Détection par le
+  // marqueur stable « pas encore référencé » émis par lib/bureaus/resolve.ts ;
+  // à réviser si ce libellé serveur change.
+  const resolverNotice = useMemo(
+    () =>
+      (data?.warnings ?? []).some((w) => w.includes('pas encore référencé'))
+        ? t('bureauxNoticeUnreferenced')
+        : null,
+    [data, t],
+  )
+
+  // Honnêteté : les avertissements non surfacés (provenance ONEM, estimations)
+  // restent tracés en dev pour ne pas les perdre silencieusement, sans polluer
+  // l'écran du citoyen.
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'production') return
+    const warnings = data?.warnings
+    if (warnings && warnings.length > 0) {
+      console.debug('[bureaux] avertissements résolveur:', warnings)
+    }
+  }, [data])
+
   // --- Fragments d'interface partagés (mobile ↔ desktop) -----------------
   const emptyBody = demarche !== 'inconnu' ? t('demarcheEmptyBody') : t('emptyBody')
 
@@ -465,6 +492,7 @@ export function BureauxFinder() {
           <div className={`${mobileView === 'carte' ? 'hidden' : ''} space-y-4 lg:block`}>
             <DemarcheSelector value={demarche} onChange={setDemarche} />
             <ActiveFilters filters={activeFilters} onRemove={removeFilter} onClear={clearAllFilters} />
+            {!loading && !error && resolverNotice && <ResolverNotice message={resolverNotice} />}
             {results}
           </div>
         </div>
@@ -496,6 +524,25 @@ export function BureauxFinder() {
           </div>
         </div>
       )}
+    </div>
+  )
+}
+
+/**
+ * Notice discrète, non-bloquante (« informatif jamais bloquant ») posée au-dessus
+ * des résultats quand le résolveur signale un cas qui change ce que voit le
+ * citoyen — actuellement : code postal absent de l'annuaire. Surface verre,
+ * accent ambre (cf. `ErrorState`/`geoloc-banner`), icône d'info : jamais une
+ * erreur ni une modale. Le libellé arrive déjà localisé du parent.
+ */
+function ResolverNotice({ message }: { message: string }) {
+  return (
+    <div
+      role="status"
+      className="flex items-start gap-2.5 rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-foreground"
+    >
+      <Info className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" aria-hidden />
+      <p className="min-w-0">{message}</p>
     </div>
   )
 }

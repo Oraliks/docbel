@@ -6378,6 +6378,7 @@
       "emptyTitle": "Aucun bureau trouvé",
       "emptyBody": "Modifiez votre adresse ou choisissez une autre démarche.",
       "demarcheEmptyBody": "Aucun bureau ne correspond à cette démarche pour cette adresse.",
+      "bureauxNoticeUnreferenced": "Ce code postal n'est pas encore référencé dans notre annuaire : les bureaux ci-dessous sont classés par proximité, sans bureau officiellement attitré à votre commune.",
       "modifySearch": "Modifier la recherche",
       "errorRetry": "Réessayer",
       "communeZoneEyebrow": "Votre zone",

@@ -126,10 +126,10 @@ export function AddressSearch({
   locating = false,
   geolocError = null,
 }: Props) {
-  // Cast idiome partagé (cf. bureaux-finder.tsx) : les clés de groupes/états
-  // (`suggestGroup*`, `suggestLoading`, `suggestNoResult`) sont ajoutées à
-  // fr.json dans une tâche suivante ; le typage strict next-intl ferait échouer
-  // `tsc` sans ce cast. Les clés existantes restent résolues normalement.
+  // Cast idiome partagé (cf. bureaux-finder.tsx) : `t()` reçoit ici des clés
+  // DYNAMIQUES (labels de groupes stockés en variable, `suggestGroup*` etc.),
+  // ce que le typage strict next-intl rejette pour une non-littérale. Toutes
+  // les clés utilisées existent bien dans fr.json.
   const t = useTranslations('public.outils') as (key: string) => string
 
   const [addresses, setAddresses] = useState<AddressSuggestion[]>([])
@@ -222,7 +222,7 @@ export function AddressSearch({
     const addressRows: ResultRow[] = addresses
       .filter(
         (a): a is AddressSuggestion & { postcode: string } =>
-          typeof a.postcode === 'string' && a.postcode.length >= ADDRESS_MIN_CHARS,
+          typeof a.postcode === 'string' && /^\d{4}$/.test(a.postcode),
       )
       .map((a, i) => ({
         kind: 'address',

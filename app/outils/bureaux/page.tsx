@@ -8,7 +8,7 @@ import { DisabledToolView } from '../[slug]/disabled-tool-view'
 export const metadata: Metadata = {
   title: 'Trouver un bureau — DocBel',
   description:
-    "Trouve d'un coup le bureau compétent pour ta commune : ONEM, CPAS, organisme de paiement, aide juridique. Données officielles ONEM.",
+    "Trouvez d'un coup le bureau compétent pour votre commune : ONEM, CPAS, organisme de paiement, aide juridique. Données officielles ONEM.",
 }
 
 export const dynamic = 'force-dynamic'

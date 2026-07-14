@@ -79,15 +79,17 @@ export function OfficeDetail({
               {t(meta.labelKey)}
             </div>
             <div className="text-xl font-extrabold text-foreground leading-tight mt-0.5">{b.name}</div>
-            <span
-              className={`inline-flex items-center mt-2 text-xs font-semibold px-2.5 py-1 rounded-full ${
-                open
-                  ? 'text-emerald-700 bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300'
-                  : 'text-amber-700 bg-amber-100 dark:bg-amber-950/40 dark:text-amber-300'
-              }`}
-            >
-              {open ? t('bureauxStatusOpen') : t('bureauxStatusClosed')}
-            </span>
+            {status.state !== 'no_data' && (
+              <span
+                className={`inline-flex items-center mt-2 text-xs font-semibold px-2.5 py-1 rounded-full ${
+                  open
+                    ? 'text-emerald-700 bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300'
+                    : 'text-amber-700 bg-amber-100 dark:bg-amber-950/40 dark:text-amber-300'
+                }`}
+              >
+                {open ? t('bureauxStatusOpen') : t('bureauxStatusClosed')}
+              </span>
+            )}
           </div>
         </div>
 

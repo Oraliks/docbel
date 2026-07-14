@@ -122,7 +122,9 @@ async function buildHealthPayload(): Promise<HealthPayload> {
         take: 50,
       })
     ),
-    withDbRetry(() => prisma.commune.count()),
+    // Exclut les communes fusionnées (mergedIntoId) : elles n'ont plus de guichet
+    // propre → sinon la couverture afficherait de faux "manquants".
+    withDbRetry(() => prisma.commune.count({ where: { mergedIntoId: null } })),
     withDbRetry(() =>
       prisma.bureau.findMany({
         where: { active: true, type: "CPAS", communeId: { not: null } },

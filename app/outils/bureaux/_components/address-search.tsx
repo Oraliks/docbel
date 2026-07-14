@@ -55,6 +55,13 @@ export function AddressSearch({
   const [suggestions, setSuggestions] = useState<CommuneSuggestion[]>([])
   const [open, setOpen] = useState(false)
   const [activeIndex, setActiveIndex] = useState(-1)
+  // Focus réel du champ (posé par `onFocus`/`onBlur`) : distingue une frappe
+  // utilisateur (champ focus) d'une écriture PROGRAMMATIQUE de `value`
+  // (geoloc, sélection commune) qui ne focus jamais le champ. Sans ce garde,
+  // une telle écriture (ex. nom de ville après géoloc) reste `eligible` et
+  // déclenche quand même le fetch de suggestions, ouvrant un dropdown
+  // qu'aucun blur ne vient ensuite fermer (dropdown fantôme).
+  const [focused, setFocused] = useState(false)
   const abortRef = useRef<AbortController | null>(null)
   // Sélection en cours : `onSelectCommune` réécrit `value` (nom choisi) chez
   // le parent, ce qui redéclenche cet effet (dep `trimmed`). Sans ce garde,
@@ -72,15 +79,19 @@ export function AddressSearch({
   // même mécanique que la résolution CP de l'orchestrateur. Les seuls
   // `setState` qui touchent `suggestions`/`open` arrivent dans le callback
   // ASYNCHRONE du fetch (après le `setTimeout`), jamais de façon synchrone
-  // dans le corps de l'effet — la branche « inéligible » se contente
-  // d'annuler une requête en vol, sans écrire d'état (cf. `showDropdown`).
+  // dans le corps de l'effet — la branche « inéligible ou pas focus » se
+  // contente d'annuler une requête en vol, sans écrire d'état (cf.
+  // `showDropdown`). Le garde `focused` empêche une écriture PROGRAMMATIQUE de
+  // `value` (geoloc, sélection commune) de rouvrir le dropdown : ces
+  // écritures ne focus jamais le champ, donc aucun blur ne viendrait ensuite
+  // le refermer.
   useEffect(() => {
     if (skipNextFetchRef.current) {
       skipNextFetchRef.current = false
       abortRef.current?.abort()
       return
     }
-    if (!eligible) {
+    if (!eligible || !focused) {
       abortRef.current?.abort()
       return
     }
@@ -104,7 +115,7 @@ export function AddressSearch({
         })
     }, DEBOUNCE_MS)
     return () => clearTimeout(timer)
-  }, [trimmed, eligible])
+  }, [trimmed, eligible, focused])
 
   // Annule toute requête encore en vol au démontage.
   useEffect(() => {
@@ -171,13 +182,12 @@ export function AddressSearch({
             value={value}
             onChange={(e) => onChange(e.target.value)}
             onKeyDown={handleKeyDown}
-            onFocus={() => {
-              if (suggestions.length > 0) setOpen(true)
-            }}
+            onFocus={() => setFocused(true)}
             onBlur={() => {
               // Délai avant fermeture pour laisser le `onMouseDown` d'une
               // suggestion (ci-dessous) aboutir avant que le blur ne ferme.
               setTimeout(() => setOpen(false), 150)
+              setFocused(false)
             }}
             role="combobox"
             aria-expanded={showDropdown}

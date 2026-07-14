@@ -687,6 +687,7 @@ export function CustomBelgiumMap({
             <g key={`cluster-${c.ids[0]}`} transform={`translate(${c.x}, ${c.y})`}>
               <ClusterBubble
                 count={c.count}
+                title={t('mapClusterCount', { count: c.count })}
                 onClick={() => {
                   // Un vrai drag/pinch ne doit pas déclencher un zoom ; seul
                   // un tap net (sans déplacement) dé-clusterise.
@@ -888,10 +889,21 @@ function Dot({
  * (dé-clustering, cf. `zoomAroundPoint`). Même technique de texte à contour
  * sombre que les numéros de pin (`Dot`) pour rester lisible sur tout fond.
  */
-function ClusterBubble({ count, onClick }: { count: number; onClick: () => void }) {
+function ClusterBubble({
+  count,
+  title,
+  onClick,
+}: {
+  count: number
+  /** Libellé du tooltip natif (déjà traduit par l'appelant, ex.
+   *  `t('mapClusterCount', { count })`) — composant purement présentationnel,
+   *  pas d'accès i18n ici (même pattern que `Dot`). */
+  title: string
+  onClick: () => void
+}) {
   return (
     <g onClick={onClick} style={{ cursor: 'pointer' }}>
-      <title>{`${count} bureaux`}</title>
+      <title>{title}</title>
       <circle cx={0} cy={0} r={14} fill="var(--primary)" stroke="#ffffff" strokeWidth={2} />
       <text
         x={0}

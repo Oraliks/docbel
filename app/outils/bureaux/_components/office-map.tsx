@@ -1,7 +1,7 @@
 // app/outils/bureaux/_components/office-map.tsx
 'use client'
 
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { CustomBelgiumMap, type MapBureau } from './custom-belgium-map'
 import { OfficeMapPopup } from './office-map-popup'
@@ -21,6 +21,16 @@ import type { OfficeMapProps } from './office-map-types'
  */
 export function OfficeMap(props: OfficeMapProps) {
   const t = useTranslations('public.outils')
+
+  // Popup épinglée par CLIC — distincte du highlight de pin (`selectedId`,
+  // piloté par le survol côté orchestrateur, cf. plus bas). Sans cette
+  // distinction, la popup clignotait au survol de la liste/des pins sur
+  // desktop et ses boutons étaient inatteignables (elle se démontait dès
+  // que la souris quittait le pin). `useState` posé dans le handler de clic
+  // ci-dessous (jamais dans un effet) : un `pinnedId` devenu obsolète (jeu
+  // de résultats changé) ne matche plus aucun marker → `pinnedMarker`
+  // retombe à `null` → plus de popup, sans effet correctif nécessaire.
+  const [pinnedId, setPinnedId] = useState<string | null>(null)
 
   // Seuls les marqueurs avec de vraies coordonnées peuvent être projetés
   // sur la carte SVG — jamais de faux placement (ex. centroïde commune)
@@ -58,8 +68,8 @@ export function OfficeMap(props: OfficeMapProps) {
     return { bureaus: located, unlocatedCount: missing }
   }, [props.markers])
 
-  const selectedMarker =
-    props.selectedId != null ? (props.markers.find((m) => m.id === props.selectedId) ?? null) : null
+  const pinnedMarker =
+    pinnedId != null ? (props.markers.find((m) => m.id === pinnedId) ?? null) : null
 
   return (
     <div className="glass-surface relative h-full w-full overflow-hidden rounded-3xl">
@@ -100,17 +110,23 @@ export function OfficeMap(props: OfficeMapProps) {
         center={props.center}
         bureaus={memoizedBureaus}
         selectedId={props.selectedId}
-        onPinClick={props.onSelect}
+        onPinClick={(id) => {
+          setPinnedId(id)
+          props.onSelect(id)
+        }}
         onPinHover={props.onHover}
       />
 
-      {selectedMarker && (
+      {pinnedMarker && (
         <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 p-3">
           <div className="pointer-events-auto mx-auto w-full max-w-sm">
             <OfficeMapPopup
-              marker={selectedMarker}
+              marker={pinnedMarker}
               onView={props.onView}
-              onClose={() => props.onHover(null)}
+              onClose={() => {
+                setPinnedId(null)
+                props.onHover(null)
+              }}
             />
           </div>
         </div>

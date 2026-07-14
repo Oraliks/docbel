@@ -32,7 +32,7 @@ export function AddressSearch({ value, onChange, onUseLocation, locating = false
           className={`${GLASS_INPUT} flex h-12 items-center gap-2.5 border px-3.5 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-[color:var(--primary)]`}
         >
           <MapPin
-            className="w-4.5 h-4.5 shrink-0"
+            className="w-[18px] h-[18px] shrink-0"
             style={{ color: 'var(--primary)' }}
             aria-hidden="true"
           />

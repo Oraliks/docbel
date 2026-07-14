@@ -29,14 +29,14 @@ export function RecommendedOfficeCard({
   const meta = TYPE_META[office.type]
   const b = office.bureau
   const status = computeOpenStatus(b.hours)
-  const open = status.state === 'open'
   const address = [b.street, b.streetNum].filter(Boolean).join(' ') + `, ${b.postalCode} ${b.city}`
   const mapsHref = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(address + ', Belgique')}`
 
   // Segments de la ligne d'info, chacun omis individuellement si la donnée
-  // manque (jamais de "undefined km" ni de trou visuel) : distance et temps
-  // de marche dépendent tous deux de `distanceKm`, le statut est toujours
-  // disponible (computeOpenStatus retombe sur "closed"-like sinon).
+  // manque (jamais de "undefined km" / trou visuel). Règle d'honnêteté sur
+  // le statut (même règle que office-result-row.tsx) : `no_data` (aucun
+  // horaire connu pour ce bureau) n'affiche PAS "Fermé" — ce serait une
+  // donnée inventée — le segment est simplement omis.
   const segments: { key: string; text: string; className?: string }[] = []
   if (office.distanceKm != null) {
     segments.push({
@@ -49,11 +49,15 @@ export function RecommendedOfficeCard({
       text: `${estimateTravel(office.distanceKm).walkMin} min ${t('bureauxWalk')}`,
     })
   }
-  segments.push({
-    key: 'status',
-    text: open ? t('bureauxStatusOpen') : t('bureauxStatusClosed'),
-    className: open ? 'font-semibold text-emerald-700 dark:text-emerald-300' : undefined,
-  })
+  if (status.state === 'open') {
+    segments.push({
+      key: 'status',
+      text: t('bureauxStatusOpen'),
+      className: 'font-semibold text-emerald-700 dark:text-emerald-300',
+    })
+  } else if (status.state !== 'no_data') {
+    segments.push({ key: 'status', text: t('bureauxStatusClosed') })
+  }
 
   return (
     <div className="glass-surface rounded-3xl p-6 sm:p-8">

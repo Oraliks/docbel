@@ -48,7 +48,7 @@ export function OfficeDetail({
             className="flex-none w-9 h-9 rounded-xl border border-border flex items-center justify-center"
             aria-label={t('bureauxBackToResults')}
           >
-            <ChevronLeft className="w-4.5 h-4.5" />
+            <ChevronLeft className="w-[18px] h-[18px]" />
           </button>
           <span className="text-sm font-bold text-foreground/80">{t('bureauxBackToResults')}</span>
         </div>

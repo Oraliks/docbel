@@ -94,6 +94,7 @@ export function BureauxFinder() {
     async (postalCode: string) => {
       if (!/^\d{4}$/.test(postalCode)) {
         setData(null)
+        setError(null)
         setLoading(false)
         return
       }

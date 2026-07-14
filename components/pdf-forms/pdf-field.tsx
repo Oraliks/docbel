@@ -78,6 +78,10 @@ interface Props {
   /// ont besoin pour évaluer `visibleIfParent` sur leurs sous-champs. Ignoré
   /// pour les autres types.
   parentValues?: FormPayload;
+  /// Signale que CE champ vient de prendre le focus (§10.4, Lot 4d) — appelé
+  /// avec `field.id` depuis `onFocus` (inputs) et `onClick` (contrôles boutons :
+  /// cases, segmenté oui/non). Purement additif : absent = comportement inchangé.
+  onFocusField?: (id: string) => void;
 }
 
 /// Rend le label + une InfoTooltip si `help` est présent — remplace
@@ -120,8 +124,12 @@ function LabelWithTooltip({
 export function PdfField({
   field, value, error, locale, onChange, formId, formSlug, rowLayout = false,
   derivedValue = null, relatedPostalCode, onSelectStreetSuggestion, onStreetVerifiedChange, parentValues,
+  onFocusField,
 }: Props) {
   const label = loc(field.label, locale);
+  // Remonte le focus de ce champ au panneau d'aide (§10.4). `undefined` si le
+  // parent ne câble pas la prop → `onFocus`/`onClick={undefined}` = no-op.
+  const notifyFocus = onFocusField ? () => onFocusField(field.id) : undefined;
   const labelShort = field.labelShort ? loc(field.labelShort, locale) : undefined;
   const help = loc(field.help, locale);
   const placeholder = loc(field.placeholder, locale);
@@ -207,7 +215,7 @@ export function PdfField({
     const isReadOnly = field.readOnly === true;
     if (rowLayout) {
       return (
-        <div className="flex flex-col gap-1 px-4 py-3" data-invalid={invalid}>
+        <div className="flex flex-col gap-1 px-4 py-3" data-invalid={invalid} onFocus={notifyFocus} onClick={notifyFocus}>
           <div className="flex items-center justify-between gap-4">
             <FieldLabel
               htmlFor={field.id}
@@ -227,7 +235,7 @@ export function PdfField({
       );
     }
     return (
-      <Field orientation="horizontal" data-invalid={invalid}>
+      <Field orientation="horizontal" data-invalid={invalid} onFocus={notifyFocus} onClick={notifyFocus}>
         <Checkbox
           id={field.id}
           checked={value === true}
@@ -259,7 +267,7 @@ export function PdfField({
     );
     if (rowLayout) {
       return (
-        <div className="flex flex-col gap-1 px-4 py-3" data-invalid={invalid}>
+        <div className="flex flex-col gap-1 px-4 py-3" data-invalid={invalid} onFocus={notifyFocus} onClick={notifyFocus}>
           <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
             <FieldLabel htmlFor={field.id} className="min-w-0 flex-1">
               <LabelWithTooltip label={label} labelShort={labelShort} help={help} required={field.required} />
@@ -280,7 +288,7 @@ export function PdfField({
       );
     }
     return (
-      <Field data-invalid={invalid} className="gap-1.5">
+      <Field data-invalid={invalid} className="gap-1.5" onFocus={notifyFocus} onClick={notifyFocus}>
         <FieldLabel htmlFor={field.id} className="text-[13px]">
           <LabelWithTooltip label={label} labelShort={labelShort} help={help} required={field.required} />
         </FieldLabel>
@@ -302,7 +310,7 @@ export function PdfField({
   // Select / radio (3+ options) : liste déroulante (compact), inchangé.
   if (field.type === "select" || field.type === "radio") {
     return (
-      <Field data-invalid={invalid} className="gap-1.5">
+      <Field data-invalid={invalid} className="gap-1.5" onFocus={notifyFocus} onClick={notifyFocus}>
         <FieldLabel htmlFor={field.id} className="text-[13px]">
           <LabelWithTooltip label={label} labelShort={labelShort} help={help} required={field.required} />
         </FieldLabel>
@@ -327,7 +335,7 @@ export function PdfField({
   // Textarea
   if (field.type === "textarea") {
     return (
-      <Field data-invalid={invalid} className="gap-1.5">
+      <Field data-invalid={invalid} className="gap-1.5" onFocus={notifyFocus} onClick={notifyFocus}>
         <FieldLabel htmlFor={field.id} className="text-[13px]">
           <LabelWithTooltip label={label} labelShort={labelShort} help={help} required={field.required} />
         </FieldLabel>
@@ -372,7 +380,7 @@ export function PdfField({
       </div>
     );
     return (
-      <Field data-invalid={invalid} className="gap-1.5">
+      <Field data-invalid={invalid} className="gap-1.5" onFocus={notifyFocus} onClick={notifyFocus}>
         <FieldLabel htmlFor={field.id} className="text-[13px]">
           <LabelWithTooltip label={label} labelShort={labelShort} help={help} required={field.required} />
         </FieldLabel>
@@ -391,7 +399,7 @@ export function PdfField({
   // NISS : masque automatique AAMMJJ-SSS.CC
   if (field.type === "niss") {
     return (
-      <Field data-invalid={invalid} className="gap-1.5">
+      <Field data-invalid={invalid} className="gap-1.5" onFocus={notifyFocus} onClick={notifyFocus}>
         <FieldLabel htmlFor={field.id} className="text-[13px]">
           <LabelWithTooltip label={label} labelShort={labelShort} help={help} required={field.required} />
         </FieldLabel>
@@ -418,7 +426,7 @@ export function PdfField({
   if (field.type === "iban") {
     const ibanCountry = field.internationalIban ? countryNameFromIban((value as string) ?? "") : null;
     return (
-      <Field data-invalid={invalid} className="gap-1.5">
+      <Field data-invalid={invalid} className="gap-1.5" onFocus={notifyFocus} onClick={notifyFocus}>
         <FieldLabel htmlFor={field.id}>
           <LabelWithTooltip label={label} labelShort={labelShort} help={help} required={field.required} />
         </FieldLabel>
@@ -463,7 +471,7 @@ export function PdfField({
   // AUTO — system.today — restent en input verrouillé). Cf. #7a.
   const useDatePicker = field.type === "date" && !locked;
   return (
-    <Field data-invalid={invalid} className="gap-1.5">
+    <Field data-invalid={invalid} className="gap-1.5" onFocus={notifyFocus} onClick={notifyFocus}>
       <FieldLabel htmlFor={field.id}>
         <LabelWithTooltip label={label} labelShort={labelShort} help={help} required={field.required} />
       </FieldLabel>

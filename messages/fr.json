@@ -4987,6 +4987,7 @@
       "runnerStepCounter": "Étape {current} sur {total}",
       "runnerStepRemaining": "{count, plural, one {# champ restant} other {# champs restants}}",
       "runnerHelpPanelEyebrow": "Conseils utiles",
+      "runnerFieldHelpEyebrow": "À propos de ce champ",
       "runnerHelpExamplesLabel": "Exemples",
       "runnerHelpChecklistLabel": "À vérifier",
       "runnerHelpNeedHelpTitle": "Besoin d'aide ?",

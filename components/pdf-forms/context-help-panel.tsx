@@ -4,7 +4,8 @@ import Link from "next/link";
 import { ArrowRightIcon, CheckIcon, InfoIcon, LifeBuoyIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { getSectionHelp } from "@/lib/pdf-forms/section-help";
-import type { Locale } from "@/lib/pdf-forms/types";
+import type { Locale, Localized } from "@/lib/pdf-forms/types";
+import { pickFieldHelp } from "@/lib/pdf-forms/field-help";
 import {
   getDefaultTipsForForm,
   pickLocalized,
@@ -25,6 +26,14 @@ interface ContextHelpPanelProps {
   /// Entrées « infos importantes » servies par le serveur (DB sur défauts).
   /// Absent = repli sur les défauts purs (`getDefaultTipsForForm`).
   entries?: TipEntry[];
+  /// Id du champ actuellement focalisé (§10.4, Lot 4d). Quand il est renseigné
+  /// ET que le champ correspondant porte une aide, on affiche « À propos de ce
+  /// champ » EN TÊTE du panneau, au-dessus des infos importantes. Absent / sans
+  /// aide = panneau strictement inchangé.
+  activeFieldId?: string;
+  /// Champs du formulaire (au minimum `{ id, help }`) — sert à résoudre l'aide
+  /// du champ focalisé via `pickFieldHelp`. Ignoré si `activeFieldId` absent.
+  fields?: { id: string; help?: Localized }[];
   locale: Locale;
 }
 
@@ -38,18 +47,39 @@ export function ContextHelpPanel({
   sectionKeys,
   checkedFieldIds,
   entries,
+  activeFieldId,
+  fields,
   locale,
 }: ContextHelpPanelProps) {
   const t = useTranslations("public.dossier");
   const source = entries ?? getDefaultTipsForForm(formSlug);
   const shown = resolveTips(source, { sectionKeys, checkedFieldIds });
   const help = getSectionHelp(sectionKeys[0], locale);
+  // Couche focus (§10.4) AU-DESSUS du système existant : aide propre du champ
+  // focalisé, résolue via le sélecteur pur `pickFieldHelp`. N'altère ni
+  // `resolveTips`, ni le repli de section, ni le contact.
+  const activeField = activeFieldId ? fields?.find((f) => f.id === activeFieldId) : undefined;
+  const fieldHelp = activeField ? pickFieldHelp(activeField, locale) : null;
 
   return (
     <aside className="flex flex-col gap-3.5 rounded-3xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface-strong)] p-4 lg:sticky lg:top-6">
       <p className="text-[11px] font-bold uppercase tracking-[0.08em] text-[color:var(--glass-ink-soft)]">
         {t("runnerHelpPanelEyebrow")}
       </p>
+
+      {/* Aide du champ focalisé (§10.4, Lot 4d) — surface EN TÊTE, au-dessus des
+          infos importantes. Rendu seulement si un champ focalisé porte une aide ;
+          sinon le panneau reste identique (tips → repli section → contact). */}
+      {fieldHelp && (
+        <div className="flex flex-col gap-1.5 rounded-2xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] p-3.5">
+          <span className="text-[11px] font-bold uppercase tracking-[0.08em] text-[color:var(--glass-accent-deep,#5B46E5)]">
+            {t("runnerFieldHelpEyebrow")}
+          </span>
+          <p className="text-[13px] leading-relaxed text-[color:var(--glass-ink-soft)]">
+            {fieldHelp}
+          </p>
+        </div>
+      )}
 
       {shown.length > 0 ? (
         shown.map((entry) => {

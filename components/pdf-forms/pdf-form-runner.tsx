@@ -150,6 +150,11 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
   >(null);
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Champ actuellement focalisé (§10.4, Lot 4d) : pilote l'aide « À propos de
+  // ce champ » en tête du panneau de gauche. Mis à jour PAR ÉVÉNEMENT (focus /
+  // clic d'un champ) — jamais dans un useEffect (règle anti-setState-in-effect).
+  const [activeFieldId, setActiveFieldId] = useState<string | undefined>(undefined);
+  const handleFocusField = useCallback((id: string) => setActiveFieldId(id), []);
 
   // Rues `requireListMatch` VÉRIFIÉES (choisies dans la liste) — état local,
   // jamais sérialisé. Init : une rue déjà non vide au montage (brouillon
@@ -767,6 +772,8 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
         liveTriggers={liveTriggers}
         bundleRunId={bundleRunId}
         onStreetVerifiedChange={handleStreetVerified}
+        onFocusField={handleFocusField}
+        activeFieldId={activeFieldId}
         contextTips={contextTips}
         t={t}
       />
@@ -822,6 +829,8 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
             sectionKeys={activeSectionKey ? [activeSectionKey] : []}
             checkedFieldIds={checkedFieldIds}
             entries={contextTips}
+            activeFieldId={activeFieldId}
+            fields={form.fields}
             locale={locale}
           />
         }
@@ -885,6 +894,7 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
                       formId={form.id}
                       formSlug={form.slug}
                       onStreetVerifiedChange={handleStreetVerified}
+                      onFocusField={handleFocusField}
                     />
                   )}
                 />
@@ -898,6 +908,7 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
                   formId={form.id}
                   formSlug={form.slug}
                   onStreetVerifiedChange={handleStreetVerified}
+                  onFocusField={handleFocusField}
                 />
               )}
 
@@ -1013,6 +1024,7 @@ function FieldsCluster({
   formId,
   formSlug,
   onStreetVerifiedChange,
+  onFocusField,
 }: {
   fields: PublicField[];
   values: FormPayload;
@@ -1022,6 +1034,7 @@ function FieldsCluster({
   formId: string;
   formSlug: string;
   onStreetVerifiedChange?: (fieldId: string, verified: boolean) => void;
+  onFocusField?: (id: string) => void;
 }) {
   // Trois familles de rendu : cartes de choix (chips), lignes binaires
   // compactes (oui/non + cases, empilées dans un conteneur à séparateurs),
@@ -1151,6 +1164,7 @@ function FieldsCluster({
                   formSlug={formSlug}
                   rowLayout
                   derivedValue={deriveValueFor(f)}
+                  onFocusField={onFocusField}
                 />
                 {/* Suivi(s) déclenché(s) par ce Oui/Non : rendus juste sous la
                     ligne, en léger retrait, dans le même cadre. */}
@@ -1169,6 +1183,7 @@ function FieldsCluster({
                         derivedValue={deriveValueFor(sub)}
                         relatedPostalCode={relatedPostalCodeFor(sub)}
                         parentValues={values}
+                        onFocusField={onFocusField}
                       />
                     ))}
                   </div>
@@ -1199,6 +1214,7 @@ function FieldsCluster({
                   }}
                   onStreetVerifiedChange={(v) => onStreetVerifiedChange?.(f.id, v)}
                   parentValues={values}
+                  onFocusField={onFocusField}
                 />
                 {/* Case échappatoire (« ma rue n'est pas dans la liste »)
                     rendue juste sous l'input auquel elle se rapporte. */}
@@ -1212,6 +1228,7 @@ function FieldsCluster({
                       onChange={(v) => setValue(escapeField.id, v)}
                       formId={formId}
                       formSlug={formSlug}
+                      onFocusField={onFocusField}
                     />
                   </div>
                 )}
@@ -1305,6 +1322,8 @@ interface MacroRunnerBodyProps {
   liveTriggers: PdfFormTrigger[];
   bundleRunId?: string;
   onStreetVerifiedChange?: (fieldId: string, verified: boolean) => void;
+  onFocusField?: (id: string) => void;
+  activeFieldId?: string;
   contextTips?: TipEntry[];
   t: ReturnType<typeof useTranslations>;
 }
@@ -1319,7 +1338,7 @@ interface MacroRunnerBodyProps {
 function MacroRunnerBody({
   form, macroSteps, activeIndex, setActive, attemptAdvance, locale, setLocale, values, errors,
   setValue, signerName, consent, setConsent, delivery, setDelivery, doccleRef,
-  setDoccleRef, submitting, submit, resetForm, lastSavedAt, serverSaved, liveTriggers, bundleRunId, onStreetVerifiedChange, contextTips, t,
+  setDoccleRef, submitting, submit, resetForm, lastSavedAt, serverSaved, liveTriggers, bundleRunId, onStreetVerifiedChange, onFocusField, activeFieldId, contextTips, t,
 }: MacroRunnerBodyProps) {
   const current = macroSteps[activeIndex];
   const isLast = activeIndex === macroSteps.length - 1;
@@ -1353,6 +1372,7 @@ function MacroRunnerBody({
       formId={form.id}
       formSlug={form.slug}
       onStreetVerifiedChange={onStreetVerifiedChange}
+      onFocusField={onFocusField}
     />
   );
 
@@ -1381,6 +1401,8 @@ function MacroRunnerBody({
             sectionKeys={current.sections.map((s) => s.key).filter((k): k is string => !!k)}
             checkedFieldIds={Object.keys(values).filter((k) => values[k] === true)}
             entries={contextTips}
+            activeFieldId={activeFieldId}
+            fields={form.fields}
             locale={locale}
           />
         }

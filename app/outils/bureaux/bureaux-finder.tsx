@@ -4,12 +4,13 @@ import { useState, useEffect, useCallback, useMemo, useRef, type ReactNode } fro
 import dynamic from 'next/dynamic'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
-import { MapPin, Info } from 'lucide-react'
+import { MapPin, Info, HeartPulse, ExternalLink } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 
 import { AddressSearch } from './_components/address-search'
 import { DemarcheSelector } from './_components/demarche-selector'
+import { MutuelleSelector, MUTUELLE_CODES, ROUTABLE_MUTUELLES, MC_CODE } from './_components/mutuelle-selector'
 import { ActiveFilters } from './_components/active-filters'
 import { RecommendedOfficeCard } from './_components/recommended-office-card'
 import { OfficeResultsList } from './_components/office-results-list'
@@ -68,6 +69,12 @@ function parseDemarcheParam(raw: string | null | undefined): Demarche {
   return raw && (DEMARCHE_ORDER as readonly string[]).includes(raw) ? (raw as Demarche) : 'inconnu'
 }
 
+/** Lit `?mutuelle=` au chargement et le valide contre les codes connus (MC
+ * comprise) ; toute valeur inconnue → `''` (toutes). */
+function parseMutuelleParam(raw: string | null | undefined): string {
+  return raw && (MUTUELLE_CODES as readonly string[]).includes(raw) ? raw : ''
+}
+
 /**
  * Orchestrateur V2 du finder de bureaux : parcours « démarche → recommandé →
  * action ». L'utilisateur indique son adresse (code postal) et sa démarche ;
@@ -120,6 +127,10 @@ export function BureauxFinder() {
   // Démarche initialisée depuis l'URL (`?demarche=`) : un lien partagé ou un
   // reload restaure le filtre actif (cf. sync dans l'effet de résolution).
   const [demarche, setDemarche] = useState<Demarche>(() => parseDemarcheParam(params?.get('demarche')))
+  // Mutuelle choisie (démarche « santé ») : les 6 mutuelles bien référencées
+  // résolvent leur office attitré via `?mutuelle=<code>` ; MC est gérée à part
+  // (renvoi mc.be). Restaurée depuis l'URL. Ignorée hors démarche « santé ».
+  const [mutuelleCode, setMutuelleCode] = useState<string>(() => parseMutuelleParam(params?.get('mutuelle')))
   const [activeId, setActiveId] = useState<string | null>(null) // survol liste ↔ carte
   const [detailId, setDetailId] = useState<string | null>(null) // fiche ouverte (résolution CP)
   // Fiche « détachée » : un bureau choisi dans l'autocomplete (recherche par
@@ -133,14 +144,18 @@ export function BureauxFinder() {
   const abortRef = useRef<AbortController | null>(null)
 
   const resolve = useCallback(
-    async (postalCode: string) => {
+    async (postalCode: string, mutuelle: string | null) => {
       if (!/^\d{4}$/.test(postalCode)) {
         setData(null)
         setError(null)
         setLoading(false)
         return
       }
-      const cached = cacheRef.current.get(postalCode)
+      // Clé de cache COMPOSITE (CP + mutuelle) : deux résolutions du même CP
+      // avec/sans mutuelle donnent des réponses différentes (attitre.mutuelle),
+      // il ne faut pas qu'elles se recouvrent.
+      const key = `${postalCode}|${mutuelle ?? ''}`
+      const cached = cacheRef.current.get(key)
       if (cached) {
         setData(cached)
         setError(null)
@@ -153,10 +168,13 @@ export function BureauxFinder() {
       setLoading(true)
       setError(null)
       try {
-        const res = await fetch(`/api/bureaux/resolve?cp=${postalCode}`, { signal: ac.signal })
+        const url = `/api/bureaux/resolve?cp=${postalCode}${
+          mutuelle ? `&mutuelle=${encodeURIComponent(mutuelle)}` : ''
+        }`
+        const res = await fetch(url, { signal: ac.signal })
         if (!res.ok) throw new Error(t('bureauxSearchError'))
         const json = (await res.json()) as ResolveResponse
-        cacheRef.current.set(postalCode, json)
+        cacheRef.current.set(key, json)
         if (!ac.signal.aborted) setData(json)
       } catch (e) {
         if ((e as Error)?.name === 'AbortError') return
@@ -169,9 +187,16 @@ export function BureauxFinder() {
     [t],
   )
 
+  // Mutuelle EFFECTIVEMENT passée au résolveur : seulement en démarche « santé »
+  // ET pour une mutuelle routable (MC exclue — pas de routage, cf. renvoi mc.be).
+  const resolveMutuelle =
+    demarche === 'sante' && (ROUTABLE_MUTUELLES as readonly string[]).includes(mutuelleCode)
+      ? mutuelleCode
+      : null
+
   useEffect(() => {
     const id = setTimeout(() => {
-      void resolve(cp)
+      void resolve(cp, resolveMutuelle)
       const usp = new URLSearchParams(params?.toString() ?? '')
       if (cp) usp.set('cp', cp)
       else usp.delete('cp')
@@ -179,12 +204,16 @@ export function BureauxFinder() {
       // pas » = pas de filtre → on retire le paramètre pour garder l'URL propre.
       if (demarche !== 'inconnu') usp.set('demarche', demarche)
       else usp.delete('demarche')
+      // Mutuelle : persistée seulement en démarche « santé » (hors santé elle est
+      // inactive → on nettoie l'URL). MC comprise (déclenche le renvoi mc.be).
+      if (demarche === 'sante' && mutuelleCode) usp.set('mutuelle', mutuelleCode)
+      else usp.delete('mutuelle')
       const qs = usp.toString()
       router.replace(qs ? `?${qs}` : '?', { scroll: false })
     }, 150)
     return () => clearTimeout(id)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cp, demarche, resolve])
+  }, [cp, demarche, mutuelleCode, resolveMutuelle, resolve])
 
   // Géoloc pilotée par le bouton « Utiliser ma position » d'AddressSearch :
   // getCurrentPosition → reverseGeocodeBE → le champ affiche la VILLE
@@ -225,8 +254,8 @@ export function BureauxFinder() {
   }, [t])
 
   const retry = useCallback(() => {
-    void resolve(cp)
-  }, [resolve, cp])
+    void resolve(cp, resolveMutuelle)
+  }, [resolve, cp, resolveMutuelle])
 
   // Frappe libre dans le champ Adresse : invalide toute sélection de commune
   // précédente (sinon `cp` resterait figé sur l'ancien `selectedCp` malgré
@@ -274,8 +303,10 @@ export function BureauxFinder() {
   }, [])
 
   const removeFilter = useCallback((key: string) => {
-    if (key === 'demarche') setDemarche('inconnu')
-    else if (key === 'cp') {
+    if (key === 'demarche') {
+      setDemarche('inconnu')
+      setMutuelleCode('') // la démarche santé s'en va → la mutuelle n'a plus de sens
+    } else if (key === 'cp') {
       setAddressInput('')
       setSelectedCp(null)
       setUserGeoloc(null)
@@ -284,6 +315,7 @@ export function BureauxFinder() {
   }, [])
   const clearAllFilters = useCallback(() => {
     setDemarche('inconnu')
+    setMutuelleCode('')
     setAddressInput('')
     setSelectedCp(null)
     setUserGeoloc(null)
@@ -491,6 +523,14 @@ export function BureauxFinder() {
               toujours visibles sur `lg`. */}
           <div className={`${mobileView === 'carte' ? 'hidden' : ''} space-y-4 lg:block`}>
             <DemarcheSelector value={demarche} onChange={setDemarche} />
+            {/* Sélecteur de mutuelle : uniquement en démarche « santé ». MC
+                choisie → renvoi honnête vers mc.be (pas de routage erroné). */}
+            {demarche === 'sante' && (
+              <MutuelleSelector value={mutuelleCode} onChange={setMutuelleCode} />
+            )}
+            {demarche === 'sante' && mutuelleCode === MC_CODE && (
+              <McFinderCallout label={t('mutuelleMcNotice')} cta={t('mutuelleMcCta')} />
+            )}
             <ActiveFilters filters={activeFilters} onRemove={removeFilter} onClear={clearAllFilters} />
             {!loading && !error && resolverNotice && <ResolverNotice message={resolverNotice} />}
             {results}
@@ -543,6 +583,33 @@ function ResolverNotice({ message }: { message: string }) {
     >
       <Info className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" aria-hidden />
       <p className="min-w-0">{message}</p>
+    </div>
+  )
+}
+
+/**
+ * Renvoi honnête vers le localisateur mc.be quand l'utilisateur choisit la
+ * Mutualité chrétienne : ses agences locales ne sont pas (encore) dans notre
+ * annuaire, donc plutôt que de router vers un bureau erroné, on l'oriente vers
+ * l'outil officiel MC. Surface verre neutre, lien externe explicite.
+ */
+function McFinderCallout({ label, cta }: { label: string; cta: string }) {
+  return (
+    <div className="flex items-start gap-2.5 rounded-2xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-4 py-3 text-sm">
+      <HeartPulse className="mt-0.5 h-4 w-4 shrink-0" style={{ color: 'var(--primary)' }} aria-hidden />
+      <div className="min-w-0">
+        <p className="text-foreground">{label}</p>
+        <a
+          href="https://www.mc.be/fr/services-en-ligne/points-de-contact"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-1 inline-flex items-center gap-1.5 font-bold"
+          style={{ color: 'var(--primary)' }}
+        >
+          {cta}
+          <ExternalLink className="h-3.5 w-3.5" aria-hidden />
+        </a>
+      </div>
     </div>
   )
 }

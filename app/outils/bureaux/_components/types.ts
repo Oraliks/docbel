@@ -56,6 +56,15 @@ export interface ResolveResponse {
     mutuelle: BureauResult | null
     emploiRegional: BureauResult | null
   }
+  /** Bureaux de proximité (non attitrés), triés par distance côté serveur.
+   * `autres` (type DB AUTRE) contient notamment les mutuelles/CAAMI proches :
+   * le résolveur ne remplit `attitre.mutuelle` qu'avec un code mutuelle
+   * explicite, donc le finder les surface depuis ici (cf. finder-model). */
+  proximite?: {
+    syndicats: BureauResult[]
+    permanences: BureauResult[]
+    autres: BureauResult[]
+  }
   warnings: string[]
 }
 

@@ -52,6 +52,39 @@ describe('flattenResolveToOffices', () => {
   it('ignore les slots vides', () => {
     expect(flattenResolveToOffices(mkResolve())).toEqual([])
   })
+
+  it('surface les mutuelles/CAAMI de proximité en MUTUELLE non-compétent (pas d’attitrée)', () => {
+    const data: ResolveResponse = {
+      ...mkResolve({ onem: mkBureau({ id: 'onem' }) }),
+      proximite: {
+        syndicats: [],
+        permanences: [],
+        autres: [
+          mkBureau({ id: 'solidaris', type: 'AUTRE', organismeCode: 'solidaris' }),
+          mkBureau({ id: 'caami', type: 'AUTRE', organismeCode: 'caami' }),
+          mkBureau({ id: 'actiris', type: 'AUTRE', organismeCode: 'actiris' }), // SRE → ignoré
+        ],
+      },
+    }
+    const flat = flattenResolveToOffices(data)
+    expect(flat.filter((f) => f.type === 'MUTUELLE').map((f) => f.bureau.id)).toEqual(['solidaris', 'caami'])
+    expect(flat.find((f) => f.bureau.id === 'solidaris')).toMatchObject({ isCompetent: false })
+    expect(flat.find((f) => f.bureau.id === 'onem')).toMatchObject({ isCompetent: true })
+    expect(flat.some((f) => f.bureau.id === 'actiris')).toBe(false)
+  })
+
+  it('n’ajoute PAS de mutuelle de proximité si une attitrée existe', () => {
+    const data: ResolveResponse = {
+      ...mkResolve({ mutuelle: mkBureau({ id: 'attitree' }) }),
+      proximite: {
+        syndicats: [],
+        permanences: [],
+        autres: [mkBureau({ id: 'solidaris', type: 'AUTRE', organismeCode: 'solidaris' })],
+      },
+    }
+    const flat = flattenResolveToOffices(data)
+    expect(flat.filter((f) => f.type === 'MUTUELLE').map((f) => f.bureau.id)).toEqual(['attitree'])
+  })
 })
 
 describe('buildOffices', () => {

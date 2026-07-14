@@ -37,17 +37,46 @@ function haversineKm(a: { lat: number; lng: number }, b: { lat: number; lng: num
   return R * 2 * Math.atan2(Math.sqrt(s), Math.sqrt(1 - s))
 }
 
-export function flattenResolveToOffices(
-  data: ResolveResponse,
-): { bureau: BureauResult; type: OfficeType }[] {
+/** Plafond de mutuelles/CAAMI de proximité surfacées (autres est déjà trié par
+ * distance et borné à 12 côté serveur ; on garde les plus proches). */
+const PROXIMITE_MUTUELLE_LIMIT = 6
+
+export interface FlatOffice {
+  bureau: BureauResult
+  type: OfficeType
+  /** Compétence territoriale : `true` pour les bureaux attitrés (résolus par
+   * adresse), `false` pour les bureaux de proximité (mutuelles/CAAMI). */
+  isCompetent: boolean
+}
+
+export function flattenResolveToOffices(data: ResolveResponse): FlatOffice[] {
   const a = data.attitre
-  const out: { bureau: BureauResult; type: OfficeType }[] = []
-  if (a.onem) out.push({ bureau: a.onem, type: 'ONEM' })
-  if (a.cpas) out.push({ bureau: a.cpas, type: 'CPAS' })
-  if (a.commune) out.push({ bureau: a.commune, type: 'COMMUNE' })
-  if (a.emploiRegional) out.push({ bureau: a.emploiRegional, type: 'SRE' })
-  for (const op of a.organismesPaiement) out.push({ bureau: op, type: 'PAIEMENT' })
-  if (a.mutuelle) out.push({ bureau: a.mutuelle, type: 'MUTUELLE' })
+  const out: FlatOffice[] = []
+  if (a.onem) out.push({ bureau: a.onem, type: 'ONEM', isCompetent: true })
+  if (a.cpas) out.push({ bureau: a.cpas, type: 'CPAS', isCompetent: true })
+  if (a.commune) out.push({ bureau: a.commune, type: 'COMMUNE', isCompetent: true })
+  if (a.emploiRegional) out.push({ bureau: a.emploiRegional, type: 'SRE', isCompetent: true })
+  for (const op of a.organismesPaiement) out.push({ bureau: op, type: 'PAIEMENT', isCompetent: true })
+  if (a.mutuelle) out.push({ bureau: a.mutuelle, type: 'MUTUELLE', isCompetent: true })
+
+  // Mutuelles / CAAMI de proximité : le résolveur ne peuple `attitre.mutuelle`
+  // qu'avec un code mutuelle explicite. En l'absence d'attitrée, on surface les
+  // plus proches depuis `proximite.autres` (mélange d'organismes AUTRE : on ne
+  // garde que ceux typés MUTUELLE via le code organisme). Marquées « à
+  // proximité » (isCompetent=false) : ce n'est pas « votre mutuelle attitrée ».
+  if (!a.mutuelle && data.proximite?.autres?.length) {
+    const seen = new Set(out.map((o) => o.bureau.id))
+    let added = 0
+    for (const b of data.proximite.autres) {
+      if (added >= PROXIMITE_MUTUELLE_LIMIT) break
+      if (seen.has(b.id)) continue
+      if (officeTypeOfBureau({ type: b.type, organismeCode: b.organismeCode }) === 'MUTUELLE') {
+        out.push({ bureau: b, type: 'MUTUELLE', isCompetent: false })
+        seen.add(b.id)
+        added++
+      }
+    }
+  }
   return out
 }
 
@@ -56,7 +85,7 @@ export function buildOffices(
   ref: { lat: number; lng: number } | null,
 ): OfficeItem[] {
   const flat = flattenResolveToOffices(data)
-  const items: OfficeItem[] = flat.map(({ bureau, type }) => ({
+  const items: OfficeItem[] = flat.map(({ bureau, type, isCompetent }) => ({
     id: bureau.id,
     type,
     bureau,
@@ -64,9 +93,9 @@ export function buildOffices(
       ref && bureau.lat != null && bureau.lng != null
         ? haversineKm(ref, { lat: bureau.lat, lng: bureau.lng })
         : null,
-    // Tous les items proviennent de data.attitre (résolution territoriale
-    // par adresse/commune) : ils sont donc compétents par construction.
-    isCompetent: true,
+    // Attitrés (résolution territoriale) = compétents ; mutuelles/CAAMI de
+    // proximité = non compétents (cf. flattenResolveToOffices).
+    isCompetent,
   }))
   const orderIndex = (t: OfficeType) => TYPE_ORDER.indexOf(t)
   items.sort((x, y) => {

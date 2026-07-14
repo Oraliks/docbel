@@ -6348,6 +6348,7 @@
       "geolocDenied": "Vous avez refusé la géolocalisation. Saisissez votre code postal ou votre commune.",
       "geolocUnavailable": "Position indisponible pour le moment. Réessayez ou saisissez votre code postal.",
       "geolocInsecure": "La géolocalisation nécessite une connexion sécurisée (https).",
+      "mapClusterCount": "{count, plural, one {# bureau} other {# bureaux}}",
       "trustOfficialTitle": "Données officielles",
       "trustOfficialBody": "Informations issues des administrations publiques belges.",
       "trustTerritorialTitle": "Compétence territoriale vérifiée",

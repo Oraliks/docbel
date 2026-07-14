@@ -539,7 +539,10 @@ function Dot({
           dominantBaseline="middle"
           fontSize={recommended ? (number >= 10 ? 8.5 : 10) : number >= 10 ? 6.5 : 7.5}
           fontWeight={700}
-          fill={isLight ? '#1b1530' : '#ffffff'}
+          fill="#ffffff"
+          stroke="rgba(0,0,0,0.55)"
+          strokeWidth={0.7}
+          paintOrder="stroke"
           style={{
             pointerEvents: 'none',
             fontFamily: 'var(--font-sans), system-ui, sans-serif',

@@ -22,7 +22,7 @@ import { type ResolveResponse } from './_components/types'
 import type { OfficeMapMarker } from './_components/office-map-types'
 import { buildOffices, TYPE_META } from '@/lib/bureaus/finder-model'
 import { rankOffices } from '@/lib/bureaus/office-ranking'
-import { DEMARCHE_META, type Demarche } from '@/lib/bureaus/demarche-map'
+import { DEMARCHE_META, DEMARCHE_ORDER, type Demarche } from '@/lib/bureaus/demarche-map'
 import { computeOpenStatus } from '@/lib/bureaus/types'
 
 /**
@@ -54,6 +54,18 @@ const ORG_TO_DEMARCHE: Record<string, Demarche> = {
   forem: 'emploi',
   vdab: 'emploi',
   adg: 'emploi',
+  solidaris: 'sante',
+  mc: 'sante',
+  mloz: 'sante',
+  helan: 'sante',
+  partenamut: 'sante',
+  caami: 'sante',
+}
+
+/** Lit `?demarche=` au chargement (partage/reload) et le valide contre les
+ * démarches connues ; toute valeur inconnue retombe sur « Je ne sais pas ». */
+function parseDemarcheParam(raw: string | null | undefined): Demarche {
+  return raw && (DEMARCHE_ORDER as readonly string[]).includes(raw) ? (raw as Demarche) : 'inconnu'
 }
 
 /**
@@ -105,7 +117,9 @@ export function BureauxFinder() {
   const [error, setError] = useState<string | null>(null)
 
   // --- État d'interaction ------------------------------------------------
-  const [demarche, setDemarche] = useState<Demarche>('inconnu')
+  // Démarche initialisée depuis l'URL (`?demarche=`) : un lien partagé ou un
+  // reload restaure le filtre actif (cf. sync dans l'effet de résolution).
+  const [demarche, setDemarche] = useState<Demarche>(() => parseDemarcheParam(params?.get('demarche')))
   const [activeId, setActiveId] = useState<string | null>(null) // survol liste ↔ carte
   const [detailId, setDetailId] = useState<string | null>(null) // fiche ouverte
   const [mobileView, setMobileView] = useState<MobileView>('liste')
@@ -157,12 +171,16 @@ export function BureauxFinder() {
       const usp = new URLSearchParams(params?.toString() ?? '')
       if (cp) usp.set('cp', cp)
       else usp.delete('cp')
+      // Persiste la démarche active dans l'URL (partage/reload) ; « Je ne sais
+      // pas » = pas de filtre → on retire le paramètre pour garder l'URL propre.
+      if (demarche !== 'inconnu') usp.set('demarche', demarche)
+      else usp.delete('demarche')
       const qs = usp.toString()
       router.replace(qs ? `?${qs}` : '?', { scroll: false })
     }, 150)
     return () => clearTimeout(id)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cp, resolve])
+  }, [cp, demarche, resolve])
 
   // Géoloc pilotée par le bouton « Utiliser ma position » d'AddressSearch :
   // getCurrentPosition → reverseGeocodeBE → le champ affiche la VILLE

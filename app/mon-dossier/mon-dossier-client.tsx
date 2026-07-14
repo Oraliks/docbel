@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import {
@@ -225,7 +225,10 @@ function ActiveRunCard({ run }: { run: ActiveBundleRun }) {
       // direct (AccessRow) garde la vue liste via `bundleHref` nu.
       href={`${bundleHref(run.slug)}?demarrer=1`}
       onClick={() =>
-        trackBundleEventClient("bundle_opened", {
+        // Reprise d'un dossier déjà entamé → `bundle_resumed` (pas
+        // `bundle_opened`) : ne compte pas comme une ouverture fraîche dans le
+        // funnel « Dossiers ouverts ».
+        trackBundleEventClient("bundle_resumed", {
           bundleId: run.slug,
           metadata: { slug: run.slug, from: "resume_local" },
         })
@@ -311,6 +314,11 @@ export function MonDossierClient({ bundles, catalog, activeRun, situations }: Pr
 
   const trimmed = search.trim().toLowerCase();
   const isSearching = trimmed.length > 0;
+
+  // Anti-flood : chaque requête normalisée n'émet qu'UNE fois par montage
+  // (sinon retaper/effacer un caractère ré-émet `search_performed` en boucle et
+  // gonfle l'étape « Recherches » du funnel).
+  const emittedSearches = useRef<Set<string>>(new Set());
 
   // ── Filtre par catégorie (puces « Filtres ») ──
   const catFiltered = useMemo(() => {
@@ -428,7 +436,10 @@ export function MonDossierClient({ bundles, catalog, activeRun, situations }: Pr
   // ── Analytics recherche (débouncé) : search_performed / search_no_result ──
   useEffect(() => {
     if (!isSearching || trimmed.length < 2) return;
+    // Une même requête normalisée n'émet qu'une fois par montage.
+    if (emittedSearches.current.has(trimmed)) return;
     const t = setTimeout(() => {
+      emittedSearches.current.add(trimmed);
       if (searchResults.length === 0) {
         trackBundleEventClient("search_no_result", { metadata: { q: trimmed } });
       } else {

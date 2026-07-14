@@ -1066,7 +1066,9 @@ function RelatedCard({ dossier }: { dossier: DerivedDossier }) {
             <Link
               href={`/d/${dossier.slug}`}
               onClick={() =>
-                trackBundleEventClient("bundle_opened", {
+                // Ouverture d'un dossier LIÉ (secondaire) → `bundle_resumed` :
+                // ne compte pas comme une ouverture fraîche dans le funnel.
+                trackBundleEventClient("bundle_resumed", {
                   bundleId: dossier.slug ?? undefined,
                   metadata: { from: "wizard_related" },
                 })

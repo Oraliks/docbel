@@ -25,7 +25,7 @@ export default async function ParcoursAnalyticsPage({
 }) {
   const { period: raw } = await searchParams;
   const period = parsePeriod(raw);
-  const { stages, totalPdfGenerated } = await getParcoursFunnel(period);
+  const { interactionStages, entityMetrics } = await getParcoursFunnel(period);
 
   return (
     <div className="flex flex-1 flex-col gap-6 px-4 py-6 lg:px-6">
@@ -63,7 +63,10 @@ export default async function ParcoursAnalyticsPage({
         </div>
       </div>
 
-      <ParcoursFunnel stages={stages} totalPdfGenerated={totalPdfGenerated} />
+      <ParcoursFunnel
+        interactionStages={interactionStages}
+        entityMetrics={entityMetrics}
+      />
 
       {/* Accès aux deux dashboards détaillés (drill-down). */}
       <div className="grid gap-3 sm:grid-cols-2">

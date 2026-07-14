@@ -207,6 +207,23 @@ export async function POST(
             completedTemplateIds: newCompleted as unknown as Prisma.InputJsonValue,
           },
         });
+        // Complétion : le téléchargement est une action terminale du dossier.
+        // Comme le chemin "save" (~l.126), si TOUS les documents requis sont
+        // remplis on horodate `completedAt` (idempotent via updateMany sur
+        // completedAt:null → posé une seule fois, sans course). Sans cela, seul
+        // le chemin "save" alimentait la métrique de complétion et un dossier
+        // livré par download restait « jamais complété » (=0). On reste dans le
+        // garde de propriété (`owns`) : jamais horodater un run étranger.
+        const after = await loadDossierState(bundleRunId, {
+          userId: ownerUserId,
+          sessionId: ownerSessionId,
+        });
+        if (after?.allRequiredDone) {
+          await prisma.bundleRun.updateMany({
+            where: { id: bundleRunId, completedAt: null },
+            data: { completedAt: new Date() },
+          });
+        }
       }
     } catch (err) {
       // Non-bloquant : la génération du PDF a déjà réussi ; on log juste.

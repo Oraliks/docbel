@@ -2,27 +2,25 @@ import { cache } from "react";
 import { prisma, withDbRetry } from "@/lib/prisma";
 import { periodBounds, type Period } from "./dashboard-stats-helpers";
 import {
-  assembleParcoursStages,
+  buildParcoursModel,
   zeroParcoursCounts,
-  type ParcoursStage,
+  GENERATED_PDF_DELIVERIES,
+  type ParcoursFunnelModel,
   type ParcoursCounts,
 } from "./parcours-funnel-core";
 
 /**
- * Données du funnel « Parcours » unifié (Lot 3) — I/O DB. La forme/l'ordre des
- * étapes vit dans `parcours-funnel-core.ts` (pur, testé). Résilient : toute
- * erreur DB (cold-start Neon…) → funnel à zéro plutôt qu'un crash.
+ * Données du funnel « Parcours » unifié — I/O DB. La forme/l'ordre des étapes et
+ * des métriques vit dans `parcours-funnel-core.ts` (pur, testé). Résilient :
+ * toute erreur DB (cold-start Neon…) → modèle à zéro plutôt qu'un crash.
  *
- * Sources : `BundleAnalyticsEvent` (5 events de parcours + `documents_downloaded`)
- * pour les étapes ; `PdfFormSubmissionLog` pour le volume PDF total (contexte,
- * hors funnel car non attribuable à un run).
+ * Lot 5 — de-conflation : on interroge la BONNE source pour chaque unité au lieu
+ * d'empiler trois unités dans une seule colonne.
+ *   - étapes d'interaction : `BundleAnalyticsEvent` (5 events de parcours) ;
+ *   - « PDF générés » : `PdfFormSubmissionLog` (succès, delivery download/doccle) ;
+ *   - « Dossiers complets » : `BundleRun.completedAt` posé sur la période ;
+ *   - « Documents récupérés » : event `documents_downloaded` (zip/e-mail).
  */
-
-export interface ParcoursFunnelData {
-  stages: ParcoursStage[];
-  /** Documents PDF générés sur la période, tous formulaires (contexte). */
-  totalPdfGenerated: number;
-}
 
 const FUNNEL_EVENTS = [
   "search_performed",
@@ -34,10 +32,10 @@ const FUNNEL_EVENTS = [
 ] as const;
 
 export const getParcoursFunnel = cache(
-  async (period: Period): Promise<ParcoursFunnelData> => {
+  async (period: Period): Promise<ParcoursFunnelModel> => {
     try {
       const { start } = periodBounds(period);
-      const [events, totalPdfGenerated] = await Promise.all([
+      const [events, pdfGenerated, dossiersComplets] = await Promise.all([
         withDbRetry(() =>
           prisma.bundleAnalyticsEvent.groupBy({
             by: ["eventType"],
@@ -48,10 +46,22 @@ export const getParcoursFunnel = cache(
             _count: { _all: true },
           }),
         ),
+        // « PDF générés » = un PDF réellement produit (download/doccle). Un
+        // `save` persiste dans le dossier sans PDF → jamais compté ici (cf.
+        // classifyPdfDelivery).
         withDbRetry(() =>
           prisma.pdfFormSubmissionLog.count({
-            where: { createdAt: { gte: start }, success: true },
+            where: {
+              createdAt: { gte: start },
+              success: true,
+              delivery: { in: [...GENERATED_PDF_DELIVERIES] },
+            },
           }),
+        ),
+        // « Dossiers complets » = runs horodatés complétés sur la période (même
+        // définition « completedAt dans la fenêtre » que getBundleFunnel).
+        withDbRetry(() =>
+          prisma.bundleRun.count({ where: { completedAt: { gte: start } } }),
         ),
       ]);
       const m = new Map(events.map((e) => [e.eventType, e._count._all]));
@@ -61,14 +71,13 @@ export const getParcoursFunnel = cache(
         resultShown: m.get("wizard_result_shown") ?? 0,
         opened: m.get("bundle_opened") ?? 0,
         runCreated: m.get("run_created") ?? 0,
-        documents: m.get("documents_downloaded") ?? 0,
+        pdfGenerated,
+        dossiersComplets,
+        documentsRetrieved: m.get("documents_downloaded") ?? 0,
       };
-      return { stages: assembleParcoursStages(counts), totalPdfGenerated };
+      return buildParcoursModel(counts);
     } catch {
-      return {
-        stages: assembleParcoursStages(zeroParcoursCounts()),
-        totalPdfGenerated: 0,
-      };
+      return buildParcoursModel(zeroParcoursCounts());
     }
   },
 );

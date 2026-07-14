@@ -133,6 +133,12 @@ export const getUsageKpis = cache(async (period: Period): Promise<UsageKpis> => 
   return {
     visitors: stat(visitorsNow, visitorsPrev, visitorsSeries),
     runsStarted: stat(runsNow, runsPrev, runsSeries),
+    // TAUX de complétion par COHORTE DE DÉMARRAGE : parmi les runs *démarrés*
+    // dans la fenêtre (`startedAt`), la part qui a un `completedAt` (à
+    // n'importe quel moment). À NE PAS confondre avec `getBundleFunnel.completed`
+    // qui est un COMPTE de runs *complétés* dans la fenêtre (`completedAt` gte
+    // start) — deux définitions différentes, donc deux nombres qui ne doivent
+    // PAS coïncider (numérateur, dénominateur et fenêtrage distincts).
     completion: { value: completionNow, deltaPts: completionNow - completionPrev },
     pdfGenerated: stat(pdfNow, pdfPrev, pdfSeries),
     bookings: stat(bookingsNow, bookingsPrev, bookingsSeries),

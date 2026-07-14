@@ -12,6 +12,10 @@ export const BUNDLE_EVENT_TYPES = [
   /// mesurer la « demande orpheline » (résultats a_creer/externe atteints).
   "wizard_result_shown",
   "bundle_opened",
+  /// Réouverture d'un dossier déjà entamé (reprise locale, dossier lié) —
+  /// distinct de `bundle_opened` pour ne PAS gonfler l'étape « Dossiers
+  /// ouverts » du funnel avec des ré-accès. Émissible client.
+  "bundle_resumed",
   "run_created",
   /// L'usager a récupéré ses documents complétés (zip ou email). Posé
   /// UNIQUEMENT côté serveur (routes download-all / email) — étape finale du
@@ -40,6 +44,7 @@ export const CLIENT_BUNDLE_EVENTS: readonly BundleEventType[] = [
   "wizard_abandoned",
   "wizard_result_shown",
   "bundle_opened",
+  "bundle_resumed",
 ];
 
 export function isClientBundleEvent(v: unknown): v is BundleEventType {

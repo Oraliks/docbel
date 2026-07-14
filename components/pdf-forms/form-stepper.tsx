@@ -1,6 +1,5 @@
 "use client";
 
-import { ClockIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 export interface FormStepperItem {
@@ -26,10 +25,11 @@ interface FormStepperProps {
   onSelect: (index: number) => void;
 }
 
-/// Barre de progression (dégradé violet → rose, libellé + pastille « N / T
-/// étapes ») suivie d'une liste numérotée des étapes. Remplace l'ancien
-/// stepper à cercles/connecteurs — la navigation (clic sur une étape) reste
-/// identique, seule la représentation visuelle change.
+/// Progression UNIQUE du formulaire : un compteur « Étape N sur T » + une
+/// barre de remplissage fine, suivis d'une liste numérotée des étapes
+/// (navigation au clic). Remplace les indicateurs de progression multiples
+/// qui coexistaient (ancienne pastille dégradée + badge + pied d'étape) par
+/// cette seule source de vérité — la navigation reste identique.
 export function FormStepper({ steps, activeIndex, onSelect }: FormStepperProps) {
   const t = useTranslations("public.dossier");
   const total = steps.length;
@@ -37,17 +37,19 @@ export function FormStepper({ steps, activeIndex, onSelect }: FormStepperProps) 
 
   return (
     <div className="flex flex-col gap-4 px-2 py-3">
-      {/* Barre de progression */}
-      <div className="relative flex h-11 w-full items-center rounded-full bg-[color:var(--glass-pop-bg)] p-1">
-        <div
-          className="flex h-full min-w-fit shrink-0 items-center gap-2 rounded-full bg-gradient-to-r from-[color:var(--glass-accent-deep,#5B46E5)] to-pink-500 px-4 text-[13px] font-semibold text-white shadow-[0_4px_14px_-4px_rgba(91,70,229,0.5)] transition-[width] duration-300"
-          style={{ width: `${pct}%` }}
+      {/* Progression unique : compteur « Étape N sur T » + barre fine */}
+      <div className="flex items-center gap-3">
+        <span className="whitespace-nowrap text-[13px] font-semibold text-[color:var(--glass-ink-soft)]">
+          {t("runnerStepCounter", { current: activeIndex + 1, total })}
+        </span>
+        <span
+          className="relative h-1.5 flex-1 overflow-hidden rounded-full bg-[color:var(--glass-pop-bg)]"
+          aria-hidden
         >
-          <ClockIcon className="size-4 shrink-0" aria-hidden />
-          <span className="truncate">{t("runnerProgressBarLabel")}</span>
-        </div>
-        <span className="ml-auto mr-1.5 shrink-0 rounded-full bg-[color:var(--glass-surface)] px-3 py-1.5 text-[12px] font-bold text-[color:var(--glass-ink)] shadow-sm">
-          {t("runnerStepBadge", { current: activeIndex + 1, total })}
+          <span
+            className="absolute inset-y-0 left-0 rounded-full bg-[color:var(--glass-accent-deep,#5B46E5)] transition-[width] duration-300"
+            style={{ width: `${pct}%` }}
+          />
         </span>
       </div>
 

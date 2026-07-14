@@ -1,6 +1,6 @@
 "use client";
 
-import { type LucideIcon } from "lucide-react";
+import { CheckIcon, type LucideIcon } from "lucide-react";
 
 interface OptionCardProps {
   label: string;
@@ -18,13 +18,20 @@ interface OptionCardProps {
   /// partagé sous le groupe plutôt que de rougir une carte en particulier
   /// (aucune n'est individuellement "fausse").
   invalid?: boolean;
+  /// Forme de l'indicateur de sélection. `"radio"` (défaut) = pastille ronde
+  /// + point plein (choix unique). `"check"` = case CARRÉE arrondie + coche
+  /// (choix multiple) — règle produit : un cercle se lit comme un radio
+  /// (single-select), donc un multi-select DOIT être un carré. L'appelant
+  /// pilote strictement par cette prop (cf. FieldsCluster : radio vs checkbox).
+  indicator?: "radio" | "check";
 }
 
-/// Carte de choix cliquable (ex. "type de changement" du C1) : pastille
-/// radio à gauche, bordure + fond lilas à la sélection. Le mode
-/// single-select vs multi-select est décidé par l'appelant via `onToggle` —
-/// composant purement présentationnel.
-export function OptionCard({ label, labelShort, selected, onToggle, icon: Icon, invalid }: OptionCardProps) {
+/// Carte de choix cliquable (ex. "type de changement" du C1) : indicateur de
+/// sélection à gauche (rond pour un choix unique, carré + coche pour un choix
+/// multiple, via `indicator`), bordure + fond lilas à la sélection. Le mode
+/// single-select vs multi-select est décidé par l'appelant via `onToggle` +
+/// `indicator` — composant purement présentationnel.
+export function OptionCard({ label, labelShort, selected, onToggle, icon: Icon, invalid, indicator = "radio" }: OptionCardProps) {
   return (
     <button
       type="button"
@@ -39,16 +46,29 @@ export function OptionCard({ label, labelShort, selected, onToggle, icon: Icon, 
           : "border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] font-medium text-[color:var(--glass-ink)] hover:border-[color:var(--glass-accent-deep,#5B46E5)]"
       }`}
     >
-      <span
-        aria-hidden
-        className={`flex size-[18px] shrink-0 items-center justify-center rounded-full border-2 transition-colors ${
-          selected
-            ? "border-[color:var(--glass-accent-deep,#5B46E5)]"
-            : "border-[color:var(--glass-border)]"
-        }`}
-      >
-        {selected && <span className="size-2 rounded-full bg-[color:var(--glass-accent-deep,#5B46E5)]" />}
-      </span>
+      {indicator === "check" ? (
+        <span
+          aria-hidden
+          className={`flex size-[18px] shrink-0 items-center justify-center rounded-[6px] border-2 transition-colors ${
+            selected
+              ? "border-[color:var(--glass-accent-deep,#5B46E5)] bg-[color:var(--glass-accent-deep,#5B46E5)]"
+              : "border-[color:var(--glass-border)]"
+          }`}
+        >
+          {selected && <CheckIcon className="size-3 text-white" strokeWidth={3} />}
+        </span>
+      ) : (
+        <span
+          aria-hidden
+          className={`flex size-[18px] shrink-0 items-center justify-center rounded-full border-2 transition-colors ${
+            selected
+              ? "border-[color:var(--glass-accent-deep,#5B46E5)]"
+              : "border-[color:var(--glass-border)]"
+          }`}
+        >
+          {selected && <span className="size-2 rounded-full bg-[color:var(--glass-accent-deep,#5B46E5)]" />}
+        </span>
+      )}
       {Icon && <Icon className="size-4 shrink-0 text-[color:var(--glass-accent-deep,#5B46E5)]" />}
       <span className="min-w-0 flex-1">
         {labelShort && labelShort !== label ? (

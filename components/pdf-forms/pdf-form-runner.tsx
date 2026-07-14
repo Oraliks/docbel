@@ -822,11 +822,6 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
                     <ResetFormButton onConfirm={resetForm} disabled={submitting} />
                   </div>
                   <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[color:var(--glass-border)] pt-4">
-                    <StepProgress
-                      current={activeIndex + 1}
-                      total={steps.length}
-                      label={t("runnerStepCounter", { current: activeIndex + 1, total: steps.length })}
-                    />
                     <div className="flex flex-1 items-center justify-end gap-2 sm:flex-none">
                       {activeIndex > 0 && (
                         <Button type="button" variant="outline" className="rounded-full" onClick={() => setActive(activeIndex - 1)}>
@@ -848,12 +843,7 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
                 </div>
               ) : (
                 <div className="flex flex-col gap-3 border-t border-[color:var(--glass-border)] pt-4">
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <StepProgress
-                      current={activeIndex + 1}
-                      total={steps.length}
-                      label={t("runnerStepCounter", { current: activeIndex + 1, total: steps.length })}
-                    />
+                  <div className="flex flex-wrap items-center justify-end gap-3">
                     <div className="flex items-center gap-2">
                       {activeIndex > 0 && (
                         <Button type="button" variant="outline" className="rounded-full" onClick={() => setActive(activeIndex - 1)}>
@@ -1003,6 +993,7 @@ function FieldsCluster({
                   selected={values[f.id] === true}
                   onToggle={() => setValue(f.id, values[f.id] !== true)}
                   invalid={f.required === true && !!errors[f.id]}
+                  indicator="check"
                 />
               );
             })}
@@ -1119,23 +1110,6 @@ function computeStepMeta(
   return { complete: remaining === 0, subLabel: remaining > 0 ? remainingLabel(remaining) : undefined };
 }
 
-/// Compteur d'étape + barre de progression fine + pourcentage (pied d'étape).
-function StepProgress({ current, total, label }: { current: number; total: number; label: string }) {
-  const pct = total > 0 ? Math.round((current / total) * 100) : 0;
-  return (
-    <div className="flex items-center gap-3">
-      <span className="whitespace-nowrap text-xs font-semibold text-[color:var(--glass-ink-soft)]">{label}</span>
-      <span className="relative h-1.5 w-24 overflow-hidden rounded-full bg-[color:var(--glass-pop-bg)] sm:w-36" aria-hidden>
-        <span
-          className="absolute inset-y-0 left-0 rounded-full bg-[color:var(--glass-accent-deep,#5B46E5)] transition-[width] duration-300"
-          style={{ width: `${pct}%` }}
-        />
-      </span>
-      <span className="text-xs font-bold text-[color:var(--glass-accent-deep,#5B46E5)]">{pct}%</span>
-    </div>
-  );
-}
-
 /// Étape finale allégée : plus de liste détaillée des valeurs (ancien
 /// SummaryStep, conservé plus bas pour le mode legacy). Le mode de
 /// livraison/signature/consentement restent dans le pied d'étape appelant.
@@ -1207,7 +1181,8 @@ interface MacroRunnerBodyProps {
 /// Rendu « macro-étapes » (C1 → 5 étapes) : pas d'étape résumé, l'action
 /// d'envoi (consentement + livraison + signature + génération) vit dans le
 /// pied de la DERNIÈRE étape. Réutilise FieldsCluster / FormStepper /
-/// ContextHelpPanel / StepProgress. Une macro-étape à plusieurs sections
+/// ContextHelpPanel (la progression unique vit dans FormStepper). Une
+/// macro-étape à plusieurs sections
 /// affiche un sous-titre par section ; le long-tail non curé (`advanced`)
 /// va dans un accordéon replié.
 function MacroRunnerBody({
@@ -1247,14 +1222,6 @@ function MacroRunnerBody({
       formId={form.id}
       formSlug={form.slug}
       onStreetVerifiedChange={onStreetVerifiedChange}
-    />
-  );
-
-  const progress = (
-    <StepProgress
-      current={activeIndex + 1}
-      total={macroSteps.length}
-      label={t("runnerStepCounter", { current: activeIndex + 1, total: macroSteps.length })}
     />
   );
 
@@ -1409,8 +1376,7 @@ function MacroRunnerBody({
                     <AutoSaveNotice lastSavedAt={lastSavedAt} isPartOfBundle={!!bundleRunId} />
                     <ResetFormButton onConfirm={resetForm} disabled={submitting} />
                   </div>
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    {progress}
+                  <div className="flex flex-wrap items-center justify-end gap-3">
                     <div className="flex flex-1 items-center justify-end gap-2 sm:flex-none">
                       <Button type="button" variant="outline" className="rounded-full" onClick={() => setActive(activeIndex - 1)}>
                         <ChevronLeftIcon className="size-4" /> {t("previous")}
@@ -1424,8 +1390,7 @@ function MacroRunnerBody({
                 </div>
               ) : (
                 <div className="flex flex-col gap-3 border-t border-[color:var(--glass-border)] pt-4">
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    {progress}
+                  <div className="flex flex-wrap items-center justify-end gap-3">
                     <div className="flex items-center gap-2">
                       {activeIndex > 0 && (
                         <Button type="button" variant="outline" className="rounded-full" onClick={() => setActive(activeIndex - 1)}>

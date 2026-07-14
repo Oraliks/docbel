@@ -183,7 +183,17 @@ export default async function PdfFormPage({
   const { bundleRun, bundleSlug } = await searchParams;
   const res = await loadForm(path);
   if (res.kind === "missing") notFound();
-  if (res.kind === "redirect") permanentRedirect(`/document/${res.publicPath}`);
+  if (res.kind === "redirect") {
+    // Redirection slug → publicPath (URL canonique) EN PRÉSERVANT le contexte
+    // dossier : sans ça, `bundleRun`/`bundleSlug` sont perdus et le formulaire
+    // s'ouvre en mode autonome (ne se sauvegarde pas dans le dossier). Vaut pour
+    // l'ouverture directe (parcours guidé) comme pour le bouton « Compléter ».
+    const qs = new URLSearchParams();
+    if (bundleRun) qs.set("bundleRun", bundleRun);
+    if (bundleSlug) qs.set("bundleSlug", bundleSlug);
+    const suffix = qs.toString();
+    permanentRedirect(`/document/${res.publicPath}${suffix ? `?${suffix}` : ""}`);
+  }
   if (res.kind === "disabled") {
     return (
       <div className="w-full">

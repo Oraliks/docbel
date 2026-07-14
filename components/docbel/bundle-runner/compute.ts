@@ -62,6 +62,21 @@ export interface ComputedRunner {
   allRequiredDone: boolean;
 }
 
+/// Résout le formulaire à ouvrir automatiquement : le premier document
+/// applicable (`eligibility === true`, ni hors-dossier ni en attente),
+/// incomplet et remplissable par le citoyen (`pdfForm` non nul). L'ordre de
+/// `visible` reflète l'ordre des items (order asc), donc « premier » = le
+/// document principal du bundle sur un parcours neuf, et le prochain document
+/// à faire lors d'une reprise. Renvoie `null` si rien n'est à ouvrir.
+export function resolveTargetForm(visible: ItemStatus[]): BundleItem | null {
+  for (const s of visible) {
+    if (s.eligibility === true && !s.completed && s.item.pdfForm) {
+      return s.item;
+    }
+  }
+  return null;
+}
+
 /// Calcule les statuts des items. `applicableSlugs` (dossier codé) écrase la
 /// visibilité : un item dont le slug n'est pas applicable est caché, peu
 /// importe sa condition JSON.

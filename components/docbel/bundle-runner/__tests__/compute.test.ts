@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { computeItemStatuses, type BundleItem } from "../compute";
+import {
+  computeItemStatuses,
+  resolveTargetForm,
+  type BundleItem,
+  type ItemStatus,
+} from "../compute";
 
 function item(p: {
   id: string;
@@ -57,5 +62,69 @@ describe("computeItemStatuses", () => {
     expect(done.completedCount).toBe(1);
     const notDone = computeItemStatuses(it, ["i1"], {}, null);
     expect(notDone.completedCount).toBe(0);
+  });
+});
+
+/// Construit un ItemStatus à partir d'un item + son état, pour tester le
+/// résolveur d'auto-ouverture sans passer par computeItemStatuses.
+function status(
+  p: Parameters<typeof item>[0],
+  s: { completed?: boolean; eligibility?: ItemStatus["eligibility"] } = {},
+): ItemStatus {
+  return {
+    item: item(p),
+    completed: s.completed ?? false,
+    eligibility: s.eligibility ?? true,
+  };
+}
+
+describe("resolveTargetForm", () => {
+  it("retourne le premier item applicable, incomplet et remplissable (le principal)", () => {
+    const target = resolveTargetForm([
+      status({ id: "c1", slug: "c1" }),
+      status({ id: "annexe", slug: "c1-annexe" }),
+    ]);
+    expect(target?.pdfForm?.slug).toBe("c1");
+  });
+
+  it("saute les items déjà complétés et rend le prochain à remplir (reprise)", () => {
+    const target = resolveTargetForm([
+      status({ id: "c1", slug: "c1" }, { completed: true }),
+      status({ id: "annexe", slug: "c1-annexe" }, { completed: false }),
+    ]);
+    expect(target?.pdfForm?.slug).toBe("c1-annexe");
+  });
+
+  it("ignore les items en attente d'autres réponses (eligibility 'pending')", () => {
+    const target = resolveTargetForm([
+      status({ id: "c1", slug: "c1" }, { eligibility: "pending" }),
+      status({ id: "c4", slug: "c4" }, { eligibility: true }),
+    ]);
+    expect(target?.pdfForm?.slug).toBe("c4");
+  });
+
+  it("ignore les items sans formulaire remplissable (pdfForm nul)", () => {
+    const external: ItemStatus = {
+      item: { ...item({ id: "ext", slug: "ext" }), pdfForm: null },
+      completed: false,
+      eligibility: true,
+    };
+    const target = resolveTargetForm([
+      external,
+      status({ id: "c1", slug: "c1" }),
+    ]);
+    expect(target?.pdfForm?.slug).toBe("c1");
+  });
+
+  it("retourne null quand tous les documents applicables sont complétés", () => {
+    const target = resolveTargetForm([
+      status({ id: "c1", slug: "c1" }, { completed: true }),
+      status({ id: "annexe", slug: "c1-annexe" }, { completed: true }),
+    ]);
+    expect(target).toBeNull();
+  });
+
+  it("retourne null pour une liste vide", () => {
+    expect(resolveTargetForm([])).toBeNull();
   });
 });

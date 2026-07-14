@@ -32,10 +32,16 @@ const ORIENTATION_COOKIE = "beldoc-orientation";
 
 export default async function BundleRoute({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ demarrer?: string }>;
 }) {
   const { slug } = await params;
+  // `?demarrer=1` = parcours guidé / reprise → ouverture directe du formulaire
+  // principal (opt-in). Sans ce paramètre, l'URL affiche la liste « Documents
+  // du parcours » (accès direct / « En savoir plus »).
+  const autoStart = (await searchParams).demarrer === "1";
   const locale = await getLocale();
 
   const bundleRaw = await prisma.documentBundle.findUnique({
@@ -343,6 +349,7 @@ export default async function BundleRoute({
           applicableSlugs: finalApplicableSlugs,
           externalDocuments,
           userEmail: session?.user?.email ?? null,
+          autoStart,
         };
 
         // Écran d'explication : uniquement si le dossier codé fournit un

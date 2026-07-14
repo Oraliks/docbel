@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
@@ -12,6 +12,7 @@ import {
   Clock,
   EyeOff,
   Inbox,
+  Loader2,
   Mail,
   Package,
   RefreshCw,
@@ -41,6 +42,7 @@ import {
   itemDescription,
   itemOrganismeLabel,
   itemTitle,
+  resolveTargetForm,
   type BundleItem,
 } from "./bundle-runner/compute";
 
@@ -91,6 +93,12 @@ interface BundleRunnerProps {
   userEmail?: string | null;
   /// Ids des questions de pré-qual pré-remplies depuis l'orientation (badge).
   orientationAnswerIds?: string[];
+  /// Ouverture directe du formulaire principal (parcours guidé / reprise).
+  /// Quand `true` et qu'il n'y a rien à décider (pré-qualification faite,
+  /// aucun document encore complété), le runner saute la liste « Documents du
+  /// parcours » et ouvre directement le document à remplir. Opt-in via
+  /// `?demarrer=1` — la liste reste la vue par défaut (accès direct).
+  autoStart?: boolean;
 }
 
 const RESPONSIBILITY_LABEL_KEYS: Record<ExternalDocument["responsibility"], string> = {
@@ -114,6 +122,7 @@ export function BundleRunner({
   externalDocuments = [],
   userEmail = null,
   orientationAnswerIds = [],
+  autoStart = false,
 }: BundleRunnerProps) {
   const t = useTranslations("public.dossier");
   const router = useRouter();
@@ -179,12 +188,17 @@ export function BundleRunner({
     }
   }
 
-  async function handleStart(item: BundleItem) {
-    if (!item.pdfForm) return;
+  /// Ouvre le formulaire d'un document (création/reprise du run + navigation).
+  /// Renvoie `true` si la navigation a été déclenchée, `false` en cas d'échec
+  /// (ex. création du run impossible) — utilisé par l'auto-ouverture pour
+  /// retomber sur la liste plutôt que de laisser l'utilisateur bloqué.
+  async function handleStart(item: BundleItem): Promise<boolean> {
+    if (!item.pdfForm) return false;
     const id = await ensureRun();
-    if (!id) return;
+    if (!id) return false;
     const url = `/document/${item.pdfForm.slug}?bundleRun=${encodeURIComponent(id)}&bundleSlug=${encodeURIComponent(bundle.slug)}`;
     router.push(url);
+    return true;
   }
 
   /// Génère un courrier de réclamation PDF (document à charge d'un tiers) et
@@ -291,6 +305,57 @@ export function BundleRunner({
     requiredVisible,
     allRequiredDone,
   } = computeItemStatuses(bundle.items, completedTemplateIds, payloads, applicableSlugs);
+
+  // --- Auto-ouverture du formulaire principal (opt-in `?demarrer=1`) ---
+  // On saute la liste « Documents du parcours » et on ouvre directement le
+  // document à remplir UNIQUEMENT quand il n'y a rien à décider : la
+  // pré-qualification est faite (pas de gate affiché) et aucun document n'est
+  // encore complété. Dès qu'un document est validé, `completedCount > 0` et on
+  // revient sur la liste (feuille de route / documents restants) — d'où
+  // l'absence de chaînage de redirections après la validation d'un formulaire.
+  const autoTarget = resolveTargetForm(visibleItems);
+  const [autoForwardFailed, setAutoForwardFailed] = useState(false);
+  const autoForwardedRef = useRef(false);
+  const canAutoForward =
+    autoStart &&
+    !autoForwardFailed &&
+    !showsPrequalifierGate &&
+    !editingEligibility &&
+    completedCount === 0 &&
+    autoTarget !== null;
+
+  useEffect(() => {
+    if (!canAutoForward || autoForwardedRef.current || !autoTarget) return;
+    autoForwardedRef.current = true;
+    handleStart(autoTarget).then((ok) => {
+      if (!ok) {
+        // Échec (run non créé, réseau…) : on révèle la liste.
+        autoForwardedRef.current = false;
+        setAutoForwardFailed(true);
+      }
+    });
+    // On ne réagit qu'au passage à `true` de canAutoForward ; le ref garantit
+    // l'unicité, donc l'identité de handleStart/autoTarget (relus au moment du
+    // déclenchement) n'a pas à figurer dans les deps.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [canAutoForward]);
+
+  // Placeholder pendant l'auto-ouverture — évite le flash de la liste avant la
+  // redirection. Lien de repli vers la liste si JS/réseau ne suit pas.
+  if (canAutoForward) {
+    return (
+      <div className="flex min-h-[40vh] flex-col items-center justify-center gap-3 text-center">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        <p className="text-sm text-muted-foreground">{t("runnerStarting")}</p>
+        <a
+          href={`/d/${bundle.slug}`}
+          className="text-xs text-primary underline underline-offset-2"
+        >
+          {t("runnerFlowDocuments")}
+        </a>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

@@ -863,22 +863,31 @@ function PrimaryAvailable({
             <ArrowRight className="size-4" aria-hidden />
           </Button>
         ) : (
-          <Button
-            render={
-              <Link
-                href={`/d/${primary.slug}`}
-                onClick={() =>
-                  trackBundleEventClient("bundle_opened", {
-                    bundleId: primary.slug ?? undefined,
-                    metadata: { from: "wizard" },
-                  })
-                }
-              />
-            }
-          >
-            {t("wizardStartProcedure")}
-            <ArrowRight className="size-4" aria-hidden />
-          </Button>
+          <>
+            {/* En savoir plus → vue « Documents du parcours » (page explicative)
+                sans ouverture automatique du formulaire. */}
+            <Button variant="outline" render={<Link href={`/d/${primary.slug}`} />}>
+              {t("learnMore")}
+            </Button>
+            {/* Démarrer → ouverture directe du formulaire principal (opt-in
+                `?demarrer=1`) : on saute la liste intermédiaire. */}
+            <Button
+              render={
+                <Link
+                  href={`/d/${primary.slug}?demarrer=1`}
+                  onClick={() =>
+                    trackBundleEventClient("bundle_opened", {
+                      bundleId: primary.slug ?? undefined,
+                      metadata: { from: "wizard" },
+                    })
+                  }
+                />
+              }
+            >
+              {t("wizardStartProcedure")}
+              <ArrowRight className="size-4" aria-hidden />
+            </Button>
+          </>
         )}
       </div>
     </div>

@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { PdfFormRunner } from "./pdf-form-runner";
 import type { PublicForm } from "@/lib/pdf-forms/public-serializer";
 import type { PrefillMap } from "@/lib/pdf-forms/canonical/extract";
+import type { TipEntry } from "@/lib/form-context-tips";
 
 interface Props {
   /// Si le PDF est ouvert dans le contexte d'un dossier codé, les "types"
@@ -20,13 +21,15 @@ interface Props {
   bundleSlug?: string;
   /// Filet de sécurité : si true, affiche l'ancien rendu dense du PDF.
   legacyLayout?: boolean;
+  /// Infos importantes contextuelles (panneau de gauche), servies par le serveur.
+  contextTips?: TipEntry[];
 }
 
 /// Page publique de remplissage d'un PDF — reprend le langage visuel "glass"
 /// du reste du site (fond dégradé hérité de .glass-root, surfaces translucides)
 /// et le layout du mockup : header riche avec illustration décorative, pills
 /// meta, puis 2 colonnes (formulaire à gauche, résumé live à droite).
-export function DocumentPageLayout({ form, bundlePrefill, bundleRunId, bundleSlug, dossierTypes, legacyLayout }: Props) {
+export function DocumentPageLayout({ form, bundlePrefill, bundleRunId, bundleSlug, dossierTypes, legacyLayout, contextTips }: Props) {
   const t = useTranslations("public.dossier");
 
   // Abréviation pour l'illustration : "C32_Travailleur" → "C32".
@@ -94,7 +97,7 @@ export function DocumentPageLayout({ form, bundlePrefill, bundleRunId, bundleSlu
       </header>
 
       {/* Formulaire pleine largeur : le résumé live en colonne a été retiré
-          (le PdfFormRunner porte déjà son aide contextuelle à droite via
+          (le PdfFormRunner porte déjà son aide contextuelle à GAUCHE via
           FormShell). Le formulaire occupe donc toute la largeur du shell. */}
       <PdfFormRunner
         form={form}
@@ -102,6 +105,7 @@ export function DocumentPageLayout({ form, bundlePrefill, bundleRunId, bundleSlu
         bundleRunId={bundleRunId}
         bundleSlug={bundleSlug}
         legacyLayout={legacyLayout}
+        contextTips={contextTips}
       />
     </div>
   );

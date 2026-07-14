@@ -1,9 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { parseStreetSuggestions, prioritizeByPostalCode } from "../street-suggestions";
+import {
+  parseStreetSuggestions,
+  prioritizeByPostalCode,
+  type RawLookupResult,
+} from "../street-suggestions";
 
 describe("parseStreetSuggestions", () => {
   it("extrait rue/code postal/commune depuis metadata", () => {
-    const raw = [
+    const raw: RawLookupResult[] = [
       { id: "1", labelFr: "Rue Neuve", metadata: { "Code postal": "1000", Commune: "Bruxelles" } },
     ];
     expect(parseStreetSuggestions(raw)).toEqual([
@@ -12,7 +16,7 @@ describe("parseStreetSuggestions", () => {
   });
 
   it("ignore une entrée sans code postal ou sans commune dans metadata (suggestion inexploitable)", () => {
-    const raw = [
+    const raw: RawLookupResult[] = [
       { id: "1", labelFr: "Rue Sans Code Postal", metadata: { Commune: "Bruxelles" } },
       { id: "2", labelFr: "Rue Sans Commune", metadata: { "Code postal": "1000" } },
       { id: "3", labelFr: "Rue Sans Metadata", metadata: null },

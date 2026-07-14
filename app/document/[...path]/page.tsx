@@ -10,6 +10,7 @@ import { toPublicForm } from "@/lib/pdf-forms/public-serializer";
 import { isDoccleConfigured } from "@/lib/pdf-forms/integrations/doccle";
 import { isItsmeConfigured } from "@/lib/pdf-forms/integrations/itsme";
 import { DocumentPageLayout } from "@/components/pdf-forms/document-page-layout";
+import { getFormContextTips } from "@/lib/form-context-tips.server";
 import { DisabledFormView } from "./disabled-form-view";
 import { getDossier } from "@/lib/dossiers/registry";
 import type { PdfFormField } from "@/lib/pdf-forms/types";
@@ -269,6 +270,10 @@ export default async function PdfFormPage({
   // rendu compact (défaut).
   const legacyLayout = process.env.PDF_FORM_LEGACY_LAYOUT === "1";
 
+  // Infos importantes contextuelles (panneau d'aide de gauche) : DB sur défauts,
+  // résilient (jamais de throw). Passé jusqu'au ContextHelpPanel via le runner.
+  const contextTips = await getFormContextTips(form.slug);
+
   // Nudge profil : connecté mais profil quasi vide → invite à le compléter
   // pour bénéficier du préremplissage automatique. Aucune bannière si le profil
   // est renseigné (le prefill fait alors son office silencieusement).
@@ -302,6 +307,7 @@ export default async function PdfFormPage({
         bundleSlug={bundleSlug}
         dossierTypes={dossierTypes}
         legacyLayout={legacyLayout}
+        contextTips={contextTips}
       />
     </div>
   );

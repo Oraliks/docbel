@@ -138,6 +138,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             { title: t("pdfNew"), url: "/admin/pdf/new" },
             { title: t("acroformSources"), url: "/admin/pdf-sources" },
             { title: t("presets"), url: "/admin/pdf/presets" },
+            { title: "Conseils formulaires", url: "/admin/pdf/conseils" },
             { title: "Soumissions", url: "/admin/form-submissions" },
           ],
         },

@@ -39,6 +39,7 @@ import { sectionLabel } from "@/lib/pdf-forms/section-labels";
 import { FormStepper } from "./form-stepper";
 import { FormShell } from "./form-shell";
 import { ContextHelpPanel } from "./context-help-panel";
+import type { TipEntry } from "@/lib/form-context-tips";
 import { MotifSituationPicker } from "./motif-situation-picker";
 import { CompactAccordionSection } from "./compact-accordion-section";
 import { AutoSaveNotice } from "./auto-save-notice";
@@ -96,9 +97,12 @@ interface PdfFormRunnerProps {
   /// détaillé) si true. Piloté par un env var serveur, cf. Task 12. Défaut
   /// false (nouveau rendu).
   legacyLayout?: boolean;
+  /// Infos importantes contextuelles servies par le serveur (DB sur défauts,
+  /// cf. `getFormContextTips`). Absent = le panneau retombe sur les défauts purs.
+  contextTips?: TipEntry[];
 }
 
-export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, onValuesChange, onLocaleChange, legacyLayout = false }: PdfFormRunnerProps) {
+export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, onValuesChange, onLocaleChange, legacyLayout = false, contextTips }: PdfFormRunnerProps) {
   const t = useTranslations("public.dossier");
   const router = useRouter();
   const [locale, setLocale] = useState<Locale>(form.defaultLocale);
@@ -633,6 +637,7 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
         liveTriggers={liveTriggers}
         bundleRunId={bundleRunId}
         onStreetVerifiedChange={handleStreetVerified}
+        contextTips={contextTips}
         t={t}
       />
     );
@@ -652,6 +657,8 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
   };
 
   const activeSectionKey = current.kind === "fields" ? current.id : undefined;
+  // Motifs cochés (champs booléens à true) → déclencheurs du panneau d'infos.
+  const checkedFieldIds = Object.keys(values).filter((k) => values[k] === true);
 
   return (
     <div className="flex flex-col gap-3">
@@ -679,7 +686,15 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
       )}
 
       <FormShell
-        helpPanel={<ContextHelpPanel sectionKey={activeSectionKey} locale={locale} />}
+        helpPanel={
+          <ContextHelpPanel
+            formSlug={form.slug}
+            sectionKeys={activeSectionKey ? [activeSectionKey] : []}
+            checkedFieldIds={checkedFieldIds}
+            entries={contextTips}
+            locale={locale}
+          />
+        }
       >
         <Card className="overflow-hidden rounded-3xl border-0 bg-card shadow-sm">
           <div className="border-b border-[color:var(--glass-border)] px-3">
@@ -1185,6 +1200,7 @@ interface MacroRunnerBodyProps {
   liveTriggers: PdfFormTrigger[];
   bundleRunId?: string;
   onStreetVerifiedChange?: (fieldId: string, verified: boolean) => void;
+  contextTips?: TipEntry[];
   t: ReturnType<typeof useTranslations>;
 }
 
@@ -1197,7 +1213,7 @@ interface MacroRunnerBodyProps {
 function MacroRunnerBody({
   form, macroSteps, activeIndex, setActive, attemptAdvance, locale, setLocale, values, errors,
   setValue, signerName, consent, setConsent, delivery, setDelivery, doccleRef,
-  setDoccleRef, submitting, submit, resetForm, lastSavedAt, liveTriggers, bundleRunId, onStreetVerifiedChange, t,
+  setDoccleRef, submitting, submit, resetForm, lastSavedAt, liveTriggers, bundleRunId, onStreetVerifiedChange, contextTips, t,
 }: MacroRunnerBodyProps) {
   const current = macroSteps[activeIndex];
   const isLast = activeIndex === macroSteps.length - 1;
@@ -1260,7 +1276,17 @@ function MacroRunnerBody({
         </div>
       )}
 
-      <FormShell helpPanel={<ContextHelpPanel sectionKey={current.sections[0]?.key} locale={locale} />}>
+      <FormShell
+        helpPanel={
+          <ContextHelpPanel
+            formSlug={form.slug}
+            sectionKeys={current.sections.map((s) => s.key).filter((k): k is string => !!k)}
+            checkedFieldIds={Object.keys(values).filter((k) => values[k] === true)}
+            entries={contextTips}
+            locale={locale}
+          />
+        }
+      >
         <Card className="overflow-hidden rounded-3xl border-0 bg-card shadow-sm">
           <div className="border-b border-[color:var(--glass-border)] px-3">
             <FormStepper

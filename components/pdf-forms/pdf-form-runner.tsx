@@ -45,6 +45,7 @@ import { MotifSituationPicker } from "./motif-situation-picker";
 import { CompactAccordionSection } from "./compact-accordion-section";
 import { AutoSaveNotice } from "./auto-save-notice";
 import { ResetFormButton } from "./reset-form-button";
+import { MacroFinalSummary } from "./macro-final-summary";
 import { OptionCard } from "@/components/ui/option-card";
 
 const LOCALE_NAMES: Record<Locale, string> = { fr: "FR", nl: "NL", de: "DE" };
@@ -1458,7 +1459,18 @@ function MacroRunnerBody({
               )}
 
               {isLast ? (
-                <div className="flex flex-col gap-4 border-t border-[color:var(--glass-border)] pt-4">
+                <>
+                  {/* Récapitulatif final allégé (§10.6) : carte « champs
+                      critiques » + expander « Voir toutes mes réponses »
+                      (replié). Au-dessus du bloc livraison/consentement/
+                      signature, qui reste inchangé. */}
+                  <MacroFinalSummary
+                    fields={form.fields}
+                    values={values}
+                    locale={locale}
+                    liveTriggers={liveTriggers}
+                  />
+                  <div className="flex flex-col gap-4 border-t border-[color:var(--glass-border)] pt-4">
                   {!bundleRunId && form.allowDownload && form.allowDoccle && (
                     <div className="flex flex-col gap-2">
                       <span className="text-xs font-medium text-muted-foreground">{t("runnerDeliveryModeLabel")}</span>
@@ -1517,7 +1529,8 @@ function MacroRunnerBody({
                       </Button>
                     </div>
                   </div>
-                </div>
+                  </div>
+                </>
               ) : (
                 <div className="flex flex-col gap-3 border-t border-[color:var(--glass-border)] pt-4">
                   <div className="flex flex-wrap items-center justify-end gap-3">

@@ -1,69 +1,93 @@
 'use client'
 
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef, type ReactNode } from 'react'
+import dynamic from 'next/dynamic'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
-import { Input } from '@/components/ui/input'
-import { MapPin, AlertCircle, Search } from 'lucide-react'
+import { MapPin } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Skeleton } from '@/components/ui/skeleton'
 
-import { OfficeList } from './_components/office-list'
-import { TypeFilterChips } from './_components/type-filter-chips'
+import { AddressSearch } from './_components/address-search'
+import { DemarcheSelector } from './_components/demarche-selector'
+import { ActiveFilters } from './_components/active-filters'
+import { RecommendedOfficeCard } from './_components/recommended-office-card'
+import { OfficeResultsList } from './_components/office-results-list'
 import { OfficeDetail } from './_components/office-detail'
-import { FinderMap } from './_components/finder-map'
-import { MobileSheet } from './_components/mobile-sheet'
-import { useFavorites } from './_components/use-favorites'
-import { SearchLoader } from './_components/search-loader'
-import { GeolocBanner, reverseGeocodeBE, type UserGeoloc } from './_components/geoloc-banner'
-import { InfoBands } from './_components/info-bands'
+import { TrustBar } from './_components/trust-bar'
+import { MobileViewSwitcher, type MobileView } from './_components/mobile-view-switcher'
+import { EmptyState, ErrorState, SkeletonResults } from './_components/finder-states'
+import { reverseGeocodeBE, type UserGeoloc } from './_components/geoloc-banner'
 import { type ResolveResponse } from './_components/types'
-import { buildOffices, filterOffices, TYPE_ORDER, type OfficeType } from '@/lib/bureaus/finder-model'
+import type { OfficeMapMarker } from './_components/office-map-types'
+import { buildOffices, TYPE_META } from '@/lib/bureaus/finder-model'
+import { rankOffices } from '@/lib/bureaus/office-ranking'
+import { DEMARCHE_META, type Demarche } from '@/lib/bureaus/demarche-map'
+import { computeOpenStatus } from '@/lib/bureaus/types'
 
 /**
- * Orchestrateur du finder de bureaux (refonte liste + carte + fiche).
+ * `OfficeMap` code-splitté (~120 KB de d3-geo/topojson via `CustomBelgiumMap`)
+ * hors du bundle initial : `ssr: false` (la projection SVG n'a aucun sens
+ * côté serveur) + squelette pleine hauteur pendant le chargement de la puce.
+ * Défini au niveau module pour rester stable entre les rendus (sinon la carte
+ * se remonterait à chaque render de l'orchestrateur).
+ */
+const OfficeMap = dynamic(
+  () => import('./_components/office-map').then((m) => ({ default: m.OfficeMap })),
+  { ssr: false, loading: () => <Skeleton className="h-full w-full rounded-3xl" /> },
+)
+
+/**
+ * Orchestrateur V2 du finder de bureaux : parcours « démarche → recommandé →
+ * action ». L'utilisateur indique son adresse (code postal) et sa démarche ;
+ * `rankOffices` désigne un bureau n°1 recommandé (héros) + une liste
+ * numérotée ; la carte partage les mêmes numéros. Survol liste ↔ carte
+ * synchronisé (`activeId`) ; « Voir le bureau » ouvre la fiche (`detailId`).
  *
- * Desktop (`lg:`) : deux colonnes pleine hauteur. Colonne gauche (420px) =
- * titre + recherche + géoloc + puces de type + liste ; quand un bureau est
- * sélectionné, `OfficeDetail variant="inline"` recouvre la colonne. Colonne
- * droite = carte plein cadre. La sélection est bidirectionnelle liste ↔ carte.
+ * Desktop (`lg:`) : deux colonnes (contrôles + résultats à gauche, carte
+ * collante à droite), `TrustBar` dessous. Mobile (`<lg`) : `MobileViewSwitcher`
+ * bascule Liste/Carte ; la recherche reste toujours accessible.
  *
- * Mobile (`<lg`) : carte plein écran d'abord, barre de recherche flottante en
- * haut, `MobileSheet` glissante en bas (count + puces + liste) ; sélection →
- * `OfficeDetail variant="sheet"` dans un overlay bas assombri.
- *
- * La logique de résolution (cache mémoire par CP, AbortController, debounce
- * 150 ms, sync `?cp=`, reverse-geocode géoloc) est conservée à l'identique.
+ * La machinerie de résolution est conservée à l'identique (cache mémoire par
+ * CP, `AbortController`, debounce 150 ms, sync `?cp=`, reverse-geocode géoloc).
+ * Le reset de la fiche/sélection est DÉRIVÉ (pas de setState synchrone dans un
+ * effet) : un `id` obsolète ne matche plus `ranked` → rendu nul, sans effet.
  */
 export function BureauxFinder() {
-  const t = useTranslations('public.outils')
+  // Cast (idiome partagé avec les enfants, cf. office-card.tsx / demarche-
+  // selector.tsx) : `TYPE_META[..].labelKey` / `DEMARCHE_META[..].labelKey`
+  // sont des `string` dynamiques (jamais des littéraux), donc le typage strict
+  // next-intl (`i18n/global.ts`) fait échouer `tsc` sans ce cast. L'orches-
+  // trateur ne passe que des chaînes déjà résolues aux enfants : aucune
+  // interpolation ici (les enfants — OfficeMap, ActiveFilters… — gèrent la leur).
+  const t = useTranslations('public.outils') as (key: string) => string
   const router = useRouter()
   const params = useSearchParams()
 
-  const [cp, setCp] = useState(params?.get('cp') ?? '')
-  const [query, setQuery] = useState('')
+  // --- État de résolution -----------------------------------------------
+  // `addressInput` = valeur du champ Adresse ; `cp` en est DÉRIVÉ : un code
+  // postal (4 chiffres) déclenche la résolution, du texte libre (nom de
+  // commune…) est accepté mais ne résout pas encore (« préparé pour plus tard »).
+  const [addressInput, setAddressInput] = useState(params?.get('cp') ?? '')
+  const cp = useMemo(() => {
+    const trimmed = addressInput.trim()
+    return /^\d{4}$/.test(trimmed) ? trimmed : ''
+  }, [addressInput])
+
   const [userGeoloc, setUserGeoloc] = useState<UserGeoloc | null>(null)
+  const [locating, setLocating] = useState(false)
   const [data, setData] = useState<ResolveResponse | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [activeTypes, setActiveTypes] = useState<Set<OfficeType>>(new Set(TYPE_ORDER))
-  const [selectedId, setSelectedId] = useState<string | null>(null)
-  const { favorites, toggle: toggleFavorite } = useFavorites()
 
-  // --- Résolution : logique conservée à l'identique (cache/abort/debounce) ---
-  const handleLocated = useCallback(async (geo: UserGeoloc) => {
-    setUserGeoloc(geo)
-    const resolved = await reverseGeocodeBE(geo.lat, geo.lng)
-    if (resolved) {
-      setUserGeoloc({ ...geo, postcode: resolved.postcode, city: resolved.city })
-      setCp(resolved.postcode)
-    }
-  }, [])
-  const clearGeoloc = useCallback(() => setUserGeoloc(null), [])
+  // --- État d'interaction ------------------------------------------------
+  const [demarche, setDemarche] = useState<Demarche>('inconnu')
+  const [activeId, setActiveId] = useState<string | null>(null) // survol liste ↔ carte
+  const [detailId, setDetailId] = useState<string | null>(null) // fiche ouverte
+  const [mobileView, setMobileView] = useState<MobileView>('liste')
 
-  // Cache mémoire des résultats par CP : retaper un CP déjà vu pendant la
-  // session render direct depuis ce cache (0 ms, aucun appel réseau).
+  // --- Résolution : cache mémoire par CP + annulation + debounce (conservé) --
   const cacheRef = useRef<Map<string, ResolveResponse>>(new Map())
-  // Annule la requête en cours si le user tape un autre CP avant qu'elle
-  // finisse (évite race condition + données obsolètes).
   const abortRef = useRef<AbortController | null>(null)
 
   const resolve = useCallback(
@@ -104,9 +128,9 @@ export function BureauxFinder() {
 
   useEffect(() => {
     const id = setTimeout(() => {
-      void resolve(cp.trim())
+      void resolve(cp)
       const usp = new URLSearchParams(params?.toString() ?? '')
-      if (cp.trim()) usp.set('cp', cp.trim())
+      if (cp) usp.set('cp', cp)
       else usp.delete('cp')
       const qs = usp.toString()
       router.replace(qs ? `?${qs}` : '?', { scroll: false })
@@ -115,206 +139,260 @@ export function BureauxFinder() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cp, resolve])
 
-  // Le reset de la sélection quand le jeu de données change est DÉRIVÉ (pas
-  // d'effet synchrone) : `selected` ci-dessous retombe à null si `selectedId`
-  // n'existe plus dans les nouveaux résultats → la fiche se ferme d'elle-même.
+  // Géoloc pilotée par le bouton « Utiliser ma position » d'AddressSearch :
+  // getCurrentPosition → reverseGeocodeBE → on injecte le CP résolu dans le
+  // champ (déclenche la résolution). `userGeoloc` affine ensuite les distances.
+  const handleUseLocation = useCallback(() => {
+    if (typeof navigator === 'undefined' || !navigator.geolocation) return
+    setLocating(true)
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const geo: UserGeoloc = { lat: pos.coords.latitude, lng: pos.coords.longitude }
+        setUserGeoloc(geo)
+        void reverseGeocodeBE(geo.lat, geo.lng).then((resolved) => {
+          if (resolved) {
+            setUserGeoloc({ ...geo, postcode: resolved.postcode, city: resolved.city })
+            setAddressInput(resolved.postcode)
+          }
+          setLocating(false)
+        })
+      },
+      () => setLocating(false),
+      { enableHighAccuracy: false, timeout: 10000, maximumAge: 5 * 60 * 1000 },
+    )
+  }, [])
 
+  const retry = useCallback(() => {
+    void resolve(cp)
+  }, [resolve, cp])
+
+  const removeFilter = useCallback((key: string) => {
+    if (key === 'demarche') setDemarche('inconnu')
+    else if (key === 'cp') {
+      setAddressInput('')
+      setUserGeoloc(null)
+    }
+  }, [])
+  const clearAllFilters = useCallback(() => {
+    setDemarche('inconnu')
+    setAddressInput('')
+    setUserGeoloc(null)
+  }, [])
+
+  // --- Dérivations -------------------------------------------------------
+  // Référence de distance : position géoloc si connue, sinon centroïde commune.
   const distanceRef = useMemo(() => {
     if (userGeoloc) return { lat: userGeoloc.lat, lng: userGeoloc.lng }
     if (data?.commune?.lat != null && data?.commune?.lng != null)
       return { lat: data.commune.lat, lng: data.commune.lng }
     return null
-  }, [userGeoloc, data?.commune])
+  }, [userGeoloc, data])
 
   const allItems = useMemo(() => (data ? buildOffices(data, distanceRef) : []), [data, distanceRef])
-  const items = useMemo(() => filterOffices(allItems, activeTypes, query), [allItems, activeTypes, query])
+  const ranked = useMemo(() => rankOffices(allItems, { demarche }), [allItems, demarche])
+  const recommended = ranked[0] ?? null
+  const others = useMemo(() => ranked.slice(1), [ranked])
+  const hasRanked = ranked.length > 0
 
-  const counts = useMemo(() => {
-    const c = Object.fromEntries(TYPE_ORDER.map((ty) => [ty, 0])) as Record<OfficeType, number>
-    for (const it of allItems) c[it.type]++
-    return c
-  }, [allItems])
+  // Fiche ouverte = résolution DÉRIVÉE de `detailId` : un id devenu obsolète
+  // (jeu de données changé) ne matche plus `ranked` → `null` → la fiche se
+  // ferme d'elle-même, sans effet synchrone.
+  const detail = useMemo(() => ranked.find((o) => o.id === detailId) ?? null, [ranked, detailId])
 
-  const countLabel = useMemo(() => {
-    const n = items.length
-    return query
-      ? t('bureauxResultCount', { count: n, query })
-      : t('bureauxNearCount', { count: n })
-  }, [items.length, query, t])
-
-  const toggleType = useCallback((ty: OfficeType) => {
-    setActiveTypes((prev) => {
-      const next = new Set(prev)
-      if (next.has(ty)) next.delete(ty)
-      else next.add(ty)
-      return next
-    })
-  }, [])
-
-  const selected = useMemo(
-    () => items.find((i) => i.id === selectedId) ?? allItems.find((i) => i.id === selectedId) ?? null,
-    [items, allItems, selectedId],
+  // Marqueurs carte — mémo perf-critique (STABLE) : `OfficeMap`/`CustomBelgiumMap`
+  // mémoïsent leur projection sur l'identité de ce tableau. Ne dépend que de
+  // `[ranked, t]` (t = référence stable next-intl) → pas de reprojection sur un
+  // simple survol. Tous les libellés arrivent déjà résolus (i18n, formatage).
+  const markers = useMemo<OfficeMapMarker[]>(
+    () =>
+      ranked.map((office) => {
+        const b = office.bureau
+        const s = computeOpenStatus(b.hours)
+        // Statut honnête : jamais « Fermé » inventé quand aucun horaire connu.
+        const statusLabel =
+          s.state === 'open'
+            ? t('bureauxStatusOpen')
+            : s.state === 'no_data'
+              ? null
+              : t('bureauxStatusClosed')
+        const address =
+          [b.street, b.streetNum].filter(Boolean).join(' ') + `, ${b.postalCode} ${b.city}`
+        return {
+          id: office.id,
+          number: office.number,
+          recommended: office.isRecommended,
+          lat: b.lat,
+          lng: b.lng,
+          color: TYPE_META[office.type].color,
+          label: b.name,
+          typeLabel: t(TYPE_META[office.type].labelKey),
+          address,
+          statusLabel,
+          distanceLabel:
+            office.distanceKm != null
+              ? `${office.distanceKm.toFixed(1).replace('.', ',')} km`
+              : null,
+        }
+      }),
+    [ranked, t],
   )
-  const showResults = !!data && !loading
 
-  // Barre de recherche partagée (CP déclenche la résolution ; texte filtre la liste)
-  const searchBar = (
-    <label className="flex items-center gap-2.5 h-12 px-3.5 rounded-2xl glass-surface border border-border">
-      <Search className="w-4.5 h-4.5" style={{ color: 'var(--primary)' }} />
-      <Input
-        inputMode="text"
-        placeholder={t('bureauxSearchPlaceholder')}
-        value={query || cp}
-        onChange={(e) => {
-          const v = e.target.value
-          const digits = v.replace(/\D/g, '')
-          if (/^\d{0,4}$/.test(v)) {
-            setCp(digits)
-            setQuery('')
-          } else {
-            setQuery(v)
-          }
+  const activeFilters = useMemo(() => {
+    const f: { key: string; label: string }[] = []
+    if (data) f.push({ key: 'cp', label: data.commune?.nameFr ?? cp })
+    if (demarche !== 'inconnu') f.push({ key: 'demarche', label: t(DEMARCHE_META[demarche].labelKey) })
+    return f
+  }, [data, cp, demarche, t])
+
+  // --- Fragments d'interface partagés (mobile ↔ desktop) -----------------
+  const emptyBody = demarche !== 'inconnu' ? t('demarcheEmptyBody') : t('emptyBody')
+
+  const emptyActions = (
+    <>
+      {demarche !== 'inconnu' && (
+        <Button type="button" size="sm" onClick={() => setDemarche('inconnu')}>
+          {t('clearFilters')}
+        </Button>
+      )}
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        onClick={() => {
+          setAddressInput('')
+          setUserGeoloc(null)
         }}
-        className="border-0 px-0 h-auto bg-transparent shadow-none focus-visible:ring-0 text-sm font-medium"
-      />
-    </label>
+      >
+        {t('modifySearch')}
+      </Button>
+    </>
+  )
+
+  // Colonne résultats (gauche desktop / vue Liste mobile).
+  let results: ReactNode
+  if (loading) {
+    results = <SkeletonResults />
+  } else if (error) {
+    results = <ErrorState message={error} onRetry={retry} />
+  } else if (data) {
+    results = hasRanked ? (
+      <div className="space-y-4">
+        {recommended && <RecommendedOfficeCard office={recommended} onView={setDetailId} />}
+        {others.length > 0 && (
+          <OfficeResultsList
+            offices={others}
+            selectedId={activeId}
+            onView={setDetailId}
+            onHover={setActiveId}
+          />
+        )}
+      </div>
+    ) : (
+      <EmptyState title={t('emptyTitle')} body={emptyBody} actions={emptyActions} />
+    )
+  } else {
+    // Initial (aucun CP) : jamais un écran vide sans explication.
+    results = <InitialPrompt text={t('bureauxSubtitle')} />
+  }
+
+  // Zone carte (droite desktop / vue Carte mobile). Jamais de carte vide sans
+  // explication : on montre un placeholder tant qu'il n'y a pas de résultats.
+  const mapArea: ReactNode = loading ? (
+    <Skeleton className="h-full w-full rounded-3xl" />
+  ) : data && hasRanked ? (
+    <OfficeMap
+      markers={markers}
+      center={distanceRef}
+      selectedInsCode={data.commune?.insCode ?? null}
+      selectedId={activeId}
+      zoneLabel={data.commune?.nameFr ?? cp}
+      resultCount={ranked.length}
+      onHover={setActiveId}
+      onSelect={setActiveId}
+      onView={setDetailId}
+    />
+  ) : (
+    <MapPlaceholder text={error ?? (data ? emptyBody : t('bureauxSubtitle'))} />
   )
 
   return (
     <div className="w-full">
-      {/* ===== Desktop ===== */}
-      <div className="hidden lg:flex gap-4 h-[calc(100vh-13rem)] min-h-[640px]">
-        <div className="relative w-[420px] flex-none glass-surface rounded-3xl border border-border flex flex-col overflow-hidden">
-          <div className="p-5 pb-3 space-y-3">
-            <div>
-              <div className="text-xs font-bold uppercase tracking-widest" style={{ color: 'var(--primary)' }}>
-                {t('bureauxEyebrow')}
-              </div>
-              <h1 className="text-2xl font-extrabold text-foreground mt-1">{t('bureauxTitle')}</h1>
-            </div>
-            {searchBar}
-            <GeolocBanner onLocated={handleLocated} located={userGeoloc} onClear={clearGeoloc} />
+      <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_1.08fr] lg:gap-5">
+        {/* ===== Colonne gauche : recherche + démarche + filtres + résultats ===== */}
+        <div className="min-w-0 space-y-4">
+          <AddressSearch
+            value={addressInput}
+            onChange={setAddressInput}
+            onUseLocation={handleUseLocation}
+            locating={locating}
+          />
+
+          {/* Bascule Liste/Carte — mobile uniquement */}
+          <div className="lg:hidden">
+            <MobileViewSwitcher view={mobileView} onChange={setMobileView} resultCount={ranked.length} />
           </div>
-          <div className="px-5">
-            <TypeFilterChips active={activeTypes} onToggle={toggleType} counts={counts} />
+
+          {/* Démarche + filtres + résultats : masqués en vue Carte mobile,
+              toujours visibles sur `lg`. */}
+          <div className={`${mobileView === 'carte' ? 'hidden' : ''} space-y-4 lg:block`}>
+            <DemarcheSelector value={demarche} onChange={setDemarche} />
+            <ActiveFilters filters={activeFilters} onRemove={removeFilter} onClear={clearAllFilters} />
+            {results}
           </div>
-          <div className="flex-1 min-h-0 px-5 pt-2">
-            {loading && <SearchLoader cp={cp.trim() || undefined} />}
-            {error && <ErrorBox error={error} />}
-            {showResults && (
-              <OfficeList
-                items={items}
-                selectedId={selectedId}
-                favorites={favorites}
-                onSelect={setSelectedId}
-                onToggleFavorite={toggleFavorite}
-                countLabel={countLabel}
-              />
-            )}
-            {!loading && !data && <EmptyPrompt />}
-          </div>
-          {selected && (
-            <div className="absolute inset-0 z-20 glass-surface">
-              <OfficeDetail
-                item={selected}
-                isFavorite={favorites.has(selected.id)}
-                onToggleFavorite={toggleFavorite}
-                onClose={() => setSelectedId(null)}
-                variant="inline"
-              />
-            </div>
-          )}
         </div>
-        <div className="flex-1 min-w-0 rounded-3xl overflow-hidden border border-border">
-          <FinderMap commune={data?.commune ?? null} items={items} selectedId={selectedId} onSelect={setSelectedId} />
+
+        {/* ===== Colonne droite : carte (collante desktop, plein cadre mobile) ===== */}
+        <div className={`${mobileView === 'carte' ? '' : 'hidden'} mt-4 lg:mt-0 lg:block`}>
+          <div className="h-[calc(100vh-16rem)] min-h-[440px] lg:sticky lg:top-4 lg:h-[calc(100vh-8rem)] lg:min-h-[600px]">
+            {mapArea}
+          </div>
         </div>
       </div>
 
-      {/* ===== Mobile ===== */}
-      <div className="lg:hidden relative h-[calc(100vh-9rem)] min-h-[560px] rounded-3xl overflow-hidden border border-border">
-        <div className="absolute inset-0">
-          <FinderMap commune={data?.commune ?? null} items={items} selectedId={selectedId} onSelect={setSelectedId} />
-        </div>
-        <div className="absolute top-3 left-3 right-3 z-30 space-y-2">
-          {searchBar}
-          <GeolocBanner onLocated={handleLocated} located={userGeoloc} onClear={clearGeoloc} />
-          {error && <ErrorBox error={error} />}
-        </div>
-        {showResults && (
-          <MobileSheet header={<span className="text-sm font-extrabold text-foreground">{countLabel}</span>}>
-            <TypeFilterChips active={activeTypes} onToggle={toggleType} counts={counts} />
-            <div className="mt-2">
-              <OfficeList
-                items={items}
-                selectedId={selectedId}
-                favorites={favorites}
-                onSelect={setSelectedId}
-                onToggleFavorite={toggleFavorite}
-                countLabel=""
-              />
-            </div>
-          </MobileSheet>
-        )}
-        {loading && (
-          <div className="absolute bottom-0 left-0 right-0 z-20 glass-surface rounded-t-3xl p-5">
-            <SearchLoader cp={cp.trim() || undefined} />
-          </div>
-        )}
-        {selected && (
-          <div className="fixed inset-0 z-40 flex flex-col justify-end">
-            <button
-              type="button"
-              aria-label={t('bureauxClose')}
-              className="absolute inset-0 bg-black/40"
-              onClick={() => setSelectedId(null)}
-            />
-            <div className="relative glass-surface rounded-t-3xl max-h-[85%]">
-              <OfficeDetail
-                item={selected}
-                isFavorite={favorites.has(selected.id)}
-                onToggleFavorite={toggleFavorite}
-                onClose={() => setSelectedId(null)}
-                variant="sheet"
-              />
-            </div>
-          </div>
-        )}
+      {/* ===== Barre de confiance (remplace les cartes InfoBands) ===== */}
+      <div className="mt-6">
+        <TrustBar />
       </div>
 
-      {/* Bandeaux pédagogiques (conservés) */}
-      {showResults && (
-        <div className="mt-6">
-          {data!.warnings.length > 0 && <WarningsBox warnings={data!.warnings} />}
-          <InfoBands />
+      {/* ===== Fiche bureau (overlay) : mobile = bottom-sheet, desktop = modale ===== */}
+      {detail && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-4">
+          <button
+            type="button"
+            aria-label={t('bureauxClose')}
+            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+            onClick={() => setDetailId(null)}
+          />
+          <div className="relative w-full glass-surface rounded-t-3xl sm:w-auto sm:max-w-md sm:rounded-3xl max-h-[85vh] overflow-hidden">
+            <OfficeDetail item={detail} onClose={() => setDetailId(null)} variant="sheet" />
+          </div>
         </div>
       )}
     </div>
   )
 }
 
-function ErrorBox({ error }: { error: string }) {
+/**
+ * Invite initiale (aucun code postal saisi) affichée dans la colonne résultats.
+ */
+function InitialPrompt({ text }: { text: string }) {
   return (
-    <div className="rounded-md border border-red-300 bg-red-50 p-4 text-sm text-red-800">{error}</div>
-  )
-}
-function WarningsBox({ warnings }: { warnings: string[] }) {
-  return (
-    <div className="rounded-md border border-orange-300 bg-orange-50/60 dark:bg-orange-950/10 p-3 text-xs text-orange-900 dark:text-orange-200 space-y-1 mb-4">
-      {warnings.map((w, i) => (
-        <div key={i} className="flex items-start gap-2">
-          <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-          <span>{w}</span>
-        </div>
-      ))}
+    <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-[color:var(--glass-border)] px-6 py-14 text-center">
+      <MapPin className="h-10 w-10 text-muted-foreground/40" aria-hidden />
+      <p className="max-w-sm text-sm text-muted-foreground">{text}</p>
     </div>
   )
 }
-function EmptyPrompt() {
-  const t = useTranslations('public.outils')
+
+/**
+ * Substitut de carte quand il n'y a pas (encore) de résultats à projeter :
+ * garde le cadre verre plein et explique pourquoi la carte est vide.
+ */
+function MapPlaceholder({ text }: { text: string }) {
   return (
-    <div className="rounded-lg border border-dashed py-12 text-center text-sm text-muted-foreground h-full flex flex-col items-center justify-center">
-      <MapPin className="w-10 h-10 text-muted-foreground/40 mb-3" />
-      {t('bureauxEmptyPrompt')}
+    <div className="glass-surface flex h-full w-full flex-col items-center justify-center gap-3 rounded-3xl px-6 text-center">
+      <MapPin className="h-10 w-10 text-muted-foreground/40" aria-hidden />
+      <p className="max-w-xs text-sm text-muted-foreground">{text}</p>
     </div>
   )
 }

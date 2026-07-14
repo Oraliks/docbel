@@ -2,7 +2,7 @@
 'use client'
 import { useState } from 'react'
 import { useTranslations } from 'next-intl'
-import { ChevronLeft, X, MapPin, Globe, Star, CalendarCheck, Flag } from 'lucide-react'
+import { ChevronLeft, X, MapPin, Globe, CalendarCheck, Flag } from 'lucide-react'
 import { GLASS_CARD } from '@/lib/glass-classes'
 import { computeOpenStatus } from '@/lib/bureaus/types'
 import { estimateTravel, TYPE_META, type OfficeItem } from '@/lib/bureaus/finder-model'
@@ -13,14 +13,13 @@ import { ReportForm } from './report-form'
 
 export function OfficeDetail({
   item,
-  isFavorite,
-  onToggleFavorite,
   onClose,
   variant,
 }: {
+  // Accepte un `OfficeItem` ou un `RankedOffice` (surtype `OfficeItem`) : la
+  // fiche ne lit que `item.type` / `item.bureau` / `item.distanceKm`, jamais
+  // le rang. La favorisation a été retirée (V2-12).
   item: OfficeItem
-  isFavorite: boolean
-  onToggleFavorite: (id: string) => void
   onClose: () => void
   variant: 'inline' | 'sheet'
 }) {
@@ -154,14 +153,6 @@ export function OfficeDetail({
               {t('bureauxAppointment')}
             </a>
           )}
-          <button
-            type="button"
-            onClick={() => onToggleFavorite(item.id)}
-            aria-label={t('bureauxFavorite')}
-            className="flex-none w-12 h-12 rounded-2xl border border-border flex items-center justify-center"
-          >
-            <Star className="w-5 h-5" fill={isFavorite ? '#f6b93b' : 'none'} stroke={isFavorite ? '#f6b93b' : 'currentColor'} />
-          </button>
         </div>
 
         {/* Signalement (réutilisé) */}

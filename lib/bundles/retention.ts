@@ -13,6 +13,11 @@
 
 export const ANONYMIZE_DAYS = 60;
 export const HARD_DELETE_DAYS = 180;
+/// TTL des brouillons EN COURS non validés (`draftPayloads` + repères de
+/// reprise). Volontairement court (Lot 3) : les réponses saisies mais jamais
+/// validées ne doivent pas traîner — on les purge sans supprimer le run ni les
+/// `payloads` déjà validés.
+export const DRAFT_TTL_DAYS = 7;
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -21,6 +26,9 @@ export interface RetentionCutoffs {
   anonymizeBefore: Date;
   /// Runs inactifs avant cette date → à supprimer définitivement.
   deleteBefore: Date;
+  /// Runs dont le brouillon (draftPayloads) est inactif avant cette date → le
+  /// brouillon SEUL est purgé (le run et ses payloads validés survivent).
+  draftBefore: Date;
 }
 
 /// Calcule les dates seuils (pure → testable).
@@ -28,9 +36,11 @@ export function retentionCutoffs(
   now: Date,
   anonymizeDays: number = ANONYMIZE_DAYS,
   hardDeleteDays: number = HARD_DELETE_DAYS,
+  draftDays: number = DRAFT_TTL_DAYS,
 ): RetentionCutoffs {
   return {
     anonymizeBefore: new Date(now.getTime() - anonymizeDays * DAY_MS),
     deleteBefore: new Date(now.getTime() - hardDeleteDays * DAY_MS),
+    draftBefore: new Date(now.getTime() - draftDays * DAY_MS),
   };
 }

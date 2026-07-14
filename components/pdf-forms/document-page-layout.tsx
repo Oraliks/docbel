@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { PdfFormRunner } from "./pdf-form-runner";
 import type { PublicForm } from "@/lib/pdf-forms/public-serializer";
 import type { PrefillMap } from "@/lib/pdf-forms/canonical/extract";
+import type { FormPayload } from "@/lib/pdf-forms/types";
 import type { TipEntry } from "@/lib/form-context-tips";
 
 interface Props {
@@ -23,13 +24,18 @@ interface Props {
   legacyLayout?: boolean;
   /// Infos importantes contextuelles (panneau de gauche), servies par le serveur.
   contextTips?: TipEntry[];
+  /// Reprise fine (Lot 3) : étape initiale (id stable) + réponses en cours à
+  /// restaurer + état connecté (pour un message d'auto-save honnête).
+  initialStepId?: string;
+  draftValues?: FormPayload;
+  isAuthenticated?: boolean;
 }
 
 /// Page publique de remplissage d'un PDF — reprend le langage visuel "glass"
 /// du reste du site (fond dégradé hérité de .glass-root, surfaces translucides)
 /// et le layout du mockup : header riche avec illustration décorative, pills
 /// meta, puis 2 colonnes (formulaire à gauche, résumé live à droite).
-export function DocumentPageLayout({ form, bundlePrefill, bundleRunId, bundleSlug, dossierTypes, legacyLayout, contextTips }: Props) {
+export function DocumentPageLayout({ form, bundlePrefill, bundleRunId, bundleSlug, dossierTypes, legacyLayout, contextTips, initialStepId, draftValues, isAuthenticated }: Props) {
   const t = useTranslations("public.dossier");
 
   // Abréviation pour l'illustration : "C32_Travailleur" → "C32".
@@ -106,6 +112,9 @@ export function DocumentPageLayout({ form, bundlePrefill, bundleRunId, bundleSlu
         bundleSlug={bundleSlug}
         legacyLayout={legacyLayout}
         contextTips={contextTips}
+        initialStepId={initialStepId}
+        draftValues={draftValues}
+        isAuthenticated={isAuthenticated}
       />
     </div>
   );

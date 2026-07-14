@@ -35,6 +35,7 @@ import { findListMatchErrors } from "@/lib/pdf-forms/list-match";
 import { activeTriggers } from "@/lib/pdf-forms/triggers";
 import type { PublicForm, PublicField } from "@/lib/pdf-forms/public-serializer";
 import { buildSteps, buildMacroSteps, type OptionalSection, type MacroStep } from "@/lib/pdf-forms/build-steps";
+import { resolveStepIndexById } from "@/lib/pdf-forms/resume-step";
 import { sectionLabel } from "@/lib/pdf-forms/section-labels";
 import { FormStepper } from "./form-stepper";
 import { FormShell } from "./form-shell";
@@ -100,13 +101,31 @@ interface PdfFormRunnerProps {
   /// Infos importantes contextuelles servies par le serveur (DB sur défauts,
   /// cf. `getFormContextTips`). Absent = le panneau retombe sur les défauts purs.
   contextTips?: TipEntry[];
+  /// Reprise fine (Lot 3) : identifiant STABLE de l'étape à rouvrir au montage
+  /// (résolu serveur via `pickInitialStepId`). Absent = étape 0.
+  initialStepId?: string;
+  /// Réponses EN COURS restaurées (brouillon serveur du dossier). Fusionnées à
+  /// la PLUS HAUTE précédence dans l'état initial — préserve TOUS les types
+  /// (cases à cocher, listes) que `bundlePrefill`/`PrefillMap` ne portent pas.
+  draftValues?: FormPayload;
+  /// Utilisateur connecté ? Sert au message d'auto-save honnête : les réponses
+  /// ne sont réellement persistées que dans un dossier (brouillon serveur) OU
+  /// pour un utilisateur connecté.
+  isAuthenticated?: boolean;
 }
 
-export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, onValuesChange, onLocaleChange, legacyLayout = false, contextTips }: PdfFormRunnerProps) {
+export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, onValuesChange, onLocaleChange, legacyLayout = false, contextTips, initialStepId, draftValues, isAuthenticated = false }: PdfFormRunnerProps) {
   const t = useTranslations("public.dossier");
   const router = useRouter();
   const [locale, setLocale] = useState<Locale>(form.defaultLocale);
-  const [values, setValues] = useState<FormPayload>(() => defaultValues(form, bundlePrefill));
+  // Valeurs initiales : défauts (+ prefill profil/inter-documents), PUIS le
+  // brouillon en cours restauré par-dessus (plus haute précédence — la dernière
+  // frappe de l'utilisateur prime). Le merge direct dans le state préserve tous
+  // les types (booléens, listes), contrairement à la voie `bundlePrefill`.
+  const [values, setValues] = useState<FormPayload>(() => ({
+    ...defaultValues(form, bundlePrefill),
+    ...(draftValues ?? {}),
+  }));
   // Triggers actifs en direct (avant même soumission) sur les valeurs
   // courantes, pour prévenir l'utilisateur qu'un compagnon sera ajouté au
   // dossier — purement informatif, ne bloque rien (cf. runnerLiveTriggerNotice).
@@ -128,7 +147,6 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
   const [continuation, setContinuation] = useState<
     null | { missing: { slug: string; title: string }[]; allRequiredDone: boolean }
   >(null);
-  const [active, setActive] = useState(0);
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -138,7 +156,7 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
   // retour d'utilisateur sur une valeur saisie lors d'une session précédente.
   const [verifiedStreets, setVerifiedStreets] = useState<Set<string>>(() => {
     const init = new Set<string>();
-    const v0 = defaultValues(form, bundlePrefill);
+    const v0 = { ...defaultValues(form, bundlePrefill), ...(draftValues ?? {}) };
     for (const f of form.fields) {
       if (!f.requireListMatch) continue;
       const val = v0[f.id];
@@ -165,7 +183,14 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
   /// les erreurs à zéro, le consentement à false et retour step 0. Ne
   /// touche PAS la locale ni le mode delivery (choix produit conservés).
   async function resetForm() {
-    await fetch(`/api/pdf/${form.slug}/draft`, { method: "DELETE" }).catch(() => {});
+    // `bundleRunId` (si présent) route la suppression vers le brouillon serveur
+    // du dossier (draftPayloads[form]) ; sinon le corps `{}` cible le
+    // PdfFormDraft autonome (connecté). Best-effort, silencieux si KO.
+    await fetch(`/api/pdf/${form.slug}/draft`, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ bundleRunId }),
+    }).catch(() => {});
     setValues(defaultValues(form, bundlePrefill));
     setErrors({});
     setConsent(false);
@@ -265,9 +290,23 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
   // numérique). "" si aucun nom exploitable.
   const signerName = useMemo(() => resolveSignerName(form.fields, values), [form.fields, values]);
 
+  // Liste ORDONNÉE des identifiants d'étape STABLES (macro OU classique) — sert
+  // la reprise fine (Lot 3) : on persiste/résout un id, jamais un index (la
+  // liste change via visibleIf).
+  const stepIds = macroSteps ? macroSteps.map((s) => s.id) : steps.map((s) => s.id);
+  // Étape initiale : one-shot synchrone (pas d'effet → React-Compiler-safe). On
+  // résout l'id d'étape persisté vers son index courant (0 si absent/introuvable).
+  const [active, setActive] = useState(() => resolveStepIndexById(stepIds, initialStepId));
+
   // Clamp dérivé (le nombre d'étapes peut diminuer via visibleIf).
   const stepCount = macroSteps ? macroSteps.length : steps.length;
   const activeIndex = Math.min(active, stepCount - 1);
+  // Id STABLE de l'étape courante — persisté avec le brouillon (autosave).
+  const activeStepId = stepIds[activeIndex];
+  // Les réponses sont réellement persistées côté serveur si on est dans un
+  // dossier (brouillon serveur, même anonyme) OU connecté (PdfFormDraft).
+  // Sinon (autonome anonyme) : rien n'est enregistré → message honnête.
+  const serverSaved = !!bundleRunId || isAuthenticated;
 
   // Map champ → index d'étape (pour sauter sur la 1ʳᵉ erreur) — macro-aware.
   const fieldStepIndex = useMemo(() => {
@@ -306,14 +345,19 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
           fetch(`/api/pdf/${form.slug}/draft`, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ payload: cur }),
-          }).catch(() => {});
+            // `bundleRunId` route vers le brouillon serveur du dossier (anonyme
+            // possible) ; `stepId`/`field` alimentent la reprise fine (Lot 3).
+            body: JSON.stringify({ payload: cur, stepId: activeStepId ?? null, field: id, bundleRunId }),
+          })
+            // N'affiche « enregistré » QUE si le serveur a réellement persisté
+            // (corrige le faux « enregistré » sur un 401 anonyme autonome).
+            .then((res) => { if (res.ok) setLastSavedAt(new Date()); })
+            .catch(() => {});
           return cur;
         });
-        setLastSavedAt(new Date());
       }, 1500);
     },
-    [form.slug, form.fields]
+    [form.slug, form.fields, activeStepId, bundleRunId]
   );
 
   // Bloque l'avancée vers une étape ULTÉRIEURE tant que les champs REQUIS
@@ -718,6 +762,7 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
         submit={submit}
         resetForm={resetForm}
         lastSavedAt={lastSavedAt}
+        serverSaved={serverSaved}
         liveTriggers={liveTriggers}
         bundleRunId={bundleRunId}
         onStreetVerifiedChange={handleStreetVerified}
@@ -902,7 +947,7 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
                     <span>{t("runnerConsentText")}</span>
                   </label>
                   <div className="flex items-center justify-between gap-2">
-                    <AutoSaveNotice lastSavedAt={lastSavedAt} isPartOfBundle={!!bundleRunId} />
+                    <AutoSaveNotice lastSavedAt={lastSavedAt} isPartOfBundle={!!bundleRunId} serverSaved={serverSaved} />
                     <ResetFormButton onConfirm={resetForm} disabled={submitting} />
                   </div>
                   <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[color:var(--glass-border)] pt-4">
@@ -940,7 +985,7 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
                     </div>
                   </div>
                   <div className="flex items-center justify-between gap-2">
-                    <AutoSaveNotice lastSavedAt={lastSavedAt} isPartOfBundle={!!bundleRunId} />
+                    <AutoSaveNotice lastSavedAt={lastSavedAt} isPartOfBundle={!!bundleRunId} serverSaved={serverSaved} />
                     <ResetFormButton onConfirm={resetForm} disabled={submitting} />
                   </div>
                 </div>
@@ -1255,6 +1300,7 @@ interface MacroRunnerBodyProps {
   submit: () => void;
   resetForm: () => void | Promise<void>;
   lastSavedAt: Date | null;
+  serverSaved: boolean;
   liveTriggers: PdfFormTrigger[];
   bundleRunId?: string;
   onStreetVerifiedChange?: (fieldId: string, verified: boolean) => void;
@@ -1272,7 +1318,7 @@ interface MacroRunnerBodyProps {
 function MacroRunnerBody({
   form, macroSteps, activeIndex, setActive, attemptAdvance, locale, setLocale, values, errors,
   setValue, signerName, consent, setConsent, delivery, setDelivery, doccleRef,
-  setDoccleRef, submitting, submit, resetForm, lastSavedAt, liveTriggers, bundleRunId, onStreetVerifiedChange, contextTips, t,
+  setDoccleRef, submitting, submit, resetForm, lastSavedAt, serverSaved, liveTriggers, bundleRunId, onStreetVerifiedChange, contextTips, t,
 }: MacroRunnerBodyProps) {
   const current = macroSteps[activeIndex];
   const isLast = activeIndex === macroSteps.length - 1;
@@ -1457,7 +1503,7 @@ function MacroRunnerBody({
                     </p>
                   )}
                   <div className="flex items-center justify-between gap-2">
-                    <AutoSaveNotice lastSavedAt={lastSavedAt} isPartOfBundle={!!bundleRunId} />
+                    <AutoSaveNotice lastSavedAt={lastSavedAt} isPartOfBundle={!!bundleRunId} serverSaved={serverSaved} />
                     <ResetFormButton onConfirm={resetForm} disabled={submitting} />
                   </div>
                   <div className="flex flex-wrap items-center justify-end gap-3">
@@ -1487,7 +1533,7 @@ function MacroRunnerBody({
                     </div>
                   </div>
                   <div className="flex items-center justify-between gap-2">
-                    <AutoSaveNotice lastSavedAt={lastSavedAt} isPartOfBundle={!!bundleRunId} />
+                    <AutoSaveNotice lastSavedAt={lastSavedAt} isPartOfBundle={!!bundleRunId} serverSaved={serverSaved} />
                     <ResetFormButton onConfirm={resetForm} disabled={submitting} />
                   </div>
                 </div>

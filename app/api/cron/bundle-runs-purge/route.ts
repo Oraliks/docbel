@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { cronAuthError } from "@/lib/booking/notify";
 import { retentionCutoffs } from "@/lib/bundles/retention";
@@ -22,7 +23,7 @@ async function run(req: NextRequest) {
     );
   }
 
-  const { anonymizeBefore, deleteBefore } = retentionCutoffs(new Date());
+  const { anonymizeBefore, deleteBefore, draftBefore } = retentionCutoffs(new Date());
 
   // 1. Suppression définitive (runs les plus anciens) — évite de les
   //    anonymiser inutilement juste avant suppression.
@@ -31,7 +32,8 @@ async function run(req: NextRequest) {
   });
 
   // 2. Anonymisation des runs inactifs non encore anonymisés : on vide tout ce
-  //    qui pourrait identifier ou réidentifier le dossier.
+  //    qui pourrait identifier ou réidentifier le dossier — y compris le
+  //    brouillon en cours (draftPayloads) et les repères de reprise (Lot 3).
   const anonymized = await prisma.bundleRun.updateMany({
     where: { updatedAt: { lt: anonymizeBefore }, anonymizedAt: null },
     data: {
@@ -42,12 +44,30 @@ async function run(req: NextRequest) {
       sessionId: null,
       resumeCode: null,
       resumeCodeHash: null,
+      draftPayloads: Prisma.DbNull,
+      lastFormId: null,
+      lastStepId: null,
+      lastActiveField: null,
       anonymizedAt: new Date(),
     },
   });
 
+  // 3. Purge des brouillons EN COURS non validés (Lot 3, TTL 7 jours) : on vide
+  //    `draftPayloads` + les repères de reprise SANS supprimer le run — les
+  //    `payloads` déjà validés et le code de reprise survivent. Ne cible que les
+  //    runs porteurs d'un brouillon (draftPayloads non null) inactifs depuis > 7j.
+  const draftPurged = await prisma.bundleRun.updateMany({
+    where: { updatedAt: { lt: draftBefore }, draftPayloads: { not: Prisma.DbNull } },
+    data: {
+      draftPayloads: Prisma.DbNull,
+      lastFormId: null,
+      lastStepId: null,
+      lastActiveField: null,
+    },
+  });
+
   return NextResponse.json(
-    { ok: true, deleted: deleted.count, anonymized: anonymized.count },
+    { ok: true, deleted: deleted.count, anonymized: anonymized.count, draftPurged: draftPurged.count },
     { headers: json },
   );
 }

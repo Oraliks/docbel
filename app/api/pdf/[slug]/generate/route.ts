@@ -105,6 +105,16 @@ export async function POST(
     if (!before) {
       return NextResponse.json({ error: "Dossier introuvable" }, { status: 404, headers: json });
     }
+    // Lot 3 : la validation fait passer ce formulaire de « brouillon » à
+    // « validé » → on purge son entrée dans `draftPayloads` (les brouillons des
+    // AUTRES documents du dossier sont préservés) et on oublie l'étape/champ
+    // actifs. La reprise fine ne doit plus rouvrir ce document sur une étape.
+    const runDraft = await prisma.bundleRun.findUnique({
+      where: { id: bundleRunId },
+      select: { draftPayloads: true },
+    });
+    const nextDraft = { ...((runDraft?.draftPayloads as Record<string, unknown>) ?? {}) };
+    delete nextDraft[form.id];
     await prisma.bundleRun.update({
       where: { id: bundleRunId },
       data: {
@@ -112,6 +122,10 @@ export async function POST(
         completedTemplateIds: (before.completedTemplateIds.includes(form.id)
           ? before.completedTemplateIds
           : [...before.completedTemplateIds, form.id]) as unknown as Prisma.InputJsonValue,
+        draftPayloads:
+          Object.keys(nextDraft).length > 0 ? (nextDraft as Prisma.InputJsonValue) : Prisma.DbNull,
+        lastStepId: null,
+        lastActiveField: null,
       },
     });
     const after = await loadDossierState(bundleRunId, { userId: ownerUserId, sessionId: ownerSessionId });

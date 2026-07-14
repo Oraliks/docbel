@@ -1112,6 +1112,17 @@ model BundleRun {
   /// Permet de reprendre orientation + dossier avec un seul code BELDOC.
   /// Forme : { [nodeId]: { value: string | string[] } } — typage Zod côté `lib/decision-builder/schema.ts`.
   orientationAnswers   Json?
+  /// Reprise fine (Lot 3, migration 58). Dernier formulaire actif du dossier.
+  lastFormId           String?
+  /// Identifiant STABLE de la dernière étape vue (`MacroStep.id`/`CoreStep.id`) —
+  /// jamais un index (la liste d'étapes est dynamique via `visibleIf`).
+  lastStepId           String?
+  /// Dernier champ focalisé (repère de reprise, best-effort).
+  lastActiveField      String?
+  /// Réponses EN COURS non encore validées, { [pdfFormId]: answers }. Séparé de
+  /// `payloads` (validé) pour ne PAS perturber les lecteurs existants. Purgé à
+  /// 7 jours (DRAFT_TTL_DAYS) et à la validation. cf. lib/bundles/retention.ts.
+  draftPayloads        Json?
 
   @@index([bundleId])
   @@index([userId])

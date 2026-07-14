@@ -13,7 +13,8 @@ import { DocumentPageLayout } from "@/components/pdf-forms/document-page-layout"
 import { getFormContextTips } from "@/lib/form-context-tips.server";
 import { DisabledFormView } from "./disabled-form-view";
 import { getDossier } from "@/lib/dossiers/registry";
-import type { PdfFormField } from "@/lib/pdf-forms/types";
+import type { PdfFormField, FormPayload } from "@/lib/pdf-forms/types";
+import { pickInitialStepId } from "@/lib/pdf-forms/resume-step";
 import { buildProfilePrefill } from "@/lib/pdf-forms/profile-prefill";
 import {
   applySharedValuesToForm,
@@ -91,7 +92,24 @@ async function loadBundleSharedValues(
   bundleRunId: string,
   currentFormId: string,
   ownership: { userId: string | undefined; sessionId: string | null }
-): Promise<{ shared: SharedBundleValues; canonical: CanonicalMap; runValid: boolean }> {
+): Promise<{
+  shared: SharedBundleValues;
+  canonical: CanonicalMap;
+  runValid: boolean;
+  /// Reprise fine (Lot 3) : dernier formulaire/étape actifs + brouillon en cours
+  /// du formulaire COURANT (réponses non validées à restaurer).
+  lastFormId: string | null;
+  lastStepId: string | null;
+  draftForForm: FormPayload | undefined;
+}> {
+  const invalid = {
+    shared: {},
+    canonical: {},
+    runValid: false as const,
+    lastFormId: null,
+    lastStepId: null,
+    draftForForm: undefined,
+  };
   const run = await prisma.bundleRun.findUnique({
     where: { id: bundleRunId },
     include: {
@@ -107,7 +125,7 @@ async function loadBundleSharedValues(
     },
   });
   if (!run || run.status !== "in_progress") {
-    return { shared: {}, canonical: {}, runValid: false };
+    return invalid;
   }
   // Propriété du run (même logique que app/api/documents/bundles/[id]/run/route.ts) :
   // sans ce contrôle, un `bundleRunId` deviné suffirait à lire les valeurs
@@ -118,7 +136,7 @@ async function loadBundleSharedValues(
       ? run.sessionId === ownership.sessionId
       : false;
   if (!owns) {
-    return { shared: {}, canonical: {}, runValid: false };
+    return invalid;
   }
 
   const payloads = (run.payloads as Record<string, Record<string, unknown>>) || {};
@@ -141,10 +159,20 @@ async function loadBundleSharedValues(
     sharedMaps.push(extractSharedValues(fields, payload));
     canonicalMaps.push(extractCanonical(fields, payload));
   }
+  // Brouillon EN COURS du formulaire courant (réponses non validées) — restauré
+  // au montage du runner, à la PLUS HAUTE précédence (la dernière frappe de
+  // l'utilisateur prime sur profil + prefill inter-documents).
+  const draftPayloads =
+    (run.draftPayloads as Record<string, Record<string, unknown>> | null) || {};
+  const draftForForm = draftPayloads[currentFormId] as FormPayload | undefined;
+
   return {
     shared: mergeSharedValues(...sharedMaps),
     canonical: mergeCanonical(...canonicalMaps),
     runValid: true,
+    lastFormId: run.lastFormId,
+    lastStepId: run.lastStepId,
+    draftForForm,
   };
 }
 
@@ -233,12 +261,15 @@ export default async function PdfFormPage({
   // valeur canonique d'un formulaire qui l'a extraite d'un profil).
   let bundlePrefill: PrefillMap | undefined;
   let validBundleRunId: string | undefined;
+  // Reprise fine (Lot 3) : étape initiale du runner + réponses en cours à
+  // restaurer (passées à la plus haute précédence dans le runner, préservant
+  // tous les types — cases à cocher, listes — que `PrefillMap` ne porte pas).
+  let initialStepId: string | undefined;
+  let draftValues: FormPayload | undefined;
   if (bundleRun) {
     const sessionId = (await cookies()).get("beldoc-bundle-session")?.value || null;
-    const { shared, canonical, runValid } = await loadBundleSharedValues(bundleRun, form.id, {
-      userId,
-      sessionId,
-    });
+    const { shared, canonical, runValid, lastFormId, lastStepId, draftForForm } =
+      await loadBundleSharedValues(bundleRun, form.id, { userId, sessionId });
     if (runValid) {
       validBundleRunId = bundleRun;
       const bySharedFrom = applySharedValuesToForm(form.fields, shared);
@@ -248,6 +279,8 @@ export default async function PdfFormPage({
       // strings. Priorité `prefillFrom` (précision plus fine, contexte plus
       // certain que la composition canonique) — donc bySharedFrom prime.
       bundlePrefill = { ...byCanonical, ...bySharedFrom };
+      initialStepId = pickInitialStepId(lastFormId, lastStepId, form.id);
+      draftValues = draftForForm;
     }
   }
 
@@ -308,6 +341,9 @@ export default async function PdfFormPage({
         dossierTypes={dossierTypes}
         legacyLayout={legacyLayout}
         contextTips={contextTips}
+        initialStepId={initialStepId}
+        draftValues={draftValues}
+        isAuthenticated={Boolean(userId)}
       />
     </div>
   );

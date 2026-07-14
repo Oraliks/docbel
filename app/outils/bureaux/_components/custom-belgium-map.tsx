@@ -386,17 +386,65 @@ export function CustomBelgiumMap({
   // (toujours rendus à part, jamais clusterisés). Ferme sur les mêmes props
   // que l'ancien rendu (selectedId/onPinClick/onPinHover/draggedRef).
   function renderDot(b: MapBureau, sx: number, sy: number) {
+    // Pin interactif dès qu'un `onPinClick` est fourni. Sinon (usages sans
+    // sélection, ex. CommunePanel historique), le pin reste purement visuel :
+    // ni focusable, ni annoncé — comportement clavier/lecteur d'écran inchangé.
+    const interactive = Boolean(onPinClick)
+    const isSelected = b.id === selectedId
+    // Miroir de la logique de rayon de `Dot` pour dimensionner l'anneau de
+    // focus autour du pin (constant à l'écran : rendu hors du groupe zoomé).
+    const r = b.recommended ? 7.5 : 4.5
+    const displayR = isSelected ? r * 1.35 : r
+    // Libellé accessible : numéro de rang + nom du bureau (données neutres,
+    // valables dans toutes les langues — pas de texte codé en dur à traduire).
+    const ariaLabel = b.number != null ? `${b.number}. ${b.name}` : b.name
     return (
       <g
         key={b.id}
         transform={`translate(${sx}, ${sy})`}
+        className={interactive ? 'bureau-pin' : undefined}
+        role={interactive ? 'button' : undefined}
+        tabIndex={interactive ? 0 : undefined}
+        aria-label={interactive ? ariaLabel : undefined}
         onMouseEnter={() => onPinHover?.(b.id)}
         onMouseLeave={() => onPinHover?.(null)}
+        // Sync survol ↔ liste aussi au focus clavier (mêmes callbacks que la souris).
+        onFocus={interactive ? () => onPinHover?.(b.id) : undefined}
+        onBlur={interactive ? () => onPinHover?.(null) : undefined}
+        // Entrée / Espace déclenchent la MÊME sélection qu'un clic. Le clavier
+        // n'est jamais un drag : on appelle directement `onPinClick` sans passer
+        // par le garde `draggedRef` (réservé à la distinction tap/pan de la souris).
+        onKeyDown={
+          interactive
+            ? (e) => {
+                if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
+                  e.preventDefault()
+                  onPinClick?.(b.id)
+                }
+              }
+            : undefined
+        }
       >
+        {/* Anneau de focus clavier (focus-visible only, cf. <style> du <svg>) :
+            invisible par défaut, révélé au focus clavier. Halo blanc doux pour
+            rester lisible même sur le polygone violet de la commune. */}
+        {interactive && (
+          <circle
+            className="bureau-pin-focus"
+            cx={0}
+            cy={0}
+            r={displayR + 4}
+            fill="none"
+            stroke="var(--primary)"
+            strokeWidth={2.5}
+            opacity={0}
+            style={{ filter: 'drop-shadow(0 0 2px rgba(255,255,255,0.95))' }}
+          />
+        )}
         <Dot
           color={b.color}
           title={b.name}
-          selected={b.id === selectedId}
+          selected={isSelected}
           number={b.number}
           recommended={b.recommended}
           onClick={
@@ -577,6 +625,14 @@ export function CustomBelgiumMap({
           cursor: grabbing ? 'grabbing' : 'grab',
         }}
       >
+        {/* Style scopé aux marqueurs interactifs : suppression de l'outline
+            natif (souvent un rectangle pointillé disgracieux sur du SVG) au
+            profit de notre anneau `var(--primary)`, révélé uniquement au focus
+            CLAVIER (`:focus-visible`) — un clic souris ne l'affiche donc pas. */}
+        <style>{`
+          .bureau-pin { outline: none; }
+          .bureau-pin:focus-visible .bureau-pin-focus { opacity: 1; }
+        `}</style>
         {/* Groupe TRANSFORMÉ (pan + zoom continu) : polygones + labels. Les
             strokes restent fins grâce à vectorEffect="non-scaling-stroke".
             Aucune transition CSS sur le transform → pas de mouvement animé
@@ -684,7 +740,34 @@ export function CustomBelgiumMap({
             return m ? renderDot(m.bureau, c.x, c.y) : null
           }
           return (
-            <g key={`cluster-${c.ids[0]}`} transform={`translate(${c.x}, ${c.y})`}>
+            <g
+              key={`cluster-${c.ids[0]}`}
+              transform={`translate(${c.x}, ${c.y})`}
+              className="bureau-pin"
+              role="button"
+              tabIndex={0}
+              aria-label={t('mapClusterCount', { count: c.count })}
+              // Entrée / Espace zooment vers le cluster (dé-clustering), comme
+              // le clic. Clavier = jamais un drag → appel direct de `zoomAroundPoint`.
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
+                  e.preventDefault()
+                  zoomAroundPoint(c.x, c.y, 1.8)
+                }
+              }}
+            >
+              {/* Anneau de focus clavier (cf. renderDot). Rayon = bulle (14) + marge. */}
+              <circle
+                className="bureau-pin-focus"
+                cx={0}
+                cy={0}
+                r={18}
+                fill="none"
+                stroke="var(--primary)"
+                strokeWidth={2.5}
+                opacity={0}
+                style={{ filter: 'drop-shadow(0 0 2px rgba(255,255,255,0.95))' }}
+              />
               <ClusterBubble
                 count={c.count}
                 title={t('mapClusterCount', { count: c.count })}

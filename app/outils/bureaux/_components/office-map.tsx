@@ -3,9 +3,10 @@
 
 import { useMemo, useState } from 'react'
 import { useTranslations } from 'next-intl'
+import { ChevronDown, ChevronUp } from 'lucide-react'
 import { CustomBelgiumMap, type MapBureau } from './custom-belgium-map'
 import { OfficeMapPopup } from './office-map-popup'
-import type { OfficeMapProps } from './office-map-types'
+import type { OfficeMapProps, OfficeMapMarker } from './office-map-types'
 
 /**
  * Boundary cartographique unique du finder de bureaux : SEUL composant qui
@@ -21,6 +22,17 @@ import type { OfficeMapProps } from './office-map-types'
  */
 export function OfficeMap(props: OfficeMapProps) {
   const t = useTranslations('public.outils')
+  // `t` casté (idiome déjà utilisé dans custom-belgium-map.tsx / office-result-row.tsx)
+  // pour référencer `mapUnlocatedTitle`, une clé ajoutée dans une tâche i18n
+  // ultérieure (V3-7) : le fallback next-intl est non-bloquant si elle manque
+  // encore. Les autres appels `t(...)` de ce fichier restent typés normalement.
+  const tLoose = t as (key: string) => string
+
+  // Encart bureaux non localisés : replié par défaut (juste le compteur),
+  // dépliable pour lister les bureaux concernés au lieu de se contenter de
+  // les compter — ils restent honnêtement absents de la carte (pas de
+  // position devinée), mais deviennent atteignables via `onView`.
+  const [unlocatedOpen, setUnlocatedOpen] = useState(false)
 
   // Popup épinglée par CLIC — distincte du highlight de pin (`selectedId`,
   // piloté par le survol côté orchestrateur, cf. plus bas). Sans cette
@@ -46,13 +58,13 @@ export function OfficeMap(props: OfficeMapProps) {
   // les pins inutilement. Ce memo ne peut garantir la stabilité que si
   // `props.markers` lui-même est stable côté appelant — condition posée
   // ici, à charge de l'orchestrateur de la respecter.
-  const { bureaus: memoizedBureaus, unlocatedCount } = useMemo(() => {
+  const { bureaus: memoizedBureaus, unlocatedMarkers } = useMemo(() => {
     const located: MapBureau[] = []
-    let missing = 0
+    const unlocated: OfficeMapMarker[] = []
     for (const marker of props.markers) {
       const { lat, lng } = marker
       if (lat == null || lng == null) {
-        missing += 1
+        unlocated.push(marker)
         continue
       }
       located.push({
@@ -65,8 +77,9 @@ export function OfficeMap(props: OfficeMapProps) {
         recommended: marker.recommended,
       })
     }
-    return { bureaus: located, unlocatedCount: missing }
+    return { bureaus: located, unlocatedMarkers: unlocated }
   }, [props.markers])
+  const unlocatedCount = unlocatedMarkers.length
 
   const pinnedMarker =
     pinnedId != null ? (props.markers.find((m) => m.id === pinnedId) ?? null) : null
@@ -85,10 +98,57 @@ export function OfficeMap(props: OfficeMapProps) {
           <p className="truncate text-xs text-muted-foreground">
             {t('mapResultCount', { count: props.resultCount })}
           </p>
+          {/* Bureaux sans coordonnées connues : jamais placés sur la carte à
+              une position devinée (pas de fausse précision) — encart honnête,
+              replié par défaut, qui les liste par numéro + nom au lieu de se
+              contenter de les compter (cf. `mapUnlocatedNote` ci-dessous). */}
           {unlocatedCount > 0 && (
-            <p className="truncate text-[11px] text-muted-foreground/80">
-              {t('mapUnlocatedNote', { count: unlocatedCount })}
-            </p>
+            <div className="mt-1">
+              <button
+                type="button"
+                onClick={() => setUnlocatedOpen((v) => !v)}
+                aria-expanded={unlocatedOpen}
+                className="flex w-full items-center gap-1 text-left text-[11px] text-muted-foreground/80"
+              >
+                {unlocatedOpen ? (
+                  <ChevronUp className="h-3 w-3 flex-none" aria-hidden="true" />
+                ) : (
+                  <ChevronDown className="h-3 w-3 flex-none" aria-hidden="true" />
+                )}
+                <span className="truncate">{t('mapUnlocatedNote', { count: unlocatedCount })}</span>
+              </button>
+              {unlocatedOpen && (
+                <div className="mt-1.5 border-t border-border/60 pt-1.5">
+                  <p className="mb-1 truncate text-[10px] font-bold uppercase tracking-wide text-muted-foreground/70">
+                    {tLoose('mapUnlocatedTitle')}
+                  </p>
+                  <div className="flex max-h-40 flex-col gap-0.5 overflow-y-auto">
+                    {unlocatedMarkers.map((marker) => (
+                      <button
+                        key={marker.id}
+                        type="button"
+                        onClick={() => props.onView(marker.id)}
+                        className="flex w-full items-center gap-2 rounded-lg px-1.5 py-1 text-left hover:bg-foreground/10"
+                      >
+                        <span
+                          className="inline-flex h-5 w-5 flex-none items-center justify-center rounded-full text-[10px] font-black text-white"
+                          style={{ background: marker.color }}
+                          aria-hidden="true"
+                        >
+                          {marker.number}
+                        </span>
+                        <span className="min-w-0 flex-1 truncate text-xs font-semibold text-foreground">
+                          {marker.label}
+                        </span>
+                        <span className="flex-none truncate text-[10px] text-muted-foreground">
+                          {marker.typeLabel}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
           )}
         </div>
         <div className="glass-surface-strong pointer-events-auto flex flex-none items-center gap-1.5 rounded-full px-3 py-1.5">

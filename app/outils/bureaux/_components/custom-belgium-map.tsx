@@ -7,6 +7,7 @@ import { geoMercator, geoPath, type GeoPermissibleObjects } from 'd3-geo'
 import type { Topology } from 'topojson-specification'
 import type { Feature, FeatureCollection, Polygon, MultiPolygon } from 'geojson'
 import { MapPin, Plus, Minus, Crosshair } from 'lucide-react'
+import { clusterPoints } from '@/lib/bureaus/map-clustering'
 
 interface MapBureau {
   id: string
@@ -317,6 +318,101 @@ export function CustomBelgiumMap({
     return out
   }, [projection, bureaus])
 
+  // Index bureau par id : `clusterPoints` ne travaille que sur des points bruts
+  // {id,x,y}, jamais sur l'objet bureau complet — ce lookup permet de retrouver
+  // le bureau (couleur/numéro/nom…) derrière un id de cluster au rendu.
+  const markersById = useMemo(() => {
+    const map = new Map<string, MapMarker>()
+    for (const m of markers) map.set(m.bureau.id, m)
+    return map
+  }, [markers])
+
+  // Position ÉCRAN (sous la vue pan/zoom courante) de chaque marqueur localisé.
+  // C'est cette position — pas `markers[].{x,y}`, qui vit dans l'espace de
+  // base non zoomé — qu'il faut comparer pour détecter des pins superposés à
+  // l'écran : deux bureaux proches en coordonnées de base peuvent être très
+  // écartés à l'écran une fois zoomés, et inversement une fois dézoomés.
+  const screenPts = useMemo(
+    () =>
+      markers.map((m) => ({
+        id: m.bureau.id,
+        x: view.tx + m.x * view.scale,
+        y: view.ty + m.y * view.scale,
+      })),
+    [markers, view]
+  )
+
+  // Regroupe les pins superposés en clusters — SAUF le n°1 recommandé, qui ne
+  // doit JAMAIS être absorbé dans une bulle de compte (c'est l'ancre visuelle
+  // de la carte : il doit toujours rester identifiable en un coup d'œil).
+  // `clusterPoints` ne reçoit donc que les points « clusterables » (tous sauf
+  // le recommandé) ; le recommandé est collecté à part et rendu séparément,
+  // toujours en Dot individuel (cf. rendu plus bas).
+  const { clusters, recommendedPts } = useMemo(() => {
+    const recommended: typeof screenPts = []
+    const clusterable: typeof screenPts = []
+    for (const p of screenPts) {
+      const bureau = markersById.get(p.id)?.bureau
+      if (bureau && (bureau.recommended || bureau.number === 1)) {
+        recommended.push(p)
+      } else {
+        clusterable.push(p)
+      }
+    }
+    return { clusters: clusterPoints(clusterable, 28), recommendedPts: recommended }
+  }, [screenPts, markersById])
+
+  // Zoom autour d'un point ÉCRAN : (cx,cy) reste visuellement fixe pendant que
+  // le scale change (même formule zoom-around-point que la molette, cf.
+  // `onWheel` plus bas — dupliquée ici plutôt que partagée pour ne PAS toucher
+  // à la logique molette/pinch existante). Utilisé pour le clic de
+  // dé-clustering sur une bulle : zoomer vers le cluster jusqu'à ce qu'il
+  // éclate en pins individuels.
+  function zoomAroundPoint(cx: number, cy: number, factor: number) {
+    setView((v) => {
+      const s2 = clamp(v.scale * factor, MIN_SCALE, MAX_SCALE)
+      if (s2 === v.scale) return v
+      return {
+        scale: s2,
+        tx: cx - (cx - v.tx) * (s2 / v.scale),
+        ty: cy - (cy - v.ty) * (s2 / v.scale),
+      }
+    })
+  }
+
+  // Rendu d'un Dot individuel (bureau localisé) à une position ÉCRAN donnée —
+  // factorisé car utilisé à deux endroits : cluster de taille 1 (singleton,
+  // rendu identique à l'ancien comportement pin-par-pin) et pins recommandés
+  // (toujours rendus à part, jamais clusterisés). Ferme sur les mêmes props
+  // que l'ancien rendu (selectedId/onPinClick/onPinHover/draggedRef).
+  function renderDot(b: MapBureau, sx: number, sy: number) {
+    return (
+      <g
+        key={b.id}
+        transform={`translate(${sx}, ${sy})`}
+        onMouseEnter={() => onPinHover?.(b.id)}
+        onMouseLeave={() => onPinHover?.(null)}
+      >
+        <Dot
+          color={b.color}
+          title={b.name}
+          selected={b.id === selectedId}
+          number={b.number}
+          recommended={b.recommended}
+          onClick={
+            onPinClick
+              ? () => {
+                  // Un vrai drag/pinch ne doit pas sélectionner un pin ; un
+                  // simple tap (sans déplacement) sélectionne toujours.
+                  if (!draggedRef.current) onPinClick(b.id)
+                }
+              : undefined
+          }
+        />
+      </g>
+    )
+  }
+
   // ─── Gestes pan / pinch via Pointer Events (aucune dépendance externe) ───
   // Le viewBox du <svg> est 1:1 avec ses pixels rendus (width=size.w,
   // viewBox="0 0 size.w size.h"), donc 1 px client = 1 unité SVG : les deltas
@@ -573,42 +669,41 @@ export function CustomBelgiumMap({
               l'info visuelle et ajouter du bruit sur les bureaux. */}
         </g>
 
-        {/* Dots bureaux — rendus HORS du groupe zoomé pour garder une taille
-            CONSTANTE quel que soit le zoom (sinon les cercles/numéros
-            « ballonnent »). On projette la position de base (markers, mémoïsée)
-            dans l'espace ÉCRAN sous la vue courante : sx = tx + x·scale ; on ne
-            translate QUE le Dot (jamais de scale dessus). Cliquables si
-            onPinClick est fourni : synchronise la sélection avec la liste.
-            Survolables si onPinHover est fourni. Le pin sélectionné (selectedId)
-            est agrandi + halo (cf. Dot). */}
-        {markers.map(({ bureau: b, x, y }) => {
-          const sx = view.tx + x * view.scale
-          const sy = view.ty + y * view.scale
+        {/* Clusters de bureaux localisés — rendus HORS du groupe zoomé pour
+            garder une taille CONSTANTE quel que soit le zoom (sinon les
+            cercles/numéros « ballonnent »). `clusters[].x/y` sont déjà des
+            coordonnées ÉCRAN (calculées dans `screenPts`, sous la vue pan/zoom
+            courante) : aucune transformation supplémentaire à appliquer ici.
+            Un cluster de taille 1 (singleton) rend le Dot inchangé (couleur,
+            numéro, sélection, clic, survol) ; un cluster de taille > 1 rend
+            une bulle de compte cliquable qui zoome vers lui pour le
+            dé-clusteriser. */}
+        {clusters.map((c) => {
+          if (c.count === 1) {
+            const m = markersById.get(c.ids[0])
+            return m ? renderDot(m.bureau, c.x, c.y) : null
+          }
           return (
-            <g
-              key={b.id}
-              transform={`translate(${sx}, ${sy})`}
-              onMouseEnter={() => onPinHover?.(b.id)}
-              onMouseLeave={() => onPinHover?.(null)}
-            >
-              <Dot
-                color={b.color}
-                title={b.name}
-                selected={b.id === selectedId}
-                number={b.number}
-                recommended={b.recommended}
-                onClick={
-                  onPinClick
-                    ? () => {
-                        // Un vrai drag/pinch ne doit pas sélectionner un pin ;
-                        // un simple tap (sans déplacement) sélectionne toujours.
-                        if (!draggedRef.current) onPinClick(b.id)
-                      }
-                    : undefined
-                }
+            <g key={`cluster-${c.ids[0]}`} transform={`translate(${c.x}, ${c.y})`}>
+              <ClusterBubble
+                count={c.count}
+                onClick={() => {
+                  // Un vrai drag/pinch ne doit pas déclencher un zoom ; seul
+                  // un tap net (sans déplacement) dé-clusterise.
+                  if (!draggedRef.current) zoomAroundPoint(c.x, c.y, 1.8)
+                }}
               />
             </g>
           )
+        })}
+
+        {/* Pins recommandés (n°1) — TOUJOURS rendus APRÈS les clusters, donc
+            au-dessus dans l'ordre de peinture SVG : jamais masqués par une
+            bulle de cluster voisine. Jamais eux-mêmes clusterisés (exclus en
+            amont dans le useMemo `recommendedPts`/`clusters`). */}
+        {recommendedPts.map((p) => {
+          const m = markersById.get(p.id)
+          return m ? renderDot(m.bureau, p.x, p.y) : null
         })}
       </svg>
 
@@ -780,6 +875,42 @@ function Dot({
           {number}
         </text>
       )}
+    </g>
+  )
+}
+
+/**
+ * Bulle de cluster : regroupe plusieurs bureaux dont les pins se superposent
+ * à l'écran (cf. `clusterPoints`, rayon 28px). Remplace visuellement les Dots
+ * individuels tant qu'on n'a pas assez zoomé pour les séparer — teinte neutre
+ * (`--primary`) plutôt que la couleur d'un organisme précis, car la bulle
+ * représente un mélange, pas un seul type. Le clic zoome vers le cluster
+ * (dé-clustering, cf. `zoomAroundPoint`). Même technique de texte à contour
+ * sombre que les numéros de pin (`Dot`) pour rester lisible sur tout fond.
+ */
+function ClusterBubble({ count, onClick }: { count: number; onClick: () => void }) {
+  return (
+    <g onClick={onClick} style={{ cursor: 'pointer' }}>
+      <title>{`${count} bureaux`}</title>
+      <circle cx={0} cy={0} r={14} fill="var(--primary)" stroke="#ffffff" strokeWidth={2} />
+      <text
+        x={0}
+        y={0.5}
+        textAnchor="middle"
+        dominantBaseline="middle"
+        fontSize={count >= 100 ? 9 : count >= 10 ? 11 : 12}
+        fontWeight={700}
+        fill="#ffffff"
+        stroke="rgba(0,0,0,0.55)"
+        strokeWidth={0.7}
+        paintOrder="stroke"
+        style={{
+          pointerEvents: 'none',
+          fontFamily: 'var(--font-sans), system-ui, sans-serif',
+        }}
+      >
+        {count}
+      </text>
     </g>
   )
 }

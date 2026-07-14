@@ -45,7 +45,7 @@ export default async function BureauxToolPage() {
       <div>
         <h1 className="text-2xl font-bold">{t('bureauxTitle')}</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          {t('bureauxIntro')}
+          {t('bureauxSubtitle')}
         </p>
       </div>
       <BureauxFinder />

@@ -65,17 +65,22 @@ export function BureauxFinder() {
   const params = useSearchParams()
 
   // --- État de résolution -----------------------------------------------
-  // `addressInput` = valeur du champ Adresse ; `cp` en est DÉRIVÉ : un code
-  // postal (4 chiffres) déclenche la résolution, du texte libre (nom de
-  // commune…) est accepté mais ne résout pas encore (« préparé pour plus tard »).
+  // `addressInput` = valeur AFFICHÉE du champ Adresse (CP, nom de commune ou
+  // adresse libre) ; `cp` en est DÉRIVÉ de DEUX sources : soit une sélection
+  // explicite dans le dropdown de suggestions (`selectedCp`, prioritaire —
+  // le champ affiche alors un NOM mais résout le CP représentatif de la
+  // commune), soit un code postal à 4 chiffres tapé directement. Toute
+  // frappe libre invalide une sélection précédente (cf. `handleAddressChange`).
   const [addressInput, setAddressInput] = useState(params?.get('cp') ?? '')
-  const cp = useMemo(() => {
-    const trimmed = addressInput.trim()
-    return /^\d{4}$/.test(trimmed) ? trimmed : ''
-  }, [addressInput])
+  const [selectedCp, setSelectedCp] = useState<string | null>(null)
+  const cp = useMemo(
+    () => selectedCp ?? (/^\d{4}$/.test(addressInput.trim()) ? addressInput.trim() : ''),
+    [selectedCp, addressInput],
+  )
 
   const [userGeoloc, setUserGeoloc] = useState<UserGeoloc | null>(null)
   const [locating, setLocating] = useState(false)
+  const [geolocError, setGeolocError] = useState<string | null>(null)
   const [data, setData] = useState<ResolveResponse | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -141,10 +146,21 @@ export function BureauxFinder() {
   }, [cp, resolve])
 
   // Géoloc pilotée par le bouton « Utiliser ma position » d'AddressSearch :
-  // getCurrentPosition → reverseGeocodeBE → on injecte le CP résolu dans le
-  // champ (déclenche la résolution). `userGeoloc` affine ensuite les distances.
+  // getCurrentPosition → reverseGeocodeBE → le champ affiche la VILLE
+  // résolue et `selectedCp` porte le CP (même logique que la sélection
+  // d'une commune dans le dropdown). `userGeoloc` affine ensuite les
+  // distances. Échec (refus, contexte non sécurisé, indisponible…) → message
+  // `geolocError` affiché par `AddressSearch` (jamais un échec silencieux).
   const handleUseLocation = useCallback(() => {
-    if (typeof navigator === 'undefined' || !navigator.geolocation) return
+    setGeolocError(null)
+    const unsupported =
+      typeof navigator === 'undefined' ||
+      !navigator.geolocation ||
+      (typeof window !== 'undefined' && !window.isSecureContext)
+    if (unsupported) {
+      setGeolocError(t('geolocInsecure'))
+      return
+    }
     setLocating(true)
     navigator.geolocation.getCurrentPosition(
       (pos) => {
@@ -153,31 +169,47 @@ export function BureauxFinder() {
         void reverseGeocodeBE(geo.lat, geo.lng).then((resolved) => {
           if (resolved) {
             setUserGeoloc({ ...geo, postcode: resolved.postcode, city: resolved.city })
-            setAddressInput(resolved.postcode)
+            setAddressInput(resolved.city || resolved.postcode)
+            setSelectedCp(resolved.postcode)
           }
           setLocating(false)
         })
       },
-      () => setLocating(false),
+      (err) => {
+        setGeolocError(err.code === err.PERMISSION_DENIED ? t('geolocDenied') : t('geolocUnavailable'))
+        setLocating(false)
+      },
       { enableHighAccuracy: false, timeout: 10000, maximumAge: 5 * 60 * 1000 },
     )
-  }, [])
+  }, [t])
 
   const retry = useCallback(() => {
     void resolve(cp)
   }, [resolve, cp])
 
+  // Frappe libre dans le champ Adresse : invalide toute sélection de commune
+  // précédente (sinon `cp` resterait figé sur l'ancien `selectedCp` malgré
+  // un champ modifié — cf. dérivation de `cp` plus haut).
+  const handleAddressChange = useCallback((v: string) => {
+    setAddressInput(v)
+    setSelectedCp(null)
+  }, [])
+
   const removeFilter = useCallback((key: string) => {
     if (key === 'demarche') setDemarche('inconnu')
     else if (key === 'cp') {
       setAddressInput('')
+      setSelectedCp(null)
       setUserGeoloc(null)
+      setGeolocError(null)
     }
   }, [])
   const clearAllFilters = useCallback(() => {
     setDemarche('inconnu')
     setAddressInput('')
+    setSelectedCp(null)
     setUserGeoloc(null)
+    setGeolocError(null)
   }, [])
 
   // --- Dérivations -------------------------------------------------------
@@ -255,15 +287,7 @@ export function BureauxFinder() {
           {t('clearFilters')}
         </Button>
       )}
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        onClick={() => {
-          setAddressInput('')
-          setUserGeoloc(null)
-        }}
-      >
+      <Button type="button" variant="outline" size="sm" onClick={() => removeFilter('cp')}>
         {t('modifySearch')}
       </Button>
     </>
@@ -323,9 +347,14 @@ export function BureauxFinder() {
         <div className="min-w-0 space-y-4">
           <AddressSearch
             value={addressInput}
-            onChange={setAddressInput}
+            onChange={handleAddressChange}
+            onSelectCommune={(c) => {
+              setAddressInput(c.nameFr)
+              setSelectedCp(c.cp)
+            }}
             onUseLocation={handleUseLocation}
             locating={locating}
+            geolocError={geolocError}
           />
 
           {/* Bascule Liste/Carte — mobile uniquement */}

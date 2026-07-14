@@ -36,18 +36,23 @@ export function OfficeCard({
   const walk = item.distanceKm != null ? `${estimateTravel(item.distanceKm).walkMin} min` : null
 
   return (
-    <button
-      type="button"
+    <div
+      role="button"
+      tabIndex={0}
       onClick={() => onSelect(item.id)}
-      className={`glass-surface w-full text-left p-3.5 rounded-2xl transition ${
-        selected ? 'ring-2 ring-[var(--primary)]' : ''
-      }`}
+      onKeyDown={(e) => {
+        if ((e.key === 'Enter' || e.key === ' ') && e.target === e.currentTarget) {
+          e.preventDefault()
+          onSelect(item.id)
+        }
+      }}
+      className="glass-surface w-full text-left p-3.5 rounded-2xl transition"
       // `.glass-surface` pose son propre `box-shadow: var(--glass-shadow)`
       // (règle CSS globale, non Tailwind) qui gagne sur le box-shadow des
       // utilitaires `ring-*` (même mécanisme) : l'anneau de sélection ne
-      // s'affichait pas malgré les classes ci-dessus. On recompose les deux
-      // en style inline (priorité maximale) pour garder l'ombre verre + un
-      // anneau visible quand la carte est sélectionnée.
+      // s'affichait pas avec Tailwind seul. On utilise le style inline
+      // (priorité maximale) pour garder l'ombre verre + un anneau visible
+      // quand la carte est sélectionnée.
       style={
         selected
           ? { boxShadow: 'var(--glass-shadow), 0 0 0 2px var(--primary)' }
@@ -71,7 +76,9 @@ export function OfficeCard({
             </span>
             <span
               className={`flex-none text-[11px] font-semibold px-2 py-0.5 rounded-full ${
-                open ? 'text-emerald-700 bg-emerald-100' : 'text-amber-700 bg-amber-100'
+                open
+                  ? 'text-emerald-700 bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300'
+                  : 'text-amber-700 bg-amber-100 dark:bg-amber-950/40 dark:text-amber-300'
               }`}
             >
               {open ? t('bureauxStatusOpen') : t('bureauxStatusClosed')}
@@ -107,9 +114,7 @@ export function OfficeCard({
             className="flex-none p-0.5 cursor-pointer"
           >
             <Star
-              className="w-5 h-5"
-              fill={isFavorite ? '#f6b93b' : 'none'}
-              stroke={isFavorite ? '#f6b93b' : 'currentColor'}
+              className={`w-5 h-5 ${isFavorite ? 'fill-amber-400 text-amber-500' : 'fill-none text-muted-foreground'}`}
             />
           </span>
         )}
@@ -137,6 +142,6 @@ export function OfficeCard({
           {b.phone ? t('bureauxCall') : t('bureauxWebsite')}
         </a>
       </div>
-    </button>
+    </div>
   )
 }

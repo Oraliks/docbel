@@ -24,6 +24,12 @@ interface Props {
   /** Bureaux à pinpoint (CPAS, ONEM, Commune, OP). */
   bureaus: MapBureau[]
   height?: number
+  /** Id du bureau actuellement sélectionné (sync pin ↔ liste). Optionnel :
+   *  les usages existants sans sélection continuent de fonctionner tels quels. */
+  selectedId?: string | null
+  /** Callback au clic sur un pin — permet la sélection pin ↔ liste. Optionnel :
+   *  si absent, les pins restent non cliquables (comportement inchangé). */
+  onPinClick?: (id: string) => void
 }
 
 interface MunicipalityProps {
@@ -67,6 +73,8 @@ export function CustomBelgiumMap({
   center,
   bureaus,
   height = 420,
+  selectedId = null,
+  onPinClick,
 }: Props) {
   const t = useTranslations('public.outils')
   const [topo, setTopo] = useState<Topology | null>(null)
@@ -320,13 +328,21 @@ export function CustomBelgiumMap({
             </text>
           )}
 
-          {/* Dots bureaux (simple cercle coloré, couleur par type d'org) */}
+          {/* Dots bureaux (simple cercle coloré, couleur par type d'org).
+              Cliquables si onPinClick est fourni : synchronise la sélection
+              avec la liste. Le pin sélectionné (selectedId) est agrandi
+              + halo, cf. Dot ci-dessous. */}
           {bureaus.map((b) => {
             const xy = projection?.proj([b.lng, b.lat])
             if (!xy || !Number.isFinite(xy[0])) return null
             return (
               <g key={b.id} transform={`translate(${xy[0]}, ${xy[1]})`}>
-                <Dot color={b.color} title={b.name} />
+                <Dot
+                  color={b.color}
+                  title={b.name}
+                  selected={b.id === selectedId}
+                  onClick={onPinClick ? () => onPinClick(b.id) : undefined}
+                />
               </g>
             )
           })}
@@ -402,23 +418,50 @@ function Dot({
   color,
   title,
   large = false,
+  selected = false,
+  onClick,
 }: {
   color: string
   title: string
   large?: boolean
+  /** État sélectionné (sync liste ↔ carte) : rayon agrandi + halo. */
+  selected?: boolean
+  /** Si fourni, le pin devient cliquable (curseur pointer). */
+  onClick?: () => void
 }) {
   const r = large ? 6 : 4.5
+  const displayR = selected ? r * 1.35 : r
   const isLight = isLightColor(color)
   return (
-    <g>
+    <g onClick={onClick} style={onClick ? { cursor: 'pointer' } : undefined}>
       <title>{title}</title>
+      {selected && (
+        <circle
+          cx={0}
+          cy={0}
+          r={displayR + 3.5}
+          fill="none"
+          stroke="var(--primary)"
+          strokeWidth={1.5}
+          style={{
+            filter:
+              'drop-shadow(0 0 2px color-mix(in oklab, var(--primary) 65%, transparent))',
+          }}
+        />
+      )}
       <circle
         cx={0}
         cy={0}
-        r={r}
+        r={displayR}
         fill={color}
-        stroke={isLight ? 'rgba(0,0,0,0.4)' : 'rgba(255,255,255,0.95)'}
-        strokeWidth={1.2}
+        stroke={
+          selected
+            ? 'var(--primary)'
+            : isLight
+              ? 'rgba(0,0,0,0.4)'
+              : 'rgba(255,255,255,0.95)'
+        }
+        strokeWidth={selected ? 1.8 : 1.2}
       />
     </g>
   )

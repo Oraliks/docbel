@@ -39,13 +39,17 @@ function regionLabelKey(raw: string): string | null {
 interface Props {
   commune: CommuneSummary | null
   bureaux: (BureauResult | null)[]
+  /** Id du bureau sélectionné (sync pin ↔ liste), propagé à la carte. */
+  selectedId?: string | null
+  /** Callback de sélection au clic sur un pin de la carte. */
+  onSelect?: (id: string) => void
 }
 
 /**
  * Panneau gauche du finder : carte agrandie avec les pins des bureaux trouvés,
  * + petit bloc "Bon à savoir" en dessous. Pas de stats grid (était trop vague).
  */
-export function CommunePanel({ commune, bureaux }: Props) {
+export function CommunePanel({ commune, bureaux, selectedId = null, onSelect }: Props) {
   const t = useTranslations('public.outils')
   const validBureaux = bureaux.filter((b): b is BureauResult => !!b)
 
@@ -150,6 +154,8 @@ export function CommunePanel({ commune, bureaux }: Props) {
               center={center}
               bureaus={mapBureaus}
               height={420}
+              selectedId={selectedId}
+              onPinClick={onSelect}
             />
           </div>
         </CardContent>

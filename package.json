@@ -44,6 +44,7 @@
     "postal-codes:from-bestaddress": "dotenv -e .env.local -- tsx scripts/postal-codes-from-bestaddress.ts",
     "bureaux:import-op": "dotenv -e .env.local -- tsx scripts/bureaux-import-op.ts",
     "bureaux:geocode": "dotenv -e .env.local -- tsx scripts/bureaux-geocode.ts",
+    "bureaux:backfill-coords": "dotenv -e .env.local -- tsx scripts/bureaux-backfill-coords.ts",
     "bureaux:audit": "dotenv -e .env.local -- tsx scripts/bureaux-audit.ts",
     "bureaux:dedupe": "dotenv -e .env.local -- tsx scripts/bureaux-dedupe.ts",
     "bureaux:assign": "dotenv -e .env.local -- tsx scripts/bureaux-assign.ts",

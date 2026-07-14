@@ -1182,3 +1182,13 @@ body {
   text-decoration-color: var(--primary);
   background-color: color-mix(in oklab, var(--primary) 10%, transparent);
 }
+
+/* ============================================================
+   .no-scrollbar — masque la scrollbar d'un conteneur défilant
+   ------------------------------------------------------------
+   Utilisé par les rangées horizontales (ex. puces de filtre du
+   finder bureaux) qui doivent rester scrollables au doigt/molette
+   sans afficher la barre de défilement du navigateur.
+   ============================================================ */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { scrollbar-width: none; }

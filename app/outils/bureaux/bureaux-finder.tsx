@@ -212,6 +212,7 @@ export function BureauxFinder() {
   const handleAddressChange = useCallback((v: string) => {
     setAddressInput(v)
     setSelectedCp(null)
+    setUserGeoloc(null)
   }, [])
 
   const removeFilter = useCallback((key: string) => {
@@ -377,6 +378,7 @@ export function BureauxFinder() {
             onSelectCommune={(c) => {
               setAddressInput(c.nameFr)
               setSelectedCp(c.cp)
+              setUserGeoloc(null)
             }}
             onSelectOrganisme={(o) => {
               const d = ORG_TO_DEMARCHE[o.code]

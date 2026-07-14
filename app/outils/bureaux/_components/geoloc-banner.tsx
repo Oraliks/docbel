@@ -174,40 +174,33 @@ export function GeolocBanner({ onLocated, located, onClear }: Props) {
 }
 
 /**
- * Reverse geocode via Nominatim : lat/lng → adresse belge structurée.
+ * Reverse geocode BE : lat/lng → adresse belge structurée.
  * Renvoie le code postal + la ville si trouvable, ou null sinon.
  *
- * Nominatim est gratuit, sans clé, mais demande un User-Agent et un usage
- * raisonnable (1 req/s côté server, dans le browser pas de limite stricte
- * mais on évite le spam). Pour notre cas (1 reverse par activation géoloc),
- * c'est largement OK.
+ * Passe par le proxy serveur `/api/geocode` (jamais d'appel direct à
+ * Nominatim depuis le client — cf. contrainte §13) : celui-ci ajoute déjà le
+ * User-Agent, le cache et le rate-limit nécessaires.
  */
 export async function reverseGeocodeBE(
   lat: number,
   lng: number
 ): Promise<{ postcode: string; city: string } | null> {
   try {
-    const url = new URL('https://nominatim.openstreetmap.org/reverse')
-    url.searchParams.set('lat', String(lat))
-    url.searchParams.set('lon', String(lng))
-    url.searchParams.set('format', 'json')
-    url.searchParams.set('addressdetails', '1')
-    url.searchParams.set('zoom', '14') // niveau commune/quartier
-    const r = await fetch(url.toString(), {
-      headers: { 'Accept-Language': 'fr' },
-    })
+    const r = await fetch(`/api/geocode?lat=${lat}&lng=${lng}`)
     if (!r.ok) return null
-    const data = (await r.json()) as {
-      address?: {
-        postcode?: string
-        city?: string
-        town?: string
-        village?: string
-        suburb?: string
-        municipality?: string
+    const json = (await r.json()) as {
+      data?: {
+        address?: {
+          postcode?: string
+          city?: string
+          town?: string
+          village?: string
+          suburb?: string
+          municipality?: string
+        }
       }
     }
-    const a = data.address ?? {}
+    const a = json.data?.address ?? {}
     const postcode = a.postcode
     const city = a.city ?? a.town ?? a.village ?? a.municipality ?? a.suburb ?? ''
     if (!postcode || !/^\d{4}$/.test(postcode)) return null

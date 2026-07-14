@@ -57,6 +57,7 @@ const SERVICE_INDEX: { key: string; label: string; terms: string[] }[] = [
   { key: "aide_sociale", label: "Aide sociale", terms: ["aide", "sociale", "cpas", "revenu", "integration"] },
   { key: "documents_communaux", label: "Documents communaux", terms: ["document", "commune", "communal", "carte", "identite", "identité", "administration"] },
   { key: "emploi", label: "Recherche d'emploi", terms: ["emploi", "travail", "actiris", "forem", "vdab", "adg", "job"] },
+  { key: "sante", label: "Mutuelle et santé", terms: ["mutuelle", "mutualite", "mutualité", "sante", "santé", "solidaris", "partenamut", "helan", "caami", "assurance", "maladie"] },
 ];
 
 function matchServices(q: string): SuggestResponse["services"] {

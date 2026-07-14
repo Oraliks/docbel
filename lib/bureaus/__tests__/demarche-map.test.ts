@@ -27,10 +27,11 @@ describe('demarcheToOfficeTypes', () => {
   it('chomage → ONEM + PAIEMENT', () => {
     expect(demarcheToOfficeTypes('chomage')).toEqual(expect.arrayContaining(['ONEM', 'PAIEMENT']))
   })
-  it('aide_sociale → CPAS ; documents_communaux → COMMUNE ; emploi → SRE', () => {
+  it('aide_sociale → CPAS ; documents_communaux → COMMUNE ; emploi → SRE ; sante → MUTUELLE', () => {
     expect(demarcheToOfficeTypes('aide_sociale')).toEqual(['CPAS'])
     expect(demarcheToOfficeTypes('documents_communaux')).toEqual(['COMMUNE'])
     expect(demarcheToOfficeTypes('emploi')).toEqual(['SRE'])
+    expect(demarcheToOfficeTypes('sante')).toEqual(['MUTUELLE'])
   })
   it('inconnu → "all"', () => {
     expect(demarcheToOfficeTypes('inconnu')).toBe('all')

@@ -38,6 +38,25 @@ const OfficeMap = dynamic(
 )
 
 /**
+ * Correspondance HEURISTIQUE code organisme → démarche : sélectionner un
+ * organisme dans l'autocomplete règle le filtre démarche (sans toucher le
+ * champ adresse). Résolution « organisme-first » plus fine = étape ultérieure.
+ */
+const ORG_TO_DEMARCHE: Record<string, Demarche> = {
+  onem: 'chomage',
+  capac: 'chomage',
+  fgtb: 'chomage',
+  csc: 'chomage',
+  synova: 'chomage',
+  cpas: 'aide_sociale',
+  commune: 'documents_communaux',
+  actiris: 'emploi',
+  forem: 'emploi',
+  vdab: 'emploi',
+  adg: 'emploi',
+}
+
+/**
  * Orchestrateur V2 du finder de bureaux : parcours « démarche → recommandé →
  * action ». L'utilisateur indique son adresse (code postal) et sa démarche ;
  * `rankOffices` désigne un bureau n°1 recommandé (héros) + une liste
@@ -348,9 +367,23 @@ export function BureauxFinder() {
           <AddressSearch
             value={addressInput}
             onChange={handleAddressChange}
+            onSelectAddress={(a) => {
+              // Le gros gain : adresse précise → CP pour la résolution ET coords
+              // exactes pour les distances (pas seulement le centroïde commune).
+              setAddressInput(a.label)
+              setSelectedCp(a.postcode)
+              setUserGeoloc({ lat: a.lat, lng: a.lng })
+            }}
             onSelectCommune={(c) => {
               setAddressInput(c.nameFr)
               setSelectedCp(c.cp)
+            }}
+            onSelectOrganisme={(o) => {
+              const d = ORG_TO_DEMARCHE[o.code]
+              if (d) setDemarche(d)
+            }}
+            onSelectService={(s) => {
+              setDemarche(s.key as Demarche)
             }}
             onUseLocation={handleUseLocation}
             locating={locating}

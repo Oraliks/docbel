@@ -120,6 +120,14 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
   const [doccleRef, setDoccleRef] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState<null | { mode: "download" | "doccle" }>(null);
+  // Écran de continuation in-line (§11.3) : après une validation DANS un dossier
+  // (delivery="save"), au lieu de renvoyer sur la liste des documents on affiche
+  // une carte proposant de continuer avec le prochain document requis
+  // (`missing[0]`). Renseigné DANS le handler async `submit()` (jamais dans un
+  // useEffect — règle ESLint anti-setState-in-effect).
+  const [continuation, setContinuation] = useState<
+    null | { missing: { slug: string; title: string }[]; allRequiredDone: boolean }
+  >(null);
   const [active, setActive] = useState(0);
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -494,15 +502,29 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
         fetch(`/api/pdf/${form.slug}/draft`, { method: "DELETE" }).catch(() => {});
         const newlyTriggered: Array<{ slug: string; title: string }> = data.newlyTriggered || [];
         if (newlyTriggered.length > 0) {
+          // Un choix vient de matérialiser un document compagnon : on le
+          // signale (le « prochain document » précis est ensuite porté par la
+          // carte de continuation ci-dessous).
           toast.info(
             t("runnerNewlyTriggered", {
               titles: newlyTriggered.map((d) => d.title).join(", "),
             }),
           );
+        }
+        // Écran de continuation in-line (§11.3) : en mode dossier (bundleSlug +
+        // bundleRunId présents — toujours le cas pour delivery="save"), on
+        // remplace la redirection par une carte proposant le prochain document.
+        // Filet défensif : sans contexte dossier (ne devrait pas arriver ici),
+        // on retombe sur l'ancien comportement (toast + redirection éventuelle).
+        if (bundleSlug && bundleRunId) {
+          const missing: Array<{ slug: string; title: string }> = Array.isArray(data.missing)
+            ? data.missing
+            : [];
+          setContinuation({ missing, allRequiredDone: data.allRequiredDone === true });
         } else {
           toast.success(t("runnerSavedSuccess"));
+          if (bundleSlug) router.push(`/d/${bundleSlug}`);
         }
-        if (bundleSlug) router.push(`/d/${bundleSlug}`);
         return;
       }
 
@@ -575,6 +597,68 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
           <Button variant="outline" size="sm" onClick={() => { setDone(null); setActive(0); }}>
             {t("runnerGenerateAnother")}
           </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Écran de continuation in-line (§11.3). Décision produit : PAS de bouton de
+  // téléchargement ici — l'architecture verrouille le download par document
+  // (garde 409) tant que le dossier n'est pas complet ; le téléchargement/mail
+  // reste sur la feuille de route de fin de dossier (BundleRoadmap).
+  if (continuation) {
+    const next = continuation.missing[0];
+    const complete = continuation.allRequiredDone || !next;
+    const goNext = () => {
+      if (!next || !bundleRunId || !bundleSlug) return;
+      // Route en mode dossier : le catch-all /document conserve bundleRun &
+      // bundleSlug, et shared-values pré-remplit le formulaire suivant.
+      router.push(
+        `/document/${next.slug}?bundleRun=${encodeURIComponent(bundleRunId)}&bundleSlug=${encodeURIComponent(bundleSlug)}`,
+      );
+    };
+    const goDossier = () => { if (bundleSlug) router.push(`/d/${bundleSlug}`); };
+    return (
+      <Card className="rounded-2xl border-0 bg-card shadow-sm">
+        <CardContent className="flex flex-col items-center gap-4 py-10 text-center">
+          <CheckCircle2Icon className="size-10 text-primary" />
+          {complete ? (
+            <>
+              <h2 className="glass-display text-[20px] font-semibold text-[color:var(--glass-ink)]">
+                {t("runnerContinuationComplete")}
+              </h2>
+              <Button className="rounded-full px-6" onClick={goDossier}>
+                {t("runnerContinuationViewDossier")}
+                <ChevronRightIcon className="size-4" />
+              </Button>
+            </>
+          ) : (
+            <>
+              <h2 className="glass-display text-[20px] font-semibold text-[color:var(--glass-ink)]">
+                {t("runnerContinuationReadyTitle", { title: form.title })}
+              </h2>
+              <p className="max-w-md text-sm text-muted-foreground">
+                {t("runnerContinuationSavedNote")}
+              </p>
+              <div className="w-full max-w-md rounded-2xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] p-4 text-left">
+                <p className="text-sm font-medium text-[color:var(--glass-ink)]">
+                  {t("runnerContinuationStillNeeded", { title: next.title })}
+                </p>
+                <p className="mt-1 text-[12px] text-[color:var(--glass-ink-soft)]">
+                  {t("runnerContinuationPrefillNote")}
+                </p>
+              </div>
+              <div className="flex flex-col items-center gap-2">
+                <Button className="rounded-full px-6" onClick={goNext}>
+                  {t("runnerContinuationCta", { title: next.title })}
+                  <ChevronRightIcon className="size-4" />
+                </Button>
+                <Button variant="ghost" size="sm" className="rounded-full" onClick={goDossier}>
+                  {t("runnerContinuationBack")}
+                </Button>
+              </div>
+            </>
+          )}
         </CardContent>
       </Card>
     );

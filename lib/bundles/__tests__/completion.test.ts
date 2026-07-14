@@ -52,4 +52,20 @@ describe("deriveMissingDocs", () => {
     const result = deriveMissingDocs(items, ["form-c1"], {}, ["c1"]);
     expect(result).toEqual({ allRequiredDone: true, missing: [] });
   });
+
+  it("plusieurs documents requis manquants : `missing` est ordonné par `order` croissant (le vrai prochain document en tête)", () => {
+    // Tableau d'entrée VOLONTAIREMENT désordonné : le document déclenché
+    // (order 5) avant le document de base (order 0). L'ordre de `missing` doit
+    // suivre `order` croissant — jamais l'ordre du tableau d'entrée — pour que
+    // le CTA « Continuer » de l'écran de continuation pointe toujours vers le
+    // vrai prochain document à remplir (le document de base ici).
+    const items = [
+      item({ id: "c1c", order: 5, triggered: true }),
+      item({ id: "c1", order: 0 }),
+    ];
+    const result = deriveMissingDocs(items, [], {}, null);
+    expect(result.allRequiredDone).toBe(false);
+    expect(result.missing.map((m) => m.slug)).toEqual(["c1", "c1c"]);
+    expect(result.missing[0]).toEqual({ slug: "c1", title: "Doc c1" });
+  });
 });

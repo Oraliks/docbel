@@ -130,7 +130,20 @@ export async function POST(
       });
     }
     await logSubmission(form.id, form.version, lang, validated, "save", true, ip);
-    return NextResponse.json({ ok: true, saved: true, newlyTriggered }, { headers: json });
+    // `missing` (ordonné par `order`, cf. deriveMissingDocs) + `allRequiredDone`
+    // alimentent l'écran de continuation in-line (§11.3) : le runner propose de
+    // continuer avec `missing[0]` sans repasser par la liste des documents.
+    // Réutilise l'état `after` déjà chargé — aucune requête supplémentaire.
+    return NextResponse.json(
+      {
+        ok: true,
+        saved: true,
+        newlyTriggered,
+        missing: after?.missing ?? [],
+        allRequiredDone: after?.allRequiredDone ?? false,
+      },
+      { headers: json },
+    );
   }
 
   // Verrou dossier entier : un téléchargement (download/doccle) demandé

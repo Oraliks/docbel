@@ -26,6 +26,12 @@ export interface MissingDoc {
 /// Calcul PUR : donné l'état déjà chargé d'un dossier, quels documents
 /// requis (visibles, non exclus par condition/dossier) manquent encore ?
 /// `allRequiredDone` vrai ⇔ `missing` vide.
+///
+/// `missing` est ORDONNÉ par `item.order` croissant : `missing[0]` est donc
+/// toujours le VRAI prochain document à remplir (document de base avant
+/// compagnon déclenché), indépendamment de l'ordre du tableau `items` reçu.
+/// L'écran de continuation (§11.3) s'appuie sur cette garantie pour son CTA
+/// « Continuer avec … ».
 export function deriveMissingDocs(
   items: BundleItem[],
   completedTemplateIds: string[],
@@ -40,6 +46,7 @@ export function deriveMissingDocs(
   );
   const missing: MissingDoc[] = requiredVisible
     .filter((s) => !s.completed)
+    .sort((a, b) => a.item.order - b.item.order)
     .map((s) => ({
       slug: s.item.pdfForm?.slug ?? s.item.id,
       title: s.item.pdfForm?.title ?? "Document",

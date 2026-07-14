@@ -436,16 +436,18 @@ function Dot({
     <g onClick={onClick} style={onClick ? { cursor: 'pointer' } : undefined}>
       <title>{title}</title>
       {selected && (
+        // Halo sombre universel : visible même sur le pin COMMUNE (fill blanc),
+        // où un anneau clair se fondrait dans le fond. Ne dépend d'aucune
+        // couleur d'organisme ni de var(--primary).
         <circle
           cx={0}
           cy={0}
           r={displayR + 3.5}
           fill="none"
-          stroke="var(--primary)"
+          stroke="#1b1530"
           strokeWidth={1.5}
           style={{
-            filter:
-              'drop-shadow(0 0 2px color-mix(in oklab, var(--primary) 65%, transparent))',
+            filter: 'drop-shadow(0 0 3px rgba(0,0,0,0.55))',
           }}
         />
       )}
@@ -456,12 +458,15 @@ function Dot({
         fill={color}
         stroke={
           selected
-            ? 'var(--primary)'
+            // Anneau blanc universel : contraste garanti sur les fills sombres
+            // ou saturés (marine, orange, violet SRE, rose), combiné au halo
+            // sombre ci-dessus pour rester lisible sur le pin blanc COMMUNE.
+            ? '#ffffff'
             : isLight
               ? 'rgba(0,0,0,0.4)'
               : 'rgba(255,255,255,0.95)'
         }
-        strokeWidth={selected ? 1.8 : 1.2}
+        strokeWidth={selected ? 2.5 : 1.2}
       />
     </g>
   )

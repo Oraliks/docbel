@@ -238,6 +238,7 @@ export function BureauxFinder() {
         <div className="absolute top-3 left-3 right-3 z-30 space-y-2">
           {searchBar}
           <GeolocBanner onLocated={handleLocated} located={userGeoloc} onClear={clearGeoloc} />
+          {error && <ErrorBox error={error} />}
         </div>
         {showResults && (
           <MobileSheet header={<span className="text-sm font-extrabold text-foreground">{countLabel}</span>}>

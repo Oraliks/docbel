@@ -7,6 +7,7 @@ export interface OfficeItem {
   type: OfficeType
   bureau: BureauResult
   distanceKm: number | null
+  isCompetent: boolean
 }
 
 /** Ordre d'affichage par défaut (quand pas de tri par distance). */
@@ -63,6 +64,9 @@ export function buildOffices(
       ref && bureau.lat != null && bureau.lng != null
         ? haversineKm(ref, { lat: bureau.lat, lng: bureau.lng })
         : null,
+    // Tous les items proviennent de data.attitre (résolution territoriale
+    // par adresse/commune) : ils sont donc compétents par construction.
+    isCompetent: true,
   }))
   const orderIndex = (t: OfficeType) => TYPE_ORDER.indexOf(t)
   items.sort((x, y) => {

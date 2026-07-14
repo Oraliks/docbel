@@ -127,7 +127,7 @@ export function OfficeDetail({
         {/* Téléphone anti-scraping (réutilisé) */}
         {b.phone && (
           <div className="mt-3">
-            <PhoneReveal phone={b.phone} />
+            <PhoneReveal phone={b.phone} className="inline-flex items-center gap-1.5 text-xs font-bold text-primary" />
           </div>
         )}
 

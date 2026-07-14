@@ -314,9 +314,10 @@ export function CustomBelgiumMap({
           {/* Label commune sélectionnée — masqué au niveau pays car
               la commune est minuscule et un texte 12px serait
               disproportionné (illisible / déborde) */}
-          {sel && selBbox && level !== 'country' && (
+          {sel && selCentroid && selBbox && level !== 'country' &&
+            Number.isFinite(selCentroid[0]) && Number.isFinite(selBbox[0][1]) && (
             <text
-              x={selCentroid![0]}
+              x={selCentroid[0]}
               y={selBbox[0][1] - 4}
               textAnchor="middle"
               fontSize={12}

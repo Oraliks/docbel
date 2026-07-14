@@ -57,7 +57,8 @@ export function ResumeForm() {
       }
       const data = (await res.json()) as { bundleSlug: string; bundleName: string };
       toast.success(t("resumeSuccess", { name: data.bundleName }));
-      router.push(`/d/${data.bundleSlug}`);
+      // Reprise par code → ouverture directe du formulaire actif (`?demarrer=1`).
+      router.push(`/d/${data.bundleSlug}?demarrer=1`);
     } catch {
       setError(t("networkErrorRetry"));
     } finally {

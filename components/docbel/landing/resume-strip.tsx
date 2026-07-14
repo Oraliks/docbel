@@ -161,7 +161,7 @@ export function ResumeStrip({ run }: ResumeStripProps) {
       {/* CTA reprendre + fermer. */}
       <div className="flex shrink-0 items-center gap-2">
         <Link
-          href={`/d/${run.slug}`}
+          href={`/d/${run.slug}?demarrer=1`}
           className="glass-cta inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-[12.5px] font-bold"
         >
           {t("resumeCta")}

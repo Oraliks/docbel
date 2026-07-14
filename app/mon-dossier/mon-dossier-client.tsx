@@ -221,7 +221,9 @@ function ActiveRunCard({ run }: { run: ActiveBundleRun }) {
   const hue = run.color || "var(--glass-accent-deep)";
   return (
     <Link
-      href={bundleHref(run.slug)}
+      // Reprise → ouverture directe du formulaire actif (`?demarrer=1`) ; l'accès
+      // direct (AccessRow) garde la vue liste via `bundleHref` nu.
+      href={`${bundleHref(run.slug)}?demarrer=1`}
       onClick={() =>
         trackBundleEventClient("bundle_opened", {
           bundleId: run.slug,

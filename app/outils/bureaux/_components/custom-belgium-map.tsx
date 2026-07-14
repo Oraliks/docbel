@@ -1,12 +1,12 @@
 'use client'
 
-import { useEffect, useRef, useState, useMemo } from 'react'
+import { useEffect, useRef, useState, useMemo, type PointerEvent as ReactPointerEvent } from 'react'
 import { useTranslations } from 'next-intl'
 import { feature } from 'topojson-client'
 import { geoMercator, geoPath, type GeoPermissibleObjects } from 'd3-geo'
 import type { Topology } from 'topojson-specification'
 import type { Feature, FeatureCollection, Polygon, MultiPolygon } from 'geojson'
-import { MapPin, Plus, Minus } from 'lucide-react'
+import { MapPin, Plus, Minus, Crosshair } from 'lucide-react'
 
 interface MapBureau {
   id: string
@@ -62,6 +62,19 @@ interface MapMarker {
   y: number
 }
 
+/** Snapshot figé d'un geste pan/pinch en cours (valeurs de départ du geste). */
+interface Gesture {
+  mode: 'pan' | 'pinch'
+  startX: number
+  startY: number
+  startTx: number
+  startTy: number
+  startScale: number
+  startDist: number
+  midX: number
+  midY: number
+}
+
 /**
  * Carte custom 100% SVG construite à partir du TopoJSON Belgique
  * (bmesuere/belgium-topojson, 581 communes + arrondissements + provinces).
@@ -86,6 +99,10 @@ const ZOOM_LABEL_KEYS: Record<ZoomLevel, string> = {
 
 const ZOOM_ORDER: ZoomLevel[] = ['commune', 'arrondissement', 'country']
 
+/** Bornes du zoom continu (vue libre : molette / pinch). */
+const MIN_SCALE = 0.8
+const MAX_SCALE = 8
+
 export function CustomBelgiumMap({
   selectedInsCode,
   center,
@@ -101,10 +118,40 @@ export function CustomBelgiumMap({
   const [size, setSize] = useState({ w: 380, h: height })
   const [level, setLevel] = useState<ZoomLevel>('commune')
 
+  // ─── Vue pan / zoom / pinch : transform SVG (translate + scale) appliqué
+  // PAR-DESSUS la projection fitExtent. Identité { scale:1, tx:0, ty:0 } = aucune
+  // transformation (la projection cadre déjà la commune au « scale 1 »). Les
+  // POLYGONES sont mis à l'échelle dans un <g transform> ; les PINS sont rendus
+  // hors de ce groupe et gardent une taille constante (cf. rendu plus bas). ───
+  const [view, setView] = useState({ scale: 1, tx: 0, ty: 0 })
+  const [grabbing, setGrabbing] = useState(false)
+  const svgRef = useRef<SVGSVGElement | null>(null)
+  // Pointeurs actifs (souris / tactile) + snapshot du geste en cours.
+  const pointersRef = useRef<Map<number, { x: number; y: number }>>(new Map())
+  const gestureRef = useRef<Gesture | null>(null)
+  // Passe à true dès qu'un pan/pinch a réellement bougé : empêche le clic d'un
+  // pin de se déclencher après un vrai déplacement (un tap net sélectionne).
+  const draggedRef = useRef(false)
+  // `t` casté comme le reste du finder pour référencer `mapRecenter` (clé
+  // ajoutée dans une tâche ultérieure) sans casser le typecheck ; le fallback
+  // next-intl est non-bloquant si la clé manque encore.
+  const tLoose = t as (key: string) => string
+
   // Reset au niveau commune quand la commune sélectionnée change
   useEffect(() => {
     setLevel('commune')
   }, [selectedInsCode])
+
+  // Reset de la VUE (pan/zoom) quand la commune sélectionnée change — via le
+  // pattern React sanctionné « ajuster l'état pendant le rendu ». L'ESLint du
+  // repo interdit un setState synchrone dans un useEffect ; on n'ajoute donc
+  // PAS ce reset au useEffect setLevel ci-dessus (ce serait une nouvelle erreur
+  // à côté de l'existante), on le fait en phase de rendu.
+  const [prevSel, setPrevSel] = useState(selectedInsCode)
+  if (selectedInsCode !== prevSel) {
+    setPrevSel(selectedInsCode)
+    setView({ scale: 1, tx: 0, ty: 0 })
+  }
 
   // Charge le TopoJSON une fois
   useEffect(() => {
@@ -133,6 +180,35 @@ export function CustomBelgiumMap({
     ro.observe(el)
     return () => ro.disconnect()
   }, [])
+
+  // Zoom molette : listener natif NON-passif. React attache `onWheel` en passif
+  // (e.preventDefault() y serait ignoré + warning console), on passe donc par
+  // addEventListener({ passive: false }) pour bloquer le scroll de page et
+  // zoomer autour du curseur. Clé sur `topo` : le <svg> n'existe qu'une fois le
+  // TopoJSON chargé (avant, on rend le placeholder → svgRef.current est null).
+  useEffect(() => {
+    const el = svgRef.current
+    if (!el || !topo) return
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault()
+      const rect = el.getBoundingClientRect()
+      const cx = e.clientX - rect.left
+      const cy = e.clientY - rect.top
+      const factor = e.deltaY < 0 ? 1.1 : 1 / 1.1
+      setView((v) => {
+        const s2 = clamp(v.scale * factor, MIN_SCALE, MAX_SCALE)
+        if (s2 === v.scale) return v
+        // Zoom-around-point : garde le point sous le curseur fixe.
+        return {
+          scale: s2,
+          tx: cx - (cx - v.tx) * (s2 / v.scale),
+          ty: cy - (cy - v.ty) * (s2 / v.scale),
+        }
+      })
+    }
+    el.addEventListener('wheel', onWheel, { passive: false })
+    return () => el.removeEventListener('wheel', onWheel)
+  }, [topo])
 
   const projection = useMemo(() => {
     if (!topo || !topo.objects.municipalities) return null
@@ -241,6 +317,115 @@ export function CustomBelgiumMap({
     return out
   }, [projection, bureaus])
 
+  // ─── Gestes pan / pinch via Pointer Events (aucune dépendance externe) ───
+  // Le viewBox du <svg> est 1:1 avec ses pixels rendus (width=size.w,
+  // viewBox="0 0 size.w size.h"), donc 1 px client = 1 unité SVG : les deltas
+  // client s'appliquent directement à tx/ty, et (clientX - rect.left) donne la
+  // position locale au SVG pour le zoom-around-point.
+  function toLocal(clientX: number, clientY: number) {
+    const rect = svgRef.current?.getBoundingClientRect()
+    if (!rect) return { x: clientX, y: clientY }
+    return { x: clientX - rect.left, y: clientY - rect.top }
+  }
+
+  function onPointerDownSvg(e: ReactPointerEvent<SVGSVGElement>) {
+    e.currentTarget.setPointerCapture(e.pointerId)
+    const wasEmpty = pointersRef.current.size === 0
+    pointersRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY })
+    if (wasEmpty) draggedRef.current = false // nouvelle interaction
+    setGrabbing(true)
+    const pts = [...pointersRef.current.values()]
+    if (pts.length === 1) {
+      // 1 pointeur → PAN : fige position + translation de départ.
+      gestureRef.current = {
+        mode: 'pan',
+        startX: e.clientX,
+        startY: e.clientY,
+        startTx: view.tx,
+        startTy: view.ty,
+        startScale: view.scale,
+        startDist: 0,
+        midX: 0,
+        midY: 0,
+      }
+    } else if (pts.length === 2) {
+      // 2 pointeurs → PINCH : distance initiale + milieu (coords SVG) + scale
+      // et translation de départ. Un pinch n'est jamais un clic de pin.
+      const dx = pts[0].x - pts[1].x
+      const dy = pts[0].y - pts[1].y
+      const mid = toLocal((pts[0].x + pts[1].x) / 2, (pts[0].y + pts[1].y) / 2)
+      draggedRef.current = true
+      gestureRef.current = {
+        mode: 'pinch',
+        startX: 0,
+        startY: 0,
+        startTx: view.tx,
+        startTy: view.ty,
+        startScale: view.scale,
+        startDist: Math.hypot(dx, dy) || 1,
+        midX: mid.x,
+        midY: mid.y,
+      }
+    }
+  }
+
+  function onPointerMoveSvg(e: ReactPointerEvent<SVGSVGElement>) {
+    const p = pointersRef.current.get(e.pointerId)
+    if (!p) return
+    p.x = e.clientX
+    p.y = e.clientY
+    const g = gestureRef.current
+    if (!g) return
+    const pts = [...pointersRef.current.values()]
+    if (g.mode === 'pan' && pts.length === 1) {
+      // Pan : translation = départ + déplacement client depuis le pointerdown.
+      const dx = e.clientX - g.startX
+      const dy = e.clientY - g.startY
+      if (!draggedRef.current && Math.hypot(dx, dy) > 4) draggedRef.current = true
+      setView({ scale: g.startScale, tx: g.startTx + dx, ty: g.startTy + dy })
+    } else if (g.mode === 'pinch' && pts.length >= 2) {
+      // Pinch : nouveau scale = scale de départ × (dist courante / dist départ),
+      // borné, appliqué en zoom-around-point autour du milieu figé au départ.
+      const dx = pts[0].x - pts[1].x
+      const dy = pts[0].y - pts[1].y
+      const dist = Math.hypot(dx, dy) || 1
+      const s2 = clamp(g.startScale * (dist / g.startDist), MIN_SCALE, MAX_SCALE)
+      setView({
+        scale: s2,
+        tx: g.midX - (g.midX - g.startTx) * (s2 / g.startScale),
+        ty: g.midY - (g.midY - g.startTy) * (s2 / g.startScale),
+      })
+    }
+  }
+
+  function onPointerUpSvg(e: ReactPointerEvent<SVGSVGElement>) {
+    try {
+      e.currentTarget.releasePointerCapture(e.pointerId)
+    } catch {
+      // capture déjà relâchée — sans effet
+    }
+    pointersRef.current.delete(e.pointerId)
+    const pts = [...pointersRef.current.values()]
+    if (pts.length === 1) {
+      // Il reste 1 doigt après un pinch → on repart proprement en pan pour lui
+      // (sinon le geste resterait « coincé » en mode pinch avec un seul point).
+      gestureRef.current = {
+        mode: 'pan',
+        startX: pts[0].x,
+        startY: pts[0].y,
+        startTx: view.tx,
+        startTy: view.ty,
+        startScale: view.scale,
+        startDist: 0,
+        midX: 0,
+        midY: 0,
+      }
+    } else if (pts.length === 0) {
+      gestureRef.current = null
+      setGrabbing(false)
+    }
+  }
+
   if (!topo) {
     return (
       <div
@@ -280,12 +465,27 @@ export function CustomBelgiumMap({
       className="relative bg-[color-mix(in_oklab,var(--primary)_4%,white)] dark:bg-[color-mix(in_oklab,var(--primary)_8%,#0c0c12)] border border-border"
     >
       <svg
+        ref={svgRef}
         width={size.w}
         height={size.h}
         viewBox={`0 0 ${size.w} ${size.h}`}
-        style={{ display: 'block' }}
+        onPointerDown={onPointerDownSvg}
+        onPointerMove={onPointerMoveSvg}
+        onPointerUp={onPointerUpSvg}
+        onPointerCancel={onPointerUpSvg}
+        style={{
+          display: 'block',
+          // touch-action: none → le navigateur ne scrolle/zoome pas la page
+          // pendant un pan/pinch tactile sur la carte.
+          touchAction: 'none',
+          cursor: grabbing ? 'grabbing' : 'grab',
+        }}
       >
-        <g>
+        {/* Groupe TRANSFORMÉ (pan + zoom continu) : polygones + labels. Les
+            strokes restent fins grâce à vectorEffect="non-scaling-stroke".
+            Aucune transition CSS sur le transform → pas de mouvement animé
+            (respecte prefers-reduced-motion : on applique la vue directement). */}
+        <g transform={`translate(${view.tx} ${view.ty}) scale(${view.scale})`}>
           {/* Voisins en gris clair. Stroke + fill légèrement plus
               discrets au niveau pays (580 polygones) pour ne pas
               créer un quadrillage trop chargé. */}
@@ -368,17 +568,26 @@ export function CustomBelgiumMap({
             </text>
           )}
 
-          {/* Dots bureaux (cercle coloré par type d'org, numéroté si
-              `number` est fourni ; le n°1 recommandé est agrandi). Cliquables
-              si onPinClick est fourni : synchronise la sélection avec la
-              liste. Survolables si onPinHover est fourni : synchronise le
-              hover avec la liste. Le pin sélectionné (selectedId) est
-              agrandi + halo, cf. Dot ci-dessous. Positions pré-calculées
-              dans `markers` (mémoïsé, cf. plus haut). */}
-          {markers.map(({ bureau: b, x, y }) => (
+          {/* Pas de dot sur le centroïde : le polygone violet entoure
+              déjà la commune sélectionnée, ce dot ne fait que doubler
+              l'info visuelle et ajouter du bruit sur les bureaux. */}
+        </g>
+
+        {/* Dots bureaux — rendus HORS du groupe zoomé pour garder une taille
+            CONSTANTE quel que soit le zoom (sinon les cercles/numéros
+            « ballonnent »). On projette la position de base (markers, mémoïsée)
+            dans l'espace ÉCRAN sous la vue courante : sx = tx + x·scale ; on ne
+            translate QUE le Dot (jamais de scale dessus). Cliquables si
+            onPinClick est fourni : synchronise la sélection avec la liste.
+            Survolables si onPinHover est fourni. Le pin sélectionné (selectedId)
+            est agrandi + halo (cf. Dot). */}
+        {markers.map(({ bureau: b, x, y }) => {
+          const sx = view.tx + x * view.scale
+          const sy = view.ty + y * view.scale
+          return (
             <g
               key={b.id}
-              transform={`translate(${x}, ${y})`}
+              transform={`translate(${sx}, ${sy})`}
               onMouseEnter={() => onPinHover?.(b.id)}
               onMouseLeave={() => onPinHover?.(null)}
             >
@@ -388,15 +597,19 @@ export function CustomBelgiumMap({
                 selected={b.id === selectedId}
                 number={b.number}
                 recommended={b.recommended}
-                onClick={onPinClick ? () => onPinClick(b.id) : undefined}
+                onClick={
+                  onPinClick
+                    ? () => {
+                        // Un vrai drag/pinch ne doit pas sélectionner un pin ;
+                        // un simple tap (sans déplacement) sélectionne toujours.
+                        if (!draggedRef.current) onPinClick(b.id)
+                      }
+                    : undefined
+                }
               />
             </g>
-          ))}
-
-          {/* Pas de dot sur le centroïde : le polygone violet entoure
-              déjà la commune sélectionnée, ce dot ne fait que doubler
-              l'info visuelle et ajouter du bruit sur les bureaux. */}
-        </g>
+          )
+        })}
       </svg>
 
       {/* Boutons zoom custom — 3 niveaux discrets : commune → arrondissement → région */}
@@ -410,6 +623,9 @@ export function CustomBelgiumMap({
             onClick={() => {
               const i = ZOOM_ORDER.indexOf(level)
               if (i > 0) setLevel(ZOOM_ORDER[i - 1])
+              // On repart d'une vue propre : le cadrage du preset (fitExtent)
+              // n'a pas à cumuler un pan/zoom manuel précédent.
+              setView({ scale: 1, tx: 0, ty: 0 })
             }}
             disabled={level === 'commune'}
             className="p-1.5 hover:bg-muted transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
@@ -423,6 +639,7 @@ export function CustomBelgiumMap({
             onClick={() => {
               const i = ZOOM_ORDER.indexOf(level)
               if (i < ZOOM_ORDER.length - 1) setLevel(ZOOM_ORDER[i + 1])
+              setView({ scale: 1, tx: 0, ty: 0 })
             }}
             disabled={level === 'country'}
             className="p-1.5 hover:bg-muted transition-colors border-t border-border disabled:opacity-30 disabled:cursor-not-allowed"
@@ -430,6 +647,18 @@ export function CustomBelgiumMap({
             title={t('mapZoomOut')}
           >
             <Minus className="w-3.5 h-3.5" />
+          </button>
+          {/* Recentrer : annule le pan/zoom manuel (retour à l'identité).
+              La clé i18n `mapRecenter` sera ajoutée dans une tâche ultérieure ;
+              en attendant le fallback next-intl est non-bloquant. */}
+          <button
+            type="button"
+            onClick={() => setView({ scale: 1, tx: 0, ty: 0 })}
+            className="p-1.5 hover:bg-muted transition-colors border-t border-border"
+            aria-label={tLoose('mapRecenter')}
+            title={tLoose('mapRecenter')}
+          >
+            <Crosshair className="w-3.5 h-3.5" />
           </button>
         </div>
       </div>
@@ -578,6 +807,11 @@ function bboxOverlaps(
   b: [[number, number], [number, number]]
 ): boolean {
   return !(a[1][0] < b[0][0] || a[0][0] > b[1][0] || a[1][1] < b[0][1] || a[0][1] > b[1][1])
+}
+
+/** Borne une valeur dans [min, max] (zoom continu molette/pinch). */
+function clamp(v: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, v))
 }
 
 // Re-export MapBureau pour typer ailleurs

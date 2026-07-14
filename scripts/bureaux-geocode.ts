@@ -32,6 +32,8 @@ function getArg(flag: string): string | null {
 }
 const TYPE_FILTER = getArg('--type') // CPAS | COMMUNE | SYNDICAT | ONEM | null
 const ORG_FILTER = getArg('--org') // capac | fgtb | csc | synova | null
+const LIMIT_RAW = getArg('--limit') // borne le nombre de bureaux traités (preview / batch)
+const LIMIT = LIMIT_RAW ? Math.max(1, parseInt(LIMIT_RAW, 10) || 0) : null
 
 const USER_AGENT = 'Beldoc/1.0 (geocoding bureaux belges; contact: oraliks@github)'
 const NOMINATIM = 'https://nominatim.openstreetmap.org/search'
@@ -153,8 +155,9 @@ async function main() {
       organisme: { select: { code: true } },
     },
     orderBy: [{ type: 'asc' }, { postalCode: 'asc' }],
+    ...(LIMIT ? { take: LIMIT } : {}),
   })
-  console.log(`${bureaus.length} bureaux à géocoder\n`)
+  console.log(`${bureaus.length} bureaux à géocoder${LIMIT ? ` (borné à --limit ${LIMIT})` : ''}\n`)
 
   let ok = 0
   let fallback = 0

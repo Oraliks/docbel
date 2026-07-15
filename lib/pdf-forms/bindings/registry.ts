@@ -8,7 +8,7 @@
 import type { MappingRule } from "./types";
 import { C1_CHANGEMENT_RULES } from "./per-form/c1-changement";
 
-/// Les 3 slugs de la famille C1 (première demande, insertion, changement de
+/// Les slugs C1 récents (première demande, insertion, changement de
 /// situation) partagent le MÊME PDF source + le même schéma enrichi (cf.
 /// `applyC1Improvements`) → ils partagent aussi le même jeu de règles de
 /// bindings. Les règles c1-changement sont CONDITIONNELLES sur des champs
@@ -23,6 +23,8 @@ const RULES_BY_SLUG: Record<string, MappingRule[]> = {
   "c1-changement-situation": C1_CHANGEMENT_RULES,
   "c1": C1_CHANGEMENT_RULES,
   "c1-insertion": C1_CHANGEMENT_RULES,
+  // `c1-fr` est un PDF historique distinct. Il reste volontairement sans
+  // binding serveur tant qu'un dump dédié n'a pas validé chaque cible.
   // Phase 7 (compagnons) : c1a / c1b / c1c / c46 / c47 / c1-partenaire /
   // c1-regis nécessitent chacun un dump AcroForm dédié (widget names
   // exacts) — geste manuel non fait dans cette session.

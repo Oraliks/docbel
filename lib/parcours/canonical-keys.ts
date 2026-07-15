@@ -39,6 +39,14 @@ export const CANONICAL_KEYS: CanonicalKeyDef[] = [
       { value: "non", label: "Non" },
     ],
   },
+  {
+    key: "demande_chomage_precedente",
+    label: "A déjà reçu des allocations de chômage",
+    values: [
+      { value: "oui", label: "Oui" },
+      { value: "non", label: "Non" },
+    ],
+  },
 ];
 
 const BY_KEY = new Map(CANONICAL_KEYS.map((d) => [d.key, d]));

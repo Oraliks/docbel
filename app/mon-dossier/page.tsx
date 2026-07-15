@@ -12,6 +12,8 @@ import type { WizardCatalog } from "@/lib/dossier-wizard/derive-results";
 import { WIZARD_SITUATIONS } from "@/lib/dossier-wizard/config";
 import { loadPublishedDecisionTree } from "@/lib/decision-builder/loader";
 import { loadActiveBundleRun } from "@/lib/landing/resume";
+import { getDossier } from "@/lib/dossiers/registry";
+import { deriveDossierDiscoveryMetadata } from "@/lib/dossiers/discovery";
 import { MonDossierClient, type MonDossierBundle } from "./mon-dossier-client";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -53,7 +55,22 @@ export default async function MonDossierPage() {
         warningLevel: true,
         officialSources: true,
         lastVerifiedAt: true,
-        items: { select: { id: true } },
+        items: {
+          orderBy: { order: "asc" },
+          select: {
+            id: true,
+            required: true,
+            pdfForm: {
+              select: {
+                slug: true,
+                title: true,
+                issuer: true,
+                status: true,
+                active: true,
+              },
+            },
+          },
+        },
       },
     })
     .catch(() => []);
@@ -66,30 +83,41 @@ export default async function MonDossierPage() {
     locale,
   );
 
-  const serializable: MonDossierBundle[] = localizedBundles.map((bundle) => ({
-    slug: bundle.slug,
-    name: bundle.name,
-    description: bundle.description,
-    color: bundle.color,
-    icon: bundle.icon,
-    lifeEventCategory: bundle.lifeEventCategory,
-    itemCount: bundle.items.length,
-    createdAt: bundle.createdAt ? bundle.createdAt.toISOString() : null,
-    popular: bundle.showOnOnboarding,
-    organism: bundle.organism,
-    vocabularyTags: parseStringArray(bundle.vocabularyTags),
-    keywords: parseStringArray(bundle.keywords),
-    synonyms: parseStringArray(bundle.synonyms),
-  }));
+  const discoveryBySlug = new Map(
+    localizedBundles.map((bundle) => [
+      bundle.slug,
+      deriveDossierDiscoveryMetadata(bundle, getDossier(bundle.slug)),
+    ]),
+  );
+
+  const serializable: MonDossierBundle[] = localizedBundles.map((bundle) => {
+    const discovery = discoveryBySlug.get(bundle.slug)!;
+    return {
+      slug: bundle.slug,
+      name: bundle.name,
+      description: bundle.description,
+      color: bundle.color,
+      icon: bundle.icon,
+      lifeEventCategory: bundle.lifeEventCategory,
+      itemCount: discovery.documentCount,
+      createdAt: bundle.createdAt ? bundle.createdAt.toISOString() : null,
+      popular: bundle.showOnOnboarding,
+      organism: discovery.organism,
+      vocabularyTags: discovery.vocabularyTags,
+      keywords: parseStringArray(bundle.keywords),
+      synonyms: parseStringArray(bundle.synonyms),
+    };
+  });
 
   // Catalogue passé au wizard pour résoudre documents/points/proches.
   const catalog: WizardCatalog = {};
   for (const bundle of localizedBundles) {
+    const discovery = discoveryBySlug.get(bundle.slug)!;
     catalog[bundle.slug] = {
       slug: bundle.slug,
       name: bundle.name,
-      organism: bundle.organism,
-      requiredDocuments: parseStringArray(bundle.requiredDocuments),
+      organism: discovery.organism,
+      requiredDocuments: discovery.requiredDocuments,
       points: parseBundleWarnings(bundle.warnings).map((w) => w.title),
       warningLevel: parseWarningLevel(bundle.warningLevel),
       estimatedTime: bundle.estimatedTime ?? null,

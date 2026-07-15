@@ -10,6 +10,7 @@
 
 import { PrismaClient, Prisma } from "@prisma/client";
 import { wizardSituationsToTreeContent } from "../../lib/decision-builder/from-wizard";
+import { applyOnem2026CanonicalTags } from "../../lib/decision-builder/onem-canonical";
 import {
   mapOnem2026ToWizardSituations,
   ONEM_2026_STUB_BUNDLES,
@@ -44,7 +45,9 @@ async function seedStubBundles(prisma: PrismaClient): Promise<void> {
 export async function seedDecisionTrees(prisma: PrismaClient): Promise<void> {
   await seedStubBundles(prisma);
 
-  const content = wizardSituationsToTreeContent(mapOnem2026ToWizardSituations());
+  const content = applyOnem2026CanonicalTags(
+    wizardSituationsToTreeContent(mapOnem2026ToWizardSituations()),
+  );
   const contentJson = content as unknown as Prisma.InputJsonValue;
   const now = new Date();
 

@@ -8200,6 +8200,25 @@
             "title": "C4 — Certificat de chômage (à fournir par l'employeur)"
           }
         },
+        "journeyCtaLabel": "Commencer mon dossier de chômage",
+        "journey": {
+          "step1": {
+            "title": "Réponds à quelques questions",
+            "body": "Tes réponses nous permettent d'afficher seulement les documents et les explications utiles à ta situation."
+          },
+          "step2": {
+            "title": "Remplis ton formulaire C1",
+            "body": "Nous avançons partie par partie : identité, famille, activités, revenus et paiement. Tu peux relire et corriger avant de terminer."
+          },
+          "step3": {
+            "title": "Demande ton C4 à ton employeur",
+            "body": "Le C4 est préparé par ton ancien employeur. Si tu ne l'as pas reçu, le dossier t'explique comment le réclamer."
+          },
+          "step4": {
+            "title": "Transmets ton dossier",
+            "body": "Après vérification, remets les documents à ton organisme de paiement : la CAPAC ou ton syndicat."
+          }
+        },
         "theory": {
           "quiPeutBeneficier": {
             "title": "Qui peut bénéficier ?",

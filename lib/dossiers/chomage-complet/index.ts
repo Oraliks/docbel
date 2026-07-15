@@ -246,6 +246,9 @@ export const chomageComplet: DossierDefinition = {
         fr: "Réponds « oui » si tu as déjà touché du chômage (complet ou temporaire) à un moment dans ta vie, même il y a longtemps. Sinon réponds « non » — c'est la première fois que tu fais une demande.",
       },
       type: "boolean",
+      canonicalKey: "demande_chomage_precedente",
+      canonicalTrue: "oui",
+      canonicalFalse: "non",
     },
 
     // ------- Situation familiale -------
@@ -333,9 +336,10 @@ export const chomageComplet: DossierDefinition = {
       // C1 — Demande d'allocations (déclaration personnelle).
       // Commun à toutes les demandes de chômage. Pivot du dossier ici tant
       // que C4/C61/C109 ne sont pas encore disponibles côté PDF.
-      // NB : slug distinct du C1 utilisé dans chomage-temporaire pour éviter
-      // un conflit dans la table PdfForm (slug unique global).
-      slug: "c1-chomage-complet",
+      // Slug du PdfForm réellement rattaché au bundle en production. Garder
+      // cette valeur alignée évite que `selectDocuments()` masque le C1 comme
+      // document « non applicable » dans le parcours guidé.
+      slug: "c1-fr",
       title: "C1 — Demande d'allocations",
       titleKey: "complet.doc.c1.title",
       issuer: "ONEM",
@@ -377,6 +381,43 @@ export const chomageComplet: DossierDefinition = {
     //     de la situation familiale. Requise quand `chargeFamille` est
     //     "chef-menage" ou "cohabitant-charge".
     // -----------------------------------------------------------------
+  ],
+
+  journeyCtaLabel: "Commencer mon dossier de chômage",
+  journeyCtaLabelKey: "complet.journeyCtaLabel",
+  journey: [
+    {
+      order: 1,
+      icon: "user-check",
+      title: "Réponds à quelques questions",
+      titleKey: "complet.journey.step1.title",
+      body: "Tes réponses nous permettent d'afficher seulement les documents et les explications utiles à ta situation.",
+      bodyKey: "complet.journey.step1.body",
+    },
+    {
+      order: 2,
+      icon: "file-check",
+      title: "Remplis ton formulaire C1",
+      titleKey: "complet.journey.step2.title",
+      body: "Nous avançons partie par partie : identité, famille, activités, revenus et paiement. Tu peux relire et corriger avant de terminer.",
+      bodyKey: "complet.journey.step2.body",
+    },
+    {
+      order: 3,
+      icon: "calendar",
+      title: "Demande ton C4 à ton employeur",
+      titleKey: "complet.journey.step3.title",
+      body: "Le C4 est préparé par ton ancien employeur. Si tu ne l'as pas reçu, le dossier t'explique comment le réclamer.",
+      bodyKey: "complet.journey.step3.body",
+    },
+    {
+      order: 4,
+      icon: "wallet",
+      title: "Transmets ton dossier",
+      titleKey: "complet.journey.step4.title",
+      body: "Après vérification, remets les documents à ton organisme de paiement : la CAPAC ou ton syndicat.",
+      bodyKey: "complet.journey.step4.body",
+    },
   ],
 
   theory: THEORY,

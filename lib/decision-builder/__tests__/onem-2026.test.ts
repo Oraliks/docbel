@@ -8,11 +8,17 @@ import { wizardSituationsToTreeContent } from "../from-wizard";
 import { treeContentToWizardSituations } from "../adapter";
 import { parseTreeContent } from "../schema";
 import { validateDecisionTree } from "../validator";
+import {
+  applyOnem2026CanonicalTags,
+  ONEM_2026_CANONICAL_TAGS,
+} from "../onem-canonical";
 
 // Pipeline complet de l'arbre ONEM 2026 : mapping → contenu DB → validation.
 
 const situations = mapOnem2026ToWizardSituations();
-const content = wizardSituationsToTreeContent(situations);
+const content = applyOnem2026CanonicalTags(
+  wizardSituationsToTreeContent(situations),
+);
 
 describe("ONEM 2026 — mapping V2 → WizardSituation[]", () => {
   it("produit 12 situations racines", () => {
@@ -69,6 +75,15 @@ describe("ONEM 2026 — contenu DB", () => {
     const back = treeContentToWizardSituations(content);
     expect(back).toHaveLength(situations.length);
     expect(back.map((s) => s.label)).toEqual(situations.map((s) => s.label));
+  });
+
+  it("porte les faits canoniques sûrs utilisés par le dossier chômage complet", () => {
+    for (const [id, canonical] of Object.entries(ONEM_2026_CANONICAL_TAGS)) {
+      const node = content.nodes[id];
+      expect(node?.type).toBe("option");
+      expect(node?.type === "option" ? node.canonical : null).toEqual(canonical);
+    }
+    expect(applyOnem2026CanonicalTags(content)).toEqual(content);
   });
 });
 

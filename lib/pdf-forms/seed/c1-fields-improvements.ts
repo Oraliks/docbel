@@ -972,6 +972,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
     defaultValue: "non",
     section: SECTION_ACTIVITES,
     order: 199,
+    stepPriority: "optional",
   },
   {
     id: "etudesPleinExercice",
@@ -1245,6 +1246,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
     defaultValue: "non",
     section: SECTION_REVENUS,
     order: 509,
+    stepPriority: "optional",
   },
   {
     id: "pensionCategorieParticuliere",

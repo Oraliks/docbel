@@ -8301,8 +8301,8 @@
         "journeyCtaLabel": "Commencer mon dossier de chômage",
         "journey": {
           "step1": {
-            "title": "Réponds à quelques questions",
-            "body": "Tes réponses nous permettent d'afficher seulement les documents et les explications utiles à ta situation."
+            "title": "Commence ton formulaire C1",
+            "body": "L'assistant a déjà choisi le bon dossier. Tu peux répondre directement dans le formulaire, étape par étape."
           },
           "step2": {
             "title": "Remplis ton formulaire C1",

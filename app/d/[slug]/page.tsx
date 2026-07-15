@@ -359,10 +359,11 @@ export default async function BundleRoute({
 
         // Écran d'explication : uniquement si le dossier codé fournit un
         // `journey` + un libellé CTA, ET qu'aucun run RÉEL n'est en cours (un
-        // run vide ne compte pas — cf. runHasProgress ci-dessus). Un visiteur
-        // qui reprend un dossier réellement entamé va droit au questionnaire.
+        // run vide ne compte pas — cf. runHasProgress ci-dessus). Le parcours
+        // guidé (`?demarrer=1`) va directement au Form Runner ; l'accès manuel
+        // garde cette présentation avant le démarrage.
         const showJourney =
-          dossier?.journey && dossier.journeyCtaLabel && !effectiveRun;
+          dossier?.journey && dossier.journeyCtaLabel && !effectiveRun && !autoStart;
 
         if (showJourney) {
           return (

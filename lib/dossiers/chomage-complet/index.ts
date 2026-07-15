@@ -145,9 +145,9 @@ export const chomageComplet: DossierDefinition = {
   // fin de contrat est consigné dans le questionnaire, pas dans `types`.
   types: [],
 
-  // Chaîne le wizard d'orientation → pré-qualification : seules les
-  // correspondances SÛRES sont mappées (pré-sélection éditable, jamais
-  // bloquant).
+  // Conserve dans le run les faits sûrs déjà connus par l'assistant. Ils
+  // restent utiles comme contexte, mais ne déclenchent plus un second
+  // questionnaire avant le C1.
   prefillFromOrientation: (o) => {
     const out: Record<string, string> = {};
     // « Est-ce votre toute première demande de chômage ? »
@@ -162,155 +162,10 @@ export const chomageComplet: DossierDefinition = {
     return out;
   },
 
-  questions: [
-    // ------- Statut & contexte -------
-    {
-      id: "statut",
-      label: { fr: "Tu fais ta demande comme…" },
-      helpText: {
-        fr: "Salarié = tu avais un patron et tu travaillais pour lui contre un salaire. Indépendant qui cotise volontairement = tu travaillais à ton compte et tu as choisi de payer des cotisations pour avoir droit au chômage. Première inscription = tu sors juste de l'école et tu n'as encore jamais reçu de chômage.",
-      },
-      type: "select",
-      // Pré-remplissage depuis l'orientation (clés canoniques). Mapping À VALIDER
-      // par Oraliks : salarié/indépendant = a déjà travaillé ; première
-      // inscription (sortie d'études) = non. Ne se déclenche que si l'option
-      // d'arbre correspondante est taguée `a_deja_travaille` en admin.
-      canonicalKey: "a_deja_travaille",
-      options: [
-        {
-          value: "salarie",
-          label: { fr: "Salarié (j'avais un patron)" },
-          canonicalValue: "oui",
-        },
-        {
-          value: "independant-cotisant-volontaire",
-          label: { fr: "Indépendant ayant cotisé volontairement au chômage" },
-          canonicalValue: "oui",
-        },
-        {
-          value: "premiere-inscription",
-          label: { fr: "Première inscription (je sors des études)" },
-          canonicalValue: "non",
-        },
-      ],
-    },
-
-    // ------- Motif de la perte d'emploi -------
-    {
-      id: "motifPerteEmploi",
-      label: { fr: "Pourquoi ton contrat de travail s'est-il terminé ?" },
-      helpText: {
-        fr: "Licenciement = ton patron t'a annoncé la fin de ton contrat. Démission = c'est toi qui as donné ton préavis. Fin de CDD = ton contrat avait une date de fin et elle est arrivée. Rupture amiable = vous avez décidé d'un commun accord d'arrêter. Chômage économique prolongé = ton patron t'avait déjà mis au chômage temporaire et la situation dure trop longtemps.",
-      },
-      type: "select",
-      options: [
-        { value: "licenciement", label: { fr: "Licenciement (mon patron a mis fin au contrat)" } },
-        { value: "demission", label: { fr: "Démission (j'ai donné mon préavis)" } },
-        { value: "fin-cdd", label: { fr: "Fin de contrat à durée déterminée (CDD)" } },
-        { value: "rupture-amiable", label: { fr: "Rupture d'un commun accord" } },
-        {
-          value: "chomage-economique-prolonge",
-          label: { fr: "Chômage économique prolongé qui se transforme en chômage complet" },
-        },
-        { value: "autre", label: { fr: "Autre situation" } },
-      ],
-      // Non pertinent pour une première inscription : il n'y a pas eu de
-      // contrat à rompre.
-      visibleIf: { fieldId: "statut", op: "notEquals", value: "premiere-inscription" },
-    },
-
-    // ------- Date de fin de contrat (pour le délai de 8 jours) -------
-    {
-      id: "dateFinContrat",
-      label: { fr: "Quelle est la date de fin de ton contrat ?" },
-      helpText: {
-        fr: "C'est le dernier jour où tu étais encore employé. À partir du lendemain, tu as 8 jours ouvrables pour t'inscrire au chômage. Si tu ne te souviens pas exactement, regarde ton C4 ou le dernier document remis par ton employeur.",
-      },
-      type: "select",
-      // Pas de type "date" disponible dans DossierQuestion → on utilise un
-      // select grossier pour le squelette. À remplacer par un vrai champ
-      // date quand le type sera ajouté au runner.
-      options: [
-        { value: "moins-8-jours", label: { fr: "Il y a moins de 8 jours ouvrables" } },
-        { value: "8-a-30-jours", label: { fr: "Entre 8 et 30 jours" } },
-        { value: "plus-30-jours", label: { fr: "Plus de 30 jours" } },
-      ],
-      visibleIf: { fieldId: "statut", op: "notEquals", value: "premiere-inscription" },
-    },
-
-    // ------- Historique -------
-    {
-      id: "aDejaTouche",
-      label: { fr: "As-tu déjà reçu des allocations de chômage avant ?" },
-      helpText: {
-        fr: "Réponds « oui » si tu as déjà touché du chômage (complet ou temporaire) à un moment dans ta vie, même il y a longtemps. Sinon réponds « non » — c'est la première fois que tu fais une demande.",
-      },
-      type: "boolean",
-      canonicalKey: "demande_chomage_precedente",
-      canonicalTrue: "oui",
-      canonicalFalse: "non",
-    },
-
-    // ------- Situation familiale -------
-    {
-      id: "chargeFamille",
-      label: { fr: "Quelle est ta situation familiale ?" },
-      helpText: {
-        fr: "Isolé = tu vis seul. Chef de ménage = tu vis avec ta famille et tu es la seule personne du ménage qui ramène un revenu. Cohabitant = tu vis avec d'autres personnes qui ont aussi un revenu. Cohabitant avec charge = tu vis avec quelqu'un mais tu paies une pension alimentaire pour un enfant ou un ex-partenaire.",
-      },
-      type: "select",
-      options: [
-        { value: "isole", label: { fr: "Isolé (je vis seul)" } },
-        { value: "chef-menage", label: { fr: "Chef de ménage (seul revenu du foyer)" } },
-        { value: "cohabitant", label: { fr: "Cohabitant (je vis avec d'autres revenus)" } },
-        {
-          value: "cohabitant-charge",
-          label: { fr: "Cohabitant avec charge (pension alimentaire à payer)" },
-        },
-      ],
-    },
-
-    // ------- Tranche d'âge -------
-    {
-      id: "agePersonne",
-      label: { fr: "Quel est ton âge ?" },
-      helpText: {
-        fr: "L'âge change le nombre de jours de travail que tu dois prouver pour avoir droit au chômage : moins on est âgé, moins on doit en prouver.",
-      },
-      type: "select",
-      options: [
-        { value: "moins-30", label: { fr: "Moins de 30 ans" } },
-        { value: "30-49", label: { fr: "Entre 30 et 49 ans" } },
-        { value: "50-plus", label: { fr: "50 ans ou plus" } },
-      ],
-    },
-
-    // ------- Inscription service régional emploi -------
-    {
-      id: "inscritServiceEmploi",
-      label: { fr: "Es-tu déjà inscrit comme demandeur d'emploi ?" },
-      helpText: {
-        fr: "Pour avoir droit au chômage, tu dois être inscrit dans le service de l'emploi de ta région : FOREM en Wallonie, ACTIRIS à Bruxelles, VDAB en Flandre, ADG en Communauté germanophone. Si tu ne sais plus, réponds « non » — on te rappellera comment faire.",
-      },
-      type: "boolean",
-    },
-
-    // ------- Secteur (impact sur certains documents complémentaires) -------
-    {
-      id: "commissionParitaire",
-      label: { fr: "Tu travaillais dans le secteur du bâtiment / construction ?" },
-      helpText: {
-        fr: "On parle ici de la « Commission paritaire 124 », c'est-à-dire les ouvriers du bâtiment (maçons, peintres, électriciens sur chantier, etc.). Si tu ne sais pas, choisis « Je ne sais pas » — on adaptera.",
-      },
-      type: "select",
-      options: [
-        { value: "construction", label: { fr: "Oui — bâtiment / construction" } },
-        { value: "autre", label: { fr: "Non — un autre secteur" } },
-        { value: "inconnu", label: { fr: "Je ne sais pas" } },
-      ],
-      visibleIf: { fieldId: "statut", op: "notEquals", value: "premiere-inscription" },
-    },
-  ],
+  // Le C1 est désormais le formulaire de collecte unique : l'assistant a déjà
+  // choisi le bon dossier et le Form Runner pose les questions utiles, section
+  // par section. Aucun écran de selects ne doit s'intercaler entre les deux.
+  questions: [],
 
   warnings: [
     {
@@ -367,10 +222,6 @@ export const chomageComplet: DossierDefinition = {
       },
       internalRef:
         "Dossier chomage-complet — C4 employeur (durée prestations + motif fin contrat).",
-      // Exclu uniquement pour une toute première inscription sans emploi
-      // antérieur (jeune insertion orienté ailleurs en théorie, mais on
-      // garde le filtre par sécurité).
-      includeWhen: (a) => a.statut !== "premiere-inscription",
       fields: [],
     },
     // -----------------------------------------------------------------
@@ -389,9 +240,9 @@ export const chomageComplet: DossierDefinition = {
     {
       order: 1,
       icon: "user-check",
-      title: "Réponds à quelques questions",
+      title: "Commence ton formulaire C1",
       titleKey: "complet.journey.step1.title",
-      body: "Tes réponses nous permettent d'afficher seulement les documents et les explications utiles à ta situation.",
+      body: "L'assistant a déjà choisi le bon dossier. Tu peux répondre directement dans le formulaire, étape par étape.",
       bodyKey: "complet.journey.step1.body",
     },
     {

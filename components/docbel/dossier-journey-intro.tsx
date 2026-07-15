@@ -8,7 +8,8 @@
  * éditorial serif. Espacements réduits, cartes plus compactes, sans CTA
  * intermédiaire (le seul appel à l'action est le bandeau final).
  *
- * Contenu 100 % piloté par la `DossierDefinition` ; `BundleRunner` inchangé.
+ * Contenu 100 % piloté par la `DossierDefinition`. Le CTA active l'ouverture
+ * directe du premier formulaire dès qu'aucune question d'aiguillage ne reste.
  */
 
 import { type ComponentProps, useState } from "react";
@@ -151,7 +152,7 @@ export function DossierJourneyIntro({
   if (started) {
     return (
       <div className="outils-rise">
-        <BundleRunner {...runnerProps} />
+        <BundleRunner {...runnerProps} autoStart />
       </div>
     );
   }

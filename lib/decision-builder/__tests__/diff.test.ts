@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { computeTreeDiff } from "../diff";
+import { computeTreeDiff, hasUnpublishedTreeChanges } from "../diff";
 import type { DecisionTreeContent } from "../types";
 
 function tree(nodes: DecisionTreeContent["nodes"]): DecisionTreeContent {
@@ -58,5 +58,29 @@ describe("computeTreeDiff", () => {
     const t = tree({ q: q("q", "?") });
     const d = computeTreeDiff(t, t);
     expect(d).toEqual({ added: [], removed: [], modified: [] });
+  });
+});
+
+describe("hasUnpublishedTreeChanges", () => {
+  it("returns false when the complete contents are identical", () => {
+    const content = tree({ q: q("q", "?") });
+    expect(hasUnpublishedTreeChanges(content, content)).toBe(false);
+  });
+
+  it("detects a node content change", () => {
+    const published = tree({ q: q("q", "Ancien texte") });
+    const draft = tree({ q: q("q", "Nouveau texte") });
+    expect(hasUnpublishedTreeChanges(draft, published)).toBe(true);
+  });
+
+  it("detects layout-only changes", () => {
+    const published = tree({ q: q("q", "?") });
+    const draft = { ...published, positions: { q: { x: 80, y: 40 } } };
+    expect(hasUnpublishedTreeChanges(draft, published)).toBe(true);
+  });
+
+  it("treats a non-empty first draft as unpublished", () => {
+    const draft = tree({ q: q("q", "?") });
+    expect(hasUnpublishedTreeChanges(draft, null)).toBe(true);
   });
 });

@@ -51,6 +51,17 @@ export function computeTreeDiff(
   };
 }
 
+/// Indique si le brouillon diffère réellement de la version publiée.
+/// La comparaison porte sur l'arbre complet (racine, nœuds et positions), pas
+/// seulement sur `updatedAt`, qui peut aussi changer lors d'une publication.
+export function hasUnpublishedTreeChanges(
+  draft: DecisionTreeContent,
+  published: DecisionTreeContent | null | undefined,
+): boolean {
+  if (!published) return Object.keys(draft.nodes).length > 0;
+  return stableStringify(draft) !== stableStringify(published);
+}
+
 /// Sérialisation déterministe (clés triées) pour comparer deux nœuds sans
 /// être sensible à l'ordre des propriétés.
 function stableStringify(value: unknown): string {

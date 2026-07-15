@@ -6,13 +6,20 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import {
   ArrowLeft,
   CheckCircle2,
+  CircleDot,
+  FileCheck2,
+  GitBranch,
   History,
+  Info,
   Loader2,
+  Play,
   Plus,
   RotateCcw,
+  Settings2,
   ShieldCheck,
   TriangleAlert,
   UploadCloud,
@@ -23,6 +30,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Skeleton } from "@/components/ui/skeleton";
 import { addRootQuestion, setNodePosition } from "@/lib/decision-builder/mutations";
 import type { ValidationReport, Violation } from "@/lib/decision-builder/validator";
 import type { DecisionTreeContent } from "@/lib/decision-builder/types";
@@ -34,6 +42,7 @@ import { useTreeData } from "./use-tree-data";
 
 export function TreeEditor({ treeId }: { treeId: string }) {
   const router = useRouter();
+  const t = useTranslations("admin.decisionTrees.editor");
   const data = useTreeData(treeId);
   const { meta, content, saving, busy, report } = data;
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -45,9 +54,9 @@ export function TreeEditor({ treeId }: { treeId: string }) {
 
   if (!meta || !content) {
     return (
-      <div className="space-y-3 p-6">
-        <div className="h-9 w-64 animate-pulse rounded bg-muted" />
-        <div className="h-96 w-full animate-pulse rounded bg-muted" />
+      <div className="flex h-[calc(100svh-var(--header-height))] flex-col gap-3 p-4">
+        <Skeleton className="h-12 w-full" />
+        <Skeleton className="min-h-0 w-full flex-1" />
       </div>
     );
   }
@@ -63,86 +72,107 @@ export function TreeEditor({ treeId }: { treeId: string }) {
 
   const statusBadge =
     meta.status === "published"
-      ? { label: "Publié", variant: "default" as const }
+      ? { label: t("status.published"), variant: "default" as const }
       : meta.status === "archived"
-        ? { label: "Archivé", variant: "outline" as const }
-        : { label: "Brouillon", variant: "secondary" as const };
+        ? { label: t("status.archived"), variant: "outline" as const }
+        : { label: t("status.draft"), variant: "secondary" as const };
+
+  const nodeCount = Object.keys(content.nodes).length;
+  const resultCount = Object.values(content.nodes).filter(
+    (node) => node.type === "result",
+  ).length;
 
   return (
-    <div className="flex h-[calc(100svh-1px)] flex-col">
+    <div className="flex h-[calc(100svh-var(--header-height))] min-h-[560px] flex-col overflow-hidden bg-background">
       {/* Topbar */}
-      <div className="flex flex-wrap items-center gap-2 border-b px-4 py-3">
-        <button
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-2 border-b bg-background px-3 py-2.5 lg:px-4">
+        <Button
+          variant="ghost"
+          size="sm"
           onClick={() => router.push("/admin/decision-trees")}
-          className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+          className="-ml-1 text-muted-foreground"
+          aria-label={t("back")}
         >
-          <ArrowLeft className="size-4" /> Arbres
-        </button>
-        <span className="text-muted-foreground">/</span>
-        <span className="font-medium">{meta.title}</span>
+          <ArrowLeft className="size-4" />
+          <span className="hidden sm:inline">{t("trees")}</span>
+        </Button>
+        <div className="min-w-0">
+          <p className="max-w-[34ch] truncate text-sm font-semibold sm:text-base">
+            {meta.title}
+          </p>
+          <p className="hidden text-xs text-muted-foreground md:block">
+            {nodeCount} {t("nodes")} · {resultCount} {t("results")}
+          </p>
+        </div>
         <Badge variant={statusBadge.variant}>{statusBadge.label}</Badge>
-        <span className="ml-1 text-xs text-muted-foreground">
+        {meta.hasUnpublishedChanges && (
+          <Badge variant="secondary" className="gap-1 border border-amber-500/30 bg-amber-500/10 text-amber-800 dark:text-amber-300">
+            <CircleDot className="size-3" /> {t("unpublishedChanges")}
+          </Badge>
+        )}
+        <span className="text-xs text-muted-foreground" aria-live="polite">
           {saving ? (
             <span className="inline-flex items-center gap-1">
-              <Loader2 className="size-3 animate-spin" /> Enregistrement…
+              <Loader2 className="size-3 animate-spin" /> {t("saving")}
             </span>
           ) : (
-            "Enregistré"
+            t("saved")
           )}
         </span>
 
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ml-auto flex items-center gap-1.5">
           <Button variant="outline" size="sm" onClick={handleValidate} disabled={busy === "validate"}>
             {busy === "validate" ? (
               <Loader2 className="size-4 animate-spin" />
             ) : (
               <ShieldCheck className="size-4" />
             )}
-            Valider
+            <span className="hidden lg:inline">{t("validate")}</span>
           </Button>
           <Button variant="outline" size="sm" onClick={() => setVersionsOpen(true)}>
-            <History className="size-4" /> Historique
+            <History className="size-4" />
+            <span className="hidden xl:inline">{t("history")}</span>
           </Button>
-          {meta.status === "published" ? (
+          {meta.status === "published" && !meta.hasUnpublishedChanges ? (
             <Button
-              variant="secondary"
+              variant="outline"
               size="sm"
               onClick={() => data.unpublish()}
               disabled={busy === "unpublish"}
             >
-              Dépublier
+              {t("unpublish")}
             </Button>
           ) : (
-            <Button
-              size="sm"
-              onClick={() => setTab("publication")}
-            >
-              <UploadCloud className="size-4" /> Publier…
+            <Button size="sm" onClick={() => setTab("publication")}>
+              <UploadCloud className="size-4" />
+              {meta.status === "published"
+                ? t("publishChanges")
+                : t("publish")}
             </Button>
           )}
         </div>
       </div>
 
       <Tabs value={tab} onValueChange={setTab} className="flex min-h-0 flex-1 flex-col">
-        <TabsList variant="line" className="justify-start rounded-none border-b px-4">
-          <TabsTrigger value="arbre">Arbre</TabsTrigger>
-          <TabsTrigger value="details">Détails</TabsTrigger>
-          <TabsTrigger value="test">Tester</TabsTrigger>
+        <TabsList variant="line" className="h-auto shrink-0 justify-start overflow-x-auto rounded-none border-b px-2 sm:px-4">
+          <TabsTrigger value="arbre"><GitBranch className="size-4" />{t("tabs.tree")}</TabsTrigger>
+          <TabsTrigger value="details"><Settings2 className="size-4" />{t("tabs.details")}</TabsTrigger>
+          <TabsTrigger value="test"><Play className="size-4" />{t("tabs.test")}</TabsTrigger>
           <TabsTrigger value="validation">
-            Validation
+            <FileCheck2 className="size-4" />{t("tabs.validation")}
             {violations.size > 0 && (
               <span className="ml-1.5 rounded-full bg-red-500/15 px-1.5 text-[10px] font-bold text-red-600 dark:text-red-400">
                 {report?.errors.length ?? 0}
               </span>
             )}
           </TabsTrigger>
-          <TabsTrigger value="publication">Publication</TabsTrigger>
+          <TabsTrigger value="publication"><UploadCloud className="size-4" />{t("tabs.publication")}</TabsTrigger>
         </TabsList>
 
         {/* Onglet ARBRE : canvas + inspecteur */}
         <TabsContent value="arbre" className="min-h-0 flex-1">
-          <div className="grid h-full grid-cols-[1fr_360px]">
-            <div className="relative min-h-0 border-r bg-muted/20">
+          <div className="relative h-full min-h-0 bg-muted/20">
+            <div className="relative h-full min-h-0">
               <div className="absolute left-3 top-3 z-10">
                 {!content.rootNodeId && (
                   <Button
@@ -167,12 +197,21 @@ export function TreeEditor({ treeId }: { treeId: string }) {
                 violations={violations}
               />
             </div>
-            <NodeInspector
-              content={content}
-              selectedId={selectedId}
-              onChange={setContent}
-              onSelect={setSelectedId}
-            />
+            {selectedId ? (
+              <aside className="absolute inset-y-3 right-3 z-20 w-[min(430px,calc(100%-1.5rem))] overflow-hidden rounded-xl border bg-background shadow-xl">
+                <NodeInspector
+                  content={content}
+                  selectedId={selectedId}
+                  onChange={setContent}
+                  onSelect={setSelectedId}
+                  onClose={() => setSelectedId(null)}
+                />
+              </aside>
+            ) : (
+              <div className="pointer-events-none absolute bottom-3 left-3 z-10 hidden items-center gap-2 rounded-lg border bg-background/95 px-3 py-2 text-xs text-muted-foreground shadow-sm md:flex">
+                <Info className="size-3.5" /> {t("selectHint")}
+              </div>
+            )}
           </div>
         </TabsContent>
 
@@ -300,7 +339,7 @@ function ValidationTab({
         </p>
         <Button onClick={onValidate} disabled={busy}>
           {busy ? <Loader2 className="size-4 animate-spin" /> : <ShieldCheck className="size-4" />}
-          Valider l'arbre
+          Valider l’arbre
         </Button>
       </div>
     );

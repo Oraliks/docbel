@@ -256,19 +256,20 @@ export function DecisionCanvas({
           <button
             type="button"
             onClick={() => setSearchOpen((o) => !o)}
-            className="flex size-8 items-center justify-center rounded-md border bg-background/90 text-muted-foreground shadow-sm backdrop-blur hover:text-foreground"
+            className="flex size-10 items-center justify-center rounded-lg border bg-background/95 text-muted-foreground shadow-sm transition hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             title="Rechercher un nœud"
+            aria-label="Rechercher un nœud"
           >
             <SearchIcon className="size-4" />
           </button>
           {searchOpen && (
-            <div className="absolute right-0 top-9 w-64 rounded-md border bg-popover p-1 shadow-lg">
+            <div className="absolute right-0 top-11 w-72 rounded-lg border bg-popover p-1.5 shadow-lg">
               <input
                 autoFocus
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Nom du nœud…"
-                className="w-full rounded px-2 py-1.5 text-sm outline-none"
+                className="h-10 w-full rounded-md border bg-background px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
               />
               {searchResults.length > 0 && (
                 <div className="mt-1 max-h-60 overflow-y-auto">
@@ -277,7 +278,7 @@ export function DecisionCanvas({
                       key={n.id}
                       type="button"
                       onClick={() => focusNode(n.id)}
-                      className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-sm hover:bg-accent/50"
+                      className="flex min-h-10 w-full items-center gap-2 rounded-md px-2.5 py-2 text-left text-sm hover:bg-accent/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     >
                       <span className="text-[10px] uppercase text-muted-foreground">
                         {n.type[0]}
@@ -290,23 +291,25 @@ export function DecisionCanvas({
             </div>
           )}
         </div>
-        <div className="flex items-center rounded-md border bg-background/90 shadow-sm backdrop-blur">
+        <div className="flex items-center rounded-lg border bg-background/95 shadow-sm">
           <button
             type="button"
             onClick={() => zoomBy(1 / 1.2)}
-            className="flex size-8 items-center justify-center text-muted-foreground hover:text-foreground"
+            className="flex size-10 items-center justify-center rounded-l-lg text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             title="Dézoomer"
+            aria-label="Dézoomer"
           >
             <Minus className="size-4" />
           </button>
-          <span className="w-10 text-center text-xs tabular-nums text-muted-foreground">
+          <span className="w-12 text-center text-xs tabular-nums text-muted-foreground" aria-live="polite">
             {Math.round(view.zoom * 100)}%
           </span>
           <button
             type="button"
             onClick={() => zoomBy(1.2)}
-            className="flex size-8 items-center justify-center text-muted-foreground hover:text-foreground"
+            className="flex size-10 items-center justify-center rounded-r-lg text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             title="Zoomer"
+            aria-label="Zoomer"
           >
             <Plus className="size-4" />
           </button>
@@ -314,16 +317,18 @@ export function DecisionCanvas({
         <button
           type="button"
           onClick={fit}
-          className="flex size-8 items-center justify-center rounded-md border bg-background/90 text-muted-foreground shadow-sm backdrop-blur hover:text-foreground"
+          className="flex size-10 items-center justify-center rounded-lg border bg-background/95 text-muted-foreground shadow-sm hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           title="Ajuster à l'écran"
+          aria-label="Ajuster l’arbre à l’écran"
         >
           <Crosshair className="size-4" />
         </button>
         <button
           type="button"
           onClick={() => setView({ tx: 24, ty: 24, zoom: 1 })}
-          className="flex size-8 items-center justify-center rounded-md border bg-background/90 text-muted-foreground shadow-sm backdrop-blur hover:text-foreground"
+          className="flex size-10 items-center justify-center rounded-lg border bg-background/95 text-muted-foreground shadow-sm hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           title="Réinitialiser la vue"
+          aria-label="Réinitialiser la vue"
         >
           <RotateCcw className="size-4" />
         </button>
@@ -342,7 +347,7 @@ export function DecisionCanvas({
           onPointerMove={onPointerMove}
           onPointerUp={onPointerUp}
         >
-          <svg className="h-full w-full">
+          <svg className="h-full w-full" role="tree" aria-label="Arbre de décision interactif">
             <g transform={`translate(${view.tx} ${view.ty}) scale(${view.zoom})`}>
               {/* Arêtes */}
               {layout.edges.map((e, i) => {
@@ -381,8 +386,17 @@ export function DecisionCanvas({
                     <div
                       data-node={id}
                       onPointerDown={(e) => onNodePointerDown(e, id)}
+                      role="treeitem"
+                      aria-selected={selectedId === id}
+                      tabIndex={0}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter" || event.key === " ") {
+                          event.preventDefault();
+                          onSelect(id);
+                        }
+                      }}
                       className={cn(
-                        "flex size-full cursor-pointer flex-col items-start justify-center gap-0.5 rounded-lg border px-3 py-1.5 text-left transition-colors",
+                        "flex size-full cursor-pointer flex-col items-start justify-center gap-0.5 rounded-lg border px-3 py-1.5 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                         nodeColor(node.type),
                         selectedId === id && "ring-2 ring-primary ring-offset-1",
                         sev === "error" && "border-red-500 ring-1 ring-red-500/50",

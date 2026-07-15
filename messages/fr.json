@@ -3285,7 +3285,67 @@
       "analyticsTitle": "Analytics — orientation",
       "analyticsDescription": "Parcours du wizard, demande par dossier et trous de contenu, sur les 30 derniers jours.",
       "analyticsUnavailable": "Données indisponibles pour le moment.",
-      "editorLoading": "Chargement de l'éditeur…"
+      "editorLoading": "Chargement de l'éditeur…",
+      "editor": {
+        "back": "Retour à la liste des arbres",
+        "trees": "Arbres",
+        "nodes": "nœuds",
+        "results": "résultats",
+        "saving": "Enregistrement…",
+        "saved": "Enregistré",
+        "validate": "Valider",
+        "history": "Historique",
+        "unpublish": "Dépublier",
+        "publish": "Publier…",
+        "publishChanges": "Publier les changements",
+        "unpublishedChanges": "Modifications non publiées",
+        "selectHint": "Sélectionnez un nœud pour ouvrir son inspecteur.",
+        "status": {
+          "published": "Publié",
+          "draft": "Brouillon",
+          "archived": "Archivé"
+        },
+        "tabs": {
+          "tree": "Arbre",
+          "details": "Détails",
+          "test": "Tester",
+          "validation": "Validation",
+          "publication": "Publication"
+        }
+      },
+      "list": {
+        "loading": "Chargement des arbres…",
+        "treeCount": "{count, plural, =0 {Aucun arbre} one {# arbre} other {# arbres}}",
+        "summary": "Les parcours actifs et leurs brouillons au même endroit.",
+        "newTree": "Nouvel arbre",
+        "emptyTitle": "Aucun arbre d'orientation",
+        "emptyDescription": "Créez un arbre pour guider les utilisateurs vers le bon dossier en quelques questions.",
+        "createError": "Échec de la création.",
+        "createSuccess": "Arbre créé.",
+        "unpublished": "Non publié",
+        "open": "Ouvrir",
+        "openTree": "Ouvrir l'arbre {title}",
+        "columns": {
+          "tree": "Arbre",
+          "segment": "Segment",
+          "status": "Statut",
+          "versions": "Versions"
+        },
+        "status": {
+          "published": "Publié",
+          "draft": "Brouillon",
+          "archived": "Archivé"
+        },
+        "dialog": {
+          "title": "Nouvel arbre d'orientation",
+          "description": "Créez la structure vide, puis composez le parcours dans l'éditeur visuel.",
+          "name": "Titre",
+          "namePlaceholder": "Orientation chômage",
+          "segment": "Segment",
+          "cancel": "Annuler",
+          "create": "Créer"
+        }
+      }
     },
     "employeurAssistant": {
       "sourcesMetaTitle": "Sources officielles — Employeur | Admin",

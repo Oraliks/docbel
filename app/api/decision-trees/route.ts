@@ -7,7 +7,11 @@ import { prisma, withDbRetry } from "@/lib/prisma";
 import { requireAdminAuth } from "@/lib/auth-check";
 import { slugify } from "@/lib/news/slug";
 import { logActivity } from "@/lib/activity-logger";
-import { emptyTreeContent } from "@/lib/decision-builder/schema";
+import {
+  emptyTreeContent,
+  safeParseTreeContent,
+} from "@/lib/decision-builder/schema";
+import { hasUnpublishedTreeChanges } from "@/lib/decision-builder/diff";
 import { jsonError, jsonOk } from "@/lib/decision-builder/api-helpers";
 
 /// GET — liste des arbres (métadonnées seulement, pas le contenu volumineux).
@@ -18,6 +22,7 @@ export async function GET() {
   const trees = await withDbRetry(() =>
     prisma.decisionTree.findMany({
       orderBy: [{ updatedAt: "desc" }],
+      take: 100,
       select: {
         id: true,
         slug: true,
@@ -28,11 +33,24 @@ export async function GET() {
         publishedAt: true,
         createdAt: true,
         updatedAt: true,
+        draftContent: true,
+        publishedContent: true,
         _count: { select: { revisions: true } },
       },
     }),
   );
-  return jsonOk(trees);
+  return jsonOk(
+    trees.map(({ draftContent, publishedContent, ...tree }) => {
+      const draft = safeParseTreeContent(draftContent);
+      const published = safeParseTreeContent(publishedContent);
+      return {
+        ...tree,
+        hasUnpublishedChanges: draft
+          ? hasUnpublishedTreeChanges(draft, published)
+          : false,
+      };
+    }),
+  );
 }
 
 /// POST — crée un nouvel arbre vide (draft). Body : { title, slug?, segment?, description? }.

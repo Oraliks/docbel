@@ -6,6 +6,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { hasUnpublishedTreeChanges } from "@/lib/decision-builder/diff";
 import { safeParseTreeContent } from "@/lib/decision-builder/schema";
 import type { DecisionTreeContent } from "@/lib/decision-builder/types";
 import type { ValidationReport } from "@/lib/decision-builder/validator";
@@ -19,6 +20,7 @@ export interface TreeMeta {
   status: "draft" | "published" | "archived";
   updatedAt: string;
   publishedAt: string | null;
+  hasUnpublishedChanges: boolean;
 }
 
 const AUTOSAVE_MS = 1500;
@@ -49,14 +51,19 @@ export function useTreeData(treeId: string): UseTreeData {
   const contentRef = useRef<DecisionTreeContent | null>(null);
   const metaRef = useRef<TreeMeta | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  contentRef.current = content;
-  metaRef.current = meta;
+
+  useEffect(() => {
+    contentRef.current = content;
+    metaRef.current = meta;
+  }, [content, meta]);
 
   const load = useCallback(() => {
     fetch(`/api/decision-trees/${treeId}`)
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => {
         if (!d) return;
+        const draft = safeParseTreeContent(d.draftContent);
+        const published = safeParseTreeContent(d.publishedContent);
         setMeta({
           id: d.id,
           slug: d.slug,
@@ -66,9 +73,11 @@ export function useTreeData(treeId: string): UseTreeData {
           status: d.status,
           updatedAt: d.updatedAt,
           publishedAt: d.publishedAt,
+          hasUnpublishedChanges: draft
+            ? hasUnpublishedTreeChanges(draft, published)
+            : false,
         });
-        const parsed = safeParseTreeContent(d.draftContent);
-        if (parsed) setContentState(parsed);
+        if (draft) setContentState(draft);
       })
       .catch(() => toast.error("Impossible de charger l'arbre."));
   }, [treeId]);
@@ -121,7 +130,19 @@ export function useTreeData(treeId: string): UseTreeData {
       }
       const updated = await res.json();
       // Resync du jeton de verrou.
-      setMeta((prev) => (prev ? { ...prev, updatedAt: updated.updatedAt } : prev));
+      const savedDraft = safeParseTreeContent(updated.draftContent);
+      const published = safeParseTreeContent(updated.publishedContent);
+      setMeta((prev) =>
+        prev
+          ? {
+              ...prev,
+              updatedAt: updated.updatedAt,
+              hasUnpublishedChanges: savedDraft
+                ? hasUnpublishedTreeChanges(savedDraft, published)
+                : prev.hasUnpublishedChanges,
+            }
+          : prev,
+      );
     } finally {
       setSaving(false);
     }
@@ -138,6 +159,9 @@ export function useTreeData(treeId: string): UseTreeData {
   const setContent = useCallback(
     (next: DecisionTreeContent) => {
       setContentState(next);
+      setMeta((prev) =>
+        prev ? { ...prev, hasUnpublishedChanges: true } : prev,
+      );
       scheduleSave();
     },
     [scheduleSave],

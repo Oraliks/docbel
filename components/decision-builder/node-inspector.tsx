@@ -5,7 +5,7 @@
 /// `lib/decision-builder/mutations.ts`. Réutilise `BundleConditionEditor` pour
 /// les conditions (les sources = questions ancêtres, valeurs = options).
 
-import { ArrowRight, Plus, Trash2 } from "lucide-react";
+import { ArrowRight, Plus, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -52,16 +52,17 @@ interface Props {
   selectedId: string | null;
   onChange: (next: DecisionTreeContent) => void;
   onSelect: (id: string | null) => void;
+  onClose?: () => void;
 }
 
-export function NodeInspector({ content, selectedId, onChange, onSelect }: Props) {
+export function NodeInspector({ content, selectedId, onChange, onSelect, onClose }: Props) {
   const confirm = useConfirm();
   const node = selectedId ? content.nodes[selectedId] : null;
 
   if (!node) {
     return (
       <div className="flex h-full items-center justify-center p-6 text-center text-sm text-muted-foreground">
-        Sélectionnez un nœud dans l'arbre pour le modifier.
+        Sélectionnez un nœud dans l’arbre pour le modifier.
       </div>
     );
   }
@@ -92,11 +93,28 @@ export function NodeInspector({ content, selectedId, onChange, onSelect }: Props
               : "Résultat"}
           {isRoot ? " · racine" : ""}
         </span>
-        {!isRoot && (
-          <Button variant="ghost" size="sm" onClick={handleDelete}>
-            <Trash2 className="size-4" />
-          </Button>
-        )}
+        <div className="flex items-center gap-1">
+          {!isRoot && (
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              onClick={handleDelete}
+              aria-label="Supprimer ce nœud"
+            >
+              <Trash2 className="size-4" />
+            </Button>
+          )}
+          {onClose && (
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              onClick={onClose}
+              aria-label="Fermer l’inspecteur"
+            >
+              <X className="size-4" />
+            </Button>
+          )}
+        </div>
       </div>
 
       <div className="flex-1 space-y-4 overflow-y-auto p-4">
@@ -480,7 +498,7 @@ function ResultFields({
         </Select>
       </Field>
       <label className="flex items-center justify-between gap-2 rounded-md border px-3 py-2.5">
-        <span className="text-sm">Afficher l'estimation d'allocation</span>
+        <span className="text-sm">Afficher l’estimation d’allocation</span>
         <Switch
           checked={node.allocationEstimate ?? false}
           onCheckedChange={(v) => update({ allocationEstimate: v || undefined })}
@@ -522,7 +540,7 @@ function ConditionsField({
         Conditions (optionnel)
       </Label>
       <p className="text-xs text-muted-foreground">
-        N'activer ce nœud que si les réponses précédentes correspondent.
+        N’activer ce nœud que si les réponses précédentes correspondent.
       </p>
       <BundleConditionEditor
         value={value}

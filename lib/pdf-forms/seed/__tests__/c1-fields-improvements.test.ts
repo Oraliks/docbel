@@ -21,7 +21,7 @@ const ACTIVITY_REVENUE_IDS = [
 ] as const;
 
 describe("C1_QUESTIONS — activités et revenus saisis par le citoyen", () => {
-  it("affiche les 15 déclarations officielles sans question-chapeau ni réponse automatique", () => {
+  it("affiche les 15 déclarations officielles avec Non modifiable par défaut", () => {
     expect(C1_QUESTIONS.find((f) => f.id === "aExerceActivite")).toBeUndefined();
     expect(C1_QUESTIONS.find((f) => f.id === "aAutresRevenus")).toBeUndefined();
 
@@ -29,7 +29,7 @@ describe("C1_QUESTIONS — activités et revenus saisis par le citoyen", () => {
       const field = C1_QUESTIONS.find((f) => f.id === id);
       expect(field, `champ ${id} introuvable`).toBeDefined();
       expect(field?.required, `${id} doit être répondu`).toBe(true);
-      expect(field?.defaultValue, `${id} ne doit pas être pré-répondu`).toBeUndefined();
+      expect(field?.defaultValue, `${id} doit commencer à Non`).toBe("non");
       expect(
         ["aExerceActivite", "aAutresRevenus"],
         `${id} ne doit pas être masqué`,
@@ -37,13 +37,13 @@ describe("C1_QUESTIONS — activités et revenus saisis par le citoyen", () => {
     }
   });
 
-  it("ne réintroduit aucun Non automatique dans le C1 changement de situation", () => {
+  it("conserve le Non par défaut dans le C1 changement de situation", () => {
     const restricted = applyC1Improvements([], {
       defaultMotif: "modification",
       restrictMotifTo5Situations: true,
     });
     for (const id of ACTIVITY_REVENUE_IDS) {
-      expect(restricted.find((f) => f.id === id)?.defaultValue, id).toBeUndefined();
+      expect(restricted.find((f) => f.id === id)?.defaultValue, id).toBe("non");
     }
   });
 
@@ -64,11 +64,11 @@ describe("C1_QUESTIONS — activités et revenus saisis par le citoyen", () => {
     }
   });
 
-  it("ne suppose pas Non pour le congé sans solde ou l'incapacité de 33 %", () => {
+  it("commence à Non pour le congé sans solde ou l'incapacité de 33 %", () => {
     for (const id of ["congeSansSolde", "incapacite33"]) {
       const field = C1_QUESTIONS.find((item) => item.id === id);
       expect(field?.required, id).toBe(true);
-      expect(field?.defaultValue, id).toBeUndefined();
+      expect(field?.defaultValue, id).toBe("non");
     }
   });
 });

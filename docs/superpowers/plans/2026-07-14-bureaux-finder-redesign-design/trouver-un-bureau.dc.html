@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<meta name="design_doc_mode" content="canvas">
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:#eceaf4}
+a{color:#6d5ce7}a:hover{color:#5646d6}
+.noscroll::-webkit-scrollbar{width:0;height:0}
+.noscroll{scrollbar-width:none}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes sheetUp{from{transform:translateY(34px);opacity:.3}to{transform:translateY(0);opacity:1}}
+</style>
+</helmet>
+
+<!-- ============ TURN 2 — VERSION BUREAU (PC) ============ -->
+<section style="padding:56px 60px 20px;display:flex;flex-direction:column;gap:24px;--accent:{{ accent }}">
+  <div id="2a" style="display:flex;align-items:center;gap:12px">
+    <span style="flex:none;display:inline-flex;align-items:center;justify-content:center;min-width:36px;height:28px;padding:0 10px;border-radius:9px;background:#211d2e;color:#fff;font-size:13px;font-weight:800">2a</span>
+    <div>
+      <div style="font-size:17px;font-weight:800;color:#211d2e">Version bureau — carte d'abord</div>
+      <div style="font-size:13px;color:#6f6a80">Même logique que le mobile 1b, adaptée grand écran : panneau de résultats à gauche, carte plein cadre, fiche détaillée en place.</div>
+    </div>
+  </div>
+
+  <div style="width:1240px;height:760px;background:#17151f;border-radius:20px;padding:0;box-shadow:0 40px 90px -30px rgba(20,16,40,.55);overflow:hidden">
+    <div style="height:44px;display:flex;align-items:center;gap:14px;padding:0 18px;background:#211d2e">
+      <span style="display:flex;gap:8px">
+        <span style="width:12px;height:12px;border-radius:50%;background:#ff5f57"></span>
+        <span style="width:12px;height:12px;border-radius:50%;background:#febc2e"></span>
+        <span style="width:12px;height:12px;border-radius:50%;background:#28c840"></span>
+      </span>
+      <div style="flex:1;display:flex;justify-content:center">
+        <div style="display:flex;align-items:center;gap:8px;height:28px;padding:0 16px;border-radius:8px;background:rgba(255,255,255,.08);color:#c9c5d8;font-size:12.5px;font-weight:600">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="9" width="16" height="12" rx="2"></rect><path d="M8 9V6a4 4 0 0 1 8 0v3"></path></svg>
+          docbel.be/espace-citoyen/trouver-un-bureau
+        </div>
+      </div>
+      <span style="width:44px"></span>
+    </div>
+
+    <div style="height:716px;display:flex;background:#f6f5fb">
+      <!-- Sidebar -->
+      <div style="position:relative;width:420px;flex:none;display:flex;flex-direction:column;background:#fff;border-right:1px solid #ecebf3">
+        <div style="padding:22px 22px 14px">
+          <div style="font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--accent,#6d5ce7)">Docbel · Espace citoyen</div>
+          <div style="font-size:22px;font-weight:800;color:#211d2e;letter-spacing:-.01em;margin-top:4px">Trouver un bureau</div>
+          <label style="display:flex;align-items:center;gap:10px;height:48px;padding:0 14px;margin-top:14px;background:#f6f5fb;border:1px solid #ecebf3;border-radius:14px">
+            <span style="color:var(--accent,#6d5ce7);display:flex">{{ searchIcon }}</span>
+            <input value="{{ v4.q }}" onInput="{{ v4.setQ }}" placeholder="Code postal, ville ou organisme" style="flex:1;min-width:0;border:none;outline:none;font:inherit;font-size:14px;color:#211d2e;background:none">
+          </label>
+        </div>
+        <div class="noscroll" style="display:flex;gap:8px;overflow-x:auto;padding:0 22px 12px">
+          <sc-for list="{{ v4.chips }}" as="chip" hint-placeholder-count="6">
+            <button onClick="{{ chip.toggle }}" style="flex:none;display:inline-flex;align-items:center;height:32px;padding:0 12px;border-radius:999px;font-size:12px;font-weight:600;cursor:pointer;background:{{ chip.bg }};color:{{ chip.fg }};border:1px solid {{ chip.bd }}">{{ chip.label }}</button>
+          </sc-for>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:2px 22px 10px">
+          <span style="font-size:13px;font-weight:700;color:#3a3550">{{ v4.countLabel }}</span>
+          <span style="font-size:12px;color:#8b8798">Trié par proximité</span>
+        </div>
+        <div class="noscroll" style="flex:1;overflow-y:auto;padding:0 22px 22px;display:flex;flex-direction:column;gap:12px">
+          <sc-for list="{{ v4.list }}" as="item" hint-placeholder-count="5">
+            <dc-import name="OfficeCard" item="{{ item }}" hint-size="100%,150px"></dc-import>
+          </sc-for>
+        </div>
+
+        <!-- Inline detail panel over the sidebar -->
+        <sc-if value="{{ v4.sel }}" hint-placeholder-val="{{ false }}">
+          <div style="position:absolute;inset:0;z-index:20;background:#fff;display:flex;flex-direction:column;animation:fadeIn .18s ease">
+            <div style="flex:none;display:flex;align-items:center;gap:10px;padding:16px 20px;border-bottom:1px solid #f0eef6">
+              <button onClick="{{ v4.closeSel }}" style="flex:none;width:38px;height:38px;border-radius:12px;border:1px solid #ecebf3;background:#fff;color:#4a4560;cursor:pointer;display:flex;align-items:center;justify-content:center">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"></path></svg>
+              </button>
+              <span style="font-size:14px;font-weight:700;color:#3a3550">Retour aux résultats</span>
+            </div>
+            <div class="noscroll" style="flex:1;overflow-y:auto;padding:22px 22px 26px">
+              <div style="display:flex;gap:14px;align-items:flex-start">
+                <div style="flex:none;width:58px;height:58px;border-radius:17px;display:flex;align-items:center;justify-content:center;background:{{ v4.sel.typeColor }}">{{ v4.sel.icon }}</div>
+                <div style="flex:1;min-width:0">
+                  <div style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:{{ v4.sel.typeColor }}">{{ v4.sel.typeLabel }}</div>
+                  <div style="font-size:20px;font-weight:800;color:#211d2e;line-height:1.2;margin-top:3px">{{ v4.sel.name }}</div>
+                  <div style="display:inline-flex;align-items:center;margin-top:9px;font-size:12px;font-weight:600;padding:4px 10px;border-radius:999px;color:{{ v4.sel.statusColor }};background:{{ v4.sel.statusBg }}">{{ v4.sel.statusLabel }} · {{ v4.sel.hours }}</div>
+                </div>
+              </div>
+              <div style="margin-top:18px;background:#faf9fd;border:1px solid #efedf5;border-radius:16px;padding:16px">
+                <div style="font-size:13.5px;color:#4a4560;font-weight:600">{{ v4.sel.address }}</div>
+                <div style="font-size:12.5px;color:#8b8798;margin-top:5px">{{ v4.sel.dist }} · {{ v4.sel.walk }} à pied</div>
+                <a href="{{ v4.sel.webHref }}" target="_blank" style="display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--accent,#6d5ce7);text-decoration:none;font-weight:700;margin-top:9px">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM3.5 9h17M3.5 15h17M12 3c2.5 2.4 3.8 5.6 3.8 9S14.5 18.6 12 21c-2.5-2.4-3.8-5.6-3.8-9S9.5 5.4 12 3z"></path></svg>{{ v4.sel.web }}</a>
+              </div>
+              <div style="display:flex;gap:10px;margin-top:16px">
+                <a href="{{ v4.sel.mapsHref }}" target="_blank" style="flex:1;display:inline-flex;align-items:center;justify-content:center;gap:7px;height:50px;border-radius:14px;border:none;background:var(--accent,#6d5ce7);color:#fff;font-size:14px;font-weight:700;text-decoration:none">
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l18-8-8 18-2-8z"></path></svg>Itinéraire</a>
+                <a href="{{ v4.sel.actionHref }}" target="_blank" style="flex:1;display:inline-flex;align-items:center;justify-content:center;gap:7px;height:50px;border-radius:14px;border:1px solid #e4e2ee;color:#3a3550;font-size:14px;font-weight:700;text-decoration:none">{{ v4.sel.actionIcon }}{{ v4.sel.actionLabel }}</a>
+                <button onClick="{{ v4.sel.toggleFav }}" style="flex:none;width:50px;height:50px;border-radius:14px;border:1px solid #e4e2ee;background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center">
+                  <svg width="21" height="21" viewBox="0 0 24 24" fill="{{ v4.sel.starFill }}" stroke="{{ v4.sel.starStroke }}" stroke-width="1.7" stroke-linejoin="round"><path d="M12 3.5l2.6 5.3 5.9.9-4.2 4.1 1 5.8L12 17.9 6.7 19.6l1-5.8L3.5 9.7l5.9-.9z"></path></svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        </sc-if>
+      </div>
+
+      <!-- Map -->
+      <div style="position:relative;flex:1;min-width:0">
+        <dc-import name="MiniMap" pins="{{ v4.pins }}" bg="{{ v4.map.bg }}" grid="{{ v4.map.grid }}" label="{{ v4.map.label }}" park="{{ v4.map.park }}" water="{{ v4.map.water }}" hint-size="100%,100%"></dc-import>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ TURN 1 — VERSIONS MOBILES ============ -->
+<section style="padding:36px 60px 90px;display:flex;flex-direction:column;gap:36px;--accent:{{ accent }}">
+  <div style="max-width:620px">
+    <div style="font-size:13px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--accent,#6d5ce7)">Docbel · Espace citoyen</div>
+    <h1 style="margin:8px 0 6px;font-size:34px;font-weight:800;letter-spacing:-.02em;color:#211d2e">Trouver un bureau — format mobile</h1>
+    <p style="margin:0;font-size:15px;line-height:1.55;color:#6f6a80">Version légère et interactive. Recherche instantanée par code postal, filtres en un geste, carte en option, et fiche glissante avec appel &amp; itinéraire en un tap.</p>
+  </div>
+
+  <div style="display:flex;flex-wrap:wrap;gap:48px;align-items:flex-start">
+
+    <!-- ============ OPTION 1b — CARTE D'ABORD ============ -->
+    <div id="1b" style="display:flex;flex-direction:column;gap:16px;width:392px">
+      <div style="display:flex;align-items:center;gap:12px">
+        <span style="flex:none;display:inline-flex;align-items:center;justify-content:center;min-width:36px;height:28px;padding:0 10px;border-radius:9px;background:#211d2e;color:#fff;font-size:13px;font-weight:800">1b</span>
+        <div>
+          <div style="font-size:16px;font-weight:800;color:#211d2e">Carte d'abord</div>
+          <div style="font-size:13px;color:#6f6a80">Carte plein écran + fiche glissante à tirer vers le haut.</div>
+        </div>
+      </div>
+
+      <div style="width:392px;height:800px;background:#17151f;border-radius:46px;padding:11px;box-shadow:0 30px 70px -20px rgba(20,16,40,.5)">
+        <div style="position:relative;height:100%;background:#f6f5fb;border-radius:36px;overflow:hidden">
+          <div style="position:absolute;inset:0"><dc-import name="MiniMap" pins="{{ v2.pins }}" bg="{{ v2.map.bg }}" grid="{{ v2.map.grid }}" label="{{ v2.map.label }}" park="{{ v2.map.park }}" water="{{ v2.map.water }}" hint-size="100%,100%"></dc-import></div>
+
+          <div style="position:absolute;top:0;left:0;right:0;height:38px;z-index:12;display:flex;align-items:center;justify-content:space-between;padding:0 24px 0 26px;color:#211d2e;background:linear-gradient(#f6f5fb,rgba(246,245,251,0))">
+            <span style="font-size:13px;font-weight:800">9:41</span>
+            <span style="display:flex;align-items:center;gap:6px"><svg width="17" height="11" viewBox="0 0 17 11" fill="#211d2e"><rect x="0" y="7" width="3" height="4" rx="1"></rect><rect x="4.5" y="5" width="3" height="6" rx="1"></rect><rect x="9" y="2.5" width="3" height="8.5" rx="1"></rect><rect x="13.5" y="0" width="3" height="11" rx="1"></rect></svg><svg width="23" height="12" viewBox="0 0 24 12" fill="none"><rect x="1" y="1" width="19" height="10" rx="3" stroke="#211d2e" stroke-width="1.2"></rect><rect x="2.5" y="2.5" width="14" height="7" rx="1.5" fill="#211d2e"></rect><rect x="21" y="4" width="2" height="4" rx="1" fill="#211d2e"></rect></svg></span>
+          </div>
+
+          <div style="position:absolute;top:46px;left:16px;right:16px;z-index:11">
+            <label style="display:flex;align-items:center;gap:10px;height:48px;padding:0 14px;background:#fff;border:1px solid #ecebf3;border-radius:15px;box-shadow:0 6px 20px rgba(20,16,40,.14)">
+              <span style="color:var(--accent,#6d5ce7);display:flex">{{ searchIcon }}</span>
+              <input value="{{ v2.q }}" onInput="{{ v2.setQ }}" placeholder="Code postal, ville ou organisme" style="flex:1;min-width:0;border:none;outline:none;font:inherit;font-size:14px;color:#211d2e;background:none">
+            </label>
+          </div>
+
+          <div ref="{{ v2.v2SheetRef }}" style="position:absolute;left:0;right:0;bottom:0;z-index:15;height:430px;background:#fff;border-radius:24px 24px 0 0;box-shadow:0 -8px 30px rgba(20,16,40,.16);display:flex;flex-direction:column;overflow:hidden">
+            <div onPointerDown="{{ v2.onSheetDown }}" style="flex:none;padding:10px 0 8px;cursor:grab;touch-action:none;display:flex;flex-direction:column;align-items:center;gap:8px">
+              <span style="width:40px;height:5px;border-radius:3px;background:#d9d6e4"></span>
+              <span style="font-size:14px;font-weight:800;color:#211d2e">{{ v2.countLabel }}</span>
+            </div>
+            <div class="noscroll" style="display:flex;gap:8px;overflow-x:auto;padding:4px 18px 8px">
+              <sc-for list="{{ v2.chips }}" as="chip" hint-placeholder-count="6">
+                <button onClick="{{ chip.toggle }}" style="flex:none;display:inline-flex;align-items:center;height:32px;padding:0 12px;border-radius:999px;font-size:12px;font-weight:600;cursor:pointer;background:{{ chip.bg }};color:{{ chip.fg }};border:1px solid {{ chip.bd }}">{{ chip.label }}</button>
+              </sc-for>
+            </div>
+            <div class="noscroll" style="flex:1;overflow-y:auto;padding:6px 18px 20px;display:flex;flex-direction:column;gap:12px">
+              <sc-for list="{{ v2.list }}" as="item" hint-placeholder-count="4">
+                <dc-import name="OfficeCard" item="{{ item }}" hint-size="100%,150px"></dc-import>
+              </sc-for>
+            </div>
+          </div>
+
+          <sc-if value="{{ v2.sel }}" hint-placeholder-val="{{ false }}">
+            <dc-import name="OfficeDetail" item="{{ v2.sel }}" on-close="{{ v2.closeSel }}" hint-size="100%,100%"></dc-import>
+          </sc-if>
+        </div>
+      </div>
+    </div>
+
+      </div>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;accent&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#6d5ce7&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Thème&quot;},&quot;mapStyle&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Clair&quot;,&quot;Nuit&quot;],&quot;default&quot;:&quot;Clair&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Thème&quot;}}">
+class Component extends DCLogic {
+  v2sheet = React.createRef();
+
+  TYPES = {
+    ONEM: { label: 'ONEM', color: '#33406b', icon: 'bank' },
+    CPAS: { label: 'CPAS', color: '#7c5cff', icon: 'heart' },
+    COMMUNE: { label: 'Commune', color: '#22a06b', icon: 'commune' },
+    PAIEMENT: { label: 'Org. de paiement', color: '#f97316', icon: 'wallet' },
+    MUTUELLE: { label: 'Mutuelle', color: '#ec4899', icon: 'people' },
+    SRE: { label: 'SRE', color: '#2563eb', icon: 'book' },
+    PENSIONS: { label: 'Pensions', color: '#8b6f47', icon: 'shield' },
+    AIDE: { label: 'Aide juridique', color: '#d99a06', icon: 'scale' },
+  };
+
+  ICONS = {
+    bank: 'M12 3l9 5H3zM5 8v9M9 8v9M15 8v9M19 8v9M4 20h16',
+    heart: 'M12 20s-6.5-4.2-6.5-8.4A3.6 3.6 0 0 1 12 9a3.6 3.6 0 0 1 6.5 2.6C18.5 15.8 12 20 12 20z',
+    commune: 'M4 20V9l8-5 8 5v11M4 20h16M9.5 20v-6h5v6',
+    wallet: 'M3 7.5A1.5 1.5 0 0 1 4.5 6H18a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2zM16 12.5h1.5M3 8.5V7a2 2 0 0 1 2-2h11',
+    people: 'M15 19v-1a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v1M9 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM21 19v-1a4 4 0 0 0-3-3.9M16 4.1a3 3 0 0 1 0 5.8',
+    book: 'M5 4h13v14H6a2 2 0 0 0-2 2V6a2 2 0 0 1 1-2zM4 19a2 2 0 0 1 2-2h12',
+    shield: 'M12 3l7 3v5c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z',
+    scale: 'M12 4v16M7 20h10M12 6l-5 2 2.5 4a2.5 2.5 0 0 1-5 0L7 8M12 6l5 2-2.5 4a2.5 2.5 0 0 0 5 0L17 8',
+  };
+
+  UICONS = {
+    pin: 'M12 21s7-5.6 7-11a7 7 0 1 0-14 0c0 5.4 7 11 7 11zM12 10.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z',
+    search: 'M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16zM21 21l-4.3-4.3',
+    phone: 'M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.3 1.8.6 2.6a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.5-1.1a2 2 0 0 1 2.1-.5c.8.3 1.7.5 2.6.6a2 2 0 0 1 1.7 2z',
+    globe: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM3.5 9h17M3.5 15h17M12 3c2.5 2.4 3.8 5.6 3.8 9S14.5 18.6 12 21c-2.5-2.4-3.8-5.6-3.8-9S9.5 5.4 12 3z',
+    close: 'M6 6l12 12M18 6L6 18',
+    map: 'M9 3L3 5.5v15L9 18l6 3 6-2.5v-15L15 6 9 3zM9 3v15M15 6v15',
+    filter: 'M3 5h18l-7 8v5l-4 2v-7z',
+  };
+
+  OFFICES = [
+    { id: 'onem', type: 'ONEM', name: 'ONEM de Bruxelles', address: 'Galerie Ravenstein 32, 1000 Bruxelles', dist: '524 m', walk: '1 min', status: 'open', hours: '08:30–12:00 · 13:30–16:00', web: 'onem.be', pin: [44, 47] },
+    { id: 'cpas', type: 'CPAS', name: 'OCMW Brussel / CPAS', address: 'Hoogstraat 298a, 1000 Brussel', dist: '1,7 km', walk: '3 min', status: 'open', hours: '08:30–12:00 · 13:00–16:00', tel: '+3225434323', web: 'cpasbxl.brussels', pin: [47, 30] },
+    { id: 'commune', type: 'COMMUNE', name: 'Ville de Bruxelles — Centre admin.', address: 'Rue des Halles 4, 1000 Bruxelles', dist: '403 m', walk: '1 min', status: 'open', hours: '08:30–12:00 · 13:00–16:00', web: 'bruxelles.be', pin: [54, 46] },
+    { id: 'capac', type: 'PAIEMENT', name: 'CAPAC Bruxelles', address: 'Rue des Plantes 69, 1210 Bruxelles', dist: '1,1 km', walk: '2 min', status: 'open', hours: '08:30–12:00 · 13:00–16:00', web: 'capac.fgov.be', pin: [66, 40] },
+    { id: 'partenamut', type: 'MUTUELLE', name: 'Partenamut Bruxelles', address: 'Bd Bischoffsheim 1-8, 1000 Bruxelles', dist: '950 m', walk: '2 min', status: 'soon', hours: '08:30–12:30 · 13:30–17:00', tel: '+3225498211', web: 'partenamut.be', pin: [41, 60] },
+    { id: 'actiris', type: 'SRE', name: 'Actiris Bruxelles', address: 'Rue Belliard 15, 1040 Bruxelles', dist: '1,3 km', walk: '4 min', status: 'open', hours: '08:30–12:00 · 13:30–16:00', web: 'actiris.brussels', pin: [59, 62] },
+    { id: 'pensions', type: 'PENSIONS', name: 'Service fédéral des pensions', address: "Tour du Midi, Espl. de l'Europe 1, 1060 Bxl", dist: '2,6 km', walk: '7 min', status: 'open', hours: '08:30–12:00 · 13:30–16:00', web: 'sfpd.fgov.be', pin: [50, 74] },
+  ];
+
+  allTypes() {
+    const o = {};
+    Object.keys(this.TYPES).forEach(k => { o[k] = true; });
+    return o;
+  }
+
+  state = {
+    v1: { q: '', types: this.allTypes(), favs: {}, mapOpen: false, sel: null },
+    v2: { q: '', types: this.allTypes(), favs: {}, sheet: 'half', sel: null },
+    v3: { q: '', types: this.allTypes(), favs: {}, tab: 'liste', filtersOpen: false, sel: null },
+    v4: { q: '', types: this.allTypes(), favs: {}, sel: null },
+  };
+
+  makeIcon(name, size = 22) {
+    return React.createElement('svg', { width: size, height: size, viewBox: '0 0 24 24', fill: 'none', stroke: '#fff', strokeWidth: 1.7, strokeLinecap: 'round', strokeLinejoin: 'round' }, React.createElement('path', { d: this.ICONS[name] }));
+  }
+  makeUi(name, size = 15) {
+    return React.createElement('svg', { width: size, height: size, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.9, strokeLinecap: 'round', strokeLinejoin: 'round' }, React.createElement('path', { d: this.UICONS[name] }));
+  }
+
+  setV(p, patch) { this.setState(s => ({ [p]: { ...s[p], ...patch } })); }
+  setQ(p, e) { this.setV(p, { q: e.target.value }); }
+  toggleType(p, k) { const t = { ...this.state[p].types, [k]: !this.state[p].types[k] }; this.setV(p, { types: t }); }
+  toggleFav(p, id) { const f = { ...this.state[p].favs, [id]: !this.state[p].favs[id] }; this.setV(p, { favs: f }); }
+  select(p, id) { this.setV(p, { sel: id }); }
+
+  buildItem(o, p) {
+    const t = this.TYPES[o.type];
+    const st = this.state[p];
+    const fav = !!st.favs[o.id];
+    return {
+      id: o.id, name: o.name, address: o.address, dist: o.dist, walk: o.walk, hours: o.hours, web: o.web,
+      typeLabel: t.label, typeColor: t.color, icon: this.makeIcon(t.icon, 22),
+      statusLabel: o.status === 'open' ? 'Ouvert' : 'Ferme bientôt',
+      statusColor: o.status === 'open' ? '#15803d' : '#b45309',
+      statusBg: o.status === 'open' ? '#e7f6ec' : '#fbeed7',
+      fav, starFill: fav ? '#f6b93b' : 'none', starStroke: fav ? '#f6b93b' : '#c3c0d0',
+      actionLabel: o.tel ? 'Appeler' : 'Site web',
+      actionHref: o.tel ? ('tel:' + o.tel) : ('https://' + o.web),
+      actionIcon: this.makeUi(o.tel ? 'phone' : 'globe', 15),
+      webHref: 'https://' + o.web,
+      mapsHref: 'https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(o.address + ', Belgique'),
+      left: o.pin[0] + '%', top: o.pin[1] + '%', color: t.color,
+      toggleFav: () => this.toggleFav(p, o.id),
+      select: () => this.select(p, o.id),
+    };
+  }
+
+  filtered(p) {
+    const st = this.state[p];
+    const q = (st.q || '').trim().toLowerCase();
+    return this.OFFICES.filter(o => {
+      if (!st.types[o.type]) return false;
+      if (!q) return true;
+      return (o.address + ' ' + o.name + ' ' + this.TYPES[o.type].label).toLowerCase().includes(q);
+    }).map(o => this.buildItem(o, p));
+  }
+
+  chips(p) {
+    const st = this.state[p];
+    return Object.keys(this.TYPES).map(k => {
+      const t = this.TYPES[k];
+      const active = !!st.types[k];
+      return {
+        key: k, label: t.label, color: t.color, active,
+        rowIcon: this.makeIcon(t.icon, 16),
+        bg: active ? t.color : '#f4f3f9',
+        fg: active ? '#fff' : '#5b566b',
+        bd: active ? t.color : '#ecebf3',
+        boxBg: active ? t.color : '#fff',
+        boxBd: active ? t.color : '#d7d5e0',
+        toggle: () => this.toggleType(p, k),
+      };
+    });
+  }
+
+  selected(p) {
+    const id = this.state[p].sel;
+    if (!id) return null;
+    const o = this.OFFICES.find(x => x.id === id);
+    return o ? this.buildItem(o, p) : null;
+  }
+
+  // ---- v2 draggable sheet ----
+  sheetH() { return ({ peek: 150, half: 430, full: 720 })[this.state.v2.sheet] || 430; }
+  applyV2() { const el = this.v2sheet.current; if (el) el.style.height = this.sheetH() + 'px'; }
+  componentDidMount() { this.applyV2(); }
+  componentDidUpdate() { this.applyV2(); }
+
+  onSheetDown = (e) => {
+    e.preventDefault();
+    const el = this.v2sheet.current; if (!el) return;
+    this._sd = { y: e.clientY, h: this.sheetH() };
+    el.style.height = this.sheetH() + 'px';
+    window.addEventListener('pointermove', this.onSheetMove);
+    window.addEventListener('pointerup', this.onSheetUp);
+  };
+  onSheetMove = (e) => {
+    const el = this.v2sheet.current; if (!el || !this._sd) return;
+    let h = this._sd.h - (e.clientY - this._sd.y);
+    h = Math.max(120, Math.min(740, h));
+    el.style.height = h + 'px';
+  };
+  onSheetUp = () => {
+    window.removeEventListener('pointermove', this.onSheetMove);
+    window.removeEventListener('pointerup', this.onSheetUp);
+    const el = this.v2sheet.current;
+    const h = el ? parseFloat(el.style.height || '430') : 430;
+    const snaps = [[150, 'peek'], [430, 'half'], [720, 'full']];
+    let best = snaps[1];
+    snaps.forEach(sn => { if (Math.abs(sn[0] - h) < Math.abs(best[0] - h)) best = sn; });
+    this._sd = null;
+    this.setV('v2', { sheet: best[1] });
+  };
+
+  mapTheme() {
+    const dark = (this.props.mapStyle || 'Clair') === 'Nuit';
+    return dark
+      ? { bg: '#1b2233', grid: 'rgba(255,255,255,.05)', label: 'rgba(255,255,255,.55)', park: 'rgba(80,140,110,.35)', water: 'rgba(90,120,200,.28)' }
+      : { bg: '#eef0f7', grid: 'rgba(90,90,140,.07)', label: '#9a97ad', park: 'rgba(120,190,150,.30)', water: 'rgba(150,180,235,.38)' };
+  }
+
+  countLabel(p, list) {
+    const q = this.state[p].q;
+    const n = list.length;
+    if (q) return n + ' résultat' + (n > 1 ? 's' : '') + ' · ' + q;
+    return n + ' bureau' + (n > 1 ? 'x' : '') + ' près de toi';
+  }
+
+  renderVals() {
+    const accent = this.props.accent || '#6d5ce7';
+    const map = this.mapTheme();
+
+    const mk = (p) => {
+      const list = this.filtered(p);
+      return {
+        q: this.state[p].q,
+        setQ: (e) => this.setQ(p, e),
+        chips: this.chips(p),
+        list, pins: list, count: list.length,
+        countLabel: this.countLabel(p, list),
+        sel: this.selected(p),
+        closeSel: () => this.select(p, null),
+        map,
+      };
+    };
+
+    const v4 = mk('v4');
+
+    const v1 = { ...mk('v1'), mapOpen: this.state.v1.mapOpen, toggleMap: () => this.setV('v1', { mapOpen: !this.state.v1.mapOpen }) };
+    const v2 = { ...mk('v2'), onSheetDown: this.onSheetDown, v2SheetRef: this.v2sheet };
+    const t3 = this.state.v3.tab;
+    const v3o = mk('v3');
+    const v3 = {
+      ...v3o,
+      isListe: t3 === 'liste', isCarte: t3 === 'carte',
+      setListe: () => this.setV('v3', { tab: 'liste' }),
+      setCarte: () => this.setV('v3', { tab: 'carte' }),
+      listeBg: t3 === 'liste' ? '#fff' : 'transparent', listeFg: t3 === 'liste' ? '#211d2e' : '#8b8798',
+      carteBg: t3 === 'carte' ? '#fff' : 'transparent', carteFg: t3 === 'carte' ? '#211d2e' : '#8b8798',
+      filtersOpen: this.state.v3.filtersOpen,
+      toggleFilters: () => this.setV('v3', { filtersOpen: !this.state.v3.filtersOpen }),
+      activeCount: Object.values(this.state.v3.types).filter(Boolean).length,
+    };
+
+    return {
+      accent, v1, v2, v3, v4,
+      pinIcon: this.makeUi('pin', 16),
+      searchIcon: this.makeUi('search', 18),
+      mapIcon: this.makeUi('map', 18),
+      filterIcon: this.makeUi('filter', 18),
+      closeIcon: this.makeUi('close', 18),
+    };
+  }
+}
+</script>
+</body>
+</html>

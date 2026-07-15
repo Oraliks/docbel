@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<div style="position:absolute;inset:0;z-index:40;display:flex;flex-direction:column;justify-content:flex-end">
+  <div onClick="{{ onClose }}" style="position:absolute;inset:0;background:rgba(18,14,32,.42);animation:fadeIn .2s ease"></div>
+  <div style="position:relative;background:#fff;border-radius:26px 26px 0 0;padding:22px 20px 24px;box-shadow:0 -12px 40px rgba(20,16,40,.22);animation:sheetUp .3s cubic-bezier(.22,1,.36,1)">
+    <span style="position:absolute;top:10px;left:50%;transform:translateX(-50%);width:40px;height:5px;border-radius:3px;background:#e4e2ee"></span>
+    <button onClick="{{ onClose }}" style="position:absolute;top:16px;right:16px;width:34px;height:34px;border-radius:11px;border:none;background:#f4f3f9;color:#5b566b;cursor:pointer;display:flex;align-items:center;justify-content:center">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"></path></svg>
+    </button>
+    <div style="display:flex;gap:14px;align-items:flex-start;padding-right:40px">
+      <div style="flex:none;width:54px;height:54px;border-radius:16px;display:flex;align-items:center;justify-content:center;background:{{ typeColor }}">{{ icon }}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:{{ typeColor }}">{{ typeLabel }}</div>
+        <div style="font-size:18px;font-weight:800;color:#211d2e;line-height:1.2;margin-top:3px">{{ name }}</div>
+        <div style="display:inline-flex;align-items:center;margin-top:8px;font-size:12px;font-weight:600;padding:4px 10px;border-radius:999px;color:{{ statusColor }};background:{{ statusBg }}">{{ statusLabel }} · {{ hours }}</div>
+      </div>
+    </div>
+    <div style="margin-top:16px;background:#faf9fd;border:1px solid #efedf5;border-radius:16px;padding:14px">
+      <div style="font-size:13px;color:#4a4560;font-weight:600">{{ address }}</div>
+      <div style="font-size:12.5px;color:#8b8798;margin-top:5px">{{ dist }} · {{ walk }} à pied</div>
+      <a href="{{ webHref }}" target="_blank" onClick="{{ stop }}" style="display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--accent,#6d5ce7);text-decoration:none;font-weight:700;margin-top:8px">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM3.5 9h17M3.5 15h17M12 3c2.5 2.4 3.8 5.6 3.8 9S14.5 18.6 12 21c-2.5-2.4-3.8-5.6-3.8-9S9.5 5.4 12 3z"></path></svg>{{ web }}</a>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:16px">
+      <a href="{{ mapsHref }}" target="_blank" onClick="{{ stop }}" style="flex:1;display:inline-flex;align-items:center;justify-content:center;gap:7px;height:50px;border-radius:14px;border:none;background:var(--accent,#6d5ce7);color:#fff;font-size:14px;font-weight:700;text-decoration:none">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l18-8-8 18-2-8z"></path></svg>Itinéraire</a>
+      <a href="{{ actionHref }}" target="_blank" onClick="{{ stop }}" style="flex:1;display:inline-flex;align-items:center;justify-content:center;gap:7px;height:50px;border-radius:14px;border:1px solid #e4e2ee;color:#3a3550;font-size:14px;font-weight:700;text-decoration:none">{{ actionIcon }}{{ actionLabel }}</a>
+      <button onClick="{{ fav }}" style="flex:none;width:50px;height:50px;border-radius:14px;border:1px solid #e4e2ee;background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center">
+        <svg width="21" height="21" viewBox="0 0 24 24" fill="{{ starFill }}" stroke="{{ starStroke }}" stroke-width="1.7" stroke-linejoin="round"><path d="M12 3.5l2.6 5.3 5.9.9-4.2 4.1 1 5.8L12 17.9 6.7 19.6l1-5.8L3.5 9.7l5.9-.9z"></path></svg>
+      </button>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:380,&quot;height&quot;:420},&quot;item&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;object&quot;},&quot;onClose&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;function&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    const it = this.props.item || {};
+    return {
+      ...it,
+      onClose: this.props.onClose || (() => {}),
+      stop: (e) => { e.stopPropagation(); },
+      fav: (e) => { e.stopPropagation(); it.toggleFav && it.toggleFav(); },
+    };
+  }
+}
+</script>
+</body>
+</html>

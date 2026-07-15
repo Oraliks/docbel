@@ -44,8 +44,6 @@ const SAFE_VIRTUAL_IDS = new Set([
   "situationCohabitationAmbigueDejaDeclare",
   "habiteEnColocation",
   "statutJugementPensionAlimentaire",
-  "aExerceActivite",
-  "aAutresRevenus",
   "modePaiementChequeWarning",
   "incapacite33DejaDeclare",
   "activiteAccessoireDejaDeclare",

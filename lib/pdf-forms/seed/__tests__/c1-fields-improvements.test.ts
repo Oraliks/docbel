@@ -2,6 +2,77 @@ import { describe, expect, it } from "vitest";
 import { C1_QUESTIONS, C1_TRIGGERS, applyC1Improvements } from "../c1-fields-improvements";
 import { evaluateTrigger } from "../../triggers";
 
+const ACTIVITY_REVENUE_IDS = [
+  "etudesPleinExercice",
+  "apprentissageAlternance",
+  "formationStageSyntra",
+  "mandatArtistique",
+  "mandatPolitique",
+  "chapitreXIIArts",
+  "tremplinIndependants",
+  "activiteAccessoireOuAide",
+  "administrateurSociete",
+  "independantAccessoireOuPrincipal",
+  "pensionCategorieParticuliere",
+  "pensionRetraiteSurvie",
+  "indemniteMaladieInvalidite",
+  "indemniteAccidentTravail",
+  "avantageFinancierFormation",
+] as const;
+
+describe("C1_QUESTIONS — activités et revenus saisis par le citoyen", () => {
+  it("affiche les 15 déclarations officielles sans question-chapeau ni réponse automatique", () => {
+    expect(C1_QUESTIONS.find((f) => f.id === "aExerceActivite")).toBeUndefined();
+    expect(C1_QUESTIONS.find((f) => f.id === "aAutresRevenus")).toBeUndefined();
+
+    for (const id of ACTIVITY_REVENUE_IDS) {
+      const field = C1_QUESTIONS.find((f) => f.id === id);
+      expect(field, `champ ${id} introuvable`).toBeDefined();
+      expect(field?.required, `${id} doit être répondu`).toBe(true);
+      expect(field?.defaultValue, `${id} ne doit pas être pré-répondu`).toBeUndefined();
+      expect(
+        ["aExerceActivite", "aAutresRevenus"],
+        `${id} ne doit pas être masqué`,
+      ).not.toContain(field?.visibleIf?.fieldId);
+    }
+  });
+
+  it("ne réintroduit aucun Non automatique dans le C1 changement de situation", () => {
+    const restricted = applyC1Improvements([], {
+      defaultMotif: "modification",
+      restrictMotifTo5Situations: true,
+    });
+    for (const id of ACTIVITY_REVENUE_IDS) {
+      expect(restricted.find((f) => f.id === id)?.defaultValue, id).toBeUndefined();
+    }
+  });
+
+  it("exige une réponse explicite aux suivis déjà déclaré / première fois", () => {
+    for (const id of [
+      "mandatArtistiqueDejaDeclare",
+      "tremplinIndependantsDejaDeclare",
+      "activiteAccessoireDejaDeclare",
+      "administrateurSocieteDejaDeclare",
+      "independantAccessoireDejaDeclare",
+      "pensionRetraiteDejaDeclare",
+    ]) {
+      const field = C1_QUESTIONS.find((item) => item.id === id);
+      expect(field, id).toBeDefined();
+      expect(field?.required, id).toBe(true);
+      expect(field?.defaultValue, id).toBeUndefined();
+      expect(field?.visibleIf?.value, id).toBe("oui");
+    }
+  });
+
+  it("ne suppose pas Non pour le congé sans solde ou l'incapacité de 33 %", () => {
+    for (const id of ["congeSansSolde", "incapacite33"]) {
+      const field = C1_QUESTIONS.find((item) => item.id === id);
+      expect(field?.required, id).toBe(true);
+      expect(field?.defaultValue, id).toBeUndefined();
+    }
+  });
+});
+
 describe("C1_QUESTIONS — habiteEnColocation", () => {
   it("existe (radio oui/non) et n'est posée QUE pour l'isolé (Oraliks 2026-07-09)", () => {
     // 2026-07-09 : la question colocation ne concerne plus que la branche
@@ -66,6 +137,32 @@ describe("C1_TRIGGERS — colocation → Annexe Regis", () => {
     for (const slug of ["c1-partenaire", "c47", "c1-regis", "c46", "c1c", "c1a", "c1b"]) {
       expect(targets).toContain(slug);
     }
+  });
+});
+
+describe("C1_TRIGGERS — Tremplin-indépendants → C1C", () => {
+  const trigger = C1_TRIGGERS.find(
+    (item) =>
+      item.whenFieldId === "tremplinIndependants" && item.requiresFormSlug === "c1c",
+  );
+
+  it("ajoute le C1C pour une première déclaration Tremplin", () => {
+    expect(trigger).toBeDefined();
+    expect(
+      evaluateTrigger(trigger!, {
+        tremplinIndependants: "oui",
+        tremplinIndependantsDejaDeclare: "non",
+      }),
+    ).toBe(true);
+  });
+
+  it("n'ajoute pas le C1C si la déclaration précédente reste inchangée", () => {
+    expect(
+      evaluateTrigger(trigger!, {
+        tremplinIndependants: "oui",
+        tremplinIndependantsDejaDeclare: "oui",
+      }),
+    ).toBe(false);
   });
 });
 

@@ -13,6 +13,7 @@ import { sha256Hex, checkRateLimit, getClientIp } from "@/lib/pdf-forms/security
 import { sendToDoccle, isDoccleConfigured } from "@/lib/pdf-forms/integrations/doccle";
 import { todayISO } from "@/lib/pdf-forms/system-values";
 import { applyServerAutoFields } from "@/lib/pdf-forms/auto-fields";
+import { shouldFlattenGeneratedPdf } from "@/lib/pdf-forms/flatten-policy";
 import { PdfFormField, FormPayload, Locale, isLocale } from "@/lib/pdf-forms/types";
 import { ensureWriteAllowed } from "@/lib/admin/readonly-guard";
 import { loadDossierState } from "@/lib/bundles/completion";
@@ -194,7 +195,13 @@ export async function POST(
 
   let pdfBytes: Buffer;
   try {
-    pdfBytes = (await fillForm(source, fields, validated, { technicalSchema, extraStamps })).bytes;
+    pdfBytes = (
+      await fillForm(source, fields, validated, {
+        flatten: shouldFlattenGeneratedPdf(form.slug),
+        technicalSchema,
+        extraStamps,
+      })
+    ).bytes;
   } catch (err) {
     console.error("pdf-forms generate error:", err);
     await logSubmission(form.id, form.version, lang, validated, delivery, false, ip);

@@ -13,6 +13,7 @@ import { readSourcePdf } from "@/lib/pdf-forms/storage";
 import { renderFilename } from "@/lib/pdf-forms/filename";
 import { applyServerAutoFields } from "@/lib/pdf-forms/auto-fields";
 import { todayISO } from "@/lib/pdf-forms/system-values";
+import { shouldFlattenGeneratedPdf } from "@/lib/pdf-forms/flatten-policy";
 import type { PdfFormField, AcroFieldRaw, FormPayload } from "@/lib/pdf-forms/types";
 
 export interface RegeneratedDoc {
@@ -86,7 +87,11 @@ async function regenerateItems(
     // date ni signature — cf. applyServerAutoFields.
     const filled = applyServerAutoFields(fields, payload, todayISO());
     const extraStamps = resolveStamps(filled, getRulesForSlug(form.slug));
-    const { bytes } = await fillForm(source, fields, filled, { technicalSchema, extraStamps });
+    const { bytes } = await fillForm(source, fields, filled, {
+      flatten: shouldFlattenGeneratedPdf(form.slug),
+      technicalSchema,
+      extraStamps,
+    });
     docs.push({ filename: renderFilename(form.slug, filled), bytes });
   }
   return docs;

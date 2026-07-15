@@ -6,6 +6,7 @@ import { fillForm } from "@/lib/pdf-forms/filler";
 import { generateSeedPayload } from "@/lib/pdf-forms/seed-payload";
 import { PdfFormField, FormPayload } from "@/lib/pdf-forms/types";
 import { sanitizeFields } from "@/lib/pdf-forms/sanitize-fields";
+import { shouldFlattenGeneratedPdf } from "@/lib/pdf-forms/flatten-policy";
 
 /// POST — génère un PDF de test (données seed ou payload fourni). Admin only.
 /// Stream direct, AUCUN stockage. Accepte `{ schema?, payload? }` pour tester
@@ -40,7 +41,9 @@ export async function POST(
 
   let result;
   try {
-    result = await fillForm(source, fields, payload);
+    result = await fillForm(source, fields, payload, {
+      flatten: shouldFlattenGeneratedPdf(form.slug),
+    });
   } catch (err) {
     console.error("test-generate error:", err);
     return NextResponse.json({ error: "Échec de génération" }, { status: 500 });

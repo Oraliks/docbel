@@ -60,7 +60,10 @@ function dejaDeclare(opts: {
     id: opts.id,
     pdfFieldName: opts.pdfFieldName ?? "",
     type: "radio",
-    required: false,
+    // La question n'existe que si la déclaration principale vaut « oui » ;
+    // dans ce cas, le citoyen doit choisir explicitement entre « déjà
+    // déclaré » et « première fois ». Ne jamais déduire ce choix à sa place.
+    required: true,
     label: { fr: "Avais-tu déjà déclaré cette situation à ton organisme de paiement ?", nl: "", de: "" },
     help: { fr: opts.helpText, nl: "", de: "" },
     options: YN_DECLARE,
@@ -955,25 +958,6 @@ export const C1_QUESTIONS: PdfFormField[] = [
   },
 
   // ---------- MES ACTIVITÉS (10 questions, page 2) ----------
-  // Lot 4b (§10.2) — question-chapeau : masque le détail tant que la réponse
-  // est « non ». Champ UI-only (pas de widget PDF). Quand « non », chaque
-  // détail gaté garde son `defaultValue: "non"` → le PDF officiel ONEM reste
-  // rempli en « non » (toutes les déclarations restent posées).
-  {
-    id: "aExerceActivite",
-    pdfFieldName: "",
-    type: "radio",
-    required: true,
-    label: {
-      fr: "Exercez-vous une activité (accessoire, indépendante, ou comme administrateur/mandataire) ?",
-      nl: "", de: "",
-    },
-    options: YN,
-    defaultValue: "non",
-    section: SECTION_ACTIVITES,
-    order: 199,
-    stepPriority: "optional",
-  },
   {
     id: "etudesPleinExercice",
     pdfFieldName: "oui_2|non_2",
@@ -985,8 +969,6 @@ export const C1_QUESTIONS: PdfFormField[] = [
       nl: "", de: "",
     },
     options: YN,
-    defaultValue: "non",
-    visibleIf: { fieldId: "aExerceActivite", op: "equals", value: "oui" },
     section: SECTION_ACTIVITES,
     order: 200,
     stepPriority: "optional",
@@ -1013,8 +995,6 @@ export const C1_QUESTIONS: PdfFormField[] = [
       nl: "", de: "",
     },
     options: YN,
-    defaultValue: "non",
-    visibleIf: { fieldId: "aExerceActivite", op: "equals", value: "oui" },
     section: SECTION_ACTIVITES,
     order: 210,
     stepPriority: "optional",
@@ -1038,8 +1018,6 @@ export const C1_QUESTIONS: PdfFormField[] = [
     label: { fr: "Je suis une formation avec convention de stage (SYNTRA / IFAPME / EFEPME / IAWM)", nl: "", de: "" },
     help: { fr: "⚠ Idem études — perte du droit sauf dispense.", nl: "", de: "" },
     options: YN,
-    defaultValue: "non",
-    visibleIf: { fieldId: "aExerceActivite", op: "equals", value: "oui" },
     section: SECTION_ACTIVITES,
     order: 220,
     stepPriority: "optional",
@@ -1066,8 +1044,6 @@ export const C1_QUESTIONS: PdfFormField[] = [
     },
     help: { fr: "→ Joindre un FORMULAIRE C46 si pas encore déclaré.", nl: "", de: "" },
     options: YN,
-    defaultValue: "non",
-    visibleIf: { fieldId: "aExerceActivite", op: "equals", value: "oui" },
     section: SECTION_ACTIVITES,
     order: 230,
     stepPriority: "optional",
@@ -1094,8 +1070,6 @@ export const C1_QUESTIONS: PdfFormField[] = [
       nl: "", de: "",
     },
     options: YN,
-    defaultValue: "non",
-    visibleIf: { fieldId: "aExerceActivite", op: "equals", value: "oui" },
     section: SECTION_ACTIVITES,
     order: 240,
     stepPriority: "optional",
@@ -1111,8 +1085,6 @@ export const C1_QUESTIONS: PdfFormField[] = [
     },
     help: { fr: "Demande des explications à ton organisme de paiement.", nl: "", de: "" },
     options: YN,
-    defaultValue: "non",
-    visibleIf: { fieldId: "aExerceActivite", op: "equals", value: "oui" },
     section: SECTION_ACTIVITES,
     order: 250,
     stepPriority: "optional",
@@ -1128,8 +1100,6 @@ export const C1_QUESTIONS: PdfFormField[] = [
     },
     help: { fr: "→ Joindre un FORMULAIRE C1C si pas encore déclaré.", nl: "", de: "" },
     options: YN,
-    defaultValue: "non",
-    visibleIf: { fieldId: "aExerceActivite", op: "equals", value: "oui" },
     section: SECTION_ACTIVITES,
     order: 270,
     stepPriority: "optional",
@@ -1154,8 +1124,6 @@ export const C1_QUESTIONS: PdfFormField[] = [
     label: { fr: "J'exerce une activité accessoire ou j'aide un travailleur indépendant", nl: "", de: "" },
     help: { fr: "→ Joindre un FORMULAIRE C1A si pas encore déclaré.", nl: "", de: "" },
     options: YN,
-    defaultValue: "non",
-    visibleIf: { fieldId: "aExerceActivite", op: "equals", value: "oui" },
     section: SECTION_ACTIVITES,
     order: 280,
     stepPriority: "optional",
@@ -1179,8 +1147,6 @@ export const C1_QUESTIONS: PdfFormField[] = [
     label: { fr: "Je suis administrateur de société", nl: "", de: "" },
     help: { fr: "→ Joindre un FORMULAIRE C1A si pas encore déclaré.", nl: "", de: "" },
     options: YN,
-    defaultValue: "non",
-    visibleIf: { fieldId: "aExerceActivite", op: "equals", value: "oui" },
     section: SECTION_ACTIVITES,
     order: 290,
     stepPriority: "optional",
@@ -1211,8 +1177,6 @@ export const C1_QUESTIONS: PdfFormField[] = [
       nl: "", de: "",
     },
     options: YN,
-    defaultValue: "non",
-    visibleIf: { fieldId: "aExerceActivite", op: "equals", value: "oui" },
     section: SECTION_ACTIVITES,
     order: 500,
     stepPriority: "optional",
@@ -1231,23 +1195,6 @@ export const C1_QUESTIONS: PdfFormField[] = [
   },
 
   // ---------- MES REVENUS (5 questions, page 2) ----------
-  // Lot 4b (§10.2) — question-chapeau revenus (même mécanique que la note
-  // « MES ACTIVITÉS » ci-dessus : UI-only, détails gatés en `defaultValue "non"`).
-  {
-    id: "aAutresRevenus",
-    pdfFieldName: "",
-    type: "radio",
-    required: true,
-    label: {
-      fr: "Percevez-vous d'autres revenus (pension, indemnité maladie/invalidité/accident, avantage de formation…) ?",
-      nl: "", de: "",
-    },
-    options: YN,
-    defaultValue: "non",
-    section: SECTION_REVENUS,
-    order: 509,
-    stepPriority: "optional",
-  },
   {
     id: "pensionCategorieParticuliere",
     pdfFieldName: "oui_12|non_12",
@@ -1262,8 +1209,6 @@ export const C1_QUESTIONS: PdfFormField[] = [
       nl: "", de: "",
     },
     options: YN,
-    defaultValue: "non",
-    visibleIf: { fieldId: "aAutresRevenus", op: "equals", value: "oui" },
     section: SECTION_REVENUS,
     order: 510,
     stepPriority: "optional",
@@ -1279,8 +1224,6 @@ export const C1_QUESTIONS: PdfFormField[] = [
       nl: "", de: "",
     },
     options: YN,
-    defaultValue: "non",
-    visibleIf: { fieldId: "aAutresRevenus", op: "equals", value: "oui" },
     section: SECTION_REVENUS,
     order: 520,
     stepPriority: "optional",
@@ -1305,8 +1248,6 @@ export const C1_QUESTIONS: PdfFormField[] = [
     label: { fr: "Je perçois une indemnité de maladie ou d'invalidité", nl: "", de: "" },
     help: { fr: "À déclarer. Demande des explications à ton organisme de paiement.", nl: "", de: "" },
     options: YN,
-    defaultValue: "non",
-    visibleIf: { fieldId: "aAutresRevenus", op: "equals", value: "oui" },
     section: SECTION_REVENUS,
     order: 530,
     stepPriority: "optional",
@@ -1319,8 +1260,6 @@ export const C1_QUESTIONS: PdfFormField[] = [
     label: { fr: "Je perçois une indemnité pour accident du travail ou maladie professionnelle", nl: "", de: "" },
     help: { fr: "À déclarer.", nl: "", de: "" },
     options: YN,
-    defaultValue: "non",
-    visibleIf: { fieldId: "aAutresRevenus", op: "equals", value: "oui" },
     section: SECTION_REVENUS,
     order: 540,
     stepPriority: "optional",
@@ -1339,8 +1278,6 @@ export const C1_QUESTIONS: PdfFormField[] = [
       nl: "", de: "",
     },
     options: YN,
-    defaultValue: "non",
-    visibleIf: { fieldId: "aAutresRevenus", op: "equals", value: "oui" },
     section: SECTION_REVENUS,
     order: 550,
     stepPriority: "optional",
@@ -1587,7 +1524,6 @@ export const C1_QUESTIONS: PdfFormField[] = [
     required: true,
     label: { fr: "Je suis actuellement dans une période de congé sans solde", nl: "", de: "" },
     options: YN,
-    defaultValue: "non",
     section: SECTION_DIVERS,
     order: 900,
     stepPriority: "optional",
@@ -1617,7 +1553,6 @@ export const C1_QUESTIONS: PdfFormField[] = [
       nl: "", de: "",
     },
     options: YN,
-    defaultValue: "non",
     section: SECTION_DIVERS,
     order: 910,
     stepPriority: "optional",
@@ -1959,36 +1894,6 @@ export interface ApplyC1ImprovementsOptions {
 /// déclarer du tout (trouvé par Oraliks, 2026-07-07).
 const MOTIF_SITUATION_GROUP = "motifSituation";
 
-/// IDs des 15 radios oui/non « Activités & revenus » qui sont required
-/// par défaut sur le C1 (déclaration initiale) mais tombent en accordéon
-/// replié (`stepPriority: "optional"`) sur les dossiers restreints — ex.
-/// « changement de situation personnelle ». Sans defaultValue, l'utilisateur
-/// qui ne déplie pas l'accordéon reste bloqué au submit (Zod exige une
-/// valeur pour un required visible). En dossier restreint, on les
-/// pré-répond « non » par défaut : le citoyen peut toujours ouvrir
-/// l'accordéon et basculer un item sur « oui » si applicable, ce qui
-/// déclenche alors le sous-formulaire adéquat via les C1_TRIGGERS.
-/// Oraliks 2026-07-07 : « on n'a pas le même parallèle entre le document
-/// C1 pdf et le form runner » — ces 15 questions font sens pour une
-/// première demande, pas pour un simple changement de situation.
-const OPTIONAL_ACTIVITE_REVENU_IDS = new Set<string>([
-  "etudesPleinExercice",
-  "apprentissageAlternance",
-  "formationStageSyntra",
-  "mandatArtistique",
-  "mandatPolitique",
-  "chapitreXIIArts",
-  "tremplinIndependants",
-  "activiteAccessoireOuAide",
-  "administrateurSociete",
-  "independantAccessoireOuPrincipal",
-  "pensionCategorieParticuliere",
-  "pensionRetraiteSurvie",
-  "indemniteMaladieInvalidite",
-  "indemniteAccidentTravail",
-  "avantageFinancierFormation",
-]);
-
 /// Libellés relabelés (phrasé "je/mon", Oraliks 2026-07-06) + nouvel ordre
 /// d'affichage pour les 4 chips de modification existants, appliqués
 /// uniquement quand `restrictMotifTo5Situations` est actif. `labelShort`
@@ -2266,15 +2171,6 @@ export function applyC1Improvements(
         // applyMotifTransferOverride au submit). Cf. doc de
         // `autoAnswered` dans types.ts.
         if (q.id === "motifIntroduction") return { ...q, autoAnswered: true };
-        // Les 15 radios oui/non « Activités & revenus » sont required mais
-        // vivent dans un accordéon replié — sans defaultValue, l'utilisateur
-        // qui ne l'ouvre pas est bloqué au submit (cf.
-        // OPTIONAL_ACTIVITE_REVENU_IDS pour le pourquoi). En dossier
-        // restreint, on pré-répond « non » — cliquable en « oui » si
-        // applicable (déclenche alors le sous-formulaire C1_TRIGGERS).
-        if (OPTIONAL_ACTIVITE_REVENU_IDS.has(q.id) && q.defaultValue === undefined) {
-          return { ...q, defaultValue: "non" };
-        }
         return q;
       })
       .concat(TRANSFERE_ORGANISME_FIELD);

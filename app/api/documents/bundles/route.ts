@@ -1,13 +1,12 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireAdminAuth } from "@/lib/auth-check";
-import { parseEligibilityQuestions } from "@/lib/bundles/eligibility";
-import { parseVocabularyTags } from "@/lib/bundles/vocabulary";
-import { parseBundleWarnings } from "@/lib/bundles/types";
 import { getUserLocale } from "@/i18n/locale";
 import { localizeRecords } from "@/lib/i18n/content";
 import { scheduleAutoTranslate } from "@/lib/i18n/auto-translate";
+import { createBundleSchema } from "@/lib/bundles/admin-schema";
+import { apiError, apiOk } from "@/lib/api/response";
 
 export async function GET() {
   // Lecture publique des bundles actifs (utilisé pour la page publique aussi)
@@ -33,55 +32,47 @@ export async function GET() {
     ["name", "description", "organism"],
     locale,
   );
-  return NextResponse.json(localized);
+  return apiOk(localized);
 }
 
 export async function POST(req: NextRequest) {
   const auth = await requireAdminAuth();
   if (!auth.isAuthorized) return auth.error;
 
-  let body;
-  try {
-    body = await req.json();
-  } catch {
-    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  const parsed = createBundleSchema.safeParse(
+    await req.json().catch(() => null),
+  );
+  if (!parsed.success) {
+    return apiError(400, "Données invalides", {
+      code: "validation_error",
+      details: parsed.error.flatten(),
+    });
   }
 
-  const {
-    slug,
-    name,
-    description,
-    icon,
-    color,
-    order,
-    lifeEventCategory,
-    showOnOnboarding,
-    vocabularyTags,
-    eligibilityQuestions,
-    warnings,
-  } = body || {};
-  if (!slug) return NextResponse.json({ error: "slug requis" }, { status: 400 });
-  if (!name) return NextResponse.json({ error: "name requis" }, { status: 400 });
-
-  const cleanSlug = slug.toLowerCase().replace(/[^a-z0-9-]/g, "-");
-  const dup = await prisma.documentBundle.findUnique({ where: { slug: cleanSlug } });
+  const body = parsed.data;
+  const dup = await prisma.documentBundle.findUnique({
+    where: { slug: body.slug },
+  });
   if (dup) {
-    return NextResponse.json({ error: `slug "${cleanSlug}" déjà utilisé` }, { status: 409 });
+    return apiError(409, `slug "${body.slug}" déjà utilisé`, {
+      code: "slug_conflict",
+    });
   }
 
   const created = await prisma.documentBundle.create({
     data: {
-      slug: cleanSlug,
-      name,
-      description: description || null,
-      icon: icon || null,
-      color: color || "#7C3AED",
-      order: typeof order === "number" ? order : 0,
-      lifeEventCategory: typeof lifeEventCategory === "string" ? lifeEventCategory : null,
-      showOnOnboarding: !!showOnOnboarding,
-      vocabularyTags: parseVocabularyTags(vocabularyTags) as unknown as Prisma.InputJsonValue,
-      eligibilityQuestions: parseEligibilityQuestions(eligibilityQuestions) as unknown as Prisma.InputJsonValue,
-      warnings: parseBundleWarnings(warnings) as unknown as Prisma.InputJsonValue,
+      slug: body.slug,
+      name: body.name,
+      description: body.description,
+      icon: body.icon,
+      color: body.color,
+      order: body.order,
+      lifeEventCategory: body.lifeEventCategory,
+      showOnOnboarding: body.showOnOnboarding,
+      vocabularyTags: body.vocabularyTags as unknown as Prisma.InputJsonValue,
+      eligibilityQuestions:
+        body.eligibilityQuestions as unknown as Prisma.InputJsonValue,
+      warnings: body.warnings as unknown as Prisma.InputJsonValue,
       createdBy: auth.user.id,
     },
   });
@@ -89,5 +80,5 @@ export async function POST(req: NextRequest) {
   // Auto-traduction NL/EN en arrière-plan (name + description, statut "ia").
   scheduleAutoTranslate("DocumentBundle", created.id);
 
-  return NextResponse.json(created, { status: 201 });
+  return apiOk(created, { status: 201 });
 }

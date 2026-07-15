@@ -125,7 +125,7 @@ export function checkPublishable(
   for (const t of technical) {
     if (t.required && !enrichedNames.has(t.pdfFieldName)) {
       issues.push({
-        level: "warning",
+        level: "error",
         message: `Le champ PDF requis « ${t.pdfFieldName} » n'est pas exposé dans le formulaire.`,
       });
     }
@@ -162,12 +162,12 @@ export function checkPublishable(
       if (row.status !== "conflict") continue;
       if (row.acroType === "unknown") {
         issues.push({
-          level: "warning",
+          level: "error",
           message: `Règle serveur cible un widget absent du PDF : « ${row.pdfFieldName} ».`,
         });
       } else {
         issues.push({
-          level: "warning",
+          level: "error",
           message: `Conflit de mapping sur « ${row.pdfFieldName} » — plusieurs sources écrivent la même case.`,
         });
       }
@@ -184,17 +184,17 @@ export function checkPublishable(
       const updAt = ctx.updatedAt ? new Date(ctx.updatedAt) : null;
       if (!matAt) {
         issues.push({
-          level: "warning",
+          level: "error",
           message: `${vdoc.fields.length} champ(s) visuel(s) en brouillon — cliquez sur « Appliquer au PDF » pour les matérialiser.`,
         });
       } else if (isDocDirtyVsMaterialized(vdoc)) {
         issues.push({
-          level: "warning",
+          level: "error",
           message: `Le brouillon visuel diffère du dernier PDF matérialisé — re-matérialisez pour synchroniser.`,
         });
       } else if (updAt && updAt.getTime() > matAt.getTime() + 1000) {
         issues.push({
-          level: "warning",
+          level: "error",
           message: `Modifications visuelles sauvegardées sans matérialisation depuis le ${matAt.toLocaleString("fr-BE")}.`,
         });
       }

@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { headers, cookies } from "next/headers";
 import { Prisma } from "@prisma/client";
 import { auth } from "@/lib/auth";
@@ -11,6 +11,11 @@ import { hashResumeCode } from "@/lib/bundles/resume-code-hash";
 import { parseEligibilityAnswers } from "@/lib/bundles/eligibility";
 import { trackBundleEvent } from "@/lib/bundles/analytics";
 import { ensureWriteAllowed } from "@/lib/admin/readonly-guard";
+import {
+  deriveBundleRunLifecycle,
+  EDITABLE_BUNDLE_RUN_STATUSES,
+} from "@/lib/bundles/run-lifecycle";
+import { apiError, apiOk } from "@/lib/api/response";
 
 const COOKIE_NAME = "beldoc-bundle-session";
 const ORIENTATION_COOKIE = "beldoc-orientation";
@@ -44,7 +49,7 @@ async function resolveSessionId(): Promise<string> {
   const cookieStore = await cookies();
   const existing = cookieStore.get(COOKIE_NAME)?.value;
   if (existing && existing.length >= 10) return existing;
-  const fresh = `b_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
+  const fresh = `b_${crypto.randomUUID()}`;
   cookieStore.set(COOKIE_NAME, fresh, {
     path: "/",
     maxAge: 60 * 60 * 24 * 30,
@@ -65,13 +70,15 @@ export async function GET(
   const userId = session?.user?.id || null;
   const sessionId = await resolveSessionId();
 
-  const where = userId ? { bundleId: id, userId, status: "in_progress" } : { bundleId: id, sessionId, status: "in_progress" };
+  const where = userId
+    ? { bundleId: id, userId, status: { in: [...EDITABLE_BUNDLE_RUN_STATUSES] } }
+    : { bundleId: id, sessionId, status: { in: [...EDITABLE_BUNDLE_RUN_STATUSES] } };
   const run = await prisma.bundleRun.findFirst({
     where,
     orderBy: { startedAt: "desc" },
   });
 
-  return NextResponse.json(run);
+  return apiOk(run ? { ...run, lifecycle: deriveBundleRunLifecycle(run) } : null);
 }
 
 /// POST → démarre (ou récupère) un run pour ce bundle.
@@ -87,7 +94,7 @@ export async function POST(
   const { id } = await params;
   const bundle = await prisma.documentBundle.findUnique({ where: { id } });
   if (!bundle || !bundle.active) {
-    return NextResponse.json({ error: "Bundle indisponible" }, { status: 404 });
+    return apiError(404, "Bundle indisponible", { code: "not_found" });
   }
 
   const session = await auth.api.getSession({ headers: await headers() });
@@ -105,20 +112,19 @@ export async function POST(
 
   // Récupérer un run existant in_progress pour cet utilisateur/session
   const existingWhere = userId
-    ? { bundleId: id, userId, status: "in_progress" }
-    : { bundleId: id, sessionId, status: "in_progress" };
+    ? { bundleId: id, userId, status: { in: [...EDITABLE_BUNDLE_RUN_STATUSES] } }
+    : { bundleId: id, sessionId, status: { in: [...EDITABLE_BUNDLE_RUN_STATUSES] } };
   const existing = await prisma.bundleRun.findFirst({ where: existingWhere });
   if (existing) {
     // Si des réponses d'éligibilité sont fournies, on met à jour
     if (Object.keys(eligibilityAnswers).length > 0) {
-      return NextResponse.json(
-        await prisma.bundleRun.update({
-          where: { id: existing.id },
-          data: { eligibilityAnswers },
-        })
-      );
+      const updated = await prisma.bundleRun.update({
+        where: { id: existing.id },
+        data: { eligibilityAnswers },
+      });
+      return apiOk({ ...updated, lifecycle: deriveBundleRunLifecycle(updated) });
     }
-    return NextResponse.json(existing);
+    return apiOk({ ...existing, lifecycle: deriveBundleRunLifecycle(existing) });
   }
 
   // Nouveau run : génère un code de reprise unique. Le code en CLAIR n'est
@@ -151,8 +157,8 @@ export async function POST(
 
   // Le code en CLAIR n'est renvoyé QU'ICI (affichage unique côté client) ; il
   // n'est pas stocké. Sur les visites suivantes, le run ne le contient plus.
-  return NextResponse.json(
-    { ...run, resumeCode: resumeCodePlain },
+  return apiOk(
+    { ...run, lifecycle: deriveBundleRunLifecycle(run), resumeCode: resumeCodePlain },
     { status: 201 },
   );
 }
@@ -175,16 +181,16 @@ export async function PATCH(
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+    return apiError(400, "Invalid JSON", { code: "invalid_json" });
   }
 
   // Vérifier que l'utilisateur a accès à ce run
   const where = userId
-    ? { bundleId: id, userId, status: "in_progress" }
-    : { bundleId: id, sessionId, status: "in_progress" };
+    ? { bundleId: id, userId, status: { in: [...EDITABLE_BUNDLE_RUN_STATUSES] } }
+    : { bundleId: id, sessionId, status: { in: [...EDITABLE_BUNDLE_RUN_STATUSES] } };
   const run = await prisma.bundleRun.findFirst({ where });
   if (!run) {
-    return NextResponse.json({ error: "Run introuvable" }, { status: 404 });
+    return apiError(404, "Run introuvable", { code: "not_found" });
   }
 
   const eligibilityAnswers = parseEligibilityAnswers(body?.eligibilityAnswers);
@@ -192,5 +198,5 @@ export async function PATCH(
     where: { id: run.id },
     data: { eligibilityAnswers },
   });
-  return NextResponse.json(updated);
+  return apiOk({ ...updated, lifecycle: deriveBundleRunLifecycle(updated) });
 }

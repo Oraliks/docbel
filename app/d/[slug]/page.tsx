@@ -22,6 +22,7 @@ import { parseOrientationAnswers } from "@/lib/dossiers/orientation";
 import { dossierQuestionsToEligibility, selectDocuments, type DossierAnswers } from "@/lib/dossiers/types";
 import { getLocale } from "next-intl/server";
 import { localizeRecord } from "@/lib/i18n/content";
+import { EDITABLE_BUNDLE_RUN_STATUSES } from "@/lib/bundles/run-lifecycle";
 
 export const dynamic = "force-dynamic";
 
@@ -91,8 +92,12 @@ export default async function BundleRoute({
   let run = null;
   if (userId || sessionId) {
     const where = userId
-      ? { bundleId: bundle.id, userId, status: "in_progress" }
-      : { bundleId: bundle.id, sessionId: sessionId!, status: "in_progress" };
+      ? { bundleId: bundle.id, userId, status: { in: [...EDITABLE_BUNDLE_RUN_STATUSES] } }
+      : {
+          bundleId: bundle.id,
+          sessionId: sessionId!,
+          status: { in: [...EDITABLE_BUNDLE_RUN_STATUSES] },
+        };
     run = await prisma.bundleRun.findFirst({ where, orderBy: { startedAt: "desc" } });
   }
 

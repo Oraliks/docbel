@@ -31,7 +31,7 @@ describe("checkPublishable", () => {
     expect(issues.filter((i) => i.level === "warning")).toHaveLength(0);
   });
 
-  it("brouillon visuel non matérialisé → warning non bloquant", () => {
+  it("brouillon visuel non matérialisé → erreur bloquante", () => {
     const fields = [enriched("nom")];
     const visualFieldsRaw = {
       version: 1,
@@ -43,8 +43,8 @@ describe("checkPublishable", () => {
       visualFieldsMaterializedAt: null,
       updatedAt: new Date(),
     });
-    expect(hasBlockingIssues(issues)).toBe(false);
-    expect(issues.some((i) => i.level === "warning" && /Appliquer au PDF/.test(i.message))).toBe(true);
+    expect(hasBlockingIssues(issues)).toBe(true);
+    expect(issues.some((i) => i.level === "error" && /Appliquer au PDF/.test(i.message))).toBe(true);
   });
 
   it("aucun champ → erreur bloquante", () => {
@@ -138,7 +138,7 @@ describe("checkPublishable", () => {
     expect(issues.some((i) => /Couverture AcroForm/.test(i.message))).toBe(false);
   });
 
-  it("couverture AcroForm : règle serveur qui cible un widget absent → warning", () => {
+  it("couverture AcroForm : règle serveur qui cible un widget absent → erreur bloquante", () => {
     const fields = [enriched("a")];
     const technical = [raw("a")];
     const issues = checkPublishable(fields, technical, ["fr"], {
@@ -146,8 +146,9 @@ describe("checkPublishable", () => {
     });
     const bad = issues.find((i) => /widget absent du PDF/.test(i.message));
     expect(bad).toBeDefined();
-    expect(bad!.level).toBe("warning");
+    expect(bad!.level).toBe("error");
     expect(bad!.message).toContain("widget_absent");
+    expect(hasBlockingIssues(issues)).toBe(true);
   });
 
   it("couverture AcroForm : ne bloque JAMAIS la publication (warning uniquement)", () => {
@@ -155,5 +156,32 @@ describe("checkPublishable", () => {
     const technical = [raw("a"), raw("b"), raw("c"), raw("d")]; // 75% orphelins
     const issues = checkPublishable(fields, technical, ["fr"]);
     expect(hasBlockingIssues(issues)).toBe(false);
+  });
+
+  it("un widget PDF requis non exposé bloque la publication", () => {
+    const requiredRaw = {
+      ...raw("signature_requise"),
+      required: true,
+    };
+    const issues = checkPublishable([enriched("nom")], [raw("nom"), requiredRaw], ["fr"]);
+    expect(
+      issues.some(
+        (issue) =>
+          issue.level === "error" && /signature_requise/.test(issue.message),
+      ),
+    ).toBe(true);
+    expect(hasBlockingIssues(issues)).toBe(true);
+  });
+
+  it("une collision entre un champ et une règle serveur bloque la publication", () => {
+    const issues = checkPublishable([enriched("nom")], [raw("nom")], ["fr"], {
+      bindingRules: [{ name: "override-nom", stamp: [{ widget: "nom", value: "X" }] }],
+    });
+    expect(
+      issues.some(
+        (issue) => issue.level === "error" && /Conflit de mapping/.test(issue.message),
+      ),
+    ).toBe(true);
+    expect(hasBlockingIssues(issues)).toBe(true);
   });
 });

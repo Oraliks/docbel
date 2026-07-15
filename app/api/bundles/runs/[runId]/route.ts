@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies, headers } from "next/headers";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { isBundleRunEditable } from "@/lib/bundles/run-lifecycle";
 
 const BUNDLE_COOKIE = "beldoc-bundle-session";
 
@@ -39,7 +40,7 @@ export async function DELETE(
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  if (run.status !== "in_progress") {
+  if (!isBundleRunEditable(run)) {
     // Déjà fini / abandonné — opération idempotente, on renvoie ok.
     return NextResponse.json({ ok: true, alreadyClosed: true });
   }

@@ -8,6 +8,21 @@ Chaque étape indique commande + fichier + garde-fou associé.
 > chiffrement). Testé avec les documents ONEM v01.2024. Si le PDF n'a pas
 > d'AcroForm ou est corrompu, l'inférence renverra 0 widget.
 
+## Choisir le mode du dossier
+
+Deux modes coexistent volontairement :
+
+- **Mode no-code** : dossier créé dans `/admin/pdf/dossiers`. Les métadonnées,
+  documents, conditions, questions et avertissements enregistrés en base sont
+  directement servis au citoyen.
+- **Mode avancé** : le slug est enregistré dans `lib/dossiers/registry.ts`. Le
+  questionnaire et les règles d'applicabilité viennent alors du module
+  `lib/dossiers/<slug>/index.ts` et sont affichés en lecture seule dans l'admin.
+
+Utiliser le mode avancé uniquement lorsqu'il faut des responsabilités tierces,
+un parcours d'introduction, de la théorie/procédure ou une logique métier qui ne
+peut pas être exprimée par l'arbre de conditions no-code.
+
 ---
 
 ## 1. Déposer le PDF source

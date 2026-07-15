@@ -15,6 +15,8 @@ import {
   Eye,
   GitBranch,
   ExternalLink,
+  CheckCircle2,
+  AlertTriangle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,6 +24,11 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+} from "@/components/ui/alert";
 import {
   Select,
   SelectContent,
@@ -61,6 +68,8 @@ export interface BundleEditorItem {
     slug: string;
     title: string;
     issuer: string | null;
+    status: "draft" | "published" | "archived";
+    active: boolean;
   } | null;
 }
 
@@ -110,6 +119,8 @@ export interface AvailablePdfForm {
   slug: string;
   title: string;
   issuer: string | null;
+  status: "draft" | "published" | "archived";
+  active: boolean;
 }
 
 interface Props {
@@ -120,6 +131,9 @@ interface Props {
   templateSchemas: Record<string, SchemaField[]>;
   /// Arbres d'orientation qui pointent vers ce dossier (intégrité référentielle).
   references?: BundleReference[];
+  /// Le questionnaire et l'applicabilité des documents viennent alors du
+  /// module `lib/dossiers/<slug>` et ne doivent pas être édités comme du JSON DB.
+  codeDriven?: boolean;
 }
 
 export function BundleEditor({
@@ -127,6 +141,7 @@ export function BundleEditor({
   availablePdfForms,
   templateSchemas,
   references = [],
+  codeDriven = false,
 }: Props) {
   const router = useRouter();
   const t = useTranslations("admin.documents");
@@ -157,6 +172,14 @@ export function BundleEditor({
   const [formWarnings, setFormWarnings] = useState<BundleWarning[]>(
     initial ? parseBundleWarnings(initial.warnings) : []
   );
+  const unavailableDocumentCount = formItems.filter(
+    (item) =>
+      !item.pdfForm ||
+      item.pdfForm.status !== "published" ||
+      !item.pdfForm.active,
+  ).length;
+  const dossierReady =
+    formItems.length > 0 && unavailableDocumentCount === 0;
 
   function addItem(sourceValue: string) {
     const [kind, id] = sourceValue.split(":");
@@ -237,7 +260,9 @@ export function BundleEditor({
           lifeEventCategory: formLifeEventCategory || null,
           showOnOnboarding: formShowOnOnboarding,
           vocabularyTags: formVocabularyTags,
-          eligibilityQuestions: formEligibilityQuestions,
+          ...(!codeDriven
+            ? { eligibilityQuestions: formEligibilityQuestions }
+            : {}),
           warnings: formWarnings,
           items: formItems.map((it, idx) => ({
             pdfFormId: it.pdfFormId,
@@ -263,7 +288,7 @@ export function BundleEditor({
   }
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto">
+    <div className="flex w-full flex-col gap-6">
       {/* Header */}
       <div className="flex items-center gap-3 flex-wrap">
         <Button render={<Link href="/admin/pdf/dossiers" />} variant="ghost" size="sm">
@@ -317,23 +342,58 @@ export function BundleEditor({
         </div>
       </div>
 
+      <Alert>
+        <GitBranch />
+        <AlertTitle className="flex items-center gap-2">
+          {codeDriven ? t("codeDrivenTitle") : t("databaseDrivenTitle")}
+          <Badge variant="secondary">
+            {codeDriven ? t("advancedModeBadge") : t("noCodeModeBadge")}
+          </Badge>
+        </AlertTitle>
+        <AlertDescription className="flex flex-col gap-2">
+          <p>
+            {codeDriven
+              ? t("codeDrivenDescription")
+              : t("databaseDrivenDescription")}
+          </p>
+          {codeDriven && (
+            <p>
+              {t("codeDrivenSource")} {" "}
+              <code className="rounded bg-muted px-1.5 py-0.5 text-xs text-foreground">
+                lib/dossiers/{initial?.slug}/index.ts
+              </code>
+            </p>
+          )}
+        </AlertDescription>
+      </Alert>
+
+      <Alert variant={dossierReady ? "default" : "destructive"}>
+        {dossierReady ? <CheckCircle2 /> : <AlertTriangle />}
+        <AlertTitle>
+          {dossierReady ? t("dossierReadyTitle") : t("dossierNotReadyTitle")}
+        </AlertTitle>
+        <AlertDescription>
+          {formItems.length === 0
+            ? t("dossierNoDocuments")
+            : unavailableDocumentCount > 0
+              ? t("dossierUnavailableDocuments", {
+                  count: unavailableDocumentCount,
+                })
+              : t("dossierReadyDescription")}
+        </AlertDescription>
+      </Alert>
+
       {/* Intégrité référentielle : arbres d'orientation pointant vers ce dossier.
           Libellés en FR (panneau neuf) — cohérent avec la grammaire admin récente. */}
       {isEdit && references.length > 0 && (
-        <Card className="border-amber-300 bg-amber-50/40 dark:bg-amber-950/20">
-          <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
-              <GitBranch className="w-4 h-4 text-primary" />
-              Référencé par {references.length} arbre
-              {references.length > 1 ? "s" : ""} d&apos;orientation
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <p className="text-xs text-muted-foreground">
-              Désactiver, supprimer ou renommer le slug de ce dossier orphelinerait
-              ces parcours. Vérifiez-les avant toute modification structurelle.
-            </p>
-            <ul className="space-y-1.5">
+        <Alert>
+          <GitBranch />
+          <AlertTitle>
+            {t("referencedByTrees", { count: references.length })}
+          </AlertTitle>
+          <AlertDescription className="flex flex-col gap-2">
+            <p>{t("referencedByTreesDescription")}</p>
+            <ul className="flex flex-col gap-1.5">
               {references.map((ref) => (
                 <li
                   key={ref.treeId}
@@ -361,8 +421,8 @@ export function BundleEditor({
                 </li>
               ))}
             </ul>
-          </CardContent>
-        </Card>
+          </AlertDescription>
+        </Alert>
       )}
 
       {/* Section : Identité */}
@@ -603,13 +663,43 @@ export function BundleEditor({
       {/* Section : Pré-qualification */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">{t("prequalSection")}</CardTitle>
+          <CardTitle className="flex items-center gap-2 text-base">
+            {t("prequalSection")}
+            {codeDriven && (
+              <Badge variant="secondary">{t("readOnlyBadge")}</Badge>
+            )}
+          </CardTitle>
         </CardHeader>
         <CardContent>
-          <EligibilityQuestionsEditor
-            value={formEligibilityQuestions}
-            onChange={setFormEligibilityQuestions}
-          />
+          {codeDriven ? (
+            <div className="space-y-3">
+              <p className="text-sm text-muted-foreground">
+                {t("codeDrivenQuestionsHint", {
+                  count: formEligibilityQuestions.length,
+                })}
+              </p>
+              {formEligibilityQuestions.length > 0 && (
+                <ol className="space-y-2">
+                  {formEligibilityQuestions.map((question, index) => (
+                    <li
+                      key={question.id}
+                      className="flex gap-3 rounded-md border bg-muted/20 px-3 py-2 text-sm"
+                    >
+                      <span className="font-mono text-xs text-muted-foreground">
+                        {index + 1}.
+                      </span>
+                      <span>{question.label}</span>
+                    </li>
+                  ))}
+                </ol>
+              )}
+            </div>
+          ) : (
+            <EligibilityQuestionsEditor
+              value={formEligibilityQuestions}
+              onChange={setFormEligibilityQuestions}
+            />
+          )}
         </CardContent>
       </Card>
 

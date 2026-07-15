@@ -10,7 +10,15 @@ export const dynamic = "force-dynamic";
 export default async function NewBundlePage() {
   const pdfForms = await prisma.pdfForm.findMany({
     where: { status: "published" },
-    select: { id: true, slug: true, title: true, issuer: true, fields: true },
+    select: {
+      id: true,
+      slug: true,
+      title: true,
+      issuer: true,
+      status: true,
+      active: true,
+      fields: true,
+    },
     orderBy: { title: "asc" },
   });
 
@@ -19,6 +27,8 @@ export default async function NewBundlePage() {
     slug: p.slug,
     title: p.title,
     issuer: p.issuer,
+    status: p.status,
+    active: p.active,
   }));
 
   // Schémas par PdfForm pour l'éditeur de conditions cross-form.

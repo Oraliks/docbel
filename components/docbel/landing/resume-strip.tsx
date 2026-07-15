@@ -26,6 +26,7 @@ export interface ResumeStripRun {
   completed: number;
   total: number;
   startedAt: string;
+  lifecycle: "in_progress" | "completed_editable";
 }
 
 interface ResumeStripProps {
@@ -74,15 +75,19 @@ export function ResumeStrip({ run }: ResumeStripProps) {
 
   if (dismissed) return null;
 
-  const pct =
-    run.total > 0
+  const completed = run.lifecycle === "completed_editable";
+  const pct = completed
+    ? 100
+    : run.total > 0
       ? Math.min(100, Math.round((run.completed / run.total) * 100))
       : 0;
   // Phrase de progression (pluriels via ICU) — réutilisée desktop/mobile/aria.
-  const progressText = t("resumeProgress", {
-    completed: run.completed,
-    total: run.total,
-  });
+  const progressText = completed
+    ? t("resumeCompletedProgress")
+    : t("resumeProgress", {
+        completed: run.completed,
+        total: run.total,
+      });
 
   const dismiss = () => {
     setDismissed(true);
@@ -99,7 +104,11 @@ export function ResumeStrip({ run }: ResumeStripProps) {
 
   return (
     <aside
-      aria-label={t("resumeAriaLabel", { name: run.name })}
+      aria-label={
+        completed
+          ? t("resumeCompletedAriaLabel", { name: run.name })
+          : t("resumeAriaLabel", { name: run.name })
+      }
       className="glass-surface relative flex w-full animate-[fadeInUp_0.45s_ease] flex-wrap items-center gap-x-4 gap-y-3 px-4 py-3 motion-reduce:animate-none sm:flex-nowrap sm:px-5"
     >
       {/* Pastille dossier — accent violet, icône Phosphor duotone. */}
@@ -122,7 +131,9 @@ export function ResumeStrip({ run }: ResumeStripProps) {
       <div className="min-w-0 flex-1">
         <p className="truncate text-[13px] leading-snug text-[color:var(--glass-ink-soft)]">
           <span className="font-bold text-[color:var(--glass-ink)]">
-            {t("resumeTitle", { name: run.name })}
+            {completed
+              ? t("resumeCompletedTitle", { name: run.name })
+              : t("resumeTitle", { name: run.name })}
           </span>
           <span className="hidden sm:inline">
             {" — "}
@@ -164,7 +175,7 @@ export function ResumeStrip({ run }: ResumeStripProps) {
           href={`/d/${run.slug}?demarrer=1`}
           className="glass-cta inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-[12.5px] font-bold"
         >
-          {t("resumeCta")}
+          {completed ? t("resumeCompletedCta") : t("resumeCta")}
           <ArrowRightIcon className="size-3.5" />
         </Link>
         <button

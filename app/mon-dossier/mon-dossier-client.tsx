@@ -217,7 +217,12 @@ function HelpRow({
 /* ── Zone « Reprendre un dossier » : dernier dossier local + code BELDOC ── */
 function ActiveRunCard({ run }: { run: ActiveBundleRun }) {
   const t = useTranslations("public.dossier");
-  const pct = run.total > 0 ? Math.round((run.completed / run.total) * 100) : 0;
+  const completed = run.lifecycle === "completed_editable";
+  const pct = completed
+    ? 100
+    : run.total > 0
+      ? Math.round((run.completed / run.total) * 100)
+      : 0;
   const hue = run.color || "var(--glass-accent-deep)";
   return (
     <Link
@@ -246,11 +251,16 @@ function ActiveRunCard({ run }: { run: ActiveBundleRun }) {
             {run.name}
           </span>
           <span className="text-[12px] text-[color:var(--glass-ink-faint)]">
-            {t("runProgress", { completed: run.completed, total: run.total })}
+            {completed
+              ? t("runCompletedEditable")
+              : t("runProgress", {
+                  completed: run.completed,
+                  total: run.total,
+                })}
           </span>
         </span>
         <span className="inline-flex items-center gap-1 text-[12.5px] font-bold text-[color:var(--glass-accent-deep)]">
-          {t("resume")}
+          {completed ? t("reviewCompletedRun") : t("resume")}
           <ArrowRight
             className="size-3.5 transition-transform group-hover:translate-x-0.5"
             aria-hidden

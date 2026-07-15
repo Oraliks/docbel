@@ -7,7 +7,6 @@ import {
   type BundleEditorItem,
 } from "@/components/admin/documents/bundle-editor";
 import type { BundleCondition } from "@/lib/bundles/conditions";
-import { parseEligibilityQuestions } from "@/lib/bundles/eligibility";
 import { getDossier } from "@/lib/dossiers/registry";
 import { dossierQuestionsToEligibility } from "@/lib/dossiers/types";
 import { findTreesReferencingBundle } from "@/lib/decision-builder/references";
@@ -29,14 +28,31 @@ export default async function EditBundlePage({
         items: {
           orderBy: { order: "asc" },
           include: {
-            pdfForm: { select: { id: true, slug: true, title: true, issuer: true } },
+            pdfForm: {
+              select: {
+                id: true,
+                slug: true,
+                title: true,
+                issuer: true,
+                status: true,
+                active: true,
+              },
+            },
           },
         },
       },
     }),
     prisma.pdfForm.findMany({
       where: { status: "published" },
-      select: { id: true, slug: true, title: true, issuer: true, fields: true },
+      select: {
+        id: true,
+        slug: true,
+        title: true,
+        issuer: true,
+        status: true,
+        active: true,
+        fields: true,
+      },
       orderBy: { title: "asc" },
     }),
   ]);
@@ -51,6 +67,8 @@ export default async function EditBundlePage({
     slug: p.slug,
     title: p.title,
     issuer: p.issuer,
+    status: p.status,
+    active: p.active,
   }));
 
   // Schémas par PdfForm pour l'éditeur de conditions cross-form.
@@ -85,20 +103,18 @@ export default async function EditBundlePage({
           slug: it.pdfForm.slug,
           title: it.pdfForm.title,
           issuer: it.pdfForm.issuer,
+          status: it.pdfForm.status,
+          active: it.pdfForm.active,
         }
       : null,
   }));
 
-  // Si un dossier code-driven (DossierDefinition) existe pour ce slug ET que
-  // le champ DB `eligibilityQuestions` est vide, on pré-remplit l'éditeur
-  // avec les questions venues du code. L'admin voit ainsi le questionnaire
-  // réellement servi à l'utilisateur sur /d/<slug> (qui priorise le code).
-  // L'admin peut ensuite éditer / sauvegarder pour figer la version DB —
-  // le runtime continue à prendre le code en priorité si dossier existe.
-  const existingQuestions = parseEligibilityQuestions(bundle.eligibilityQuestions);
+  // Pour un dossier piloté par code, afficher sans ambiguïté les questions
+  // réellement servies par le runtime. Leur copie DB peut être ancienne et
+  // n'est jamais la source de vérité tant que le module est enregistré.
   const codeDossier = getDossier(bundle.slug);
   const effectiveEligibilityQuestions =
-    existingQuestions.length === 0 && codeDossier
+    codeDossier
       ? dossierQuestionsToEligibility(codeDossier.questions)
       : bundle.eligibilityQuestions;
 
@@ -126,6 +142,7 @@ export default async function EditBundlePage({
         availablePdfForms={availablePdfForms}
         templateSchemas={templateSchemas}
         references={references}
+        codeDriven={Boolean(codeDossier)}
       />
     </div>
   );

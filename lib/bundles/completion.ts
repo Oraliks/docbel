@@ -17,6 +17,7 @@ import type { BundleCondition } from "@/lib/bundles/conditions";
 import { parseEligibilityAnswers } from "@/lib/bundles/eligibility";
 import { getDossier } from "@/lib/dossiers/registry";
 import { selectDocuments, type DossierAnswers } from "@/lib/dossiers/types";
+import { isBundleRunEditable } from "@/lib/bundles/run-lifecycle";
 
 export interface MissingDoc {
   slug: string;
@@ -102,7 +103,7 @@ export async function loadDossierState(
       },
     },
   });
-  if (!run || run.status !== "in_progress") return null;
+  if (!run || !isBundleRunEditable(run)) return null;
   const owns = ownership.userId
     ? run.userId === ownership.userId
     : ownership.sessionId

@@ -1,6 +1,11 @@
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { getServerAuthSession } from "@/lib/auth-session";
+import {
+  deriveBundleRunLifecycle,
+  EDITABLE_BUNDLE_RUN_STATUSES,
+  type BundleRunLifecycle,
+} from "@/lib/bundles/run-lifecycle";
 
 /**
  * Cookie anonyme posé par le parcours dossier — même nom que dans
@@ -30,6 +35,7 @@ export interface ActiveBundleRun {
   total: number;
   /** Date de démarrage du parcours (ISO) — sérialisable vers le client. */
   startedAt: string;
+  lifecycle: Extract<BundleRunLifecycle, "in_progress" | "completed_editable">;
 }
 
 /**
@@ -64,11 +70,17 @@ export async function loadActiveBundleRun(
     // findFirst + orderBy = le run en cours le plus récent, requête bornée.
     const run = await prisma.bundleRun.findFirst({
       where: userId
-        ? { userId, status: "in_progress" }
-        : { sessionId: sessionId as string, status: "in_progress" },
+        ? { userId, status: { in: [...EDITABLE_BUNDLE_RUN_STATUSES] } }
+        : {
+            sessionId: sessionId as string,
+            status: { in: [...EDITABLE_BUNDLE_RUN_STATUSES] },
+          },
       orderBy: { startedAt: "desc" },
       select: {
         startedAt: true,
+        status: true,
+        completedAt: true,
+        anonymizedAt: true,
         completedTemplateIds: true,
         bundle: {
           select: {
@@ -90,6 +102,8 @@ export async function loadActiveBundleRun(
       ? (run.completedTemplateIds as string[])
       : [];
     const total = run.bundle.items.length;
+    const lifecycle = deriveBundleRunLifecycle(run);
+    if (lifecycle === "abandoned" || lifecycle === "anonymized") return null;
 
     return {
       slug: run.bundle.slug,
@@ -100,6 +114,7 @@ export async function loadActiveBundleRun(
       completed: Math.min(completedIds.length, total),
       total,
       startedAt: run.startedAt.toISOString(),
+      lifecycle,
     };
   } catch {
     return null;

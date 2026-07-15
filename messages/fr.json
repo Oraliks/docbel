@@ -3311,6 +3311,28 @@
           "test": "Tester",
           "validation": "Validation",
           "publication": "Publication"
+        },
+        "json": {
+          "menu": "Importer ou exporter l'arbre",
+          "export": "Exporter le brouillon JSON",
+          "import": "Importer un fichier JSON",
+          "exportSuccess": "Arbre exporté en JSON.",
+          "importSuccess": "Arbre importé dans le brouillon.",
+          "fileTooLarge": "Ce fichier dépasse la limite de 2 Mo.",
+          "errors": {
+            "invalid_json": "Le fichier n'est pas un JSON valide.",
+            "unsupported_format": "Cette version du format d'arbre n'est pas prise en charge.",
+            "invalid_tree": "Le JSON ne contient pas un arbre de décision valide."
+          },
+          "dialog": {
+            "title": "Importer cet arbre ?",
+            "description": "Vérifiez le contenu détecté avant de remplacer le brouillon courant.",
+            "questions": "questions",
+            "draftOnlyTitle": "Importation sans publication",
+            "draftOnlyDescription": "Le JSON remplacera uniquement le brouillon. La version visible dans /mon-dossier restera inchangée jusqu'à une publication manuelle.",
+            "cancel": "Annuler",
+            "confirm": "Importer dans le brouillon"
+          }
         }
       },
       "list": {

@@ -4,14 +4,18 @@
 /// Arbre / Détails / Tester / Validation / Publication. Topbar sticky avec
 /// statut, auto-save, valider, historique, publier.
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { toast } from "sonner";
 import {
   ArrowLeft,
+  ChevronDown,
   CheckCircle2,
   CircleDot,
+  Download,
   FileCheck2,
+  FileJson,
   GitBranch,
   History,
   Info,
@@ -22,6 +26,7 @@ import {
   Settings2,
   ShieldCheck,
   TriangleAlert,
+  Upload,
   UploadCloud,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -31,7 +36,30 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { addRootQuestion, setNodePosition } from "@/lib/decision-builder/mutations";
+import {
+  DecisionTreeImportError,
+  decisionTreeFileName,
+  parseDecisionTreeJson,
+  serializeDecisionTree,
+} from "@/lib/decision-builder/json-transfer";
 import type { ValidationReport, Violation } from "@/lib/decision-builder/validator";
 import type { DecisionTreeContent } from "@/lib/decision-builder/types";
 import { DecisionCanvas } from "./canvas";
@@ -49,6 +77,9 @@ export function TreeEditor({ treeId }: { treeId: string }) {
   const [tab, setTab] = useState("arbre");
   const [changeNotes, setChangeNotes] = useState("");
   const [versionsOpen, setVersionsOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
+  const [pendingImport, setPendingImport] = useState<DecisionTreeContent | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const violations = useMemo(() => violationMap(report), [report]);
 
@@ -68,6 +99,54 @@ export function TreeEditor({ treeId }: { treeId: string }) {
   async function handleValidate() {
     const r = await data.validate();
     if (r) setTab(r.publishable ? "publication" : "validation");
+  }
+
+  function handleExportJson() {
+    if (!meta || !content) return;
+    const json = serializeDecisionTree(
+      { slug: meta.slug, title: meta.title, segment: meta.segment },
+      content,
+    );
+    const url = URL.createObjectURL(
+      new Blob([json], { type: "application/json;charset=utf-8" }),
+    );
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = decisionTreeFileName(meta.slug);
+    document.body.append(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+    toast.success(t("json.exportSuccess"));
+  }
+
+  async function handleImportFile(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.currentTarget.files?.[0];
+    event.currentTarget.value = "";
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error(t("json.fileTooLarge"));
+      return;
+    }
+    try {
+      const imported = parseDecisionTreeJson(await file.text());
+      setPendingImport(imported);
+      setImportOpen(true);
+    } catch (error) {
+      const code =
+        error instanceof DecisionTreeImportError ? error.code : "invalid_json";
+      toast.error(t(`json.errors.${code}`));
+    }
+  }
+
+  function confirmImport() {
+    if (!pendingImport) return;
+    setContent(pendingImport);
+    setSelectedId(null);
+    setImportOpen(false);
+    setPendingImport(null);
+    setTab("arbre");
+    toast.success(t("json.importSuccess"));
   }
 
   const statusBadge =
@@ -121,6 +200,35 @@ export function TreeEditor({ treeId }: { treeId: string }) {
         </span>
 
         <div className="ml-auto flex items-center gap-1.5">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="application/json,.json"
+            className="sr-only"
+            onChange={(event) => void handleImportFile(event)}
+          />
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              render={
+                <Button variant="outline" size="sm" aria-label={t("json.menu")} />
+              }
+            >
+              <FileJson data-icon="inline-start" />
+              <span className="hidden xl:inline">JSON</span>
+              <ChevronDown data-icon="inline-end" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuGroup>
+                <DropdownMenuLabel>{t("json.menu")}</DropdownMenuLabel>
+                <DropdownMenuItem onClick={handleExportJson}>
+                  <Download /> {t("json.export")}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => fileInputRef.current?.click()}>
+                  <Upload /> {t("json.import")}
+                </DropdownMenuItem>
+              </DropdownMenuGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <Button variant="outline" size="sm" onClick={handleValidate} disabled={busy === "validate"}>
             {busy === "validate" ? (
               <Loader2 className="size-4 animate-spin" />
@@ -313,6 +421,58 @@ export function TreeEditor({ treeId }: { treeId: string }) {
           setSelectedId(null);
         }}
       />
+
+      <Dialog
+        open={importOpen}
+        onOpenChange={(open) => {
+          setImportOpen(open);
+          if (!open) setPendingImport(null);
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t("json.dialog.title")}</DialogTitle>
+            <DialogDescription>{t("json.dialog.description")}</DialogDescription>
+          </DialogHeader>
+          {pendingImport && (
+            <div className="flex flex-col gap-4">
+              <div className="grid grid-cols-3 gap-3 rounded-lg border bg-muted/30 p-3 text-center">
+                <div>
+                  <p className="text-lg font-semibold tabular-nums">
+                    {Object.keys(pendingImport.nodes).length}
+                  </p>
+                  <p className="text-xs text-muted-foreground">{t("nodes")}</p>
+                </div>
+                <div>
+                  <p className="text-lg font-semibold tabular-nums">
+                    {Object.values(pendingImport.nodes).filter((node) => node.type === "question").length}
+                  </p>
+                  <p className="text-xs text-muted-foreground">{t("json.dialog.questions")}</p>
+                </div>
+                <div>
+                  <p className="text-lg font-semibold tabular-nums">
+                    {Object.values(pendingImport.nodes).filter((node) => node.type === "result").length}
+                  </p>
+                  <p className="text-xs text-muted-foreground">{t("results")}</p>
+                </div>
+              </div>
+              <Alert>
+                <Info />
+                <AlertTitle>{t("json.dialog.draftOnlyTitle")}</AlertTitle>
+                <AlertDescription>{t("json.dialog.draftOnlyDescription")}</AlertDescription>
+              </Alert>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setImportOpen(false)}>
+              {t("json.dialog.cancel")}
+            </Button>
+            <Button onClick={confirmImport} disabled={!pendingImport}>
+              <Upload data-icon="inline-start" /> {t("json.dialog.confirm")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -35,6 +35,13 @@ import {
 } from "lucide-react";
 import { BundleRunner } from "./bundle-runner";
 import { JourneyHeroIllustration } from "./journey-hero-illustration";
+import { AccessibilityToolbar } from "./accessibility-toolbar";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import type { DossierJourneyStep, JourneyStepIcon } from "@/lib/dossiers/types";
 import type { JourneyWarning, JourneyDocument } from "@/lib/dossiers/journey";
 
@@ -110,10 +117,10 @@ function JourneyCompactPath({ className }: { className?: string }) {
                 </span>
               ) : null}
             </span>
-            <span className="text-[13px] font-semibold leading-snug text-[color:var(--glass-ink)]">
+            <span className="text-base font-semibold leading-snug text-[color:var(--glass-ink)]">
               {td(titleKey)}
             </span>
-            <span className="max-w-[92px] text-[11px] leading-[1.4] text-[color:var(--glass-ink-soft)]">
+            <span className="max-w-28 text-sm leading-relaxed text-[color:var(--glass-ink-soft)]">
               {td(bodyKey)}
             </span>
           </div>
@@ -126,7 +133,7 @@ function JourneyCompactPath({ className }: { className?: string }) {
 export function DossierJourneyIntro({
   journey,
   warnings,
-  documents: _documents,
+  documents,
   ctaLabel,
   ctaLabelKey,
   ...runnerProps
@@ -154,7 +161,7 @@ export function DossierJourneyIntro({
   const cta = resolve(ctaLabelKey, ctaLabel);
 
   return (
-    <section className="relative flex w-full flex-col gap-8">
+    <section className="relative flex w-full flex-col gap-8" data-docbel-readable>
       {/* Décor pastel très doux (blanc → lavande → rose → beige) */}
       <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
         <div
@@ -171,19 +178,21 @@ export function DossierJourneyIntro({
         />
       </div>
 
+      <AccessibilityToolbar />
+
       {/* ══ Hero — compact pour allocations-insertion (maquette), sinon mise en page historique ══ */}
       {runnerProps.bundle.slug === "allocations-insertion" ? (
         <header className="flex flex-col gap-7 lg:flex-row lg:items-center lg:justify-between lg:gap-10">
           <div className="flex max-w-[520px] flex-col gap-4">
             <div>
               <h1
-                className="glass-display text-[28px] font-semibold leading-[1.08] text-[color:var(--glass-ink)] sm:text-[34px]"
+                className="glass-display text-4xl font-semibold leading-tight text-[color:var(--glass-ink)] sm:text-5xl"
                 style={{ fontVariationSettings: "'WONK' 0, 'SOFT' 0", fontFeatureSettings: "'swsh' 0, 'salt' 0" }}
               >
                 {runnerProps.bundle.name}
               </h1>
               {runnerProps.bundle.description ? (
-                <p className="mt-2.5 text-[14px] leading-[1.55] text-[color:var(--glass-ink-soft)]">
+                <p className="mt-3 text-lg leading-relaxed text-[color:var(--glass-ink-soft)]">
                   {runnerProps.bundle.description}
                 </p>
               ) : null}
@@ -192,14 +201,14 @@ export function DossierJourneyIntro({
               <button
                 type="button"
                 onClick={start}
-                className="glass-cta inline-flex items-center gap-2 rounded-full px-6 py-3 text-[13.5px] font-bold shadow-[0_12px_32px_-10px_rgba(91,70,229,0.55)]"
+                className="glass-cta inline-flex min-h-12 items-center gap-2 rounded-full px-6 py-3 text-base font-bold shadow-[0_12px_32px_-10px_rgba(91,70,229,0.55)]"
               >
                 {cta}
                 <ArrowRight className="size-4" aria-hidden />
               </button>
               <a
                 href="#etapes-demande"
-                className="inline-flex items-center gap-2 rounded-full border px-5 py-3 text-[13.5px] font-semibold text-[color:var(--glass-ink)] transition-colors hover:bg-[color:color-mix(in_oklab,var(--glass-accent-a)_12%,transparent)]"
+                className="inline-flex min-h-12 items-center gap-2 rounded-full border px-5 py-3 text-base font-semibold text-[color:var(--glass-ink)] transition-colors hover:bg-[color:color-mix(in_oklab,var(--glass-accent-a)_12%,transparent)]"
                 style={{ borderColor: "color-mix(in oklab, var(--glass-accent-a) 45%, transparent)" }}
               >
                 <Info className="size-4" aria-hidden />
@@ -217,8 +226,8 @@ export function DossierJourneyIntro({
                 <div key={titleKey} className="flex items-start gap-2">
                   <Icon className="mt-0.5 size-4 shrink-0 text-[color:var(--glass-accent-deep)]" aria-hidden />
                   <div>
-                    <p className="text-[12px] font-semibold leading-tight text-[color:var(--glass-ink)]">{td(titleKey)}</p>
-                    <p className="text-[11px] leading-tight text-[color:var(--glass-ink-soft)]">{td(bodyKey)}</p>
+                    <p className="text-sm font-semibold leading-tight text-[color:var(--glass-ink)]">{td(titleKey)}</p>
+                    <p className="text-sm leading-relaxed text-[color:var(--glass-ink-soft)]">{td(bodyKey)}</p>
                   </div>
                 </div>
               ))}
@@ -230,16 +239,24 @@ export function DossierJourneyIntro({
         <header className="grid items-center gap-4 lg:grid-cols-[1.1fr_0.9fr] lg:items-start">
           <div className="flex flex-col">
             <h1
-              className="glass-display text-[34px] font-semibold leading-[1.03] text-[color:var(--glass-ink)] sm:text-[46px]"
+              className="glass-display text-4xl font-semibold leading-tight text-[color:var(--glass-ink)] sm:text-5xl"
               style={{ fontVariationSettings: "'WONK' 0, 'SOFT' 0", fontFeatureSettings: "'swsh' 0, 'salt' 0" }}
             >
               {runnerProps.bundle.name}
             </h1>
             {runnerProps.bundle.description ? (
-              <p className="mt-3 max-w-[420px] text-[14.5px] leading-[1.6] text-[color:var(--glass-ink-soft)]">
+              <p className="mt-3 max-w-xl text-lg leading-relaxed text-[color:var(--glass-ink-soft)]">
                 {runnerProps.bundle.description}
               </p>
             ) : null}
+            <button
+              type="button"
+              onClick={start}
+              className="glass-cta mt-5 inline-flex min-h-12 w-fit items-center gap-2 rounded-full px-6 py-3 text-base font-bold shadow-[0_12px_32px_-10px_rgba(91,70,229,0.55)]"
+            >
+              {cta}
+              <ArrowRight aria-hidden />
+            </button>
           </div>
           <JourneyHeroIllustration className="h-auto w-full max-w-[420px] justify-self-center lg:justify-self-end" />
         </header>
@@ -269,10 +286,10 @@ export function DossierJourneyIntro({
                 >
                   <Icon className="size-6" strokeWidth={1.7} />
                 </span>
-                <span className="text-[14.5px] font-semibold leading-snug text-[color:var(--glass-ink)]">
+                <span className="text-base font-bold leading-snug text-[color:var(--glass-ink)]">
                   {resolve(step.titleKey, step.title)}
                 </span>
-                <span className="text-[12px] leading-[1.5] text-[color:var(--glass-ink-soft)]">
+                <span className="text-sm leading-relaxed text-[color:var(--glass-ink-soft)]">
                   {resolve(step.bodyKey, step.body)}
                 </span>
               </div>
@@ -284,7 +301,7 @@ export function DossierJourneyIntro({
       {/* ══ À savoir avant de commencer ══ */}
       {warnings.length > 0 ? (
         <div className="flex flex-col gap-4">
-          <h2 className="glass-display w-fit text-[20px] font-semibold text-[color:var(--glass-ink)]">
+          <h2 className="glass-display w-fit text-2xl font-semibold text-[color:var(--glass-ink)]">
             {td("journeyConditionsTitle")}
             <span className="mt-1.5 block h-[3px] w-12 rounded-full bg-[color:var(--glass-accent-deep)]" />
           </h2>
@@ -317,10 +334,10 @@ export function DossierJourneyIntro({
                   >
                     <WIcon className="size-[18px]" strokeWidth={1.8} />
                   </span>
-                  <p className="text-[13.5px] font-semibold leading-snug text-[color:var(--glass-ink)]">
+                  <p className="text-base font-bold leading-snug text-[color:var(--glass-ink)]">
                     {title}
                   </p>
-                  <p className="text-[12px] leading-[1.5] text-[color:var(--glass-ink-soft)]">
+                  <p className="text-sm leading-relaxed text-[color:var(--glass-ink-soft)]">
                     {message}
                   </p>
                 </div>
@@ -328,6 +345,39 @@ export function DossierJourneyIntro({
             })}
           </div>
         </div>
+      ) : null}
+
+      {documents.length > 0 ? (
+        <Accordion className={`${CARD} px-5`} type="single" collapsible>
+          <AccordionItem value="documents">
+            <AccordionTrigger className="min-h-16 text-lg font-bold text-[color:var(--glass-ink)]">
+              <span className="flex items-center gap-3">
+                <FileCheck2 aria-hidden />
+                {td("journeyDocsTitle")}
+              </span>
+            </AccordionTrigger>
+            <AccordionContent className="pb-5">
+              <ul className="grid gap-3 sm:grid-cols-2">
+                {documents.map((document) => (
+                  <li
+                    key={document.slug}
+                    className="flex items-start gap-3 rounded-2xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] p-4"
+                  >
+                    <Check className="mt-0.5 shrink-0 text-[color:var(--glass-accent-deep)]" aria-hidden />
+                    <span>
+                      <span className="block text-base font-bold text-[color:var(--glass-ink)]">
+                        {resolve(document.titleKey, document.title)}
+                      </span>
+                      <span className="mt-1 block text-sm text-[color:var(--glass-ink-soft)]">
+                        {document.issuer}
+                      </span>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
       ) : null}
 
       {/* ══ Bandeau CTA final — le SEUL appel à l'action ══ */}
@@ -341,10 +391,10 @@ export function DossierJourneyIntro({
             <FilePlus2 className="size-6" strokeWidth={1.7} />
           </span>
           <div>
-            <p className="glass-display text-[20px] font-semibold leading-snug text-[color:var(--glass-ink)]">
+            <p className="glass-display text-2xl font-semibold leading-snug text-[color:var(--glass-ink)]">
               {td("journeyBannerTitle")}
             </p>
-            <p className="mt-1 max-w-md text-[13px] leading-[1.5] text-[color:var(--glass-ink-soft)]">
+            <p className="mt-1 max-w-md text-base leading-relaxed text-[color:var(--glass-ink-soft)]">
               {td("journeyBannerSubtitle")}
             </p>
           </div>
@@ -352,7 +402,7 @@ export function DossierJourneyIntro({
         <button
           type="button"
           onClick={start}
-          className="glass-cta inline-flex shrink-0 items-center justify-center gap-2 rounded-full px-7 py-3.5 text-[14px] font-bold shadow-[0_12px_32px_-10px_rgba(91,70,229,0.55)]"
+          className="glass-cta inline-flex min-h-12 shrink-0 items-center justify-center gap-2 rounded-full px-7 py-3.5 text-base font-bold shadow-[0_12px_32px_-10px_rgba(91,70,229,0.55)]"
         >
           {cta}
           <ArrowRight className="size-4" aria-hidden />

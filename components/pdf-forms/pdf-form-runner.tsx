@@ -47,6 +47,7 @@ import { AutoSaveNotice } from "./auto-save-notice";
 import { ResetFormButton } from "./reset-form-button";
 import { MacroFinalSummary } from "./macro-final-summary";
 import { OptionCard } from "@/components/ui/option-card";
+import { AccessibilityToolbar } from "@/components/docbel/accessibility-toolbar";
 
 const LOCALE_NAMES: Record<Locale, string> = { fr: "FR", nl: "NL", de: "DE" };
 
@@ -479,7 +480,6 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
       // Log console explicite : quand l'utilisateur ne voit pas où corriger
       // (champ dans une étape déjà validée, ou champ orphelin sans stepGroup),
       // on lui donne au moins la liste dans la devtools.
-      // eslint-disable-next-line no-console
       console.warn("[pdf-form-runner] validation failed on:", invalidIds.map((id) => {
         const f = form.fields.find((x) => x.id === id);
         return { id, label: f ? loc(f.label, locale) : id, step: fieldStepIndex[id] };
@@ -799,6 +799,7 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
 
   return (
     <div className="flex flex-col gap-3">
+      <AccessibilityToolbar />
       {/* Barre langue + itsme (au-dessus de la carte) */}
       {(form.locales.length > 1 || form.allowItsme) && (
         <div className="flex flex-wrap items-center gap-2">
@@ -1378,11 +1379,12 @@ function MacroRunnerBody({
 
   return (
     <div className="flex flex-col gap-3">
+      <AccessibilityToolbar />
       {(form.locales.length > 1 || form.allowItsme) && (
         <div className="flex flex-wrap items-center gap-2">
           {form.locales.length > 1 &&
             form.locales.map((l) => (
-              <Button key={l} size="sm" variant={l === locale ? "default" : "outline"} className="h-7 px-2.5" onClick={() => setLocale(l)}>
+              <Button key={l} variant={l === locale ? "default" : "outline"} className="min-h-11 px-4" onClick={() => setLocale(l)}>
                 {LOCALE_NAMES[l]}
               </Button>
             ))}
@@ -1419,20 +1421,11 @@ function MacroRunnerBody({
             />
           </div>
 
-          <CardContent className="p-4 sm:p-5">
+          <CardContent className="p-5 sm:p-6" data-docbel-readable>
             <form
               onSubmit={(e) => { e.preventDefault(); if (isLast) submit(); }}
               className="flex flex-col gap-4"
             >
-              <div className="flex flex-col gap-1">
-                <h2
-                  className="glass-display text-[22px] font-semibold leading-tight text-[color:var(--glass-ink)] sm:text-[26px]"
-                  style={{ fontVariationSettings: "'WONK' 0, 'SOFT' 0", fontFeatureSettings: "'swsh' 0, 'salt' 0" }}
-                >
-                  {titleFor(current.id)}
-                </h2>
-              </div>
-
               {current.sections.map((sec, i) => {
                 // Étape "Motif" à contrainte de groupe (ex. les 5 situations
                 // du C1 changement-situation) : rendu dédié tableau + panneau
@@ -1464,7 +1457,7 @@ function MacroRunnerBody({
                     }
                   >
                     {multiSection && sec.key && (
-                      <h3 className="text-[11px] font-bold uppercase tracking-[0.06em] text-[color:var(--glass-ink-soft)]">
+                      <h3 className="text-base font-bold text-[color:var(--glass-ink-soft)]">
                         {sectionLabel(sec.key, locale)}
                       </h3>
                     )}
@@ -1495,12 +1488,12 @@ function MacroRunnerBody({
                   <div className="flex flex-col gap-4 border-t border-[color:var(--glass-border)] pt-4">
                   {!bundleRunId && form.allowDownload && form.allowDoccle && (
                     <div className="flex flex-col gap-2">
-                      <span className="text-xs font-medium text-muted-foreground">{t("runnerDeliveryModeLabel")}</span>
+                      <span className="text-base font-bold text-muted-foreground">{t("runnerDeliveryModeLabel")}</span>
                       <div className="flex gap-1.5">
-                        <Button type="button" size="sm" variant={delivery === "download" ? "default" : "outline"} onClick={() => setDelivery("download")}>
+                        <Button className="min-h-11" type="button" variant={delivery === "download" ? "default" : "outline"} onClick={() => setDelivery("download")}>
                           <DownloadIcon className="size-4" /> {t("runnerDeliveryDownload")}
                         </Button>
-                        <Button type="button" size="sm" variant={delivery === "doccle" ? "default" : "outline"} onClick={() => setDelivery("doccle")}>
+                        <Button className="min-h-11" type="button" variant={delivery === "doccle" ? "default" : "outline"} onClick={() => setDelivery("doccle")}>
                           <SendIcon className="size-4" /> {t("runnerDeliveryDoccle")}
                         </Button>
                       </div>
@@ -1513,19 +1506,19 @@ function MacroRunnerBody({
                     </div>
                   )}
                   {form.fields.some(isSignatureField) && (
-                    <div className="rounded-lg border border-dashed bg-muted/30 p-3 text-sm">
-                      <div className="text-[11px] uppercase tracking-wide text-muted-foreground">{t("runnerDigitalSignatureLabel")}</div>
+                    <div className="rounded-2xl border border-dashed bg-muted/30 p-4 text-base">
+                      <div className="font-bold text-muted-foreground">{t("runnerDigitalSignatureLabel")}</div>
                       {signerName ? (
                         <>
                           <div className="mt-1 font-serif text-lg italic">{signerName}</div>
-                          <div className="mt-0.5 text-[11px] text-muted-foreground">{t("runnerDigitalSignatureAutoNote")}</div>
+                          <div className="mt-1 text-sm text-muted-foreground">{t("runnerDigitalSignatureAutoNote")}</div>
                         </>
                       ) : (
-                        <div className="mt-1 text-xs text-amber-700 dark:text-amber-300">{t("runnerDigitalSignatureNameRequired")}</div>
+                        <div className="mt-1 text-sm text-amber-700 dark:text-amber-300">{t("runnerDigitalSignatureNameRequired")}</div>
                       )}
                     </div>
                   )}
-                  <label className="flex items-start gap-2.5 text-sm text-muted-foreground">
+                  <label className="flex items-start gap-3 text-base leading-relaxed text-muted-foreground">
                     <Checkbox checked={consent} onCheckedChange={(c) => setConsent(c === true)} className="mt-0.5" />
                     <span>{t("runnerConsentText")}</span>
                   </label>
@@ -1542,10 +1535,10 @@ function MacroRunnerBody({
                   </div>
                   <div className="flex flex-wrap items-center justify-end gap-3">
                     <div className="flex flex-1 items-center justify-end gap-2 sm:flex-none">
-                      <Button type="button" variant="outline" className="rounded-full" onClick={() => setActive(activeIndex - 1)}>
+                      <Button type="button" variant="outline" className="min-h-12 rounded-full" onClick={() => setActive(activeIndex - 1)}>
                         <ChevronLeftIcon className="size-4" /> {t("previous")}
                       </Button>
-                      <Button type="submit" disabled={submitting} className="rounded-full px-6">
+                      <Button type="submit" disabled={submitting} className="min-h-12 rounded-full px-6">
                         {submitting ? <Loader2Icon className="size-4 animate-spin" /> : bundleRunId ? <CheckCircle2Icon className="size-4" /> : delivery === "doccle" ? <SendIcon className="size-4" /> : <DownloadIcon className="size-4" />}
                         {submitting ? t("runnerGenerating") : bundleRunId ? t("runnerSubmitValidate") : delivery === "doccle" ? t("runnerSubmitSignAndSend") : t("runnerSubmitSignAndGenerate")}
                       </Button>
@@ -1558,11 +1551,11 @@ function MacroRunnerBody({
                   <div className="flex flex-wrap items-center justify-end gap-3">
                     <div className="flex items-center gap-2">
                       {activeIndex > 0 && (
-                        <Button type="button" variant="outline" className="rounded-full" onClick={() => setActive(activeIndex - 1)}>
+                        <Button type="button" variant="outline" className="min-h-12 rounded-full" onClick={() => setActive(activeIndex - 1)}>
                           <ChevronLeftIcon className="size-4" /> {t("previous")}
                         </Button>
                       )}
-                      <Button type="button" className="rounded-full px-6" onClick={() => attemptAdvance([stepFieldsOf(current)], activeIndex, activeIndex + 1)}>
+                      <Button type="button" className="min-h-12 rounded-full px-6" onClick={() => attemptAdvance([stepFieldsOf(current)], activeIndex, activeIndex + 1)}>
                         {t("continue")} <ChevronRightIcon className="size-4" />
                       </Button>
                     </div>

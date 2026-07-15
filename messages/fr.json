@@ -3327,6 +3327,19 @@
     }
   },
   "public": {
+    "accessibility": {
+      "title": "Accessibilité",
+      "listen": "Écouter la page",
+      "stopListening": "Arrêter la lecture",
+      "contrast": "Contraste renforcé",
+      "simpleMode": "Mode simple",
+      "reduceMotion": "Réduire les animations",
+      "textSize": {
+        "normal": "Texte normal",
+        "large": "Texte grand",
+        "xlarge": "Texte très grand"
+      }
+    },
     "cookieConsent": {
       "title": "Votre vie privée, votre choix",
       "description": "Nous utilisons des cookies strictement nécessaires au fonctionnement du site et, avec votre accord, des cookies de mesure d'audience pour améliorer Docbel. Aucun traceur n'est activé sans votre consentement.",
@@ -4645,7 +4658,8 @@
       "breadcrumbCurrent": "Mon dossier",
       "monDossierTitle": "Créer ou retrouver <em>le bon dossier</em>",
       "monDossierIntro": "Laissez-vous guider en quelques questions simples, ou accédez directement au dossier dont vous avez besoin.",
-      "chooseFlowLabel": "Choisissez votre parcours",
+      "chooseFlowLabel": "Que voulez-vous faire ?",
+      "chooseFlowHelp": "Choisissez l'aide guidée si vous hésitez. Vous pourrez toujours revenir en arrière.",
       "modeGuideLabel": "Je me laisse guider",
       "modeGuideSub": "Quelques questions simples",
       "modeDirectLabel": "J'accède directement",
@@ -4662,6 +4676,7 @@
       "filtersAriaLabel": "Filtres par catégorie",
       "filters": "Filtres",
       "guidedDossier": "Dossier guidé",
+      "otherDossiers": "Autres dossiers",
       "emptyNoneTitle": "Aucun dossier n'est encore publié.",
       "emptyNoMatchTitle": "Aucun dossier ne correspond.",
       "emptyNoneBody": "Les dossiers ne sont pas encore disponibles. Réessayez dans un instant.",
@@ -4773,6 +4788,7 @@
       "wizardHesitateDryRun": "Vous hésitez ? Un organisme de paiement peut vous aider.",
       "wizardHesitate": "Vous hésitez ? <link>Faites-vous aider par un organisme de paiement</link>.",
       "wizardProgressLabel": "Progression du guide",
+      "wizardQuestionCounter": "Question {current} sur {total}",
       "wizardQuestion1": "Question 1 sur 4",
       "wizardSituationQuestion": "Quelle est votre situation actuelle ?",
       "wizardSituationHelp": "Choisissez la situation qui vous correspond le mieux.",

@@ -38,7 +38,7 @@ export function OptionCard({ label, labelShort, selected, onToggle, icon: Icon, 
       aria-pressed={selected}
       aria-invalid={invalid || undefined}
       onClick={onToggle}
-      className={`flex w-full items-center gap-3 rounded-2xl border px-4 py-3 text-left text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 ${
+      className={`flex min-h-16 w-full items-center gap-3 rounded-2xl border px-4 py-4 text-left text-base transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 ${
         selected
           ? "border-[color:var(--glass-accent-deep,#5B46E5)] bg-[color:var(--glass-pop-bg)] font-semibold text-[color:var(--glass-ink)] shadow-[0_10px_24px_-16px_rgba(91,70,229,0.55)]"
           : invalid
@@ -49,24 +49,24 @@ export function OptionCard({ label, labelShort, selected, onToggle, icon: Icon, 
       {indicator === "check" ? (
         <span
           aria-hidden
-          className={`flex size-[18px] shrink-0 items-center justify-center rounded-[6px] border-2 transition-colors ${
+          className={`flex size-6 shrink-0 items-center justify-center rounded-md border-2 transition-colors ${
             selected
               ? "border-[color:var(--glass-accent-deep,#5B46E5)] bg-[color:var(--glass-accent-deep,#5B46E5)]"
               : "border-[color:var(--glass-border)]"
           }`}
         >
-          {selected && <CheckIcon className="size-3 text-white" strokeWidth={3} />}
+          {selected && <CheckIcon className="size-4 text-white" strokeWidth={3} />}
         </span>
       ) : (
         <span
           aria-hidden
-          className={`flex size-[18px] shrink-0 items-center justify-center rounded-full border-2 transition-colors ${
+          className={`flex size-6 shrink-0 items-center justify-center rounded-full border-2 transition-colors ${
             selected
               ? "border-[color:var(--glass-accent-deep,#5B46E5)]"
               : "border-[color:var(--glass-border)]"
           }`}
         >
-          {selected && <span className="size-2 rounded-full bg-[color:var(--glass-accent-deep,#5B46E5)]" />}
+          {selected && <span className="size-3 rounded-full bg-[color:var(--glass-accent-deep,#5B46E5)]" />}
         </span>
       )}
       {Icon && <Icon className="size-4 shrink-0 text-[color:var(--glass-accent-deep,#5B46E5)]" />}

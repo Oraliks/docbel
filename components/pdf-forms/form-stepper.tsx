@@ -1,21 +1,15 @@
 "use client";
 
+import { AlertCircle, CheckCircle2 } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { cn } from "@/lib/utils";
 
 export interface FormStepperItem {
   id: string;
   label: string;
   hasError: boolean;
-  /// Vrai quand tous les champs REQUIS de l'étape sont remplis et valides
-  /// (indépendant de la position) → coche verte de complétion.
   complete?: boolean;
-  /// Libellé secondaire affiché sous le titre de l'étape ACTIVE (ex. « 2
-  /// champs restants »). Absent = rien.
   subLabel?: string;
-  /// Description courte et STATIQUE de l'étape (ex. « Précise l'objet de ta
-  /// demande »), affichée sous le titre pour TOUTES les étapes (pas
-  /// seulement l'active), contrairement à `subLabel`. Absent = pas de
-  /// description (ex. formulaires sans macro-étapes curées).
   description?: string;
 }
 
@@ -25,26 +19,43 @@ interface FormStepperProps {
   onSelect: (index: number) => void;
 }
 
-/// Progression UNIQUE du formulaire : un compteur « Étape N sur T » + une
-/// barre de remplissage fine, suivis d'une liste numérotée des étapes
-/// (navigation au clic). Remplace les indicateurs de progression multiples
-/// qui coexistaient (ancienne pastille dégradée + badge + pied d'étape) par
-/// cette seule source de vérité — la navigation reste identique.
+/** Progression lisible : l'étape active est prioritaire, la navigation complète reste secondaire. */
 export function FormStepper({ steps, activeIndex, onSelect }: FormStepperProps) {
   const t = useTranslations("public.dossier");
   const total = steps.length;
+  const activeStep = steps[activeIndex];
   const pct = total > 0 ? ((activeIndex + 1) / total) * 100 : 0;
 
   return (
-    <div className="flex flex-col gap-4 px-2 py-3">
-      {/* Progression unique : compteur « Étape N sur T » + barre fine */}
-      <div className="flex items-center gap-3">
-        <span className="whitespace-nowrap text-[13px] font-semibold text-[color:var(--glass-ink-soft)]">
+    <div className="flex flex-col gap-4 py-3" data-docbel-readable>
+      <div className="flex flex-col gap-2">
+        <span className="text-base font-bold text-[color:var(--glass-accent-deep)]">
           {t("runnerStepCounter", { current: activeIndex + 1, total })}
         </span>
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex flex-col gap-1">
+            <h2 className="text-2xl font-bold leading-tight text-[color:var(--glass-ink)]">
+              {activeStep?.label}
+            </h2>
+            {(activeStep?.subLabel || activeStep?.description) && (
+              <p className="text-base leading-relaxed text-[color:var(--glass-ink-soft)]">
+                {activeStep.subLabel ?? activeStep.description}
+              </p>
+            )}
+          </div>
+          {activeStep?.hasError ? (
+            <AlertCircle className="shrink-0 text-destructive" aria-label={t("runnerStepErrorsAria")} />
+          ) : activeStep?.complete ? (
+            <CheckCircle2 className="shrink-0 text-emerald-600" aria-hidden />
+          ) : null}
+        </div>
         <span
-          className="relative h-1.5 flex-1 overflow-hidden rounded-full bg-[color:var(--glass-pop-bg)]"
-          aria-hidden
+          className="relative h-2.5 overflow-hidden rounded-full bg-[color:var(--glass-pop-bg)]"
+          role="progressbar"
+          aria-valuemin={1}
+          aria-valuemax={total}
+          aria-valuenow={activeIndex + 1}
+          aria-label={t("runnerStepCounter", { current: activeIndex + 1, total })}
         >
           <span
             className="absolute inset-y-0 left-0 rounded-full bg-[color:var(--glass-accent-deep,#5B46E5)] transition-[width] duration-300"
@@ -53,54 +64,40 @@ export function FormStepper({ steps, activeIndex, onSelect }: FormStepperProps) 
         </span>
       </div>
 
-      {/* Liste des étapes — sur mobile, juste le numéro (évite le scroll
-          horizontal) ; le libellé + la description reviennent à partir de
-          sm: (cf. Oraliks, 2026-07-07). */}
-      <ol className="flex flex-wrap gap-x-3 gap-y-3 sm:gap-x-6">
-        {steps.map((step, i) => {
-          const isActive = i === activeIndex;
+      <ol className="hidden gap-2 sm:grid sm:grid-cols-2 lg:grid-cols-4" data-a11y-secondary="true">
+        {steps.map((step, index) => {
+          const isActive = index === activeIndex;
           return (
-            <li key={step.id} className="sm:min-w-[110px] sm:flex-1">
+            <li key={step.id}>
               <button
                 type="button"
-                onClick={() => onSelect(i)}
+                onClick={() => onSelect(index)}
                 aria-current={isActive ? "step" : undefined}
-                aria-label={`${String(i + 1).padStart(2, "0")}. ${step.label}`}
-                className="flex w-full items-center gap-0.5 rounded-lg text-left transition-colors hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 sm:flex-col sm:items-start"
+                aria-label={`${index + 1}. ${step.label}`}
+                className={cn(
+                  "flex min-h-12 w-full items-center gap-3 rounded-xl border px-3 py-2 text-left text-base transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1",
+                  isActive
+                    ? "border-[color:var(--glass-accent-deep)] bg-[color:var(--glass-pop-bg)] font-bold text-[color:var(--glass-ink)]"
+                    : "border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] text-[color:var(--glass-ink-soft)] hover:border-[color:var(--glass-accent-deep)]",
+                )}
               >
                 <span
                   aria-hidden
-                  className={`relative flex size-7 shrink-0 items-center justify-center rounded-full text-[12px] font-bold transition-colors sm:hidden ${
+                  className={cn(
+                    "relative flex size-8 shrink-0 items-center justify-center rounded-full text-sm font-bold",
                     isActive
-                      ? "bg-gradient-to-r from-[color:var(--glass-accent-deep,#5B46E5)] to-pink-500 text-white"
-                      : "bg-[color:var(--glass-pop-bg)] text-[color:var(--glass-ink-soft)]"
-                  }`}
-                >
-                  {i + 1}
-                  {step.hasError && (
-                    <span className="absolute -right-0.5 -top-0.5 size-2 rounded-full bg-destructive" />
+                      ? "bg-[color:var(--glass-accent-deep)] text-white"
+                      : "bg-[color:var(--glass-pop-bg)] text-[color:var(--glass-ink-soft)]",
                   )}
-                </span>
-                <span
-                  className={`hidden truncate text-[13px] sm:block ${
-                    isActive
-                      ? "border-b-2 border-[color:var(--glass-accent-deep,#5B46E5)] pb-0.5 font-bold text-[color:var(--glass-ink)]"
-                      : "font-semibold text-[color:var(--glass-ink-soft)]"
-                  }`}
                 >
-                  {String(i + 1).padStart(2, "0")}. {step.label}
-                  {step.hasError && (
-                    <span
-                      className="ml-1.5 inline-block size-1.5 rounded-full bg-destructive align-middle"
-                      aria-label="Erreurs dans cette étape"
-                    />
-                  )}
+                  {index + 1}
                 </span>
-                {step.description && (
-                  <span className="hidden truncate text-[11px] text-[color:var(--glass-ink-faint)] sm:block">
-                    {step.description}
-                  </span>
-                )}
+                <span className="min-w-0 flex-1 truncate">{step.label}</span>
+                {step.hasError ? (
+                  <span className="size-2 shrink-0 rounded-full bg-destructive" aria-label={t("runnerStepErrorsAria")} />
+                ) : step.complete ? (
+                  <CheckCircle2 className="shrink-0 text-emerald-600" aria-hidden />
+                ) : null}
               </button>
             </li>
           );

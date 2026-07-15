@@ -1192,3 +1192,40 @@ body {
    ============================================================ */
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { scrollbar-width: none; }
+
+/* ============================================================
+   Préférences d'accessibilité du parcours citoyen
+   ============================================================ */
+html[data-docbel-text-size="large"] { font-size: 112.5%; }
+html[data-docbel-text-size="xlarge"] { font-size: 125%; }
+
+html[data-docbel-contrast="high"] .glass-root {
+  --glass-ink: #151020;
+  --glass-ink-soft: #292035;
+  --glass-ink-faint: #3d304d;
+  --glass-border: rgba(45, 30, 70, 0.42);
+  --glass-ink-line: rgba(45, 30, 70, 0.32);
+  --glass-surface: rgba(250, 247, 255, 0.82);
+  --glass-surface-strong: rgba(250, 247, 255, 0.94);
+}
+
+.dark[data-docbel-contrast="high"] .glass-root {
+  --glass-ink: #ffffff;
+  --glass-ink-soft: #eee9ff;
+  --glass-ink-faint: #d5caff;
+  --glass-border: rgba(233, 224, 255, 0.6);
+  --glass-ink-line: rgba(233, 224, 255, 0.42);
+}
+
+html[data-docbel-simple="true"] [data-a11y-secondary="true"] {
+  display: none !important;
+}
+
+html[data-docbel-motion="reduced"] *,
+html[data-docbel-motion="reduced"] *::before,
+html[data-docbel-motion="reduced"] *::after {
+  scroll-behavior: auto !important;
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+}

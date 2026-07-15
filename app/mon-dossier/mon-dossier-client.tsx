@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import {
   ArrowRight,
   ChevronRight,
@@ -19,10 +19,25 @@ import {
   Sparkles,
 } from "lucide-react";
 import { IconDisplay } from "@/components/admin/documents/icon-picker";
+import { AccessibilityToolbar } from "@/components/docbel/accessibility-toolbar";
 import { DossierWizard } from "@/components/docbel/onboarding/dossier-wizard";
+import { Button } from "@/components/ui/button";
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+} from "@/components/ui/input-group";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { trackBundleEventClient } from "@/lib/bundles/analytics-client";
 import { LIFE_EVENT_CATEGORIES } from "@/lib/bundles/types";
 import { scoreBundleMatch } from "@/lib/bundles/vocabulary";
-import { trackBundleEventClient } from "@/lib/bundles/analytics-client";
 import type { WizardSituation } from "@/lib/dossier-wizard/config";
 import type { WizardCatalog } from "@/lib/dossier-wizard/derive-results";
 import type { ActiveBundleRun } from "@/lib/landing/resume";
@@ -46,31 +61,35 @@ export interface MonDossierBundle {
 interface Props {
   bundles: MonDossierBundle[];
   catalog: WizardCatalog;
-  /// Dernier dossier local en cours (zone « Reprendre »), ou null.
   activeRun: ActiveBundleRun | null;
-  /// Situations du wizard : arbre publié (Decision Builder) si dispo, sinon
-  /// fallback `WIZARD_SITUATIONS` (résolu côté serveur dans page.tsx).
   situations: WizardSituation[];
 }
 
-/* Route réelle d'un dossier (identique à life-event-card.tsx → /d/[slug]). */
-function bundleHref(slug: string): string {
-  return `/d/${slug}`;
-}
+type Sort = "populaires" | "az" | "categories" | "recents";
+type Mode = "guide" | "direct";
 
-/* Repli « sous-chaîne » pour la frappe partielle (ex. "chom" → "chômage"),
-   que le scorer par tokens entiers ne capterait pas. Score faible (1). */
-function substringHit(b: MonDossierBundle, q: string): boolean {
-  if (!q) return false;
-  if (b.name.toLowerCase().includes(q)) return true;
-  if ((b.description ?? "").toLowerCase().includes(q)) return true;
-  if ((b.organism ?? "").toLowerCase().includes(q)) return true;
-  return [...b.vocabularyTags, ...b.keywords, ...b.synonyms].some((t) =>
-    t.toLowerCase().includes(q),
-  );
-}
+const SORT_PILLS = [
+  { id: "populaires", labelKey: "sortPopular" },
+  { id: "az", labelKey: "sortAz" },
+  { id: "categories", labelKey: "sortCategories" },
+  { id: "recents", labelKey: "sortRecent" },
+] as const satisfies ReadonlyArray<{ id: Sort; labelKey: string }>;
 
-/* Teintes de repli par catégorie (charte mauve), quand bundle.color manque. */
+const MODE_TABS = [
+  {
+    id: "guide" as const,
+    labelKey: "modeGuideLabel",
+    subKey: "modeGuideSub",
+    icon: Sparkles,
+  },
+  {
+    id: "direct" as const,
+    labelKey: "modeDirectLabel",
+    subKey: "modeDirectSub",
+    icon: FolderOpen,
+  },
+] as const;
+
 const CATEGORY_HUE: Record<string, string> = {
   emploi: "#5B46E5",
   formation: "#7C3AED",
@@ -82,60 +101,61 @@ const CATEGORY_HUE: Record<string, string> = {
   independant: "#8b5cf6",
 };
 
-function hueForBundle(b: MonDossierBundle): string {
-  if (b.color && b.color.trim()) return b.color;
-  if (b.lifeEventCategory && CATEGORY_HUE[b.lifeEventCategory]) {
-    return CATEGORY_HUE[b.lifeEventCategory];
+function bundleHref(slug: string): string {
+  return `/d/${slug}`;
+}
+
+function substringHit(bundle: MonDossierBundle, query: string): boolean {
+  if (!query) return false;
+  if (bundle.name.toLowerCase().includes(query)) return true;
+  if ((bundle.description ?? "").toLowerCase().includes(query)) return true;
+  if ((bundle.organism ?? "").toLowerCase().includes(query)) return true;
+  return [
+    ...bundle.vocabularyTags,
+    ...bundle.keywords,
+    ...bundle.synonyms,
+  ].some((term) => term.toLowerCase().includes(query));
+}
+
+function hueForBundle(bundle: MonDossierBundle): string {
+  if (bundle.color?.trim()) return bundle.color;
+  if (bundle.lifeEventCategory && CATEGORY_HUE[bundle.lifeEventCategory]) {
+    return CATEGORY_HUE[bundle.lifeEventCategory];
   }
   return "var(--glass-accent-deep)";
 }
 
-/* Feuilles qui « tombent » dans le dossier du hero (décalage, inclinaison,
-   teinte d'en-tête, délai). Peintes SOUS le PNG du dossier (cf. .hero-doc). */
-const HERO_DOCS: {
-  dx: string;
-  r: string;
-  delay: string;
-  tint: string;
-}[] = [
-  { dx: "-12px", r: "-10deg", delay: "0s", tint: "var(--glass-accent-a)" },
-  { dx: "13px", r: "8deg", delay: "0.95s", tint: "var(--glass-accent-c)" },
-  { dx: "1px", r: "-3deg", delay: "1.9s", tint: "var(--glass-accent-deep)" },
-];
-
-/* ── Pastille d'icône teintée (glow) pour une ligne de dossier ── */
-function RowIconTile({ bundle, size = 36 }: { bundle: MonDossierBundle; size?: number }) {
+function RowIconTile({ bundle }: { bundle: MonDossierBundle }) {
   const hue = hueForBundle(bundle);
   const category = bundle.lifeEventCategory
-    ? LIFE_EVENT_CATEGORIES.find((c) => c.id === bundle.lifeEventCategory)
+    ? LIFE_EVENT_CATEGORIES.find((item) => item.id === bundle.lifeEventCategory)
     : null;
 
   return (
     <span
-      className="glass-icon-tile flex shrink-0 items-center justify-center rounded-xl transition-transform duration-200 group-hover:scale-[1.06] motion-reduce:transform-none"
-      style={{
-        width: size,
-        height: size,
-        background: `color-mix(in oklab, ${hue} 18%, transparent)`,
-        color: hue,
-        "--tile-hue": hue,
-      } as React.CSSProperties}
+      className="glass-icon-tile flex size-12 shrink-0 items-center justify-center rounded-2xl"
+      style={
+        {
+          background: `color-mix(in oklab, ${hue} 18%, transparent)`,
+          color: hue,
+          "--tile-hue": hue,
+        } as React.CSSProperties
+      }
+      aria-hidden
     >
       {bundle.icon ? (
-        <IconDisplay value={bundle.icon} className="size-[48%]" />
+        <IconDisplay value={bundle.icon} className="size-6" />
       ) : category ? (
-        <span style={{ fontSize: size * 0.5, lineHeight: 1 }}>{category.emoji}</span>
+        <span className="text-2xl leading-none">{category.emoji}</span>
       ) : (
-        <Layers size={size * 0.46} />
+        <Layers />
       )}
     </span>
   );
 }
 
-/* ── Ligne « Accès direct » (icône + nom + sous-titre + chevron) ── */
 function AccessRow({ bundle }: { bundle: MonDossierBundle }) {
   const t = useTranslations("public.dossier");
-  // Organisme en sous-titre (façon mockup) ; repli sur le nombre de documents.
   const subtitle =
     bundle.organism?.trim() ||
     (bundle.itemCount > 0
@@ -151,23 +171,22 @@ function AccessRow({ bundle }: { bundle: MonDossierBundle }) {
           metadata: { slug: bundle.slug, from: "direct" },
         })
       }
-      className="group flex items-center gap-3 rounded-2xl border border-transparent px-2.5 py-2.5 transition-all hover:-translate-y-px hover:border-[color:var(--glass-border)] hover:bg-[color:var(--glass-surface)] hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)]/40"
+      className="glass-interactive group flex min-h-16 items-center gap-3 rounded-2xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-3 py-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)]"
     >
       <RowIconTile bundle={bundle} />
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-[13.5px] font-bold leading-tight text-[color:var(--glass-ink)]">
+        <span className="block text-base font-bold leading-snug text-[color:var(--glass-ink)]">
           {bundle.name}
         </span>
-        <span className="mt-0.5 block truncate text-[12px] text-[color:var(--glass-ink-faint)]">
+        <span className="mt-1 block text-sm text-[color:var(--glass-ink-soft)]">
           {subtitle}
         </span>
       </span>
-      <ChevronRight className="size-4 shrink-0 text-[color:var(--glass-ink-faint)] transition-transform group-hover:translate-x-0.5 group-hover:text-[color:var(--glass-accent-deep)]" />
+      <ChevronRight className="shrink-0 text-[color:var(--glass-accent-deep)]" aria-hidden />
     </Link>
   );
 }
 
-/* ── Lien de la colonne « Besoin d'aide » ── */
 function HelpRow({
   icon: Icon,
   label,
@@ -179,768 +198,398 @@ function HelpRow({
   href?: string;
   onClick?: () => void;
 }) {
-  const inner = (
+  const content = (
     <>
-      <span
-        className="flex size-9 shrink-0 items-center justify-center rounded-xl text-[color:var(--glass-accent-deep)] transition-colors"
-        style={{
-          background: "color-mix(in oklab, var(--glass-accent-deep) 12%, transparent)",
-        }}
-        aria-hidden
-      >
-        <Icon className="size-[18px]" />
+      <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-[color:var(--glass-pop-bg)] text-[color:var(--glass-accent-deep)]" aria-hidden>
+        <Icon />
       </span>
-      <span className="min-w-0 flex-1 truncate text-[13.5px] font-semibold text-[color:var(--glass-ink)]">
+      <span className="min-w-0 flex-1 text-base font-semibold text-[color:var(--glass-ink)]">
         {label}
       </span>
-      <ChevronRight className="size-4 shrink-0 text-[color:var(--glass-ink-faint)] transition-transform group-hover:translate-x-0.5 group-hover:text-[color:var(--glass-accent-deep)]" />
+      <ChevronRight className="shrink-0 text-[color:var(--glass-accent-deep)]" aria-hidden />
     </>
   );
+  const className =
+    "glass-interactive flex min-h-14 w-full items-center gap-3 rounded-2xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-3 py-2 text-left";
 
-  const cls =
-    "glass-interactive group flex w-full items-center gap-3 rounded-2xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-3 py-2.5 text-left";
-
-  if (href) {
-    return (
-      <Link href={href} className={cls}>
-        {inner}
-      </Link>
-    );
-  }
-  return (
-    <button type="button" onClick={onClick} className={cls}>
-      {inner}
+  return href ? (
+    <Link href={href} className={className}>
+      {content}
+    </Link>
+  ) : (
+    <button type="button" onClick={onClick} className={className}>
+      {content}
     </button>
   );
 }
 
-/* ── Zone « Reprendre un dossier » : dernier dossier local + code BELDOC ── */
 function ActiveRunCard({ run }: { run: ActiveBundleRun }) {
   const t = useTranslations("public.dossier");
   const completed = run.lifecycle === "completed_editable";
-  const pct = completed
+  const percentage = completed
     ? 100
     : run.total > 0
       ? Math.round((run.completed / run.total) * 100)
       : 0;
   const hue = run.color || "var(--glass-accent-deep)";
+
   return (
     <Link
-      // Reprise → ouverture directe du formulaire actif (`?demarrer=1`) ; l'accès
-      // direct (AccessRow) garde la vue liste via `bundleHref` nu.
       href={`${bundleHref(run.slug)}?demarrer=1`}
       onClick={() =>
-        // Reprise d'un dossier déjà entamé → `bundle_resumed` (pas
-        // `bundle_opened`) : ne compte pas comme une ouverture fraîche dans le
-        // funnel « Dossiers ouverts ».
         trackBundleEventClient("bundle_resumed", {
           bundleId: run.slug,
           metadata: { slug: run.slug, from: "resume_local" },
         })
       }
-      className="glass-interactive group flex flex-col gap-2 rounded-2xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] p-3.5"
+      className="glass-interactive flex min-h-20 flex-col justify-center gap-3 rounded-2xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface-strong)] p-4"
     >
-      <div className="flex items-center gap-3">
-        <span
-          className="size-2.5 shrink-0 rounded-full"
-          style={{ background: hue }}
-          aria-hidden
-        />
+      <span className="flex items-center gap-3">
+        <span className="size-3 shrink-0 rounded-full" style={{ background: hue }} aria-hidden />
         <span className="min-w-0 flex-1">
-          <span className="block truncate text-[13.5px] font-bold text-[color:var(--glass-ink)]">
-            {run.name}
-          </span>
-          <span className="text-[12px] text-[color:var(--glass-ink-faint)]">
+          <span className="block text-base font-bold text-[color:var(--glass-ink)]">{run.name}</span>
+          <span className="mt-1 block text-sm text-[color:var(--glass-ink-soft)]">
             {completed
               ? t("runCompletedEditable")
-              : t("runProgress", {
-                  completed: run.completed,
-                  total: run.total,
-                })}
+              : t("runProgress", { completed: run.completed, total: run.total })}
           </span>
         </span>
-        <span className="inline-flex items-center gap-1 text-[12.5px] font-bold text-[color:var(--glass-accent-deep)]">
+        <span className="inline-flex items-center gap-2 text-sm font-bold text-[color:var(--glass-accent-deep)]">
           {completed ? t("reviewCompletedRun") : t("resume")}
-          <ArrowRight
-            className="size-3.5 transition-transform group-hover:translate-x-0.5"
-            aria-hidden
-          />
+          <ArrowRight aria-hidden />
         </span>
-      </div>
-      <span
-        className="h-1.5 w-full overflow-hidden rounded-full bg-[color:var(--glass-ink-line)]"
-        aria-hidden
-      >
-        <span
-          className="block h-full rounded-full transition-all"
-          style={{ width: `${pct}%`, background: hue }}
-        />
+      </span>
+      <span className="h-2 w-full overflow-hidden rounded-full bg-[color:var(--glass-ink-line)]" aria-hidden>
+        <span className="block h-full rounded-full" style={{ width: `${percentage}%`, background: hue }} />
       </span>
     </Link>
   );
 }
 
-type Sort = "populaires" | "az" | "categories" | "recents";
-
-const SORT_PILLS: { id: Sort; labelKey: string }[] = [
-  { id: "populaires", labelKey: "sortPopular" },
-  { id: "az", labelKey: "sortAz" },
-  { id: "categories", labelKey: "sortCategories" },
-  { id: "recents", labelKey: "sortRecent" },
-];
-
-type Mode = "guide" | "direct";
-
-/* Les deux parcours du segmented control. Chaque onglet porte un sous-titre
-   qui clarifie ce qu'il fait (le toggle devient un vrai choix, pas un gadget). */
-const MODE_TABS: {
-  id: Mode;
-  labelKey: string;
-  subKey: string;
-  icon: typeof Sparkles;
-}[] = [
-  {
-    id: "guide",
-    labelKey: "modeGuideLabel",
-    subKey: "modeGuideSub",
-    icon: Sparkles,
-  },
-  {
-    id: "direct",
-    labelKey: "modeDirectLabel",
-    subKey: "modeDirectSub",
-    icon: FolderOpen,
-  },
-];
-
 export function MonDossierClient({ bundles, catalog, activeRun, situations }: Props) {
   const t = useTranslations("public.dossier");
+  const locale = useLocale();
   const [mode, setMode] = useState<Mode>("guide");
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<Sort>("populaires");
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [activeCats, setActiveCats] = useState<Set<string>>(new Set());
   const [showAllCats, setShowAllCats] = useState(false);
-
+  const emittedSearches = useRef<Set<string>>(new Set());
   const trimmed = search.trim().toLowerCase();
   const isSearching = trimmed.length > 0;
 
-  // Anti-flood : chaque requête normalisée n'émet qu'UNE fois par montage
-  // (sinon retaper/effacer un caractère ré-émet `search_performed` en boucle et
-  // gonfle l'étape « Recherches » du funnel).
-  const emittedSearches = useRef<Set<string>>(new Set());
-
-  // ── Filtre par catégorie (puces « Filtres ») ──
-  const catFiltered = useMemo(() => {
+  const categoryFiltered = useMemo(() => {
     if (activeCats.size === 0) return bundles;
     return bundles.filter(
-      (b) => b.lifeEventCategory && activeCats.has(b.lifeEventCategory),
+      (bundle) =>
+        bundle.lifeEventCategory && activeCats.has(bundle.lifeEventCategory),
     );
-  }, [bundles, activeCats]);
+  }, [activeCats, bundles]);
 
-  // ── Recherche CLASSÉE par score (scorer vocabulaire : tags + mots-clés +
-  //    synonymes + organisme + nom + description), avec repli sous-chaîne pour
-  //    la frappe partielle. cf. lib/bundles/vocabulary.ts ──
   const searchResults = useMemo(() => {
     if (!isSearching) return [] as MonDossierBundle[];
-    const scored: { b: MonDossierBundle; score: number }[] = [];
-    for (const b of catFiltered) {
-      const s = scoreBundleMatch(search, {
-        id: b.slug,
-        slug: b.slug,
-        name: b.name,
-        description: b.description,
-        vocabularyTags: b.vocabularyTags,
-        keywords: b.keywords,
-        synonyms: b.synonyms,
-        organism: b.organism,
-      }).score;
-      const fallback = s === 0 && substringHit(b, trimmed) ? 1 : 0;
-      const total = s + fallback;
-      if (total > 0) scored.push({ b, score: total });
-    }
-    return scored.sort((a, b) => b.score - a.score).map((x) => x.b);
-  }, [catFiltered, search, trimmed, isSearching]);
+    return categoryFiltered
+      .map((bundle) => {
+        const score = scoreBundleMatch(search, {
+          id: bundle.slug,
+          slug: bundle.slug,
+          name: bundle.name,
+          description: bundle.description,
+          vocabularyTags: bundle.vocabularyTags,
+          keywords: bundle.keywords,
+          synonyms: bundle.synonyms,
+          organism: bundle.organism,
+        }).score;
+        return {
+          bundle,
+          score: score + (score === 0 && substringHit(bundle, trimmed) ? 1 : 0),
+        };
+      })
+      .filter((item) => item.score > 0)
+      .sort((left, right) => right.score - left.score)
+      .map((item) => item.bundle);
+  }, [categoryFiltered, isSearching, search, trimmed]);
 
-  // ── Tri intra-groupe ──
-  const sortItems = useMemo(() => {
-    return (list: MonDossierBundle[]) => {
-      const arr = [...list];
-      switch (sort) {
-        case "az":
-          arr.sort((a, b) => a.name.localeCompare(b.name, "fr"));
-          break;
-        case "recents":
-          arr.sort((a, b) => (b.createdAt ?? "").localeCompare(a.createdAt ?? ""));
-          break;
-        default:
-          arr.sort((a, b) => Number(b.popular) - Number(a.popular));
-          break;
-      }
-      return arr;
-    };
-  }, [sort]);
+  const sortItems = useMemo(
+    () => (items: MonDossierBundle[]) => {
+      const next = [...items];
+      if (sort === "az") next.sort((a, b) => a.name.localeCompare(b.name, locale));
+      else if (sort === "recents") {
+        next.sort((a, b) => (b.createdAt ?? "").localeCompare(a.createdAt ?? ""));
+      } else next.sort((a, b) => Number(b.popular) - Number(a.popular));
+      return next;
+    },
+    [locale, sort],
+  );
 
-  // ── Regroupement par catégorie (vue sans recherche) ──
   const groups = useMemo(() => {
     const map = new Map<string, MonDossierBundle[]>();
     const uncategorized: MonDossierBundle[] = [];
-    for (const b of catFiltered) {
-      if (b.lifeEventCategory && CATEGORY_HUE[b.lifeEventCategory]) {
-        const arr = map.get(b.lifeEventCategory) ?? [];
-        arr.push(b);
-        map.set(b.lifeEventCategory, arr);
-      } else {
-        uncategorized.push(b);
-      }
+    for (const bundle of categoryFiltered) {
+      if (bundle.lifeEventCategory && CATEGORY_HUE[bundle.lifeEventCategory]) {
+        map.set(bundle.lifeEventCategory, [
+          ...(map.get(bundle.lifeEventCategory) ?? []),
+          bundle,
+        ]);
+      } else uncategorized.push(bundle);
     }
-    const ordered: {
+    const ordered: Array<{
       id: string;
       label: string;
       emoji: string;
       items: MonDossierBundle[];
-    }[] = LIFE_EVENT_CATEGORIES.filter((c) => map.has(c.id)).map((c) => ({
-      id: c.id,
-      label: c.label,
-      emoji: c.emoji,
-      items: sortItems(map.get(c.id) ?? []),
-    }));
+    }> = LIFE_EVENT_CATEGORIES.filter((category) => map.has(category.id)).map(
+      (category) => ({
+        id: category.id,
+        label: category.label,
+        emoji: category.emoji,
+        items: sortItems(map.get(category.id) ?? []),
+      }),
+    );
     if (uncategorized.length > 0) {
       ordered.push({
         id: "_autres",
-        label: "Autres dossiers",
+        label: t("otherDossiers"),
         emoji: "📁",
         items: sortItems(uncategorized),
       });
     }
     return ordered;
-  }, [catFiltered, sortItems]);
+  }, [categoryFiltered, sortItems, t]);
 
-  // Catégories disponibles (pour les puces de filtre).
   const availableCats = useMemo(
     () =>
-      LIFE_EVENT_CATEGORIES.filter((c) =>
-        bundles.some((b) => b.lifeEventCategory === c.id),
+      LIFE_EVENT_CATEGORIES.filter((category) =>
+        bundles.some((bundle) => bundle.lifeEventCategory === category.id),
       ),
     [bundles],
   );
-
-  // « Catégories » → déplie tout ; « Populaires/Récents » → limite à 3 groupes.
   const collapsed = !isSearching && !showAllCats && sort !== "categories";
   const visibleGroups = collapsed ? groups.slice(0, 3) : groups;
-  const hiddenCount = groups.length - visibleGroups.length;
+  const empty = isSearching ? searchResults.length === 0 : categoryFiltered.length === 0;
 
-  function toggleCat(id: string) {
-    setActiveCats((prev) => {
-      const next = new Set(prev);
+  function toggleCategory(id: string) {
+    setActiveCats((previous) => {
+      const next = new Set(previous);
       if (next.has(id)) next.delete(id);
       else next.add(id);
       return next;
     });
   }
 
-  const isEmpty = isSearching
-    ? searchResults.length === 0
-    : catFiltered.length === 0;
-
-  // ── Analytics recherche (débouncé) : search_performed / search_no_result ──
   useEffect(() => {
-    if (!isSearching || trimmed.length < 2) return;
-    // Une même requête normalisée n'émet qu'une fois par montage.
-    if (emittedSearches.current.has(trimmed)) return;
-    const t = setTimeout(() => {
+    if (!isSearching || trimmed.length < 2 || emittedSearches.current.has(trimmed)) return;
+    const timer = setTimeout(() => {
       emittedSearches.current.add(trimmed);
-      if (searchResults.length === 0) {
-        trackBundleEventClient("search_no_result", { metadata: { q: trimmed } });
-      } else {
-        trackBundleEventClient("search_performed", {
-          metadata: { q: trimmed, results: searchResults.length },
-        });
-      }
+      trackBundleEventClient(
+        searchResults.length === 0 ? "search_no_result" : "search_performed",
+        { metadata: { q: trimmed, results: searchResults.length } },
+      );
     }, 700);
-    return () => clearTimeout(t);
-  }, [trimmed, isSearching, searchResults.length]);
+    return () => clearTimeout(timer);
+  }, [isSearching, searchResults.length, trimmed]);
 
   return (
-    <section className="relative isolate flex flex-col gap-4 sm:gap-7">
-      {/* ───────── HERO ───────── */}
-      <header className="relative flex flex-col gap-3 px-1">
-        {/* Illustration 3D : dossier + feuilles qui s'y classent (coin haut-droit) */}
-        <div
-          aria-hidden
-          className="pointer-events-none absolute -top-6 right-6 hidden h-[200px] w-[230px] lg:block"
-        >
-          {/* Le wrapper flotte ; les feuilles (hero-doc) descendent à l'intérieur
-              puis passent DERRIÈRE le PNG du dossier (occlusion) → effet rangement. */}
-          <div className="hero-float absolute right-4 top-0 h-[185px] w-[185px]">
-            {HERO_DOCS.map((d, i) => (
-              <span
-                key={i}
-                className="hero-doc absolute left-1/2 top-0 -ml-[15px] block h-[36px] w-[30px] overflow-hidden rounded-[5px] bg-white"
-                style={
-                  {
-                    "--dx": d.dx,
-                    "--r": d.r,
-                    animationDelay: d.delay,
-                    boxShadow: "0 9px 16px rgba(20,10,45,0.30)",
-                  } as React.CSSProperties
-                }
-              >
-                <span
-                  className="block h-[8px] w-full"
-                  style={{ background: d.tint }}
-                />
-                <span className="mx-[4px] mt-[5px] block h-[2.5px] rounded-full bg-[rgba(42,15,77,0.18)]" />
-                <span className="mx-[4px] mt-[3px] block h-[2.5px] w-[68%] rounded-full bg-[rgba(42,15,77,0.13)]" />
-                <span className="mx-[4px] mt-[3px] block h-[2.5px] w-[82%] rounded-full bg-[rgba(42,15,77,0.13)]" />
-              </span>
-            ))}
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/3d/folder.png"
-              alt=""
-              className="absolute inset-0 h-full w-full object-contain"
-              style={{
-                filter:
-                  "drop-shadow(0 20px 36px rgba(20,10,45,0.30)) drop-shadow(0 0 50px color-mix(in oklab, var(--glass-accent-deep) 35%, transparent))",
-              }}
-            />
-          </div>
-        </div>
-
-        <nav
-          aria-label={t("breadcrumbLabel")}
-          className="flex items-center gap-1.5 text-[11.5px] text-[color:var(--glass-ink-faint)]"
-        >
-          <Link href="/" className="transition hover:text-[color:var(--glass-ink)]">
-            {t("breadcrumbHome")}
-          </Link>
+    <section className="docbel-a11y-scope relative isolate flex w-full flex-col gap-5 sm:gap-7">
+      <header className="flex flex-col gap-3 px-1" data-docbel-readable>
+        <nav aria-label={t("breadcrumbLabel")} className="flex items-center gap-2 text-sm text-[color:var(--glass-ink-soft)]" data-a11y-secondary="true">
+          <Link href="/" className="font-medium hover:text-[color:var(--glass-ink)]">{t("breadcrumbHome")}</Link>
           <span aria-hidden>/</span>
-          <span className="font-semibold text-[color:var(--glass-ink-soft)]">
-            {t("breadcrumbCurrent")}
-          </span>
+          <span className="font-bold text-[color:var(--glass-ink)]">{t("breadcrumbCurrent")}</span>
         </nav>
-        <h1 className="glass-display max-w-2xl text-[36px] font-semibold leading-[1.05] sm:text-[46px]">
+        <h1 className="glass-display max-w-3xl text-4xl font-semibold leading-tight sm:text-5xl">
           {t.rich("monDossierTitle", { em: (chunks) => <em>{chunks}</em> })}
         </h1>
-        <p className="max-w-2xl text-[14px] leading-[1.6] text-[color:var(--glass-ink-soft)]">
+        <p className="max-w-3xl text-base leading-relaxed text-[color:var(--glass-ink-soft)] sm:text-lg">
           {t("monDossierIntro")}
         </p>
       </header>
 
-      {/* ═══════ Parcours (toggle) + panneau actif + aide — pleine largeur ═══════ */}
-      <div className="flex w-full flex-col gap-4 sm:gap-6">
-        {/* ── Segmented control : choix RÉEL du parcours (pastille glissante) ── */}
-        <div
-          role="tablist"
+      <AccessibilityToolbar />
+
+      {activeRun ? (
+        <section className="flex flex-col gap-2" data-docbel-readable>
+          <h2 className="text-base font-bold text-[color:var(--glass-ink)]">{t("ongoingDossier")}</h2>
+          <ActiveRunCard run={activeRun} />
+        </section>
+      ) : null}
+
+      <section className="flex flex-col gap-3" aria-labelledby="flow-title" data-docbel-readable>
+        <div>
+          <h2 id="flow-title" className="text-xl font-bold text-[color:var(--glass-ink)]">{t("chooseFlowLabel")}</h2>
+          <p className="mt-1 text-base text-[color:var(--glass-ink-soft)]">{t("chooseFlowHelp")}</p>
+        </div>
+        <ToggleGroup
+          value={[mode]}
+          onValueChange={(values) => {
+            const selected = values.at(-1) as Mode | undefined;
+            if (selected) setMode(selected);
+          }}
+          variant="outline"
+          spacing={2}
+          className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2"
           aria-label={t("chooseFlowLabel")}
-          className="glass-surface-strong relative flex w-full max-w-2xl rounded-2xl p-1.5"
         >
-          {/* Pastille glissante = onglet actif */}
-          <span
-            aria-hidden
-            className="pointer-events-none absolute inset-y-1.5 left-1.5 rounded-xl transition-transform duration-300 ease-out motion-reduce:transition-none"
-            style={{
-              width: "calc(50% - 0.375rem)",
-              transform:
-                mode === "direct" ? "translateX(100%)" : "translateX(0)",
-              background:
-                "linear-gradient(135deg, var(--glass-accent-deep), color-mix(in oklab, var(--glass-accent-deep) 72%, var(--glass-accent-a)))",
-              boxShadow:
-                "0 10px 24px color-mix(in oklab, var(--glass-accent-deep) 38%, transparent), inset 0 1px 0 rgba(255,255,255,0.35)",
-            }}
-          />
           {MODE_TABS.map((tab) => {
-            const active = mode === tab.id;
+            const Icon = tab.icon;
             return (
-              <button
+              <ToggleGroupItem
                 key={tab.id}
-                type="button"
-                role="tab"
-                id={`tab-${tab.id}`}
-                aria-selected={active}
-                aria-controls={`panel-${tab.id}`}
-                onClick={() => setMode(tab.id)}
-                className="relative z-10 flex flex-1 items-center justify-center gap-2.5 rounded-xl px-3 py-2.5 text-left transition-colors sm:justify-start sm:px-4"
+                value={tab.id}
+                className="h-auto min-h-24 w-full justify-start gap-4 rounded-2xl p-4 text-left whitespace-normal aria-pressed:border-[color:var(--glass-accent-deep)] aria-pressed:bg-[color:var(--glass-pop-bg)]"
               >
-                <span
-                  className="flex size-9 shrink-0 items-center justify-center rounded-lg transition-colors"
-                  style={{
-                    background: active
-                      ? "rgba(255,255,255,0.20)"
-                      : "color-mix(in oklab, var(--glass-accent-deep) 12%, transparent)",
-                    color: active ? "#fff" : "var(--glass-accent-deep)",
-                  }}
-                  aria-hidden
-                >
-                  <tab.icon className="size-[18px]" />
+                <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-[color:var(--glass-pop-bg)] text-[color:var(--glass-accent-deep)]" aria-hidden>
+                  <Icon />
                 </span>
-                <span className="min-w-0">
-                  <span
-                    className="block truncate text-[13px] font-bold leading-tight transition-colors sm:text-[13.5px]"
-                    style={{ color: active ? "#fff" : "var(--glass-ink)" }}
-                  >
-                    {t(tab.labelKey as Parameters<typeof t>[0])}
-                  </span>
-                  <span
-                    className="mt-0.5 hidden truncate text-[11.5px] leading-tight transition-colors sm:block"
-                    style={{
-                      color: active
-                        ? "rgba(255,255,255,0.82)"
-                        : "var(--glass-ink-faint)",
-                    }}
-                  >
-                    {t(tab.subKey as Parameters<typeof t>[0])}
-                  </span>
+                <span className="flex min-w-0 flex-col gap-1">
+                  <span className="text-lg font-bold text-[color:var(--glass-ink)]">{t(tab.labelKey)}</span>
+                  <span className="text-base font-normal text-[color:var(--glass-ink-soft)]">{t(tab.subKey)}</span>
                 </span>
-              </button>
+              </ToggleGroupItem>
             );
           })}
-        </div>
+        </ToggleGroup>
+      </section>
 
-        {/* ── 2 colonnes : panneau actif (guide OU accès direct) + aide ──
-             Largeurs aside augmentées progressivement (lg → 2xl) : sur très
-             large (≥ 1600px) l'aide a plus de présence pour équilibrer le
-             panneau qui devient très large. */}
-        <div className="grid gap-4 sm:gap-6 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start xl:grid-cols-[minmax(0,1fr)_380px] 2xl:grid-cols-[minmax(0,1fr)_420px]">
-          {/* ════ Panneau principal — swap selon le parcours ════ */}
-          <div className="min-w-0">
-            {/* Parcours guidé */}
-            <div
-              role="tabpanel"
-              id="panel-guide"
-              aria-labelledby="tab-guide"
-              className={mode === "guide" ? "outils-rise" : "hidden"}
-            >
-              <DossierWizard situations={situations} catalog={catalog} />
+      <div role="tabpanel" aria-label={t(mode === "guide" ? "modeGuideLabel" : "modeDirectLabel")}>
+        {mode === "guide" ? (
+          <DossierWizard situations={situations} catalog={catalog} />
+        ) : (
+          <section className="glass-surface flex flex-col gap-5 p-4 sm:p-6" data-docbel-readable>
+            <div className="flex items-center gap-3">
+              <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-[color:var(--glass-pop-bg)] text-[color:var(--glass-accent-deep)]" aria-hidden>
+                <FolderOpen />
+              </span>
+              <div>
+                <h2 className="text-xl font-bold text-[color:var(--glass-ink)]">{t("directAccessTitle")}</h2>
+                <p className="mt-1 text-base text-[color:var(--glass-ink-soft)]">{t("directAccessSubtitle")}</p>
+              </div>
             </div>
 
-            {/* Accès direct */}
-            <section
-              role="tabpanel"
-              id="panel-direct"
-              aria-labelledby="tab-direct"
-              className={`glass-surface flex-col gap-4 p-6 ${
-                mode === "direct" ? "outils-rise flex" : "hidden"
-              }`}
-            >
-              <div className="flex items-center gap-3">
-            <span
-              className="glass-icon-tile flex size-9 shrink-0 items-center justify-center rounded-xl text-[color:var(--glass-accent-deep)]"
-              style={{
-                background:
-                  "color-mix(in oklab, var(--glass-accent-deep) 14%, transparent)",
-                "--tile-hue": "var(--glass-accent-deep)",
-              } as React.CSSProperties}
-              aria-hidden
-            >
-              <FolderOpen className="size-4" />
-            </span>
-            <div className="min-w-0">
-              <h2 className="text-[17px] font-semibold leading-tight text-[color:var(--glass-ink)]">
-                {t("directAccessTitle")}
-              </h2>
-              <p className="text-xs text-[color:var(--glass-ink-faint)]">
-                {t("directAccessSubtitle")}
-              </p>
+            <InputGroup className="min-h-12 rounded-2xl">
+              <InputGroupAddon><SearchIcon aria-hidden /></InputGroupAddon>
+              <InputGroupInput
+                type="search"
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder={t("searchPlaceholder")}
+                aria-label={t("searchAriaLabel")}
+                className="text-base"
+              />
+            </InputGroup>
+
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between" data-a11y-secondary="true">
+              <ToggleGroup
+                value={[sort]}
+                onValueChange={(values) => {
+                  const selected = values.at(-1) as Sort | undefined;
+                  if (selected) setSort(selected);
+                }}
+                variant="outline"
+                spacing={1}
+                className="flex w-full flex-wrap sm:w-auto"
+                aria-label={t("sortGroupLabel")}
+              >
+                {SORT_PILLS.map((pill) => (
+                  <ToggleGroupItem key={pill.id} value={pill.id} className="min-h-11 flex-1 px-3 text-sm sm:flex-none">
+                    {t(pill.labelKey)}
+                  </ToggleGroupItem>
+                ))}
+              </ToggleGroup>
+              <Button type="button" variant="outline" size="lg" className="min-h-11" aria-pressed={filtersOpen} onClick={() => setFiltersOpen((open) => !open)}>
+                <SlidersHorizontal data-icon="inline-start" aria-hidden />
+                {t("filters")}{activeCats.size > 0 ? ` (${activeCats.size})` : ""}
+              </Button>
             </div>
-          </div>
 
-          {/* Recherche */}
-          <div className="relative">
-            <SearchIcon className="pointer-events-none absolute top-1/2 left-4 size-[18px] -translate-y-1/2 text-[color:var(--glass-ink-faint)]" />
-            <input
-              type="search"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder={t("searchPlaceholder")}
-              className="search-glow glass-surface-strong h-12 w-full rounded-2xl border-0 py-3 pr-4 pl-11 text-[14px] text-[color:var(--glass-ink)] shadow-none placeholder:text-[color:var(--glass-ink-faint)] focus:outline-none"
-              aria-label={t("searchAriaLabel")}
-            />
-          </div>
-
-          {/* Pills de tri + Filtres */}
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div
-              className="flex flex-wrap items-center gap-1.5"
-              role="group"
-              aria-label={t("sortGroupLabel")}
-            >
-              {SORT_PILLS.map((pill) => {
-                const active = sort === pill.id;
-                return (
-                  <button
-                    key={pill.id}
+            {filtersOpen && availableCats.length > 0 ? (
+              <div className="flex flex-wrap gap-2 rounded-2xl border border-[color:var(--glass-border)] p-3" data-a11y-secondary="true">
+                {availableCats.map((category) => (
+                  <Button
+                    key={category.id}
                     type="button"
-                    onClick={() => setSort(pill.id)}
-                    aria-pressed={active}
-                    className="rounded-full border px-3 py-1.5 text-[12px] font-semibold transition"
-                    style={{
-                      borderColor: active
-                        ? "var(--glass-accent-deep)"
-                        : "var(--glass-border)",
-                      background: active
-                        ? "color-mix(in oklab, var(--glass-accent-deep) 12%, transparent)"
-                        : "var(--glass-surface)",
-                      color: active
-                        ? "var(--glass-accent-deep)"
-                        : "var(--glass-ink-soft)",
-                    }}
+                    variant={activeCats.has(category.id) ? "default" : "outline"}
+                    size="lg"
+                    className="min-h-11"
+                    aria-pressed={activeCats.has(category.id)}
+                    onClick={() => toggleCategory(category.id)}
                   >
-                    {t(pill.labelKey as Parameters<typeof t>[0])}
-                  </button>
-                );
-              })}
-            </div>
+                    <span aria-hidden>{category.emoji}</span>{category.label}
+                  </Button>
+                ))}
+                {activeCats.size > 0 ? (
+                  <Button type="button" variant="ghost" size="lg" className="min-h-11" onClick={() => setActiveCats(new Set())}>{t("reset")}</Button>
+                ) : null}
+              </div>
+            ) : null}
 
-            <button
-              type="button"
-              onClick={() => setFiltersOpen((v) => !v)}
-              aria-pressed={filtersOpen}
-              aria-label={t("filtersAriaLabel")}
-              className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[12px] font-semibold transition"
-              style={{
-                borderColor:
-                  filtersOpen || activeCats.size > 0
-                    ? "var(--glass-accent-deep)"
-                    : "var(--glass-border)",
-                background:
-                  filtersOpen || activeCats.size > 0
-                    ? "color-mix(in oklab, var(--glass-accent-deep) 12%, transparent)"
-                    : "var(--glass-surface)",
-                color:
-                  filtersOpen || activeCats.size > 0
-                    ? "var(--glass-accent-deep)"
-                    : "var(--glass-ink-soft)",
-              }}
-            >
-              <SlidersHorizontal className="size-3.5" />
-              {t("filters")}
-              {activeCats.size > 0 ? (
-                <span className="ml-0.5 rounded-full bg-[color:var(--glass-accent-deep)] px-1.5 text-[10px] font-bold text-white">
-                  {activeCats.size}
-                </span>
-              ) : null}
-            </button>
-          </div>
+            {empty ? (
+              <Empty>
+                <EmptyHeader>
+                  <EmptyMedia variant="icon"><SearchIcon aria-hidden /></EmptyMedia>
+                  <EmptyTitle className="text-lg">{bundles.length === 0 ? t("emptyNoneTitle") : t("emptyNoMatchTitle")}</EmptyTitle>
+                  <EmptyDescription className="text-base">{bundles.length === 0 ? t("emptyNoneBody") : t("emptyNoMatchBody")}</EmptyDescription>
+                </EmptyHeader>
+              </Empty>
+            ) : isSearching ? (
+              <div className="grid gap-3 sm:grid-cols-2">
+                {searchResults.map((bundle) => <AccessRow key={bundle.slug} bundle={bundle} />)}
+              </div>
+            ) : (
+              <div className="flex flex-col gap-6">
+                {visibleGroups.map((group) => (
+                  <section key={group.id} className="flex flex-col gap-3">
+                    <h3 className="flex items-center gap-2 text-lg font-bold text-[color:var(--glass-ink)]">
+                      <span aria-hidden>{group.emoji}</span>{group.label}
+                      <span className="ml-auto rounded-full bg-[color:var(--glass-pop-bg)] px-3 py-1 text-sm text-[color:var(--glass-accent-deep)]">{group.items.length}</span>
+                    </h3>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      {group.items.map((bundle) => <AccessRow key={bundle.slug} bundle={bundle} />)}
+                    </div>
+                  </section>
+                ))}
+              </div>
+            )}
 
-          {/* Puces de filtre par catégorie (repliables) */}
-          {filtersOpen && availableCats.length > 0 ? (
-            <div className="flex flex-wrap gap-1.5 rounded-2xl border border-[color:var(--glass-ink-line)] p-2.5">
-              {availableCats.map((c) => {
-                const on = activeCats.has(c.id);
-                return (
-                  <button
-                    key={c.id}
-                    type="button"
-                    onClick={() => toggleCat(c.id)}
-                    aria-pressed={on}
-                    className="inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[12px] font-medium transition"
-                    style={{
-                      borderColor: on
-                        ? "var(--glass-accent-deep)"
-                        : "var(--glass-border)",
-                      background: on
-                        ? "color-mix(in oklab, var(--glass-accent-deep) 12%, transparent)"
-                        : "transparent",
-                      color: on
-                        ? "var(--glass-accent-deep)"
-                        : "var(--glass-ink-soft)",
-                    }}
-                  >
-                    <span aria-hidden>{c.emoji}</span>
-                    {c.label}
-                  </button>
-                );
-              })}
-              {activeCats.size > 0 ? (
-                <button
-                  type="button"
-                  onClick={() => setActiveCats(new Set())}
-                  className="ml-auto text-[12px] font-semibold text-[color:var(--glass-accent-deep)] underline-offset-2 hover:underline"
-                >
-                  {t("reset")}
-                </button>
-              ) : null}
-            </div>
-          ) : null}
-
-          {/* Liste groupée / résultats de recherche */}
-          {isEmpty ? (
-            <div className="flex flex-col items-center gap-2 rounded-2xl px-6 py-12 text-center">
-              <SearchIcon className="size-6 text-[color:var(--glass-ink-faint)]" />
-              <p className="text-[14px] font-semibold text-[color:var(--glass-ink)]">
-                {bundles.length === 0
-                  ? t("emptyNoneTitle")
-                  : t("emptyNoMatchTitle")}
-              </p>
-              <p className="max-w-sm text-[12.5px] text-[color:var(--glass-ink-soft)]">
-                {bundles.length === 0
-                  ? t("emptyNoneBody")
-                  : t("emptyNoMatchBody")}
-              </p>
-            </div>
-          ) : isSearching ? (
-            <div className="flex flex-col gap-1">
-              {searchResults.map((b) => (
-                <AccessRow key={b.slug} bundle={b} />
-              ))}
-            </div>
-          ) : (
-            <div className="flex flex-col gap-5">
-              {visibleGroups.map((g) => (
-                <div key={g.id} className="flex flex-col gap-1.5">
-                  <h3 className="flex items-center gap-2 px-1 text-[13px] font-bold text-[color:var(--glass-ink)]">
-                    <span aria-hidden>{g.emoji}</span>
-                    {g.label}
-                    <span
-                      className="ml-auto min-w-[1.25rem] rounded-full px-1.5 py-1 text-center text-[11px] font-bold leading-none tabular-nums"
-                      style={{
-                        background:
-                          "color-mix(in oklab, var(--glass-accent-deep) 12%, transparent)",
-                        color: "var(--glass-accent-deep)",
-                      }}
-                    >
-                      {g.items.length}
-                    </span>
-                  </h3>
-                  <div className="flex flex-col gap-0.5">
-                    {g.items.map((b) => (
-                      <AccessRow key={b.slug} bundle={b} />
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Pied : voir toutes les catégories */}
-          {!isSearching && groups.length > 0 ? (
-            <div className="mt-1 border-t border-[color:var(--glass-ink-line)] pt-4">
-              <button
+            {!isSearching && groups.length > 3 ? (
+              <Button
                 type="button"
+                variant="outline"
+                size="lg"
+                className="min-h-11 w-full"
                 onClick={() => {
-                  setShowAllCats((v) => !v);
+                  setShowAllCats((shown) => !shown);
                   if (!showAllCats) setSort("categories");
                 }}
-                className="group inline-flex w-full items-center justify-between gap-1 text-[13px] font-semibold text-[color:var(--glass-ink-soft)] transition hover:text-[color:var(--glass-ink)]"
               >
-                {collapsed && hiddenCount > 0
-                  ? t("seeAllCategories", { count: groups.length })
-                  : t("seeLess")}
-                <ArrowRight
-                  className="size-4 transition-transform group-hover:translate-x-0.5"
-                  aria-hidden
-                />
-              </button>
-            </div>
-          ) : null}
-            </section>
-          </div>
-
-          {/* ════ Aide — sidebar persistante ════ */}
-          <aside
-            className="glass-surface outils-rise flex flex-col gap-4 p-4 sm:p-6 lg:sticky lg:top-6"
-            style={{ animationDelay: "120ms" }}
-          >
-          <div className="flex items-center gap-3">
-            <span
-              className="glass-icon-tile flex size-9 shrink-0 items-center justify-center rounded-xl text-[color:var(--glass-accent-deep)]"
-              style={{
-                background:
-                  "color-mix(in oklab, var(--glass-accent-deep) 14%, transparent)",
-                "--tile-hue": "var(--glass-accent-deep)",
-              } as React.CSSProperties}
-              aria-hidden
-            >
-              <HelpCircle className="size-4" />
-            </span>
-            <div className="min-w-0">
-              <h2 className="text-[17px] font-semibold leading-tight text-[color:var(--glass-ink)]">
-                {t("helpTitle")}
-              </h2>
-              <p className="text-xs text-[color:var(--glass-ink-faint)]">
-                {t("helpSubtitle")}
-              </p>
-            </div>
-          </div>
-
-          {/* Dossier en cours sur cet appareil (dynamique — absent du mockup statique) */}
-          {activeRun ? (
-            <div className="flex flex-col gap-1.5">
-              <p className="text-[11px] font-bold uppercase tracking-[0.1em] text-[color:var(--glass-ink-faint)]">
-                {t("ongoingDossier")}
-              </p>
-              <ActiveRunCard run={activeRun} />
-            </div>
-          ) : null}
-
-          {/* 4 liens d'aide (identiques au mockup) */}
-          <div className="flex flex-col gap-2">
-            <HelpRow
-              icon={HelpCircle}
-              label={t("helpFindRightDossier")}
-              onClick={() => setMode("guide")}
-            />
-            <HelpRow
-              icon={FileQuestion}
-              label={t("helpCannotFind")}
-              href="/contact"
-            />
-            <HelpRow
-              icon={RotateCcw}
-              label={t("helpWhereIsRequest")}
-              href="/reprendre"
-            />
-            <HelpRow
-              icon={Phone}
-              label={t("helpContactSupport")}
-              href="/contact"
-            />
-          </div>
-
-          {/* Conseil */}
-          <div
-            className="relative flex items-start gap-3 overflow-hidden rounded-2xl border p-4"
-            style={{
-              borderColor: "color-mix(in oklab, var(--glass-accent-c) 35%, transparent)",
-              background: "color-mix(in oklab, var(--glass-accent-c) 12%, transparent)",
-              boxShadow:
-                "inset 0 1px 0 rgba(255,255,255,0.5), 0 8px 22px color-mix(in oklab, var(--glass-accent-c) 18%, transparent)",
-            }}
-          >
-            <span
-              aria-hidden
-              className="animate-soft-sheen pointer-events-none absolute inset-y-0 left-0 w-1/3 bg-gradient-to-r from-transparent via-white/40 to-transparent"
-            />
-            <span
-              className="relative flex size-9 shrink-0 items-center justify-center rounded-xl"
-              style={{
-                background:
-                  "color-mix(in oklab, var(--glass-accent-c) 30%, var(--glass-surface-strong))",
-                color: "var(--glass-pop-fg)",
-              }}
-              aria-hidden
-            >
-              <Lightbulb className="size-[18px]" />
-            </span>
-            <div className="relative min-w-0">
-              <p className="text-[13.5px] font-bold text-[color:var(--glass-ink)]">
-                {t("tipTitle")}
-              </p>
-              <p className="mt-0.5 text-[12.5px] leading-snug text-[color:var(--glass-ink-soft)]">
-                {t("tipBody")}
-              </p>
-            </div>
-          </div>
-
-          <p className="mt-auto inline-flex items-center gap-1.5 text-[11.5px] text-[color:var(--glass-ink-faint)]">
-            <Lock className="size-3.5" aria-hidden />
-            {t("privacyNote")}
-          </p>
-          </aside>
-        </div>
+                {collapsed ? t("seeAllCategories", { count: groups.length }) : t("seeLess")}
+                <ArrowRight data-icon="inline-end" aria-hidden />
+              </Button>
+            ) : null}
+          </section>
+        )}
       </div>
+
+      <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4" aria-labelledby="help-title" data-a11y-secondary="true">
+        <div className="sm:col-span-2 lg:col-span-4">
+          <h2 id="help-title" className="text-xl font-bold text-[color:var(--glass-ink)]">{t("helpTitle")}</h2>
+          <p className="mt-1 text-base text-[color:var(--glass-ink-soft)]">{t("helpSubtitle")}</p>
+        </div>
+        <HelpRow icon={HelpCircle} label={t("helpFindRightDossier")} onClick={() => setMode("guide")} />
+        <HelpRow icon={FileQuestion} label={t("helpCannotFind")} href="/contact" />
+        <HelpRow icon={RotateCcw} label={t("helpWhereIsRequest")} href="/reprendre" />
+        <HelpRow icon={Phone} label={t("helpContactSupport")} href="/contact" />
+      </section>
+
+      <aside className="glass-surface flex items-start gap-3 rounded-2xl p-4" data-a11y-secondary="true" data-docbel-readable>
+        <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-[color:var(--glass-pop-bg)] text-[color:var(--glass-accent-deep)]" aria-hidden><Lightbulb /></span>
+        <div>
+          <p className="text-base font-bold text-[color:var(--glass-ink)]">{t("tipTitle")}</p>
+          <p className="mt-1 text-base leading-relaxed text-[color:var(--glass-ink-soft)]">{t("tipBody")}</p>
+          <p className="mt-3 inline-flex items-center gap-2 text-sm text-[color:var(--glass-ink-soft)]"><Lock aria-hidden />{t("privacyNote")}</p>
+        </div>
+      </aside>
     </section>
   );
 }

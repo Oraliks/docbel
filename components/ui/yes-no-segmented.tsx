@@ -32,7 +32,7 @@ export function YesNoSegmentedControl({
       role="radiogroup"
       aria-invalid={invalid}
       aria-disabled={disabled}
-      className={`inline-flex shrink-0 overflow-hidden rounded-full border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] ${disabled ? "opacity-60" : ""}`}
+      className={`grid min-w-56 shrink-0 grid-cols-2 overflow-hidden rounded-2xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] ${disabled ? "opacity-60" : ""}`}
     >
       {options.map((opt, i) => {
         const selected = value === opt.value;
@@ -44,7 +44,7 @@ export function YesNoSegmentedControl({
             aria-checked={selected}
             disabled={disabled}
             onClick={() => onChange(opt.value)}
-            className={`px-4 py-1.5 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 disabled:cursor-not-allowed ${i === 0 ? "" : "border-l border-[color:var(--glass-border)]"} ${
+            className={`min-h-12 px-5 py-3 text-base font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 disabled:cursor-not-allowed ${i === 0 ? "" : "border-l border-[color:var(--glass-border)]"} ${
               selected
                 ? "bg-[color:var(--glass-accent-deep,#5B46E5)] text-white"
                 : "text-[color:var(--glass-ink-soft)] hover:bg-[color:var(--glass-pop-bg)]"

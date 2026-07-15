@@ -19,8 +19,7 @@
 
 import { createContext, useContext, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { useTranslations } from "next-intl";
-import { toast } from "sonner";
+import { useLocale, useTranslations } from "next-intl";
 import {
   Accessibility,
   AlertTriangle,
@@ -28,7 +27,6 @@ import {
   ArrowRight,
   Briefcase,
   Building2,
-  Check,
   ChevronRight,
   Clock,
   Construction,
@@ -46,10 +44,18 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { GLASS_CARD } from "@/lib/glass-classes";
+import { formatDate } from "@/lib/i18n/format";
 import { AllocationEstimateBlock } from "@/components/docbel/onboarding/allocation-estimate-block";
 import { trackBundleEventClient } from "@/lib/bundles/analytics-client";
 import {
@@ -81,6 +87,12 @@ const ICONS: Record<string, LucideIcon> = {
 
 function resolveIcon(name: string): LucideIcon {
   return ICONS[name] ?? HelpCircle;
+}
+
+function persistOrientationAnswers(answers: Record<string, { value: string }>) {
+  document.cookie = `beldoc-orientation=${encodeURIComponent(
+    JSON.stringify(answers),
+  )}; path=/; max-age=600; samesite=lax`;
 }
 
 /// Résout un texte localisé : préfère la clé i18n `*Key` quand elle est
@@ -192,18 +204,6 @@ export function DossierWizard({ situations, catalog = {}, dryRun = false }: Prop
     setCurrentStep(4);
   }
 
-  function handleStartGuide() {
-    // GARDE-FOU CRITIQUE : sans sélection, on REFUSE d'avancer. Pas de
-    // défaut implicite vers chômage temporaire.
-    if (!selectedSituation) {
-      toast.error(t("wizardChooseSituationFirst"));
-      return;
-    }
-    // Re-déclenche la sélection effective (utile si l'utilisateur a cliqué
-    // sur une carte puis sur « Commencer » sans avoir auto-avancé — sécurité).
-    handleSituationSelect(selectedSituation);
-  }
-
   function handleBack() {
     if (currentStep === 4) {
       // Retour : si on venait d'un raffinement (step 3) → step 3 ;
@@ -259,9 +259,7 @@ export function DossierWizard({ situations, catalog = {}, dryRun = false }: Prop
         ...(selectedRefine ? { refine: { value: selectedRefine } } : {}),
         ...(result.dossierSlug ? { slug: { value: result.dossierSlug } } : {}),
       };
-      document.cookie = `beldoc-orientation=${encodeURIComponent(
-        JSON.stringify(answers),
-      )}; path=/; max-age=600; samesite=lax`;
+      persistOrientationAnswers(answers);
     } catch {
       // best-effort — l'orientation reste fonctionnelle sans ce cookie.
     }
@@ -277,9 +275,9 @@ export function DossierWizard({ situations, catalog = {}, dryRun = false }: Prop
 
   return (
     <DryRunContext.Provider value={dryRun}>
-    <Card className={cn(GLASS_CARD, "h-full")}>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-3 text-base">
+    <Card className={cn(GLASS_CARD, "h-full overflow-hidden")} data-docbel-readable>
+      <CardHeader className="border-b border-[color:var(--glass-ink-line)] p-4 sm:p-6">
+        <CardTitle className="flex items-center gap-3">
           <span
             className="glass-icon-tile flex size-9 shrink-0 items-center justify-center rounded-xl text-[color:var(--glass-accent-deep)]"
             style={{
@@ -289,19 +287,19 @@ export function DossierWizard({ situations, catalog = {}, dryRun = false }: Prop
             } as React.CSSProperties}
             aria-hidden
           >
-            <Sparkles className="size-4" />
+            <Sparkles />
           </span>
           <span className="flex flex-col gap-0.5">
-            <span className="text-[17px] font-semibold leading-tight">
+            <span className="text-xl font-bold leading-tight">
               {t("wizardAssistantTitle")}
             </span>
-            <span className="text-xs font-normal text-muted-foreground">
+            <span className="text-base font-normal text-muted-foreground">
               {t("wizardAssistantSubtitle")}
             </span>
           </span>
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-6">
+      <CardContent className="flex flex-col gap-6 p-4 sm:p-6">
         <Stepper currentStep={currentStep} />
 
         {/* Annonce du changement d'étape pour les lecteurs d'écran. */}
@@ -317,7 +315,6 @@ export function DossierWizard({ situations, catalog = {}, dryRun = false }: Prop
             situations={situations}
             selected={selectedSituation}
             onSelect={handleSituationSelect}
-            onStart={handleStartGuide}
           />
         )}
 
@@ -353,11 +350,11 @@ export function DossierWizard({ situations, catalog = {}, dryRun = false }: Prop
         {/* Échappatoire « je ne suis pas sûr » sur les étapes de questions. */}
         {currentStep < 4 &&
           (dryRun ? (
-            <p className="text-center text-xs text-muted-foreground">
+            <p className="text-center text-base text-muted-foreground" data-a11y-secondary="true">
               {t("wizardHesitateDryRun")}
             </p>
           ) : (
-            <p className="text-center text-xs text-muted-foreground">
+            <p className="text-center text-base text-muted-foreground" data-a11y-secondary="true">
               {t.rich("wizardHesitate", {
                 link: (chunks) => (
                   <Link
@@ -385,64 +382,27 @@ interface StepperProps {
 
 function Stepper({ currentStep }: StepperProps) {
   const t = useTranslations("public.dossier");
-  const steps: StepNumber[] = [1, 2, 3, 4];
+  const percentage = (currentStep / 4) * 100;
   return (
-    <ol
-      className="flex items-center gap-2"
-      aria-label={t("wizardProgressLabel")}
-    >
-      {steps.map((step) => {
-        const isCurrent = step === currentStep;
-        const isPast = step < currentStep;
-        const isFuture = !isCurrent && !isPast;
-        const isLast = step === 4;
-        return (
-          <li
-            key={step}
-            className={cn(
-              "flex items-center gap-2",
-              isLast ? "flex-none" : "flex-1",
-            )}
-            aria-current={isCurrent ? "step" : undefined}
-          >
-            <span
-              className={cn(
-                "flex size-7 shrink-0 items-center justify-center rounded-full text-xs font-bold transition-colors",
-                isCurrent &&
-                  "bg-[color:var(--glass-accent-deep)] text-white shadow-[0_4px_12px_color-mix(in_oklab,var(--glass-accent-deep)_45%,transparent)]",
-                isPast && "bg-[color:var(--glass-accent-deep)] text-white",
-                isFuture &&
-                  "bg-[color:var(--glass-ink-line)] text-[color:var(--glass-ink-faint)]",
-              )}
-              aria-hidden
-            >
-              {isPast ? <Check className="size-3.5" /> : step}
-            </span>
-            <span
-              className={cn(
-                "hidden truncate text-[12.5px] font-semibold transition-colors sm:inline",
-                isCurrent && "text-[color:var(--glass-ink)]",
-                isPast && "text-[color:var(--glass-ink-soft)]",
-                isFuture && "text-[color:var(--glass-ink-faint)]",
-              )}
-            >
-              {t(STEP_LABEL_KEYS[step] as Parameters<typeof t>[0])}
-            </span>
-            {!isLast && (
-              <span
-                aria-hidden
-                className={cn(
-                  "h-px flex-1 rounded-full transition-colors",
-                  isPast
-                    ? "bg-[color:var(--glass-accent-deep)]"
-                    : "bg-[color:var(--glass-ink-line)]",
-                )}
-              />
-            )}
-          </li>
-        );
-      })}
-    </ol>
+    <div className="flex flex-col gap-2" aria-label={t("wizardProgressLabel")}>
+      <div className="flex items-center justify-between gap-3">
+        <span className="text-base font-bold text-[color:var(--glass-ink)]">
+          {t("wizardQuestionCounter", { current: currentStep, total: 4 })}
+        </span>
+        <span className="text-sm font-semibold text-[color:var(--glass-ink-soft)]">
+          {t(STEP_LABEL_KEYS[currentStep] as Parameters<typeof t>[0])}
+        </span>
+      </div>
+      <span
+        role="progressbar"
+        aria-valuemin={1}
+        aria-valuemax={4}
+        aria-valuenow={currentStep}
+        className="h-2.5 overflow-hidden rounded-full bg-[color:var(--glass-ink-line)]"
+      >
+        <span className="block h-full rounded-full bg-[color:var(--glass-accent-deep)] transition-[width]" style={{ width: `${percentage}%` }} />
+      </span>
+    </div>
   );
 }
 
@@ -453,32 +413,27 @@ interface StepSituationProps {
   situations: WizardSituation[];
   selected: string | null;
   onSelect: (value: string) => void;
-  onStart: () => void;
 }
 
 function StepSituation({
   situations,
   selected,
   onSelect,
-  onStart,
 }: StepSituationProps) {
   const t = useTranslations("public.dossier");
   const tc = useTranslations("public.dossierContent");
   return (
-    <div className="space-y-4 transition-opacity duration-200">
-      <div className="space-y-1.5">
-        <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-[color:var(--glass-ink-faint)]">
-          {t("wizardQuestion1")}
-        </p>
-        <Label className="block text-[16px] font-semibold text-[color:var(--glass-ink)]">
+    <div className="flex flex-col gap-5 transition-opacity duration-200">
+      <div className="flex flex-col gap-2">
+        <Label className="block text-2xl font-bold leading-tight text-[color:var(--glass-ink)]">
           {t("wizardSituationQuestion")}
         </Label>
-        <p className="text-xs text-muted-foreground">
+        <p className="text-base leading-relaxed text-muted-foreground">
           {t("wizardSituationHelp")}
         </p>
       </div>
 
-      <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {situations.map((s) => {
           const Icon = resolveIcon(s.icon);
           const isSelected = selected === s.value;
@@ -489,7 +444,7 @@ function StepSituation({
               onClick={() => onSelect(s.value)}
               aria-pressed={isSelected}
               className={cn(
-                "group flex items-center gap-3 rounded-2xl border bg-[color:var(--glass-surface)] px-3 py-3 text-left text-sm transition-all",
+                "group flex min-h-20 items-center gap-4 rounded-2xl border bg-[color:var(--glass-surface)] px-4 py-4 text-left transition-all",
                 "hover:-translate-y-px hover:border-[color:var(--glass-accent-a)]/40 hover:shadow-sm",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-a)]/40",
                 isSelected
@@ -499,21 +454,21 @@ function StepSituation({
             >
               <span
                 className={cn(
-                  "flex size-10 shrink-0 items-center justify-center rounded-xl transition-colors",
+                  "flex size-12 shrink-0 items-center justify-center rounded-2xl transition-colors",
                   isSelected
                     ? "bg-[color:var(--glass-accent-a)] text-white"
                     : "bg-muted text-muted-foreground group-hover:bg-[color:var(--glass-accent-a)]/10 group-hover:text-[color:var(--glass-accent-a)]",
                 )}
                 aria-hidden
               >
-                <Icon className="size-[18px]" />
+                <Icon />
               </span>
               <span className="min-w-0 flex-1">
-                <span className="block truncate font-semibold text-[color:var(--glass-ink)]">
+                <span className="block text-base font-bold leading-snug text-[color:var(--glass-ink)]">
                   {resolveText(tc, s.labelKey, s.label)}
                 </span>
                 {(s.description || s.descriptionKey) ? (
-                  <span className="mt-0.5 block truncate text-xs text-muted-foreground">
+                  <span className="mt-1 block text-sm leading-snug text-muted-foreground">
                     {resolveText(tc, s.descriptionKey, s.description ?? "")}
                   </span>
                 ) : null}
@@ -530,15 +485,9 @@ function StepSituation({
         })}
       </div>
 
-      <div className="flex items-center justify-between gap-3 border-t border-[color:var(--glass-ink-line)] pt-4">
-        <p className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
-          <Lock className="size-3.5" aria-hidden />
+      <div className="flex items-center gap-2 border-t border-[color:var(--glass-ink-line)] pt-4 text-sm text-muted-foreground" data-a11y-secondary="true">
+          <Lock aria-hidden />
           {t("wizardAnswerConfidential")}
-        </p>
-        <Button onClick={onStart} variant={selected ? "default" : "outline"}>
-          {t("continue")}
-          <ArrowRight className="size-4" aria-hidden />
-        </Button>
       </div>
     </div>
   );
@@ -567,20 +516,22 @@ function StepSubQuestion({
   const subQuestionText = resolveText(tc, subQuestion.questionKey, subQuestion.question);
   const subHelpText = resolveText(tc, subQuestion.helpTextKey, subQuestion.helpText ?? "");
   return (
-    <div className="space-y-4 transition-opacity duration-200">
-      <div className="space-y-1.5">
-        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+    <div className="flex flex-col gap-5 transition-opacity duration-200">
+      <div className="flex flex-col gap-2">
+        <p className="text-sm font-semibold text-[color:var(--glass-accent-deep)]">
           {situationLabel}
         </p>
-        <Label className="text-sm font-medium">{subQuestionText}</Label>
+        <Label className="text-2xl font-bold leading-tight text-[color:var(--glass-ink)]">
+          {subQuestionText}
+        </Label>
         {subHelpText && (
-          <p className="rounded-md border-l-2 border-[color:var(--glass-accent-a)]/45 bg-[color:var(--glass-accent-a)]/8 px-2.5 py-1.5 text-xs text-[color:var(--glass-ink-soft)]">
+          <p className="rounded-xl border-l-4 border-[color:var(--glass-accent-a)] bg-[color:var(--glass-accent-a)]/8 px-4 py-3 text-base leading-relaxed text-[color:var(--glass-ink-soft)]">
             {subHelpText}
           </p>
         )}
       </div>
 
-      <div className="grid grid-cols-1 gap-2">
+      <div className="grid grid-cols-1 gap-3">
         {subQuestion.options.map((opt) => {
           const isSelected = selected === opt.value;
           const optLabel = resolveText(tc, opt.labelKey, opt.label);
@@ -592,7 +543,7 @@ function StepSubQuestion({
               onClick={() => onSelect(opt.value)}
               aria-pressed={isSelected}
               className={cn(
-                "group flex items-center gap-3 rounded-2xl border bg-[color:var(--glass-surface)] px-3 py-3 text-left text-sm transition-all",
+                "group flex min-h-20 items-center gap-4 rounded-2xl border bg-[color:var(--glass-surface)] px-4 py-4 text-left transition-all",
                 "hover:-translate-y-px hover:border-[color:var(--glass-accent-a)]/40 hover:shadow-sm",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-a)]/40",
                 isSelected
@@ -601,9 +552,9 @@ function StepSubQuestion({
               )}
             >
               <span className="flex-1">
-                <span className="block font-medium">{optLabel}</span>
+                <span className="block text-base font-bold text-[color:var(--glass-ink)]">{optLabel}</span>
                 {optHelp && (
-                  <span className="mt-0.5 block text-xs text-muted-foreground">
+                  <span className="mt-1 block text-sm leading-relaxed text-muted-foreground">
                     {optHelp}
                   </span>
                 )}
@@ -620,12 +571,12 @@ function StepSubQuestion({
         })}
       </div>
 
-      <div className="flex items-center justify-between pt-1">
-        <Button variant="ghost" onClick={onBack}>
-          <ArrowLeft className="size-4" aria-hidden />
+      <div className="flex items-center justify-between gap-4 pt-1">
+        <Button className="min-h-11" variant="ghost" onClick={onBack}>
+          <ArrowLeft data-icon aria-hidden />
           {t("previous")}
         </Button>
-        <p className="text-xs text-muted-foreground">
+        <p className="text-sm text-muted-foreground" data-a11y-secondary="true">
           {t("wizardClickAnswerHint")}
         </p>
       </div>
@@ -656,20 +607,22 @@ function StepRefine({
   const refineQuestionText = resolveText(tc, refineQuestion.questionKey, refineQuestion.question);
   const refineHelpText = resolveText(tc, refineQuestion.helpTextKey, refineQuestion.helpText ?? "");
   return (
-    <div className="space-y-4 transition-opacity duration-200">
-      <div className="space-y-1.5">
-        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+    <div className="flex flex-col gap-5 transition-opacity duration-200">
+      <div className="flex flex-col gap-2">
+        <p className="text-sm font-semibold text-[color:var(--glass-accent-deep)]">
           {subOptionLabel}
         </p>
-        <Label className="text-sm font-medium">{refineQuestionText}</Label>
+        <Label className="text-2xl font-bold leading-tight text-[color:var(--glass-ink)]">
+          {refineQuestionText}
+        </Label>
         {refineHelpText && (
-          <p className="rounded-md border-l-2 border-[color:var(--glass-accent-a)]/45 bg-[color:var(--glass-accent-a)]/8 px-2.5 py-1.5 text-xs text-[color:var(--glass-ink-soft)]">
+          <p className="rounded-xl border-l-4 border-[color:var(--glass-accent-a)] bg-[color:var(--glass-accent-a)]/8 px-4 py-3 text-base leading-relaxed text-[color:var(--glass-ink-soft)]">
             {refineHelpText}
           </p>
         )}
       </div>
 
-      <div className="grid grid-cols-1 gap-2">
+      <div className="grid grid-cols-1 gap-3">
         {refineQuestion.options.map((opt) => {
           const isSelected = selected === opt.value;
           const optLabel = resolveText(tc, opt.labelKey, opt.label);
@@ -681,7 +634,7 @@ function StepRefine({
               onClick={() => onSelect(opt.value)}
               aria-pressed={isSelected}
               className={cn(
-                "group flex items-center gap-3 rounded-2xl border bg-[color:var(--glass-surface)] px-3 py-3 text-left text-sm transition-all",
+                "group flex min-h-20 items-center gap-4 rounded-2xl border bg-[color:var(--glass-surface)] px-4 py-4 text-left transition-all",
                 "hover:-translate-y-px hover:border-[color:var(--glass-accent-a)]/40 hover:shadow-sm",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-a)]/40",
                 isSelected
@@ -690,9 +643,9 @@ function StepRefine({
               )}
             >
               <span className="flex-1">
-                <span className="block font-medium">{optLabel}</span>
+                <span className="block text-base font-bold text-[color:var(--glass-ink)]">{optLabel}</span>
                 {optHelp && (
-                  <span className="mt-0.5 block text-xs text-muted-foreground">
+                  <span className="mt-1 block text-sm leading-relaxed text-muted-foreground">
                     {optHelp}
                   </span>
                 )}
@@ -709,12 +662,12 @@ function StepRefine({
         })}
       </div>
 
-      <div className="flex items-center justify-between pt-1">
-        <Button variant="ghost" onClick={onBack}>
-          <ArrowLeft className="size-4" aria-hidden />
+      <div className="flex items-center justify-between gap-4 pt-1">
+        <Button className="min-h-11" variant="ghost" onClick={onBack}>
+          <ArrowLeft data-icon aria-hidden />
           {t("previous")}
         </Button>
-        <p className="text-xs text-muted-foreground">
+        <p className="text-sm text-muted-foreground" data-a11y-secondary="true">
           {t("wizardRefineHint")}
         </p>
       </div>
@@ -734,9 +687,9 @@ const MATCH_BADGE_KEYS: Record<MatchLevel, string> = {
 function MatchBadge({ level }: { level: MatchLevel }) {
   const t = useTranslations("public.dossier");
   return (
-    <span className="inline-flex shrink-0 items-center rounded-full bg-[color:var(--glass-accent-a)]/15 px-2 py-0.5 text-[10.5px] font-bold uppercase tracking-wide text-[color:var(--glass-accent-a)]">
+    <Badge className="h-7 shrink-0 bg-[color:var(--glass-accent-a)]/15 px-3 text-sm font-bold text-[color:var(--glass-accent-deep)]" variant="secondary">
       {t(MATCH_BADGE_KEYS[level] as Parameters<typeof t>[0])}
-    </span>
+    </Badge>
   );
 }
 
@@ -744,16 +697,16 @@ function MetaChips({ dossier }: { dossier: DerivedDossier }) {
   const t = useTranslations("public.dossier");
   if (!dossier.organism && dossier.estimatedTime == null) return null;
   return (
-    <div className="flex flex-wrap gap-1.5">
+    <div className="flex flex-wrap gap-2">
       {dossier.organism && (
-        <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
-          <Building2 className="size-3" aria-hidden /> {dossier.organism}
-        </span>
+        <Badge className="h-8 gap-2 px-3 text-sm" variant="outline">
+          <Building2 data-icon aria-hidden /> {dossier.organism}
+        </Badge>
       )}
       {dossier.estimatedTime != null && (
-        <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
-          <Clock className="size-3" aria-hidden /> {t("wizardEstMinutes", { minutes: dossier.estimatedTime })}
-        </span>
+        <Badge className="h-8 gap-2 px-3 text-sm" variant="outline">
+          <Clock data-icon aria-hidden /> {t("wizardEstMinutes", { minutes: dossier.estimatedTime })}
+        </Badge>
       )}
     </div>
   );
@@ -772,20 +725,20 @@ function BulletList({
 }) {
   if (items.length === 0) return null;
   return (
-    <div className="space-y-1">
+    <div className="flex flex-col gap-2">
       <p
         className={cn(
-          "flex items-center gap-1.5 text-xs font-semibold",
+          "flex items-center gap-2 text-base font-bold",
           tone === "warn"
             ? "text-amber-700 dark:text-amber-300"
             : "text-[color:var(--glass-ink-soft)]",
         )}
       >
-        <Icon className="size-3.5" aria-hidden /> {title}
+        <Icon data-icon aria-hidden /> {title}
       </p>
-      <ul className="ml-1 space-y-0.5">
+      <ul className="flex flex-col gap-2 pl-1">
         {items.map((it) => (
-          <li key={it} className="flex gap-1.5 text-xs text-muted-foreground">
+          <li key={it} className="flex gap-2 text-base leading-relaxed text-muted-foreground">
             <span aria-hidden className="select-none">
               •
             </span>
@@ -815,50 +768,62 @@ function PrimaryAvailable({
     ? resolveText(tc, result.nextStepKey, primary.nextStep ?? "")
     : primary.nextStep;
   return (
-    <div className="space-y-3 rounded-2xl border border-[color:var(--glass-accent-a)]/30 bg-[color:var(--glass-accent-a)]/5 p-4">
-      <div className="flex items-start gap-2">
-        <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-[color:var(--glass-accent-a)] text-white">
-          <Sparkles className="size-4" aria-hidden />
+    <div className="flex flex-col gap-5 rounded-3xl border-2 border-[color:var(--glass-accent-a)]/30 bg-[color:var(--glass-accent-a)]/5 p-5 sm:p-6">
+      <div className="flex items-start gap-4">
+        <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-[color:var(--glass-accent-a)] text-white">
+          <Sparkles aria-hidden />
         </span>
-        <div className="flex-1 space-y-1.5">
+        <div className="flex flex-1 flex-col gap-2">
           <div className="flex flex-wrap items-center gap-2">
-            <p className="text-xs font-medium uppercase tracking-wide text-[color:var(--glass-accent-a)]">
+            <p className="text-sm font-bold text-[color:var(--glass-accent-deep)]">
               {t("wizardRecommendedDossier")}
             </p>
             <MatchBadge level={primary.matchLevel} />
           </div>
-          <h3 className="text-base font-semibold">{title}</h3>
-          <p className="text-sm text-muted-foreground">{rationale}</p>
+          <h3 className="text-2xl font-bold leading-tight">{title}</h3>
+          <p className="text-base leading-relaxed text-muted-foreground">{rationale}</p>
           <MetaChips dossier={primary} />
         </div>
       </div>
 
       <NextStep text={nextStepText} />
 
-      <BulletList
-        icon={FileText}
-        title={t("wizardDocsToPrepare")}
-        items={primary.requiredDocuments}
-        tone="neutral"
-      />
-      <BulletList
-        icon={AlertTriangle}
-        title={t("wizardPointsOfAttention")}
-        items={primary.points}
-        tone="warn"
-      />
+      {(primary.requiredDocuments.length > 0 || primary.points.length > 0) && (
+        <Accordion className="rounded-2xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-4">
+          {primary.requiredDocuments.length > 0 && (
+            <AccordionItem value="documents">
+              <AccordionTrigger className="min-h-14 text-base font-bold">
+                {t("wizardDocsToPrepare")}
+              </AccordionTrigger>
+              <AccordionContent>
+                <BulletList icon={FileText} title={t("wizardDocsToPrepare")} items={primary.requiredDocuments} tone="neutral" />
+              </AccordionContent>
+            </AccordionItem>
+          )}
+          {primary.points.length > 0 && (
+            <AccordionItem value="attention">
+              <AccordionTrigger className="min-h-14 text-base font-bold">
+                {t("wizardPointsOfAttention")}
+              </AccordionTrigger>
+              <AccordionContent>
+                <BulletList icon={AlertTriangle} title={t("wizardPointsOfAttention")} items={primary.points} tone="warn" />
+              </AccordionContent>
+            </AccordionItem>
+          )}
+        </Accordion>
+      )}
 
       {/* Estimation indicative — ne se rend que pour les dossiers dont le revenu
           est une allocation proportionnelle au salaire (early-return null sinon). */}
       {result.allocationEstimate && <AllocationEstimateBlock result={result} />}
 
-      <div className="flex flex-col gap-2 pt-1 sm:flex-row sm:items-center sm:justify-end">
-        <Button variant="outline" onClick={onReset}>
+      <div className="flex flex-col-reverse gap-3 pt-1 sm:flex-row sm:items-center sm:justify-end">
+        <Button className="min-h-12" variant="outline" onClick={onReset}>
           <RotateCcw className="size-4" aria-hidden />
           {t("wizardRestartGuide")}
         </Button>
         {dryRun ? (
-          <Button disabled title={t("wizardNavDisabledTest")}>
+          <Button className="min-h-12" disabled title={t("wizardNavDisabledTest")}>
             {t("wizardStartProcedure")}
             <ArrowRight className="size-4" aria-hidden />
           </Button>
@@ -866,12 +831,13 @@ function PrimaryAvailable({
           <>
             {/* En savoir plus → vue « Documents du parcours » (page explicative)
                 sans ouverture automatique du formulaire. */}
-            <Button variant="outline" render={<Link href={`/d/${primary.slug}`} />}>
+            <Button className="min-h-12" variant="outline" render={<Link href={`/d/${primary.slug}`} />}>
               {t("learnMore")}
             </Button>
             {/* Démarrer → ouverture directe du formulaire principal (opt-in
                 `?demarrer=1`) : on saute la liste intermédiaire. */}
             <Button
+              className="min-h-12"
               render={
                 <Link
                   href={`/d/${primary.slug}?demarrer=1`}
@@ -963,12 +929,12 @@ function NextStep({ text }: { text: string | null }) {
   const t = useTranslations("public.dossier");
   if (!text) return null;
   return (
-    <div className="flex items-start gap-2 rounded-lg border border-[color:var(--glass-ink-line)] bg-[color:var(--glass-surface)] px-3 py-2">
+    <div className="flex items-start gap-3 rounded-2xl border border-[color:var(--glass-ink-line)] bg-[color:var(--glass-surface)] px-4 py-4">
       <ArrowRight
-        className="mt-0.5 size-3.5 shrink-0 text-[color:var(--glass-accent-deep)]"
+        className="mt-0.5 shrink-0 text-[color:var(--glass-accent-deep)]"
         aria-hidden
       />
-      <p className="text-xs text-[color:var(--glass-ink-soft)]">
+      <p className="text-base leading-relaxed text-[color:var(--glass-ink-soft)]">
         <span className="font-semibold">{t("wizardNextStep")} </span>
         {text}
       </p>
@@ -1096,7 +1062,7 @@ function StepResults({ result, catalog, onBack, onReset }: StepResultsProps) {
   const { primary, related } = deriveWizardResults(result, catalog);
 
   return (
-    <div className="space-y-4 transition-opacity duration-200">
+    <div className="flex flex-col gap-5 transition-opacity duration-200">
       {primary.availability === "orientation_externe" ? (
         <PrimaryExternal primary={primary} result={result} onReset={onReset} />
       ) : primary.available ? (
@@ -1106,8 +1072,8 @@ function StepResults({ result, catalog, onBack, onReset }: StepResultsProps) {
       )}
 
       {related.length > 0 && (
-        <div className="space-y-2">
-          <p className="text-xs font-semibold uppercase tracking-wide text-[color:var(--glass-ink-faint)]">
+        <div className="flex flex-col gap-3" data-a11y-secondary="true">
+          <p className="text-base font-bold text-[color:var(--glass-ink-soft)]">
             {t("wizardRelatedDossiers")}
           </p>
           <div className="grid gap-2">
@@ -1118,7 +1084,9 @@ function StepResults({ result, catalog, onBack, onReset }: StepResultsProps) {
         </div>
       )}
 
-      <ResultFooter primary={primary} />
+      <div data-a11y-secondary="true">
+        <ResultFooter primary={primary} />
+      </div>
 
       <div className="flex items-center justify-between">
         <Button variant="ghost" onClick={onBack}>
@@ -1138,12 +1106,13 @@ function StepResults({ result, catalog, onBack, onReset }: StepResultsProps) {
 /// le guide n'est pas un calculateur de droits. Renforce la confiance.
 function ResultFooter({ primary }: { primary: DerivedDossier }) {
   const t = useTranslations("public.dossier");
+  const locale = useLocale();
   const hasSources = primary.officialSources.length > 0;
   return (
     <div className="space-y-2 border-t border-[color:var(--glass-ink-line)] pt-3">
       {hasSources && (
         <div className="space-y-1">
-          <p className="text-[11px] font-bold uppercase tracking-wide text-[color:var(--glass-ink-faint)]">
+          <p className="text-sm font-bold text-[color:var(--glass-ink-faint)]">
             {t("wizardOfficialSources")}
           </p>
           <ul className="space-y-0.5">
@@ -1153,7 +1122,7 @@ function ResultFooter({ primary }: { primary: DerivedDossier }) {
                   href={s.url}
                   target="_blank"
                   rel="noreferrer noopener"
-                  className="inline-flex items-center gap-1 text-xs text-[color:var(--glass-accent-deep)] underline-offset-2 hover:underline"
+                  className="inline-flex min-h-11 items-center gap-2 text-sm text-[color:var(--glass-accent-deep)] underline-offset-2 hover:underline"
                 >
                   <ExternalLink className="size-3 shrink-0" aria-hidden />
                   {s.title}
@@ -1163,24 +1132,12 @@ function ResultFooter({ primary }: { primary: DerivedDossier }) {
           </ul>
         </div>
       )}
-      <p className="text-[11px] leading-snug text-[color:var(--glass-ink-faint)]">
+      <p className="text-sm leading-relaxed text-[color:var(--glass-ink-faint)]">
         {primary.lastVerifiedAt
-          ? t("wizardVerifiedOn", { date: formatFrDate(primary.lastVerifiedAt) })
+          ? t("wizardVerifiedOn", { date: formatDate(primary.lastVerifiedAt, locale) })
           : ""}
         {t("wizardFooterDisclaimer")}
       </p>
     </div>
   );
-}
-
-function formatFrDate(iso: string): string {
-  try {
-    return new Date(iso).toLocaleDateString("fr-BE", {
-      day: "numeric",
-      month: "long",
-      year: "numeric",
-    });
-  } catch {
-    return "";
-  }
 }

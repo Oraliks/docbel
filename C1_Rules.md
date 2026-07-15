@@ -167,3 +167,76 @@ Toute modification du comportement C1 doit mettre à jour, dans le même lot :
 3. les tests correspondants ;
 4. le seed des variantes `c1-fr`, `c1-insertion` et
    `c1-changement-situation` si la structure ou les defaults changent.
+
+## 11. Règles détaillées confirmées par l'article 110
+
+Source de référence : `reglementation/25_11_1991-1-art_110` dans le corpus
+RioLex Docbel, complétée par l'AM du 26/11/1991, articles 59 à 64.
+
+### Conjoint marié et partenaire de fait
+
+- Un conjoint marié sans revenu professionnel ni revenu de remplacement prime
+  sur les autres personnes du ménage : la présence d'enfants ne change pas
+  cette priorité. Exemple : épouse sans revenus + trois enfants = `110&1A`.
+- Un partenaire de fait peut être assimilé au conjoint uniquement s'il forme un
+  ménage de fait avec le chômeur et est financièrement à sa charge, sans être un
+  parent/allié jusqu'au troisième degré ni un enfant ouvrant le droit aux
+  allocations familiales.
+- Le conjoint marié ne déclenche pas le C1-Partenaire et ne nécessite pas la
+  signature du partenaire.
+- Le partenaire de fait financièrement à charge déclenche le C1-Partenaire lors
+  de la demande initiale, du début de la cohabitation ou d'une modification des
+  revenus. La signature du partenaire est alors requise, sauf si la déclaration
+  C1-Partenaire sert uniquement à fournir annuellement la preuve de composition
+  du ménage.
+
+### Enfant qui commence à travailler : neutralisation de 12 mois
+
+Lorsqu'un enfant perçoit pour la première fois un revenu professionnel après la
+fin de ses études, ses revenus peuvent être neutralisés pendant 12 mois de date
+à date. Le ménage peut alors conserver le code A, notamment via l'article
+`110&1M`, si les autres conditions sont remplies.
+
+La neutralisation doit être proposée comme une possibilité à déclarer, pas
+appliquée silencieusement. Le C1 doit pouvoir recueillir au minimum :
+
+- la date de début de la première activité de l'enfant ;
+- la date de fin des études ;
+- le revenu mensuel brut normal moyen ;
+- la demande explicite de neutralisation.
+
+Si deux enfants travaillent mais qu'un autre enfant ouvre encore le droit aux
+allocations familiales, le code A peut rester applicable via `110&1B` selon la
+composition exacte du ménage. Le code final doit être confirmé par l'organisme
+de paiement.
+
+### Revenus du conjoint ou partenaire salarié : régime 60B
+
+Un revenu salarié du conjoint peut, sous conditions strictes de l'AM art. 60,
+ne pas être considéré comme revenu professionnel pour l'application du code A.
+Il faut notamment tenir compte du type de contrat, du caractère fixe ou variable
+du salaire, du montant brut normal, de la durée de l'occupation et de l'absence
+de revenu de remplacement incompatible.
+
+Lorsque la situation ou le montant est encore inconnu, l'ONEM peut utiliser le
+code `60B`. Ce code est un régime conditionnel permettant le paiement au tarif A
+sous réserve d'une vérification, notamment via le formulaire C110A ; il ne doit
+pas être affiché comme une catégorie familiale autonome. Un partenaire
+indépendant est, en principe, considéré comme disposant d'un revenu
+professionnel, quel que soit le montant déclaré, sous réserve des règles
+spécifiques à confirmer par l'organisme de paiement.
+
+### Colocation et preuve
+
+Une colocation n'est pas une cohabitation au sens de l'article 59 si les
+personnes partagent un logement sans régler principalement en commun les
+questions ménagères. Pour une première déclaration de colocation à cette
+adresse, le parcours peut demander :
+
+- une déclaration sur l'honneur ;
+- l'Annexe REGIS ;
+- le contrat de bail ou un justificatif équivalent.
+
+Si la même colocation à la même adresse a déjà été déclarée et reste inchangée,
+le contrat de bail ne doit pas être redemandé automatiquement. Le C1 doit
+toutefois permettre de signaler une modification.

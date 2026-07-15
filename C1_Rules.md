@@ -98,7 +98,35 @@ obligatoire dans ce cas et ne reçoit pas de valeur automatique.
 Les documents compagnons ne doivent être exigés que lorsqu'ils sont réellement
 déclenchés par le payload du C1 et disponibles dans le parcours.
 
-## 6. Préremplissage autorisé et limites
+## 6. Priorité de détermination de l'article 110
+
+La situation familiale déclarée dans le C1 sert à orienter vers l'article
+d'indemnisation ONEM correspondant dans le lookup
+`s04-s36-article-indemnisation`.
+
+Le conjoint ou partenaire doit être analysé en priorité avant les enfants et
+les autres membres du ménage. Exemple de référence :
+
+> La personne déclare son épouse comme membre du ménage, sans revenu
+> professionnel et sans revenu de remplacement, ainsi que trois enfants. Le
+> conjoint sans revenus prime dans la qualification : la situation est
+> « travailleur ayant charge de famille — conjoint sans revenus », soit
+> `110&1A`.
+
+| Situation familiale déclarée | Article de référence | Commentaire |
+|---|---|---|
+| Époux/se sans revenu professionnel ni revenu de remplacement | `110&1A` | Le conjoint prime sur la présence d'enfants dans cet exemple |
+| Enfants à charge avec allocations familiales | `110&1B` ou variante `110&1D`/`110&1E` | Dépend de la composition exacte du ménage |
+| Enfants à charge sans revenus | `110&1C` | À confirmer selon les autres membres du ménage |
+| Partenaire sans revenus | `110&1K` | Variante distincte de l'époux/se selon le statut déclaré |
+| Isolé | `110&2` | À confirmer si pension alimentaire ou situation particulière |
+| Cohabitant avec revenus dans le ménage | `110&3` | Catégorie cohabitant |
+
+Cette correspondance doit produire une indication explicative et non une
+décision juridique automatique. Le C1 collecte les faits ; l'organisme de
+paiement confirme l'article exact.
+
+## 7. Préremplissage autorisé et limites
 
 Autorisé : identité issue du profil, date de naissance déduite d'un NISS valide,
 date du jour, mode de paiement standard et valeurs techniques nécessaires à la
@@ -109,7 +137,7 @@ déclaration ou une catégorie familiale à la place du citoyen. La catégorie A
 doit rester confirmée par le C1 et, en cas d'ambiguïté, par l'organisme de
 paiement.
 
-## 7. Génération du PDF
+## 8. Génération du PDF
 
 - Chaque réponse du Form Runner doit être reportée sur le widget AcroForm
   correspondant du C1 officiel.
@@ -121,7 +149,7 @@ paiement.
 - Le C1 ne doit pas être aplati avec une transformation qui casse ses références
   XRef ou ses champs AcroForm.
 
-## 8. Points nécessitant une vérification humaine
+## 9. Points nécessitant une vérification humaine
 
 - catégorie familiale exacte lorsque la composition du ménage ou les revenus sont
   ambigus ;
@@ -130,7 +158,7 @@ paiement.
 - toute situation non couverte explicitement par le PDF C1 ou par une source ONEM
   vérifiée.
 
-## 9. Règle de maintenance
+## 10. Règle de maintenance
 
 Toute modification du comportement C1 doit mettre à jour, dans le même lot :
 

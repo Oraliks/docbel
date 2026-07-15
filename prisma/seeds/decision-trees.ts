@@ -1,8 +1,7 @@
-/// Seed du Decision Builder : importe les 7 situations chômage historiques
-/// (lib/dossier-wizard/config.ts → WIZARD_SITUATIONS) en un arbre DB publié
-/// `chomage-orientation`. Idempotent (upsert par slug ; révision ajoutée
-/// uniquement si le contenu change). Garanti iso-fonctionnel par le test de
-/// parité `lib/decision-builder/__tests__/seed-parity.test.ts`.
+/// Seed du Decision Builder : prépare l'arbre DB `chomage-orientation` depuis
+/// la nomenclature ONEM 2026. À la création, l'arbre est publié. Sur un arbre
+/// existant, le seed fusionne seulement les nœuds manquants dans le BROUILLON :
+/// il ne remplace jamais les éditions admin et ne republie jamais implicitement.
 ///
 /// NB : le flag `DECISION_TREE_RUNTIME_ENABLED` reste OFF par défaut → tant
 /// qu'on ne l'active pas, /mon-dossier utilise toujours le TS. Le seed prépare
@@ -11,6 +10,8 @@
 import { PrismaClient, Prisma } from "@prisma/client";
 import { wizardSituationsToTreeContent } from "../../lib/decision-builder/from-wizard";
 import { applyOnem2026CanonicalTags } from "../../lib/decision-builder/onem-canonical";
+import { mergeSeedTreeContent } from "../../lib/decision-builder/merge-seed";
+import { parseTreeContent } from "../../lib/decision-builder/schema";
 import {
   mapOnem2026ToWizardSituations,
   ONEM_2026_STUB_BUNDLES,
@@ -53,7 +54,7 @@ export async function seedDecisionTrees(prisma: PrismaClient): Promise<void> {
 
   const existing = await prisma.decisionTree.findUnique({
     where: { slug: SLUG },
-    select: { id: true, publishedContent: true },
+    select: { id: true, draftContent: true },
   });
 
   if (!existing) {
@@ -62,7 +63,7 @@ export async function seedDecisionTrees(prisma: PrismaClient): Promise<void> {
         slug: SLUG,
         title: "Orientation chômage",
         description:
-          "Arbre d'orientation /mon-dossier importé depuis la config historique (7 situations ONEM).",
+          "Arbre d'orientation /mon-dossier basé sur la nomenclature ONEM 2026 et les dossiers DocBel actifs.",
         segment: "chomage",
         status: "published",
         draftContent: contentJson,
@@ -90,41 +91,32 @@ export async function seedDecisionTrees(prisma: PrismaClient): Promise<void> {
     return;
   }
 
-  // Idempotence : si le contenu publié est identique, rien à faire.
-  const sameContent =
-    JSON.stringify(existing.publishedContent) === JSON.stringify(content);
-  if (sameContent) {
+  const currentDraft = parseTreeContent(existing.draftContent);
+  const merged = mergeSeedTreeContent(currentDraft, content);
+  if (
+    merged.addedNodeIds.length === 0 &&
+    merged.addedRootOptionIds.length === 0
+  ) {
     console.log(`   = arbre ${SLUG} déjà à jour`);
     return;
   }
 
-  // Contenu changé (config TS modifiée) → met à jour + nouvelle révision.
-  const last = await prisma.decisionTreeRevision.findFirst({
-    where: { treeId: existing.id },
-    orderBy: { version: "desc" },
-    select: { version: true },
-  });
-  const nextVersion = (last?.version ?? 0) + 1;
-  const rev = await prisma.decisionTreeRevision.create({
-    data: {
-      treeId: existing.id,
-      version: nextVersion,
-      content: contentJson,
-      changeType: "minor",
-      changeNotes: "Resynchronisation depuis WIZARD_SITUATIONS (seed).",
-      publishedBy: "seed",
-    },
-  });
+  // Ne touche qu'au brouillon. L'admin valide puis publie explicitement : le
+  // seed ne doit jamais faire fuiter un contenu non relu vers /mon-dossier.
   await prisma.decisionTree.update({
     where: { id: existing.id },
     data: {
-      draftContent: contentJson,
-      publishedContent: contentJson,
-      publishedAt: now,
-      publishedRevisionId: rev.id,
-      status: "published",
+      draftContent: merged.content as unknown as Prisma.InputJsonValue,
       updatedBy: "seed",
     },
   });
-  console.log(`   ↑ arbre ${SLUG} resynchronisé (v${nextVersion})`);
+  console.log(
+    `   ↑ arbre ${SLUG} enrichi dans le brouillon ` +
+      `(+${merged.addedNodeIds.length} nœuds, +${merged.addedRootOptionIds.length} porte racine)`,
+  );
+  if (merged.preservedConflictIds.length > 0) {
+    console.log(
+      `   ↳ ${merged.preservedConflictIds.length} nœud(s) admin préservé(s) malgré un écart avec le seed`,
+    );
+  }
 }

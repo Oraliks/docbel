@@ -8,6 +8,7 @@ import { wizardSituationsToTreeContent } from "../from-wizard";
 import { treeContentToWizardSituations } from "../adapter";
 import { parseTreeContent } from "../schema";
 import { validateDecisionTree } from "../validator";
+import { mapOnem2026ToWizardSituations } from "@/prisma/seeds/data/onem-2026-tree";
 
 /// Projection comparable d'une situation : on ignore les `value` (identifiants
 /// opaques, renommés par l'aller-retour) et on normalise les champs optionnels
@@ -85,5 +86,44 @@ describe("seed parity — WIZARD_SITUATIONS round-trip via DB tree content", () 
   it("keeps the same number of situations", () => {
     const roundTripped = treeContentToWizardSituations(content);
     expect(roundTripped).toHaveLength(WIZARD_SITUATIONS.length);
+  });
+});
+
+describe("seed ONEM 2026 — branche C1 changement de situation", () => {
+  const situations = mapOnem2026ToWizardSituations();
+  const content = wizardSituationsToTreeContent(situations);
+
+  it("expose les cinq situations guidées du C1", () => {
+    const c1 = situations.find(
+      (situation) => situation.value === "changement-situation-personnelle",
+    );
+    expect(c1?.subQuestion?.options.map((option) => option.value)).toEqual([
+      "adresse",
+      "situation-personnelle-menage",
+      "permis-sejour-travail",
+      "compte-bancaire",
+      "organisme-paiement",
+    ]);
+    expect(
+      c1?.subQuestion?.options.every(
+        (option) =>
+          option.result?.dossierSlug === "changement-situation-personnelle" &&
+          option.result.availability === "disponible",
+      ),
+    ).toBe(true);
+  });
+
+  it("produit un arbre valide avec une porte racine C1", () => {
+    expect(() => parseTreeContent(content)).not.toThrow();
+    const rootId = content.rootNodeId;
+    expect(rootId).not.toBeNull();
+    if (!rootId) throw new Error("Racine ONEM absente");
+    const root = content.nodes[rootId];
+    expect(root?.type).toBe("question");
+    expect(
+      root?.type === "question"
+        ? root.optionIds.includes("opt_changement-situation-personnelle")
+        : false,
+    ).toBe(true);
   });
 });

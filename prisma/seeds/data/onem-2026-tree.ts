@@ -22,6 +22,7 @@ import type {
 type DossierSlug =
   | "chomage-complet"
   | "chomage-temporaire"
+  | "changement-situation-personnelle"
   | "allocations-insertion"
   | "reforme-fin-droit-chomage"
   | "travail-temps-partiel-maintien-droits"
@@ -98,6 +99,7 @@ interface WizardSituationV2 {
 export const ONEM_2026_AVAILABLE_SLUGS = [
   "chomage-complet",
   "chomage-temporaire",
+  "changement-situation-personnelle",
 ] as const;
 
 // ── Littéral VERBATIM du document ────────────────────────────────────────────
@@ -879,6 +881,103 @@ const wizardSituationsOnem2026: WizardSituationV2[] = [
             allocationEstimate: false,
             related: ["ffe-fermeture-entreprise"],
             sourceIds: ["ONEM_CHOMAGE_TEMPORAIRE", "ONEM_TEMPS_PARTIEL"],
+          },
+        },
+      ],
+    },
+  },
+  {
+    value: "changement-situation-personnelle",
+    icon: "Accessibility",
+    label: "Votre situation personnelle ou familiale a changé",
+    description:
+      "Vous recevez déjà des allocations et devez signaler un changement avec le formulaire C1.",
+    subQuestion: {
+      question: "Quel changement voulez-vous déclarer ?",
+      helpText:
+        "Choisissez le changement principal. Vous pourrez en déclarer plusieurs dans le même C1 s'ils prennent effet à la même date.",
+      options: [
+        {
+          value: "adresse",
+          label: "Vous avez changé d'adresse",
+          result: {
+            dossierSlug: "changement-situation-personnelle",
+            dossierTitle: "Déclarer un changement d'adresse",
+            availability: "disponible",
+            rationale:
+              "Le formulaire C1 permet de signaler votre nouvelle adresse pendant que vous recevez des allocations.",
+            nextStep:
+              "Ouvrir le dossier de changement de situation et préparer la nouvelle adresse ainsi que sa date d'effet.",
+            matchLevel: "recommande",
+            allocationEstimate: false,
+            sourceIds: ["ONEM_C1"],
+          },
+        },
+        {
+          value: "situation-personnelle-menage",
+          label: "Votre situation personnelle ou celle de votre ménage a changé",
+          helpText:
+            "Par exemple : mariage, séparation, cohabitation ou changement concernant une personne du ménage.",
+          result: {
+            dossierSlug: "changement-situation-personnelle",
+            dossierTitle: "Déclarer un changement de situation personnelle ou familiale",
+            availability: "disponible",
+            rationale:
+              "La composition du ménage et la situation familiale peuvent influencer votre dossier d'allocations et se déclarent au moyen du C1.",
+            nextStep:
+              "Ouvrir le dossier de changement de situation et préparer les informations sur les personnes concernées.",
+            matchLevel: "recommande",
+            allocationEstimate: false,
+            sourceIds: ["ONEM_C1"],
+          },
+        },
+        {
+          value: "permis-sejour-travail",
+          label: "Votre permis de séjour ou de travail a changé",
+          result: {
+            dossierSlug: "changement-situation-personnelle",
+            dossierTitle: "Déclarer un changement de permis",
+            availability: "disponible",
+            rationale:
+              "Le C1 permet de signaler une modification de votre permis de séjour ou de travail à votre organisme de paiement.",
+            nextStep:
+              "Ouvrir le dossier de changement de situation et préparer une copie du nouveau permis.",
+            matchLevel: "recommande",
+            allocationEstimate: false,
+            sourceIds: ["ONEM_C1"],
+          },
+        },
+        {
+          value: "compte-bancaire",
+          label: "Votre numéro de compte bancaire a changé",
+          result: {
+            dossierSlug: "changement-situation-personnelle",
+            dossierTitle: "Déclarer un nouveau compte bancaire",
+            availability: "disponible",
+            rationale:
+              "Votre organisme de paiement doit connaître le compte sur lequel vos allocations doivent être versées.",
+            nextStep:
+              "Ouvrir le dossier de changement de situation et préparer le nouvel IBAN, le BIC éventuel et le nom du titulaire.",
+            matchLevel: "recommande",
+            allocationEstimate: false,
+            sourceIds: ["ONEM_C1"],
+          },
+        },
+        {
+          value: "organisme-paiement",
+          label: "Vous voulez changer d'organisme de paiement",
+          helpText: "Par exemple : passer de la CAPAC à un syndicat ou inversement.",
+          result: {
+            dossierSlug: "changement-situation-personnelle",
+            dossierTitle: "Changer d'organisme de paiement",
+            availability: "disponible",
+            rationale:
+              "Le C1 prévoit une demande spécifique de transfert vers un autre organisme de paiement.",
+            nextStep:
+              "Ouvrir le dossier et indiquer le nouvel organisme ainsi que la date souhaitée du transfert.",
+            matchLevel: "recommande",
+            allocationEstimate: false,
+            sourceIds: ["ONEM_C1"],
           },
         },
       ],

@@ -240,3 +240,30 @@ adresse, le parcours peut demander :
 Si la même colocation à la même adresse a déjà été déclarée et reste inchangée,
 le contrat de bail ne doit pas être redemandé automatiquement. Le C1 doit
 toutefois permettre de signaler une modification.
+
+## 12. Barèmes dynamiques utilisés par la C1
+
+Les montants servant à déterminer les règles familiales ne doivent jamais être
+copiés en dur dans le formulaire, l'arbre décisionnel ou le code de résolution.
+La C1 doit interroger le dernier fichier de barème **publié** et retenir celui
+dont la date de validité est la plus récente. Le fichier actuellement actif n'est
+qu'une photographie à une date donnée : il ne constitue pas une référence
+permanente.
+
+Les règles concernées comprennent notamment :
+
+- le revenu professionnel maximal du conjoint ou partenaire salarié (AM art. 60) ;
+- le revenu professionnel maximal d'un enfant (AM art. 60) ;
+- les revenus de remplacement du partenaire, de l'enfant et des ascendants
+  (AM art. 61 et 62) ;
+- les montants utilisés pour les situations avec pension alimentaire ou
+  ascendants pensionnés.
+
+Lorsqu'un nouveau fichier est importé et publié dans « Autres montants », la
+C1 doit donc utiliser automatiquement ses valeurs pour les nouveaux parcours,
+sans modification manuelle du code. Chaque résultat doit conserver la date de
+validité du barème utilisé et afficher une mention du type : « seuil appliqué :
+barème ONEM valide au JJ/MM/AAAA ».
+
+Si aucun barème publié n'est disponible, la C1 ne doit pas inventer un seuil :
+elle doit afficher que la vérification par l'organisme de paiement est requise.

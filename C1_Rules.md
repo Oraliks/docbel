@@ -235,11 +235,25 @@ adresse, le parcours peut demander :
 
 - une déclaration sur l'honneur ;
 - l'Annexe REGIS ;
-- le contrat de bail ou un justificatif équivalent.
+- une explication de la vie autonome et de l'absence de gestion commune du
+  ménage.
 
 Si la même colocation à la même adresse a déjà été déclarée et reste inchangée,
-le contrat de bail ne doit pas être redemandé automatiquement. Le C1 doit
+les justificatifs ne doivent pas être redemandés automatiquement. Le C1 doit
 toutefois permettre de signaler une modification.
+
+### Date d'un transfert
+
+Pour une nouvelle demande de transfert d'organisme ou de bureau, la date
+choisie ne peut pas être antérieure à la date du jour : l'assistant doit bloquer
+la demande et expliquer que le transfert doit être introduit à partir d'une date
+actuelle ou future.
+
+L'utilisateur peut toutefois mentionner une date passée dans le C1 lorsqu'il ne
+s'agit pas d'une nouvelle demande de transfert, mais d'une déclaration destinée
+à demander une révision, une régularisation ou l'examen d'une situation déjà
+survenue. Cette date doit alors être conservée comme date de l'événement
+déclaré, sans être traitée comme une date de transfert futur.
 
 ## 12. Barèmes dynamiques utilisés par la C1
 

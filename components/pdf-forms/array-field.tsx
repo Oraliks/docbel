@@ -9,6 +9,7 @@ import { PdfField } from "./pdf-field";
 import { loc, type Locale, type FieldValue, type FieldValueRecord, type FormPayload, type ConditionOp, isFieldValueRecordArray } from "@/lib/pdf-forms/types";
 import type { PublicField } from "@/lib/pdf-forms/public-serializer";
 import { isFieldVisible } from "@/lib/pdf-forms/validation";
+import { getCohabitationAdvice } from "@/lib/pdf-forms/cohabitation-advice";
 
 interface Props {
   field: PublicField;
@@ -41,6 +42,7 @@ export function ArrayField({ field, value, locale, onChange, formId, formSlug, p
   );
 
   const rows: FieldValueRecord[] = isFieldValueRecordArray(value) ? value : [];
+  const cohabitationAdvice = field.id === "cohabitants" ? getCohabitationAdvice(rows) : null;
 
   function addRow() {
     if (field.maxRows && rows.length >= field.maxRows) return;
@@ -129,6 +131,20 @@ export function ArrayField({ field, value, locale, onChange, formId, formSlug, p
           ))
         )}
       </div>
+
+      {cohabitationAdvice === "consider-fac" && (
+        <div
+          role="status"
+          className="mt-3 rounded-lg border border-amber-300/70 bg-amber-50 p-3 text-sm text-amber-950"
+        >
+          <strong>Vérifie le lien avec cette personne.</strong>{" "}
+          Vous êtes deux dans le ménage (vous compris). Si cette personne est
+          réellement financièrement à votre charge, choisissez « FAC » plutôt
+          que « Aucun lien » : vous pourriez prétendre au statut de chef de
+          ménage. Un justificatif pourra être demandé par votre organisme de
+          paiement.
+        </div>
+      )}
 
       <Button
         type="button"

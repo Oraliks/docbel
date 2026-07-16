@@ -13,15 +13,25 @@
 //
 // Usage : pnpm tsx scripts/apply-c1-improvements.ts        (dry run par défaut)
 //         pnpm tsx scripts/apply-c1-improvements.ts --yes  (applique en DB)
+//         pnpm tsx scripts/apply-c1-improvements.ts --yes --slug c1-changement-situation
+//           (applique une seule cible)
 
 import { prisma } from "@/lib/prisma";
 import { C1_IMPROVEMENT_TARGETS, applyOneC1Improvement } from "@/lib/pdf-forms/seed/apply-c1-improvements-core";
 
 const APPLY = process.argv.includes("--yes");
+const slugArgIndex = process.argv.indexOf("--slug");
+const targetSlug = slugArgIndex >= 0 ? process.argv[slugArgIndex + 1] : undefined;
 
 async function main() {
   console.log(`Mode : ${APPLY ? "🔥 APPLY" : "👀 DRY RUN"}`);
-  for (const target of C1_IMPROVEMENT_TARGETS) {
+  const targets = targetSlug
+    ? C1_IMPROVEMENT_TARGETS.filter((target) => target.slug === targetSlug)
+    : C1_IMPROVEMENT_TARGETS;
+  if (targetSlug && targets.length === 0) {
+    throw new Error(`Cible C1 inconnue : ${targetSlug}`);
+  }
+  for (const target of targets) {
     const r = await applyOneC1Improvement(target, APPLY);
     if (r.status === "not_found") {
       console.log(`⚠️  ${r.slug.padEnd(16)} introuvable en DB — seed-le d'abord (endpoint admin ou seed-c1-companion-forms.ts).`);

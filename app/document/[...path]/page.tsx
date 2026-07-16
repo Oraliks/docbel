@@ -14,6 +14,7 @@ import { getFormContextTips } from "@/lib/form-context-tips.server";
 import { DisabledFormView } from "./disabled-form-view";
 import { getDossier } from "@/lib/dossiers/registry";
 import { familyAnswersToC1Prefill } from "@/lib/dossiers/family-prefill";
+import { orientationAnswersToC1Prefill } from "@/lib/dossiers/orientation";
 import type { PdfFormField, FormPayload } from "@/lib/pdf-forms/types";
 import { pickInitialStepId } from "@/lib/pdf-forms/resume-step";
 import { buildProfilePrefill } from "@/lib/pdf-forms/profile-prefill";
@@ -103,6 +104,7 @@ async function loadBundleSharedValues(
   lastStepId: string | null;
   draftForForm: FormPayload | undefined;
   eligibilityAnswers: Record<string, string>;
+  orientationAnswers: unknown;
 }> {
   const invalid = {
     shared: {},
@@ -112,6 +114,7 @@ async function loadBundleSharedValues(
     lastStepId: null,
     draftForForm: undefined,
     eligibilityAnswers: {},
+    orientationAnswers: null,
   };
   const run = await prisma.bundleRun.findUnique({
     where: { id: bundleRunId },
@@ -177,6 +180,7 @@ async function loadBundleSharedValues(
     lastStepId: run.lastStepId,
     draftForForm,
     eligibilityAnswers: (run.eligibilityAnswers as Record<string, string> | null) ?? {},
+    orientationAnswers: run.orientationAnswers,
   };
 }
 
@@ -272,8 +276,16 @@ export default async function PdfFormPage({
   let draftValues: FormPayload | undefined;
   if (bundleRun) {
     const sessionId = (await cookies()).get("beldoc-bundle-session")?.value || null;
-    const { shared, canonical, runValid, lastFormId, lastStepId, draftForForm, eligibilityAnswers } =
-      await loadBundleSharedValues(bundleRun, form.id, { userId, sessionId });
+    const {
+      shared,
+      canonical,
+      runValid,
+      lastFormId,
+      lastStepId,
+      draftForForm,
+      eligibilityAnswers,
+      orientationAnswers,
+    } = await loadBundleSharedValues(bundleRun, form.id, { userId, sessionId });
     if (runValid) {
       validBundleRunId = bundleRun;
       const bySharedFrom = applySharedValuesToForm(form.fields, shared);
@@ -293,7 +305,17 @@ export default async function PdfFormPage({
         };
       }
       initialStepId = pickInitialStepId(lastFormId, lastStepId, form.id);
-      draftValues = draftForForm;
+      // Les cases issues de l'assistant sont des valeurs initiales. Un vrai
+      // brouillon enregistré est fusionné ensuite et reste donc prioritaire
+      // (ex. l'utilisateur a volontairement décoché la suggestion).
+      const orientationPrefill = form.slug === "c1-changement-situation"
+        ? orientationAnswersToC1Prefill(orientationAnswers)
+        : {};
+      const hasInitialValues =
+        draftForForm !== undefined || Object.keys(orientationPrefill).length > 0;
+      draftValues = hasInitialValues
+        ? { ...orientationPrefill, ...(draftForForm ?? {}) }
+        : undefined;
     }
   }
 

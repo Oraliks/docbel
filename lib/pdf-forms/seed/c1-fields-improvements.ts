@@ -274,7 +274,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
     id: "commune",
     pdfFieldName: "",
     type: "text",
-    required: false,
+    required: true,
     label: { fr: "Commune", nl: "", de: "" },
     help: {
       fr: "Remplie automatiquement à partir de ton code postal. Si le code couvre plusieurs communes, choisis la tienne ; pour une adresse à l'étranger, saisis-la à la main.",
@@ -1372,7 +1372,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
     required: true,
     label: { fr: "N° de compte bancaire (IBAN)", nl: "", de: "" },
     help: {
-      fr: "IBAN belge (BE…) ou étranger de la zone SEPA (FR…, DE…, NL…, LU…, ES…, IT…, LT… etc.). Le pays est détecté depuis les 2 premières lettres — pour un IBAN étranger, un BIC te sera demandé en plus.",
+      fr: "IBAN belge (BE…) ou étranger de la zone SEPA (FR…, DE…, NL…, LU…, ES…, IT…, LT… etc.). Le pays est détecté depuis les 2 premières lettres. Pour certaines banques étrangères, le BIC est prérempli automatiquement.",
       nl: "",
       de: "",
     },
@@ -1417,7 +1417,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
     required: true,
     label: { fr: "BIC (code SWIFT de la banque)", nl: "", de: "" },
     help: {
-      fr: "Obligatoire pour un IBAN étranger. Le BIC se trouve sur tes extraits de compte (8 ou 11 caractères, ex. BNPAFRPP).",
+      fr: "Obligatoire pour un IBAN étranger. Lorsqu'il est trouvé automatiquement, le BIC est ajouté et verrouillé. Sinon, retrouve-le sur tes extraits de compte (8 ou 11 caractères, ex. BNPAFRPP).",
       nl: "", de: "",
     },
     placeholder: { fr: "BNPAFRPP", nl: "", de: "" },
@@ -2160,6 +2160,39 @@ export function applyC1Improvements(
         // `hidden` = ni rendue à l'écran, ni stampée (les 2 cases oui/non
         // restent neutres sur le PDF).
         if (q.id === "chomeurTemporaireAlternance") return { ...q, hidden: true };
+        // Libellés courts du panneau bancaire dédié au parcours de
+        // changement de situation. Les valeurs métier et le mapping PDF ne
+        // changent pas, seul le phrasé visible est rapproché de la maquette.
+        if (q.id === "modePaiement") {
+          return {
+            ...q,
+            label: { ...q.label, fr: "Réception des allocations" },
+            options: q.options?.map((option) => ({
+              ...option,
+              label: {
+                ...option.label,
+                fr: option.value === "virement"
+                  ? "Virement bancaire"
+                  : "Chèque circulaire envoyé à mon adresse",
+              },
+            })),
+          };
+        }
+        if (q.id === "titulaireCompte") {
+          return {
+            ...q,
+            label: { ...q.label, fr: "Titulaire du compte" },
+            options: q.options?.map((option) => ({
+              ...option,
+              label: {
+                ...option.label,
+                fr: option.value === "mon-nom"
+                  ? "À mon nom"
+                  : "Au nom d'une autre personne",
+              },
+            })),
+          };
+        }
         // Libellé/aide raccourcis pour l'étape Motif. La date de changement
         // (saisie ici) est stampée par BINDINGS (c1-changement.ts) sur la ligne
         // « à partir du » du/des motif(s) COCHÉ(s) uniquement. Oraliks a scindé
@@ -2172,6 +2205,13 @@ export function applyC1Improvements(
         if (q.id === "dateModificationEffective") {
           return {
             ...q,
+            required: true,
+            // Dans ce parcours, motifIntroduction est toujours répondu
+            // automatiquement à "modification" puis retiré du schéma Zod
+            // de l'étape. Garder ce visibleIf ferait donc considérer la date
+            // comme invisible pendant validateStepFields et permettrait de
+            // continuer malgré required=true.
+            visibleIf: undefined,
             label: { ...q.label, fr: "Date de changement" },
             help: {
               ...q.help,

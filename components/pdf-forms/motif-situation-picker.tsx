@@ -10,20 +10,22 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { Field, FieldLegend, FieldSet } from "@/components/ui/field";
+import { cn } from "@/lib/utils";
 import { PdfField } from "./pdf-field";
 import { loc, Locale, FieldValue } from "@/lib/pdf-forms/types";
 import type { PublicField } from "@/lib/pdf-forms/public-serializer";
 import type { FormPayload } from "@/lib/pdf-forms/types";
 
-/// Icône + clé i18n du badge "Type" par champ — composant volontairement
+/// Icône du motif par champ — composant volontairement
 /// spécifique à l'étape Motif du C1 changement-situation (pas un mécanisme
 /// générique : les 5 champs et leur habillage sont propres à ce dossier).
-const ROW_META: Record<string, { icon: LucideIcon; badgeKey: string }> = {
-  modificationAdresse: { icon: MapPinIcon, badgeKey: "runnerMotifBadgeAdresse" },
-  modificationSituationFamiliale: { icon: UsersIcon, badgeKey: "runnerMotifBadgeSituation" },
-  modificationPermisSejour: { icon: IdCardIcon, badgeKey: "runnerMotifBadgePermis" },
-  modificationCompte: { icon: LandmarkIcon, badgeKey: "runnerMotifBadgePaiements" },
-  transfereOrganismePaiement: { icon: Building2Icon, badgeKey: "runnerMotifBadgeTransfert" },
+const ROW_META: Record<string, { icon: LucideIcon }> = {
+  modificationAdresse: { icon: MapPinIcon },
+  modificationSituationFamiliale: { icon: UsersIcon },
+  modificationPermisSejour: { icon: IdCardIcon },
+  modificationCompte: { icon: LandmarkIcon },
+  transfereOrganismePaiement: { icon: Building2Icon },
 };
 
 interface Props {
@@ -37,7 +39,7 @@ interface Props {
 }
 
 /// Étape "Motif" du C1 changement-situation : liste des 5 situations à
-/// cocher (multi-sélection préservée) façon tableau avec badge de type, et
+/// cocher (multi-sélection préservée) façon liste avec icône, et
 /// un panneau "Détails" pour les questions complémentaires (dates
 /// conditionnelles) — cf. mockup Oraliks, 2026-07-07.
 export function MotifSituationPicker({ fields, values, errors, locale, setValue, formId, formSlug }: Props) {
@@ -50,45 +52,55 @@ export function MotifSituationPicker({ fields, values, errors, locale, setValue,
 
   return (
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_320px]">
-      {/* Colonne Motif : tableau des 5 lignes */}
-      <div className="rounded-2xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] p-4 sm:p-5">
-        <div className="flex items-center justify-between border-b border-[color:var(--glass-border)] pb-2 text-[11px] font-bold uppercase tracking-[0.06em] text-[color:var(--glass-ink-faint)]">
-          <span>{t("runnerMotifColumnMotif")}</span>
-          <span>{t("runnerMotifColumnType")}</span>
-        </div>
-        <div className="divide-y divide-[color:var(--glass-border)]">
+      {/* Colonne Motif : coche, icône puis libellé sur chaque ligne */}
+      <FieldSet className="gap-0 rounded-2xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] p-4 sm:p-5">
+        <FieldLegend
+          variant="label"
+          className="mb-0 w-full border-b border-[color:var(--glass-border)] pb-2 text-[11px] font-bold uppercase tracking-[0.06em] text-[color:var(--glass-ink-faint)]"
+        >
+          {t("runnerMotifColumnMotif")}
+        </FieldLegend>
+        <div data-slot="checkbox-group" className="divide-y divide-[color:var(--glass-border)]">
           {listFields.map((f) => {
             const meta = ROW_META[f.id];
             const Icon = meta.icon;
             const selected = values[f.id] === true;
+            const label = loc(f.label, locale);
             return (
-              <button
-                key={f.id}
-                type="button"
-                aria-pressed={selected}
-                onClick={() => setValue(f.id, values[f.id] !== true)}
-                className={`flex w-full items-center gap-3 rounded-lg px-2 py-3 text-left transition-colors ${
-                  selected ? "bg-[color:var(--glass-pop-bg)]" : ""
-                }`}
-              >
-                <span
-                  aria-hidden
-                  className={`flex size-5 shrink-0 items-center justify-center rounded-[6px] border-2 transition-colors ${
-                    selected
-                      ? "border-[color:var(--glass-accent-deep,#5B46E5)] bg-[color:var(--glass-accent-deep,#5B46E5)]"
-                      : "border-[color:var(--glass-border)]"
-                  }`}
+              <Field key={f.id} orientation="horizontal" className="gap-0">
+                <button
+                  type="button"
+                  role="checkbox"
+                  aria-checked={selected}
+                  aria-invalid={Boolean(errors[f.id])}
+                  onClick={() => setValue(f.id, !selected)}
+                  className={cn(
+                    "flex w-full items-center gap-3 rounded-lg px-2 py-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1",
+                    selected && "bg-[color:var(--glass-pop-bg)]",
+                  )}
                 >
-                  {selected && <CheckIcon className="size-3.5 text-white" strokeWidth={3} />}
-                </span>
-                <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-[color:var(--glass-ink)]">
-                  {loc(f.label, locale)}
-                </span>
-                <span className="flex shrink-0 items-center gap-1.5 rounded-full bg-[color:var(--glass-pop-bg)] px-2.5 py-1 text-[11px] font-semibold text-[color:var(--glass-accent-deep,#5B46E5)]">
-                  <Icon className="size-3.5" aria-hidden />
-                  {t(meta.badgeKey as Parameters<typeof t>[0])}
-                </span>
-              </button>
+                  <span
+                    aria-hidden
+                    className={cn(
+                      "flex size-5 shrink-0 items-center justify-center rounded-full border-2 transition-colors",
+                      selected
+                        ? "border-[color:var(--glass-accent-deep,#5B46E5)] bg-[color:var(--glass-accent-deep,#5B46E5)] text-white"
+                        : "border-[color:var(--glass-ink-faint)]",
+                    )}
+                  >
+                    {selected && <CheckIcon className="size-3" strokeWidth={3} />}
+                  </span>
+                  <span
+                    aria-hidden
+                    className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[color:var(--glass-pop-bg)] text-[color:var(--glass-accent-deep,#5B46E5)]"
+                  >
+                    <Icon className="size-4" />
+                  </span>
+                  <span className="min-w-0 flex-1 text-[13px] font-medium text-[color:var(--glass-ink)]">
+                    {label}
+                  </span>
+                </button>
+              </Field>
             );
           })}
         </div>
@@ -97,7 +109,7 @@ export function MotifSituationPicker({ fields, values, errors, locale, setValue,
             {msg}
           </p>
         ))}
-      </div>
+      </FieldSet>
 
       {/* Colonne Détails */}
       <div className="flex flex-col gap-4 rounded-2xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] p-4 sm:p-5">

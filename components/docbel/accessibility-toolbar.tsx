@@ -34,7 +34,15 @@ const TEXT_SIZE_KEYS: Record<
   xlarge: "textSize.xlarge",
 };
 
-export function AccessibilityToolbar() {
+interface AccessibilityToolbarProps {
+  showSimpleMode?: boolean;
+  showReducedMotion?: boolean;
+}
+
+export function AccessibilityToolbar({
+  showSimpleMode = true,
+  showReducedMotion = true,
+}: AccessibilityToolbarProps = {}) {
   const t = useTranslations("public.accessibility");
   const preferences = useSyncExternalStore(
     subscribeAccessibilityPreferences,
@@ -119,34 +127,38 @@ export function AccessibilityToolbar() {
         <Contrast data-icon="inline-start" aria-hidden />
         {t("contrast")}
       </Button>
-      <Button
-        type="button"
-        variant={preferences.simpleMode ? "default" : "outline"}
-        size="sm"
-        className="min-h-10 px-2.5"
-        aria-pressed={preferences.simpleMode}
-        onClick={() =>
-          updateAccessibilityPreferences({ simpleMode: !preferences.simpleMode })
-        }
-      >
-        <Gauge data-icon="inline-start" aria-hidden />
-        {t("simpleMode")}
-      </Button>
-      <Button
-        type="button"
-        variant={preferences.reducedMotion ? "default" : "outline"}
-        size="sm"
-        className="min-h-10 px-2.5"
-        aria-pressed={preferences.reducedMotion}
-        onClick={() =>
-          updateAccessibilityPreferences({
-            reducedMotion: !preferences.reducedMotion,
-          })
-        }
-      >
-        <Pause data-icon="inline-start" aria-hidden />
-        {t("reduceMotion")}
-      </Button>
+      {showSimpleMode && (
+        <Button
+          type="button"
+          variant={preferences.simpleMode ? "default" : "outline"}
+          size="sm"
+          className="min-h-10 px-2.5"
+          aria-pressed={preferences.simpleMode}
+          onClick={() =>
+            updateAccessibilityPreferences({ simpleMode: !preferences.simpleMode })
+          }
+        >
+          <Gauge data-icon="inline-start" aria-hidden />
+          {t("simpleMode")}
+        </Button>
+      )}
+      {showReducedMotion && (
+        <Button
+          type="button"
+          variant={preferences.reducedMotion ? "default" : "outline"}
+          size="sm"
+          className="min-h-10 px-2.5"
+          aria-pressed={preferences.reducedMotion}
+          onClick={() =>
+            updateAccessibilityPreferences({
+              reducedMotion: !preferences.reducedMotion,
+            })
+          }
+        >
+          <Pause data-icon="inline-start" aria-hidden />
+          {t("reduceMotion")}
+        </Button>
+      )}
     </section>
   );
 }

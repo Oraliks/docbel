@@ -33,6 +33,7 @@ import { FIELD_DERIVATIONS, applyFieldDerivations } from "@/lib/pdf-forms/field-
 import { resolveOnSelectSet } from "@/lib/pdf-forms/field-side-effects";
 import { findListMatchErrors } from "@/lib/pdf-forms/list-match";
 import { activeTriggers } from "@/lib/pdf-forms/triggers";
+import { bicFromForeignIban } from "@/lib/pdf-forms/bic-lookup";
 import type { PublicForm, PublicField } from "@/lib/pdf-forms/public-serializer";
 import { buildSteps, buildMacroSteps, type OptionalSection, type MacroStep } from "@/lib/pdf-forms/build-steps";
 import { resolveStepIndexById } from "@/lib/pdf-forms/resume-step";
@@ -46,6 +47,7 @@ import { CompactAccordionSection } from "./compact-accordion-section";
 import { AutoSaveNotice } from "./auto-save-notice";
 import { ResetFormButton } from "./reset-form-button";
 import { MacroFinalSummary } from "./macro-final-summary";
+import { PaymentMethodPanel } from "./payment-method-panel";
 import { OptionCard } from "@/components/ui/option-card";
 import { AccessibilityToolbar } from "@/components/docbel/accessibility-toolbar";
 
@@ -53,6 +55,24 @@ const LOCALE_NAMES: Record<Locale, string> = { fr: "FR", nl: "NL", de: "DE" };
 
 // Types de champ qui occupent toute la largeur dans la grille 2 colonnes.
 const FULL_WIDTH_TYPES = new Set(["textarea", "signature", "fullname", "checkbox", "radio", "array"]);
+
+function withSuggestedBic(values: FormPayload, fields: PublicField[]): FormPayload {
+  const ibanField = fields.find((field) => field.canonicalKey === "banque.iban");
+  const bicField = fields.find((field) => field.canonicalKey === "banque.bic");
+  if (
+    !ibanField ||
+    !bicField ||
+    (typeof values[bicField.id] === "string" && values[bicField.id].trim() !== "") ||
+    typeof values[ibanField.id] !== "string"
+  ) {
+    return values;
+  }
+
+  const suggestedBic = bicFromForeignIban(values[ibanField.id]);
+  return suggestedBic && values[bicField.id] !== suggestedBic
+    ? { ...values, [bicField.id]: suggestedBic }
+    : values;
+}
 
 function defaultValues(form: PublicForm, bundlePrefill?: PrefillMap): FormPayload {
   const v: FormPayload = {};
@@ -80,7 +100,9 @@ function defaultValues(form: PublicForm, bundlePrefill?: PrefillMap): FormPayloa
     else if (f.type === "fullname") v[f.id] = { first: "", last: "" };
     else if (isSignatureField(f)) v[f.id] = "";
   }
-  return v;
+
+  // Un IBAN déjà prérempli (dossier/reprise) ne passe pas par `setValue`.
+  return withSuggestedBic(v, form.fields);
 }
 
 type Step =
@@ -153,6 +175,9 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
   >(null);
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Mémorise les BIC proposés afin de les effacer seulement quand l'IBAN est
+  // remplacé par un compte non couvert (le BIC redevient alors saisissable).
+  const autoFilledBic = useRef(new Map<string, string>());
   // Champ actuellement focalisé (§10.4, Lot 4d) : pilote l'aide « À propos de
   // ce champ » en tête du panneau de gauche. Mis à jour PAR ÉVÉNEMENT (focus /
   // clic d'un champ) — jamais dans un useEffect (règle anti-setState-in-effect).
@@ -201,6 +226,7 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
       body: JSON.stringify({ bundleRunId }),
     }).catch(() => {});
     setValues(defaultValues(form, bundlePrefill));
+    autoFilledBic.current.clear();
     setErrors({});
     setConsent(false);
     setActive(0);
@@ -239,7 +265,7 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
                 if (typeof cur !== "string" || cur.trim() === "") merged[f.id] = todayISO();
               }
             }
-            return merged;
+            return withSuggestedBic(merged, form.fields);
           });
           toast.info(t("runnerDraftRestored"));
         }
@@ -336,18 +362,41 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
 
   const setValue = useCallback(
     (id: string, value: FieldValue) => {
+      const field = form.fields.find((candidate) => candidate.id === id);
+      const bicField = field?.canonicalKey === "banque.iban"
+        ? form.fields.find((candidate) => candidate.canonicalKey === "banque.bic")
+        : undefined;
+      if (field?.canonicalKey === "banque.bic") autoFilledBic.current.delete(id);
+
       setValues((prev) => {
         const next = { ...prev, [id]: value };
         // Effet de bord déclaratif `onSelectSet` (ex. C1 : « c'est une
         // colocation » ⇒ statutFamilial=isolé + habiteEnColocation=oui). Ne
         // s'applique QUE sur saisie utilisateur (ce callback) — jamais au
         // restore de brouillon (setValues direct) — donc pas de boucle.
-        const field = form.fields.find((f) => f.id === id);
         const sets = field ? resolveOnSelectSet(field, value) : null;
         if (sets) for (const s of sets) next[s.fieldId] = s.value;
+
+        if (bicField && typeof value === "string") {
+          const currentBic = typeof prev[bicField.id] === "string" ? prev[bicField.id] : "";
+          const previouslyAutoFilled = autoFilledBic.current.get(bicField.id);
+          const suggestedBic = bicFromForeignIban(value);
+          // Quand la table locale reconnaît la banque, le BIC devient la
+          // valeur de référence du formulaire et le champ est verrouillé.
+          if (suggestedBic) {
+            next[bicField.id] = suggestedBic;
+            autoFilledBic.current.set(bicField.id, suggestedBic);
+          } else if (currentBic === previouslyAutoFilled) {
+            next[bicField.id] = "";
+            autoFilledBic.current.delete(bicField.id);
+          }
+        }
         return next;
       });
-      setErrors((prev) => (prev[id] ? { ...prev, [id]: "" } : prev));
+      setErrors((prev) => {
+        if (!prev[id] && (!bicField || !prev[bicField.id])) return prev;
+        return { ...prev, [id]: "", ...(bicField ? { [bicField.id]: "" } : {}) };
+      });
       if (saveTimer.current) clearTimeout(saveTimer.current);
       saveTimer.current = setTimeout(() => {
         setValues((cur) => {
@@ -1346,6 +1395,14 @@ function MacroRunnerBody({
   const current = macroSteps[activeIndex];
   const isLast = activeIndex === macroSteps.length - 1;
   const multiSection = current.sections.length > 1;
+  const isStreamlinedC1 = form.slug === "c1-changement-situation";
+  const detectedBic = useMemo(() => {
+    const ibanField = form.fields.find((field) => field.canonicalKey === "banque.iban");
+    if (!ibanField || typeof values[ibanField.id] !== "string") {
+      return null;
+    }
+    return bicFromForeignIban(values[ibanField.id]);
+  }, [form.fields, values]);
   const titleFor = (id: string) => {
     const k = MACRO_TITLE_KEY[id];
     return k ? t(k) : id;
@@ -1381,7 +1438,10 @@ function MacroRunnerBody({
 
   return (
     <div className="flex flex-col gap-3">
-      <AccessibilityToolbar />
+      <AccessibilityToolbar
+        showSimpleMode={!isStreamlinedC1}
+        showReducedMotion={!isStreamlinedC1}
+      />
       {(form.locales.length > 1 || form.allowItsme) && (
         <div className="flex flex-wrap items-center gap-2">
           {form.locales.length > 1 &&
@@ -1420,6 +1480,7 @@ function MacroRunnerBody({
               })}
               activeIndex={activeIndex}
               onSelect={handleStepSelect}
+              showNavigation={!isStreamlinedC1}
             />
           </div>
 
@@ -1446,6 +1507,34 @@ function MacroRunnerBody({
                       setValue={setValue}
                       formId={form.id}
                       formSlug={form.slug}
+                    />
+                  );
+                }
+                if (isStreamlinedC1 && sec.key === "mode-paiement") {
+                  return (
+                    <PaymentMethodPanel
+                      key={sec.key}
+                      title={sectionLabel(sec.key, locale)}
+                      fields={sec.fields}
+                      renderField={(field) => (
+                        <PdfField
+                          field={field}
+                          value={
+                            field.canonicalKey === "banque.bic" && detectedBic
+                              ? detectedBic
+                              : values[field.id] ?? ""
+                          }
+                          autoLocked={field.canonicalKey === "banque.bic" && !!detectedBic}
+                          error={errors[field.id]}
+                          locale={locale}
+                          onChange={(value) => setValue(field.id, value)}
+                          formId={form.id}
+                          formSlug={form.slug}
+                          rowLayout
+                          segmentedVariant="pills"
+                          onFocusField={onFocusField}
+                        />
+                      )}
                     />
                   );
                 }

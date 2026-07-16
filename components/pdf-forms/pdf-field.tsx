@@ -28,6 +28,7 @@ import { ArrayField } from "./array-field";
 import { loc, Locale, FieldValue, FormPayload, FullNameValue, isFullNameValue, FieldOption } from "@/lib/pdf-forms/types";
 import type { PublicField } from "@/lib/pdf-forms/public-serializer";
 import { validateFieldFormat, validateFieldWarning, FORMAT_VALIDATABLE_TYPES } from "@/lib/pdf-forms/validation";
+import { cn } from "@/lib/utils";
 
 // Type HTML + inputMode adaptés au type sémantique (clavier mobile pertinent).
 const INPUT_HINTS: Record<string, { type?: string; inputMode?: "numeric" | "tel" | "email" | "text" }> = {
@@ -54,9 +55,13 @@ interface Props {
   /// Rendu « ligne compacte » (libellé à gauche, contrôle à droite) pour les
   /// champs binaires empilés dans un conteneur à séparateurs (nouveau
   /// form-runner). Opt-in — le chemin legacy ne le passe jamais, défaut
-  /// false = rendu historique inchangé. Ne concerne que checkbox et radio à
-  /// 2 options ; ignoré pour les autres types.
+  /// false = rendu historique inchangé. Le panneau bancaire l'utilise aussi
+  /// pour aligner les champs texte et IBAN sur deux colonnes.
   rowLayout?: boolean;
+  segmentedVariant?: "connected" | "pills";
+  /// Verrouille un champ prérempli de façon déterministe par le formulaire
+  /// (ex. BIC déduit d'un IBAN reconnu), sans modifier son schéma en base.
+  autoLocked?: boolean;
   /// Valeur COURANTE calculée par `field.derivedFrom` (cf. lib/pdf-forms/
   /// field-derivations.ts), recalculée à CHAQUE rendu par l'appelant à partir
   /// du champ source — jamais stockée dans le state du formulaire. Non-null
@@ -123,6 +128,8 @@ function LabelWithTooltip({
 
 export function PdfField({
   field, value, error, locale, onChange, formId, formSlug, rowLayout = false,
+  segmentedVariant = "connected",
+  autoLocked = false,
   derivedValue = null, relatedPostalCode, onSelectStreetSuggestion, onStreetVerifiedChange, parentValues,
   onFocusField,
 }: Props) {
@@ -276,11 +283,12 @@ export function PdfField({
               id={field.id}
               value={displayValue}
               onChange={onChange}
-              options={opts}
-              locale={locale}
-              invalid={invalid}
-              disabled={isDerivedLocked}
-            />
+            options={opts}
+            locale={locale}
+            invalid={invalid}
+            disabled={isDerivedLocked}
+            variant={segmentedVariant}
+          />
           </div>
           {derivedNote}
           {errorReport}
@@ -300,6 +308,7 @@ export function PdfField({
           locale={locale}
           invalid={invalid}
           disabled={isDerivedLocked}
+          variant={segmentedVariant}
         />
         {derivedNote}
         {errorReport}
@@ -426,11 +435,19 @@ export function PdfField({
   if (field.type === "iban") {
     const ibanCountry = field.internationalIban ? countryNameFromIban((value as string) ?? "") : null;
     return (
-      <Field data-invalid={invalid} className="gap-1.5" onFocus={notifyFocus} onClick={notifyFocus}>
-        <FieldLabel htmlFor={field.id}>
+      <Field
+        data-invalid={invalid}
+        className={cn(
+          "gap-1.5",
+          rowLayout && "px-4 py-3 md:grid md:grid-cols-[minmax(12rem,1fr)_minmax(0,2fr)] md:items-center md:gap-x-5",
+        )}
+        onFocus={notifyFocus}
+        onClick={notifyFocus}
+      >
+        <FieldLabel htmlFor={field.id} className={cn(rowLayout && "md:col-start-1")}>
           <LabelWithTooltip label={label} labelShort={labelShort} help={help} required={field.required} />
         </FieldLabel>
-        <div className="flex items-center gap-2">
+        <div className={cn("flex items-center gap-2", rowLayout && "min-w-0 md:col-start-2")}>
           <div className="flex-1">
             <IbanInput
               id={field.id}
@@ -445,8 +462,8 @@ export function PdfField({
             <CheckCircle2Icon className="size-5 shrink-0 text-emerald-600 dark:text-emerald-400" aria-label="Valide" />
           )}
         </div>
-        {ibanCountry && <FieldDescription>→ {ibanCountry}</FieldDescription>}
-        {errorReport}
+        {ibanCountry && <FieldDescription className={cn(rowLayout && "md:col-start-2")}>→ {ibanCountry}</FieldDescription>}
+        {effError && <div className={cn(rowLayout && "md:col-start-2")}>{errorReport}</div>}
       </Field>
     );
   }
@@ -462,7 +479,7 @@ export function PdfField({
   // `readOnly` posé côté schéma (ex. Pays verrouillé sur "Belgique") :
   // toujours verrouillé, pas de condition — cf. commentaire du champ `field`
   // dans lib/pdf-forms/types.ts.
-  const locked = autoToday || isDerivedLocked || field.readOnly === true;
+  const locked = autoToday || isDerivedLocked || field.readOnly === true || autoLocked;
   const displayValue = isDerivedLocked ? derivedValue : ((value as string | number) ?? "");
   const useStreetAutocomplete = field.streetAutocomplete != null && !locked;
   const useCountrySelect = field.countrySelect === true && !locked;
@@ -471,11 +488,20 @@ export function PdfField({
   // AUTO — system.today — restent en input verrouillé). Cf. #7a.
   const useDatePicker = field.type === "date" && !locked;
   return (
-    <Field data-invalid={invalid} className="gap-1.5" onFocus={notifyFocus} onClick={notifyFocus}>
-      <FieldLabel htmlFor={field.id}>
+    <Field
+      data-invalid={invalid}
+      data-disabled={locked || undefined}
+      className={cn(
+        "gap-1.5",
+        rowLayout && "px-4 py-3 md:grid md:grid-cols-[minmax(12rem,1fr)_minmax(0,2fr)] md:items-center md:gap-x-5",
+      )}
+      onFocus={notifyFocus}
+      onClick={notifyFocus}
+    >
+      <FieldLabel htmlFor={field.id} className={cn(rowLayout && "md:col-start-1")}>
         <LabelWithTooltip label={label} labelShort={labelShort} help={help} required={field.required} />
       </FieldLabel>
-      <div className="flex items-center gap-2">
+      <div className={cn("flex items-center gap-2", rowLayout && "min-w-0 md:col-start-2")}>
         {useStreetAutocomplete ? (
           <StreetAutocompleteInput
             id={field.id}
@@ -544,23 +570,23 @@ export function PdfField({
         )}
       </div>
       {autoToday && !help && (
-        <FieldDescription>Date de génération du document (automatique).</FieldDescription>
+        <FieldDescription className={cn(rowLayout && "md:col-start-2")}>Date de génération du document (automatique).</FieldDescription>
       )}
       {isDerivedLocked && (
-        <FieldDescription>Champ rempli automatiquement — modifiable si besoin en corrigeant le champ source.</FieldDescription>
+        <FieldDescription className={cn(rowLayout && "md:col-start-2")}>Champ rempli automatiquement — modifiable si besoin en corrigeant le champ source.</FieldDescription>
       )}
       {field.readOnly && !autoToday && !isDerivedLocked && !help && (
-        <FieldDescription>Champ verrouillé pour ce dossier.</FieldDescription>
+        <FieldDescription className={cn(rowLayout && "md:col-start-2")}>Champ verrouillé pour ce dossier.</FieldDescription>
       )}
       {field.type === "postal_be" && communeHint && (
-        <FieldDescription>→ {communeHint}</FieldDescription>
+        <FieldDescription className={cn(rowLayout && "md:col-start-2")}>→ {communeHint}</FieldDescription>
       )}
       {/* Avertissement non bloquant (ambre) — ex. NISS checksum douteux mais
           date cohérente (#4). L'erreur rouge bloquante reste dans errorReport. */}
       {formatWarning && !effError && (
-        <p className="text-[13px] text-amber-700 dark:text-amber-300">{formatWarning}</p>
+        <p className={cn("text-[13px] text-amber-700 dark:text-amber-300", rowLayout && "md:col-start-2")}>{formatWarning}</p>
       )}
-      {errorReport}
+      {effError && <div className={cn(rowLayout && "md:col-start-2")}>{errorReport}</div>}
     </Field>
   );
 }

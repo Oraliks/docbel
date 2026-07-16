@@ -16,12 +16,13 @@ import {
   EDITABLE_BUNDLE_RUN_STATUSES,
 } from "@/lib/bundles/run-lifecycle";
 import { apiError, apiOk } from "@/lib/api/response";
+import { parseOrientationAnswers } from "@/lib/dossiers/orientation";
 
 const COOKIE_NAME = "beldoc-bundle-session";
 const ORIENTATION_COOKIE = "beldoc-orientation";
 
 /// Lit (et efface) le cookie d'orientation posé par le wizard. Renvoie un objet
-/// JSON validé sommairement (objet plat, ≤ 10 clés) ou `null`. Best-effort :
+/// JSON validé sommairement (objet, ≤ 10 clés) ou `null`. Best-effort :
 /// toute anomalie → null, l'orientation reste fonctionnelle sans persistance.
 async function readOrientationAnswers(): Promise<Record<string, unknown> | null> {
   try {
@@ -110,17 +111,31 @@ export async function POST(
     // Pas de body — c'est OK
   }
 
+  // Consommée à chaque démarrage, y compris lorsqu'un run vide est réutilisé.
+  // Sans cela, une nouvelle recherche assistant gardait l'ancienne orientation.
+  const rawOrientationAnswers = await readOrientationAnswers();
+  const parsedOrientation = parseOrientationAnswers(rawOrientationAnswers);
+  const orientationAnswers =
+    parsedOrientation?.slug === bundle.slug ? rawOrientationAnswers : null;
+
   // Récupérer un run existant in_progress pour cet utilisateur/session
   const existingWhere = userId
     ? { bundleId: id, userId, status: { in: [...EDITABLE_BUNDLE_RUN_STATUSES] } }
     : { bundleId: id, sessionId, status: { in: [...EDITABLE_BUNDLE_RUN_STATUSES] } };
   const existing = await prisma.bundleRun.findFirst({ where: existingWhere });
   if (existing) {
-    // Si des réponses d'éligibilité sont fournies, on met à jour
-    if (Object.keys(eligibilityAnswers).length > 0) {
+    const hasEligibilityAnswers = Object.keys(eligibilityAnswers).length > 0;
+    // Une nouvelle orientation doit aussi rafraîchir un run réutilisé, même si
+    // ce dossier n'a aucune question de pré-qualification.
+    if (hasEligibilityAnswers || orientationAnswers) {
       const updated = await prisma.bundleRun.update({
         where: { id: existing.id },
-        data: { eligibilityAnswers },
+        data: {
+          ...(hasEligibilityAnswers ? { eligibilityAnswers } : {}),
+          ...(orientationAnswers
+            ? { orientationAnswers: orientationAnswers as Prisma.InputJsonValue }
+            : {}),
+        },
       });
       return apiOk({ ...updated, lifecycle: deriveBundleRunLifecycle(updated) });
     }
@@ -135,9 +150,6 @@ export async function POST(
     });
     return !!found;
   });
-
-  // Réponses du wizard d'orientation (cookie posé par DossierWizard, phase 6).
-  const orientationAnswers = await readOrientationAnswers();
 
   const run = await prisma.bundleRun.create({
     data: {

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { C1_QUESTIONS, C1_TRIGGERS, applyC1Improvements } from "../c1-fields-improvements";
 import { evaluateTrigger } from "../../triggers";
+import { validateStepFields } from "../../validation";
 
 const ACTIVITY_REVENUE_IDS = [
   "etudesPleinExercice",
@@ -19,6 +20,14 @@ const ACTIVITY_REVENUE_IDS = [
   "indemniteAccidentTravail",
   "avantageFinancierFormation",
 ] as const;
+
+describe("C1_QUESTIONS — identité", () => {
+  it("rend la commune obligatoire et bloque l'étape quand elle est vide", () => {
+    const commune = C1_QUESTIONS.find((field) => field.id === "commune");
+    expect(commune?.required).toBe(true);
+    expect(commune && validateStepFields([commune], {}, "fr").commune).toBeTruthy();
+  });
+});
 
 describe("C1_QUESTIONS — activités et revenus saisis par le citoyen", () => {
   it("affiche les 15 déclarations officielles avec Non modifiable par défaut", () => {
@@ -422,18 +431,35 @@ describe("applyC1Improvements — restrictMotifTo5Situations (Oraliks, 2026-07-0
     expect(f?.hidden).toBe(true);
   });
 
+  it("actif : adapte les libellés du panneau bancaire sans changer les valeurs", () => {
+    const result = applyC1Improvements([], { restrictMotifTo5Situations: true });
+    const mode = result.find((field) => field.id === "modePaiement");
+    const titulaire = result.find((field) => field.id === "titulaireCompte");
+    expect(mode?.label.fr).toBe("Réception des allocations");
+    expect(mode?.options?.map((option) => [option.value, option.label.fr])).toEqual([
+      ["virement", "Virement bancaire"],
+      ["cheque", "Chèque circulaire envoyé à mon adresse"],
+    ]);
+    expect(titulaire?.label.fr).toBe("Titulaire du compte");
+    expect(titulaire?.options?.map((option) => option.value)).toEqual(["mon-nom", "autre-nom"]);
+  });
+
   it("absent : chomeurTemporaireAlternance garde son libellé d'origine (comportement c1/c1-insertion inchangé)", () => {
     const result = applyC1Improvements([]);
     const f = result.find((q) => q.id === "chomeurTemporaireAlternance");
     expect(f?.label?.fr).toBe("… comme chômeur temporaire suivant une formation en alternance");
   });
 
-  it("actif : dateModificationEffective reçoit un libellé court avec l'explication en aide (tooltip)", () => {
+  it("actif : la date de changement est obligatoire et validable dans l'étape Motif", () => {
     const result = applyC1Improvements([], { restrictMotifTo5Situations: true });
     const f = result.find((q) => q.id === "dateModificationEffective");
     expect(f?.label?.fr).toBe("Date de changement");
     expect(f?.help?.fr).toContain("Date de la demande");
-    expect(f?.visibleIf).toEqual({ fieldId: "motifIntroduction", op: "equals", value: "modification" });
+    expect(f?.required).toBe(true);
+    // motifIntroduction est autoAnswered et absent du schéma Zod scindé
+    // par étape : la date doit donc être inconditionnelle dans ce parcours.
+    expect(f?.visibleIf).toBeUndefined();
+    expect(f && validateStepFields([f], {}, "fr").dateModificationEffective).toBeTruthy();
   });
 
   it("actif : C1_QUESTIONS partagé reste non muté (labels/visibleIf/hidden d'origine intacts)", () => {

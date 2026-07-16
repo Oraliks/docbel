@@ -290,10 +290,10 @@ export function DossierWizard({ situations, catalog = {}, dryRun = false }: Prop
             <Sparkles />
           </span>
           <span className="flex flex-col gap-0.5">
-            <span className="text-xl font-bold leading-tight">
+            <span className="text-lg font-bold leading-tight">
               {t("wizardAssistantTitle")}
             </span>
-            <span className="text-base font-normal text-muted-foreground">
+            <span className="text-sm font-normal text-muted-foreground">
               {t("wizardAssistantSubtitle")}
             </span>
           </span>
@@ -386,7 +386,7 @@ function Stepper({ currentStep }: StepperProps) {
   return (
     <div className="flex flex-col gap-2" aria-label={t("wizardProgressLabel")}>
       <div className="flex items-center justify-between gap-3">
-        <span className="text-base font-bold text-[color:var(--glass-ink)]">
+        <span className="text-sm font-bold text-[color:var(--glass-ink)]">
           {t("wizardQuestionCounter", { current: currentStep, total: 4 })}
         </span>
         <span className="text-sm font-semibold text-[color:var(--glass-ink-soft)]">
@@ -425,10 +425,10 @@ function StepSituation({
   return (
     <div className="flex flex-col gap-5 transition-opacity duration-200">
       <div className="flex flex-col gap-2">
-        <Label className="block text-xl font-bold leading-tight text-[color:var(--glass-ink)]">
+        <Label className="block text-lg font-bold leading-tight text-[color:var(--glass-ink)]">
           {t("wizardSituationQuestion")}
         </Label>
-        <p className="text-base leading-relaxed text-muted-foreground">
+        <p className="text-sm leading-relaxed text-muted-foreground">
           {t("wizardSituationHelp")}
         </p>
       </div>
@@ -444,7 +444,7 @@ function StepSituation({
               onClick={() => onSelect(s.value)}
               aria-pressed={isSelected}
               className={cn(
-                "group flex min-h-16 items-center gap-3 rounded-2xl border bg-[color:var(--glass-surface)] px-3 py-3 text-left transition-all",
+                "group flex min-h-14 items-center gap-3 rounded-2xl border bg-[color:var(--glass-surface)] px-3 py-2.5 text-left transition-all",
                 "hover:-translate-y-px hover:border-[color:var(--glass-accent-a)]/40 hover:shadow-sm",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-a)]/40",
                 isSelected
@@ -454,7 +454,7 @@ function StepSituation({
             >
               <span
                 className={cn(
-                  "flex size-12 shrink-0 items-center justify-center rounded-2xl transition-colors",
+                  "flex size-10 shrink-0 items-center justify-center rounded-xl transition-colors",
                   isSelected
                     ? "bg-[color:var(--glass-accent-a)] text-white"
                     : "bg-muted text-muted-foreground group-hover:bg-[color:var(--glass-accent-a)]/10 group-hover:text-[color:var(--glass-accent-a)]",
@@ -464,11 +464,11 @@ function StepSituation({
                 <Icon />
               </span>
               <span className="min-w-0 flex-1">
-                <span className="block text-base font-bold leading-snug text-[color:var(--glass-ink)]">
+                <span className="block text-sm font-bold leading-snug text-[color:var(--glass-ink)]">
                   {resolveText(tc, s.labelKey, s.label)}
                 </span>
                 {(s.description || s.descriptionKey) ? (
-                  <span className="mt-1 block text-sm leading-snug text-muted-foreground">
+                  <span className="mt-1 block text-xs leading-snug text-muted-foreground">
                     {resolveText(tc, s.descriptionKey, s.description ?? "")}
                   </span>
                 ) : null}
@@ -521,11 +521,11 @@ function StepSubQuestion({
         <p className="text-sm font-semibold text-[color:var(--glass-accent-deep)]">
           {situationLabel}
         </p>
-        <Label className="text-xl font-bold leading-tight text-[color:var(--glass-ink)]">
+        <Label className="text-lg font-bold leading-tight text-[color:var(--glass-ink)]">
           {subQuestionText}
         </Label>
         {subHelpText && (
-          <p className="rounded-xl border-l-4 border-[color:var(--glass-accent-a)] bg-[color:var(--glass-accent-a)]/8 px-4 py-3 text-base leading-relaxed text-[color:var(--glass-ink-soft)]">
+          <p className="rounded-xl border-l-4 border-[color:var(--glass-accent-a)] bg-[color:var(--glass-accent-a)]/8 px-3 py-2.5 text-sm leading-relaxed text-[color:var(--glass-ink-soft)]">
             {subHelpText}
           </p>
         )}
@@ -543,7 +543,7 @@ function StepSubQuestion({
               onClick={() => onSelect(opt.value)}
               aria-pressed={isSelected}
               className={cn(
-                "group flex min-h-16 items-center gap-3 rounded-2xl border bg-[color:var(--glass-surface)] px-3 py-3 text-left transition-all",
+                "group flex min-h-14 items-center gap-3 rounded-2xl border bg-[color:var(--glass-surface)] px-3 py-2.5 text-left transition-all",
                 "hover:-translate-y-px hover:border-[color:var(--glass-accent-a)]/40 hover:shadow-sm",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-a)]/40",
                 isSelected
@@ -552,7 +552,7 @@ function StepSubQuestion({
               )}
             >
               <span className="flex-1">
-                <span className="block text-base font-bold text-[color:var(--glass-ink)]">{optLabel}</span>
+                <span className="block text-sm font-bold text-[color:var(--glass-ink)]">{optLabel}</span>
                 {optHelp && (
                   <span className="mt-1 block text-sm leading-relaxed text-muted-foreground">
                     {optHelp}
@@ -612,11 +612,11 @@ function StepRefine({
         <p className="text-sm font-semibold text-[color:var(--glass-accent-deep)]">
           {subOptionLabel}
         </p>
-        <Label className="text-xl font-bold leading-tight text-[color:var(--glass-ink)]">
+        <Label className="text-lg font-bold leading-tight text-[color:var(--glass-ink)]">
           {refineQuestionText}
         </Label>
         {refineHelpText && (
-          <p className="rounded-xl border-l-4 border-[color:var(--glass-accent-a)] bg-[color:var(--glass-accent-a)]/8 px-4 py-3 text-base leading-relaxed text-[color:var(--glass-ink-soft)]">
+          <p className="rounded-xl border-l-4 border-[color:var(--glass-accent-a)] bg-[color:var(--glass-accent-a)]/8 px-3 py-2.5 text-sm leading-relaxed text-[color:var(--glass-ink-soft)]">
             {refineHelpText}
           </p>
         )}
@@ -634,7 +634,7 @@ function StepRefine({
               onClick={() => onSelect(opt.value)}
               aria-pressed={isSelected}
               className={cn(
-                "group flex min-h-16 items-center gap-3 rounded-2xl border bg-[color:var(--glass-surface)] px-3 py-3 text-left transition-all",
+                "group flex min-h-14 items-center gap-3 rounded-2xl border bg-[color:var(--glass-surface)] px-3 py-2.5 text-left transition-all",
                 "hover:-translate-y-px hover:border-[color:var(--glass-accent-a)]/40 hover:shadow-sm",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-a)]/40",
                 isSelected
@@ -643,7 +643,7 @@ function StepRefine({
               )}
             >
               <span className="flex-1">
-                <span className="block text-base font-bold text-[color:var(--glass-ink)]">{optLabel}</span>
+                <span className="block text-sm font-bold text-[color:var(--glass-ink)]">{optLabel}</span>
                 {optHelp && (
                   <span className="mt-1 block text-sm leading-relaxed text-muted-foreground">
                     {optHelp}
@@ -780,7 +780,7 @@ function PrimaryAvailable({
             </p>
             <MatchBadge level={primary.matchLevel} />
           </div>
-              <h3 className="text-xl font-bold leading-tight">{title}</h3>
+              <h3 className="text-lg font-bold leading-tight">{title}</h3>
           <p className="text-base leading-relaxed text-muted-foreground">{rationale}</p>
           <MetaChips dossier={primary} />
         </div>

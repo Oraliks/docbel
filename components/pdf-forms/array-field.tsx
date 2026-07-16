@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { PlusIcon, TrashIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -10,6 +10,7 @@ import { loc, type Locale, type FieldValue, type FieldValueRecord, type FormPayl
 import type { PublicField } from "@/lib/pdf-forms/public-serializer";
 import { isFieldVisible } from "@/lib/pdf-forms/validation";
 import { getCohabitationAdvice } from "@/lib/pdf-forms/cohabitation-advice";
+import { getC1IncomeGuidance, type C1BaremeThresholds, type C1IncomeRole } from "@/lib/baremes/c1-thresholds";
 
 interface Props {
   field: PublicField;
@@ -43,6 +44,19 @@ export function ArrayField({ field, value, locale, onChange, formId, formSlug, p
 
   const rows: FieldValueRecord[] = isFieldValueRecordArray(value) ? value : [];
   const cohabitationAdvice = field.id === "cohabitants" ? getCohabitationAdvice(rows) : null;
+  const [thresholds, setThresholds] = useState<C1BaremeThresholds | null>(null);
+
+  useEffect(() => {
+    if (field.id !== "cohabitants") return;
+    let active = true;
+    fetch("/api/baremes/c1-thresholds")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data: C1BaremeThresholds | null) => {
+        if (active && data) setThresholds(data);
+      })
+      .catch(() => {});
+    return () => { active = false; };
+  }, [field.id]);
 
   function addRow() {
     if (field.maxRows && rows.length >= field.maxRows) return;
@@ -112,6 +126,7 @@ export function ArrayField({ field, value, locale, onChange, formId, formSlug, p
                     }
                   }
                   return (
+                    <div key={sub.id} className="contents">
                     <PdfField
                       key={sub.id}
                       field={sub}
@@ -124,6 +139,12 @@ export function ArrayField({ field, value, locale, onChange, formId, formSlug, p
                         patchRow(idx, applyAutoRules(field.id, sub.id, next));
                       }}
                     />
+                    {thresholds && getIncomeGuidance(sub.id, row, thresholds) && (
+                      <p className="sm:col-span-2 text-xs text-muted-foreground" role="status">
+                        {getIncomeGuidance(sub.id, row, thresholds)}
+                      </p>
+                    )}
+                    </div>
                   );
                 })}
               </CardContent>
@@ -158,6 +179,22 @@ export function ArrayField({ field, value, locale, onChange, formId, formSlug, p
       </Button>
     </Field>
   );
+}
+
+function getIncomeGuidance(
+  fieldId: string,
+  row: FieldValueRecord,
+  thresholds: C1BaremeThresholds,
+): string | null {
+  if (fieldId !== "montantRevenuPro" && fieldId !== "montantRevenuRemplacement") return null;
+  const raw = row[fieldId];
+  const amount = typeof raw === "number" ? raw : typeof raw === "string" && raw.trim() ? Number(raw) : null;
+  if (amount === null || !Number.isFinite(amount)) return null;
+  const isChild = row.lien === "enfant";
+  const role: C1IncomeRole = fieldId === "montantRevenuPro"
+    ? (isChild ? "childProfessional" : "spouseProfessional")
+    : (isChild ? "childReplacement" : "spouseReplacement");
+  return getC1IncomeGuidance(role, amount, thresholds).message;
 }
 
 /// Visibilité intra-ligne — version simplifiée du `visibleIf` global, qui

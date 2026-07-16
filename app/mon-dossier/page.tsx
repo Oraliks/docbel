@@ -11,7 +11,7 @@ import {
 import type { WizardCatalog } from "@/lib/dossier-wizard/derive-results";
 import { WIZARD_SITUATIONS } from "@/lib/dossier-wizard/config";
 import { loadPublishedDecisionTree } from "@/lib/decision-builder/loader";
-import { loadActiveBundleRun } from "@/lib/landing/resume";
+import { loadActiveBundleRuns } from "@/lib/landing/resume";
 import { getDossier } from "@/lib/dossiers/registry";
 import { deriveDossierDiscoveryMetadata } from "@/lib/dossiers/discovery";
 import { MonDossierClient, type MonDossierBundle } from "./mon-dossier-client";
@@ -132,7 +132,7 @@ export default async function MonDossierPage() {
 
   // Dernier dossier local en cours (zone « Reprendre »). On ignore le cookie de
   // fermeture de la bande home : ici c'est une zone permanente, pas une bande.
-  const activeRun = await loadActiveBundleRun({ respectDismiss: false });
+  const activeRuns = await loadActiveBundleRuns({ respectDismiss: false });
 
   // Decision Builder (phase 6) : si un arbre est publié pour le segment chômage
   // ET que le flag runtime est actif, il pilote le wizard ; sinon fallback sur
@@ -144,7 +144,7 @@ export default async function MonDossierPage() {
     <MonDossierClient
       bundles={serializable}
       catalog={catalog}
-      activeRun={activeRun}
+      activeRuns={activeRuns}
       situations={situations}
     />
   );

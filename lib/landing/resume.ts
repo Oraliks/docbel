@@ -49,6 +49,13 @@ export interface ActiveBundleRun {
 export async function loadActiveBundleRun(
   opts: { respectDismiss?: boolean } = {},
 ): Promise<ActiveBundleRun | null> {
+  const runs = await loadActiveBundleRuns(opts);
+  return runs[0] ?? null;
+}
+
+export async function loadActiveBundleRuns(
+  opts: { respectDismiss?: boolean } = {},
+): Promise<ActiveBundleRun[]> {
   // Par défaut on respecte le cookie de fermeture (bande de la home). Sur
   // /mon-dossier la zone « Reprendre » n'est pas une bande fermable → false.
   const respectDismiss = opts.respectDismiss ?? true;
@@ -58,17 +65,17 @@ export async function loadActiveBundleRun(
     // L'utilisateur a fermé la bande pour cette session de navigation :
     // on s'épargne la requête et on ne rend rien côté serveur.
     if (respectDismiss && cookieStore.get(RESUME_DISMISS_COOKIE)?.value === "1") {
-      return null;
+      return [];
     }
 
     const session = await getServerAuthSession().catch(() => null);
     const userId = session?.user?.id || null;
     const sessionId = cookieStore.get(BUNDLE_COOKIE)?.value || null;
-    if (!userId && !sessionId) return null;
+    if (!userId && !sessionId) return [];
 
     // Priorité au compte connecté, sinon au cookie anonyme (comme d/[slug]).
     // findFirst + orderBy = le run en cours le plus récent, requête bornée.
-    const run = await prisma.bundleRun.findFirst({
+    const runs = await prisma.bundleRun.findMany({
       where: userId
         ? { userId, status: { in: [...EDITABLE_BUNDLE_RUN_STATUSES] } }
         : {
@@ -76,6 +83,7 @@ export async function loadActiveBundleRun(
             status: { in: [...EDITABLE_BUNDLE_RUN_STATUSES] },
           },
       orderBy: { startedAt: "desc" },
+      take: 8,
       select: {
         startedAt: true,
         status: true,
@@ -96,27 +104,25 @@ export async function loadActiveBundleRun(
 
     // Bundle désactivé entre-temps → /d/[slug] renverrait un 404, on ne
     // propose pas de le reprendre.
-    if (!run || !run.bundle.active) return null;
-
-    const completedIds = Array.isArray(run.completedTemplateIds)
-      ? (run.completedTemplateIds as string[])
-      : [];
-    const total = run.bundle.items.length;
-    const lifecycle = deriveBundleRunLifecycle(run);
-    if (lifecycle === "abandoned" || lifecycle === "anonymized") return null;
-
-    return {
-      slug: run.bundle.slug,
-      name: run.bundle.name,
-      color: run.bundle.color,
-      // Les documents matérialisés par déclencheurs peuvent dépasser les
-      // items de base du bundle : on borne pour ne jamais afficher « 5 sur 4 ».
-      completed: Math.min(completedIds.length, total),
-      total,
-      startedAt: run.startedAt.toISOString(),
-      lifecycle,
-    };
+    return runs.flatMap((run) => {
+      if (!run.bundle.active) return [];
+      const completedIds = Array.isArray(run.completedTemplateIds)
+        ? (run.completedTemplateIds as string[])
+        : [];
+      const total = run.bundle.items.length;
+      const lifecycle = deriveBundleRunLifecycle(run);
+      if (lifecycle === "abandoned" || lifecycle === "anonymized") return [];
+      return [{
+        slug: run.bundle.slug,
+        name: run.bundle.name,
+        color: run.bundle.color,
+        completed: Math.min(completedIds.length, total),
+        total,
+        startedAt: run.startedAt.toISOString(),
+        lifecycle,
+      }];
+    });
   } catch {
-    return null;
+    return [];
   }
 }

@@ -61,7 +61,7 @@ export interface MonDossierBundle {
 interface Props {
   bundles: MonDossierBundle[];
   catalog: WizardCatalog;
-  activeRun: ActiveBundleRun | null;
+  activeRuns: ActiveBundleRun[];
   situations: WizardSituation[];
 }
 
@@ -266,10 +266,11 @@ function ActiveRunCard({ run }: { run: ActiveBundleRun }) {
   );
 }
 
-export function MonDossierClient({ bundles, catalog, activeRun, situations }: Props) {
+export function MonDossierClient({ bundles, catalog, activeRuns, situations }: Props) {
   const t = useTranslations("public.dossier");
   const locale = useLocale();
   const [mode, setMode] = useState<Mode>("guide");
+  const [guideStarted, setGuideStarted] = useState(false);
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<Sort>("populaires");
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -418,13 +419,15 @@ export function MonDossierClient({ bundles, catalog, activeRun, situations }: Pr
 
       <AccessibilityToolbar />
 
-      {activeRun ? (
+      {activeRuns.length > 0 ? (
         <section className="glass-surface flex flex-col gap-3 rounded-3xl p-3 sm:p-4" data-docbel-readable>
           <div className="flex items-center justify-between gap-3">
             <h2 className="text-lg font-bold text-[color:var(--glass-ink)]">{t("ongoingDossier")}</h2>
-            <span className="rounded-full bg-[color:var(--glass-pop-bg)] px-2.5 py-1 text-xs font-bold text-[color:var(--glass-accent-deep)]">1</span>
+            <span className="rounded-full bg-[color:var(--glass-pop-bg)] px-2.5 py-1 text-xs font-bold text-[color:var(--glass-accent-deep)]">{activeRuns.length}</span>
           </div>
-          <ActiveRunCard run={activeRun} />
+          <div className="grid gap-2">
+            {activeRuns.map((run) => <ActiveRunCard key={`${run.slug}-${run.startedAt}`} run={run} />)}
+          </div>
         </section>
       ) : null}
 
@@ -437,7 +440,10 @@ export function MonDossierClient({ bundles, catalog, activeRun, situations }: Pr
           value={[mode]}
           onValueChange={(values) => {
             const selected = values.at(-1) as Mode | undefined;
-            if (selected) setMode(selected);
+            if (selected) {
+              setMode(selected);
+              setGuideStarted(false);
+            }
           }}
           variant="outline"
           spacing={2}
@@ -466,7 +472,18 @@ export function MonDossierClient({ bundles, catalog, activeRun, situations }: Pr
       </section>
 
       <div role="tabpanel" aria-label={t(mode === "guide" ? "modeGuideLabel" : "modeDirectLabel")}>
-        {mode === "guide" ? (
+        {mode === "guide" && !guideStarted ? (
+          <section className="glass-surface flex items-center gap-4 rounded-3xl border border-[color:var(--glass-border)] p-4 sm:p-5" data-docbel-readable>
+            <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-[color:var(--glass-pop-bg)] text-[color:var(--glass-accent-deep)]" aria-hidden><Sparkles /></span>
+            <div className="min-w-0 flex-1">
+              <h2 className="text-base font-bold text-[color:var(--glass-ink)]">{t("wizardAssistantTitle")}</h2>
+              <p className="mt-1 text-sm text-[color:var(--glass-ink)]/70">{t("wizardAssistantSubtitle")}</p>
+            </div>
+            <Button type="button" size="sm" className="shrink-0" onClick={() => setGuideStarted(true)}>
+              {t("wizardStartGuide")} <ArrowRight data-icon="inline-end" aria-hidden />
+            </Button>
+          </section>
+        ) : mode === "guide" ? (
           <DossierWizard situations={situations} catalog={catalog} />
         ) : (
           <section className="glass-surface flex flex-col gap-4 p-3 sm:p-5" data-docbel-readable>

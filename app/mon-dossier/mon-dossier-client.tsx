@@ -391,7 +391,7 @@ export function MonDossierClient({ bundles, catalog, activeRun, situations }: Pr
   }, [isSearching, searchResults.length, trimmed]);
 
   return (
-    <section className="docbel-a11y-scope relative isolate flex w-full flex-col gap-5 sm:gap-7">
+    <section className="docbel-a11y-scope relative isolate flex w-full flex-col gap-4 sm:gap-5">
       <header className="flex flex-col gap-3 px-1" data-docbel-readable>
         <nav aria-label={t("breadcrumbLabel")} className="flex items-center gap-2 text-sm text-[color:var(--glass-ink-soft)]" data-a11y-secondary="true">
           <Link href="/" className="font-medium hover:text-[color:var(--glass-ink)]">{t("breadcrumbHome")}</Link>
@@ -401,7 +401,7 @@ export function MonDossierClient({ bundles, catalog, activeRun, situations }: Pr
         <h1 className="glass-display max-w-3xl text-4xl font-semibold leading-tight sm:text-5xl">
           {t.rich("monDossierTitle", { em: (chunks) => <em>{chunks}</em> })}
         </h1>
-        <p className="max-w-3xl text-base leading-relaxed text-[color:var(--glass-ink-soft)] sm:text-lg">
+        <p className="max-w-3xl text-sm leading-relaxed text-[color:var(--glass-ink)]/70 sm:text-base">
           {t("monDossierIntro")}
         </p>
       </header>
@@ -415,10 +415,10 @@ export function MonDossierClient({ bundles, catalog, activeRun, situations }: Pr
         </section>
       ) : null}
 
-      <section className="flex flex-col gap-3" aria-labelledby="flow-title" data-docbel-readable>
+      <section className="flex flex-col gap-2" aria-labelledby="flow-title" data-docbel-readable>
         <div>
-          <h2 id="flow-title" className="text-xl font-bold text-[color:var(--glass-ink)]">{t("chooseFlowLabel")}</h2>
-          <p className="mt-1 text-base text-[color:var(--glass-ink-soft)]">{t("chooseFlowHelp")}</p>
+          <h2 id="flow-title" className="text-lg font-bold text-[color:var(--glass-ink)]">{t("chooseFlowLabel")}</h2>
+          <p className="mt-1 text-sm text-[color:var(--glass-ink)]/70">{t("chooseFlowHelp")}</p>
         </div>
         <ToggleGroup
           value={[mode]}
@@ -437,14 +437,14 @@ export function MonDossierClient({ bundles, catalog, activeRun, situations }: Pr
               <ToggleGroupItem
                 key={tab.id}
                 value={tab.id}
-                className="h-auto min-h-24 w-full justify-start gap-4 rounded-2xl p-4 text-left whitespace-normal aria-pressed:border-[color:var(--glass-accent-deep)] aria-pressed:bg-[color:var(--glass-pop-bg)]"
+                className="h-auto min-h-20 w-full justify-start gap-3 rounded-2xl p-3 text-left whitespace-normal aria-pressed:border-[color:var(--glass-accent-deep)] aria-pressed:bg-[color:var(--glass-pop-bg)]"
               >
-                <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-[color:var(--glass-pop-bg)] text-[color:var(--glass-accent-deep)]" aria-hidden>
+                <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[color:var(--glass-pop-bg)] text-[color:var(--glass-accent-deep)]" aria-hidden>
                   <Icon />
                 </span>
                 <span className="flex min-w-0 flex-col gap-1">
-                  <span className="text-lg font-bold text-[color:var(--glass-ink)]">{t(tab.labelKey)}</span>
-                  <span className="text-base font-normal text-[color:var(--glass-ink-soft)]">{t(tab.subKey)}</span>
+                  <span className="text-base font-bold text-[color:var(--glass-ink)]">{t(tab.labelKey)}</span>
+                  <span className="text-sm font-normal text-[color:var(--glass-ink)]/70">{t(tab.subKey)}</span>
                 </span>
               </ToggleGroupItem>
             );
@@ -456,7 +456,7 @@ export function MonDossierClient({ bundles, catalog, activeRun, situations }: Pr
         {mode === "guide" ? (
           <DossierWizard situations={situations} catalog={catalog} />
         ) : (
-          <section className="glass-surface flex flex-col gap-5 p-4 sm:p-6" data-docbel-readable>
+          <section className="glass-surface flex flex-col gap-4 p-3 sm:p-5" data-docbel-readable>
             <div className="flex items-center gap-3">
               <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-[color:var(--glass-pop-bg)] text-[color:var(--glass-accent-deep)]" aria-hidden>
                 <FolderOpen />
@@ -573,8 +573,8 @@ export function MonDossierClient({ bundles, catalog, activeRun, situations }: Pr
 
       <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4" aria-labelledby="help-title" data-a11y-secondary="true">
         <div className="sm:col-span-2 lg:col-span-4">
-          <h2 id="help-title" className="text-xl font-bold text-[color:var(--glass-ink)]">{t("helpTitle")}</h2>
-          <p className="mt-1 text-base text-[color:var(--glass-ink-soft)]">{t("helpSubtitle")}</p>
+          <h2 id="help-title" className="text-lg font-bold text-[color:var(--glass-ink)]">{t("helpTitle")}</h2>
+          <p className="mt-1 text-sm text-[color:var(--glass-ink)]/70">{t("helpSubtitle")}</p>
         </div>
         <HelpRow icon={HelpCircle} label={t("helpFindRightDossier")} onClick={() => setMode("guide")} />
         <HelpRow icon={FileQuestion} label={t("helpCannotFind")} href="/contact" />

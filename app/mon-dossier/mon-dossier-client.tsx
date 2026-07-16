@@ -4,14 +4,13 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 import {
+  Accessibility,
   ArrowRight,
   ChevronRight,
   FileQuestion,
   FolderOpen,
   HelpCircle,
   Layers,
-  Lightbulb,
-  Lock,
   Phone,
   RotateCcw,
   Search as SearchIcon,
@@ -125,6 +124,20 @@ function hueForBundle(bundle: MonDossierBundle): string {
   return "var(--glass-accent-deep)";
 }
 
+function resolveWizardText(
+  t: ReturnType<typeof useTranslations>,
+  key: string | undefined,
+  fallback: string,
+): string {
+  if (!key) return fallback;
+  try {
+    const value = t(key as Parameters<typeof t>[0]);
+    return value && value !== key ? value : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
 function RowIconTile({ bundle }: { bundle: MonDossierBundle }) {
   const hue = hueForBundle(bundle);
   const category = bundle.lifeEventCategory
@@ -200,17 +213,17 @@ function HelpRow({
 }) {
   const content = (
     <>
-      <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-[color:var(--glass-pop-bg)] text-[color:var(--glass-accent-deep)]" aria-hidden>
-        <Icon />
+      <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-[color:var(--glass-pop-bg)] text-[color:var(--glass-accent-deep)]" aria-hidden>
+        <Icon className="size-4" />
       </span>
-      <span className="min-w-0 flex-1 text-base font-semibold text-[color:var(--glass-ink)]">
+      <span className="min-w-0 flex-1 text-xs font-semibold leading-relaxed text-[color:var(--glass-ink)]">
         {label}
       </span>
-      <ChevronRight className="shrink-0 text-[color:var(--glass-accent-deep)]" aria-hidden />
+      <ChevronRight className="size-4 shrink-0 text-[color:var(--glass-accent-deep)]" aria-hidden />
     </>
   );
   const className =
-    "glass-interactive flex min-h-14 w-full items-center gap-3 rounded-2xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-3 py-2 text-left";
+    "glass-interactive flex min-h-14 w-full items-center gap-2 border-b border-[color:var(--glass-border)] px-3 py-2 text-left last:border-b-0 sm:border-r sm:last:border-r-0 lg:border-b-0";
 
   return href ? (
     <Link href={href} className={className}>
@@ -242,25 +255,28 @@ function ActiveRunCard({ run }: { run: ActiveBundleRun }) {
           metadata: { slug: run.slug, from: "resume_local" },
         })
       }
-      className="glass-interactive flex min-h-20 flex-col justify-center gap-3 rounded-2xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface-strong)] p-4"
+      className="glass-interactive grid min-h-16 items-center gap-3 rounded-xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-3 py-2.5 sm:grid-cols-[minmax(0,1.35fr)_minmax(150px,0.7fr)_auto]"
     >
-      <span className="flex items-center gap-3">
-        <span className="size-3 shrink-0 rounded-full" style={{ background: hue }} aria-hidden />
+      <span className="flex min-w-0 items-center gap-3">
+        <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-[color:var(--glass-pop-bg)]" style={{ color: hue }} aria-hidden><FolderOpen className="size-4" /></span>
         <span className="min-w-0 flex-1">
-          <span className="block text-base font-bold text-[color:var(--glass-ink)]">{run.name}</span>
-          <span className="mt-1 block text-sm text-[color:var(--glass-ink-soft)]">
+          <span className="block truncate text-sm font-bold text-[color:var(--glass-ink)]">{run.name}</span>
+          <span className="mt-0.5 block text-xs text-[color:var(--glass-ink)]/65">
             {completed
               ? t("runCompletedEditable")
               : t("runProgress", { completed: run.completed, total: run.total })}
           </span>
         </span>
-        <span className="inline-flex items-center gap-2 text-sm font-bold text-[color:var(--glass-accent-deep)]">
-          {completed ? t("reviewCompletedRun") : t("resume")}
-          <ArrowRight aria-hidden />
+      </span>
+      <span className="flex min-w-0 flex-col gap-1.5">
+        <span className="text-xs font-semibold text-[color:var(--glass-ink)]/70">{percentage}%</span>
+        <span className="h-1.5 w-full overflow-hidden rounded-full bg-[color:var(--glass-ink-line)]" aria-hidden>
+          <span className="block h-full rounded-full" style={{ width: `${percentage}%`, background: hue }} />
         </span>
       </span>
-      <span className="h-2 w-full overflow-hidden rounded-full bg-[color:var(--glass-ink-line)]" aria-hidden>
-        <span className="block h-full rounded-full" style={{ width: `${percentage}%`, background: hue }} />
+      <span className="inline-flex items-center justify-end gap-2 text-xs font-bold text-[color:var(--glass-accent-deep)]">
+          {completed ? t("reviewCompletedRun") : t("resume")}
+          <ArrowRight className="size-4" aria-hidden />
       </span>
     </Link>
   );
@@ -268,6 +284,8 @@ function ActiveRunCard({ run }: { run: ActiveBundleRun }) {
 
 export function MonDossierClient({ bundles, catalog, activeRuns, situations }: Props) {
   const t = useTranslations("public.dossier");
+  const tA11y = useTranslations("public.accessibility");
+  const tc = useTranslations("public.dossierContent");
   const locale = useLocale();
   const [mode, setMode] = useState<Mode>("guide");
   const [guideStarted, setGuideStarted] = useState(false);
@@ -417,75 +435,71 @@ export function MonDossierClient({ bundles, catalog, activeRuns, situations }: P
         </Link>
       </header>
 
-      <AccessibilityToolbar />
-
-      {activeRuns.length > 0 ? (
-        <section className="glass-surface flex flex-col gap-3 rounded-3xl p-3 sm:p-4" data-docbel-readable>
+      <section className="glass-surface flex flex-col gap-3 rounded-3xl p-3 sm:p-4" data-docbel-readable>
           <div className="flex items-center justify-between gap-3">
             <h2 className="text-lg font-bold text-[color:var(--glass-ink)]">{t("ongoingDossier")}</h2>
             <span className="rounded-full bg-[color:var(--glass-pop-bg)] px-2.5 py-1 text-xs font-bold text-[color:var(--glass-accent-deep)]">{activeRuns.length}</span>
           </div>
-          <div className="grid gap-2">
+          {activeRuns.length > 0 ? <div className="grid max-h-56 gap-2 overflow-y-auto pr-1">
             {activeRuns.map((run) => <ActiveRunCard key={`${run.slug}-${run.startedAt}`} run={run} />)}
-          </div>
-        </section>
-      ) : null}
+          </div> : <p className="rounded-xl border border-dashed border-[color:var(--glass-border)] px-3 py-3 text-sm text-[color:var(--glass-ink)]/65">{t("emptyNoneBody")}</p>}
+      </section>
 
-      <section className="flex flex-col gap-2" aria-labelledby="flow-title" data-docbel-readable>
-        <div>
-          <h2 id="flow-title" className="text-lg font-bold text-[color:var(--glass-ink)]">{t("chooseFlowLabel")}</h2>
-          <p className="mt-1 text-sm text-[color:var(--glass-ink)]/70">{t("chooseFlowHelp")}</p>
-        </div>
-        <ToggleGroup
-          value={[mode]}
-          onValueChange={(values) => {
-            const selected = values.at(-1) as Mode | undefined;
-            if (selected) {
-              setMode(selected);
-              setGuideStarted(false);
-            }
-          }}
-          variant="outline"
-          spacing={2}
-          className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2"
-          aria-label={t("chooseFlowLabel")}
-        >
+      <section className="glass-surface grid overflow-hidden rounded-2xl border border-[color:var(--glass-border)] sm:grid-cols-2" aria-labelledby="flow-title" data-docbel-readable>
+        <h2 id="flow-title" className="sr-only">{t("chooseFlowLabel")}</h2>
           {MODE_TABS.map((tab) => {
             const Icon = tab.icon;
             return (
-              <ToggleGroupItem
+              <button
                 key={tab.id}
-                value={tab.id}
-                className="h-auto min-h-20 w-full justify-start gap-3 rounded-2xl p-3 text-left whitespace-normal aria-pressed:border-[color:var(--glass-accent-deep)] aria-pressed:bg-[color:var(--glass-pop-bg)]"
+                type="button"
+                onClick={() => {
+                  setMode(tab.id);
+                  setGuideStarted(tab.id === "guide");
+                }}
+                className="glass-interactive flex min-h-24 items-center gap-3 border-b border-[color:var(--glass-border)] p-4 text-left last:border-b-0 sm:border-b-0 sm:border-r sm:last:border-r-0"
               >
                 <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[color:var(--glass-pop-bg)] text-[color:var(--glass-accent-deep)]" aria-hidden>
                   <Icon />
                 </span>
-                <span className="flex min-w-0 flex-col gap-1">
+                <span className="flex min-w-0 flex-1 flex-col gap-1">
                   <span className="text-base font-bold text-[color:var(--glass-ink)]">{t(tab.labelKey)}</span>
                   <span className="text-sm font-normal text-[color:var(--glass-ink)]/70">{t(tab.subKey)}</span>
                 </span>
-              </ToggleGroupItem>
+                <span className="inline-flex shrink-0 items-center gap-1 text-xs font-bold text-[color:var(--glass-accent-deep)]">
+                  {t(tab.id === "guide" ? "modeGuideLabel" : "directAccessTitle")}
+                  <ArrowRight className="size-4" aria-hidden />
+                </span>
+              </button>
             );
           })}
-        </ToggleGroup>
+      </section>
+
+      <section className="glass-surface flex flex-col gap-3 rounded-2xl p-3" aria-labelledby="assistant-shortcuts-title" data-docbel-readable>
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <span className="flex size-8 items-center justify-center rounded-xl bg-[color:var(--glass-pop-bg)] text-[color:var(--glass-accent-deep)]" aria-hidden><Sparkles className="size-4" /></span>
+            <div>
+              <h2 id="assistant-shortcuts-title" className="text-sm font-bold text-[color:var(--glass-ink)]">{t("wizardAssistantTitle")}</h2>
+              <p className="text-xs text-[color:var(--glass-ink)]/65">{t("wizardAssistantSubtitle")}</p>
+            </div>
+          </div>
+          <button type="button" className="text-xs font-bold text-[color:var(--glass-accent-deep)]" onClick={() => { setMode("guide"); setGuideStarted(true); }}>{t("modeGuideLabel")}</button>
+        </div>
+        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+          {situations.slice(0, 4).map((s) => {
+            return <button key={s.value} type="button" onClick={() => { setMode("guide"); setGuideStarted(true); }} className="glass-interactive flex min-h-14 items-center gap-2 rounded-xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-3 py-2 text-left">
+              <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-[color:var(--glass-pop-bg)] text-[color:var(--glass-accent-deep)]" aria-hidden><IconDisplay value={s.icon} className="size-4" /></span>
+              <span className="line-clamp-2 text-xs font-semibold leading-relaxed text-[color:var(--glass-ink)]">{resolveWizardText(tc, s.labelKey, s.label)}</span>
+            </button>;
+          })}
+        </div>
       </section>
 
       <div role="tabpanel" aria-label={t(mode === "guide" ? "modeGuideLabel" : "modeDirectLabel")}>
-        {mode === "guide" && !guideStarted ? (
-          <section className="glass-surface flex items-center gap-4 rounded-3xl border border-[color:var(--glass-border)] p-4 sm:p-5" data-docbel-readable>
-            <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-[color:var(--glass-pop-bg)] text-[color:var(--glass-accent-deep)]" aria-hidden><Sparkles /></span>
-            <div className="min-w-0 flex-1">
-              <h2 className="text-base font-bold text-[color:var(--glass-ink)]">{t("wizardAssistantTitle")}</h2>
-              <p className="mt-1 text-sm text-[color:var(--glass-ink)]/70">{t("wizardAssistantSubtitle")}</p>
-            </div>
-            <Button type="button" size="sm" className="shrink-0" onClick={() => setGuideStarted(true)}>
-              {t("wizardStartGuide")} <ArrowRight data-icon="inline-end" aria-hidden />
-            </Button>
-          </section>
-        ) : mode === "guide" ? (
+        {mode === "guide" && guideStarted ? (
           <DossierWizard situations={situations} catalog={catalog} />
-        ) : (
+        ) : mode === "direct" ? (
           <section className="glass-surface flex flex-col gap-4 p-3 sm:p-5" data-docbel-readable>
             <div className="flex items-center gap-3">
               <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-[color:var(--glass-pop-bg)] text-[color:var(--glass-accent-deep)]" aria-hidden>
@@ -598,28 +612,31 @@ export function MonDossierClient({ bundles, catalog, activeRuns, situations }: P
               </Button>
             ) : null}
           </section>
-        )}
+        ) : null}
       </div>
 
-      <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4" aria-labelledby="help-title" data-a11y-secondary="true">
-        <div className="sm:col-span-2 lg:col-span-4">
-          <h2 id="help-title" className="text-lg font-bold text-[color:var(--glass-ink)]">{t("helpTitle")}</h2>
-          <p className="mt-1 text-sm text-[color:var(--glass-ink)]/70">{t("helpSubtitle")}</p>
+      <section className="glass-surface grid overflow-hidden rounded-2xl border border-[color:var(--glass-border)] sm:grid-cols-2 lg:grid-cols-[1.2fr_repeat(4,1fr)]" aria-labelledby="help-title" data-a11y-secondary="true">
+        <div className="flex items-center gap-2 border-b border-[color:var(--glass-border)] px-3 py-3 sm:col-span-2 lg:col-span-1 lg:border-b-0 lg:border-r">
+          <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-[color:var(--glass-pop-bg)] text-[color:var(--glass-accent-deep)]" aria-hidden><HelpCircle className="size-4" /></span>
+          <div>
+            <h2 id="help-title" className="text-sm font-bold text-[color:var(--glass-ink)]">{t("helpTitle")}</h2>
+            <p className="text-xs text-[color:var(--glass-ink)]/65">{t("helpSubtitle")}</p>
+          </div>
         </div>
-        <HelpRow icon={HelpCircle} label={t("helpFindRightDossier")} onClick={() => setMode("guide")} />
+        <HelpRow icon={HelpCircle} label={t("helpFindRightDossier")} onClick={() => { setMode("guide"); setGuideStarted(true); }} />
         <HelpRow icon={FileQuestion} label={t("helpCannotFind")} href="/contact" />
         <HelpRow icon={RotateCcw} label={t("helpWhereIsRequest")} href="/reprendre" />
         <HelpRow icon={Phone} label={t("helpContactSupport")} href="/contact" />
       </section>
 
-      <aside className="glass-surface flex items-start gap-3 rounded-2xl p-4" data-a11y-secondary="true" data-docbel-readable>
-        <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-[color:var(--glass-pop-bg)] text-[color:var(--glass-accent-deep)]" aria-hidden><Lightbulb /></span>
-        <div>
-          <p className="text-base font-bold text-[color:var(--glass-ink)]">{t("tipTitle")}</p>
-          <p className="mt-1 text-base leading-relaxed text-[color:var(--glass-ink-soft)]">{t("tipBody")}</p>
-          <p className="mt-3 inline-flex items-center gap-2 text-sm text-[color:var(--glass-ink-soft)]"><Lock aria-hidden />{t("privacyNote")}</p>
-        </div>
-      </aside>
+      <details className="group glass-surface rounded-xl px-3 py-2" data-a11y-secondary="true">
+        <summary className="flex cursor-pointer list-none items-center gap-2 text-xs font-bold text-[color:var(--glass-ink)]">
+          <Accessibility className="size-4 text-[color:var(--glass-accent-deep)]" aria-hidden />
+          {tA11y("title")}
+          <ChevronRight className="ml-auto size-4 transition-transform group-open:rotate-90" aria-hidden />
+        </summary>
+        <div className="mt-2"><AccessibilityToolbar /></div>
+      </details>
     </section>
   );
 }

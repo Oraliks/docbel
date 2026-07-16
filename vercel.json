@@ -1,4 +1,7 @@
 {
+  "env": {
+    "DECISION_TREE_RUNTIME_ENABLED": "1"
+  },
   "crons": [
     {
       "path": "/api/cron/health-snapshot",

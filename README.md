@@ -106,4 +106,7 @@ Variables d'environnement requises côté Vercel :
 | `BETTER_AUTH_URL` | URL publique de l'application |
 | `NEXT_PUBLIC_BETTER_AUTH_URL` | URL publique exposée au client auth (navigateur) |
 
+Le runtime de l’arbre d’orientation est activé par défaut sur Vercel via
+`DECISION_TREE_RUNTIME_ENABLED=1` (configuration versionnée dans `vercel.json`).
+
 Ne jamais committer `.env` ni `.env.local`.

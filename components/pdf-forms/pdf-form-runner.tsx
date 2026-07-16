@@ -1400,10 +1400,11 @@ function MacroRunnerBody({
   const isStreamlinedC1 = form.slug === "c1-changement-situation";
   const detectedBic = useMemo(() => {
     const ibanField = form.fields.find((field) => field.canonicalKey === "banque.iban");
-    if (!ibanField || typeof values[ibanField.id] !== "string") {
+    const ibanValue = ibanField ? values[ibanField.id] : undefined;
+    if (typeof ibanValue !== "string") {
       return null;
     }
-    return bicFromForeignIban(values[ibanField.id]);
+    return bicFromForeignIban(ibanValue);
   }, [form.fields, values]);
   const titleFor = (id: string) => {
     const k = MACRO_TITLE_KEY[id];

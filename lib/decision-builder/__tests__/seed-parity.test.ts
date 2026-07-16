@@ -98,6 +98,7 @@ describe("seed ONEM 2026 — branche C1 changement de situation", () => {
       (situation) => situation.value === "changement-situation-personnelle",
     );
     expect(c1?.subQuestion?.options.map((option) => option.value)).toEqual([
+      "situation-familiale-assistant",
       "adresse",
       "situation-personnelle-menage",
       "permis-sejour-travail",

@@ -898,6 +898,24 @@ const wizardSituationsOnem2026: WizardSituationV2[] = [
         "Choisissez le changement principal. Vous pourrez en déclarer plusieurs dans le même C1 s'ils prennent effet à la même date.",
       options: [
         {
+          value: "situation-familiale-assistant",
+          label: "Vous devez déclarer une situation familiale ou un changement dans votre ménage",
+          helpText:
+            "L'arbre vous envoie vers Mon Dossier : l'assistant posera les questions familiales et préparera le C1 officiel.",
+          result: {
+            dossierSlug: "changement-situation-personnelle",
+            dossierTitle: "Préparer une déclaration de situation familiale",
+            availability: "disponible",
+            rationale:
+              "Les règles de situation familiale (conjoint, partenaire, FAC, enfants, pension alimentaire, garde alternée et colocation) sont recueillies dans l'assistant Mon Dossier, puis utilisées pour préremplir le C1.",
+            nextStep:
+              "Ouvrir Mon Dossier et répondre aux questions familiales. Le C1 officiel restera modifiable et l'Annexe REGIS ou le C1P sera ajouté si nécessaire.",
+            matchLevel: "recommande",
+            allocationEstimate: false,
+            sourceIds: ["ONEM_C1", "ONEM_ART_110"],
+          },
+        },
+        {
           value: "adresse",
           label: "Vous avez changé d'adresse",
           result: {

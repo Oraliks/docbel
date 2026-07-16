@@ -392,25 +392,38 @@ export function MonDossierClient({ bundles, catalog, activeRun, situations }: Pr
 
   return (
     <section className="docbel-a11y-scope relative isolate flex w-full flex-col gap-4 sm:gap-5">
-      <header className="flex flex-col gap-3 px-1" data-docbel-readable>
-        <nav aria-label={t("breadcrumbLabel")} className="flex items-center gap-2 text-sm text-[color:var(--glass-ink-soft)]" data-a11y-secondary="true">
-          <Link href="/" className="font-medium hover:text-[color:var(--glass-ink)]">{t("breadcrumbHome")}</Link>
-          <span aria-hidden>/</span>
-          <span className="font-bold text-[color:var(--glass-ink)]">{t("breadcrumbCurrent")}</span>
-        </nav>
-        <h1 className="glass-display max-w-3xl text-4xl font-semibold leading-tight sm:text-5xl">
-          {t.rich("monDossierTitle", { em: (chunks) => <em>{chunks}</em> })}
-        </h1>
-        <p className="max-w-3xl text-sm leading-relaxed text-[color:var(--glass-ink)]/70 sm:text-base">
-          {t("monDossierIntro")}
-        </p>
+      <header className="grid gap-4 px-1 lg:grid-cols-[minmax(0,1fr)_minmax(280px,0.42fr)] lg:items-end" data-docbel-readable>
+        <div className="flex flex-col gap-3">
+          <nav aria-label={t("breadcrumbLabel")} className="flex items-center gap-2 text-sm text-[color:var(--glass-ink-soft)]" data-a11y-secondary="true">
+            <Link href="/" className="font-medium hover:text-[color:var(--glass-ink)]">{t("breadcrumbHome")}</Link>
+            <span aria-hidden>/</span>
+            <span className="font-bold text-[color:var(--glass-ink)]">{t("breadcrumbCurrent")}</span>
+          </nav>
+          <h1 className="glass-display max-w-3xl text-4xl font-semibold leading-tight sm:text-5xl">
+            {t.rich("monDossierTitle", { em: (chunks) => <em>{chunks}</em> })}
+          </h1>
+          <p className="max-w-3xl text-sm leading-relaxed text-[color:var(--glass-ink)]/70 sm:text-base">
+            {t("monDossierIntro")}
+          </p>
+        </div>
+        <Link href="/contact" className="glass-interactive flex items-center gap-3 rounded-2xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] p-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)]">
+          <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[color:var(--glass-pop-bg)] text-[color:var(--glass-accent-deep)]" aria-hidden><HelpCircle /></span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-sm font-bold text-[color:var(--glass-ink)]">{t("helpTitle")}</span>
+            <span className="mt-1 block text-xs leading-relaxed text-[color:var(--glass-ink)]/70">{t("helpSubtitle")}</span>
+          </span>
+          <ChevronRight className="shrink-0 text-[color:var(--glass-accent-deep)]" aria-hidden />
+        </Link>
       </header>
 
       <AccessibilityToolbar />
 
       {activeRun ? (
-        <section className="flex flex-col gap-2" data-docbel-readable>
-          <h2 className="text-base font-bold text-[color:var(--glass-ink)]">{t("ongoingDossier")}</h2>
+        <section className="glass-surface flex flex-col gap-3 rounded-3xl p-3 sm:p-4" data-docbel-readable>
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="text-lg font-bold text-[color:var(--glass-ink)]">{t("ongoingDossier")}</h2>
+            <span className="rounded-full bg-[color:var(--glass-pop-bg)] px-2.5 py-1 text-xs font-bold text-[color:var(--glass-accent-deep)]">1</span>
+          </div>
           <ActiveRunCard run={activeRun} />
         </section>
       ) : null}

@@ -17,7 +17,7 @@
 // requis pour quitter step 1. Aucun `defaultValue`, aucune redirection
 // possible sans choix explicite.
 
-import { createContext, useContext, useEffect, useRef, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 import {
@@ -33,13 +33,16 @@ import {
   ExternalLink,
   FileText,
   GraduationCap,
+  HandHeart,
+  HeartPulse,
   HelpCircle,
+  Home,
   Hourglass,
-  Lock,
   MapPinned,
   RotateCcw,
   Search,
   Sparkles,
+  Users,
   UserMinus,
   type LucideIcon,
 } from "lucide-react";
@@ -58,6 +61,7 @@ import { GLASS_CARD } from "@/lib/glass-classes";
 import { formatDate } from "@/lib/i18n/format";
 import { AllocationEstimateBlock } from "@/components/docbel/onboarding/allocation-estimate-block";
 import { trackBundleEventClient } from "@/lib/bundles/analytics-client";
+import { LIFE_EVENT_CATEGORIES } from "@/lib/bundles/types";
 import {
   deriveWizardResults,
   type DerivedDossier,
@@ -84,6 +88,30 @@ const ICONS: Record<string, LucideIcon> = {
   UserMinus,
   MapPinned,
 };
+
+type SituationTheme = "emploi" | "social" | "famille" | "sante" | "formation" | "logement";
+
+const SITUATION_THEMES: ReadonlyArray<{
+  id: SituationTheme;
+  icon: LucideIcon;
+}> = [
+  { id: "emploi", icon: Briefcase },
+  { id: "social", icon: HandHeart },
+  { id: "famille", icon: Users },
+  { id: "sante", icon: HeartPulse },
+  { id: "formation", icon: GraduationCap },
+  { id: "logement", icon: Home },
+];
+
+function situationTheme(value: string): SituationTheme {
+  const normalized = value.toLowerCase();
+  if (/handicap|sante|incapac|maladie/.test(normalized)) return "sante";
+  if (/jeune|etude|formation|stage/.test(normalized)) return "formation";
+  if (/famille|familial|conge|situation-personnelle/.test(normalized)) return "famille";
+  if (/logement|adresse|mobilite|demenag/.test(normalized)) return "logement";
+  if (/allocation|aide|social/.test(normalized)) return "social";
+  return "emploi";
+}
 
 function resolveIcon(name: string): LucideIcon {
   return ICONS[name] ?? HelpCircle;
@@ -275,11 +303,11 @@ export function DossierWizard({ situations, catalog = {}, dryRun = false }: Prop
 
   return (
     <DryRunContext.Provider value={dryRun}>
-    <Card className={cn(GLASS_CARD, "h-full overflow-hidden")} data-docbel-readable>
-      <CardHeader className="border-b border-[color:var(--glass-ink-line)] p-3 sm:p-4">
+    <Card className={cn(GLASS_CARD, "h-full overflow-hidden rounded-3xl")} data-docbel-readable>
+      <CardHeader className="p-4 pb-3 sm:p-5 sm:pb-3">
         <CardTitle className="flex items-center gap-3">
           <span
-            className="glass-icon-tile flex size-9 shrink-0 items-center justify-center rounded-xl text-[color:var(--glass-accent-deep)]"
+            className="glass-icon-tile flex size-12 shrink-0 items-center justify-center rounded-2xl text-[color:var(--glass-accent-deep)]"
             style={{
               background:
                 "color-mix(in oklab, var(--glass-accent-deep) 14%, transparent)",
@@ -290,7 +318,7 @@ export function DossierWizard({ situations, catalog = {}, dryRun = false }: Prop
             <Sparkles />
           </span>
           <span className="flex flex-col gap-0.5">
-            <span className="text-lg font-bold leading-tight">
+            <span className="text-2xl font-bold leading-tight">
               {t("wizardAssistantTitle")}
             </span>
             <span className="text-sm font-normal text-muted-foreground">
@@ -299,7 +327,7 @@ export function DossierWizard({ situations, catalog = {}, dryRun = false }: Prop
           </span>
         </CardTitle>
       </CardHeader>
-      <CardContent className="flex flex-col gap-4 p-3 sm:p-5">
+      <CardContent className="flex flex-col gap-5 p-4 pt-0 sm:p-5 sm:pt-0">
         <Stepper currentStep={currentStep} />
 
         {/* Annonce du changement d'étape pour les lecteurs d'écran. */}
@@ -348,25 +376,20 @@ export function DossierWizard({ situations, catalog = {}, dryRun = false }: Prop
         )}
 
         {/* Échappatoire « je ne suis pas sûr » sur les étapes de questions. */}
-        {currentStep < 4 &&
-          (dryRun ? (
-            <p className="text-center text-base text-muted-foreground" data-a11y-secondary="true">
-              {t("wizardHesitateDryRun")}
-            </p>
-          ) : (
-            <p className="text-center text-base text-muted-foreground" data-a11y-secondary="true">
-              {t.rich("wizardHesitate", {
-                link: (chunks) => (
-                  <Link
-                    href="/contact"
-                    className="font-medium text-[color:var(--glass-accent-deep)] underline-offset-2 hover:underline"
-                  >
-                    {chunks}
-                  </Link>
-                ),
-              })}
-            </p>
-          ))}
+        {currentStep < 4 ? (
+          <div className="grid overflow-hidden rounded-2xl border border-[color:var(--glass-border)] sm:grid-cols-[1.15fr_repeat(3,1fr)]" data-a11y-secondary="true">
+            <div className="flex items-center gap-2 border-b border-[color:var(--glass-border)] px-3 py-2.5 sm:border-b-0 sm:border-r">
+              <span className="flex size-8 items-center justify-center rounded-lg bg-[color:var(--glass-pop-bg)] text-[color:var(--glass-accent-deep)]" aria-hidden><HelpCircle className="size-4" /></span>
+              <span>
+                <span className="block text-xs font-bold text-[color:var(--glass-ink)]">{t("helpTitle")}</span>
+                <span className="block text-xs text-[color:var(--glass-ink)]/60">{t("helpSubtitle")}</span>
+              </span>
+            </div>
+            <Link href="/contact" className="glass-interactive flex min-h-12 items-center justify-center gap-2 border-b border-[color:var(--glass-border)] px-3 text-xs font-semibold text-[color:var(--glass-accent-deep)] sm:border-b-0 sm:border-r"><FileText className="size-4" aria-hidden />{t("helpCannotFind")}</Link>
+            <Link href="/contact" className="glass-interactive flex min-h-12 items-center justify-center gap-2 border-b border-[color:var(--glass-border)] px-3 text-xs font-semibold text-[color:var(--glass-accent-deep)] sm:border-b-0 sm:border-r"><HelpCircle className="size-4" aria-hidden />{t("helpFindRightDossier")}</Link>
+            <Link href="/contact" className="glass-interactive flex min-h-12 items-center justify-center gap-2 px-3 text-xs font-semibold text-[color:var(--glass-accent-deep)]"><Building2 className="size-4" aria-hidden />{dryRun ? t("wizardHesitateDryRun") : t("helpContactSupport")}</Link>
+          </div>
+        ) : null}
       </CardContent>
     </Card>
     </DryRunContext.Provider>
@@ -382,26 +405,35 @@ interface StepperProps {
 
 function Stepper({ currentStep }: StepperProps) {
   const t = useTranslations("public.dossier");
-  const percentage = (currentStep / 4) * 100;
   return (
-    <div className="flex flex-col gap-2" aria-label={t("wizardProgressLabel")}>
-      <div className="flex items-center justify-between gap-3">
-        <span className="text-sm font-bold text-[color:var(--glass-ink)]">
-          {t("wizardQuestionCounter", { current: currentStep, total: 4 })}
-        </span>
-        <span className="text-sm font-semibold text-[color:var(--glass-ink-soft)]">
-          {t(STEP_LABEL_KEYS[currentStep] as Parameters<typeof t>[0])}
-        </span>
-      </div>
-      <span
-        role="progressbar"
-        aria-valuemin={1}
-        aria-valuemax={4}
-        aria-valuenow={currentStep}
-        className="h-2.5 overflow-hidden rounded-full bg-[color:var(--glass-ink-line)]"
-      >
-        <span className="block h-full rounded-full bg-[color:var(--glass-accent-deep)] transition-[width]" style={{ width: `${percentage}%` }} />
-      </span>
+    <div
+      className="grid overflow-hidden rounded-xl border border-[color:var(--glass-border)] sm:grid-cols-4"
+      aria-label={t("wizardProgressLabel")}
+      role="progressbar"
+      aria-valuemin={1}
+      aria-valuemax={4}
+      aria-valuenow={currentStep}
+    >
+      {([1, 2, 3, 4] as const).map((step) => {
+        const active = step === currentStep;
+        const completed = step < currentStep;
+        return (
+          <span
+            key={step}
+            className={cn(
+              "flex min-h-12 items-center justify-center gap-2 border-b border-[color:var(--glass-border)] px-3 text-sm last:border-b-0 sm:border-b-0 sm:border-r sm:last:border-r-0",
+              active && "bg-[color:var(--glass-pop-bg)] font-bold text-[color:var(--glass-accent-deep)]",
+              !active && "text-[color:var(--glass-ink)]/65",
+            )}
+          >
+            <span className={cn(
+              "flex size-6 items-center justify-center rounded-full bg-[color:var(--glass-pop-bg)] text-xs font-bold",
+              (active || completed) && "bg-[color:var(--glass-accent-deep)] text-white",
+            )}>{step}</span>
+            <span>{t(STEP_LABEL_KEYS[step] as Parameters<typeof t>[0])}</span>
+          </span>
+        );
+      })}
     </div>
   );
 }
@@ -422,10 +454,24 @@ function StepSituation({
 }: StepSituationProps) {
   const t = useTranslations("public.dossier");
   const tc = useTranslations("public.dossierContent");
+  const [query, setQuery] = useState("");
+  const [activeTheme, setActiveTheme] = useState<SituationTheme>("emploi");
+  const normalizedQuery = query.trim().toLocaleLowerCase();
+  const visibleSituations = useMemo(() => situations.filter((s) => {
+    if (normalizedQuery) {
+      const searchable = [
+        resolveText(tc, s.labelKey, s.label),
+        resolveText(tc, s.descriptionKey, s.description ?? ""),
+      ].join(" ").toLocaleLowerCase();
+      return searchable.includes(normalizedQuery);
+    }
+    return situationTheme(s.value) === activeTheme;
+  }), [activeTheme, normalizedQuery, situations, tc]);
+
   return (
-    <div className="flex flex-col gap-5 transition-opacity duration-200">
+    <div className="flex flex-col gap-4 transition-opacity duration-200">
       <div className="flex flex-col gap-2">
-        <Label className="block text-lg font-bold leading-tight text-[color:var(--glass-ink)]">
+        <Label className="block text-xl font-bold leading-tight text-[color:var(--glass-ink)]">
           {t("wizardSituationQuestion")}
         </Label>
         <p className="text-sm leading-relaxed text-muted-foreground">
@@ -433,8 +479,45 @@ function StepSituation({
         </p>
       </div>
 
+      <label className="flex min-h-14 items-center gap-3 rounded-2xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-4 focus-within:ring-2 focus-within:ring-[color:var(--glass-accent-deep)]/35">
+        <Search className="size-5 shrink-0 text-[color:var(--glass-accent-deep)]" aria-hidden />
+        <input
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          className="min-w-0 flex-1 bg-transparent text-sm text-[color:var(--glass-ink)] outline-none placeholder:text-[color:var(--glass-ink)]/45"
+          placeholder={t("searchPlaceholder")}
+          aria-label={t("searchAriaLabel")}
+        />
+        <span className="flex size-8 items-center justify-center rounded-full bg-[color:var(--glass-pop-bg)] text-[color:var(--glass-accent-deep)]" aria-hidden><Sparkles className="size-4" /></span>
+      </label>
+
+      <div className="no-scrollbar flex gap-2 overflow-x-auto pb-1" aria-label={t("sortGroupLabel")}>
+        {SITUATION_THEMES.map((theme) => {
+          const category = LIFE_EVENT_CATEGORIES.find((item) => item.id === theme.id);
+          const Icon = theme.icon;
+          const active = activeTheme === theme.id && !normalizedQuery;
+          return (
+            <button
+              key={theme.id}
+              type="button"
+              aria-pressed={active}
+              onClick={() => { setQuery(""); setActiveTheme(theme.id); }}
+              className={cn(
+                "glass-interactive flex min-h-11 shrink-0 items-center gap-2 rounded-xl border px-4 text-sm font-semibold",
+                active
+                  ? "border-[color:var(--glass-accent-deep)] bg-[color:var(--glass-pop-bg)] text-[color:var(--glass-accent-deep)]"
+                  : "border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] text-[color:var(--glass-ink)]",
+              )}
+            >
+              <Icon className="size-4" aria-hidden />
+              {category?.label ?? theme.id}
+            </button>
+          );
+        })}
+      </div>
+
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        {situations.map((s) => {
+        {visibleSituations.map((s) => {
           const Icon = resolveIcon(s.icon);
           const isSelected = selected === s.value;
           return (
@@ -444,7 +527,7 @@ function StepSituation({
               onClick={() => onSelect(s.value)}
               aria-pressed={isSelected}
               className={cn(
-                "group flex min-h-14 items-center gap-3 rounded-2xl border bg-[color:var(--glass-surface)] px-3 py-2.5 text-left transition-all",
+                "group flex min-h-16 items-center gap-3 rounded-xl border bg-[color:var(--glass-surface)] px-3 py-2.5 text-left transition-all",
                 "hover:-translate-y-px hover:border-[color:var(--glass-accent-a)]/40 hover:shadow-sm",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-a)]/40",
                 isSelected
@@ -485,10 +568,9 @@ function StepSituation({
         })}
       </div>
 
-      <div className="flex items-center gap-2 border-t border-[color:var(--glass-ink-line)] pt-4 text-sm text-muted-foreground" data-a11y-secondary="true">
-          <Lock aria-hidden />
-          {t("wizardAnswerConfidential")}
-      </div>
+      {visibleSituations.length === 0 ? (
+        <p className="rounded-xl border border-dashed border-[color:var(--glass-border)] px-4 py-5 text-center text-sm text-[color:var(--glass-ink)]/65">{t("emptyNoMatchBody")}</p>
+      ) : null}
     </div>
   );
 }

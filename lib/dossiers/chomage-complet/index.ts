@@ -239,6 +239,34 @@ export const chomageComplet: DossierDefinition = {
       ],
       visibleIf: { fieldId: "famille_situation", op: "equals", value: "isole" },
     },
+    {
+      id: "famille_garde_alternee",
+      label: { fr: "Un enfant vit-il régulièrement chez toi en garde alternée ?", nl: "", de: "" },
+      helpText: {
+        fr: "Le C1 demandera ensuite les jours de présence et les éventuels justificatifs.",
+        nl: "", de: "",
+      },
+      type: "select",
+      options: [
+        { value: "oui", label: { fr: "Oui", nl: "", de: "" } },
+        { value: "non", label: { fr: "Non", nl: "", de: "" } },
+      ],
+      visibleIf: { fieldId: "famille_enfants", op: "equals", value: "oui" },
+    },
+    {
+      id: "famille_premier_revenu_enfant",
+      label: { fr: "Un enfant commence-t-il son premier travail après ses études ?", nl: "", de: "" },
+      helpText: {
+        fr: "Si oui, le C1 pourra demander la neutralisation temporaire du revenu pendant 12 mois.",
+        nl: "", de: "",
+      },
+      type: "select",
+      options: [
+        { value: "oui", label: { fr: "Oui", nl: "", de: "" } },
+        { value: "non", label: { fr: "Non", nl: "", de: "" } },
+      ],
+      visibleIf: { fieldId: "famille_enfants", op: "equals", value: "oui" },
+    },
   ],
 
   warnings: [

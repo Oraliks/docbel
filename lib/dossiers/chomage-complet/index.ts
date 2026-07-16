@@ -165,7 +165,40 @@ export const chomageComplet: DossierDefinition = {
   // Le C1 est désormais le formulaire de collecte unique : l'assistant a déjà
   // choisi le bon dossier et le Form Runner pose les questions utiles, section
   // par section. Aucun écran de selects ne doit s'intercaler entre les deux.
-  questions: [],
+  // Questions de l'assistant Mon dossier. Elles enrichissent l'orientation
+  // sans modifier le C1 officiel : les réponses sont préremplies dans le C1,
+  // puis restent entièrement modifiables par la personne.
+  questions: [
+    {
+      id: "famille_situation",
+      label: { fr: "Avec qui vis-tu actuellement ?", nl: "", de: "" },
+      helpText: {
+        fr: "Choisis conjoint si tu es marié, partenaire si vous vivez en couple sans être mariés, ou aucun lien pour une personne qui n'est ni famille ni partenaire.",
+        nl: "", de: "",
+      },
+      type: "select",
+      options: [
+        { value: "isole", label: { fr: "Je vis seul(e)", nl: "", de: "" } },
+        { value: "conjoint", label: { fr: "Mon conjoint (marié)", nl: "", de: "" } },
+        { value: "partenaire", label: { fr: "Mon partenaire", nl: "", de: "" } },
+        { value: "aucun-lien", label: { fr: "Une personne sans lien familial ou de couple", nl: "", de: "" } },
+      ],
+    },
+    {
+      id: "famille_colocation",
+      label: { fr: "Est-ce une colocation où chacun gère sa vie séparément ?", nl: "", de: "" },
+      helpText: {
+        fr: "Si oui, ne détaille pas le colocataire dans le C1 : l'Annexe REGIS sera proposée ensuite.",
+        nl: "", de: "",
+      },
+      type: "select",
+      options: [
+        { value: "oui", label: { fr: "Oui, c'est une colocation", nl: "", de: "" } },
+        { value: "non", label: { fr: "Non, nous formons un ménage commun", nl: "", de: "" } },
+      ],
+      visibleIf: { fieldId: "famille_situation", op: "equals", value: "aucun-lien" },
+    },
+  ],
 
   warnings: [
     {

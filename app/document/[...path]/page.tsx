@@ -13,6 +13,7 @@ import { DocumentPageLayout } from "@/components/pdf-forms/document-page-layout"
 import { getFormContextTips } from "@/lib/form-context-tips.server";
 import { DisabledFormView } from "./disabled-form-view";
 import { getDossier } from "@/lib/dossiers/registry";
+import { familyAnswersToC1Prefill } from "@/lib/dossiers/family-prefill";
 import type { PdfFormField, FormPayload } from "@/lib/pdf-forms/types";
 import { pickInitialStepId } from "@/lib/pdf-forms/resume-step";
 import { buildProfilePrefill } from "@/lib/pdf-forms/profile-prefill";
@@ -101,6 +102,7 @@ async function loadBundleSharedValues(
   lastFormId: string | null;
   lastStepId: string | null;
   draftForForm: FormPayload | undefined;
+  eligibilityAnswers: Record<string, string>;
 }> {
   const invalid = {
     shared: {},
@@ -109,6 +111,7 @@ async function loadBundleSharedValues(
     lastFormId: null,
     lastStepId: null,
     draftForForm: undefined,
+    eligibilityAnswers: {},
   };
   const run = await prisma.bundleRun.findUnique({
     where: { id: bundleRunId },
@@ -173,6 +176,7 @@ async function loadBundleSharedValues(
     lastFormId: run.lastFormId,
     lastStepId: run.lastStepId,
     draftForForm,
+    eligibilityAnswers: (run.eligibilityAnswers as Record<string, string> | null) ?? {},
   };
 }
 
@@ -268,7 +272,7 @@ export default async function PdfFormPage({
   let draftValues: FormPayload | undefined;
   if (bundleRun) {
     const sessionId = (await cookies()).get("beldoc-bundle-session")?.value || null;
-    const { shared, canonical, runValid, lastFormId, lastStepId, draftForForm } =
+    const { shared, canonical, runValid, lastFormId, lastStepId, draftForForm, eligibilityAnswers } =
       await loadBundleSharedValues(bundleRun, form.id, { userId, sessionId });
     if (runValid) {
       validBundleRunId = bundleRun;
@@ -279,6 +283,15 @@ export default async function PdfFormPage({
       // strings. Priorité `prefillFrom` (précision plus fine, contexte plus
       // certain que la composition canonique) — donc bySharedFrom prime.
       bundlePrefill = { ...byCanonical, ...bySharedFrom };
+      // L'assistant enrichi préremplit uniquement les champs de situation
+      // familiale du C1. Le PDF officiel reste inchangé et chaque valeur est
+      // modifiable dans le Form Runner.
+      if (form.slug.startsWith("c1-")) {
+        bundlePrefill = {
+          ...familyAnswersToC1Prefill(eligibilityAnswers),
+          ...bundlePrefill,
+        };
+      }
       initialStepId = pickInitialStepId(lastFormId, lastStepId, form.id);
       draftValues = draftForForm;
     }

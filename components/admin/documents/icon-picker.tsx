@@ -1,8 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { createElement, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
-import { Search, Smile, X } from "lucide-react";
+import { HelpCircle, Search, Smile, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -42,7 +42,10 @@ export function IconDisplay({
 }) {
   if (!value) return null;
   const Icon = getIconByName(value);
-  if (Icon) return <Icon className={className} />;
+  if (Icon) return createElement(Icon, { className });
+  if (/^[A-Za-z][A-Za-z0-9]*$/.test(value)) {
+    return <HelpCircle className={className} aria-hidden />;
+  }
   return <span className="text-2xl leading-none">{value}</span>;
 }
 

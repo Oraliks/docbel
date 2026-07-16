@@ -482,6 +482,7 @@ function StepSituation({
       <label className="flex min-h-14 items-center gap-3 rounded-2xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-4 focus-within:ring-2 focus-within:ring-[color:var(--glass-accent-deep)]/35">
         <Search className="size-5 shrink-0 text-[color:var(--glass-accent-deep)]" aria-hidden />
         <input
+          data-glass-input-unstyled
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           className="min-w-0 flex-1 bg-transparent text-sm text-[color:var(--glass-ink)] outline-none placeholder:text-[color:var(--glass-ink)]/45"

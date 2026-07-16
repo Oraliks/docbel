@@ -15,6 +15,18 @@ import {
   Calendar,
   MapPin,
   Search,
+  Accessibility,
+  Briefcase,
+  FolderOpen,
+  GraduationCap,
+  HandHeart,
+  HeartPulse,
+  HelpCircle,
+  Home,
+  MapPinned,
+  Sparkles,
+  UserMinus,
+  Users,
 } from "lucide-react";
 
 export interface IconEntry {
@@ -25,6 +37,18 @@ export interface IconEntry {
 
 export const ICON_CATALOG: IconEntry[] = [
   { name: "FileText", component: FileText, keywords: ["document"] },
+  { name: "Accessibility", component: Accessibility, keywords: ["accessibilité", "handicap"] },
+  { name: "Briefcase", component: Briefcase, keywords: ["emploi", "travail", "carrière"] },
+  { name: "FolderOpen", component: FolderOpen, keywords: ["dossier", "répertoire"] },
+  { name: "GraduationCap", component: GraduationCap, keywords: ["études", "formation", "école"] },
+  { name: "HandHeart", component: HandHeart, keywords: ["aide", "social", "solidarité"] },
+  { name: "HeartPulse", component: HeartPulse, keywords: ["santé", "maladie", "soins"] },
+  { name: "HelpCircle", component: HelpCircle, keywords: ["aide", "question", "autre"] },
+  { name: "Home", component: Home, keywords: ["logement", "maison", "adresse"] },
+  { name: "MapPinned", component: MapPinned, keywords: ["carte", "adresse", "lieu"] },
+  { name: "Sparkles", component: Sparkles, keywords: ["assistant", "nouveau", "magie"] },
+  { name: "UserMinus", component: UserMinus, keywords: ["perte emploi", "licenciement", "personne"] },
+  { name: "Users", component: Users, keywords: ["famille", "groupe", "ménage"] },
   // Batch calculateurs citoyens — icônes utilisées par les outils calc_*
   // listés dans lib/docbel-data.ts. Les keywords servent au search du
   // <IconPicker/> admin (FR + EN).

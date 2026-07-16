@@ -251,14 +251,28 @@
    tranchait en blanc dur sur le coin clair du dégradé (les inputs du
    calculateur préavis « qui font mal aux yeux »). Le flou les rend dépolis,
    cohérents avec les cartes. On exclut checkbox/radio/range. */
-.glass-root :is([data-slot="input"], [data-slot="select-trigger"]),
+.glass-root :is([data-slot="input"], [data-slot="select-trigger"]):not([data-slot="input-group-control"]),
 .glass-root
-  :is(input, select, textarea):not([type="checkbox"]):not([type="radio"]):not(
-    [type="range"]
-  ) {
+  :is(input, select, textarea):not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([data-slot="input-group-control"]):not([data-glass-input-unstyled]) {
   background: var(--glass-surface);
   -webkit-backdrop-filter: blur(14px) saturate(140%);
   backdrop-filter: blur(14px) saturate(140%);
+}
+
+/* Les groupes portent eux-mêmes la surface arrondie. Leur champ interne doit
+   rester transparent, sinon il forme un rectangle blanc par-dessus le verre. */
+.glass-root [data-slot="input-group"] {
+  background: var(--glass-surface);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  backdrop-filter: blur(14px) saturate(140%);
+  overflow: hidden;
+}
+
+.glass-root [data-slot="input-group-control"],
+.glass-root [data-glass-input-unstyled] {
+  background: transparent !important;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
 }
 
 /* ── Polish /outils — micro-interactions douces (cf. AGENTS.md › Design) ── */

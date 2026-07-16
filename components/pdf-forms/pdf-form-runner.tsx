@@ -59,17 +59,19 @@ const FULL_WIDTH_TYPES = new Set(["textarea", "signature", "fullname", "checkbox
 function withSuggestedBic(values: FormPayload, fields: PublicField[]): FormPayload {
   const ibanField = fields.find((field) => field.canonicalKey === "banque.iban");
   const bicField = fields.find((field) => field.canonicalKey === "banque.bic");
+  const ibanValue = ibanField ? values[ibanField.id] : undefined;
+  const currentBic = bicField ? values[bicField.id] : undefined;
   if (
     !ibanField ||
     !bicField ||
-    (typeof values[bicField.id] === "string" && values[bicField.id].trim() !== "") ||
-    typeof values[ibanField.id] !== "string"
+    (typeof currentBic === "string" && currentBic.trim() !== "") ||
+    typeof ibanValue !== "string"
   ) {
     return values;
   }
 
-  const suggestedBic = bicFromForeignIban(values[ibanField.id]);
-  return suggestedBic && values[bicField.id] !== suggestedBic
+  const suggestedBic = bicFromForeignIban(ibanValue);
+  return suggestedBic && currentBic !== suggestedBic
     ? { ...values, [bicField.id]: suggestedBic }
     : values;
 }

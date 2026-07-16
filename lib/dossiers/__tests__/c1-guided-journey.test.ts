@@ -12,8 +12,16 @@ describe("parcours guidé arbre ONEM → chômage complet → C1", () => {
     expect(chomageComplet.journey?.[2].title).toContain("C4");
   });
 
-  it("ne place plus aucun questionnaire entre l'assistant et le Form Runner", () => {
-    expect(chomageComplet.questions).toEqual([]);
+  it("enrichit l'assistant avant le Form Runner officiel", () => {
+    expect(chomageComplet.questions.map((q) => q.id)).toEqual([
+      "famille_situation",
+      "famille_colocation",
+      "famille_charge",
+      "famille_enfants",
+      "famille_pension",
+      "famille_garde_alternee",
+      "famille_premier_revenu_enfant",
+    ]);
     expect(selectDocuments(chomageComplet, {}).map((doc) => doc.slug)).toEqual([
       "c1-fr",
       "c4-employeur",

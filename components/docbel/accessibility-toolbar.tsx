@@ -73,17 +73,17 @@ export function AccessibilityToolbar() {
   return (
     <section
       aria-label={t("title")}
-      className="glass-surface flex flex-wrap items-center gap-2 rounded-2xl p-2.5"
+      className="glass-surface flex flex-wrap items-center gap-1.5 rounded-2xl p-2"
     >
-      <span className="flex min-h-11 items-center gap-2 px-2 text-sm font-bold text-[color:var(--glass-ink)]">
+      <span className="flex min-h-10 items-center gap-1.5 px-1.5 text-xs font-bold text-[color:var(--glass-ink)] sm:text-sm">
         <Accessibility aria-hidden />
         {t("title")}
       </span>
       <Button
         type="button"
         variant={speaking ? "default" : "outline"}
-        size="lg"
-        className="min-h-11"
+        size="sm"
+        className="min-h-10 px-2.5"
         aria-pressed={speaking}
         onClick={toggleSpeech}
       >
@@ -93,8 +93,8 @@ export function AccessibilityToolbar() {
       <Button
         type="button"
         variant={preferences.textSize === "normal" ? "outline" : "default"}
-        size="lg"
-        className="min-h-11"
+        size="sm"
+        className="min-h-10 px-2.5"
         onClick={() =>
           updateAccessibilityPreferences({
             textSize: NEXT_TEXT_SIZE[preferences.textSize],
@@ -107,8 +107,8 @@ export function AccessibilityToolbar() {
       <Button
         type="button"
         variant={preferences.highContrast ? "default" : "outline"}
-        size="lg"
-        className="min-h-11"
+        size="sm"
+        className="min-h-10 px-2.5"
         aria-pressed={preferences.highContrast}
         onClick={() =>
           updateAccessibilityPreferences({
@@ -122,8 +122,8 @@ export function AccessibilityToolbar() {
       <Button
         type="button"
         variant={preferences.simpleMode ? "default" : "outline"}
-        size="lg"
-        className="min-h-11"
+        size="sm"
+        className="min-h-10 px-2.5"
         aria-pressed={preferences.simpleMode}
         onClick={() =>
           updateAccessibilityPreferences({ simpleMode: !preferences.simpleMode })
@@ -135,8 +135,8 @@ export function AccessibilityToolbar() {
       <Button
         type="button"
         variant={preferences.reducedMotion ? "default" : "outline"}
-        size="lg"
-        className="min-h-11"
+        size="sm"
+        className="min-h-10 px-2.5"
         aria-pressed={preferences.reducedMotion}
         onClick={() =>
           updateAccessibilityPreferences({

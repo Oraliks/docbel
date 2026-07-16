@@ -276,7 +276,7 @@ export function DossierWizard({ situations, catalog = {}, dryRun = false }: Prop
   return (
     <DryRunContext.Provider value={dryRun}>
     <Card className={cn(GLASS_CARD, "h-full overflow-hidden")} data-docbel-readable>
-      <CardHeader className="border-b border-[color:var(--glass-ink-line)] p-4 sm:p-6">
+      <CardHeader className="border-b border-[color:var(--glass-ink-line)] p-3 sm:p-4">
         <CardTitle className="flex items-center gap-3">
           <span
             className="glass-icon-tile flex size-9 shrink-0 items-center justify-center rounded-xl text-[color:var(--glass-accent-deep)]"
@@ -299,7 +299,7 @@ export function DossierWizard({ situations, catalog = {}, dryRun = false }: Prop
           </span>
         </CardTitle>
       </CardHeader>
-      <CardContent className="flex flex-col gap-6 p-4 sm:p-6">
+      <CardContent className="flex flex-col gap-4 p-3 sm:p-5">
         <Stepper currentStep={currentStep} />
 
         {/* Annonce du changement d'étape pour les lecteurs d'écran. */}
@@ -425,7 +425,7 @@ function StepSituation({
   return (
     <div className="flex flex-col gap-5 transition-opacity duration-200">
       <div className="flex flex-col gap-2">
-        <Label className="block text-2xl font-bold leading-tight text-[color:var(--glass-ink)]">
+        <Label className="block text-xl font-bold leading-tight text-[color:var(--glass-ink)]">
           {t("wizardSituationQuestion")}
         </Label>
         <p className="text-base leading-relaxed text-muted-foreground">
@@ -444,7 +444,7 @@ function StepSituation({
               onClick={() => onSelect(s.value)}
               aria-pressed={isSelected}
               className={cn(
-                "group flex min-h-20 items-center gap-4 rounded-2xl border bg-[color:var(--glass-surface)] px-4 py-4 text-left transition-all",
+                "group flex min-h-16 items-center gap-3 rounded-2xl border bg-[color:var(--glass-surface)] px-3 py-3 text-left transition-all",
                 "hover:-translate-y-px hover:border-[color:var(--glass-accent-a)]/40 hover:shadow-sm",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-a)]/40",
                 isSelected
@@ -521,7 +521,7 @@ function StepSubQuestion({
         <p className="text-sm font-semibold text-[color:var(--glass-accent-deep)]">
           {situationLabel}
         </p>
-        <Label className="text-2xl font-bold leading-tight text-[color:var(--glass-ink)]">
+        <Label className="text-xl font-bold leading-tight text-[color:var(--glass-ink)]">
           {subQuestionText}
         </Label>
         {subHelpText && (
@@ -543,7 +543,7 @@ function StepSubQuestion({
               onClick={() => onSelect(opt.value)}
               aria-pressed={isSelected}
               className={cn(
-                "group flex min-h-20 items-center gap-4 rounded-2xl border bg-[color:var(--glass-surface)] px-4 py-4 text-left transition-all",
+                "group flex min-h-16 items-center gap-3 rounded-2xl border bg-[color:var(--glass-surface)] px-3 py-3 text-left transition-all",
                 "hover:-translate-y-px hover:border-[color:var(--glass-accent-a)]/40 hover:shadow-sm",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-a)]/40",
                 isSelected
@@ -612,7 +612,7 @@ function StepRefine({
         <p className="text-sm font-semibold text-[color:var(--glass-accent-deep)]">
           {subOptionLabel}
         </p>
-        <Label className="text-2xl font-bold leading-tight text-[color:var(--glass-ink)]">
+        <Label className="text-xl font-bold leading-tight text-[color:var(--glass-ink)]">
           {refineQuestionText}
         </Label>
         {refineHelpText && (
@@ -634,7 +634,7 @@ function StepRefine({
               onClick={() => onSelect(opt.value)}
               aria-pressed={isSelected}
               className={cn(
-                "group flex min-h-20 items-center gap-4 rounded-2xl border bg-[color:var(--glass-surface)] px-4 py-4 text-left transition-all",
+                "group flex min-h-16 items-center gap-3 rounded-2xl border bg-[color:var(--glass-surface)] px-3 py-3 text-left transition-all",
                 "hover:-translate-y-px hover:border-[color:var(--glass-accent-a)]/40 hover:shadow-sm",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-a)]/40",
                 isSelected
@@ -780,7 +780,7 @@ function PrimaryAvailable({
             </p>
             <MatchBadge level={primary.matchLevel} />
           </div>
-          <h3 className="text-2xl font-bold leading-tight">{title}</h3>
+              <h3 className="text-xl font-bold leading-tight">{title}</h3>
           <p className="text-base leading-relaxed text-muted-foreground">{rationale}</p>
           <MetaChips dossier={primary} />
         </div>

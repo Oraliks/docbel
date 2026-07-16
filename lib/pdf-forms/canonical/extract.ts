@@ -18,7 +18,7 @@
 //   - Une valeur canonique VIDE ("", "   ") est ignorée : on ne polluerait
 //     que le sous-formulaire avec un « vider ce champ » qui n'apporte rien.
 
-import type { FormPayload, PdfFormField, FullNameValue } from "../types";
+import type { FormPayload, PdfFormField, FullNameValue, FieldValueRecord } from "../types";
 import type { PublicField } from "../public-serializer";
 import { isCanonicalKey, type CanonicalKey } from "./vocabulary";
 
@@ -26,7 +26,7 @@ import { isCanonicalKey, type CanonicalKey } from "./vocabulary";
 /// mais les champs `type: "fullname"` acceptent un objet composite qui remplit
 /// leurs deux sous-champs prénom/nom simultanément. Le runner (`defaultValues`)
 /// dispatche en fonction du type de champ.
-export type PrefillValue = string | FullNameValue;
+export type PrefillValue = string | FullNameValue | FieldValueRecord[];
 export type PrefillMap = Record<string, PrefillValue>;
 
 /// Payload validé côté form-runner (les valeurs peuvent être string, number,

@@ -198,6 +198,47 @@ export const chomageComplet: DossierDefinition = {
       ],
       visibleIf: { fieldId: "famille_situation", op: "equals", value: "aucun-lien" },
     },
+    {
+      id: "famille_charge",
+      label: { fr: "Cette personne dépend-elle principalement de tes revenus ?", nl: "", de: "" },
+      helpText: {
+        fr: "Réponds oui seulement si tu prends réellement cette personne en charge. L'organisme de paiement vérifiera les preuves.",
+        nl: "", de: "",
+      },
+      type: "select",
+      options: [
+        { value: "oui", label: { fr: "Oui, elle dépend principalement de moi", nl: "", de: "" } },
+        { value: "non", label: { fr: "Non", nl: "", de: "" } },
+      ],
+      visibleIf: { fieldId: "famille_situation", op: "in", value: ["partenaire", "aucun-lien"] },
+    },
+    {
+      id: "famille_enfants",
+      label: { fr: "Y a-t-il des enfants dans ton ménage ?", nl: "", de: "" },
+      helpText: {
+        fr: "Cette réponse permet de préparer les questions sur les allocations familiales, les revenus d'un enfant et la garde alternée.",
+        nl: "", de: "",
+      },
+      type: "select",
+      options: [
+        { value: "oui", label: { fr: "Oui", nl: "", de: "" } },
+        { value: "non", label: { fr: "Non", nl: "", de: "" } },
+      ],
+    },
+    {
+      id: "famille_pension",
+      label: { fr: "Paies-tu une pension alimentaire ?", nl: "", de: "" },
+      helpText: {
+        fr: "Si oui, prépare le jugement, l'acte notarié ou la preuve de l'état de besoin si elle est disponible.",
+        nl: "", de: "",
+      },
+      type: "select",
+      options: [
+        { value: "oui", label: { fr: "Oui", nl: "", de: "" } },
+        { value: "non", label: { fr: "Non", nl: "", de: "" } },
+      ],
+      visibleIf: { fieldId: "famille_situation", op: "equals", value: "isole" },
+    },
   ],
 
   warnings: [

@@ -72,6 +72,8 @@ function defaultValues(form: PublicForm, bundlePrefill?: PrefillMap): FormPayloa
       }
     } else if (typeof pv === "string" && pv !== "") {
       v[f.id] = pv;
+    } else if (Array.isArray(pv)) {
+      v[f.id] = pv as FieldValue;
     } else if (isCreationDateField(f)) v[f.id] = todayISO();
     else if (f.defaultValue !== undefined) v[f.id] = f.defaultValue as FieldValue;
     else if (f.type === "checkbox") v[f.id] = false;

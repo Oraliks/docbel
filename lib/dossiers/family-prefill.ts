@@ -9,7 +9,7 @@ export type FamilyAssistantAnswers = Record<string, string | undefined>;
 
 export function familyAnswersToC1Prefill(
   answers: FamilyAssistantAnswers,
-): Record<string, string> {
+): Record<string, string | Array<{ lien: string }>> {
   const situation = answers.famille_situation;
   if (!situation) return {};
 
@@ -29,8 +29,17 @@ export function familyAnswersToC1Prefill(
     return { statutFamilial: "isole", cohabiteType: "colocation", habiteEnColocation: "oui" };
   }
 
+  const lien = situation === "conjoint"
+    ? "epoux"
+    : situation === "partenaire"
+      ? "partenaire"
+      : answers.famille_charge === "oui"
+        ? "FAC"
+        : "aucun-lien";
+
   return {
     statutFamilial: "cohabite",
     cohabiteType: "menage-commun",
+    cohabitants: [{ lien }],
   };
 }

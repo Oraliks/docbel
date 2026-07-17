@@ -290,24 +290,6 @@ export const chomageComplet: DossierDefinition = {
 
   documents: [
     {
-      // C1 — Demande d'allocations (déclaration personnelle).
-      // Commun à toutes les demandes de chômage. Pivot du dossier ici tant
-      // que C4/C61/C109 ne sont pas encore disponibles côté PDF.
-      // Slug du PdfForm réellement rattaché au bundle en production. Garder
-      // cette valeur alignée évite que `selectDocuments()` masque le C1 comme
-      // document « non applicable » dans le parcours guidé.
-      slug: "c1-fr",
-      title: "C1 — Demande d'allocations",
-      titleKey: "complet.doc.c1.title",
-      issuer: "ONEM",
-      required: true,
-      sourcePdfPath: "private/pdfs/C1_FR.pdf",
-      internalRef: "Dossier chomage-complet, document central (déclaration personnelle).",
-      fields: [
-        { field: "niss", required: true, section: "identite", pdfFieldName: "NISS" },
-      ],
-    },
-    {
       // C4 — Certificat de chômage. OBLIGATOIRE au dossier mais c'est
       // l'EMPLOYEUR qui doit le délivrer : le citoyen ne le remplit pas
       // lui-même dans beldoc. On le liste quand même (required) pour que la

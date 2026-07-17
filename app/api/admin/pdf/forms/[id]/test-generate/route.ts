@@ -4,9 +4,12 @@ import { requireAdminAuth } from "@/lib/auth-check";
 import { readSourcePdf } from "@/lib/pdf-forms/storage";
 import { fillForm } from "@/lib/pdf-forms/filler";
 import { generateSeedPayload } from "@/lib/pdf-forms/seed-payload";
-import { PdfFormField, FormPayload } from "@/lib/pdf-forms/types";
+import { getRulesForSlug } from "@/lib/pdf-forms/bindings/registry";
+import { resolveStamps } from "@/lib/pdf-forms/bindings/engine";
+import { PdfFormField, FormPayload, AcroFieldRaw } from "@/lib/pdf-forms/types";
 import { sanitizeFields } from "@/lib/pdf-forms/sanitize-fields";
 import { shouldFlattenGeneratedPdf } from "@/lib/pdf-forms/flatten-policy";
+import { apiError } from "@/lib/api/response";
 
 /// POST — génère un PDF de test (données seed ou payload fourni). Admin only.
 /// Stream direct, AUCUN stockage. Accepte `{ schema?, payload? }` pour tester
@@ -20,7 +23,7 @@ export async function POST(
 
   const { id } = await params;
   const form = await prisma.pdfForm.findUnique({ where: { id } });
-  if (!form) return NextResponse.json({ error: "Introuvable" }, { status: 404 });
+  if (!form) return apiError(404, "Introuvable");
 
   let body: { schema?: PdfFormField[]; payload?: Record<string, unknown> } = {};
   try {
@@ -37,16 +40,22 @@ export async function POST(
   const payload = (body.payload as FormPayload) || generateSeedPayload(fields);
 
   const source = await readSourcePdf(form.sourceStoragePath);
-  if (!source) return NextResponse.json({ error: "PDF source introuvable" }, { status: 500 });
+  if (!source) return apiError(500, "PDF source introuvable");
 
   let result;
   try {
+    // L'aperçu admin doit suivre exactement la même voie de génération que
+    // le parcours citoyen : les bindings serveur complètent les widgets qui
+    // n'ont pas d'ancre directe dans le schéma du FormRunner.
+    const extraStamps = resolveStamps(payload, getRulesForSlug(form.slug));
     result = await fillForm(source, fields, payload, {
       flatten: shouldFlattenGeneratedPdf(form.slug),
+      technicalSchema: form.technicalSchema as unknown as AcroFieldRaw[],
+      extraStamps,
     });
   } catch (err) {
     console.error("test-generate error:", err);
-    return NextResponse.json({ error: "Échec de génération" }, { status: 500 });
+    return apiError(500, "Échec de génération");
   }
 
   return new NextResponse(new Uint8Array(result.bytes), {

@@ -15,8 +15,8 @@ const codeDossier = {
   warnings: [],
   documents: [
     {
-      slug: "c1-fr",
-      title: "C1 — Demande d'allocations",
+      slug: "formulaire-onem",
+      title: "Formulaire ONEM",
       issuer: "ONEM",
       required: true,
       fields: [],
@@ -43,8 +43,8 @@ describe("deriveDossierDiscoveryMetadata", () => {
           {
             required: true,
             pdfForm: {
-              slug: "c1-fr",
-              title: "C1",
+              slug: "formulaire-onem",
+              title: "Formulaire ONEM",
               issuer: "ONEM",
               status: "published",
               active: true,
@@ -58,11 +58,11 @@ describe("deriveDossierDiscoveryMetadata", () => {
     expect(result.organism).toBe("ONEM");
     expect(result.documentCount).toBe(2);
     expect(result.requiredDocuments).toEqual([
-      "C1 — Demande d'allocations",
+      "Formulaire ONEM",
       "C4 — Certificat de chômage",
     ]);
     expect(result.vocabularyTags).toEqual(
-      expect.arrayContaining(["chômage", "C1", "c1-fr", "c4-employeur"]),
+      expect.arrayContaining(["chômage", "C1", "formulaire-onem", "c4-employeur"]),
     );
   });
 
@@ -71,7 +71,7 @@ describe("deriveDossierDiscoveryMetadata", () => {
       {
         organism: "CAPAC ou syndicat",
         vocabularyTags: ["allocation"],
-        requiredDocuments: ["Carte d'identité", "C1 — Demande d'allocations"],
+        requiredDocuments: ["Carte d'identité", "Formulaire ONEM"],
         items: [],
       },
       codeDossier,
@@ -80,7 +80,7 @@ describe("deriveDossierDiscoveryMetadata", () => {
     expect(result.organism).toBe("CAPAC ou syndicat");
     expect(result.requiredDocuments).toEqual([
       "Carte d'identité",
-      "C1 — Demande d'allocations",
+      "Formulaire ONEM",
       "C4 — Certificat de chômage",
     ]);
   });

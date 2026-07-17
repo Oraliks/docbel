@@ -164,7 +164,7 @@ describe("collectAllTriggeredSlugs", () => {
     const items = [
       {
         pdfFormId: "form-c1",
-        pdfFormSlug: "c1-insertion",
+        pdfFormSlug: "c1-changement-situation",
         rawTriggers: [
           { whenFieldId: "tremplinIndependants", whenValue: "oui", requiresFormSlug: "c1c" },
           { whenFieldId: "administrateurSociete", whenValue: "oui", requiresFormSlug: "c1a" },
@@ -198,7 +198,7 @@ describe("collectAllTriggeredSlugs", () => {
       { pdfFormId: null, pdfFormSlug: null, rawTriggers: [] },
       {
         pdfFormId: "form-c1",
-        pdfFormSlug: "c1-insertion",
+        pdfFormSlug: "c1-changement-situation",
         rawTriggers: [{ whenFieldId: "x", whenValue: "oui", requiresFormSlug: "c1a" }],
       },
     ];

@@ -23,7 +23,6 @@ describe("parcours guidé arbre ONEM → chômage complet → C1", () => {
       "famille_premier_revenu_enfant",
     ]);
     expect(selectDocuments(chomageComplet, {}).map((doc) => doc.slug)).toEqual([
-      "c1-fr",
       "c4-employeur",
     ]);
   });

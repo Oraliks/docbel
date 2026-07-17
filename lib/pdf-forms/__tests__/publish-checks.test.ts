@@ -56,6 +56,7 @@ describe("checkPublishable", () => {
     const fields = [enriched("a", "absent")];
     const issues = checkPublishable(fields, [raw("present")], ["fr"]);
     expect(hasBlockingIssues(issues)).toBe(true);
+    expect(issues.some((issue) => /Règle serveur cible/.test(issue.message))).toBe(false);
   });
 
   it("ancre pipe-séparée où les deux widgets existent → pas d'erreur", () => {

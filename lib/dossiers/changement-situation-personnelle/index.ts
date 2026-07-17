@@ -5,10 +5,10 @@
 // syndicale, ou changement d'organisme de paiement.
 //
 // Réutilise entièrement l'infrastructure C1 existante : le PdfForm
-// "c1-changement-situation" hérite des mêmes champs enrichis + des mêmes
-// triggers que "c1"/"c1-insertion" (cf. C1_IMPROVEMENT_TARGETS), avec le
-// motif d'introduction pré-sélectionné sur "modification" (éditable — la
-// personne peut aussi choisir "changement d'organisme de paiement").
+// "c1-changement-situation" utilise les champs enrichis et les triggers
+// dédiés au changement de situation, avec le motif d'introduction
+// pré-sélectionné sur "modification" (éditable — la personne peut aussi
+// choisir "changement d'organisme de paiement").
 //
 // Pas de questionnaire d'orientation (`questions: []`) : l'interaction se
 // fait DANS le formulaire C1 lui-même (déjà organisé en sections), pas en

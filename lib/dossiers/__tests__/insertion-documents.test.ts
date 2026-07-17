@@ -13,7 +13,6 @@ function slugsFor(answers: DossierAnswers): string[] {
 // choisit lui-même celui qui correspond à sa situation).
 const BASELINE = [
   "c109-36-demande",
-  "c1-insertion",
   "attestation-inscription-a15",
   "evaluations-positives-sip",
 ];
@@ -53,12 +52,12 @@ describe("allocations-insertion — arbre de documents", () => {
     }
   });
 
-  it("les formulaires remplissables = DEMANDE, C1, DIPLÔME, ÉTRANGER (PDF officiels)", () => {
+  it("les formulaires remplissables = DEMANDE, DIPLÔME, ÉTRANGER (PDF officiels)", () => {
     const fillable = allocationsInsertion.documents.filter(
       (d) => (!d.responsibility || d.responsibility === "user") && d.fields.length > 0,
     );
     expect(fillable.map((d) => d.slug).sort()).toEqual(
-      ["c1-insertion", "c109-36-demande", "c109-36-diplome", "c109-36-etranger"].sort(),
+      ["c109-36-demande", "c109-36-diplome", "c109-36-etranger"].sort(),
     );
     // Chaque remplissable pointe vers un PDF officiel committé.
     for (const d of fillable) {

@@ -327,7 +327,7 @@ describe("applyC1Improvements — restrictMotifTo5Situations (Oraliks, 2026-07-0
     expect(motif?.defaultValue).toBeUndefined(); // note: defaultMotif est un opt séparé, testé ailleurs
   });
 
-  it("absent : motifIntroduction n'est PAS autoAnswered (comportement c1/c1-insertion inchangé)", () => {
+  it("absent : motifIntroduction n'est PAS autoAnswered sans restriction de motif", () => {
     const result = applyC1Improvements([]);
     const motif = result.find((f) => f.id === "motifIntroduction");
     expect(motif?.autoAnswered).toBeFalsy();
@@ -417,7 +417,7 @@ describe("applyC1Improvements — restrictMotifTo5Situations (Oraliks, 2026-07-0
     expect(anchor?.errorMsg?.fr).toBeTruthy();
   });
 
-  it("absent : les 5 chips n'ont PAS de requiredGroup (c1 / c1-insertion inchangés)", () => {
+  it("absent : les 5 chips n'ont PAS de requiredGroup sans restriction de motif", () => {
     const result = applyC1Improvements([]);
     for (const id of ["modificationAdresse", "modificationSituationFamiliale", "modificationPermisSejour", "modificationCompte"]) {
       expect(result.find((q) => q.id === id)?.requiredGroup).toBeUndefined();
@@ -444,7 +444,7 @@ describe("applyC1Improvements — restrictMotifTo5Situations (Oraliks, 2026-07-0
     expect(titulaire?.options?.map((option) => option.value)).toEqual(["mon-nom", "autre-nom"]);
   });
 
-  it("absent : chomeurTemporaireAlternance garde son libellé d'origine (comportement c1/c1-insertion inchangé)", () => {
+  it("absent : chomeurTemporaireAlternance garde son libellé d'origine sans restriction", () => {
     const result = applyC1Improvements([]);
     const f = result.find((q) => q.id === "chomeurTemporaireAlternance");
     expect(f?.label?.fr).toBe("… comme chômeur temporaire suivant une formation en alternance");
@@ -472,5 +472,9 @@ describe("applyC1Improvements — restrictMotifTo5Situations (Oraliks, 2026-07-0
     const dateChangement = C1_QUESTIONS.find((q) => q.id === "dateChangementOrganisme");
     expect(dateChangement?.visibleIf).toEqual({ fieldId: "motifIntroduction", op: "equals", value: "changement-op" });
     expect(C1_QUESTIONS.find((q) => q.id === "transfereOrganismePaiement")).toBeUndefined();
+  });
+
+  it("délègue la remarque de situation familiale au binding serveur", () => {
+    expect(C1_QUESTIONS.find((field) => field.id === "remarqueSituationFamiliale")?.pdfFieldName).toBe("");
   });
 });

@@ -323,21 +323,6 @@ export const allocationsInsertion: DossierDefinition = {
       ],
     },
     {
-      // C1 — déclaration de situation personnelle (PDF présent : C1_FR.pdf).
-      // Slug distinct des autres C1 (unicité globale de PdfForm.slug).
-      slug: "c1-insertion",
-      title: "C1 — Déclaration de situation personnelle",
-      titleKey: "insertion.doc.c1.title",
-      issuer: "ONEM",
-      required: true,
-      sourcePdfPath: "private/pdfs/C1_FR.pdf",
-      internalRef:
-        "Déclaration personnelle. Préremplissable (PDF présent). Activation prod = Blob + seed (comme la demande).",
-      fields: [
-        { field: "niss", required: true, section: "identite", pdfFieldName: "NISS" },
-      ],
-    },
-    {
       slug: "attestation-inscription-a15",
       title: "Attestation d'inscription comme demandeur d'emploi (A15 – historique)",
       titleKey: "insertion.doc.a15.title",

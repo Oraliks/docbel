@@ -41,18 +41,18 @@ describe("serializeJourneyDocuments", () => {
   it("garde slug/title/issuer/required, required défaut true", () => {
     const docs: DossierDocument[] = [
       {
-        slug: "c1-insertion",
-        title: "C1 — Déclaration",
-        titleKey: "insertion.doc.c1.title",
+        slug: "formulaire-test",
+        title: "Formulaire de test",
+        titleKey: "test.document.title",
         issuer: "ONEM",
         fields: [],
       },
     ];
     expect(serializeJourneyDocuments(docs)).toEqual([
       {
-        slug: "c1-insertion",
-        title: "C1 — Déclaration",
-        titleKey: "insertion.doc.c1.title",
+        slug: "formulaire-test",
+        title: "Formulaire de test",
+        titleKey: "test.document.title",
         issuer: "ONEM",
         required: true,
       },

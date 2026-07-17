@@ -16,7 +16,7 @@
 // Mapping AcroForm vérifié sur private/pdfs/C1_FR.pdf via scripts/dump-c1.ts.
 // Référence métier : feuille d'information C1 (version 01.01.2024/831.10.000).
 
-import type { PdfFormField, PdfFormTrigger } from "../types";
+import type { AcroFieldRaw, PdfFormField, PdfFormTrigger } from "../types";
 
 const SECTION_IDENTITE = "identite";
 const SECTION_DEMANDE = "demande";
@@ -592,7 +592,9 @@ export const C1_QUESTIONS: PdfFormField[] = [
     // encore reçu → phrase correspondante). `autoAnswered` = jamais rendu
     // comme contrôle interactif, mais reste dans le payload validé + soumis.
     id: "remarqueSituationFamiliale",
-    pdfFieldName: "Remarques 1 Haut",
+    // La règle serveur `remarque-fam` construit et stamp ce texte. Le champ
+    // reste dans le payload, sans doubler l'écriture du filler générique.
+    pdfFieldName: "",
     type: "textarea",
     required: false,
     label: { fr: "Remarque (situation familiale)", nl: "", de: "" },
@@ -1873,6 +1875,20 @@ const HIDDEN_INFERRED_PDF_NAMES = new Set<string>([
   // règle serveur `date-header-p2` (dateModificationEffective ?? dateDemande).
 ]);
 
+// Champs issus d'anciennes inférences du C1. Ils sont maintenant couverts par
+// les bindings serveur : les conserver crée une écriture double ou référence
+// un widget qui n'existe plus dans le PDF actuellement importé.
+const LEGACY_C1_WORKAROUND_FIELD_IDS = new Set<string>([
+  "dateHeaderP2",
+  "nom_et_pr_nom",
+  "ibanCheckDigits",
+  "ibanPart1",
+  "ibanPart2",
+  "ibanPart3",
+  "sepa_tranger_iban_bic",
+  "titulaireCompteNomStamp",
+]);
+
 /// Applique les améliorations du schéma C1 sur la liste de champs existante
 /// (typiquement issue de l'inférence automatique au moment de l'import).
 ///
@@ -1905,6 +1921,10 @@ export interface ApplyC1ImprovementsOptions {
   /// (gatés sur motifIntroduction === "modification", qui doit rester stable
   /// pendant toute la saisie).
   restrictMotifTo5Situations?: boolean;
+  /// Inventaire des widgets réellement présents dans le PDF importé. Il
+  /// permet de retirer les anciens champs cachés qui pointent vers un widget
+  /// disparu sans affecter les champs visibles du FormRunner.
+  technicalSchema?: readonly AcroFieldRaw[];
 }
 
 /// Clé de groupe partagée par les 5 chips "situation" : aucune n'est
@@ -2090,8 +2110,12 @@ export function applyC1Improvements(
   const covered = coveredCheckboxNames();
   const coveredSingle = coveredSingleNames();
   const newIds = new Set(C1_QUESTIONS.map((q) => q.id));
+  const technicalNames = opts?.technicalSchema
+    ? new Set(opts.technicalSchema.map((field) => field.pdfFieldName))
+    : null;
 
   const preserved = fields.filter((f) => {
+    if (LEGACY_C1_WORKAROUND_FIELD_IDS.has(f.id)) return false;
     // Retire les anciens checkboxes individuels désormais couverts par radio.
     if (covered.has(f.pdfFieldName)) return false;
     // Retire aussi les champs simples (non pipe-séparés) déjà couverts par un
@@ -2101,6 +2125,21 @@ export function applyC1Improvements(
     if (coveredSingle.has(f.pdfFieldName)) return false;
     // Retire aussi un éventuel ancien champ portant un id qu'on redéfinit.
     if (newIds.has(f.id)) return false;
+    // Les champs cachés inférés d'un ancien PDF ne font pas partie du Runner.
+    // Si leur widget a disparu du PDF courant, les conserver ne peut produire
+    // qu'une erreur de publication sans aucun bénéfice pour l'utilisateur.
+    if (
+      f.hidden &&
+      technicalNames &&
+      f.pdfFieldName &&
+      f.pdfFieldName
+        .split("|")
+        .map((name) => name.trim())
+        .filter(Boolean)
+        .some((name) => !technicalNames.has(name))
+    ) {
+      return false;
+    }
     return true;
   });
 

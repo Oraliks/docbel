@@ -13,7 +13,6 @@ import { applyC1BImprovements } from "./c1b-fields";
 import { applyC1CImprovements } from "./c1c-fields";
 import { applyC46Improvements } from "./c46-fields";
 import { applyC47Improvements } from "./c47-fields";
-import { applyC1FrImprovements, C1_FR_TRIGGERS } from "./c1-fr-fields";
 import type { AcroFieldRaw, PdfFormField, PdfFormTrigger } from "../types";
 
 export interface C1ImprovementTarget {
@@ -27,27 +26,13 @@ export interface C1ImprovementTarget {
 
 export const C1_IMPROVEMENT_TARGETS: C1ImprovementTarget[] = [
   {
-    slug: "c1",
-    improve: (fields) => applyC1Improvements(fields),
-    triggers: C1_TRIGGERS,
-  },
-  // Import historique rattache au dossier `chomage-complet`. Ses widgets
-  // different du PDF recent : adaptateur et triggers compatibles dedies.
-  {
-    slug: "c1-fr",
-    improve: (fields, context) =>
-      applyC1FrImprovements(fields, context?.technicalSchema),
-    triggers: C1_FR_TRIGGERS,
-  },
-  {
-    slug: "c1-insertion",
-    improve: (fields) => applyC1Improvements(fields),
-    triggers: C1_TRIGGERS,
-  },
-  {
     slug: "c1-changement-situation",
-    improve: (fields) =>
-      applyC1Improvements(fields, { defaultMotif: "modification", restrictMotifTo5Situations: true }),
+    improve: (fields, context) =>
+      applyC1Improvements(fields, {
+        defaultMotif: "modification",
+        restrictMotifTo5Situations: true,
+        technicalSchema: context?.technicalSchema,
+      }),
     triggers: C1_TRIGGERS,
   },
   { slug: "c1-regis", improve: applyC1RegisImprovements, triggers: [] },

@@ -6,8 +6,8 @@ const json = { "Content-Type": "application/json; charset=utf-8" };
 
 /// GET  /api/admin/pdf-forms/apply-c1-improvements
 ///   → prévisualisation (dry-run, aucune écriture) de toutes les cibles
-///     (cf. C1_IMPROVEMENT_TARGETS : c1, c1-insertion, c1-regis, c1-partenaire,
-///     c1a, c1b, c1c, c46, c47).
+///     (cf. C1_IMPROVEMENT_TARGETS : c1-changement-situation, c1-regis,
+///     c1-partenaire, c1a, c1b, c1c, c46, c47).
 /// POST /api/admin/pdf-forms/apply-c1-improvements?apply=1
 ///   → applique réellement (met à jour fields+triggers en DB). Un POST sans
 ///     `?apply=1` reste un dry-run, comme le script (par défaut sans --yes).

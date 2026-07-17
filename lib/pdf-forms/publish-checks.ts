@@ -161,6 +161,10 @@ export function checkPublishable(
     for (const row of report.rows) {
       if (row.status !== "conflict") continue;
       if (row.acroType === "unknown") {
+        // Une ancre de champ absente est déjà signalée plus haut avec son
+        // identifiant. Ne la présenter comme une erreur de règle serveur que
+        // lorsqu'une règle est réellement concernée.
+        if (!row.claims.some((claim) => claim.source === "rule")) continue;
         issues.push({
           level: "error",
           message: `Règle serveur cible un widget absent du PDF : « ${row.pdfFieldName} ».`,

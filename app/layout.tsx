@@ -146,7 +146,7 @@ export default async function RootLayout({
           id="docbel-theme-init"
           strategy="beforeInteractive"
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var t=localStorage.getItem('docbel-theme');if(t==='dark'){document.documentElement.classList.add('dark');document.documentElement.style.colorScheme='dark';}else{document.documentElement.style.colorScheme='light';}}catch(e){}})();`,
+            __html: `(function(){try{var r=document.documentElement;var t=localStorage.getItem('docbel-theme');if(t==='dark'){r.classList.add('dark');r.style.colorScheme='dark';}else{r.style.colorScheme='light';}var a=JSON.parse(localStorage.getItem('docbel-accessibility')||'null');var s=a&&a.textSize;if(s==='small'||s==='normal'||s==='large'||s==='xlarge'){r.dataset.docbelTextSize=s;}}catch(e){}})();`,
           }}
         />
         <NextIntlClientProvider locale={locale} messages={publicMessages}>

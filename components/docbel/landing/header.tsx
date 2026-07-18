@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { useTranslations } from "next-intl";
 import { authClient } from "@/lib/auth-client";
 import { useAuthSession } from "@/components/auth-session-provider";
@@ -13,6 +13,13 @@ import { NotificationBell } from "@/components/docbel/notification-bell";
 import { LocaleSwitcher } from "@/components/locale-switcher";
 import { publicLocales } from "@/i18n/config";
 import { AUDIENCES, type AudienceId } from "@/lib/audience";
+import {
+  getAccessibilityPreferencesServerSnapshot,
+  getAccessibilityPreferencesSnapshot,
+  subscribeAccessibilityPreferences,
+  updateAccessibilityPreferences,
+  type DocbelTextSize,
+} from "@/lib/accessibility-preferences";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -98,6 +105,13 @@ function resolveActiveNav(
 const ITEM_BASE =
   "flex items-center gap-3 rounded-xl px-3 py-2 transition-colors";
 
+const TEXT_SIZE_STEPS: readonly DocbelTextSize[] = [
+  "small",
+  "normal",
+  "large",
+  "xlarge",
+];
+
 export function LandingHeader({ persona, onSearchOpen }: LandingHeaderProps) {
   const t = useTranslations("public.chrome");
   const router = useRouter();
@@ -108,10 +122,20 @@ export function LandingHeader({ persona, onSearchOpen }: LandingHeaderProps) {
   const siteName = useSiteSettings()?.identity.name ?? "Docbel";
   const activeNav = resolveActiveNav(pathname);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const accessibilityPreferences = useSyncExternalStore(
+    subscribeAccessibilityPreferences,
+    getAccessibilityPreferencesSnapshot,
+    getAccessibilityPreferencesServerSnapshot,
+  );
 
   const current = AUDIENCES.find((aud) => aud.id === persona) ?? AUDIENCES[0];
   const Icon = current.Icon;
   const dark = resolvedTheme === "dark";
+  const textSizeIndex = TEXT_SIZE_STEPS.indexOf(
+    accessibilityPreferences.textSize,
+  );
+  const canDecreaseTextSize = textSizeIndex > 0;
+  const canIncreaseTextSize = textSizeIndex < TEXT_SIZE_STEPS.length - 1;
 
   const userLoggedIn = Boolean(session?.user);
   const userName = session?.user?.name ?? t("guest");
@@ -129,6 +153,45 @@ export function LandingHeader({ persona, onSearchOpen }: LandingHeaderProps) {
     router.push("/");
     router.refresh();
   };
+
+  const changeTextSize = (direction: -1 | 1) => {
+    const nextTextSize = TEXT_SIZE_STEPS[textSizeIndex + direction];
+    if (!nextTextSize) return;
+    updateAccessibilityPreferences({ textSize: nextTextSize });
+  };
+
+  const textSizeControls = (
+    <div
+      role="group"
+      aria-label={t("textSizeControls")}
+      className="flex items-center gap-1 rounded-2xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] p-1"
+    >
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon-xs"
+        onClick={() => changeTextSize(-1)}
+        disabled={!canDecreaseTextSize}
+        aria-label={t("decreaseTextSize")}
+        title={t("decreaseTextSize")}
+        className="size-8 rounded-xl text-base text-[color:var(--glass-ink)] hover:bg-white/55 dark:hover:bg-white/10"
+      >
+        <span aria-hidden>−</span>
+      </Button>
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon-xs"
+        onClick={() => changeTextSize(1)}
+        disabled={!canIncreaseTextSize}
+        aria-label={t("increaseTextSize")}
+        title={t("increaseTextSize")}
+        className="size-8 rounded-xl text-base text-[color:var(--glass-ink)] hover:bg-white/55 dark:hover:bg-white/10"
+      >
+        <span aria-hidden>+</span>
+      </Button>
+    </div>
+  );
 
   return (
     <header
@@ -217,6 +280,12 @@ export function LandingHeader({ persona, onSearchOpen }: LandingHeaderProps) {
                 </Link>
               );
             })}
+          </div>
+          <div className="flex items-center justify-between gap-3 border-t border-[color:var(--glass-ink-line)] p-3 sm:hidden">
+            <span className="px-3 text-[12px] font-bold text-[color:var(--glass-ink-soft)]">
+              {t("textSizeControls")}
+            </span>
+            {textSizeControls}
           </div>
         </SheetContent>
       </Sheet>
@@ -330,6 +399,7 @@ export function LandingHeader({ persona, onSearchOpen }: LandingHeaderProps) {
         >
           {dark ? <SunIcon /> : <MoonIcon />}
         </Button>
+        <div className="hidden sm:block">{textSizeControls}</div>
         <NotificationBell />
 
         {userLoggedIn ? (

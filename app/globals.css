@@ -1210,6 +1210,9 @@ body {
 /* ============================================================
    Préférences d'accessibilité du parcours citoyen
    ============================================================ */
+html,
+html[data-docbel-text-size="small"] { font-size: 88%; }
+html[data-docbel-text-size="normal"] { font-size: 100%; }
 html[data-docbel-text-size="large"] { font-size: 112.5%; }
 html[data-docbel-text-size="xlarge"] { font-size: 125%; }
 

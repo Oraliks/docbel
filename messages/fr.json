@@ -3417,6 +3417,7 @@
       "simpleMode": "Mode simple",
       "reduceMotion": "Réduire les animations",
       "textSize": {
+        "small": "Texte réduit",
         "normal": "Texte normal",
         "large": "Texte grand",
         "xlarge": "Texte très grand"
@@ -3450,6 +3451,9 @@
       "search": "Rechercher",
       "searchPlaceholder": "Rechercher un outil, un guide, une loi…",
       "toggleTheme": "Changer le thème",
+      "textSizeControls": "Taille du texte",
+      "decreaseTextSize": "Réduire la taille du texte",
+      "increaseTextSize": "Agrandir la taille du texte",
       "myAccount": "Mon compte",
       "administration": "Administration",
       "signOut": "Déconnexion",

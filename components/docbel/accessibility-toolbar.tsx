@@ -20,15 +20,20 @@ import {
 } from "@/lib/accessibility-preferences";
 
 const NEXT_TEXT_SIZE: Record<DocbelTextSize, DocbelTextSize> = {
+  small: "normal",
   normal: "large",
   large: "xlarge",
-  xlarge: "normal",
+  xlarge: "small",
 };
 
 const TEXT_SIZE_KEYS: Record<
   DocbelTextSize,
-  "textSize.normal" | "textSize.large" | "textSize.xlarge"
+  | "textSize.small"
+  | "textSize.normal"
+  | "textSize.large"
+  | "textSize.xlarge"
 > = {
+  small: "textSize.small",
   normal: "textSize.normal",
   large: "textSize.large",
   xlarge: "textSize.xlarge",
@@ -100,7 +105,7 @@ export function AccessibilityToolbar({
       </Button>
       <Button
         type="button"
-        variant={preferences.textSize === "normal" ? "outline" : "default"}
+        variant={preferences.textSize === "small" ? "outline" : "default"}
         size="sm"
         className="min-h-10 px-2.5"
         onClick={() =>

@@ -23,6 +23,9 @@ import { dossierQuestionsToEligibility, selectDocuments, type DossierAnswers } f
 import { getLocale } from "next-intl/server";
 import { localizeRecord } from "@/lib/i18n/content";
 import { EDITABLE_BUNDLE_RUN_STATUSES } from "@/lib/bundles/run-lifecycle";
+import { bundleRunHasProgress } from "@/lib/bundles/run-progress";
+import { buildDemandeSummaries } from "@/lib/bundles/demande-summary";
+import { DemandeList } from "@/components/docbel/demande-list";
 
 export const dynamic = "force-dynamic";
 
@@ -36,13 +39,16 @@ export default async function BundleRoute({
   searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ demarrer?: string }>;
+  searchParams: Promise<{ demarrer?: string; bundleRun?: string }>;
 }) {
   const { slug } = await params;
+  const sp = await searchParams;
   // `?demarrer=1` = parcours guidé / reprise → ouverture directe du formulaire
   // principal (opt-in). Sans ce paramètre, l'URL affiche la liste « Documents
-  // du parcours » (accès direct / « En savoir plus »).
-  const autoStart = (await searchParams).demarrer === "1";
+  // du parcours » (accès direct / « En savoir plus »). `?bundleRun=<id>` cible
+  // UNE demande précise (multi-demande).
+  const autoStart = sp.demarrer === "1";
+  const bundleRunParam = sp.bundleRun ?? null;
   const locale = await getLocale();
 
   const bundleRaw = await prisma.documentBundle.findUnique({
@@ -89,32 +95,44 @@ export default async function BundleRoute({
   const cookieStore = await cookies();
   const sessionId = cookieStore.get(BUNDLE_COOKIE)?.value || null;
 
-  let run = null;
-  if (userId || sessionId) {
-    const where = userId
-      ? { bundleId: bundle.id, userId, status: { in: [...EDITABLE_BUNDLE_RUN_STATUSES] } }
-      : {
-          bundleId: bundle.id,
-          sessionId: sessionId!,
-          status: { in: [...EDITABLE_BUNDLE_RUN_STATUSES] },
-        };
-    run = await prisma.bundleRun.findFirst({ where, orderBy: { startedAt: "desc" } });
-  }
+  // TOUTES les demandes éditables du (dossier, utilisateur/session). La requête
+  // est bornée par userId/sessionId → `allRuns` ne contient QUE les runs de
+  // l'appelant (pas de cross-tenant possible sur un `?bundleRun` deviné).
+  const allRuns =
+    userId || sessionId
+      ? await prisma.bundleRun.findMany({
+          where: userId
+            ? { bundleId: bundle.id, userId, status: { in: [...EDITABLE_BUNDLE_RUN_STATUSES] } }
+            : {
+                bundleId: bundle.id,
+                sessionId: sessionId!,
+                status: { in: [...EDITABLE_BUNDLE_RUN_STATUSES] },
+              },
+          orderBy: { startedAt: "desc" },
+        })
+      : [];
 
-  // Un run « in_progress » VIDE (aucune réponse, aucun document rempli, aucun
-  // payload) ne doit PAS compter comme une reprise : sinon l'écran
-  // d'explication (journey) ET la pré-qualification sont sautés à tort, et on
-  // tombe direct sur un parcours vide (bug constaté en prod). On ne traite
-  // comme « en cours » qu'un run avec une progression réelle ; sinon on repart
-  // comme un nouveau visiteur — le run vide sera réutilisé à la reprise (le
-  // POST /run retrouve le run in_progress existant par session/utilisateur).
-  const runHasProgress = Boolean(
-    run &&
-      ((((run.completedTemplateIds as string[] | null)?.length ?? 0) > 0) ||
-        Object.keys(parseEligibilityAnswers(run.eligibilityAnswers)).length > 0 ||
-        Object.keys((run.payloads as Record<string, unknown> | null) ?? {}).length > 0),
+  // Un run VIDE (aucune réponse, document, payload) ne compte pas comme une
+  // reprise (sinon journey/pré-qualif sautés à tort — bug prod). On ne garde
+  // comme « en cours » que les runs AVEC progression.
+  const runsWithProgress = allRuns.filter((r) =>
+    bundleRunHasProgress({
+      completedTemplateIds: r.completedTemplateIds,
+      eligibilityAnswers: r.eligibilityAnswers,
+      payloads: r.payloads,
+    }),
   );
-  const effectiveRun = runHasProgress ? run : null;
+
+  // Demande ciblée par `?bundleRun` (déjà bornée à l'appelant via allRuns).
+  const targeted = bundleRunParam
+    ? allRuns.find((r) => r.id === bundleRunParam) ?? null
+    : null;
+
+  // Entrée HYBRIDE : 2+ demandes avec progression, sans ciblage ni démarrage
+  // explicite → écran « Mes demandes ». Sinon on ouvre la demande ciblée, ou la
+  // plus récente avec progression (0/1 → comportement historique).
+  const showDemandeList = !targeted && !autoStart && runsWithProgress.length >= 2;
+  const effectiveRun = targeted ?? runsWithProgress[0] ?? null;
 
   const payloads =
     (effectiveRun?.payloads as Record<string, Record<string, unknown>>) || {};
@@ -338,7 +356,24 @@ export default async function BundleRoute({
         <span className="truncate text-[color:var(--glass-ink)]">{bundle.name}</span>
       </nav>
 
-      {(() => {
+      {showDemandeList ? (
+        <DemandeList
+          bundleId={bundle.id}
+          slug={bundle.slug}
+          bundleName={bundle.name}
+          demandes={buildDemandeSummaries(
+            runsWithProgress.map((r) => ({
+              id: r.id,
+              startedAt: r.startedAt,
+              completedTemplateIds: r.completedTemplateIds,
+              status: r.status,
+              completedAt: r.completedAt,
+              anonymizedAt: r.anonymizedAt,
+            })),
+            bundle.items.length,
+          )}
+        />
+      ) : (() => {
         const runnerProps = {
           bundle: serializedBundle,
           runId: effectiveRun?.id ?? null,

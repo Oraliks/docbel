@@ -23,6 +23,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useConfirm } from "@/components/ui/confirm-dialog";
+import { NouvelleDemandeButton } from "./nouvelle-demande-button";
 import {
   describeCondition,
   type CollectedPayloads,
@@ -462,6 +463,13 @@ export function BundleRunner({
               bundleRunId={runId}
               userEmail={userEmail}
             />
+          )}
+
+          {/* Créer une AUTRE demande dissociée pour ce dossier (multi-demande). */}
+          {runId && (
+            <div className="flex justify-end">
+              <NouvelleDemandeButton bundleId={bundle.id} slug={bundle.slug} variant="ghost" />
+            </div>
           )}
 
           <Card>

@@ -10,7 +10,7 @@ export interface AccessibilityPreferences {
 const STORAGE_KEY = "docbel-accessibility";
 
 export const DEFAULT_ACCESSIBILITY_PREFERENCES: AccessibilityPreferences = {
-  textSize: "small",
+  textSize: "normal",
   highContrast: false,
   simpleMode: false,
   reducedMotion: false,
@@ -30,7 +30,7 @@ function readStoredPreferences(): AccessibilityPreferences {
         stored.textSize === "large" ||
         stored.textSize === "xlarge"
           ? stored.textSize
-          : "small",
+          : "normal",
       highContrast: stored.highContrast === true,
       simpleMode: stored.simpleMode === true,
       reducedMotion: stored.reducedMotion === true,

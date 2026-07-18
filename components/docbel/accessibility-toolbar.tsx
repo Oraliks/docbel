@@ -105,7 +105,7 @@ export function AccessibilityToolbar({
       </Button>
       <Button
         type="button"
-        variant={preferences.textSize === "small" ? "outline" : "default"}
+        variant={preferences.textSize === "normal" ? "outline" : "default"}
         size="sm"
         className="min-h-10 px-2.5"
         onClick={() =>

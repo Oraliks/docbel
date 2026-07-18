@@ -475,6 +475,17 @@ describe("applyC1Improvements — restrictMotifTo5Situations (Oraliks, 2026-07-0
     expect(isFieldVisible(nom?.visibleIf, { titulaireCompte: "autre-nom", modePaiement: "cheque" })).toBe(false);
   });
 
+  it("les 3 dates d'activité (études / alternance / stage) ciblent chacune leur widget PDF", () => {
+    const byId = (id: string) => C1_QUESTIONS.find((f) => f.id === id);
+    // Bug Oraliks 2026-07-18 : seule la 3e date était stampée (les 2 autres
+    // avaient un pdfFieldName vide). Les 3 widgets existent bien dans l'AcroForm.
+    expect(byId("etudesPleinExerciceDate")?.pdfFieldName).toBe("DateEtudes");
+    expect(byId("apprentissageAlternanceDate")?.pdfFieldName).toBe("DateFormation");
+    expect(byId("formationStageSyntraDate")?.pdfFieldName).toBe(
+      "DateFormationStageSyntraIfapmeEpepmeIawm",
+    );
+  });
+
   it("la confirmation « chèque circulaire » porte le libellé validé par Oraliks", () => {
     const warning = C1_QUESTIONS.find((field) => field.id === "modePaiementChequeWarning");
     expect(warning?.label.fr).toBe(

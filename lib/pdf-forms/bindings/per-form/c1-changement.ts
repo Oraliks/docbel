@@ -130,22 +130,28 @@ function motifDateStamp(payload: FormPayload, widget: string, source: string) {
 // ---------------------------------------------------------------------------
 
 export const C1_CHANGEMENT_RULES: MappingRule[] = [
-  // -------- Motif d'introduction (parité avec applyMotifTransferOverride) --
+  // -------- Motif d'introduction (2 cases mutuellement exclusives) --------
   //
   // Deux cases mutuellement exclusives sur le PDF officiel : « je déclare
   // une modification concernant » vs « je change d'organisme de paiement ».
-  // Si l'utilisateur a coché le chip transfert OP (5e chip UI, virtuel), on
-  // stampe la case transfert ET on DÉCOCHE la case modification, quels que
-  // soient les 4 chips de modification cochés en parallèle (la case
-  // modification est mutuellement exclusive — cocher les deux romprait le
-  // PDF officiel).
+  //
+  // ⚠ Le signal est `transfereOrganismePaiement`, PAS `motifIntroduction` :
+  // dans ce dossier `motifIntroduction` est `autoAnswered` (toujours
+  // "modification") → `buildValidator` l'EXCLUT du schéma Zod et `z.object`
+  // le STRIPPE du payload validé côté serveur. La règle ne peut donc pas s'y
+  // fier (elle voyait `undefined` → la case « modification » n'était JAMAIS
+  // cochée, le changement déclaré passait à la trappe — bug Oraliks
+  // 2026-07-18). On pilote les DEUX cases depuis le 5e chip (non strippé,
+  // c'est un vrai checkbox) : transfert coché ⇒ transfert / sinon ⇒
+  // modification. Chaque règle stampe explicitement l'état des DEUX widgets
+  // pour rester déterministe quel que soit l'état par défaut du template.
   {
     name: "motif-modification",
-    when: {
-      motifIntroduction: "modification",
-      transfereOrganismePaiement: { not: true },
-    },
-    stamp: [{ widget: W_MOTIF_MODIFICATION, value: true }],
+    when: { transfereOrganismePaiement: { not: true } },
+    stamp: [
+      { widget: W_MOTIF_MODIFICATION, value: true },
+      { widget: W_MOTIF_TRANSFERT_OP, value: false },
+    ],
   },
   {
     name: "motif-transfert-op",

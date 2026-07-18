@@ -980,7 +980,10 @@ export const C1_QUESTIONS: PdfFormField[] = [
   },
   {
     id: "etudesPleinExerciceDate",
-    pdfFieldName: "",
+    // Widget « À partir du » de la ligne « études de plein exercice » (page 1,
+    // même Y que la case oui_2). Était vide → la date saisie n'était jamais
+    // stampée (Oraliks 2026-07-18 : « seule la 3e date fonctionne »).
+    pdfFieldName: "DateEtudes",
     type: "date",
     required: false,
     label: { fr: "À partir du", nl: "", de: "" },
@@ -1007,7 +1010,10 @@ export const C1_QUESTIONS: PdfFormField[] = [
   },
   {
     id: "apprentissageAlternanceDate",
-    pdfFieldName: "",
+    // Widget « À partir du » de la ligne « apprentissage / formation en
+    // alternance » (page 1, même Y que la case oui_3). Était vide → date non
+    // stampée (même bug qu'`etudesPleinExerciceDate`).
+    pdfFieldName: "DateFormation",
     type: "date",
     required: false,
     label: { fr: "À partir du", nl: "", de: "" },

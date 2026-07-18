@@ -36,9 +36,10 @@ describe("Rules C1 — scénario baseline (Oraliks repro)", () => {
   it("stampe la modification, l'adresse, le titulaire, l'IBAN split, la date et les 3 non hors-EEE", () => {
     const stamps = resolveStamps(baseline(), C1_CHANGEMENT_RULES);
 
-    // Motif : case « modification » cochée, transfert intact (absent).
+    // Motif : case « modification » cochée, transfert explicitement décoché
+    // (les 2 cases sont mutuellement exclusives et toujours stampées).
     expect(stamps.get("je déclare une modification concernant")).toBe(true);
-    expect(stamps.has("je change dorganisme de paiement à partir du 5")).toBe(false);
+    expect(stamps.get("je change dorganisme de paiement à partir du 5")).toBe(false);
 
     // Chip adresse coché, autres 3 chips absents.
     expect(stamps.get("mon adresse à partir du")).toBe(true);
@@ -73,6 +74,22 @@ describe("Rules C1 — scénario baseline (Oraliks repro)", () => {
     expect(stamps.get("non_17")).toBe(true);
     expect(stamps.get("non_18")).toBe(true);
     expect(stamps.get("non_19")).toBe(true);
+  });
+});
+
+describe("Rules C1 — motif indépendant du champ strippé motifIntroduction", () => {
+  it("motifIntroduction ABSENT (strippé par la validation) → la case modification reste cochée, transfert décoché", () => {
+    // Reproduit le payload RÉEL côté serveur : `motifIntroduction` est
+    // autoAnswered → exclu du schéma Zod → strippé de `result.data`. La règle
+    // ne doit donc pas en dépendre (bug Oraliks 2026-07-18 : le changement
+    // d'adresse déclaré n'était pas coché sur le PDF).
+    const payload: FormPayload = { ...baseline(), modificationAdresse: true };
+    delete payload["motifIntroduction"];
+    const stamps = resolveStamps(payload, C1_CHANGEMENT_RULES);
+    expect(stamps.get("je déclare une modification concernant")).toBe(true);
+    expect(stamps.get("je change dorganisme de paiement à partir du 5")).toBe(false);
+    // La ligne adresse est bien cochée (chip non strippé).
+    expect(stamps.get("mon adresse à partir du")).toBe(true);
   });
 });
 

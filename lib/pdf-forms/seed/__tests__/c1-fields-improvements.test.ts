@@ -460,6 +460,21 @@ describe("applyC1Improvements — restrictMotifTo5Situations (Oraliks, 2026-07-0
     expect(isFieldVisible(bic?.visibleIf, { iban: foreignIban, modePaiement: "cheque" })).toBe(false);
   });
 
+  it("le nom du propriétaire du compte n'est demandé qu'en virement (masqué sur chèque)", () => {
+    const nom = C1_QUESTIONS.find((field) => field.id === "titulaireCompteNom");
+    expect(nom?.visibleIf).toEqual({
+      fieldId: "titulaireCompte",
+      op: "equals",
+      value: "autre-nom",
+      and: [{ fieldId: "modePaiement", op: "equals", value: "virement" }],
+    });
+    // Compte au nom d'un tiers + virement → champ visible.
+    expect(isFieldVisible(nom?.visibleIf, { titulaireCompte: "autre-nom", modePaiement: "virement" })).toBe(true);
+    // Même choix mais bascule sur « chèque » : valeur résiduelle de
+    // `titulaireCompte`, le champ (requis) doit néanmoins disparaître.
+    expect(isFieldVisible(nom?.visibleIf, { titulaireCompte: "autre-nom", modePaiement: "cheque" })).toBe(false);
+  });
+
   it("la confirmation « chèque circulaire » porte le libellé validé par Oraliks", () => {
     const warning = C1_QUESTIONS.find((field) => field.id === "modePaiementChequeWarning");
     expect(warning?.label.fr).toBe(

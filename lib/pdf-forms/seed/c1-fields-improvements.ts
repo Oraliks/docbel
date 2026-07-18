@@ -1404,7 +1404,17 @@ export const C1_QUESTIONS: PdfFormField[] = [
     required: true,
     label: { fr: "Nom et prénom du propriétaire du compte", nl: "", de: "" },
     placeholder: { fr: "Nom et prénom de la personne", nl: "", de: "" },
-    visibleIf: { fieldId: "titulaireCompte", op: "equals", value: "autre-nom" },
+    // ET mode = virement (Oraliks 2026-07-18) : même garde-fou que le BIC. Sans
+    // ça, un usager qui choisit « au nom d'une autre personne » PUIS bascule sur
+    // « chèque » verrait ce champ (requis) rester actif via la valeur résiduelle
+    // de `titulaireCompte`, alors même que `titulaireCompte` est masqué — cf.
+    // VisibleIf.and et le même correctif sur `bic`.
+    visibleIf: {
+      fieldId: "titulaireCompte",
+      op: "equals",
+      value: "autre-nom",
+      and: [{ fieldId: "modePaiement", op: "equals", value: "virement" }],
+    },
     canonicalKey: "banque.titulaire",
     section: SECTION_PAIEMENT,
     order: 604,

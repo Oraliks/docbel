@@ -1386,7 +1386,7 @@
       "roadmapStepAttachHint": "Añada estos documentos a su expediente en cuanto los reciba.",
       "roadmapAttachFrom": "A obtener de: {issuer}",
       "roadmapStepSend": "Envíe todo a su organismo de pago",
-      "roadmapStepSendBody": "Entregue o envíe su expediente completo a su sindicato (FGTB, CSC, CGSLB) o a la CAPAC. Hágalo cuanto antes: un retraso puede aplazar el inicio de sus prestaciones. Su organismo le confirmará el plazo exacto y los pasos siguientes.",
+      "roadmapStepSendBody": "Entregue o envíe su expediente completo a su sindicato (FGTB, CSC, SYNOVA) o a la CAPAC. Hágalo cuanto antes: un retraso puede aplazar el inicio de sus prestaciones. Su organismo le confirmará el plazo exacto y los pasos siguientes.",
       "roadmapStepKeep": "Guarde un justificante",
       "roadmapStepKeepBody": "Su código de reanudación le permite volver a este expediente durante 30 días. Después, sus respuestas se eliminan y los PDF generados nunca se conservan en Docbel.",
       "roadmapPrint": "Imprimir la hoja de ruta",

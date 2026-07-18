@@ -1386,7 +1386,7 @@
       "roadmapStepAttachHint": "Aggiungili al tuo fascicolo appena li ricevi.",
       "roadmapAttachFrom": "Da richiedere a: {issuer}",
       "roadmapStepSend": "Invia tutto al tuo organismo di pagamento",
-      "roadmapStepSendBody": "Consegna o invia il fascicolo completo al tuo sindacato (FGTB, CSC, CGSLB) o alla CAPAC. Fallo il prima possibile: un ritardo può posticipare l'inizio delle tue indennità. L'organismo ti confermerà il termine esatto e i passi successivi.",
+      "roadmapStepSendBody": "Consegna o invia il fascicolo completo al tuo sindacato (FGTB, CSC, SYNOVA) o alla CAPAC. Fallo il prima possibile: un ritardo può posticipare l'inizio delle tue indennità. L'organismo ti confermerà il termine esatto e i passi successivi.",
       "roadmapStepKeep": "Conserva una traccia",
       "roadmapStepKeepBody": "Il codice di ripresa ti permette di tornare a questo fascicolo per 30 giorni. Poi le tue risposte vengono eliminate e i PDF generati non vengono mai conservati da Docbel.",
       "roadmapPrint": "Stampa la tabella di marcia",

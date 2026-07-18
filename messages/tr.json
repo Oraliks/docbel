@@ -1386,7 +1386,7 @@
       "roadmapStepAttachHint": "Bu belgeleri alır almaz dosyanıza ekleyin.",
       "roadmapAttachFrom": "Şuradan alınır: {issuer}",
       "roadmapStepSend": "Her şeyi ödeme kurumunuza gönderin",
-      "roadmapStepSendBody": "Eksiksiz dosyanızı sendikanıza (FGTB, CSC, CGSLB) veya CAPAC'a teslim edin ya da gönderin. Bunu en kısa sürede yapın: gecikme, ödeneklerinizin başlangıcını erteleyebilir. Kurumunuz kesin süreyi ve sonraki adımları size bildirecektir.",
+      "roadmapStepSendBody": "Eksiksiz dosyanızı sendikanıza (FGTB, CSC, SYNOVA) veya CAPAC'a teslim edin ya da gönderin. Bunu en kısa sürede yapın: gecikme, ödeneklerinizin başlangıcını erteleyebilir. Kurumunuz kesin süreyi ve sonraki adımları size bildirecektir.",
       "roadmapStepKeep": "Bir kayıt saklayın",
       "roadmapStepKeepBody": "Devam kodunuz, 30 gün boyunca bu dosyaya geri dönmenizi sağlar. Sonrasında yanıtlarınız silinir ve oluşturulan PDF'ler Docbel tarafından asla saklanmaz.",
       "roadmapPrint": "Yol haritasını yazdır",

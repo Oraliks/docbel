@@ -1536,9 +1536,6 @@ function MacroRunnerBody({
                           rowLayout
                           segmentedVariant="pills"
                           onFocusField={onFocusField}
-                          // Cases du panneau bancaire (confirmation « chèque
-                          // circulaire ») : case en début de ligne (consentement).
-                          checkboxLeading={field.type === "checkbox"}
                         />
                       )}
                     />

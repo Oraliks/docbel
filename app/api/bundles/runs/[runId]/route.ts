@@ -3,6 +3,7 @@ import { cookies, headers } from "next/headers";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { isBundleRunEditable } from "@/lib/bundles/run-lifecycle";
+import { ensureWriteAllowed } from "@/lib/admin/readonly-guard";
 
 const BUNDLE_COOKIE = "beldoc-bundle-session";
 
@@ -21,6 +22,9 @@ export async function DELETE(
   { params }: { params: Promise<{ runId: string }> }
 ) {
   const { runId } = await params;
+
+  const writeBlock = await ensureWriteAllowed();
+  if (writeBlock) return writeBlock;
 
   const run = await prisma.bundleRun.findUnique({ where: { id: runId } });
   if (!run) {

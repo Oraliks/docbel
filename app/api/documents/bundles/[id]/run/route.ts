@@ -17,6 +17,8 @@ import {
 } from "@/lib/bundles/run-lifecycle";
 import { apiError, apiOk } from "@/lib/api/response";
 import { parseOrientationAnswers } from "@/lib/dossiers/orientation";
+import { bundleRunHasProgress } from "@/lib/bundles/run-progress";
+import { resolveForceNewAction } from "@/lib/bundles/run-creation";
 
 const COOKIE_NAME = "beldoc-bundle-session";
 const ORIENTATION_COOKIE = "beldoc-orientation";
@@ -102,11 +104,15 @@ export async function POST(
   const userId = session?.user?.id || null;
   const sessionId = await resolveSessionId();
 
-  // Body optionnel (eligibilityAnswers)
+  // Body optionnel (eligibilityAnswers + forceNew)
   let eligibilityAnswers: Record<string, string> = {};
+  let forceNew = false;
   try {
     const body = await req.json();
     eligibilityAnswers = parseEligibilityAnswers(body?.eligibilityAnswers);
+    // `forceNew` = « Nouvelle demande » : on crée un run distinct au lieu de
+    // reprendre celui en cours.
+    forceNew = body?.forceNew === true;
   } catch {
     // Pas de body — c'est OK
   }
@@ -118,28 +124,58 @@ export async function POST(
   const orientationAnswers =
     parsedOrientation?.slug === bundle.slug ? rawOrientationAnswers : null;
 
-  // Récupérer un run existant in_progress pour cet utilisateur/session
-  const existingWhere = userId
-    ? { bundleId: id, userId, status: { in: [...EDITABLE_BUNDLE_RUN_STATUSES] } }
-    : { bundleId: id, sessionId, status: { in: [...EDITABLE_BUNDLE_RUN_STATUSES] } };
-  const existing = await prisma.bundleRun.findFirst({ where: existingWhere });
-  if (existing) {
-    const hasEligibilityAnswers = Object.keys(eligibilityAnswers).length > 0;
-    // Une nouvelle orientation doit aussi rafraîchir un run réutilisé, même si
-    // ce dossier n'a aucune question de pré-qualification.
-    if (hasEligibilityAnswers || orientationAnswers) {
-      const updated = await prisma.bundleRun.update({
-        where: { id: existing.id },
-        data: {
-          ...(hasEligibilityAnswers ? { eligibilityAnswers } : {}),
-          ...(orientationAnswers
-            ? { orientationAnswers: orientationAnswers as Prisma.InputJsonValue }
-            : {}),
-        },
+  // « Nouvelle demande » (forceNew) : on ne réutilise PAS le run courant. On
+  // réutilise un éventuel run VIDE (garde-fou anti-doublon fantôme), refuse
+  // au-delà du plafond, sinon on tombe sur la création plus bas.
+  if (forceNew) {
+    const editable = await prisma.bundleRun.findMany({
+      where: userId
+        ? { bundleId: id, userId, status: { in: [...EDITABLE_BUNDLE_RUN_STATUSES] } }
+        : { bundleId: id, sessionId, status: { in: [...EDITABLE_BUNDLE_RUN_STATUSES] } },
+      select: { id: true, completedTemplateIds: true, eligibilityAnswers: true, payloads: true },
+    });
+    const action = resolveForceNewAction(
+      editable.map((r) => ({ id: r.id, hasProgress: bundleRunHasProgress(r) })),
+    );
+    if (action.kind === "too_many") {
+      return apiError(409, "Trop de demandes ouvertes pour ce dossier", {
+        code: "too_many_runs",
       });
-      return apiOk({ ...updated, lifecycle: deriveBundleRunLifecycle(updated) });
     }
-    return apiOk({ ...existing, lifecycle: deriveBundleRunLifecycle(existing) });
+    if (action.kind === "reuse") {
+      const reused = await prisma.bundleRun.findUnique({ where: { id: action.runId } });
+      if (reused) {
+        return apiOk({ ...reused, lifecycle: deriveBundleRunLifecycle(reused) });
+      }
+    }
+    // action.kind === "create" (ou reuse introuvable) → création plus bas.
+  }
+
+  // Récupérer un run existant in_progress pour cet utilisateur/session
+  // (sauf « Nouvelle demande » qui force la création).
+  if (!forceNew) {
+    const existingWhere = userId
+      ? { bundleId: id, userId, status: { in: [...EDITABLE_BUNDLE_RUN_STATUSES] } }
+      : { bundleId: id, sessionId, status: { in: [...EDITABLE_BUNDLE_RUN_STATUSES] } };
+    const existing = await prisma.bundleRun.findFirst({ where: existingWhere });
+    if (existing) {
+      const hasEligibilityAnswers = Object.keys(eligibilityAnswers).length > 0;
+      // Une nouvelle orientation doit aussi rafraîchir un run réutilisé, même si
+      // ce dossier n'a aucune question de pré-qualification.
+      if (hasEligibilityAnswers || orientationAnswers) {
+        const updated = await prisma.bundleRun.update({
+          where: { id: existing.id },
+          data: {
+            ...(hasEligibilityAnswers ? { eligibilityAnswers } : {}),
+            ...(orientationAnswers
+              ? { orientationAnswers: orientationAnswers as Prisma.InputJsonValue }
+              : {}),
+          },
+        });
+        return apiOk({ ...updated, lifecycle: deriveBundleRunLifecycle(updated) });
+      }
+      return apiOk({ ...existing, lifecycle: deriveBundleRunLifecycle(existing) });
+    }
   }
 
   // Nouveau run : génère un code de reprise unique. Le code en CLAIR n'est

@@ -20,6 +20,7 @@ const DISMISS_KEY = "docbel-resume-dismissed";
  * module serveur (next/headers, prisma) depuis un composant client.
  */
 export interface ResumeStripRun {
+  runId: string;
   slug: string;
   name: string;
   color: string;
@@ -172,7 +173,7 @@ export function ResumeStrip({ run }: ResumeStripProps) {
       {/* CTA reprendre + fermer. */}
       <div className="flex shrink-0 items-center gap-2">
         <Link
-          href={`/d/${run.slug}?demarrer=1`}
+          href={`/d/${run.slug}?bundleRun=${encodeURIComponent(run.runId)}&demarrer=1`}
           className="glass-cta inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-[12.5px] font-bold"
         >
           {completed ? t("resumeCompletedCta") : t("resumeCta")}

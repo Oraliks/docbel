@@ -248,7 +248,7 @@ function ActiveRunCard({ run }: { run: ActiveBundleRun }) {
 
   return (
     <Link
-      href={`${bundleHref(run.slug)}?demarrer=1`}
+      href={`${bundleHref(run.slug)}?bundleRun=${encodeURIComponent(run.runId)}&demarrer=1`}
       onClick={() =>
         trackBundleEventClient("bundle_resumed", {
           bundleId: run.slug,
@@ -441,7 +441,7 @@ export function MonDossierClient({ bundles, catalog, activeRuns, situations }: P
             <span className="rounded-full bg-[color:var(--glass-pop-bg)] px-2.5 py-1 text-xs font-bold text-[color:var(--glass-accent-deep)]">{activeRuns.length}</span>
           </div>
           {activeRuns.length > 0 ? <div className="grid max-h-56 gap-2 overflow-y-auto pr-1">
-            {activeRuns.map((run) => <ActiveRunCard key={`${run.slug}-${run.startedAt}`} run={run} />)}
+            {activeRuns.map((run) => <ActiveRunCard key={run.runId} run={run} />)}
           </div> : <p className="rounded-xl border border-dashed border-[color:var(--glass-border)] px-3 py-3 text-sm text-[color:var(--glass-ink)]/65">{t("emptyNoneBody")}</p>}
       </section>
 

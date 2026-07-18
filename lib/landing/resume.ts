@@ -26,6 +26,8 @@ export const RESUME_DISMISS_COOKIE = "docbel-resume-dismissed";
 
 /** Dossier en cours, prêt à afficher dans la bande « Reprendre » de la home. */
 export interface ActiveBundleRun {
+  /** Id du BundleRun — permet de cibler UNE demande précise (multi-demande). */
+  runId: string;
   slug: string;
   name: string;
   color: string;
@@ -85,6 +87,7 @@ export async function loadActiveBundleRuns(
       orderBy: { startedAt: "desc" },
       take: 8,
       select: {
+        id: true,
         startedAt: true,
         status: true,
         completedAt: true,
@@ -113,6 +116,7 @@ export async function loadActiveBundleRuns(
       const lifecycle = deriveBundleRunLifecycle(run);
       if (lifecycle === "abandoned" || lifecycle === "anonymized") return [];
       return [{
+        runId: run.id,
         slug: run.bundle.slug,
         name: run.bundle.name,
         color: run.bundle.color,

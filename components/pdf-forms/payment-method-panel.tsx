@@ -19,9 +19,11 @@ const PAYMENT_FIELD_ORDER = new Map([
   ["modePaiement", 0],
   ["modePaiementChequeWarning", 1],
   ["iban", 2],
-  ["titulaireCompte", 3],
-  ["titulaireCompteNom", 4],
-  ["bic", 5],
+  // Le BIC accompagne l'IBAN (routage bancaire) : on le place juste sous le
+  // numéro de compte, AU-DESSUS du titulaire (Oraliks 2026-07-18).
+  ["bic", 3],
+  ["titulaireCompte", 4],
+  ["titulaireCompteNom", 5],
 ]);
 
 interface PaymentMethodPanelProps {

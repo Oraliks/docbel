@@ -274,9 +274,8 @@ function fieldToZod(field: PdfFormField, lang: Locale): ZodTypeAny {
   }
 }
 
-/// Évalue la visibilité d'un champ selon `visibleIf`.
-export function isFieldVisible(cond: VisibleIf | undefined, payload: FormPayload): boolean {
-  if (!cond) return true;
+/// Évalue une condition `visibleIf` UNIQUE (sans son éventuel `and`).
+function evalVisibleCondition(cond: VisibleIf, payload: FormPayload): boolean {
   const dep = payload[cond.fieldId];
   switch (cond.op) {
     case "equals":
@@ -301,6 +300,17 @@ export function isFieldVisible(cond: VisibleIf | undefined, payload: FormPayload
     default:
       return true;
   }
+}
+
+/// Évalue la visibilité d'un champ selon `visibleIf`. La condition primaire ET
+/// toutes les conditions de `and` (le cas échéant) doivent être vraies.
+export function isFieldVisible(cond: VisibleIf | undefined, payload: FormPayload): boolean {
+  if (!cond) return true;
+  if (!evalVisibleCondition(cond, payload)) return false;
+  if (cond.and) {
+    for (const extra of cond.and) if (!isFieldVisible(extra, payload)) return false;
+  }
+  return true;
 }
 
 /// Construit le validateur Zod d'un formulaire pour une locale donnée.

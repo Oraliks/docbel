@@ -1330,7 +1330,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
     // (cf. superRefine) → n'exige la case que si mode = chèque.
     required: true,
     label: {
-      fr: "Je confirme avoir compris : le chèque circulaire est rare, plus lent et envoyé à l'adresse de la rubrique « MON IDENTITÉ ».",
+      fr: "Je confirme avoir compris que le chèque circulaire est rare et plus lent à la réception. Celui-ci sera envoyé à l'adresse mentionnée sur le formulaire C1.",
       nl: "", de: "",
     },
     visibleIf: { fieldId: "modePaiement", op: "equals", value: "cheque" },
@@ -1434,10 +1434,16 @@ export const C1_QUESTIONS: PdfFormField[] = [
     // avec un negative-lookahead sur BE — évite d'afficher le BIC tant que
     // l'IBAN est vide ou incomplet (< 2 lettres). Case-insensitive côté
     // regex source pour absorber une saisie en minuscules.
+    // ET mode = virement (Oraliks 2026-07-18) : sur un chèque circulaire il
+    // n'y a pas de compte à créditer → le BIC n'a plus de sens. Le `and` gère
+    // aussi le cas où l'usager avait saisi un IBAN étranger PUIS basculé sur
+    // « chèque » : l'IBAN est masqué mais sa valeur persiste dans le payload,
+    // ce qui laissait sinon le BIC visible ET requis (blocage) — cf. VisibleIf.
     visibleIf: {
       fieldId: "iban",
       op: "matchesRegex",
       value: "^(?![Bb][Ee])[A-Za-z]{2}",
+      and: [{ fieldId: "modePaiement", op: "equals", value: "virement" }],
     },
     section: SECTION_PAIEMENT,
     order: 606,

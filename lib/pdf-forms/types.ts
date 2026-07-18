@@ -144,6 +144,12 @@ export interface VisibleIf {
   /// est visible si la valeur DÉPENDANTE, coercée en string, matche la regex ;
   /// utile pour détecter un préfixe pays sur un IBAN par ex.).
   value: string | number | boolean | Array<string | number>;
+  /// Conditions SUPPLÉMENTAIRES combinées en ET logique avec la condition
+  /// principale : le champ n'est visible que si la condition primaire ET
+  /// chacune de celles-ci sont vraies. Sert aux cas multi-champs (ex. C1 :
+  /// n'afficher le BIC que si l'IBAN est étranger ET le mode = virement).
+  /// Chaque condition est évaluée contre le MÊME payload (cf. isFieldVisible).
+  and?: VisibleIf[];
 }
 
 export interface FieldOption {

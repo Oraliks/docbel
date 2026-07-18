@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { C1_QUESTIONS, C1_TRIGGERS, applyC1Improvements } from "../c1-fields-improvements";
 import { evaluateTrigger } from "../../triggers";
-import { validateStepFields } from "../../validation";
+import { isFieldVisible, validateStepFields } from "../../validation";
 
 const ACTIVITY_REVENUE_IDS = [
   "etudesPleinExercice",
@@ -442,6 +442,32 @@ describe("applyC1Improvements — restrictMotifTo5Situations (Oraliks, 2026-07-0
     ]);
     expect(titulaire?.label.fr).toBe("Titulaire du compte");
     expect(titulaire?.options?.map((option) => option.value)).toEqual(["mon-nom", "autre-nom"]);
+  });
+
+  it("le BIC n'est requis que pour un IBAN étranger ET en mode virement (masqué sur chèque)", () => {
+    const bic = C1_QUESTIONS.find((field) => field.id === "bic");
+    expect(bic?.visibleIf).toEqual({
+      fieldId: "iban",
+      op: "matchesRegex",
+      value: "^(?![Bb][Ee])[A-Za-z]{2}",
+      and: [{ fieldId: "modePaiement", op: "equals", value: "virement" }],
+    });
+    const foreignIban = "FR7630001007941234567890185";
+    // Virement + IBAN étranger → BIC visible.
+    expect(isFieldVisible(bic?.visibleIf, { iban: foreignIban, modePaiement: "virement" })).toBe(true);
+    // L'usager avait saisi un IBAN étranger PUIS basculé sur « chèque » : la
+    // valeur IBAN persiste mais le BIC doit disparaître (plus de blocage).
+    expect(isFieldVisible(bic?.visibleIf, { iban: foreignIban, modePaiement: "cheque" })).toBe(false);
+  });
+
+  it("la confirmation « chèque circulaire » porte le libellé validé par Oraliks", () => {
+    const warning = C1_QUESTIONS.find((field) => field.id === "modePaiementChequeWarning");
+    expect(warning?.label.fr).toBe(
+      "Je confirme avoir compris que le chèque circulaire est rare et plus lent à la réception. Celui-ci sera envoyé à l'adresse mentionnée sur le formulaire C1.",
+    );
+    // Requise, mais uniquement quand le mode « chèque » est choisi.
+    expect(warning?.required).toBe(true);
+    expect(warning?.visibleIf).toEqual({ fieldId: "modePaiement", op: "equals", value: "cheque" });
   });
 
   it("absent : chomeurTemporaireAlternance garde son libellé d'origine sans restriction", () => {

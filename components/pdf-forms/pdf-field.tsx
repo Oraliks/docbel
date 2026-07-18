@@ -87,6 +87,11 @@ interface Props {
   /// avec `field.id` depuis `onFocus` (inputs) et `onClick` (contrôles boutons :
   /// cases, segmenté oui/non). Purement additif : absent = comportement inchangé.
   onFocusField?: (id: string) => void;
+  /// En `rowLayout`, place la case AVANT le libellé (style consentement) au
+  /// lieu du défaut « libellé à gauche / case à droite ». Opt-in porté par le
+  /// conteneur (ex. panneau bancaire pour la confirmation « chèque
+  /// circulaire ») — n'affecte que les cases à cocher.
+  checkboxLeading?: boolean;
 }
 
 /// Rend le label + une InfoTooltip si `help` est présent — remplace
@@ -132,6 +137,7 @@ export function PdfField({
   autoLocked = false,
   derivedValue = null, relatedPostalCode, onSelectStreetSuggestion, onStreetVerifiedChange, parentValues,
   onFocusField,
+  checkboxLeading = false,
 }: Props) {
   const label = loc(field.label, locale);
   // Remonte le focus de ce champ au panneau d'aide (§10.4). `undefined` si le
@@ -221,6 +227,31 @@ export function PdfField({
     // l'organisme de paiement). On désactive l'interaction et on grise.
     const isReadOnly = field.readOnly === true;
     if (rowLayout) {
+      // `checkboxLeading` : case AVANT le libellé (style consentement). Top-
+      // alignée (`items-start`) car le libellé de confirmation peut être long
+      // et passer sur plusieurs lignes.
+      if (checkboxLeading) {
+        return (
+          <div className="flex flex-col gap-1 px-4 py-3" data-invalid={invalid} onFocus={notifyFocus} onClick={notifyFocus}>
+            <div className="flex items-start gap-3">
+              <Checkbox
+                id={field.id}
+                className="mt-0.5 shrink-0"
+                checked={value === true}
+                onCheckedChange={(c) => !isReadOnly && onChange(c === true)}
+                disabled={isReadOnly}
+              />
+              <FieldLabel
+                htmlFor={field.id}
+                className={`min-w-0 flex-1 ${isReadOnly ? "font-normal text-muted-foreground" : "font-normal"}`}
+              >
+                <LabelWithTooltip label={label} labelShort={labelShort} help={help} required={field.required} />
+              </FieldLabel>
+            </div>
+            {errorReport}
+          </div>
+        );
+      }
       return (
         <div className="flex flex-col gap-1 px-4 py-3" data-invalid={invalid} onFocus={notifyFocus} onClick={notifyFocus}>
           <div className="flex items-center justify-between gap-4">

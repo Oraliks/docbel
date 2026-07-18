@@ -251,6 +251,22 @@ describe("isFieldVisible", () => {
     expect(isFieldVisible({ fieldId: "t", op: "in", value: ["a", "b"] }, { t: "a" })).toBe(true);
     expect(isFieldVisible({ fieldId: "t", op: "notIn", value: ["a", "b"] }, { t: "c" })).toBe(true);
   });
+
+  it("combine `and` en ET logique avec la condition primaire", () => {
+    const cond = {
+      fieldId: "iban",
+      op: "matchesRegex" as const,
+      value: "^(?![Bb][Ee])[A-Za-z]{2}",
+      and: [{ fieldId: "mode", op: "equals" as const, value: "virement" }],
+    };
+    // Primaire vraie (IBAN étranger) + `and` vraie (virement) → visible.
+    expect(isFieldVisible(cond, { iban: "FR7630001007941234567890185", mode: "virement" })).toBe(true);
+    // Primaire vraie mais `and` fausse (chèque) → masqué, même si l'IBAN
+    // étranger persiste dans le payload.
+    expect(isFieldVisible(cond, { iban: "FR7630001007941234567890185", mode: "cheque" })).toBe(false);
+    // Primaire fausse (IBAN belge) → masqué quelle que soit la condition `and`.
+    expect(isFieldVisible(cond, { iban: "BE68539007547034", mode: "virement" })).toBe(false);
+  });
 });
 
 describe("validateFieldFormat — validation par champ (blur)", () => {

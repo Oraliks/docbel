@@ -165,12 +165,22 @@ async function loadBundleSharedValues(
     sharedMaps.push(extractSharedValues(fields, payload));
     canonicalMaps.push(extractCanonical(fields, payload));
   }
-  // Brouillon EN COURS du formulaire courant (réponses non validées) — restauré
-  // au montage du runner, à la PLUS HAUTE précédence (la dernière frappe de
-  // l'utilisateur prime sur profil + prefill inter-documents).
+  // Réponses du formulaire courant à restaurer au montage du runner, à la PLUS
+  // HAUTE précédence (priment sur profil + prefill inter-documents). Deux
+  // sources, dans l'ordre :
+  //   1. `draftPayloads[currentFormId]` — brouillon EN COURS (saisie non encore
+  //      validée). Prioritaire tant qu'il existe (dernière frappe de l'usager).
+  //   2. `payloads[currentFormId]` — réponses DÉJÀ VALIDÉES. À la validation
+  //      (delivery="save"), le brouillon est PURGÉ et les réponses migrent ici.
+  //      Sans ce fallback, revenir corriger un formulaire terminé (ex. rouvrir
+  //      le C1 après avoir commencé l'Annexe REGIS) le rouvrait VIDE — toutes
+  //      les données semblaient remises à zéro (bug Oraliks 2026-07-18), alors
+  //      qu'elles sont bien conservées dans `payloads`.
   const draftPayloads =
     (run.draftPayloads as Record<string, Record<string, unknown>> | null) || {};
-  const draftForForm = draftPayloads[currentFormId] as FormPayload | undefined;
+  const draftForForm = (draftPayloads[currentFormId] ?? payloads[currentFormId]) as
+    | FormPayload
+    | undefined;
 
   return {
     shared: mergeSharedValues(...sharedMaps),

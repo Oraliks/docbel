@@ -535,7 +535,10 @@ export const C1_QUESTIONS: PdfFormField[] = [
     pdfFieldName:
       "je paie une pension alimentaire en exécution dune décision judiciaire ou dun acte notarié 10|",
     type: "radio",
-    required: false,
+    // Obligatoire quand isolé (Oraliks 2026-07-18) : `required` sur un champ
+    // `visibleIf` ne s'applique que lorsqu'il est visible → exigé uniquement
+    // pour l'isolé (à qui la question est posée), jamais autrement.
+    required: true,
     label: { fr: "Je paie une pension alimentaire (jugement, acte notarié, garde alternée)", nl: "", de: "" },
     help: {
       fr: "⚠ Si oui, joindre obligatoirement une copie du JUGEMENT ou de l'ACTE NOTARIÉ. Les preuves de paiement (virements, reçus) ne suffisent pas. Vaut aussi pour la garde alternée.",
@@ -675,7 +678,10 @@ export const C1_QUESTIONS: PdfFormField[] = [
     id: "habiteEnColocation",
     pdfFieldName: "",
     type: "radio",
-    required: false,
+    // Obligatoire quand isolé (Oraliks 2026-07-18) : même logique que
+    // `pensionAlimentaire` — `required` + `visibleIf` = exigé seulement pour
+    // l'isolé, à qui seul la question est posée.
+    required: true,
     label: { fr: "Habites-tu en colocation ?", nl: "", de: "" },
     help: {
       fr: "Colocation = tu partages un logement avec une ou plusieurs personnes SANS lien de parenté ni de couple (chacun sa vie, pas de ménage commun) — même si le registre national vous montre à la même adresse. Utile aussi si tu vis officiellement seul mais partages en pratique le logement (cohousing) — la remarque situation familiale sera annotée automatiquement. Cette précision permet d'ajouter automatiquement l'ANNEXE REGIS à ton parcours.",

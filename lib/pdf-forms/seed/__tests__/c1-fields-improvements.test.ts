@@ -494,6 +494,34 @@ describe("applyC1Improvements — restrictMotifTo5Situations (Oraliks, 2026-07-0
     expect(isFieldVisible(nom?.visibleIf, { titulaireCompte: "autre-nom", modePaiement: "cheque" })).toBe(false);
   });
 
+  it("pension alimentaire + colocation sont obligatoires UNIQUEMENT pour l'isolé", () => {
+    const pension = C1_QUESTIONS.find((f) => f.id === "pensionAlimentaire");
+    const coloc = C1_QUESTIONS.find((f) => f.id === "habiteEnColocation");
+    for (const f of [pension, coloc]) {
+      expect(f?.required).toBe(true);
+      expect(f?.visibleIf).toEqual({ fieldId: "statutFamilial", op: "equals", value: "isole" });
+    }
+    const stepFields = C1_QUESTIONS.filter(
+      (f) => ["statutFamilial", "pensionAlimentaire", "habiteEnColocation"].includes(f.id),
+    );
+    // Isolé + réponses vides → les deux questions sont exigées.
+    const isoleEmpty = validateStepFields(stepFields, { statutFamilial: "isole" }, "fr");
+    expect(isoleEmpty.pensionAlimentaire).toBeTruthy();
+    expect(isoleEmpty.habiteEnColocation).toBeTruthy();
+    // Isolé + réponses fournies → plus d'erreur.
+    const isoleFilled = validateStepFields(
+      stepFields,
+      { statutFamilial: "isole", pensionAlimentaire: "non", habiteEnColocation: "non" },
+      "fr",
+    );
+    expect(isoleFilled.pensionAlimentaire).toBeFalsy();
+    expect(isoleFilled.habiteEnColocation).toBeFalsy();
+    // Cohabitant (non isolé) → questions invisibles → jamais exigées.
+    const cohabite = validateStepFields(stepFields, { statutFamilial: "cohabite" }, "fr");
+    expect(cohabite.pensionAlimentaire).toBeFalsy();
+    expect(cohabite.habiteEnColocation).toBeFalsy();
+  });
+
   it("les 3 dates d'activité (études / alternance / stage) ciblent chacune leur widget PDF", () => {
     const byId = (id: string) => C1_QUESTIONS.find((f) => f.id === id);
     // Bug Oraliks 2026-07-18 : seule la 3e date était stampée (les 2 autres

@@ -400,8 +400,14 @@ export const C1_QUESTIONS: PdfFormField[] = [
   {
     id: "dateChangementOrganisme",
     pdfFieldName: "",
+    // Obligatoire (Oraliks 2026-07-18) : quand le transfert d'organisme est
+    // choisi, la date de prise d'effet DOIT être renseignée. `required` sur un
+    // champ `visibleIf` ne s'applique que lorsqu'il est VISIBLE (cf.
+    // buildValidator + validateStepFields) → n'exige la date QUE si le transfert
+    // est sélectionné, jamais autrement. Stampée via le binding `date-transfert`
+    // (→ DateDeTransfert) + en-tête `DateDeDA`.
     type: "date",
-    required: false,
+    required: true,
     label: { fr: "À partir du", nl: "", de: "" },
     help: {
       fr: "Le transfert prend effet le mois suivant, sous certaines conditions de délai qui dépendent de ton type d'allocation actuel. Ton nouvel organisme de paiement te confirmera la date exacte.",

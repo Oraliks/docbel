@@ -392,6 +392,25 @@ describe("applyC1Improvements — restrictMotifTo5Situations (Oraliks, 2026-07-0
     expect(f?.visibleIf).toEqual({ fieldId: "transfereOrganismePaiement", op: "equals", value: true });
   });
 
+  it("actif : la date de transfert est obligatoire UNIQUEMENT quand le transfert est coché", () => {
+    const result = applyC1Improvements([], { restrictMotifTo5Situations: true });
+    const dateF = result.find((q) => q.id === "dateChangementOrganisme");
+    expect(dateF?.required).toBe(true);
+    // Valide la case transfert ET la date ensemble : sans la case dans le
+    // schéma, le `visibleIf` (qui la référence) ne peut pas se résoudre.
+    const stepFields = result.filter(
+      (q) => q.id === "transfereOrganismePaiement" || q.id === "dateChangementOrganisme",
+    );
+    // Transfert coché + date vide → erreur (obligatoire car visible).
+    expect(validateStepFields(stepFields, { transfereOrganismePaiement: true }, "fr").dateChangementOrganisme).toBeTruthy();
+    // Transfert coché + date remplie (jour de semaine, cf. noWeekend) → pas d'erreur.
+    expect(
+      validateStepFields(stepFields, { transfereOrganismePaiement: true, dateChangementOrganisme: "2026-08-05" }, "fr").dateChangementOrganisme,
+    ).toBeFalsy();
+    // Transfert NON coché → champ invisible → jamais exigé.
+    expect(validateStepFields(stepFields, { transfereOrganismePaiement: false }, "fr").dateChangementOrganisme).toBeFalsy();
+  });
+
   it("actif : dateChangementOrganisme porte le libellé contextualisé au transfert", () => {
     const result = applyC1Improvements([], { restrictMotifTo5Situations: true });
     const f = result.find((q) => q.id === "dateChangementOrganisme");

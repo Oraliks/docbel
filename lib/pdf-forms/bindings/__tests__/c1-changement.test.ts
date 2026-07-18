@@ -93,20 +93,43 @@ describe("Rules C1 — motif indépendant du champ strippé motifIntroduction", 
   });
 });
 
-describe("Rules C1 — transfert d'organisme de paiement", () => {
-  it("stampe la case transfert et décoche explicitement la case modification", () => {
+describe("Rules C1 — transfert d'organisme de paiement (règle indépendante)", () => {
+  it("transfert SEUL (aucun motif de modification) → transfert coché, modification décochée", () => {
     const payload = {
       ...baseline(),
       transfereOrganismePaiement: true,
-      motifIntroduction: "modification",
-      // Les 4 chips modif ne comptent plus quand transfert est actif.
       modificationAdresse: false,
     };
     const stamps = resolveStamps(payload, C1_CHANGEMENT_RULES);
 
     expect(stamps.get("je change dorganisme de paiement à partir du 5")).toBe(true);
-    // Décoche explicite (règle motif-transfert-op stamp: false).
+    // Aucun motif de modification coché → case modification décochée.
     expect(stamps.get("je déclare une modification concernant")).toBe(false);
+  });
+
+  it("modification ET transfert cochés → les DEUX cases cochées (règles indépendantes, Oraliks 2026-07-18)", () => {
+    // Le point clé : cocher le transfert ne décoche PLUS « je déclare une
+    // modification concernant » — un motif de modification suffit à la cocher.
+    const payload = {
+      ...baseline(),
+      modificationAdresse: true,
+      transfereOrganismePaiement: true,
+    };
+    const stamps = resolveStamps(payload, C1_CHANGEMENT_RULES);
+    expect(stamps.get("je déclare une modification concernant")).toBe(true);
+    expect(stamps.get("je change dorganisme de paiement à partir du 5")).toBe(true);
+  });
+
+  it("chaque autre motif de modification coche aussi la case parente (indépendamment du transfert)", () => {
+    for (const motif of [
+      "modificationSituationFamiliale",
+      "modificationPermisSejour",
+      "modificationCompte",
+    ]) {
+      const payload = { ...baseline(), modificationAdresse: false, [motif]: true };
+      const stamps = resolveStamps(payload, C1_CHANGEMENT_RULES);
+      expect(stamps.get("je déclare une modification concernant"), motif).toBe(true);
+    }
   });
 });
 

@@ -115,6 +115,20 @@ function buildRemarqueFragments(payload: FormPayload): string[] {
   return parts;
 }
 
+/// « je déclare une modification concernant » est cochée dès qu'AU MOINS UN
+/// motif de modification l'est (adresse / situation familiale / permis /
+/// compte). Indépendant du transfert d'organisme (Oraliks 2026-07-18). La
+/// cotisation syndicale est `hidden` dans ce dossier (gérée ailleurs) → elle
+/// n'entre pas dans ce signal.
+function hasModificationMotif(payload: FormPayload): boolean {
+  return (
+    payload.modificationAdresse === true ||
+    payload.modificationSituationFamiliale === true ||
+    payload.modificationPermisSejour === true ||
+    payload.modificationCompte === true
+  );
+}
+
 /// Date d'effet d'une ligne de motif : ne stampe le widget QUE si le champ
 /// source (date saisie) est non vide, après formatage FR (DD/MM/YYYY). Renvoie
 /// un tableau vide sinon → la ligne du motif non renseigné reste vierge.
@@ -130,36 +144,30 @@ function motifDateStamp(payload: FormPayload, widget: string, source: string) {
 // ---------------------------------------------------------------------------
 
 export const C1_CHANGEMENT_RULES: MappingRule[] = [
-  // -------- Motif d'introduction (2 cases mutuellement exclusives) --------
+  // -------- Motif d'introduction : 2 cases INDÉPENDANTES --------
   //
-  // Deux cases mutuellement exclusives sur le PDF officiel : « je déclare
-  // une modification concernant » vs « je change d'organisme de paiement ».
+  // « je déclare une modification concernant » ⇔ au moins un motif de
+  // modification coché (adresse / situation / permis / compte). « je change
+  // d'organisme de paiement » ⇔ le chip transfert coché. Les DEUX sont
+  // INDÉPENDANTES (Oraliks 2026-07-18) : cocher le transfert ne décoche PLUS
+  // la case modification, et inversement — on peut déclarer une modification
+  // ET un transfert dans la même déclaration. Chaque case ne dépend QUE de son
+  // propre signal.
   //
-  // ⚠ Le signal est `transfereOrganismePaiement`, PAS `motifIntroduction` :
-  // dans ce dossier `motifIntroduction` est `autoAnswered` (toujours
-  // "modification") → `buildValidator` l'EXCLUT du schéma Zod et `z.object`
-  // le STRIPPE du payload validé côté serveur. La règle ne peut donc pas s'y
-  // fier (elle voyait `undefined` → la case « modification » n'était JAMAIS
-  // cochée, le changement déclaré passait à la trappe — bug Oraliks
-  // 2026-07-18). On pilote les DEUX cases depuis le 5e chip (non strippé,
-  // c'est un vrai checkbox) : transfert coché ⇒ transfert / sinon ⇒
-  // modification. Chaque règle stampe explicitement l'état des DEUX widgets
-  // pour rester déterministe quel que soit l'état par défaut du template.
+  // ⚠ Le signal n'est JAMAIS `motifIntroduction` : dans ce dossier il est
+  // `autoAnswered` → `buildValidator` l'EXCLUT du schéma Zod et `z.object` le
+  // STRIPPE du payload validé côté serveur (il vaut `undefined`). On lit donc
+  // les vrais checkboxes (non strippés). Chaque case est stampée explicitement
+  // (true/false) pour un rendu déterministe quel que soit l'état du template.
   {
     name: "motif-modification",
-    when: { transfereOrganismePaiement: { not: true } },
-    stamp: [
-      { widget: W_MOTIF_MODIFICATION, value: true },
-      { widget: W_MOTIF_TRANSFERT_OP, value: false },
-    ],
+    stampFn: (p) => [{ widget: W_MOTIF_MODIFICATION, value: hasModificationMotif(p) }],
+    declaredWidgets: [W_MOTIF_MODIFICATION],
   },
   {
     name: "motif-transfert-op",
-    when: { transfereOrganismePaiement: true },
-    stamp: [
-      { widget: W_MOTIF_TRANSFERT_OP, value: true },
-      { widget: W_MOTIF_MODIFICATION, value: false },
-    ],
+    stampFn: (p) => [{ widget: W_MOTIF_TRANSFERT_OP, value: p.transfereOrganismePaiement === true }],
+    declaredWidgets: [W_MOTIF_TRANSFERT_OP],
   },
 
   // -------- Chips « nature de modification » (4 cases indépendantes) -------

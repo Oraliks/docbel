@@ -26,7 +26,12 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export const dynamic = "force-dynamic";
 
-export default async function MonDossierPage() {
+export default async function MonDossierPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ situation?: string }>;
+}) {
+  const { situation } = await searchParams;
   // Fail-soft : si la base est froide (Neon) ou indisponible, on rend une page
   // vide plutôt qu'une 500. Même pattern que /creer-ma-demande.
   const bundles = await prisma.documentBundle
@@ -146,6 +151,7 @@ export default async function MonDossierPage() {
       catalog={catalog}
       activeRuns={activeRuns}
       situations={situations}
+      initialSituation={situation ?? null}
     />
   );
 }

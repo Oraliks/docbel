@@ -146,6 +146,13 @@ interface Props {
   /// (documents, points d'attention, dossiers proches). Optionnel : si vide,
   /// le résultat se limite au titre + explication de la config.
   catalog?: WizardCatalog;
+  /// Présélection de situation (query param `?situation=` de /mon-dossier, ou
+  /// raccourci « L'assistant dossier ») : si la valeur correspond à une
+  /// entrée de `situations`, le wizard s'ouvre directement à l'étape 2 (ou au
+  /// résultat si la situation n'a pas de `subQuestion`), sans repasser par
+  /// « Quelle est votre situation ? ». Additif, défaut `undefined` →
+  /// comportement public inchangé (démarre à l'étape 1).
+  initialSituation?: string;
   /// Mode « test » (simulation admin) : désactive l'envoi d'analytics ET
   /// neutralise la navigation des CTA de résultat (on ne quitte pas l'éditeur).
   /// Additif, défaut `false` → comportement public inchangé.
@@ -168,16 +175,31 @@ const STEP_LABEL_KEYS: Record<StepNumber, string> = {
   4: "wizardStep4",
 };
 
-export function DossierWizard({ situations, catalog = {}, dryRun = false }: Props) {
+export function DossierWizard({
+  situations,
+  catalog = {},
+  initialSituation,
+  dryRun = false,
+}: Props) {
   const t = useTranslations("public.dossier");
   const tc = useTranslations("public.dossierContent");
-  const [currentStep, setCurrentStep] = useState<StepNumber>(1);
+  // Présélection : reprend la logique de saut de `handleSituationSelect`
+  // (subQuestion → step 2, sinon résultat → step 4) SANS son appel
+  // `track("wizard_started")` — cette valeur est recalculée à chaque rendu
+  // (ce n'est pas un lazy-initializer de useState), un appel analytics ici
+  // partirait donc à chaque re-render au lieu d'une seule fois.
+  const preset = initialSituation
+    ? situations.find((s) => s.value === initialSituation) ?? null
+    : null;
+  const [currentStep, setCurrentStep] = useState<StepNumber>(
+    preset ? (preset.subQuestion ? 2 : 4) : 1,
+  );
   // N'émet `wizard_started` qu'une fois par session de wizard.
   const startedRef = useRef(false);
   // En mode test, on n'émet aucun event analytics.
   const track: typeof trackBundleEventClient = dryRun ? () => {} : trackBundleEventClient;
   const [selectedSituation, setSelectedSituation] = useState<string | null>(
-    null,
+    preset ? preset.value : null,
   );
   const [selectedSubOption, setSelectedSubOption] = useState<string | null>(
     null,

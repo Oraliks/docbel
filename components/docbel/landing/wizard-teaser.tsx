@@ -4,9 +4,11 @@
 //
 // Affiche les portes d'entrée RÉELLES du wizard (WIZARD_SITUATIONS — même
 // source de vérité que la page /mon-dossier) en grille cliquable. Chaque
-// carte mène à /mon-dossier où le guide démarre ; le wizard ne supporte pas
-// (encore) de présélection par query param ou ancre — vérifié dans
-// mon-dossier-client.tsx / dossier-wizard.tsx — donc lien simple partout.
+// carte de situation mène à /mon-dossier?situation=<value> : le wizard lit ce
+// param (page.tsx → MonDossierClient → DossierWizard) et s'ouvre directement
+// sur cette situation, sans repasser par « Quelle est votre situation ? ».
+// La 8ᵉ tuile « Commencer le guide » reste un lien simple vers /mon-dossier
+// (CTA générique, pas de présélection).
 
 import Link from "next/link";
 import { useTranslations } from "next-intl";
@@ -98,7 +100,7 @@ export function WizardTeaser() {
           return (
             <Link
               key={situation.value}
-              href="/mon-dossier"
+              href={`/mon-dossier?situation=${encodeURIComponent(situation.value)}`}
               className="glass-surface glass-interactive outils-rise group flex items-center gap-3 p-4"
               style={{ animationDelay: `${index * 60}ms` }}
             >

@@ -62,6 +62,11 @@ interface Props {
   catalog: WizardCatalog;
   activeRuns: ActiveBundleRun[];
   situations: WizardSituation[];
+  /// Situation présélectionnée via `?situation=` (tuile home ou lien externe).
+  /// Si elle correspond à une entrée de `situations`, le guide s'ouvre
+  /// directement dessus (cf. DossierWizard.initialSituation). `null`/absent
+  /// = comportement inchangé (mode guide fermé par défaut).
+  initialSituation?: string | null;
 }
 
 type Sort = "populaires" | "az" | "categories" | "recents";
@@ -282,13 +287,35 @@ function ActiveRunCard({ run }: { run: ActiveBundleRun }) {
   );
 }
 
-export function MonDossierClient({ bundles, catalog, activeRuns, situations }: Props) {
+export function MonDossierClient({
+  bundles,
+  catalog,
+  activeRuns,
+  situations,
+  initialSituation,
+}: Props) {
   const t = useTranslations("public.dossier");
   const tA11y = useTranslations("public.accessibility");
   const tc = useTranslations("public.dossierContent");
   const locale = useLocale();
+  // Présélection home/raccourci, validée contre `situations` (le query param
+  // peut être arbitraire ou périmé). Recalculée à chaque rendu — sert
+  // uniquement d'init pour les deux useState suivants (pas de setState dans
+  // un effect).
+  const validInitialSituation =
+    initialSituation && situations.some((s) => s.value === initialSituation)
+      ? initialSituation
+      : null;
   const [mode, setMode] = useState<Mode>("guide");
-  const [guideStarted, setGuideStarted] = useState(false);
+  const [guideStarted, setGuideStarted] = useState(
+    Boolean(validInitialSituation),
+  );
+  // Situation à transmettre au DossierWizard : initialisée depuis le query
+  // param, puis mise à jour par les raccourcis « L'assistant dossier »
+  // ci-dessous (chacun associé à une situation précise).
+  const [presetSituation, setPresetSituation] = useState<string | null>(
+    validInitialSituation,
+  );
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<Sort>("populaires");
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -488,7 +515,7 @@ export function MonDossierClient({ bundles, catalog, activeRuns, situations }: P
         </div>
         <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
           {situations.slice(0, 4).map((s) => {
-            return <button key={s.value} type="button" onClick={() => { setMode("guide"); setGuideStarted(true); }} className="glass-interactive flex min-h-14 items-center gap-2 rounded-xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-3 py-2 text-left">
+            return <button key={s.value} type="button" onClick={() => { setPresetSituation(s.value); setMode("guide"); setGuideStarted(true); }} className="glass-interactive flex min-h-14 items-center gap-2 rounded-xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-3 py-2 text-left">
               <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-[color:var(--glass-pop-bg)] text-[color:var(--glass-accent-deep)]" aria-hidden><IconDisplay value={s.icon} className="size-4" /></span>
               <span className="line-clamp-2 text-xs font-semibold leading-relaxed text-[color:var(--glass-ink)]">{resolveWizardText(tc, s.labelKey, s.label)}</span>
             </button>;
@@ -498,7 +525,12 @@ export function MonDossierClient({ bundles, catalog, activeRuns, situations }: P
 
       <div role="tabpanel" aria-label={t(mode === "guide" ? "modeGuideLabel" : "modeDirectLabel")}>
         {mode === "guide" && guideStarted ? (
-          <DossierWizard situations={situations} catalog={catalog} />
+          <DossierWizard
+            key={presetSituation ?? "none"}
+            situations={situations}
+            catalog={catalog}
+            initialSituation={presetSituation ?? undefined}
+          />
         ) : mode === "direct" ? (
           <section className="glass-surface flex flex-col gap-4 p-3 sm:p-5" data-docbel-readable>
             <div className="flex items-center gap-3">

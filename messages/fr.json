@@ -5165,6 +5165,7 @@
       "runnerContinuationReadyTitle": "Votre {title} est prêt",
       "runnerContinuationSavedNote": "Enregistré dans votre dossier. Le téléchargement sera disponible une fois tous les documents complétés.",
       "runnerContinuationStillNeeded": "Votre dossier nécessite encore : {title}",
+      "runnerContinuationRemainingCount": "Votre dossier nécessite encore {count, plural, one {1 document} other {# documents}} :",
       "runnerContinuationPrefillNote": "Vos informations déjà renseignées seront reprises automatiquement.",
       "runnerContinuationCta": "Continuer avec {title}",
       "runnerContinuationComplete": "Votre dossier est complet",

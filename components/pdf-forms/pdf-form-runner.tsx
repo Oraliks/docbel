@@ -767,9 +767,17 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
               </p>
               <div className="w-full max-w-md rounded-2xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] p-4 text-left">
                 <p className="text-sm font-medium text-[color:var(--glass-ink)]">
-                  {t("runnerContinuationStillNeeded", { title: next.title })}
+                  {t("runnerContinuationRemainingCount", { count: continuation.missing.length })}
                 </p>
-                <p className="mt-1 text-[12px] text-[color:var(--glass-ink-soft)]">
+                <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-[color:var(--glass-ink)]">
+                  {continuation.missing.slice(0, 3).map((item) => (
+                    <li key={item.slug}>{item.title}</li>
+                  ))}
+                  {continuation.missing.length > 3 ? (
+                    <li className="text-[color:var(--glass-ink-soft)]">+{continuation.missing.length - 3}</li>
+                  ) : null}
+                </ul>
+                <p className="mt-2 text-[12px] text-[color:var(--glass-ink-soft)]">
                   {t("runnerContinuationPrefillNote")}
                 </p>
               </div>

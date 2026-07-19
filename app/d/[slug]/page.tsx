@@ -26,6 +26,7 @@ import { EDITABLE_BUNDLE_RUN_STATUSES } from "@/lib/bundles/run-lifecycle";
 import { bundleRunHasProgress } from "@/lib/bundles/run-progress";
 import { buildDemandeSummaries } from "@/lib/bundles/demande-summary";
 import { DemandeList } from "@/components/docbel/demande-list";
+import { computeItemStatuses } from "@/components/docbel/bundle-runner/compute";
 
 export const dynamic = "force-dynamic";
 
@@ -337,6 +338,31 @@ export default async function BundleRoute({
   // organisme). Fallback "Documents" si non disponible.
   const dossierIssuer = bundle.items.find((it) => it.pdfForm?.issuer)?.pdfForm?.issuer ?? "Documents";
 
+  // Progression PAR RUN (documents visibles + remplissables), même périmètre
+  // que le compteur du runner (`runnerCompletedCount`, cf. bundle-runner.tsx)
+  // — remplace `bundle.items.length` qui comptait aussi les items masqués
+  // « non requis pour votre situation » et faisait diverger le « X sur N »
+  // affiché dans « Mes demandes » de celui affiché une fois la demande
+  // ouverte. `applicableSlugs` est partagé (même dérivation que
+  // `runnerProps.applicableSlugs` ci-dessous, issue de la demande courante) ;
+  // seuls `completedTemplateIds`/`payloads` — qui varient réellement d'une
+  // demande à l'autre — sont lus PAR run.
+  const demandeProgressByRunId = new Map(
+    runsWithProgress.map((r) => {
+      const { visibleItems } = computeItemStatuses(
+        serializedBundle.items,
+        (r.completedTemplateIds as string[]) || [],
+        (r.payloads as Record<string, Record<string, unknown>>) || {},
+        finalApplicableSlugs,
+      );
+      const fillable = visibleItems.filter((s) => s.item.pdfForm);
+      return [
+        r.id,
+        { total: fillable.length, completed: fillable.filter((s) => s.completed).length },
+      ] as const;
+    }),
+  );
+
   return (
     <div className="w-full">
       {/*
@@ -372,7 +398,8 @@ export default async function BundleRoute({
               completedAt: r.completedAt,
               anonymizedAt: r.anonymizedAt,
             })),
-            bundle.items.length,
+            (run) =>
+              demandeProgressByRunId.get(run.id) ?? { total: 0, completed: 0 },
           )}
         />
       ) : (() => {

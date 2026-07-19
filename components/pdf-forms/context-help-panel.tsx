@@ -35,6 +35,9 @@ interface ContextHelpPanelProps {
   /// du champ focalisé via `pickFieldHelp`. Ignoré si `activeFieldId` absent.
   fields?: { id: string; help?: Localized }[];
   locale: Locale;
+  /// true = rendu SANS chrome propre (bordure/fond/sticky) : le panneau est
+  /// embarqué dans le rail de démarche qui porte déjà la surface glass.
+  embedded?: boolean;
 }
 
 /// Panneau d'aide contextuelle (colonne de GAUCHE). Affiche les « infos
@@ -50,6 +53,7 @@ export function ContextHelpPanel({
   activeFieldId,
   fields,
   locale,
+  embedded = false,
 }: ContextHelpPanelProps) {
   const t = useTranslations("public.dossier");
   const source = entries ?? getDefaultTipsForForm(formSlug);
@@ -62,7 +66,13 @@ export function ContextHelpPanel({
   const fieldHelp = activeField ? pickFieldHelp(activeField, locale) : null;
 
   return (
-    <aside className="flex flex-col gap-3.5 rounded-3xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface-strong)] p-4 lg:sticky lg:top-6">
+    <aside
+      className={
+        embedded
+          ? "flex flex-col gap-3.5"
+          : "flex flex-col gap-3.5 rounded-3xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface-strong)] p-4 lg:sticky lg:top-6"
+      }
+    >
       <p className="text-[11px] font-bold uppercase tracking-[0.08em] text-[color:var(--glass-ink-soft)]">
         {t("runnerHelpPanelEyebrow")}
       </p>

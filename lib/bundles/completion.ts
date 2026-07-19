@@ -14,9 +14,9 @@ import {
   type BundleItemForTriggers,
 } from "@/lib/pdf-forms/triggers";
 import type { BundleCondition } from "@/lib/bundles/conditions";
-import { parseEligibilityAnswers } from "@/lib/bundles/eligibility";
+import { parseEligibilityAnswers, parseEligibilityQuestions } from "@/lib/bundles/eligibility";
 import { getDossier } from "@/lib/dossiers/registry";
-import { selectDocuments, type DossierAnswers } from "@/lib/dossiers/types";
+import { selectDocuments, dossierQuestionsToEligibility, type DossierAnswers } from "@/lib/dossiers/types";
 import { isBundleRunEditable } from "@/lib/bundles/run-lifecycle";
 
 export interface MissingDoc {
@@ -56,7 +56,10 @@ export function deriveMissingDocs(
 }
 
 export interface DossierState {
-  run: { id: string; bundleSlug: string };
+  run: { id: string; bundleSlug: string; bundleName: string };
+  /// Pré-qualification (rail de démarche — étape « Ma situation »).
+  hasEligibilityQuestions: boolean;
+  eligibilityCompleted: boolean;
   allRequiredDone: boolean;
   missing: MissingDoc[];
   items: BundleItem[];
@@ -169,6 +172,17 @@ export async function loadDossierState(
 
   const dossier = getDossier(run.bundle.slug);
   const eligibilityAnswers = parseEligibilityAnswers(run.eligibilityAnswers);
+  // Questions de pré-qualification : le module de code prime sur la DB
+  // (même logique que app/d/[slug]/page.tsx, eligibilityQuestionsSerialized).
+  const eligibilityQuestions = parseEligibilityQuestions(
+    dossier ? dossierQuestionsToEligibility(dossier.questions) : run.bundle.eligibilityQuestions,
+  );
+  const hasEligibilityQuestions = eligibilityQuestions.length > 0;
+  const eligibilityCompleted =
+    !hasEligibilityQuestions ||
+    eligibilityQuestions.every(
+      (q) => eligibilityAnswers[q.id] !== undefined && eligibilityAnswers[q.id] !== "",
+    );
   const selectedDocs = dossier
     ? selectDocuments(dossier, eligibilityAnswers as unknown as DossierAnswers)
     : null;
@@ -184,7 +198,9 @@ export async function loadDossierState(
   );
 
   return {
-    run: { id: run.id, bundleSlug: run.bundle.slug },
+    run: { id: run.id, bundleSlug: run.bundle.slug, bundleName: run.bundle.name },
+    hasEligibilityQuestions,
+    eligibilityCompleted,
     allRequiredDone,
     missing,
     items,

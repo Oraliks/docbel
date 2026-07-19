@@ -355,7 +355,11 @@ export function BundleRunner({
         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
         <p className="text-sm text-muted-foreground">{t("runnerStarting")}</p>
         <a
-          href={`/d/${bundle.slug}`}
+          href={
+            runId
+              ? `/d/${bundle.slug}?bundleRun=${encodeURIComponent(runId)}`
+              : `/d/${bundle.slug}`
+          }
           className="text-xs text-primary underline underline-offset-2"
         >
           {t("runnerFlowDocuments")}

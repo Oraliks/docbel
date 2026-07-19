@@ -626,7 +626,12 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
           setContinuation({ missing, allRequiredDone: data.allRequiredDone === true });
         } else {
           toast.success(t("runnerSavedSuccess"));
-          if (bundleSlug) router.push(`/d/${bundleSlug}`);
+          if (bundleSlug)
+            router.push(
+              bundleRunId
+                ? `/d/${bundleSlug}?bundleRun=${encodeURIComponent(bundleRunId)}`
+                : `/d/${bundleSlug}`,
+            );
         }
         return;
       }
@@ -730,7 +735,14 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
         `/document/${next.slug}?bundleRun=${encodeURIComponent(bundleRunId)}&bundleSlug=${encodeURIComponent(bundleSlug)}`,
       );
     };
-    const goDossier = () => { if (bundleSlug) router.push(`/d/${bundleSlug}`); };
+    const goDossier = () => {
+      if (!bundleSlug) return;
+      router.push(
+        bundleRunId
+          ? `/d/${bundleSlug}?bundleRun=${encodeURIComponent(bundleRunId)}`
+          : `/d/${bundleSlug}`,
+      );
+    };
     return (
       <Card className="rounded-2xl border-0 bg-card shadow-sm">
         <CardContent className="flex flex-col items-center gap-4 py-10 text-center">

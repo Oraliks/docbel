@@ -377,7 +377,7 @@ export default async function BundleRoute({
       >
         <Link href="/" className="hover:underline">Accueil</Link>
         <span aria-hidden>›</span>
-        <Link href="/mon-dossier" className="hover:underline">Mon dossier</Link>
+        <Link href="/mon-dossier" className="hover:underline">Démarches</Link>
         <span aria-hidden>›</span>
         <span>{dossierIssuer}</span>
         <span aria-hidden>›</span>

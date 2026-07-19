@@ -1,39 +1,39 @@
 import { test, expect } from "@playwright/test";
 
-// E2E /mon-dossier : parcours (segmented control), wizard, recherche, aide.
-// Le toggle « Je me laisse guider » / « J'accède directement » est un vrai
-// switch : l'accès direct est MASQUÉ tant qu'on n'a pas basculé d'onglet.
+// E2E /mon-dossier : guichet unique (refonte Task 4.1). Le toggle « Je me
+// laisse guider » / « J'accède directement » a été SUPPRIMÉ : le guichet
+// (wizard) ET le catalogue sont désormais TOUJOURS affichés, empilés
+// verticalement (plus d'onglet, plus d'écran vide au premier chargement).
 // Nécessite le dev server (pnpm dev) + DB accessible.
 // Lancer : pnpm test:e2e tests/e2e/mon-dossier
+// ⚠ Sélecteurs mis à jour pour la nouvelle UI mais NON rejoués à l'écriture
+// (workflow d'implémentation sans dev server) — à confirmer au 1er run e2e.
 
-test.describe("/mon-dossier — porte d'entrée", () => {
+test.describe("/mon-dossier — guichet unique", () => {
   test.beforeEach(async ({ page }) => {
     await page.goto("/mon-dossier");
+    // Le guichet (wizard) est toujours affiché — plus de bascule.
     await expect(
-      page.getByRole("heading", { name: /Créer ou retrouver/i }),
+      page.getByRole("heading", { name: /Qu'est-ce qui vous arrive/i }),
     ).toBeVisible();
   });
 
-  test("parcours guidé visible par défaut + aide persistante", async ({
+  test("guichet ET catalogue visibles d'emblée, plus aucun onglet de bascule", async ({
     page,
   }) => {
-    // Le wizard est affiché par défaut (onglet « Je me laisse guider »).
-    await expect(page.getByText(/L'assistant dossier/i)).toBeVisible();
-    // L'aide est une colonne toujours présente.
+    // Le guichet en haut…
     await expect(
-      page.getByRole("heading", { name: /Besoin d'aide/i }),
+      page.getByRole("heading", { name: /Qu'est-ce qui vous arrive/i }),
     ).toBeVisible();
-    // L'accès direct n'est pas l'onglet actif au chargement.
+    // …et le catalogue « Parcourir tous les dossiers » en dessous, sans bascule.
     await expect(
-      page.getByRole("tab", { name: /J'accède directement/i }),
-    ).toHaveAttribute("aria-selected", "false");
-  });
-
-  test("le toggle bascule vers l'accès direct (recherche)", async ({ page }) => {
-    const directTab = page.getByRole("tab", { name: /J'accède directement/i });
-    await directTab.click();
-    await expect(directTab).toHaveAttribute("aria-selected", "true");
-    await expect(page.getByLabel(/Rechercher un dossier/i)).toBeVisible();
+      page.getByRole("heading", { name: /Parcourir tous les dossiers/i }),
+    ).toBeVisible();
+    // Le toggle 2-modes n'existe plus.
+    await expect(page.getByRole("tab")).toHaveCount(0);
+    await expect(
+      page.getByRole("button", { name: /J'accède directement/i }),
+    ).toHaveCount(0);
   });
 
   test("le wizard avance à l'étape 2 après une situation", async ({ page }) => {
@@ -42,17 +42,24 @@ test.describe("/mon-dossier — porte d'entrée", () => {
     await expect(page.getByRole("button", { name: /Précédent/i })).toBeVisible();
   });
 
-  test("recherche sans résultat affiche le message dédié", async ({ page }) => {
-    await page.getByRole("tab", { name: /J'accède directement/i }).click();
-    await page.getByLabel(/Rechercher un dossier/i).fill("zzzznexistepasxyz");
+  test("recherche du catalogue sans résultat affiche le message dédié", async ({
+    page,
+  }) => {
+    // Le catalogue est toujours visible : pas besoin de basculer d'onglet.
+    const catalogue = page
+      .getByRole("heading", { name: /Parcourir tous les dossiers/i })
+      .locator("xpath=ancestor::section[1]");
+    await catalogue.getByLabel(/Rechercher un dossier/i).fill("zzzznexistepasxyz");
     await expect(page.getByText(/Aucun dossier ne correspond/i)).toBeVisible();
   });
 
-  test("ouvrir un dossier depuis l'accès direct navigue vers /d/[slug]", async ({
+  test("ouvrir un dossier depuis le catalogue navigue vers /d/[slug]", async ({
     page,
   }) => {
-    await page.getByRole("tab", { name: /J'accède directement/i }).click();
-    const firstDossier = page.locator('a[href^="/d/"]').first();
+    const catalogue = page
+      .getByRole("heading", { name: /Parcourir tous les dossiers/i })
+      .locator("xpath=ancestor::section[1]");
+    const firstDossier = catalogue.locator('a[href^="/d/"]').first();
     // Skip si aucun bundle publié dans l'environnement de test.
     if ((await firstDossier.count()) === 0) test.skip();
     const href = await firstDossier.getAttribute("href");

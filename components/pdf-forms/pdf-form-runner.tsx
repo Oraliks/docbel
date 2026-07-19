@@ -248,6 +248,10 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
 
   // Charge un éventuel brouillon (best-effort, utilisateur connecté).
   useEffect(() => {
+    // Brouillon autonome (PdfFormDraft, connectés) : UNIQUEMENT hors dossier.
+    // En contexte dossier, la vérité est BundleRun.draftPayloads, déjà
+    // restaurée côté serveur (draftValues) — ne jamais fusionner par-dessus.
+    if (bundleRunId) return;
     let act = true;
     fetch(`/api/pdf/${form.slug}/draft`)
       .then((r) => (r.ok ? r.json() : null))

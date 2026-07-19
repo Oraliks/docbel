@@ -3441,7 +3441,7 @@
     "chrome": {
       "navHome": "Accueil",
       "navNews": "Actus",
-      "navMyDossier": "Mon dossier",
+      "navMyDossier": "Démarches",
       "navChomage": "Chômage",
       "navTools": "Outils",
       "navEmployers": "Employeurs",
@@ -4744,7 +4744,7 @@
       "monDossierMetaDescription": "Créez ou retrouvez le bon dossier administratif belge : laissez-vous guider en quelques questions, ou accédez directement au dossier dont vous avez besoin.",
       "breadcrumbLabel": "Fil d'Ariane",
       "breadcrumbHome": "Accueil",
-      "breadcrumbCurrent": "Mon dossier",
+      "breadcrumbCurrent": "Démarches",
       "monDossierTitle": "Créer ou retrouver <em>le bon dossier</em>",
       "monDossierIntro": "Laissez-vous guider en quelques questions simples, ou accédez directement au dossier dont vous avez besoin.",
       "chooseFlowLabel": "Que voulez-vous faire ?",

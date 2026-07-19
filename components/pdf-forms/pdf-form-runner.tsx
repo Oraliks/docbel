@@ -672,6 +672,16 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
         toast.error(t("runnerDossierIncomplete", { titles }));
         return;
       }
+      // Anti-doublon : ce document est identique à une demande existante — on
+      // informe et on redirige vers celle-ci (« aucune différence »).
+      if (res.status === 409 && data.code === "duplicate_document") {
+        toast.info(t("demandeDuplicate"));
+        if (typeof data.bundleSlug === "string" && typeof data.existingRunId === "string") {
+          const target = `/d/${encodeURIComponent(data.bundleSlug)}?bundleRun=${encodeURIComponent(data.existingRunId)}&demarrer=1`;
+          setTimeout(() => router.push(target), 900);
+        }
+        return;
+      }
       if (res.status === 422 && Array.isArray(data.issues)) {
         const next: Record<string, string> = {};
         for (const i of data.issues) if (i.field) next[i.field] = i.message;

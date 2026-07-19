@@ -17,6 +17,8 @@ import { shouldFlattenGeneratedPdf } from "@/lib/pdf-forms/flatten-policy";
 import { PdfFormField, FormPayload, Locale, isLocale } from "@/lib/pdf-forms/types";
 import { ensureWriteAllowed } from "@/lib/admin/readonly-guard";
 import { loadDossierState } from "@/lib/bundles/completion";
+import { stableDocumentKey } from "@/lib/bundles/document-identity";
+import { EDITABLE_BUNDLE_RUN_STATUSES } from "@/lib/bundles/run-lifecycle";
 
 const json = { "Content-Type": "application/json; charset=utf-8" };
 
@@ -94,6 +96,55 @@ export async function POST(
   const session0 = await auth.api.getSession({ headers: await headers() });
   const ownerUserId = session0?.user?.id || null;
   const ownerSessionId = req.cookies.get("beldoc-bundle-session")?.value || null;
+
+  // Anti-doublon (Oraliks 2026-07-19) : dans un dossier, si CE document est
+  // identique à 100% (contenu métier, hors dates/signature auto) au MÊME
+  // document d'une AUTRE demande du même dossier, on bloque et on renvoie
+  // l'existant (« aucune différence »). Sert le multi-demande : une nouvelle
+  // demande clonée puis générée sans changement pointe vers l'originale.
+  if (bundleRunId) {
+    const currentRun = await prisma.bundleRun.findUnique({
+      where: { id: bundleRunId },
+      select: { bundleId: true, userId: true, sessionId: true },
+    });
+    const owns = currentRun
+      ? ownerUserId
+        ? currentRun.userId === ownerUserId
+        : ownerSessionId
+          ? currentRun.sessionId === ownerSessionId
+          : false
+      : false;
+    if (currentRun && owns) {
+      const siblings = await prisma.bundleRun.findMany({
+        where: {
+          bundleId: currentRun.bundleId,
+          id: { not: bundleRunId },
+          status: { in: [...EDITABLE_BUNDLE_RUN_STATUSES] },
+          ...(ownerUserId ? { userId: ownerUserId } : { sessionId: ownerSessionId! }),
+        },
+        select: { id: true, payloads: true, bundle: { select: { slug: true } } },
+      });
+      const currentKey = stableDocumentKey(validated as Record<string, unknown>, fields);
+      for (const sib of siblings) {
+        const sibPayload = (sib.payloads as Record<string, Record<string, unknown>> | null)?.[
+          form.id
+        ];
+        if (!sibPayload) continue;
+        if (stableDocumentKey(sibPayload, fields) === currentKey) {
+          return NextResponse.json(
+            {
+              error: "duplicate_document",
+              code: "duplicate_document",
+              existingRunId: sib.id,
+              bundleSlug: sib.bundle.slug,
+              formSlug: form.slug,
+            },
+            { status: 409, headers: json },
+          );
+        }
+      }
+    }
+  }
 
   // Mode "save" : valide + persiste, ne génère AUCUN PDF. Utilisé quand ce
   // formulaire est rempli à l'intérieur d'un dossier (bundleRunId fourni) —

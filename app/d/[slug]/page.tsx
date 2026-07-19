@@ -420,6 +420,18 @@ export default async function BundleRoute({
           userEmail: session?.user?.email ?? null,
           autoStart,
           clonedFromDate,
+          demandes: buildDemandeSummaries(
+            runsWithProgress.map((r) => ({
+              id: r.id,
+              startedAt: r.startedAt,
+              completedTemplateIds: r.completedTemplateIds,
+              status: r.status,
+              completedAt: r.completedAt,
+              anonymizedAt: r.anonymizedAt,
+            })),
+            (run) =>
+              demandeProgressByRunId.get(run.id) ?? { total: 0, completed: 0 },
+          ),
         };
 
         // Écran d'explication : uniquement si le dossier codé fournit un

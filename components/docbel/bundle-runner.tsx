@@ -46,6 +46,9 @@ import {
   resolveTargetForm,
   type BundleItem,
 } from "./bundle-runner/compute";
+import { DemarcheRail } from "./demarche-rail";
+import { buildDemarcheRailModel } from "@/lib/bundles/rail-model";
+import type { DemandeSummary } from "@/lib/bundles/demande-summary";
 
 interface Bundle {
   id: string;
@@ -104,6 +107,8 @@ interface BundleRunnerProps {
   /// (« Nouvelle demande »). Affiche une alerte informative en tête. `null` =
   /// pas de clone.
   clonedFromDate?: string | null;
+  /// Résumés des démarches du même dossier (sélecteur du rail si ≥ 2).
+  demandes?: DemandeSummary[];
 }
 
 const RESPONSIBILITY_LABEL_KEYS: Record<ExternalDocument["responsibility"], string> = {
@@ -129,6 +134,7 @@ export function BundleRunner({
   orientationAnswerIds = [],
   autoStart = false,
   clonedFromDate = null,
+  demandes = [],
 }: BundleRunnerProps) {
   const t = useTranslations("public.dossier");
   const locale = useLocale();
@@ -368,330 +374,341 @@ export function BundleRunner({
     );
   }
 
+  // Modèle du rail — mêmes intrants que computeItemStatuses ci-dessus.
+  const railModel = buildDemarcheRailModel({
+    items: bundle.items,
+    completedTemplateIds,
+    payloads,
+    applicableSlugs,
+    hasEligibilityQuestions,
+    eligibilityCompleted,
+  });
+
   return (
-    <div className="space-y-6">
-      {/* Alerte « demande reprise » : cette demande a été clonée d'une précédente. */}
-      {clonedFromDate && (
-        <Alert>
-          <AlertDescription className="text-sm">
-            {t("demandeClonedNotice", {
-              date: new Intl.DateTimeFormat(locale, {
-                day: "2-digit",
-                month: "2-digit",
-                year: "numeric",
-              }).format(new Date(clonedFromDate)),
-            })}
-          </AlertDescription>
-        </Alert>
-      )}
-      <div className="space-y-2">
-        <div className="flex items-center gap-2">
-          <div
-            className="w-10 h-10 rounded-md flex items-center justify-center text-white"
-            style={{ backgroundColor: bundle.color }}
-          >
-            <Package className="w-5 h-5" />
-          </div>
-          <div className="flex-1">
-            <h1 className="text-2xl font-bold">{bundle.name}</h1>
-            <p className="text-sm text-muted-foreground">
-              {t("runnerCompletedCount", {
-                completed: completedCount,
-                count: visibleItems.length,
-              })}
-            </p>
-          </div>
-          {runId && completedCount > 0 && (
-            <Button variant="ghost" size="sm" onClick={reset}>
-              <RefreshCw className="w-4 h-4 mr-1" />
-              {t("restart")}
-            </Button>
-          )}
-        </div>
-        {bundle.description && (
-          <p className="text-sm text-muted-foreground">{bundle.description}</p>
-        )}
-      </div>
-
-      {/* Avertissements importants — toujours en haut */}
-      {warnings.length > 0 && <BundleWarnings warnings={warnings} />}
-
-      {/* Pré-qualification — informatif, jamais bloquant */}
-      {showsPrequalifierGate && (
-        <EligibilityPrequalifier
-          questions={eligibilityQuestions}
-          initialAnswers={eligibilityAnswers}
-          onAnswersChange={setEligibilityAnswers}
-          orientationAnswerIds={orientationAnswerIds}
-          onContinue={handlePrequalifierContinue}
-          continueLabel={runId ? t("save") : t("runnerStartFlow")}
-        />
-      )}
-
-      {/* Banner code de reprise — visible une fois le run créé */}
-      {runId && resumeCode && (
-        <ResumeCodeBanner
-          runId={runId}
-          resumeCode={resumeCode}
-          resumeCodeExpiresAt={resumeCodeExpiresAt}
-          initialResumeEmail={resumeEmail}
-        />
-      )}
-
-      {/* Section "modifier la pré-qualification" — visible quand un run existe et qu'il y avait des questions */}
-      {runId && hasEligibilityQuestions && eligibilityCompleted && !editingEligibility && (
-        <div className="flex items-center justify-end">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setEditingEligibility(true)}
-            className="text-xs"
-          >
-            <Pencil className="w-3 h-3 mr-1" />
-            {t("runnerEditAnswers")}
-          </Button>
-        </div>
-      )}
-
-      {/* Documents — masqué tant que la pré-qualification n'est pas faite */}
-      {showsDocumentsSection && (
-        <>
-          {!runId && (
-            <Alert>
-              <AlertDescription className="text-sm flex items-center justify-between gap-3 flex-wrap">
-                <span>
-                  {t("runnerStartHint")}
-                </span>
-              </AlertDescription>
-            </Alert>
-          )}
-
-          {/* Feuille de route — l'écran de sortie, dès que tout l'obligatoire est complété */}
-          {allRequiredDone && requiredVisible.length > 0 && (
-            <BundleRoadmap
-              documents={visibleItems.flatMap(
-                ({ item, completed }): RoadmapDocument[] =>
-                  completed && item.pdfForm
-                    ? [
-                        {
-                          slug: item.pdfForm.slug,
-                          title: itemTitle(item),
-                          href: `/document/${item.pdfForm.slug}?bundleRun=${encodeURIComponent(runId ?? "")}&bundleSlug=${encodeURIComponent(bundle.slug)}`,
-                          pdfFormId: item.pdfForm.id,
-                        },
-                      ]
-                    : []
-              )}
-              externalDocuments={externalDocuments}
+    <div className="grid w-full grid-cols-1 gap-6 lg:grid-cols-[300px_minmax(0,1fr)] lg:items-start">
+      <DemarcheRail
+        bundleName={bundle.name}
+        bundleSlug={bundle.slug}
+        runId={runId}
+        model={railModel}
+        demandes={demandes}
+        resumeSlot={
+          runId && resumeCode ? (
+            <ResumeCodeBanner
+              runId={runId}
               resumeCode={resumeCode}
-              bundleRunId={runId}
-              userEmail={userEmail}
+              resumeCodeExpiresAt={resumeCodeExpiresAt}
+              initialResumeEmail={resumeEmail}
             />
-          )}
-
-          {/* Créer une AUTRE demande dissociée pour ce dossier (multi-demande). */}
-          {runId && (
-            <div className="flex justify-end">
-              <NouvelleDemandeButton bundleId={bundle.id} slug={bundle.slug} variant="ghost" />
+          ) : undefined
+        }
+        newDemarcheSlot={
+          runId ? (
+            <NouvelleDemandeButton bundleId={bundle.id} slug={bundle.slug} variant="ghost" />
+          ) : undefined
+        }
+      />
+      <div className="min-w-0 space-y-6">
+        {/* Alerte « demande reprise » : cette demande a été clonée d'une précédente. */}
+        {clonedFromDate && (
+          <Alert>
+            <AlertDescription className="text-sm">
+              {t("demandeClonedNotice", {
+                date: new Intl.DateTimeFormat(locale, {
+                  day: "2-digit",
+                  month: "2-digit",
+                  year: "numeric",
+                }).format(new Date(clonedFromDate)),
+              })}
+            </AlertDescription>
+          </Alert>
+        )}
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <div
+              className="w-10 h-10 rounded-md flex items-center justify-center text-white"
+              style={{ backgroundColor: bundle.color }}
+            >
+              <Package className="w-5 h-5" />
             </div>
+            <div className="flex-1">
+              <h1 className="text-2xl font-bold">{bundle.name}</h1>
+            </div>
+            {runId && completedCount > 0 && (
+              <Button variant="ghost" size="sm" onClick={reset}>
+                <RefreshCw className="w-4 h-4 mr-1" />
+                {t("restart")}
+              </Button>
+            )}
+          </div>
+          {bundle.description && (
+            <p className="text-sm text-muted-foreground">{bundle.description}</p>
           )}
+        </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">{t("runnerFlowDocuments")}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              {visibleItems.map(({ item, completed, eligibility }, idx) => {
-                const isPending = eligibility === "pending";
-                return (
-                  <div
-                    key={item.id}
-                    className={`flex items-start gap-3 p-3 border rounded-md transition-colors ${
-                      completed
-                        ? "bg-emerald-500/10 border-emerald-500/20"
-                        : isPending
-                          ? "bg-white/[0.06] border-dashed opacity-70"
-                          : "hover:bg-white/10"
-                    }`}
-                  >
-                    <div className="w-8 h-8 rounded-full flex items-center justify-center font-medium text-sm flex-shrink-0">
-                      {completed ? (
-                        <CheckCircle2 className="w-6 h-6 text-green-600" />
-                      ) : isPending ? (
-                        <Clock className="w-5 h-5 text-muted-foreground" />
-                      ) : (
-                        <Circle className="w-5 h-5 text-muted-foreground" />
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-medium">
-                          {idx + 1}. {itemTitle(item)}
-                        </span>
-                        {(() => {
-                          const org = itemOrganismeLabel(item);
-                          return org ? (
+        {/* Avertissements importants — toujours en haut */}
+        {warnings.length > 0 && <BundleWarnings warnings={warnings} />}
+
+        {/* Pré-qualification — informatif, jamais bloquant */}
+        {showsPrequalifierGate && (
+          <EligibilityPrequalifier
+            questions={eligibilityQuestions}
+            initialAnswers={eligibilityAnswers}
+            onAnswersChange={setEligibilityAnswers}
+            orientationAnswerIds={orientationAnswerIds}
+            onContinue={handlePrequalifierContinue}
+            continueLabel={runId ? t("save") : t("runnerStartFlow")}
+          />
+        )}
+
+        {/* Section "modifier la pré-qualification" — visible quand un run existe et qu'il y avait des questions */}
+        {runId && hasEligibilityQuestions && eligibilityCompleted && !editingEligibility && (
+          <div className="flex items-center justify-end">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setEditingEligibility(true)}
+              className="text-xs"
+            >
+              <Pencil className="w-3 h-3 mr-1" />
+              {t("runnerEditAnswers")}
+            </Button>
+          </div>
+        )}
+
+        {/* Documents — masqué tant que la pré-qualification n'est pas faite */}
+        {showsDocumentsSection && (
+          <>
+            {!runId && (
+              <Alert>
+                <AlertDescription className="text-sm flex items-center justify-between gap-3 flex-wrap">
+                  <span>
+                    {t("runnerStartHint")}
+                  </span>
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {/* Feuille de route — l'écran de sortie, dès que tout l'obligatoire est complété */}
+            {allRequiredDone && requiredVisible.length > 0 && (
+              <BundleRoadmap
+                documents={visibleItems.flatMap(
+                  ({ item, completed }): RoadmapDocument[] =>
+                    completed && item.pdfForm
+                      ? [
+                          {
+                            slug: item.pdfForm.slug,
+                            title: itemTitle(item),
+                            href: `/document/${item.pdfForm.slug}?bundleRun=${encodeURIComponent(runId ?? "")}&bundleSlug=${encodeURIComponent(bundle.slug)}`,
+                            pdfFormId: item.pdfForm.id,
+                          },
+                        ]
+                      : []
+                )}
+                externalDocuments={externalDocuments}
+                resumeCode={resumeCode}
+                bundleRunId={runId}
+                userEmail={userEmail}
+              />
+            )}
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">{t("runnerFlowDocuments")}</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {visibleItems.map(({ item, completed, eligibility }, idx) => {
+                  const isPending = eligibility === "pending";
+                  return (
+                    <div
+                      key={item.id}
+                      className={`flex items-start gap-3 p-3 border rounded-md transition-colors ${
+                        completed
+                          ? "bg-emerald-500/10 border-emerald-500/20"
+                          : isPending
+                            ? "bg-white/[0.06] border-dashed opacity-70"
+                            : "hover:bg-white/10"
+                      }`}
+                    >
+                      <div className="w-8 h-8 rounded-full flex items-center justify-center font-medium text-sm flex-shrink-0">
+                        {completed ? (
+                          <CheckCircle2 className="w-6 h-6 text-green-600" />
+                        ) : isPending ? (
+                          <Clock className="w-5 h-5 text-muted-foreground" />
+                        ) : (
+                          <Circle className="w-5 h-5 text-muted-foreground" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-medium">
+                            {idx + 1}. {itemTitle(item)}
+                          </span>
+                          {(() => {
+                            const org = itemOrganismeLabel(item);
+                            return org ? (
+                              <Badge
+                                variant="outline"
+                                className="text-xs"
+                                style={{ borderColor: org.color, color: org.color }}
+                              >
+                                {org.label}
+                              </Badge>
+                            ) : null;
+                          })()}
+                          {!item.required && (
+                            <Badge variant="secondary" className="text-xs">
+                              {t("optional")}
+                            </Badge>
+                          )}
+                          {item.triggered && (
                             <Badge
                               variant="outline"
-                              className="text-xs"
-                              style={{ borderColor: org.color, color: org.color }}
+                              className="text-xs border-amber-500 text-amber-700 dark:text-amber-300"
                             >
-                              {org.label}
+                              {t("runnerTriggeredBadge")}
                             </Badge>
-                          ) : null;
-                        })()}
-                        {!item.required && (
-                          <Badge variant="secondary" className="text-xs">
-                            {t("optional")}
-                          </Badge>
+                          )}
+                        </div>
+                        {itemDescription(item) && (
+                          <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">
+                            {itemDescription(item)}
+                          </p>
                         )}
-                        {item.triggered && (
+                        {item.condition && (
+                          <p className="text-[11px] text-muted-foreground mt-1 italic">
+                            {t("runnerConditionLabel")} {describeCondition(item.condition, templateNames, fieldLabels)}
+                          </p>
+                        )}
+                        {isPending && (
+                          <p className="text-[11px] text-amber-700 mt-1">
+                            {t("runnerPendingHint")}
+                          </p>
+                        )}
+                      </div>
+                      <Button
+                        size="sm"
+                        variant={completed ? "outline" : "default"}
+                        onClick={() => handleStart(item)}
+                        disabled={isPending || starting}
+                      >
+                        {completed
+                          ? t("edit")
+                          : starting
+                            ? t("runnerStarting")
+                            : t("complete")}
+                        {!completed && <ArrowRight className="w-4 h-4 ml-1" />}
+                      </Button>
+                    </div>
+                  );
+                })}
+              </CardContent>
+            </Card>
+
+            {externalDocuments.length > 0 && (
+              <Card className="border-amber-500/30 bg-amber-500/5">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Inbox className="w-4 h-4 text-amber-700 dark:text-amber-300" />
+                    {t("runnerExternalDocsTitle", { count: externalDocuments.length })}
+                  </CardTitle>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {t("runnerExternalDocsNote")}
+                  </p>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  {externalDocuments.map((d) => (
+                    <div
+                      key={d.slug}
+                      className="flex items-start gap-3 p-3 border rounded-md border-amber-500/20 bg-white/[0.04]"
+                    >
+                      <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0">
+                        <Building2 className="w-5 h-5 text-amber-700 dark:text-amber-300" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-medium">{d.title}</span>
                           <Badge
                             variant="outline"
                             className="text-xs border-amber-500 text-amber-700 dark:text-amber-300"
                           >
-                            {t("runnerTriggeredBadge")}
+                            {t(RESPONSIBILITY_LABEL_KEYS[d.responsibility] as Parameters<typeof t>[0])}
                           </Badge>
+                          {!d.required && (
+                            <Badge variant="secondary" className="text-xs">
+                              {t("optional")}
+                            </Badge>
+                          )}
+                        </div>
+                        {d.responsibilityNote && (
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {d.responsibilityNote}
+                          </p>
+                        )}
+                        {d.responsibilityUrl && (
+                          <a
+                            href={d.responsibilityUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs text-primary underline underline-offset-2 mt-1 inline-block"
+                          >
+                            {t("runnerResponsibilityLinkLabel")}
+                          </a>
                         )}
                       </div>
-                      {itemDescription(item) && (
-                        <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">
-                          {itemDescription(item)}
-                        </p>
-                      )}
-                      {item.condition && (
-                        <p className="text-[11px] text-muted-foreground mt-1 italic">
-                          {t("runnerConditionLabel")} {describeCondition(item.condition, templateNames, fieldLabels)}
-                        </p>
-                      )}
-                      {isPending && (
-                        <p className="text-[11px] text-amber-700 mt-1">
-                          {t("runnerPendingHint")}
-                        </p>
+                      {(d.responsibility === "employer" ||
+                        d.responsibility === "external") && (
+                        <div className="flex-shrink-0">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleGenerateLetter(d)}
+                            disabled={generatingLetter === d.slug}
+                          >
+                            <Mail className="w-4 h-4 mr-1" />
+                            {generatingLetter === d.slug
+                              ? t("runnerLetterGenerating")
+                              : t("runnerGenerateLetter")}
+                          </Button>
+                        </div>
                       )}
                     </div>
-                    <Button
-                      size="sm"
-                      variant={completed ? "outline" : "default"}
-                      onClick={() => handleStart(item)}
-                      disabled={isPending || starting}
+                  ))}
+                </CardContent>
+              </Card>
+            )}
+
+            {hiddenItems.length > 0 && (
+              <Card className="border-dashed bg-white/5">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm flex items-center gap-2 text-muted-foreground">
+                    <EyeOff className="w-4 h-4" />
+                    {t("runnerHiddenDocsTitle", { count: hiddenItems.length })}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-1.5">
+                  {hiddenItems.map(({ item }) => (
+                    <div
+                      key={item.id}
+                      className="text-xs text-muted-foreground flex items-center gap-2"
                     >
-                      {completed
-                        ? t("edit")
-                        : starting
-                          ? t("runnerStarting")
-                          : t("complete")}
-                      {!completed && <ArrowRight className="w-4 h-4 ml-1" />}
-                    </Button>
-                  </div>
-                );
-              })}
-            </CardContent>
-          </Card>
-
-          {externalDocuments.length > 0 && (
-            <Card className="border-amber-500/30 bg-amber-500/5">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Inbox className="w-4 h-4 text-amber-700 dark:text-amber-300" />
-                  {t("runnerExternalDocsTitle", { count: externalDocuments.length })}
-                </CardTitle>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {t("runnerExternalDocsNote")}
-                </p>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                {externalDocuments.map((d) => (
-                  <div
-                    key={d.slug}
-                    className="flex items-start gap-3 p-3 border rounded-md border-amber-500/20 bg-white/[0.04]"
-                  >
-                    <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0">
-                      <Building2 className="w-5 h-5 text-amber-700 dark:text-amber-300" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-medium">{d.title}</span>
-                        <Badge
-                          variant="outline"
-                          className="text-xs border-amber-500 text-amber-700 dark:text-amber-300"
-                        >
-                          {t(RESPONSIBILITY_LABEL_KEYS[d.responsibility] as Parameters<typeof t>[0])}
-                        </Badge>
-                        {!d.required && (
-                          <Badge variant="secondary" className="text-xs">
-                            {t("optional")}
-                          </Badge>
-                        )}
-                      </div>
-                      {d.responsibilityNote && (
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {d.responsibilityNote}
-                        </p>
-                      )}
-                      {d.responsibilityUrl && (
-                        <a
-                          href={d.responsibilityUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-xs text-primary underline underline-offset-2 mt-1 inline-block"
-                        >
-                          {t("runnerResponsibilityLinkLabel")}
-                        </a>
+                      <Circle className="w-3 h-3" />
+                      <span>{itemTitle(item)}</span>
+                      {item.condition && (
+                        <span className="italic">
+                          {t("runnerRequiredIf", {
+                            condition: describeCondition(item.condition, templateNames, fieldLabels),
+                          })}
+                        </span>
                       )}
                     </div>
-                    {(d.responsibility === "employer" ||
-                      d.responsibility === "external") && (
-                      <div className="flex-shrink-0">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleGenerateLetter(d)}
-                          disabled={generatingLetter === d.slug}
-                        >
-                          <Mail className="w-4 h-4 mr-1" />
-                          {generatingLetter === d.slug
-                            ? t("runnerLetterGenerating")
-                            : t("runnerGenerateLetter")}
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-          )}
-
-          {hiddenItems.length > 0 && (
-            <Card className="border-dashed bg-white/5">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm flex items-center gap-2 text-muted-foreground">
-                  <EyeOff className="w-4 h-4" />
-                  {t("runnerHiddenDocsTitle", { count: hiddenItems.length })}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-1.5">
-                {hiddenItems.map(({ item }) => (
-                  <div
-                    key={item.id}
-                    className="text-xs text-muted-foreground flex items-center gap-2"
-                  >
-                    <Circle className="w-3 h-3" />
-                    <span>{itemTitle(item)}</span>
-                    {item.condition && (
-                      <span className="italic">
-                        {t("runnerRequiredIf", {
-                          condition: describeCondition(item.condition, templateNames, fieldLabels),
-                        })}
-                      </span>
-                    )}
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-          )}
-        </>
-      )}
+                  ))}
+                </CardContent>
+              </Card>
+            )}
+          </>
+        )}
+      </div>
     </div>
   );
 }

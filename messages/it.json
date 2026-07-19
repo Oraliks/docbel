@@ -1356,7 +1356,7 @@
       "runnerLetterSuccess": "Lettera generata — ricordati di completarla, firmarla e inviarla.",
       "runnerUpdateError": "Aggiornamento non riuscito",
       "runnerAnswersUpdated": "Risposte aggiornate",
-      "runnerResetTitle": "Ricominciare questo percorso?",
+      "runnerRestartTitle": "Ricominciare questo percorso?",
       "runnerResetDescription": "Il vostro avanzamento attuale verrà eliminato (risposte al questionario + documenti in corso). I documenti già scaricati rimangono sul vostro dispositivo.",
       "runnerResetError": "Impossibile reimpostare il percorso",
       "runnerResetSuccess": "Percorso reinizializzato",

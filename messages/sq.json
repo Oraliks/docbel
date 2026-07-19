@@ -1356,7 +1356,7 @@
       "runnerLetterSuccess": "Letra u gjenerua — mos harroni ta plotësoni, ta nënshkruani dhe ta dërgoni.",
       "runnerUpdateError": "Dështim në përditësim",
       "runnerAnswersUpdated": "Përgjigjet u përditësuan",
-      "runnerResetTitle": "Të rifillosh këtë itinerar?",
+      "runnerRestartTitle": "Të rifillosh këtë itinerar?",
       "runnerResetDescription": "Progresi juaj aktual do të fshihet (përgjigjet e pyetësorit + dokumentet në proces). Dokumentet që janë shkarkuar tashmë mbeten në pajisjen tuaj.",
       "runnerResetError": "Nuk është e mundur të riinicohet itinerari",
       "runnerResetSuccess": "Itinerari u riiniciua",

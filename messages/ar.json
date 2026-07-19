@@ -1356,7 +1356,7 @@
       "runnerLetterSuccess": "تم إنشاء الرسالة — لا تنسَ إكمالها وتوقيعها وإرسالها.",
       "runnerUpdateError": "فشل في التحديث",
       "runnerAnswersUpdated": "تم تحديث الإجابات",
-      "runnerResetTitle": "هل تريد إعادة البدء في هذا المسار؟",
+      "runnerRestartTitle": "هل تريد إعادة البدء في هذا المسار؟",
       "runnerResetDescription": "ستُمحى تقدمك الحالي (إجابات الاستبيان + المستندات قيد الإنجاز). أما المستندات التي تم تنزيلها مسبقاً فستبقى على جهازك.",
       "runnerResetError": "تعذّر إعادة تهيئة المسار",
       "runnerResetSuccess": "تمت إعادة تهيئة المسار",

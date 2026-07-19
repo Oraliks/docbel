@@ -4928,7 +4928,7 @@
       "runnerLetterSuccess": "Courrier généré — pensez à le compléter, le signer et l'envoyer.",
       "runnerUpdateError": "Échec mise à jour",
       "runnerAnswersUpdated": "Réponses mises à jour",
-      "runnerResetTitle": "Recommencer ce formulaire ?",
+      "runnerRestartTitle": "Recommencer cette démarche ?",
       "runnerResetDescription": "Recommencer ce dossier ? Cette démarche sera abandonnée et une nouvelle liste de documents vierge vous sera proposée. Vos données restent conservées 60 jours, puis sont anonymisées.",
       "runnerResetError": "Impossible de réinitialiser le parcours",
       "runnerResetSuccess": "Parcours réinitialisé",

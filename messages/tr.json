@@ -1356,7 +1356,7 @@
       "runnerLetterSuccess": "Mektup oluşturuldu — tamamlamayı, imzalamayı ve göndermeyi unutmayın.",
       "runnerUpdateError": "Güncelleme hatası",
       "runnerAnswersUpdated": "Yanıtlar güncellendi",
-      "runnerResetTitle": "Bu süreci yeniden başlatmak istiyor musunuz?",
+      "runnerRestartTitle": "Bu süreci yeniden başlatmak istiyor musunuz?",
       "runnerResetDescription": "Mevcut ilerlemeniz silinecektir (anket yanıtları + devam eden belgeler). Cihazınıza indirilen belgeler korunmaya devam eder.",
       "runnerResetError": "Süreç sıfırlanamadı",
       "runnerResetSuccess": "Süreç sıfırlandı",

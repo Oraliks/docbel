@@ -1356,7 +1356,7 @@
       "runnerLetterSuccess": "Carta generada — recuerde completarla, firmarla y enviarla.",
       "runnerUpdateError": "Error al actualizar",
       "runnerAnswersUpdated": "Respuestas actualizadas",
-      "runnerResetTitle": "¿Reiniciar este recorrido?",
+      "runnerRestartTitle": "¿Reiniciar este recorrido?",
       "runnerResetDescription": "Su progreso actual se borrará (respuestas al cuestionario + documentos en curso). Los documentos ya descargados permanecerán en su dispositivo.",
       "runnerResetError": "No se puede reiniciar el recorrido",
       "runnerResetSuccess": "Recorrido reiniciado",

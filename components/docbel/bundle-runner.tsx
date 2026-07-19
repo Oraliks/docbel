@@ -273,7 +273,7 @@ export function BundleRunner({
 
   async function reset() {
     const ok = await confirm({
-      title: t("runnerResetTitle"),
+      title: t("runnerRestartTitle"),
       description: t("runnerResetDescription"),
       confirmText: t("restart"),
       destructive: true,

@@ -475,7 +475,7 @@
       "runnerLetterSuccess": "Letter generated — remember to complete, sign and send it.",
       "runnerUpdateError": "Update failed",
       "runnerAnswersUpdated": "Answers updated",
-      "runnerResetTitle": "Restart this path?",
+      "runnerRestartTitle": "Restart this path?",
       "runnerResetDescription": "Your current progress will be erased (questionnaire answers + documents in progress). Documents already downloaded stay on your device.",
       "runnerResetError": "Unable to reset the path",
       "runnerResetSuccess": "Path reset",

@@ -3613,7 +3613,7 @@
       "runnerLetterSuccess": "Brief aangemaakt — vergeet niet hem aan te vullen, te ondertekenen en te versturen.",
       "runnerUpdateError": "Bijwerken mislukt",
       "runnerAnswersUpdated": "Antwoorden bijgewerkt",
-      "runnerResetTitle": "Dit traject opnieuw beginnen?",
+      "runnerRestartTitle": "Dit traject opnieuw beginnen?",
       "runnerResetDescription": "Uw huidige voortgang wordt gewist (antwoorden op de vragenlijst + lopende documenten). De reeds gedownloade documenten blijven op uw toestel.",
       "runnerResetError": "Het traject kan niet opnieuw worden ingesteld",
       "runnerResetSuccess": "Traject opnieuw ingesteld",

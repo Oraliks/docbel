@@ -1367,7 +1367,7 @@
       "runnerLetterSuccess": "Schreiben erstellt – denken Sie daran, es zu vervollständigen, zu unterschreiben und zu versenden.",
       "runnerUpdateError": "Fehler bei der Aktualisierung",
       "runnerAnswersUpdated": "Antworten aktualisiert",
-      "runnerResetTitle": "Diesen Ablauf neu starten?",
+      "runnerRestartTitle": "Diesen Ablauf neu starten?",
       "runnerResetDescription": "Ihr aktueller Fortschritt wird gelöscht (Antworten auf den Fragebogen + laufende Dokumente). Bereits heruntergeladene Dokumente bleiben auf Ihrem Gerät erhalten.",
       "runnerResetError": "Ablauf kann nicht zurückgesetzt werden",
       "runnerResetSuccess": "Ablauf zurückgesetzt",

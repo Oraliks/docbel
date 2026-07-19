@@ -4710,7 +4710,10 @@
         "OCT",
         "NOV",
         "DÉC"
-      ]
+      ],
+      "autoSaveSaved": "Vos réponses sont enregistrées automatiquement{time, select, none {} other { (dernier enregistrement à {time})}}.",
+      "autoSaveBundleHint": "Retrouvez votre code de reprise sur la page de votre démarche.",
+      "autoSaveLocalOnly": "Vos réponses restent sur cet appareil pendant la saisie et ne sont pas encore enregistrées."
     },
     "dossier": {
       "previous": "Précédent",

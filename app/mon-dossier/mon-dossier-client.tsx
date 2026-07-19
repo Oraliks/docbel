@@ -470,6 +470,12 @@ export function MonDossierClient({
           {activeRuns.length > 0 ? <div className="grid max-h-56 gap-2 overflow-y-auto pr-1">
             {activeRuns.map((run) => <ActiveRunCard key={run.runId} run={run} />)}
           </div> : <p className="rounded-xl border border-dashed border-[color:var(--glass-border)] px-3 py-3 text-sm text-[color:var(--glass-ink)]/65">{t("emptyNoneBody")}</p>}
+          <Link
+            href="/mes-demarches"
+            className="self-start text-xs font-semibold text-[color:var(--glass-accent-deep)] underline-offset-2 transition-colors hover:underline"
+          >
+            {t("seeAllDemarches")}
+          </Link>
       </section>
 
       <section className="glass-surface grid overflow-hidden rounded-2xl border border-[color:var(--glass-border)] sm:grid-cols-2" aria-labelledby="flow-title" data-docbel-readable>

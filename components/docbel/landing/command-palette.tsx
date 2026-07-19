@@ -25,6 +25,8 @@ import {
   FileTextIcon,
   FolderOpenIcon,
   HomeIcon,
+  KeyRoundIcon,
+  ListChecksIcon,
   NewspaperIcon,
   PhoneIcon,
   WrenchIcon,
@@ -40,6 +42,8 @@ interface LandingCommandPaletteProps {
 const QUICK_LINKS = [
   { icon: HomeIcon, tKey: "navHome", href: "/", shortcut: "H" },
   { icon: FolderOpenIcon, tKey: "navMyDossier", href: "/mon-dossier", shortcut: "D" },
+  { icon: ListChecksIcon, tKey: "navMesDemarches", href: "/mes-demarches", shortcut: "M" },
+  { icon: KeyRoundIcon, tKey: "quickResume", href: "/reprendre", shortcut: "R" },
   { icon: BriefcaseIcon, tKey: "navChomage", href: "/chomage", shortcut: "U" },
   { icon: WrenchIcon, tKey: "quickAllTools", href: "/outils", shortcut: "O" },
   { icon: NewspaperIcon, tKey: "quickNews", href: "/actualites", shortcut: "A" },

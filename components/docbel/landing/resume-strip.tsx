@@ -172,13 +172,21 @@ export function ResumeStrip({ run }: ResumeStripProps) {
 
       {/* CTA reprendre + fermer. */}
       <div className="flex shrink-0 items-center gap-2">
-        <Link
-          href={`/d/${run.slug}?bundleRun=${encodeURIComponent(run.runId)}&demarrer=1`}
-          className="glass-cta inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-[12.5px] font-bold"
-        >
-          {completed ? t("resumeCompletedCta") : t("resumeCta")}
-          <ArrowRightIcon className="size-3.5" />
-        </Link>
+        <div className="flex flex-col items-end gap-1">
+          <Link
+            href={`/d/${run.slug}?bundleRun=${encodeURIComponent(run.runId)}&demarrer=1`}
+            className="glass-cta inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-[12.5px] font-bold"
+          >
+            {completed ? t("resumeCompletedCta") : t("resumeCta")}
+            <ArrowRightIcon className="size-3.5" />
+          </Link>
+          <Link
+            href="/mes-demarches"
+            className="text-[11px] font-semibold text-[color:var(--glass-ink-faint)] underline-offset-2 transition-colors hover:text-[color:var(--glass-ink)] hover:underline"
+          >
+            {t("resumeSeeAllCta")}
+          </Link>
+        </div>
         <button
           type="button"
           onClick={dismiss}

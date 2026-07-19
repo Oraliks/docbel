@@ -67,6 +67,7 @@ const NAV_ITEMS: ReadonlyArray<{
   { id: "accueil", tKey: "navHome", href: "/" },
   { id: "actualites", tKey: "navNews", href: "/actualites" },
   { id: "mon-dossier", tKey: "navMyDossier", href: "/mon-dossier" },
+  { id: "mes-demarches", tKey: "navMesDemarches", href: "/mes-demarches" },
   { id: "outils", tKey: "navTools", href: "/outils" },
 ] as const;
 
@@ -95,7 +96,6 @@ const DOSSIER_FUNNEL_PREFIXES = [
   "/document/",
   "/reprendre",
   "/creer-ma-demande",
-  "/mes-demarches",
 ] as const;
 
 function resolveActiveNav(

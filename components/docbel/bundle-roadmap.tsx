@@ -33,7 +33,6 @@ import {
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -266,30 +265,31 @@ export function BundleRoadmap({
   }
 
   return (
-    <Card className="border-emerald-500/30 bg-emerald-500/5">
-      <CardHeader className="pb-3">
-        <div className="flex items-start justify-between gap-3 flex-wrap">
-          <div>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <ListChecks className="w-5 h-5 text-green-600" />
-              {t("roadmapTitle")}
-            </CardTitle>
-            <p className="text-sm text-muted-foreground mt-1">
-              {t("roadmapIntro")}
-            </p>
-          </div>
-          <Button
-            size="sm"
-            variant="outline"
-            className="print:hidden"
-            onClick={() => window.print()}
-          >
-            <Printer className="w-4 h-4 mr-1" />
-            {t("roadmapPrint")}
-          </Button>
+    <section
+      id="recuperer-envoyer"
+      className="glass-surface flex flex-col gap-4 rounded-3xl border border-emerald-500/25 p-4 sm:p-5"
+    >
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h2 className="flex items-center gap-2 text-lg font-semibold text-[color:var(--glass-ink)]">
+            <ListChecks className="w-5 h-5 text-emerald-600" />
+            {t("roadmapTitle")}
+          </h2>
+          <p className="mt-1 text-sm text-[color:var(--glass-ink-soft)]">
+            {t("roadmapIntro")}
+          </p>
         </div>
-      </CardHeader>
-      <CardContent className="space-y-4">
+        <Button
+          size="sm"
+          variant="outline"
+          className="print:hidden"
+          onClick={() => window.print()}
+        >
+          <Printer className="w-4 h-4 mr-1" />
+          {t("roadmapPrint")}
+        </Button>
+      </div>
+      <div className="space-y-4">
         {steps.map((step, idx) => (
           <div key={step.key} className="flex items-start gap-3">
             <div className="w-7 h-7 rounded-full bg-emerald-500/15 text-green-700 dark:text-green-400 flex items-center justify-center text-sm font-semibold flex-shrink-0">
@@ -301,7 +301,7 @@ export function BundleRoadmap({
                 {step.title}
               </p>
               {step.body && (
-                <p className="text-sm text-muted-foreground mt-0.5">
+                <p className="text-sm text-[color:var(--glass-ink-soft)] mt-0.5">
                   {step.body}
                 </p>
               )}
@@ -310,11 +310,11 @@ export function BundleRoadmap({
           </div>
         ))}
 
-        <p className="text-xs text-muted-foreground flex items-start gap-2 border-t pt-3">
+        <p className="text-xs text-[color:var(--glass-ink-soft)] flex items-start gap-2 border-t border-[color:var(--glass-border)] pt-3">
           <ShieldAlert className="w-4 h-4 flex-shrink-0 mt-0.5" />
           {t("roadmapDisclaimer")}
         </p>
-      </CardContent>
-    </Card>
+      </div>
+    </section>
   );
 }

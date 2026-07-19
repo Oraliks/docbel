@@ -134,12 +134,12 @@ describe("groupRunsForMesDemarches", () => {
     expect(group.demarches.map((d) => d.runId)).toEqual(["new", "old"]);
   });
 
-  it("construit les résumés via buildDemandeSummaries : total = itemCount du dossier, completed clampé, lifecycle dérivé", () => {
+  it("total est gated par le lifecycle : en cours, garde toujours 1 de marge au-dessus de completedTemplateIds (jamais 100%)", () => {
     const runs: MesDemarchesRunInput[] = [
       run({
         id: "a1",
         bundle: bundleA, // itemCount: 3
-        completedTemplateIds: ["x", "y", "z", "w"], // 4 > total → clampé à 3
+        completedTemplateIds: ["x", "y", "z", "w"], // 4 >= itemCount, run EN COURS
         status: "in_progress",
         completedAt: null,
       }),
@@ -147,12 +147,62 @@ describe("groupRunsForMesDemarches", () => {
 
     const [group] = groupRunsForMesDemarches(runs);
 
+    // +1 de marge au-dessus de completedTemplateIds.length (4) : jamais 100%
+    // tant que lifecycle !== "completed_editable".
     expect(group.demarches[0]).toMatchObject({
       runId: "a1",
       index: 1,
-      total: 3,
-      completed: 3,
+      total: 5,
+      completed: 4,
       lifecycle: "in_progress",
     });
+    expect(group.demarches[0].completed).toBeLessThan(
+      group.demarches[0].total,
+    );
+  });
+
+  it("régression bug critique Task 3.1 : 3 items de base complétés + 1 compagnon déclenché non rempli → jamais 100% en cours (3 sur 4, pas 3 sur 3)", () => {
+    const runs: MesDemarchesRunInput[] = [
+      run({
+        id: "a1",
+        bundle: bundleA, // itemCount: 3 (compte seulement les items DE BASE)
+        // Les 3 items de base sont complétés (completedTemplateIds.length ===
+        // itemCount), mais le run reste "in_progress" : un compagnon C1
+        // déclenché par les réponses déjà saisies n'a pas encore été rempli —
+        // invisible pour `itemCount`. Avant le fix (mode "total global" de
+        // buildDemandeSummaries), ceci produisait total=3, completed=3 =
+        // 100% affiché alors que le pill dit "En cours" (contradiction, bug).
+        completedTemplateIds: ["x", "y", "z"],
+        status: "in_progress",
+        completedAt: null,
+      }),
+    ];
+
+    const [group] = groupRunsForMesDemarches(runs);
+
+    expect(group.demarches[0].lifecycle).toBe("in_progress");
+    expect(group.demarches[0]).toMatchObject({ total: 4, completed: 3 });
+    expect(group.demarches[0].completed).toBeLessThan(
+      group.demarches[0].total,
+    );
+  });
+
+  it("run terminé (lifecycle completed_editable) : total inclut les compagnons complétés, la barre est pleine (completed === total)", () => {
+    const runs: MesDemarchesRunInput[] = [
+      run({
+        id: "a1",
+        bundle: bundleA, // itemCount: 3
+        // 3 items de base + 1 compagnon déclenché, TOUS complétés.
+        completedTemplateIds: ["x", "y", "z", "companion-1"],
+        status: "completed",
+        completedAt: "2026-07-15T10:00:00Z",
+      }),
+    ];
+
+    const [group] = groupRunsForMesDemarches(runs);
+
+    expect(group.demarches[0].lifecycle).toBe("completed_editable");
+    expect(group.demarches[0]).toMatchObject({ total: 4, completed: 4 });
+    expect(group.demarches[0].completed).toBe(group.demarches[0].total);
   });
 });

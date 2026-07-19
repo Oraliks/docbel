@@ -55,10 +55,14 @@ export function ResumeForm() {
         }
         return;
       }
-      const data = (await res.json()) as { bundleSlug: string; bundleName: string };
+      const data = (await res.json()) as { runId: string; bundleSlug: string; bundleName: string };
       toast.success(t("resumeSuccess", { name: data.bundleName }));
-      // Reprise par code → ouverture directe du formulaire actif (`?demarrer=1`).
-      router.push(`/d/${data.bundleSlug}?demarrer=1`);
+      // Reprise par code → ouverture directe de LA démarche du code (`bundleRun`),
+      // pas de la plus récente : en multi-démarche, /d/[slug] ouvrirait sinon
+      // runsWithProgress[0].
+      router.push(
+        `/d/${data.bundleSlug}?bundleRun=${encodeURIComponent(data.runId)}&demarrer=1`,
+      );
     } catch {
       setError(t("networkErrorRetry"));
     } finally {

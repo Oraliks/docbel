@@ -9,5 +9,5 @@ export default async function LegacyBundleRedirect({
 }: {
   params: Promise<{ slug: string }>;
 }) {
-  redirect("https://www.docbel.be/mon-dossier");
+  redirect("/mon-dossier");
 }

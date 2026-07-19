@@ -7,6 +7,11 @@ import { normalizeResumeCode } from "@/lib/bundles/resume-code";
 import { hashResumeCode } from "@/lib/bundles/resume-code-hash";
 import { ensureWriteAllowed } from "@/lib/admin/readonly-guard";
 
+// Même mécanisme que lib/booking/emails.ts et lib/formations/emails.ts : pas
+// de nouvel env, on réutilise l'URL publique de l'app (déjà documentée README).
+const APP_URL =
+  process.env.NEXT_PUBLIC_BETTER_AUTH_URL || process.env.BETTER_AUTH_URL || "https://docbel.be";
+
 const BodySchema = z.object({
   email: z.string().email("Email invalide").max(200),
   // Le code en CLAIR est fourni par le client (qui le détient à la création) :
@@ -114,7 +119,7 @@ export async function POST(
         `    ${code}`,
         ``,
         `Pour reprendre votre dossier, rendez-vous sur la page :`,
-        `https://beldoc.be/reprendre`,
+        `${APP_URL}/reprendre`,
         ``,
         `Et entrez le code ci-dessus.`,
         ``,

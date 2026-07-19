@@ -46,7 +46,7 @@ export async function DisabledFormView({ formTitle, customMessage }: Props) {
             {t("formDisabledBackToCatalog")}
           </Link>
           <Link
-            href="/aidez-moi"
+            href="/contact"
             className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-[13px] font-semibold text-[color:var(--glass-bg-a)] transition"
             style={{ background: "var(--glass-ink)" }}
           >
@@ -56,7 +56,7 @@ export async function DisabledFormView({ formTitle, customMessage }: Props) {
 
         <p className="pt-4 text-[11px] text-[color:var(--glass-ink-faint)]">
           {t("formDisabledReportLead")}{" "}
-          <Link href="/aidez-moi" className="underline">
+          <Link href="/contact" className="underline">
             {t("formDisabledReportLink")}
           </Link>
           {t("formDisabledReportTail")}

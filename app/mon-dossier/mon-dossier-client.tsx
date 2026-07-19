@@ -435,7 +435,7 @@ export function MonDossierClient({ bundles, catalog, activeRuns, situations }: P
         </Link>
       </header>
 
-      <section className="glass-surface flex flex-col gap-3 rounded-3xl p-3 sm:p-4" data-docbel-readable>
+      <section id="dossier-en-cours" className="glass-surface flex flex-col gap-3 rounded-3xl p-3 sm:p-4" data-docbel-readable>
           <div className="flex items-center justify-between gap-3">
             <h2 className="text-lg font-bold text-[color:var(--glass-ink)]">{t("ongoingDossier")}</h2>
             <span className="rounded-full bg-[color:var(--glass-pop-bg)] px-2.5 py-1 text-xs font-bold text-[color:var(--glass-accent-deep)]">{activeRuns.length}</span>
@@ -625,7 +625,7 @@ export function MonDossierClient({ bundles, catalog, activeRuns, situations }: P
         </div>
         <HelpRow icon={HelpCircle} label={t("helpFindRightDossier")} onClick={() => { setMode("guide"); setGuideStarted(true); }} />
         <HelpRow icon={FileQuestion} label={t("helpCannotFind")} href="/contact" />
-        <HelpRow icon={RotateCcw} label={t("helpWhereIsRequest")} href="/reprendre" />
+        <HelpRow icon={RotateCcw} label={t("helpWhereIsRequest")} href="#dossier-en-cours" />
         <HelpRow icon={Phone} label={t("helpContactSupport")} href="/contact" />
       </section>
 

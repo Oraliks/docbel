@@ -39,8 +39,14 @@ export function NouvelleDemandeButton({ bundleId, slug, variant = "outline" }: P
         );
         return;
       }
+      // `clonedFrom` (date ISO de la demande reprise) → alerte informative dans
+      // le runner. Absent si première demande (rien à cloner).
+      const cloned =
+        typeof data.clonedFromDate === "string" && data.clonedFromDate
+          ? `&clonedFrom=${encodeURIComponent(data.clonedFromDate)}`
+          : "";
       router.push(
-        `/d/${encodeURIComponent(slug)}?bundleRun=${encodeURIComponent(data.id)}&demarrer=1`,
+        `/d/${encodeURIComponent(slug)}?bundleRun=${encodeURIComponent(data.id)}&demarrer=1${cloned}`,
       );
     } catch {
       toast.error(t("demandeNewError"));

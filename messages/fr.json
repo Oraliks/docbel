@@ -4787,6 +4787,8 @@
       "demandeNew": "Nouvelle demande",
       "demandeNewError": "Impossible de créer une nouvelle demande.",
       "demandeTooMany": "Tu as trop de demandes ouvertes pour ce dossier.",
+      "demandeClonedNotice": "Cette demande reprend les infos de ta demande du {date}. Vérifie et modifie seulement ce qui a changé.",
+      "demandeDuplicate": "Aucune différence avec une demande existante — on t'y redirige.",
       "helpFindRightDossier": "Comment trouver le bon dossier ?",
       "helpCannotFind": "Je ne trouve pas mon dossier",
       "helpWhereIsRequest": "Où en est ma demande ?",

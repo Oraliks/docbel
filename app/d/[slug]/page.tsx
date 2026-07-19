@@ -39,10 +39,12 @@ export default async function BundleRoute({
   searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ demarrer?: string; bundleRun?: string }>;
+  searchParams: Promise<{ demarrer?: string; bundleRun?: string; clonedFrom?: string }>;
 }) {
   const { slug } = await params;
   const sp = await searchParams;
+  // Date ISO de la demande reprise (« Nouvelle demande » qui clone) → alerte.
+  const clonedFromDate = sp.clonedFrom ?? null;
   // `?demarrer=1` = parcours guidé / reprise → ouverture directe du formulaire
   // principal (opt-in). Sans ce paramètre, l'URL affiche la liste « Documents
   // du parcours » (accès direct / « En savoir plus »). `?bundleRun=<id>` cible
@@ -390,6 +392,7 @@ export default async function BundleRoute({
           externalDocuments,
           userEmail: session?.user?.email ?? null,
           autoStart,
+          clonedFromDate,
         };
 
         // Écran d'explication : uniquement si le dossier codé fournit un

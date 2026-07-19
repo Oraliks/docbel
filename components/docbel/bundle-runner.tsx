@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { toast } from "sonner";
 import {
   ArrowRight,
@@ -100,6 +100,10 @@ interface BundleRunnerProps {
   /// parcours » et ouvre directement le document à remplir. Opt-in via
   /// `?demarrer=1` — la liste reste la vue par défaut (accès direct).
   autoStart?: boolean;
+  /// Date ISO de la demande reprise quand cette demande a été créée par clone
+  /// (« Nouvelle demande »). Affiche une alerte informative en tête. `null` =
+  /// pas de clone.
+  clonedFromDate?: string | null;
 }
 
 const RESPONSIBILITY_LABEL_KEYS: Record<ExternalDocument["responsibility"], string> = {
@@ -124,8 +128,10 @@ export function BundleRunner({
   userEmail = null,
   orientationAnswerIds = [],
   autoStart = false,
+  clonedFromDate = null,
 }: BundleRunnerProps) {
   const t = useTranslations("public.dossier");
+  const locale = useLocale();
   const router = useRouter();
   const confirm = useConfirm();
   const [runId, setRunId] = useState<string | null>(initialRunId);
@@ -360,6 +366,20 @@ export function BundleRunner({
 
   return (
     <div className="space-y-6">
+      {/* Alerte « demande reprise » : cette demande a été clonée d'une précédente. */}
+      {clonedFromDate && (
+        <Alert>
+          <AlertDescription className="text-sm">
+            {t("demandeClonedNotice", {
+              date: new Intl.DateTimeFormat(locale, {
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric",
+              }).format(new Date(clonedFromDate)),
+            })}
+          </AlertDescription>
+        </Alert>
+      )}
       <div className="space-y-2">
         <div className="flex items-center gap-2">
           <div

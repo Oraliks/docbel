@@ -15,7 +15,6 @@ import {
   RotateCcw,
   Search as SearchIcon,
   SlidersHorizontal,
-  Sparkles,
 } from "lucide-react";
 import { IconDisplay } from "@/components/admin/documents/icon-picker";
 import { AccessibilityToolbar } from "@/components/docbel/accessibility-toolbar";
@@ -63,14 +62,13 @@ interface Props {
   activeRuns: ActiveBundleRun[];
   situations: WizardSituation[];
   /// Situation présélectionnée via `?situation=` (tuile home ou lien externe).
-  /// Si elle correspond à une entrée de `situations`, le guide s'ouvre
-  /// directement dessus (cf. DossierWizard.initialSituation). `null`/absent
-  /// = comportement inchangé (mode guide fermé par défaut).
+  /// Si elle correspond à une entrée de `situations`, le guichet (toujours
+  /// ouvert) saute directement à l'étape 2 (cf. DossierWizard.initialSituation).
+  /// `null`/absent = le guichet démarre à l'étape 1 (choix de situation).
   initialSituation?: string | null;
 }
 
 type Sort = "populaires" | "az" | "categories" | "recents";
-type Mode = "guide" | "direct";
 
 const SORT_PILLS = [
   { id: "populaires", labelKey: "sortPopular" },
@@ -78,21 +76,6 @@ const SORT_PILLS = [
   { id: "categories", labelKey: "sortCategories" },
   { id: "recents", labelKey: "sortRecent" },
 ] as const satisfies ReadonlyArray<{ id: Sort; labelKey: string }>;
-
-const MODE_TABS = [
-  {
-    id: "guide" as const,
-    labelKey: "modeGuideLabel",
-    subKey: "modeGuideSub",
-    icon: Sparkles,
-  },
-  {
-    id: "direct" as const,
-    labelKey: "modeDirectLabel",
-    subKey: "modeDirectSub",
-    icon: FolderOpen,
-  },
-] as const;
 
 const CATEGORY_HUE: Record<string, string> = {
   emploi: "#5B46E5",
@@ -127,20 +110,6 @@ function hueForBundle(bundle: MonDossierBundle): string {
     return CATEGORY_HUE[bundle.lifeEventCategory];
   }
   return "var(--glass-accent-deep)";
-}
-
-function resolveWizardText(
-  t: ReturnType<typeof useTranslations>,
-  key: string | undefined,
-  fallback: string,
-): string {
-  if (!key) return fallback;
-  try {
-    const value = t(key as Parameters<typeof t>[0]);
-    return value && value !== key ? value : fallback;
-  } catch {
-    return fallback;
-  }
 }
 
 function RowIconTile({ bundle }: { bundle: MonDossierBundle }) {
@@ -296,26 +265,20 @@ export function MonDossierClient({
 }: Props) {
   const t = useTranslations("public.dossier");
   const tA11y = useTranslations("public.accessibility");
-  const tc = useTranslations("public.dossierContent");
   const locale = useLocale();
-  // Présélection home/raccourci, validée contre `situations` (le query param
-  // peut être arbitraire ou périmé). Recalculée à chaque rendu — sert
-  // uniquement d'init pour les deux useState suivants (pas de setState dans
-  // un effect).
+  // Présélection home (`?situation=`), validée contre `situations` (le query
+  // param peut être arbitraire ou périmé). Recalculée à chaque rendu — sert
+  // uniquement d'init pour le useState suivant (pas de setState dans un
+  // effect).
   const validInitialSituation =
     initialSituation && situations.some((s) => s.value === initialSituation)
       ? initialSituation
       : null;
-  const [mode, setMode] = useState<Mode>("guide");
-  const [guideStarted, setGuideStarted] = useState(
-    Boolean(validInitialSituation),
-  );
-  // Situation à transmettre au DossierWizard : initialisée depuis le query
-  // param, puis mise à jour par les raccourcis « L'assistant dossier »
-  // ci-dessous (chacun associé à une situation précise).
-  const [presetSituation, setPresetSituation] = useState<string | null>(
-    validInitialSituation,
-  );
+  // Situation à transmettre au DossierWizard (initialSituation/key) : fixée
+  // une fois depuis le query param. Le guichet est toujours ouvert ; toute
+  // sélection ultérieure se fait dans le wizard lui-même (step 1), sans
+  // remonter jusqu'ici.
+  const [presetSituation] = useState<string | null>(validInitialSituation);
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<Sort>("populaires");
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -478,180 +441,135 @@ export function MonDossierClient({
           </Link>
       </section>
 
-      <section className="glass-surface grid overflow-hidden rounded-2xl border border-[color:var(--glass-border)] sm:grid-cols-2" aria-labelledby="flow-title" data-docbel-readable>
-        <h2 id="flow-title" className="sr-only">{t("chooseFlowLabel")}</h2>
-          {MODE_TABS.map((tab) => {
-            const Icon = tab.icon;
-            return (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => {
-                  setMode(tab.id);
-                  setGuideStarted(tab.id === "guide");
-                }}
-                className="glass-interactive flex min-h-24 items-center gap-3 border-b border-[color:var(--glass-border)] p-4 text-left last:border-b-0 sm:border-b-0 sm:border-r sm:last:border-r-0"
-              >
-                <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[color:var(--glass-pop-bg)] text-[color:var(--glass-accent-deep)]" aria-hidden>
-                  <Icon />
-                </span>
-                <span className="flex min-w-0 flex-1 flex-col gap-1">
-                  <span className="text-base font-bold text-[color:var(--glass-ink)]">{t(tab.labelKey)}</span>
-                  <span className="text-sm font-normal text-[color:var(--glass-ink)]/70">{t(tab.subKey)}</span>
-                </span>
-                <span className="inline-flex shrink-0 items-center gap-1 text-xs font-bold text-[color:var(--glass-accent-deep)]">
-                  {t(tab.id === "guide" ? "modeGuideLabel" : "directAccessTitle")}
-                  <ArrowRight className="size-4" aria-hidden />
-                </span>
-              </button>
-            );
-          })}
-      </section>
-
-      <section className="glass-surface flex flex-col gap-3 rounded-2xl p-3" aria-labelledby="assistant-shortcuts-title" data-docbel-readable>
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <span className="flex size-8 items-center justify-center rounded-xl bg-[color:var(--glass-pop-bg)] text-[color:var(--glass-accent-deep)]" aria-hidden><Sparkles className="size-4" /></span>
-            <div>
-              <h2 id="assistant-shortcuts-title" className="text-sm font-bold text-[color:var(--glass-ink)]">{t("wizardAssistantTitle")}</h2>
-              <p className="text-xs text-[color:var(--glass-ink)]/65">{t("wizardAssistantSubtitle")}</p>
-            </div>
-          </div>
-          <button type="button" className="text-xs font-bold text-[color:var(--glass-accent-deep)]" onClick={() => { setMode("guide"); setGuideStarted(true); }}>{t("modeGuideLabel")}</button>
+      <div id="guichet" className="flex flex-col gap-4 px-1" data-docbel-readable>
+        <div className="flex flex-col gap-2">
+          <h2 className="text-2xl font-bold leading-tight text-[color:var(--glass-ink)] sm:text-3xl">
+            {t("guichetTitle")}
+          </h2>
+          <p className="max-w-2xl text-sm leading-relaxed text-[color:var(--glass-ink)]/70 sm:text-base">
+            {t("guichetSubtitle")}
+          </p>
         </div>
-        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-          {situations.slice(0, 4).map((s) => {
-            return <button key={s.value} type="button" onClick={() => { setPresetSituation(s.value); setMode("guide"); setGuideStarted(true); }} className="glass-interactive flex min-h-14 items-center gap-2 rounded-xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-3 py-2 text-left">
-              <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-[color:var(--glass-pop-bg)] text-[color:var(--glass-accent-deep)]" aria-hidden><IconDisplay value={s.icon} className="size-4" /></span>
-              <span className="line-clamp-2 text-xs font-semibold leading-relaxed text-[color:var(--glass-ink)]">{resolveWizardText(tc, s.labelKey, s.label)}</span>
-            </button>;
-          })}
-        </div>
-      </section>
-
-      <div role="tabpanel" aria-label={t(mode === "guide" ? "modeGuideLabel" : "modeDirectLabel")}>
-        {mode === "guide" && guideStarted ? (
-          <DossierWizard
-            key={presetSituation ?? "none"}
-            situations={situations}
-            catalog={catalog}
-            initialSituation={presetSituation ?? undefined}
-          />
-        ) : mode === "direct" ? (
-          <section className="glass-surface flex flex-col gap-4 p-3 sm:p-5" data-docbel-readable>
-            <div className="flex items-center gap-3">
-              <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-[color:var(--glass-pop-bg)] text-[color:var(--glass-accent-deep)]" aria-hidden>
-                <FolderOpen />
-              </span>
-              <div>
-                <h2 className="text-xl font-bold text-[color:var(--glass-ink)]">{t("directAccessTitle")}</h2>
-                <p className="mt-1 text-base text-[color:var(--glass-ink-soft)]">{t("directAccessSubtitle")}</p>
-              </div>
-            </div>
-
-            <InputGroup className="min-h-12 rounded-2xl">
-              <InputGroupAddon><SearchIcon aria-hidden /></InputGroupAddon>
-              <InputGroupInput
-                type="search"
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                placeholder={t("searchPlaceholder")}
-                aria-label={t("searchAriaLabel")}
-                className="text-base"
-              />
-            </InputGroup>
-
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between" data-a11y-secondary="true">
-              <ToggleGroup
-                value={[sort]}
-                onValueChange={(values) => {
-                  const selected = values.at(-1) as Sort | undefined;
-                  if (selected) setSort(selected);
-                }}
-                variant="outline"
-                spacing={1}
-                className="flex w-full flex-wrap sm:w-auto"
-                aria-label={t("sortGroupLabel")}
-              >
-                {SORT_PILLS.map((pill) => (
-                  <ToggleGroupItem key={pill.id} value={pill.id} className="min-h-11 flex-1 px-3 text-sm sm:flex-none">
-                    {t(pill.labelKey)}
-                  </ToggleGroupItem>
-                ))}
-              </ToggleGroup>
-              <Button type="button" variant="outline" size="lg" className="min-h-11" aria-pressed={filtersOpen} onClick={() => setFiltersOpen((open) => !open)}>
-                <SlidersHorizontal data-icon="inline-start" aria-hidden />
-                {t("filters")}{activeCats.size > 0 ? ` (${activeCats.size})` : ""}
-              </Button>
-            </div>
-
-            {filtersOpen && availableCats.length > 0 ? (
-              <div className="flex flex-wrap gap-2 rounded-2xl border border-[color:var(--glass-border)] p-3" data-a11y-secondary="true">
-                {availableCats.map((category) => (
-                  <Button
-                    key={category.id}
-                    type="button"
-                    variant={activeCats.has(category.id) ? "default" : "outline"}
-                    size="lg"
-                    className="min-h-11"
-                    aria-pressed={activeCats.has(category.id)}
-                    onClick={() => toggleCategory(category.id)}
-                  >
-                    <span aria-hidden>{category.emoji}</span>{category.label}
-                  </Button>
-                ))}
-                {activeCats.size > 0 ? (
-                  <Button type="button" variant="ghost" size="lg" className="min-h-11" onClick={() => setActiveCats(new Set())}>{t("reset")}</Button>
-                ) : null}
-              </div>
-            ) : null}
-
-            {empty ? (
-              <Empty>
-                <EmptyHeader>
-                  <EmptyMedia variant="icon"><SearchIcon aria-hidden /></EmptyMedia>
-                  <EmptyTitle className="text-lg">{bundles.length === 0 ? t("emptyNoneTitle") : t("emptyNoMatchTitle")}</EmptyTitle>
-                  <EmptyDescription className="text-base">{bundles.length === 0 ? t("emptyNoneBody") : t("emptyNoMatchBody")}</EmptyDescription>
-                </EmptyHeader>
-              </Empty>
-            ) : isSearching ? (
-              <div className="grid gap-3 sm:grid-cols-2">
-                {searchResults.map((bundle) => <AccessRow key={bundle.slug} bundle={bundle} />)}
-              </div>
-            ) : (
-              <div className="flex flex-col gap-6">
-                {visibleGroups.map((group) => (
-                  <section key={group.id} className="flex flex-col gap-3">
-                    <h3 className="flex items-center gap-2 text-lg font-bold text-[color:var(--glass-ink)]">
-                      <span aria-hidden>{group.emoji}</span>{group.label}
-                      <span className="ml-auto rounded-full bg-[color:var(--glass-pop-bg)] px-3 py-1 text-sm text-[color:var(--glass-accent-deep)]">{group.items.length}</span>
-                    </h3>
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      {group.items.map((bundle) => <AccessRow key={bundle.slug} bundle={bundle} />)}
-                    </div>
-                  </section>
-                ))}
-              </div>
-            )}
-
-            {!isSearching && groups.length > 3 ? (
-              <Button
-                type="button"
-                variant="outline"
-                size="lg"
-                className="min-h-11 w-full"
-                onClick={() => {
-                  setShowAllCats((shown) => !shown);
-                  if (!showAllCats) setSort("categories");
-                }}
-              >
-                {collapsed ? t("seeAllCategories", { count: groups.length }) : t("seeLess")}
-                <ArrowRight data-icon="inline-end" aria-hidden />
-              </Button>
-            ) : null}
-          </section>
-        ) : null}
+        <DossierWizard
+          key={presetSituation ?? "none"}
+          situations={situations}
+          catalog={catalog}
+          initialSituation={presetSituation ?? undefined}
+        />
       </div>
+
+      <section className="glass-surface flex flex-col gap-4 p-3 sm:p-5" data-docbel-readable>
+        <div className="flex items-center gap-3">
+          <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-[color:var(--glass-pop-bg)] text-[color:var(--glass-accent-deep)]" aria-hidden>
+            <FolderOpen />
+          </span>
+          <div>
+            <h2 className="text-xl font-bold text-[color:var(--glass-ink)]">{t("guichetBrowseAll")}</h2>
+            <p className="mt-1 text-base text-[color:var(--glass-ink-soft)]">{t("directAccessSubtitle")}</p>
+          </div>
+        </div>
+
+        <InputGroup className="min-h-12 rounded-2xl">
+          <InputGroupAddon><SearchIcon aria-hidden /></InputGroupAddon>
+          <InputGroupInput
+            type="search"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder={t("searchPlaceholder")}
+            aria-label={t("searchAriaLabel")}
+            className="text-base"
+          />
+        </InputGroup>
+
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between" data-a11y-secondary="true">
+          <ToggleGroup
+            value={[sort]}
+            onValueChange={(values) => {
+              const selected = values.at(-1) as Sort | undefined;
+              if (selected) setSort(selected);
+            }}
+            variant="outline"
+            spacing={1}
+            className="flex w-full flex-wrap sm:w-auto"
+            aria-label={t("sortGroupLabel")}
+          >
+            {SORT_PILLS.map((pill) => (
+              <ToggleGroupItem key={pill.id} value={pill.id} className="min-h-11 flex-1 px-3 text-sm sm:flex-none">
+                {t(pill.labelKey)}
+              </ToggleGroupItem>
+            ))}
+          </ToggleGroup>
+          <Button type="button" variant="outline" size="lg" className="min-h-11" aria-pressed={filtersOpen} onClick={() => setFiltersOpen((open) => !open)}>
+            <SlidersHorizontal data-icon="inline-start" aria-hidden />
+            {t("filters")}{activeCats.size > 0 ? ` (${activeCats.size})` : ""}
+          </Button>
+        </div>
+
+        {filtersOpen && availableCats.length > 0 ? (
+          <div className="flex flex-wrap gap-2 rounded-2xl border border-[color:var(--glass-border)] p-3" data-a11y-secondary="true">
+            {availableCats.map((category) => (
+              <Button
+                key={category.id}
+                type="button"
+                variant={activeCats.has(category.id) ? "default" : "outline"}
+                size="lg"
+                className="min-h-11"
+                aria-pressed={activeCats.has(category.id)}
+                onClick={() => toggleCategory(category.id)}
+              >
+                <span aria-hidden>{category.emoji}</span>{category.label}
+              </Button>
+            ))}
+            {activeCats.size > 0 ? (
+              <Button type="button" variant="ghost" size="lg" className="min-h-11" onClick={() => setActiveCats(new Set())}>{t("reset")}</Button>
+            ) : null}
+          </div>
+        ) : null}
+
+        {empty ? (
+          <Empty>
+            <EmptyHeader>
+              <EmptyMedia variant="icon"><SearchIcon aria-hidden /></EmptyMedia>
+              <EmptyTitle className="text-lg">{bundles.length === 0 ? t("emptyNoneTitle") : t("emptyNoMatchTitle")}</EmptyTitle>
+              <EmptyDescription className="text-base">{bundles.length === 0 ? t("emptyNoneBody") : t("emptyNoMatchBody")}</EmptyDescription>
+            </EmptyHeader>
+          </Empty>
+        ) : isSearching ? (
+          <div className="grid gap-3 sm:grid-cols-2">
+            {searchResults.map((bundle) => <AccessRow key={bundle.slug} bundle={bundle} />)}
+          </div>
+        ) : (
+          <div className="flex flex-col gap-6">
+            {visibleGroups.map((group) => (
+              <section key={group.id} className="flex flex-col gap-3">
+                <h3 className="flex items-center gap-2 text-lg font-bold text-[color:var(--glass-ink)]">
+                  <span aria-hidden>{group.emoji}</span>{group.label}
+                  <span className="ml-auto rounded-full bg-[color:var(--glass-pop-bg)] px-3 py-1 text-sm text-[color:var(--glass-accent-deep)]">{group.items.length}</span>
+                </h3>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {group.items.map((bundle) => <AccessRow key={bundle.slug} bundle={bundle} />)}
+                </div>
+              </section>
+            ))}
+          </div>
+        )}
+
+        {!isSearching && groups.length > 3 ? (
+          <Button
+            type="button"
+            variant="outline"
+            size="lg"
+            className="min-h-11 w-full"
+            onClick={() => {
+              setShowAllCats((shown) => !shown);
+              if (!showAllCats) setSort("categories");
+            }}
+          >
+            {collapsed ? t("seeAllCategories", { count: groups.length }) : t("seeLess")}
+            <ArrowRight data-icon="inline-end" aria-hidden />
+          </Button>
+        ) : null}
+      </section>
 
       <section className="glass-surface grid overflow-hidden rounded-2xl border border-[color:var(--glass-border)] sm:grid-cols-2 lg:grid-cols-[1.2fr_repeat(4,1fr)]" aria-labelledby="help-title" data-a11y-secondary="true">
         <div className="flex items-center gap-2 border-b border-[color:var(--glass-border)] px-3 py-3 sm:col-span-2 lg:col-span-1 lg:border-b-0 lg:border-r">
@@ -661,7 +579,7 @@ export function MonDossierClient({
             <p className="text-xs text-[color:var(--glass-ink)]/65">{t("helpSubtitle")}</p>
           </div>
         </div>
-        <HelpRow icon={HelpCircle} label={t("helpFindRightDossier")} onClick={() => { setMode("guide"); setGuideStarted(true); }} />
+        <HelpRow icon={HelpCircle} label={t("helpFindRightDossier")} href="#guichet" />
         <HelpRow icon={FileQuestion} label={t("helpCannotFind")} href="/contact" />
         <HelpRow icon={RotateCcw} label={t("helpWhereIsRequest")} href="#dossier-en-cours" />
         <HelpRow icon={Phone} label={t("helpContactSupport")} href="/contact" />

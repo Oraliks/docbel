@@ -86,9 +86,28 @@ const AUDIENCE_NAV_ITEMS: ReadonlyArray<{
 // (every pathname starts with `/`). Returns null on persona routes
 // (`/employeur`, `/partenaire`) and other unmatched paths — the brand chip
 // is the indicator there, no nav item should light up.
+/// Routes du funnel dossier qui n'ont pas d'item de nav propre : elles
+/// allument « Démarches » (id "mon-dossier") pour garder le repère
+/// « où suis-je » pendant tout le parcours.
+const DOSSIER_FUNNEL_PREFIXES = [
+  "/d/",
+  "/d",
+  "/document/",
+  "/reprendre",
+  "/creer-ma-demande",
+  "/mes-demarches",
+] as const;
+
 function resolveActiveNav(
   pathname: string,
 ): (typeof NAV_ITEMS)[number]["id"] | null {
+  if (
+    DOSSIER_FUNNEL_PREFIXES.some(
+      (p) => pathname === p || pathname.startsWith(p.endsWith("/") ? p : `${p}/`) || pathname === p.replace(/\/$/, ""),
+    )
+  ) {
+    return "mon-dossier";
+  }
   const match = [...NAV_ITEMS]
     .filter((item) => {
       if (item.href === "#") return false;

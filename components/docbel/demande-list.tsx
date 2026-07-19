@@ -50,13 +50,13 @@ export function DemandeList({ bundleId, slug, bundleName, demandes }: Props) {
         method: "DELETE",
       });
       if (!res.ok && res.status !== 404) {
-        toast.error(t("demandeNewError"));
+        toast.error(t("demandeAbandonError"));
         return;
       }
       setItems((prev) => prev.filter((d) => d.runId !== runId));
       router.refresh();
     } catch {
-      toast.error(t("demandeNewError"));
+      toast.error(t("demandeAbandonError"));
     } finally {
       setBusy(null);
     }

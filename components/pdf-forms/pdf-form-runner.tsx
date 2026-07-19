@@ -41,6 +41,7 @@ import { sectionLabel } from "@/lib/pdf-forms/section-labels";
 import { FormStepper } from "./form-stepper";
 import { FormShell } from "./form-shell";
 import { ContextHelpPanel } from "./context-help-panel";
+import { DemarcheRail, type DemarcheRailData } from "@/components/docbel/demarche-rail";
 import type { TipEntry } from "@/lib/form-context-tips";
 import { MotifSituationPicker } from "./motif-situation-picker";
 import { CompactAccordionSection } from "./compact-accordion-section";
@@ -140,9 +141,13 @@ interface PdfFormRunnerProps {
   /// ne sont réellement persistées que dans un dossier (brouillon serveur) OU
   /// pour un utilisateur connecté.
   isAuthenticated?: boolean;
+  /// Rail de démarche (contexte dossier uniquement) — construit côté serveur ;
+  /// prend l'emplacement du ContextHelpPanel et en embarque le contenu.
+  /// Absent = mode autonome, ContextHelpPanel historique inchangé.
+  rail?: DemarcheRailData;
 }
 
-export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, onValuesChange, onLocaleChange, legacyLayout = false, contextTips, initialStepId, draftValues, isAuthenticated = false }: PdfFormRunnerProps) {
+export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, onValuesChange, onLocaleChange, legacyLayout = false, contextTips, initialStepId, draftValues, isAuthenticated = false, rail }: PdfFormRunnerProps) {
   const t = useTranslations("public.dossier");
   const router = useRouter();
   const [locale, setLocale] = useState<Locale>(form.defaultLocale);
@@ -862,6 +867,7 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
         onFocusField={handleFocusField}
         activeFieldId={activeFieldId}
         contextTips={contextTips}
+        rail={rail}
         t={t}
       />
     );
@@ -911,17 +917,33 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
       )}
 
       <FormShell
-        helpPanel={
-          <ContextHelpPanel
-            formSlug={form.slug}
-            sectionKeys={activeSectionKey ? [activeSectionKey] : []}
-            checkedFieldIds={checkedFieldIds}
-            entries={contextTips}
-            activeFieldId={activeFieldId}
-            fields={form.fields}
-            locale={locale}
-          />
-        }
+        helpFirstOnMobile={Boolean(rail)}
+        helpPanel={(() => {
+          const help = (
+            <ContextHelpPanel
+              formSlug={form.slug}
+              sectionKeys={activeSectionKey ? [activeSectionKey] : []}
+              checkedFieldIds={checkedFieldIds}
+              entries={contextTips}
+              activeFieldId={activeFieldId}
+              fields={form.fields}
+              locale={locale}
+              embedded={Boolean(rail)}
+            />
+          );
+          return rail ? (
+            <DemarcheRail
+              bundleName={rail.bundleName}
+              bundleSlug={rail.bundleSlug}
+              runId={rail.runId}
+              model={rail.model}
+              activeDocSlug={form.slug}
+              helpSlot={help}
+            />
+          ) : (
+            help
+          );
+        })()}
       >
         <Card className="overflow-hidden rounded-3xl border-0 bg-card shadow-sm">
           <div className="border-b border-[color:var(--glass-border)] px-3">
@@ -1413,6 +1435,7 @@ interface MacroRunnerBodyProps {
   onFocusField?: (id: string) => void;
   activeFieldId?: string;
   contextTips?: TipEntry[];
+  rail?: DemarcheRailData;
   t: ReturnType<typeof useTranslations>;
 }
 
@@ -1426,7 +1449,7 @@ interface MacroRunnerBodyProps {
 function MacroRunnerBody({
   form, macroSteps, activeIndex, setActive, attemptAdvance, locale, setLocale, values, errors,
   setValue, signerName, consent, setConsent, delivery, setDelivery, doccleRef,
-  setDoccleRef, submitting, submit, resetForm, lastSavedAt, serverSaved, liveTriggers, bundleRunId, onStreetVerifiedChange, onFocusField, activeFieldId, contextTips, t,
+  setDoccleRef, submitting, submit, resetForm, lastSavedAt, serverSaved, liveTriggers, bundleRunId, onStreetVerifiedChange, onFocusField, activeFieldId, contextTips, rail, t,
 }: MacroRunnerBodyProps) {
   const current = macroSteps[activeIndex];
   const isLast = activeIndex === macroSteps.length - 1;
@@ -1496,17 +1519,33 @@ function MacroRunnerBody({
       )}
 
       <FormShell
-        helpPanel={
-          <ContextHelpPanel
-            formSlug={form.slug}
-            sectionKeys={current.sections.map((s) => s.key).filter((k): k is string => !!k)}
-            checkedFieldIds={Object.keys(values).filter((k) => values[k] === true)}
-            entries={contextTips}
-            activeFieldId={activeFieldId}
-            fields={form.fields}
-            locale={locale}
-          />
-        }
+        helpFirstOnMobile={Boolean(rail)}
+        helpPanel={(() => {
+          const help = (
+            <ContextHelpPanel
+              formSlug={form.slug}
+              sectionKeys={current.sections.map((s) => s.key).filter((k): k is string => !!k)}
+              checkedFieldIds={Object.keys(values).filter((k) => values[k] === true)}
+              entries={contextTips}
+              activeFieldId={activeFieldId}
+              fields={form.fields}
+              locale={locale}
+              embedded={Boolean(rail)}
+            />
+          );
+          return rail ? (
+            <DemarcheRail
+              bundleName={rail.bundleName}
+              bundleSlug={rail.bundleSlug}
+              runId={rail.runId}
+              model={rail.model}
+              activeDocSlug={form.slug}
+              helpSlot={help}
+            />
+          ) : (
+            help
+          );
+        })()}
       >
         <Card className="overflow-hidden rounded-3xl border-0 bg-card shadow-sm">
           <div className="border-b border-[color:var(--glass-border)] px-3">

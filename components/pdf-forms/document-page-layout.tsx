@@ -10,6 +10,7 @@ import type { PublicForm } from "@/lib/pdf-forms/public-serializer";
 import type { PrefillMap } from "@/lib/pdf-forms/canonical/extract";
 import type { FormPayload } from "@/lib/pdf-forms/types";
 import type { TipEntry } from "@/lib/form-context-tips";
+import type { DemarcheRailData } from "@/components/docbel/demarche-rail";
 
 interface Props {
   /// Si le PDF est ouvert dans le contexte d'un dossier codé, les "types"
@@ -29,13 +30,15 @@ interface Props {
   initialStepId?: string;
   draftValues?: FormPayload;
   isAuthenticated?: boolean;
+  /// Rail de démarche (contexte dossier uniquement) — construit côté serveur.
+  rail?: DemarcheRailData;
 }
 
 /// Page publique de remplissage d'un PDF — reprend le langage visuel "glass"
 /// du reste du site (fond dégradé hérité de .glass-root, surfaces translucides)
 /// et le layout du mockup : header riche avec illustration décorative, pills
 /// meta, puis 2 colonnes (formulaire à gauche, résumé live à droite).
-export function DocumentPageLayout({ form, bundlePrefill, bundleRunId, bundleSlug, dossierTypes, legacyLayout, contextTips, initialStepId, draftValues, isAuthenticated }: Props) {
+export function DocumentPageLayout({ form, bundlePrefill, bundleRunId, bundleSlug, dossierTypes, legacyLayout, contextTips, initialStepId, draftValues, isAuthenticated, rail }: Props) {
   const t = useTranslations("public.dossier");
 
   // Abréviation pour l'illustration : "C32_Travailleur" → "C32".
@@ -115,6 +118,7 @@ export function DocumentPageLayout({ form, bundlePrefill, bundleRunId, bundleSlu
         initialStepId={initialStepId}
         draftValues={draftValues}
         isAuthenticated={isAuthenticated}
+        rail={rail}
       />
     </div>
   );

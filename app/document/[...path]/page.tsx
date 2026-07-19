@@ -29,6 +29,9 @@ import {
   type CanonicalMap,
   type PrefillMap,
 } from "@/lib/pdf-forms/canonical/extract";
+import { loadDossierState } from "@/lib/bundles/completion";
+import { buildDemarcheRailModel } from "@/lib/bundles/rail-model";
+import type { DemarcheRailData } from "@/components/docbel/demarche-rail";
 
 export const dynamic = "force-dynamic";
 
@@ -272,6 +275,7 @@ export default async function PdfFormPage({
   // valeur canonique d'un formulaire qui l'a extraite d'un profil).
   let bundlePrefill: PrefillMap | undefined;
   let validBundleRunId: string | undefined;
+  let rail: DemarcheRailData | undefined;
   // Reprise fine (Lot 3) : étape initiale du runner + réponses en cours à
   // restaurer (passées à la plus haute précédence dans le runner, préservant
   // tous les types — cases à cocher, listes — que `PrefillMap` ne porte pas).
@@ -320,6 +324,30 @@ export default async function PdfFormPage({
         ? { ...orientationPrefill, ...(draftForForm ?? {}) }
         : undefined;
     }
+
+    // Rail de démarche : état complet du dossier (items + déclenchés + verrou),
+    // MÊME source que le 409 dossier_incomplete. Ownership re-vérifiée dedans.
+    if (runValid && bundleSlug) {
+      const dossierState = await loadDossierState(bundleRun, {
+        userId: userId ?? null,
+        sessionId,
+      });
+      if (dossierState && dossierState.run.bundleSlug === bundleSlug) {
+        rail = {
+          bundleName: dossierState.run.bundleName,
+          bundleSlug: dossierState.run.bundleSlug,
+          runId: dossierState.run.id,
+          model: buildDemarcheRailModel({
+            items: dossierState.items,
+            completedTemplateIds: dossierState.completedTemplateIds,
+            payloads: dossierState.payloads,
+            applicableSlugs: dossierState.applicableSlugs,
+            hasEligibilityQuestions: dossierState.hasEligibilityQuestions,
+            eligibilityCompleted: dossierState.eligibilityCompleted,
+          }),
+        };
+      }
+    }
   }
 
   // Précédence de fusion : le profil est la BASE, le contexte bundle ÉCRASE
@@ -352,6 +380,7 @@ export default async function PdfFormPage({
         bundlePrefill={mergedPrefill}
         bundleRunId={validBundleRunId}
         bundleSlug={bundleSlug}
+        rail={rail}
         dossierTypes={dossierTypes}
         legacyLayout={legacyLayout}
         contextTips={contextTips}

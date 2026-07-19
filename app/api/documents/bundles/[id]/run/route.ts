@@ -124,15 +124,32 @@ export async function POST(
   const orientationAnswers =
     parsedOrientation?.slug === bundle.slug ? rawOrientationAnswers : null;
 
+  // Données CLONÉES depuis la dernière demande (« Nouvelle demande » reprend le
+  // dernier dossier pour éviter de tout ressaisir — Oraliks 2026-07-19). Vides
+  // hors forceNew ou s'il n'existe pas de demande source.
+  let clonedPayloads: Prisma.InputJsonValue | undefined;
+  let clonedCompleted: Prisma.InputJsonValue | undefined;
+  let clonedEligibility: Record<string, string> | undefined;
+  let clonedOrientation: Prisma.InputJsonValue | undefined;
+  let clonedFromDate: string | null = null;
+
   // « Nouvelle demande » (forceNew) : on ne réutilise PAS le run courant. On
   // réutilise un éventuel run VIDE (garde-fou anti-doublon fantôme), refuse
-  // au-delà du plafond, sinon on tombe sur la création plus bas.
+  // au-delà du plafond, sinon on CLONE la dernière demande et on crée plus bas.
   if (forceNew) {
     const editable = await prisma.bundleRun.findMany({
       where: userId
         ? { bundleId: id, userId, status: { in: [...EDITABLE_BUNDLE_RUN_STATUSES] } }
         : { bundleId: id, sessionId, status: { in: [...EDITABLE_BUNDLE_RUN_STATUSES] } },
-      select: { id: true, completedTemplateIds: true, eligibilityAnswers: true, payloads: true },
+      orderBy: { startedAt: "desc" },
+      select: {
+        id: true,
+        startedAt: true,
+        completedTemplateIds: true,
+        eligibilityAnswers: true,
+        payloads: true,
+        orientationAnswers: true,
+      },
     });
     const action = resolveForceNewAction(
       editable.map((r) => ({ id: r.id, hasProgress: bundleRunHasProgress(r) })),
@@ -148,7 +165,18 @@ export async function POST(
         return apiOk({ ...reused, lifecycle: deriveBundleRunLifecycle(reused) });
       }
     }
-    // action.kind === "create" (ou reuse introuvable) → création plus bas.
+    // action.kind === "create" : on clone la demande la plus récente AVEC
+    // progression (les réponses des documents + pré-qualif). L'anti-doublon à
+    // la génération bloque un document resté strictement identique.
+    const source = editable.find((r) => bundleRunHasProgress(r));
+    if (source) {
+      clonedPayloads = (source.payloads as Prisma.InputJsonValue) ?? undefined;
+      clonedCompleted = (source.completedTemplateIds as Prisma.InputJsonValue) ?? undefined;
+      const elig = source.eligibilityAnswers as Record<string, string> | null;
+      clonedEligibility = elig && Object.keys(elig).length > 0 ? elig : undefined;
+      clonedOrientation = (source.orientationAnswers as Prisma.InputJsonValue) ?? undefined;
+      clonedFromDate = source.startedAt.toISOString();
+    }
   }
 
   // Récupérer un run existant in_progress pour cet utilisateur/session
@@ -194,10 +222,20 @@ export async function POST(
       sessionId,
       resumeCodeHash: hashResumeCode(resumeCodePlain),
       resumeCodeExpiresAt: defaultResumeCodeExpiresAt(),
-      eligibilityAnswers,
+      // Pré-qualif : réponses du body si fournies, sinon clonées de la source.
+      eligibilityAnswers:
+        Object.keys(eligibilityAnswers).length > 0
+          ? eligibilityAnswers
+          : (clonedEligibility ?? {}),
       ...(orientationAnswers
         ? { orientationAnswers: orientationAnswers as Prisma.InputJsonValue }
-        : {}),
+        : clonedOrientation
+          ? { orientationAnswers: clonedOrientation }
+          : {}),
+      // Clone du dernier dossier : reprend les réponses des documents + leur
+      // statut « complété » pour ne pas tout ressaisir.
+      ...(clonedPayloads ? { payloads: clonedPayloads } : {}),
+      ...(clonedCompleted ? { completedTemplateIds: clonedCompleted } : {}),
     },
   });
 
@@ -205,8 +243,9 @@ export async function POST(
 
   // Le code en CLAIR n'est renvoyé QU'ICI (affichage unique côté client) ; il
   // n'est pas stocké. Sur les visites suivantes, le run ne le contient plus.
+  // `clonedFromDate` (ISO) = date de la demande reprise (alerte informative).
   return apiOk(
-    { ...run, lifecycle: deriveBundleRunLifecycle(run), resumeCode: resumeCodePlain },
+    { ...run, lifecycle: deriveBundleRunLifecycle(run), resumeCode: resumeCodePlain, clonedFromDate },
     { status: 201 },
   );
 }

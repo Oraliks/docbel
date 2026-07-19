@@ -1,7 +1,5 @@
 import { notFound, permanentRedirect } from "next/navigation";
 import { headers, cookies } from "next/headers";
-import Link from "next/link";
-import { ChevronRightIcon, SparklesIcon } from "lucide-react";
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import { auth } from "@/lib/auth";
@@ -226,7 +224,6 @@ export default async function PdfFormPage({
   searchParams: Promise<{ bundleRun?: string; bundleSlug?: string }>;
 }) {
   const { path } = await params;
-  const t = await getTranslations("public.contenu");
   const { bundleRun, bundleSlug } = await searchParams;
   const res = await loadForm(path);
   if (res.kind === "missing") notFound();
@@ -256,15 +253,11 @@ export default async function PdfFormPage({
   const session = await auth.api.getSession({ headers: await headers() });
   const userId = session?.user?.id;
   let profilePrefill: Record<string, string> | undefined;
-  // Profil « essentiellement vide » → on incite à le compléter (cf. bannière).
-  let profileEmpty = false;
   if (userId) {
     const profile = await prisma.userProfile.findUnique({ where: { userId } });
     if (profile) {
       profilePrefill = buildProfilePrefill(form.fields, profile);
     }
-    // Sans NISS ni nom, le prefill ne sert quasiment à rien : on nudge.
-    profileEmpty = !profile || (!profile.niss && !profile.lastName);
   }
 
   // Contexte bundle : si on a un `bundleRun`, on récupère les valeurs déjà
@@ -352,32 +345,8 @@ export default async function PdfFormPage({
   // résilient (jamais de throw). Passé jusqu'au ContextHelpPanel via le runner.
   const contextTips = await getFormContextTips(form.slug);
 
-  // Nudge profil : connecté mais profil quasi vide → invite à le compléter
-  // pour bénéficier du préremplissage automatique. Aucune bannière si le profil
-  // est renseigné (le prefill fait alors son office silencieusement).
-  const showProfileNudge = Boolean(userId) && profileEmpty;
-
   return (
     <div className="flex w-full flex-col gap-4">
-      {showProfileNudge && (
-        <Link
-          href="/profil"
-          className="glass-surface flex items-center gap-3 rounded-2xl px-4 py-3 text-[13px] transition-colors hover:bg-[color:var(--glass-pop-bg)]/40"
-          style={{ color: "var(--glass-ink-soft)" }}
-        >
-          <SparklesIcon
-            className="size-4 shrink-0"
-            style={{ color: "var(--glass-accent-deep)" }}
-          />
-          <span>
-            <span className="font-semibold text-[color:var(--glass-ink)]">
-              {t("profileNudgeTitle")}
-            </span>{" "}
-            {t("profileNudgeText")}
-          </span>
-          <ChevronRightIcon className="ml-auto size-4 shrink-0 text-[color:var(--glass-accent-deep)]" />
-        </Link>
-      )}
       <DocumentPageLayout
         form={form}
         bundlePrefill={mergedPrefill}

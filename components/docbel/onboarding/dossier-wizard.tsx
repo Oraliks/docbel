@@ -300,6 +300,12 @@ export function DossierWizard({
   // Capture des réponses d'orientation à l'affichage du résultat (hors test).
   // Stockées dans un cookie court, lu par POST /api/documents/bundles/[id]/run
   // qui les persiste sur le BundleRun (reprise orientation + dossier, analytics).
+  // Également lu par app/d/[slug]/page.tsx pour préremplir la pré-qualification
+  // (eligibilityAnswers + orientationAnswerIds) : quand TOUTES les questions
+  // d'un bundle sont ainsi couvertes, EligibilityPrequalifier saute le gate et
+  // soumet automatiquement (Task 4.2, zéro double question) — aucun changement
+  // requis ici, ce cookie porte déjà tout le nécessaire (situation/subOption/
+  // refine/slug).
   useEffect(() => {
     if (dryRun || currentStep !== 4 || !result) return;
     try {

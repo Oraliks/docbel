@@ -87,6 +87,11 @@ export async function GET(
 /// POST → démarre (ou récupère) un run pour ce bundle.
 /// Au premier démarrage, génère un code de reprise unique.
 /// Body optionnel : `{ eligibilityAnswers?: Record<string, string> }`
+/// Appelée aussi bien par le clic manuel "Démarrer le parcours" que par
+/// l'auto-skip de EligibilityPrequalifier (Task 4.2, quand l'orientation du
+/// wizard couvre déjà toutes les questions d'éligibilité) — même requête,
+/// aucune distinction nécessaire ici : la lecture/consommation du cookie
+/// `beldoc-orientation` ci-dessous s'applique identiquement aux deux cas.
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }

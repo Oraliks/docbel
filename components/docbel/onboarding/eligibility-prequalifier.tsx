@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { CheckCircle2, AlertTriangle, XCircle, HelpCircle, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -36,11 +36,44 @@ interface Props {
   orientationAnswerIds?: string[];
 }
 
+/// Vrai si TOUTES les questions actuellement visibles (selon `answers`) sont
+/// à la fois répondues ET reprises de l'orientation (wizard) — cf.
+/// `orientationAnswerIds`. Sert à l'auto-skip du gate (Task 4.2) : s'il n'y a
+/// aucune question visible (rien à couvrir) ou qu'au moins une n'est pas
+/// couverte par l'orientation, renvoie `false` et le gate complet s'affiche
+/// comme avant.
+///
+/// `orientationAnswerIds` n'est peuplé QUE lors du tout premier chargement,
+/// sans run existant (cf. app/d/[slug]/page.tsx, bloc `if (!effectiveRun)`) :
+/// dès qu'un run existe (reprise / « Modifier mes réponses préliminaires »),
+/// l'appelant transmet systématiquement un tableau vide → cette fonction
+/// renvoie alors `false` et l'auto-skip ne se déclenche jamais sur une
+/// réédition (jamais de ré-auto-soumission en boucle).
+function allQuestionsCoveredByOrientation(
+  questions: EligibilityQuestion[],
+  answers: EligibilityAnswers,
+  fromOrientation: Set<string>,
+): boolean {
+  const visible = questions.filter((q) => evaluateVisibleIf(q.visibleIf, answers));
+  if (visible.length === 0) return false;
+  return visible.every((q) => {
+    const value = answers[q.id];
+    return value !== undefined && value !== "" && fromOrientation.has(q.id);
+  });
+}
+
 /// Pré-qualification informative affichée AVANT le parcours.
 ///
 /// **Principe non-négociable :** le résultat est purement informatif. Même
 /// en verdict "non éligible", on permet "Continuer quand même" — beldoc ne
 /// décide pas à la place des administrations.
+///
+/// **Auto-skip (Task 4.2) :** si l'utilisateur arrive du guichet (wizard) et
+/// que l'orientation couvre déjà TOUTES les questions, on saute le gate et on
+/// soumet automatiquement les réponses reprises — même chemin que le bouton
+/// "Démarrer le parcours" (`onContinue`, cf. bundle-runner.tsx
+/// `handlePrequalifierContinue` → POST run). Un bandeau discret remplace
+/// alors le questionnaire, avec un lien pour rouvrir le gate complet.
 export function EligibilityPrequalifier({
   questions,
   initialAnswers = {},
@@ -59,6 +92,34 @@ export function EligibilityPrequalifier({
     [questions, answers]
   );
 
+  // Décidé UNE SEULE FOIS via l'init paresseuse de useState (pas un effect,
+  // pas de setState synchrone) : si l'utilisateur rouvre le gate ("Les
+  // modifier"), il reste affiché ensuite même si les props ne changent pas.
+  const [autoSkip] = useState(() =>
+    allQuestionsCoveredByOrientation(questions, initialAnswers, fromOrientation)
+  );
+  const [manuallyReopened, setManuallyReopened] = useState(false);
+  const showBanner = autoSkip && !manuallyReopened;
+  const autoSkipSubmittedRef = useRef(false);
+
+  // Auto-soumission : déclenchée par un handler async lancé depuis l'effect
+  // (jamais de setState synchrone dans l'effect lui-même — pattern autorisé,
+  // cf. l'auto-forward de bundle-runner.tsx l.338-352). `onContinue` est
+  // typé `=> void` mais son implémentation réelle est asynchrone (POST run) :
+  // on l'appelle en fire-and-forget, exactement comme le ferait un clic sur
+  // "Démarrer le parcours". Le ref garantit l'unicité de l'appel (protège
+  // aussi contre le double-montage du Strict Mode en dev).
+  useEffect(() => {
+    if (!autoSkip || autoSkipSubmittedRef.current) return;
+    autoSkipSubmittedRef.current = true;
+    onContinue(answers, result);
+    // Ne réagit qu'au montage : `autoSkip` est figé après le premier rendu
+    // (init paresseuse ci-dessus) et le ref garantit l'unicité — l'identité
+    // de `answers`/`result`/`onContinue` (relus au moment du déclenchement)
+    // n'a donc pas à figurer dans les deps.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoSkip]);
+
   function setAnswer(questionId: string, value: string) {
     const next = { ...answers, [questionId]: value };
     setAnswers(next);
@@ -68,6 +129,29 @@ export function EligibilityPrequalifier({
   const verdictInfo = verdictMessageFr(result.verdict);
   const allAnswered = result.answered === result.total && result.total > 0;
   const showsIneligibleWarning = result.verdict === "ineligible";
+
+  // Bandeau discret : remplace le gate quand l'orientation couvre déjà tout
+  // (auto-skip ci-dessus). "Les modifier" rouvre le gate complet — mêmes
+  // champs, déjà préremplis (badge inclus) — sans perdre les réponses.
+  if (showBanner) {
+    return (
+      <Card>
+        <CardContent className="flex flex-wrap items-center justify-between gap-3">
+          <span className="flex items-center gap-2 text-sm text-muted-foreground">
+            <CheckCircle2 className="size-4 shrink-0 text-emerald-600" />
+            Vos réponses du guide ont été reprises.
+          </span>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setManuallyReopened(true)}
+          >
+            Les modifier
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>

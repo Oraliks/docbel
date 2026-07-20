@@ -14,10 +14,11 @@
  * Usage : pnpm dotenv -e .env.local -- tsx scripts/generate-lookup-refs.ts
  */
 
-import { readFileSync, writeFileSync } from "node:fs";
+import { writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { prisma } from "@/lib/prisma";
+import { normalizeLookupRefs } from "@/lib/reglementation/lookup-refs";
 import type { LegalMeta } from "@/components/reglementation/types";
 import type { LookupCodeRef } from "@/lib/dossiers/types";
 
@@ -31,6 +32,28 @@ const TABLES = [
   "signaletic-admissibility-article",
   "s04-s36-article-indemnisation",
 ];
+
+// Entrées rédigées à la main (libellés curés) : elles PRIMENT sur la génération
+// et sont réinjectées telles quelles à chaque run (indépendant de l'état du fichier).
+const SANCTION = "signaletic-sanction-article";
+const HAND_AUTHORED: Record<string, LookupCodeRef[]> = {
+  "25_11_1991-1-art_153": [
+    { tableSlug: SANCTION, code: "153,1", label: "Exclusion — omission ou déclaration inexacte/incomplète" },
+    { tableSlug: SANCTION, code: "153,2", label: "Idem 153,1 — base « chef de ménage / isolé » accordé à tort" },
+    { tableSlug: SANCTION, code: "153,3", label: "Exclusion — récidive article 153" },
+  ],
+  "25_11_1991-1-art_154": [
+    { tableSlug: SANCTION, code: "154,1", label: "Exclusion — abus de la carte de contrôle" },
+    { tableSlug: SANCTION, code: "154,2", label: "Exclusion — récidive article 154" },
+    { tableSlug: SANCTION, code: "154,3", label: "Exclusion — abus carte de contrôle (fait > 30/9/2006, mauvaise foi, art. 154 al. 3)" },
+    { tableSlug: SANCTION, code: "154,4", label: "Exclusion — récidive art. 154 (fait après 30/9/2006, mauvaise foi)" },
+  ],
+  "25_11_1991-1-art_155": [
+    { tableSlug: SANCTION, code: "155,1,1", label: "Exclusion — production de documents inexacts (avant le 01/10/2006)" },
+    { tableSlug: SANCTION, code: "155,1,2", label: "Exclusion — fausse marque de pointage (avant le 01/10/2006)" },
+    { tableSlug: SANCTION, code: "155,2", label: "Exclusion — récidive (documents inexacts / fausse marque de pointage)" },
+  ],
+};
 
 /** Numéro d'article de tête ("129&2A"->"129", "36BIS"->"36", "104,1"->"104"). */
 function leadNum(code: string): string | null {
@@ -140,25 +163,69 @@ async function main() {
     );
   }
 
-  // 3) Fusion NON destructive avec la carte existante (clés déjà présentes gardées).
-  const existing = JSON.parse(readFileSync(MAP_PATH, "utf8")) as Record<string, unknown>;
+  // 2bis) Pont THÉMATIQUE pour les tables non numérotées par article (dispo S38,
+  // vérification V) : rattachées en lien « table entière » (sans code) aux articles
+  // dont le TITRE porte le thème — c'est la donnée qui décide, pas une invention.
+  // Libellé éditorial court (renommage du label ONEM, pas d'affirmation réglementaire).
+  const THEME_LABELS: Record<string, string> = {
+    "dispo-state": "Disponibilité — statuts",
+    "dispo-action-nature": "Disponibilité — nature des actions",
+    "dispo-state-reason": "Disponibilité — motifs de statut",
+    "dispo-early-end-reason": "Disponibilité — motifs de fin anticipée",
+    "verif-decision-code": "Vérification — codes de décision",
+    "codes-verification-preliminaire": "Codes de vérification préliminaire",
+    "verif-day-nature-drs": "Vérification — nature des jours (DRS)",
+    "verif-compensatory-rest-day": "Vérification — jours de repos compensatoire",
+    "verif168bis-rejection": "Vérification — rejets art. 168bis",
+  };
+  const THEMES: { titleRe: RegExp; slugs: string[] }[] = [
+    { titleRe: /disponibilit/i, slugs: ["dispo-state", "dispo-action-nature", "dispo-state-reason", "dispo-early-end-reason"] },
+    { titleRe: /introduction et v[ée]rification/i, slugs: ["verif-decision-code", "codes-verification-preliminaire", "verif-day-nature-drs", "verif-compensatory-rest-day"] },
+    { titleRe: /surveillance/i, slugs: ["verif-decision-code", "codes-verification-preliminaire"] },
+    { titleRe: /r[ée]vision d.une d[ée]cision/i, slugs: ["verif-decision-code"] },
+  ];
+  const EXACT: { rid: string; slug: string }[] = [
+    { rid: "25_11_1991-1-art_168bis", slug: "verif168bis-rejection" },
+  ];
+
+  const allSlugs = new Set(
+    (await prisma.lookupTable.findMany({ select: { slug: true } })).map((t) => t.slug),
+  );
+  const addTableRef = (rid: string, slug: string) => {
+    if (!allSlugs.has(slug)) return;
+    if (!generated[rid]) generated[rid] = [];
+    generated[rid].push({ tableSlug: slug, label: THEME_LABELS[slug] ?? slug });
+  };
+  let thematic = 0;
+  for (const [rid, title] of validArts) {
+    for (const th of THEMES) {
+      if (!th.titleRe.test(title)) continue;
+      for (const slug of th.slugs) { addTableRef(rid, slug); thematic++; }
+    }
+  }
+  for (const ex of EXACT) {
+    if (validArts.has(ex.rid)) { addTableRef(ex.rid, ex.slug); thematic++; }
+  }
+  report.push(`thématique dispo/verif : ${thematic} lien(s) « table entière » ajouté(s)`);
+
+  // 3) Assemblage déterministe : hand-authored (priment) + généré (tout le reste).
   const out: Record<string, unknown> = {};
-  // doc en tête
   out["__doc__"] =
-    "Mappings « Codes ONEM liés » RioLex. Bootstrap via scripts/generate-lookup-refs.ts " +
-    "(pont structurel code#→article#), éditable à la main ensuite. tableSlug = slug d'une " +
-    "LookupTable. Clés '__' ignorées. Appliquer : pnpm attach:lookup-refs [--dry].";
+    "Mappings « Codes ONEM liés » RioLex. Généré par scripts/generate-lookup-refs.ts " +
+    "(pont code#→article# + thématique dispo/verif par titre), éditable à la main ensuite. " +
+    "tableSlug = slug d'une LookupTable. Clés '__' ignorées. Appliquer : pnpm attach:lookup-refs [--dry].";
 
   const articleKeys = new Set<string>();
-  for (const [k, v] of Object.entries(existing)) {
-    if (k.startsWith("__")) continue;
-    out[k] = v; // conserve l'existant tel quel (sanctions hand-authored)
-    articleKeys.add(k);
+  for (const [rid, refs] of Object.entries(HAND_AUTHORED)) {
+    out[rid] = refs;
+    articleKeys.add(rid);
   }
   let added = 0;
   for (const [rid, refs] of Object.entries(generated)) {
-    if (articleKeys.has(rid)) continue; // ne pas écraser une clé existante
-    out[rid] = refs;
+    if (articleKeys.has(rid)) continue; // hand-authored prime
+    const clean = normalizeLookupRefs(refs); // dédup (tableSlug,code) + cap 12
+    if (clean.length === 0) continue;
+    out[rid] = clean;
     articleKeys.add(rid);
     added++;
   }
@@ -167,8 +234,8 @@ async function main() {
 
   console.log("=== Génération mappings Lookup↔RioLex ===");
   for (const line of report) console.log("  " + line);
-  console.log(`\n  Clés existantes conservées : ${Object.keys(existing).filter((k)=>!k.startsWith("__")).length}`);
-  console.log(`  Nouvelles clés ajoutées    : ${added}`);
+  console.log(`\n  Hand-authored (sanctions) : ${Object.keys(HAND_AUTHORED).length}`);
+  console.log(`  Générés (code + thématique): ${added}`);
   console.log(`  Total articles mappés      : ${articleKeys.size}`);
   console.log(`\nÉcrit dans ${MAP_PATH}. Vérifie puis: pnpm attach:lookup-refs --dry`);
 }

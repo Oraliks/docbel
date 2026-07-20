@@ -113,7 +113,7 @@ function situationTheme(value: string): SituationTheme {
   return "emploi";
 }
 
-function resolveIcon(name: string): LucideIcon {
+export function resolveIcon(name: string): LucideIcon {
   return ICONS[name] ?? HelpCircle;
 }
 
@@ -126,7 +126,7 @@ function persistOrientationAnswers(answers: Record<string, { value: string }>) {
 /// Résout un texte localisé : préfère la clé i18n `*Key` quand elle est
 /// fournie (configs hand-written via WIZARD_SITUATIONS), retombe sur le
 /// texte FR brut (path adapter DB → WizardSituation, qui ne pose pas de clés).
-function resolveText(
+export function resolveText(
   t: ReturnType<typeof useTranslations>,
   key: string | undefined,
   fallback: string,
@@ -157,6 +157,13 @@ interface Props {
   /// neutralise la navigation des CTA de résultat (on ne quitte pas l'éditeur).
   /// Additif, défaut `false` → comportement public inchangé.
   dryRun?: boolean;
+  /// Masque l'en-tête assistant (icône + titre + sous-titre) et, en step 1,
+  /// le libellé de question + la barre de recherche de situations (les pills
+  /// thématiques et la grille de tuiles restent toujours visibles). Utilisé
+  /// quand le wizard est embarqué dans un chrome parent qui fournit déjà son
+  /// propre en-tête (guichet `/mon-dossier`). Additif, défaut `false` →
+  /// comportement public inchangé.
+  hideHeader?: boolean;
 }
 
 /// Contexte de mode test, lu par les sous-composants de résultat pour gater
@@ -180,6 +187,7 @@ export function DossierWizard({
   catalog = {},
   initialSituation,
   dryRun = false,
+  hideHeader = false,
 }: Props) {
   const t = useTranslations("public.dossier");
   const tc = useTranslations("public.dossierContent");
@@ -332,29 +340,31 @@ export function DossierWizard({
   return (
     <DryRunContext.Provider value={dryRun}>
     <Card className={cn(GLASS_CARD, "h-full overflow-hidden rounded-3xl")} data-docbel-readable>
-      <CardHeader className="p-4 pb-3 sm:p-5 sm:pb-3">
-        <CardTitle className="flex items-center gap-3">
-          <span
-            className="glass-icon-tile flex size-12 shrink-0 items-center justify-center rounded-2xl text-[color:var(--glass-accent-deep)]"
-            style={{
-              background:
-                "color-mix(in oklab, var(--glass-accent-deep) 14%, transparent)",
-              "--tile-hue": "var(--glass-accent-deep)",
-            } as React.CSSProperties}
-            aria-hidden
-          >
-            <Sparkles />
-          </span>
-          <span className="flex flex-col gap-0.5">
-            <span className="text-2xl font-bold leading-tight">
-              {t("wizardAssistantTitle")}
+      {!hideHeader && (
+        <CardHeader className="p-4 pb-3 sm:p-5 sm:pb-3">
+          <CardTitle className="flex items-center gap-3">
+            <span
+              className="glass-icon-tile flex size-12 shrink-0 items-center justify-center rounded-2xl text-[color:var(--glass-accent-deep)]"
+              style={{
+                background:
+                  "color-mix(in oklab, var(--glass-accent-deep) 14%, transparent)",
+                "--tile-hue": "var(--glass-accent-deep)",
+              } as React.CSSProperties}
+              aria-hidden
+            >
+              <Sparkles />
             </span>
-            <span className="text-sm font-normal text-muted-foreground">
-              {t("wizardAssistantSubtitle")}
+            <span className="flex flex-col gap-0.5">
+              <span className="text-2xl font-bold leading-tight">
+                {t("wizardAssistantTitle")}
+              </span>
+              <span className="text-sm font-normal text-muted-foreground">
+                {t("wizardAssistantSubtitle")}
+              </span>
             </span>
-          </span>
-        </CardTitle>
-      </CardHeader>
+          </CardTitle>
+        </CardHeader>
+      )}
       <CardContent className="flex flex-col gap-5 p-4 pt-0 sm:p-5 sm:pt-0">
         <Stepper currentStep={currentStep} />
 
@@ -371,6 +381,7 @@ export function DossierWizard({
             situations={situations}
             selected={selectedSituation}
             onSelect={handleSituationSelect}
+            hideSearch={hideHeader}
           />
         )}
 
@@ -473,12 +484,17 @@ interface StepSituationProps {
   situations: WizardSituation[];
   selected: string | null;
   onSelect: (value: string) => void;
+  /// Masque le libellé de question (`wizardSituationQuestion` + aide) et la
+  /// barre de recherche. Les pills thématiques et la grille de tuiles restent
+  /// toujours rendues. Additif, défaut `false`.
+  hideSearch?: boolean;
 }
 
 function StepSituation({
   situations,
   selected,
   onSelect,
+  hideSearch = false,
 }: StepSituationProps) {
   const t = useTranslations("public.dossier");
   const tc = useTranslations("public.dossierContent");
@@ -498,27 +514,31 @@ function StepSituation({
 
   return (
     <div className="flex flex-col gap-4 transition-opacity duration-200">
-      <div className="flex flex-col gap-2">
-        <Label className="block text-xl font-bold leading-tight text-[color:var(--glass-ink)]">
-          {t("wizardSituationQuestion")}
-        </Label>
-        <p className="text-sm leading-relaxed text-muted-foreground">
-          {t("wizardSituationHelp")}
-        </p>
-      </div>
+      {!hideSearch && (
+        <div className="flex flex-col gap-2">
+          <Label className="block text-xl font-bold leading-tight text-[color:var(--glass-ink)]">
+            {t("wizardSituationQuestion")}
+          </Label>
+          <p className="text-sm leading-relaxed text-muted-foreground">
+            {t("wizardSituationHelp")}
+          </p>
+        </div>
+      )}
 
-      <label className="flex min-h-14 items-center gap-3 rounded-2xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-4 focus-within:ring-2 focus-within:ring-[color:var(--glass-accent-deep)]/35">
-        <Search className="size-5 shrink-0 text-[color:var(--glass-accent-deep)]" aria-hidden />
-        <input
-          data-glass-input-unstyled
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-          className="min-w-0 flex-1 bg-transparent text-sm text-[color:var(--glass-ink)] outline-none placeholder:text-[color:var(--glass-ink)]/45"
-          placeholder={t("searchPlaceholder")}
-          aria-label={t("searchAriaLabel")}
-        />
-        <span className="flex size-8 items-center justify-center rounded-full bg-[color:var(--glass-pop-bg)] text-[color:var(--glass-accent-deep)]" aria-hidden><Sparkles className="size-4" /></span>
-      </label>
+      {!hideSearch && (
+        <label className="flex min-h-14 items-center gap-3 rounded-2xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-4 focus-within:ring-2 focus-within:ring-[color:var(--glass-accent-deep)]/35">
+          <Search className="size-5 shrink-0 text-[color:var(--glass-accent-deep)]" aria-hidden />
+          <input
+            data-glass-input-unstyled
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            className="min-w-0 flex-1 bg-transparent text-sm text-[color:var(--glass-ink)] outline-none placeholder:text-[color:var(--glass-ink)]/45"
+            placeholder={t("searchPlaceholder")}
+            aria-label={t("searchAriaLabel")}
+          />
+          <span className="flex size-8 items-center justify-center rounded-full bg-[color:var(--glass-pop-bg)] text-[color:var(--glass-accent-deep)]" aria-hidden><Sparkles className="size-4" /></span>
+        </label>
+      )}
 
       <div className="no-scrollbar flex gap-2 overflow-x-auto pb-1" aria-label={t("sortGroupLabel")}>
         {SITUATION_THEMES.map((theme) => {

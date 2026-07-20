@@ -71,6 +71,13 @@ next-intl 4 · Zod 4 · Tiptap 2 · pnpm 10. Détail + commandes :
   l'input « URL publique (SEO) » dans l'onglet Paramètres. Le catch-all
   `app/document/[...path]/page.tsx` redirige 308 slug → publicPath quand présent.
 
+**Vérification réglementaire (chômage)**
+- Tout lot touchant `lib/calculators/**`, un arbre de décision / runtime d'orientation,
+  `lib/pdf-forms/seed/**`, `docs/knowledge/chomage/**`, ou un contenu affirmant des
+  conditions / montants / durées : lancer **`/verif-reglementation`** (ou dispatcher le
+  sous-agent `verif-reglementation`) **avant commit**. Rapport informatif, **jamais bloquant**.
+  Charte : [`docs/agents/chomage/AGENT_CHOMAGE.md`](docs/agents/chomage/AGENT_CHOMAGE.md).
+
 ## Modèle utilisateur (résumé)
 Rôles `UserRole` : `user`, `partner`, `employer`, `moderator`, `admin` (+ `segment`,
 `partnerType` ; accès outils via `canUseTool` [`lib/entitlements.ts`](lib/entitlements.ts)).

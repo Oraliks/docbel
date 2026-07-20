@@ -313,7 +313,6 @@ export function BundleRunner({
     visibleItems,
     hiddenItems,
     completedCount,
-    requiredVisible,
     allRequiredDone,
   } = computeItemStatuses(bundle.items, completedTemplateIds, payloads, applicableSlugs);
 
@@ -483,8 +482,12 @@ export function BundleRunner({
               </div>
             )}
 
-            {/* Feuille de route — l'écran de sortie, dès que tout l'obligatoire est complété */}
-            {allRequiredDone && requiredVisible.length > 0 && (
+            {/* Feuille de route — l'écran de sortie (ancre #recuperer-envoyer),
+                dès que tout l'obligatoire est complété. Prédicat = `allRequiredDone`
+                SEUL, identique au déverrouillage de l'étape 3 du rail (rail-model
+                retrieveState) : sinon un dossier sans document requis côté citoyen
+                afficherait un lien « Récupérer » vers une ancre absente (#14). */}
+            {allRequiredDone && (
               <BundleRoadmap
                 documents={visibleItems.flatMap(
                   ({ item, completed }): RoadmapDocument[] =>

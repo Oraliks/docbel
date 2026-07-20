@@ -506,6 +506,9 @@ export function MonDossierClient({
               initialSituation={presetSituation ?? undefined}
             />
 
+            {/* Catalogue « Parcourir tous les dossiers » — masqué s'il n'y a aucun
+                dossier publié (évite un en-tête + tris/filtres sans rien dessous). */}
+            {bundles.length > 0 && (
             <section className="glass-surface flex flex-col gap-4 p-3 sm:p-5">
               <div className="flex items-center gap-3">
                 <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-[color:var(--glass-pop-bg)] text-[color:var(--glass-accent-deep)]" aria-hidden>
@@ -592,6 +595,7 @@ export function MonDossierClient({
                 </Button>
               ) : null}
             </section>
+            )}
           </div>
         )}
       </div>

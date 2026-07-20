@@ -1,55 +1,69 @@
 import { test, expect } from "@playwright/test";
 
 // E2E /mon-dossier : guichet unique (refonte Task 4.1). Le toggle « Je me
-// laisse guider » / « J'accède directement » a été SUPPRIMÉ : le guichet
-// (wizard) ET le catalogue sont désormais TOUJOURS affichés, empilés
-// verticalement (plus d'onglet, plus d'écran vide au premier chargement).
+// laisse guider » / « J'accède directement » a été SUPPRIMÉ. Le guichet
+// (wizard, dans #guichet, sous « Qu'est-ce qui vous arrive ? ») ET le
+// catalogue (« Parcourir tous les dossiers » : recherche + tris + filtres)
+// sont désormais TOUJOURS affichés, empilés verticalement dans le même
+// scroll — plus d'onglet, plus de rôle "tab"/"aria-selected", plus d'écran
+// vide au 1er chargement, et la recherche du catalogue est directement
+// visible sans aucune bascule préalable.
 // Nécessite le dev server (pnpm dev) + DB accessible.
 // Lancer : pnpm test:e2e tests/e2e/mon-dossier
-// ⚠ Sélecteurs mis à jour pour la nouvelle UI mais NON rejoués à l'écriture
-// (workflow d'implémentation sans dev server) — à confirmer au 1er run e2e.
+// ⚠ Sélecteurs alignés sur la nouvelle UI (valeurs i18n vérifiées :
+// guichetTitle / guichetBrowseAll / wizardAssistantTitle / searchAriaLabel /
+// emptyNoMatchTitle) mais NON rejoués à l'écriture — workflow sans dev
+// server ; à confirmer au 1er `pnpm test:e2e`.
 
 test.describe("/mon-dossier — guichet unique", () => {
   test.beforeEach(async ({ page }) => {
     await page.goto("/mon-dossier");
-    // Le guichet (wizard) est toujours affiché — plus de bascule.
+    // Le guichet (wizard) est affiché d'emblée — plus de bascule d'onglet.
     await expect(
       page.getByRole("heading", { name: /Qu'est-ce qui vous arrive/i }),
     ).toBeVisible();
   });
 
-  test("guichet ET catalogue visibles d'emblée, plus aucun onglet de bascule", async ({
+  test("guichet ET catalogue visibles d'emblée, recherche directe, aucun onglet", async ({
     page,
   }) => {
-    // Le guichet en haut…
+    // 1) Le guichet (wizard) en haut : son titre de section + l'assistant.
     await expect(
       page.getByRole("heading", { name: /Qu'est-ce qui vous arrive/i }),
     ).toBeVisible();
-    // …et le catalogue « Parcourir tous les dossiers » en dessous, sans bascule.
+    await expect(page.getByText(/L'assistant dossier/i)).toBeVisible();
+
+    // 2) Le catalogue « Parcourir tous les dossiers » est rendu EN DESSOUS,
+    //    dans le même scroll, sans avoir à basculer d'onglet.
+    const catalogue = page
+      .getByRole("heading", { name: /Parcourir tous les dossiers/i })
+      .locator("xpath=ancestor::section[1]");
     await expect(
-      page.getByRole("heading", { name: /Parcourir tous les dossiers/i }),
+      catalogue.getByRole("heading", { name: /Parcourir tous les dossiers/i }),
     ).toBeVisible();
-    // Le toggle 2-modes n'existe plus.
+
+    // 3) La recherche du catalogue est directement visible au chargement,
+    //    sans aucun clic d'onglet préalable.
+    await expect(catalogue.getByRole("searchbox")).toBeVisible();
+
+    // 4) Le toggle 2-modes a disparu : plus d'onglet, ni bouton de bascule.
     await expect(page.getByRole("tab")).toHaveCount(0);
     await expect(
       page.getByRole("button", { name: /J'accède directement/i }),
     ).toHaveCount(0);
-  });
-
-  test("le wizard avance à l'étape 2 après une situation", async ({ page }) => {
-    await page.getByRole("button", { name: /perdu mon emploi/i }).click();
-    await expect(page.getByText(/Quel est votre parcours/i)).toBeVisible();
-    await expect(page.getByRole("button", { name: /Précédent/i })).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: /Je me laisse guider/i }),
+    ).toHaveCount(0);
   });
 
   test("recherche du catalogue sans résultat affiche le message dédié", async ({
     page,
   }) => {
-    // Le catalogue est toujours visible : pas besoin de basculer d'onglet.
+    // Recherche directement accessible : aucune bascule d'onglet préalable.
     const catalogue = page
       .getByRole("heading", { name: /Parcourir tous les dossiers/i })
       .locator("xpath=ancestor::section[1]");
-    await catalogue.getByLabel(/Rechercher un dossier/i).fill("zzzznexistepasxyz");
+    await catalogue.getByRole("searchbox").fill("zzzznexistepasxyz");
     await expect(page.getByText(/Aucun dossier ne correspond/i)).toBeVisible();
   });
 

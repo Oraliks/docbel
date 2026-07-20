@@ -219,6 +219,23 @@ export const allocationsInsertion: DossierDefinition = {
       messageKey: "insertion.warning.alternance.message",
       severity: "info",
     },
+    {
+      // Prudence obligatoire : texte FR direct (pas de clé i18n) — beldoc
+      // oriente, il ne décide pas à la place de l'ONEM. Toujours visible.
+      title: "À titre indicatif",
+      message:
+        "Cet outil t'aide à t'orienter. Il ne remplace pas une décision de l'ONEM, de ton organisme de paiement ou d'un conseiller compétent.",
+      severity: "info",
+    },
+    {
+      // Effet phare de la réforme 01/03/2026 : on annonce la durée d'un an
+      // SANS calculer de fin de droit individuelle (renvoi à l'organisme de
+      // paiement). Texte FR direct (pas de clé i18n).
+      title: "Limitées à 1 an depuis 2026",
+      message:
+        "Depuis le 1er mars 2026, les allocations d'insertion sont limitées à un an (une prolongation reste possible selon tes périodes de travail ou assimilées). Cette durée est une orientation : ton organisme de paiement confirme ta situation exacte.",
+      severity: "info",
+    },
   ],
 
   // ===================================================================

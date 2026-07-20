@@ -4,6 +4,17 @@
     { "tableSlug": "signaletic-sanction-article", "code": "153,2", "label": "Idem 153,1 — base « chef de ménage / isolé » accordé à tort" },
     { "tableSlug": "signaletic-sanction-article", "code": "153,3", "label": "Exclusion — récidive article 153" }
   ],
+  "25_11_1991-1-art_154": [
+    { "tableSlug": "signaletic-sanction-article", "code": "154,1", "label": "Exclusion — abus de la carte de contrôle" },
+    { "tableSlug": "signaletic-sanction-article", "code": "154,2", "label": "Exclusion — récidive article 154" },
+    { "tableSlug": "signaletic-sanction-article", "code": "154,3", "label": "Exclusion — abus carte de contrôle (fait > 30/9/2006, mauvaise foi, art. 154 al. 3)" },
+    { "tableSlug": "signaletic-sanction-article", "code": "154,4", "label": "Exclusion — récidive art. 154 (fait après 30/9/2006, mauvaise foi)" }
+  ],
+  "25_11_1991-1-art_155": [
+    { "tableSlug": "signaletic-sanction-article", "code": "155,1,1", "label": "Exclusion — production de documents inexacts (avant le 01/10/2006)" },
+    { "tableSlug": "signaletic-sanction-article", "code": "155,1,2", "label": "Exclusion — fausse marque de pointage (avant le 01/10/2006)" },
+    { "tableSlug": "signaletic-sanction-article", "code": "155,2", "label": "Exclusion — récidive (documents inexacts / fausse marque de pointage)" }
+  ],
   "__doc__": "Mappings éditoriaux article RioLex -> codes Lookup ONEM. Clé = riolexId (ex: '25_11_1991-1-art_52bis'), valeur = LookupCodeRef[]. Édite ce fichier puis lance `pnpm attach:lookup-refs --dry` (aperçu) puis sans --dry (écrit legalMeta.lookupRefs). tableSlug DOIT être le slug d'une LookupTable existante (cf. /admin/chomage/lookup ou table LookupTable). Les clés préfixées '__' sont ignorées par le script. Mappings à fournir/valider par Oraliks (domaine) — ne pas inventer.",
   "__example__": [
     {

@@ -320,6 +320,21 @@ export function SimulatorCard() {
             </div>
           </div>
 
+          {/* Limites honnêtes renvoyées par le moteur (plafond, plancher,
+              dégressivité…). Chaînes FR issues d'`estimerAllocation` : PAS
+              d'i18n. Miroir du pattern d'allocation-estimate-block, adapté aux
+              tokens sombres de cette carte. */}
+          <ul className="space-y-1 text-[11px] leading-snug text-white/65">
+            {result.caveats.map((caveat) => (
+              <li key={caveat} className="flex gap-1.5">
+                <span aria-hidden className="select-none">
+                  •
+                </span>
+                <span>{caveat}</span>
+              </li>
+            ))}
+          </ul>
+
           <p className="text-[11px] leading-snug text-white/65">
             {t("simDisclaimer")}{" "}
             <Link
@@ -329,6 +344,9 @@ export function SimulatorCard() {
               {t("simRefineLink")}
               <ArrowRightIcon className="ml-0.5 inline size-3" aria-hidden />
             </Link>
+          </p>
+          <p className="text-[11px] leading-snug text-white/65">
+            {t("simLegalWarning")}
           </p>
 
           <button

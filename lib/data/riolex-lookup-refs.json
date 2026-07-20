@@ -1,27 +1,1391 @@
 {
+  "__doc__": "Mappings « Codes ONEM liés » RioLex. Bootstrap via scripts/generate-lookup-refs.ts (pont structurel code#→article#), éditable à la main ensuite. tableSlug = slug d'une LookupTable. Clés '__' ignorées. Appliquer : pnpm attach:lookup-refs [--dry].",
   "25_11_1991-1-art_153": [
-    { "tableSlug": "signaletic-sanction-article", "code": "153,1", "label": "Exclusion — omission ou déclaration inexacte/incomplète" },
-    { "tableSlug": "signaletic-sanction-article", "code": "153,2", "label": "Idem 153,1 — base « chef de ménage / isolé » accordé à tort" },
-    { "tableSlug": "signaletic-sanction-article", "code": "153,3", "label": "Exclusion — récidive article 153" }
-  ],
-  "25_11_1991-1-art_154": [
-    { "tableSlug": "signaletic-sanction-article", "code": "154,1", "label": "Exclusion — abus de la carte de contrôle" },
-    { "tableSlug": "signaletic-sanction-article", "code": "154,2", "label": "Exclusion — récidive article 154" },
-    { "tableSlug": "signaletic-sanction-article", "code": "154,3", "label": "Exclusion — abus carte de contrôle (fait > 30/9/2006, mauvaise foi, art. 154 al. 3)" },
-    { "tableSlug": "signaletic-sanction-article", "code": "154,4", "label": "Exclusion — récidive art. 154 (fait après 30/9/2006, mauvaise foi)" }
-  ],
-  "25_11_1991-1-art_155": [
-    { "tableSlug": "signaletic-sanction-article", "code": "155,1,1", "label": "Exclusion — production de documents inexacts (avant le 01/10/2006)" },
-    { "tableSlug": "signaletic-sanction-article", "code": "155,1,2", "label": "Exclusion — fausse marque de pointage (avant le 01/10/2006)" },
-    { "tableSlug": "signaletic-sanction-article", "code": "155,2", "label": "Exclusion — récidive (documents inexacts / fausse marque de pointage)" }
-  ],
-  "__doc__": "Mappings éditoriaux article RioLex -> codes Lookup ONEM. Clé = riolexId (ex: '25_11_1991-1-art_52bis'), valeur = LookupCodeRef[]. Édite ce fichier puis lance `pnpm attach:lookup-refs --dry` (aperçu) puis sans --dry (écrit legalMeta.lookupRefs). tableSlug DOIT être le slug d'une LookupTable existante (cf. /admin/chomage/lookup ou table LookupTable). Les clés préfixées '__' sont ignorées par le script. Mappings à fournir/valider par Oraliks (domaine) — ne pas inventer.",
-  "__example__": [
     {
       "tableSlug": "signaletic-sanction-article",
       "code": "153,1",
-      "label": "Article de sanction 153, §1",
-      "context": "exemple de forme — à remplacer"
+      "label": "Exclusion — omission ou déclaration inexacte/incomplète"
+    },
+    {
+      "tableSlug": "signaletic-sanction-article",
+      "code": "153,2",
+      "label": "Idem 153,1 — base « chef de ménage / isolé » accordé à tort"
+    },
+    {
+      "tableSlug": "signaletic-sanction-article",
+      "code": "153,3",
+      "label": "Exclusion — récidive article 153"
+    }
+  ],
+  "25_11_1991-1-art_154": [
+    {
+      "tableSlug": "signaletic-sanction-article",
+      "code": "154,1",
+      "label": "Exclusion — abus de la carte de contrôle"
+    },
+    {
+      "tableSlug": "signaletic-sanction-article",
+      "code": "154,2",
+      "label": "Exclusion — récidive article 154"
+    },
+    {
+      "tableSlug": "signaletic-sanction-article",
+      "code": "154,3",
+      "label": "Exclusion — abus carte de contrôle (fait > 30/9/2006, mauvaise foi, art. 154 al. 3)"
+    },
+    {
+      "tableSlug": "signaletic-sanction-article",
+      "code": "154,4",
+      "label": "Exclusion — récidive art. 154 (fait après 30/9/2006, mauvaise foi)"
+    }
+  ],
+  "25_11_1991-1-art_155": [
+    {
+      "tableSlug": "signaletic-sanction-article",
+      "code": "155,1,1",
+      "label": "Exclusion — production de documents inexacts (avant le 01/10/2006)"
+    },
+    {
+      "tableSlug": "signaletic-sanction-article",
+      "code": "155,1,2",
+      "label": "Exclusion — fausse marque de pointage (avant le 01/10/2006)"
+    },
+    {
+      "tableSlug": "signaletic-sanction-article",
+      "code": "155,2",
+      "label": "Exclusion — récidive (documents inexacts / fausse marque de pointage)"
+    }
+  ],
+  "25_11_1991-1-art_52": [
+    {
+      "tableSlug": "signaletic-sanction-article",
+      "code": "52,D",
+      "label": "Exclusion licenciement emploi pour motifs équitables"
+    },
+    {
+      "tableSlug": "signaletic-sanction-article",
+      "code": "52,E",
+      "label": "Exclusion licenciement motifs équitables emploi/stage (allocations…"
+    },
+    {
+      "tableSlug": "signaletic-sanction-article",
+      "code": "52,F",
+      "label": "1ère récidive - exclusion licenciement motifs équitables emploi/stage"
+    },
+    {
+      "tableSlug": "signaletic-sanction-article",
+      "code": "52,G",
+      "label": "2ème récidive - exclusion licenciement motifs équitables emploi/stage"
+    },
+    {
+      "tableSlug": "signaletic-sanction-article",
+      "code": "52,DB",
+      "label": "Exclusion licenciement formation professionnelle pour motifs équitables"
+    },
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "52DRD",
+      "label": "Droit au rebond accepté"
+    },
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "52&1",
+      "label": "Licenciement au sens de l'article 51§1,alinéa 2, 2°"
+    },
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "52&2",
+      "label": "Récidive après exclusion article 52§1 ou 52bis§1"
+    },
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "52&3",
+      "label": "Récidive après exclusion article 52§2"
+    },
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "52&4",
+      "label": "Nouvelle admission après exclusion"
+    }
+  ],
+  "25_11_1991-1-art_52bis": [
+    {
+      "tableSlug": "signaletic-sanction-article",
+      "code": "52BIS,A",
+      "label": "Exclusion normale abandon d'emploi"
+    },
+    {
+      "tableSlug": "signaletic-sanction-article",
+      "code": "52BIS,B",
+      "label": "Exclusion abandon d'emploi délibéré et intentionnel"
+    },
+    {
+      "tableSlug": "signaletic-sanction-article",
+      "code": "52BIS,C",
+      "label": "Récidive - Exclusion abandon d'emploi délibéré"
+    },
+    {
+      "tableSlug": "signaletic-sanction-article",
+      "code": "52BIS,D",
+      "label": "Exclusion pas d’inscription au préalable"
+    },
+    {
+      "tableSlug": "signaletic-sanction-article",
+      "code": "52BIS,E",
+      "label": "Perte de droit pour non coopération personne non-mobilisable"
+    }
+  ],
+  "25_11_1991-1-art_54": [
+    {
+      "tableSlug": "signaletic-sanction-article",
+      "code": "54",
+      "label": "Exclusion abandon d'emploi pour occuper un autre emploi < 4 semaines"
+    },
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "54",
+      "label": "Exclusion suite abandon d'emploi pour excercer un autre (4 semaines)"
+    }
+  ],
+  "25_11_1991-1-art_56": [
+    {
+      "tableSlug": "signaletic-sanction-article",
+      "code": "56&2",
+      "label": "Exclusion Région pour la durée de l'indisponibilité"
+    },
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "56&2",
+      "label": "Exclusion art 56, § 2 par les Régions en cas d'indisponibilité"
+    },
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "56,B",
+      "label": "Indispinobilité subjective non déclarée spontanément par le chômeur"
+    },
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "56,C",
+      "label": "Indisponibilité objective constatée par le BC"
+    }
+  ],
+  "25_11_1991-1-art_58": [
+    {
+      "tableSlug": "signaletic-sanction-article",
+      "code": "58&1",
+      "label": "Exclusion Région pour la durée de la radiation en tant que demandeur…"
+    },
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "58",
+      "label": "Inscription comme demandeur d'emploi chômeur complet"
+    },
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "58&1",
+      "label": "Exclusion art 58, §1 par les Régions en cas de radiation en tant que…"
+    }
+  ],
+  "25_11_1991-1-art_59": [
+    {
+      "tableSlug": "signaletic-sanction-article",
+      "code": "59,41",
+      "label": "Suspension de 4 mois après une évaluation négative 1er entretien et le…"
+    },
+    {
+      "tableSlug": "signaletic-sanction-article",
+      "code": "59,42",
+      "label": "Suspension de 4 mois après une évaluation négative 1er entretien et le…"
+    },
+    {
+      "tableSlug": "signaletic-sanction-article",
+      "code": "59,51",
+      "label": "Suspension de 4 mois après une évaluation négative 2ème entretien et le…"
+    },
+    {
+      "tableSlug": "signaletic-sanction-article",
+      "code": "59,52",
+      "label": "Suspension de 4 mois après une évaluation négative 2ème entretien et le…"
+    },
+    {
+      "tableSlug": "signaletic-sanction-article",
+      "code": "59,70",
+      "label": "Suspension de 4 mois lorsque le chômeur, malgré sa situation familiale…"
+    },
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "59",
+      "label": "Inscription comme demandeur d'emploi chômeur temporaire"
+    },
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "59B",
+      "label": "Cohabitant ou jeune ayant quitté l'école - suspension limitée…"
+    },
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "59C",
+      "label": "Chômage temporaire durant sanction Dispo (59X)"
+    },
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "59,8",
+      "label": "Admission sur base art. 59 octies après exclusion art. 59 sexies"
+    },
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "59,53",
+      "label": "Jeune ayant quitté l'école - exclusion entretien 2"
+    }
+  ],
+  "25_11_1991-1-art_63bis": [
+    {
+      "tableSlug": "signaletic-sanction-article",
+      "code": "63BIS",
+      "label": "Perte de droit aux allocations de sauvegarde pour non coopération…"
+    },
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "63BIS",
+      "label": "Perte du droit aux allocations de sauvegarde"
+    }
+  ],
+  "25_11_1991-1-art_129bis": [
+    {
+      "tableSlug": "signaletic-admissibility-article",
+      "code": "129BIS",
+      "label": "Complément de reprise de travail salarié"
+    },
+    {
+      "tableSlug": "signaletic-admissibility-article",
+      "code": "129BIS&1BIS",
+      "label": "Pas admis au complément de reprise de travail temporaire salarié"
+    },
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "129BIS",
+      "label": "Droit au complément de reprise travail salarié"
+    }
+  ],
+  "25_11_1991-1-art_129quater": [
+    {
+      "tableSlug": "signaletic-admissibility-article",
+      "code": "129QTR",
+      "label": "Complément de reprise de travail indépendant coopérative d'activités…"
+    },
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "129QTR",
+      "label": "Droit au complément de reprise Acco"
+    }
+  ],
+  "25_11_1991-1-art_129ter": [
+    {
+      "tableSlug": "signaletic-admissibility-article",
+      "code": "129TER",
+      "label": "Complément de reprise de travail indépendant"
+    },
+    {
+      "tableSlug": "signaletic-admissibility-article",
+      "code": "129TER&1BIS",
+      "label": "Pas admis au complément de reprise de travail temporaire indépendant"
+    },
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "129TER",
+      "label": "Droit au complément de reprise travail indépendant"
+    }
+  ],
+  "25_11_1991-1-art_131": [
+    {
+      "tableSlug": "signaletic-admissibility-article",
+      "code": "131,91",
+      "label": "Prime de passage - pas droit 131nonies§1"
+    },
+    {
+      "tableSlug": "signaletic-admissibility-article",
+      "code": "131,92",
+      "label": "Prime de passage - pas droit 131nonies§2 - prime déjà octroyée"
+    },
+    {
+      "tableSlug": "signaletic-admissibility-article",
+      "code": "131,93",
+      "label": "Prime de passage - pas droit 131 nonies§3 -"
+    },
+    {
+      "tableSlug": "signaletic-admissibility-article",
+      "code": "131,96",
+      "label": "Prime de passage - pas droit 131nonies§6"
+    },
+    {
+      "tableSlug": "signaletic-admissibility-article",
+      "code": "131,912",
+      "label": "Pas droit 131nonies §1,2 ."
+    },
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "131.8",
+      "label": "Complément après 6 mois formation professionnelle"
+    },
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "131&1",
+      "label": "Prime de formation"
+    },
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "131&2",
+      "label": "Prime fin formation linguistique"
+    },
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "131,7",
+      "label": "Complément de garde d'enfants"
+    },
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "131,9",
+      "label": "Prime de passage"
+    }
+  ],
+  "25_11_1991-1-art_148": [
+    {
+      "tableSlug": "signaletic-admissibility-article",
+      "code": "148",
+      "label": "Prime de crise secteur public"
+    }
+  ],
+  "25_11_1991-1-art_149": [
+    {
+      "tableSlug": "signaletic-admissibility-article",
+      "code": "149",
+      "label": "Prime de crise pour raison urgente"
+    },
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "149,1",
+      "label": "Révision décision suite erreur matérielle ou juridique"
+    },
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "149,2",
+      "label": "Erreur BC"
+    },
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "149,3",
+      "label": "Récupération avec effet rétroactif suite fausse déclaration"
+    },
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "149,4",
+      "label": "Révision avec effet rétroactif sans erreur du BC"
+    },
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "149,5",
+      "label": "Révision décision suite fait nouveau"
+    }
+  ],
+  "25_11_1991-1-art_150": [
+    {
+      "tableSlug": "signaletic-admissibility-article",
+      "code": "150",
+      "label": "Prime de crise durant période d'essai"
+    }
+  ],
+  "25_11_1991-1-art_151": [
+    {
+      "tableSlug": "signaletic-admissibility-article",
+      "code": "151",
+      "label": "Prime de crise à charge de l'employeur"
+    }
+  ],
+  "25_11_1991-1-art_152": [
+    {
+      "tableSlug": "signaletic-admissibility-article",
+      "code": "152",
+      "label": "Partie de la prime de crise"
+    }
+  ],
+  "25_11_1991-1-art_182": [
+    {
+      "tableSlug": "signaletic-admissibility-article",
+      "code": "182N1,1",
+      "label": "travailleurs des arts - ne prouve pas 156 jours"
+    },
+    {
+      "tableSlug": "signaletic-admissibility-article",
+      "code": "182N1,2",
+      "label": "Travailleurs des arts - pas d'attestation valide"
+    },
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "182N1",
+      "label": "refus renouvellement chapitre XII"
+    }
+  ],
+  "25_11_1991-1-art_195": [
+    {
+      "tableSlug": "signaletic-admissibility-article",
+      "code": "195N",
+      "label": "refus Chapitre XII - phase 1"
+    },
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "195&1",
+      "label": "Travailleurs des arts - Renonciation Stock"
+    }
+  ],
+  "25_11_1991-1-art_27": [
+    {
+      "tableSlug": "signaletic-admissibility-article",
+      "code": "27,2C",
+      "label": "Allocations CT durant formation en alternance"
+    },
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "27SP",
+      "label": "Procédure spécifique fin contrat de travail – Démarrage CT force…"
+    },
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "27,6",
+      "label": "Prolongation formation professionnelle"
+    },
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "27,2A1",
+      "label": "Suspension du contrat du travailleur protégé (loi 19/03/1991)"
+    },
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "27,2A2",
+      "label": "Pas droit aux allocations de chômage temporaire"
+    },
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "27,2A",
+      "label": "Suspension du contrat pour inaptitude temporaire"
+    }
+  ],
+  "25_11_1991-1-art_29": [
+    {
+      "tableSlug": "signaletic-admissibility-article",
+      "code": "29&2",
+      "label": "Refus du statut de travailleur à temps partiel avec maintien des droits"
+    },
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "29&2B",
+      "label": "Régularisation travailleur à temps partiel avec maintien des droits"
+    }
+  ],
+  "25_11_1991-1-art_30": [
+    {
+      "tableSlug": "signaletic-admissibility-article",
+      "code": "30N",
+      "label": "Ne répond pas aux conditions d'admission article 30, 32, 42"
+    },
+    {
+      "tableSlug": "signaletic-admissibility-article",
+      "code": "30,1",
+      "label": "Admission sur base de prestations de travail (chômage complet)"
+    },
+    {
+      "tableSlug": "signaletic-admissibility-article",
+      "code": "30,2",
+      "label": "Catégorie d'âge plus élevée"
+    },
+    {
+      "tableSlug": "signaletic-admissibility-article",
+      "code": "30,3,1",
+      "label": "Prolongation période de référence service militaire ou civil -…"
+    },
+    {
+      "tableSlug": "signaletic-admissibility-article",
+      "code": "30,3,2",
+      "label": "Prolongation période de référence éducation enfant"
+    }
+  ],
+  "25_11_1991-1-art_31": [
+    {
+      "tableSlug": "signaletic-admissibility-article",
+      "code": "31",
+      "label": "Travailleurs des ports/Pêcheurs de mer"
+    },
+    {
+      "tableSlug": "signaletic-admissibility-article",
+      "code": "31N",
+      "label": "Ne répond pas aux conditions d'admission article 31 (travailleurs de…"
+    }
+  ],
+  "25_11_1991-1-art_33": [
+    {
+      "tableSlug": "signaletic-admissibility-article",
+      "code": "33",
+      "label": "Travailleurs à temps partiel volontaire art. 103 - 104"
+    },
+    {
+      "tableSlug": "signaletic-admissibility-article",
+      "code": "33N",
+      "label": "Ne répond pas aux conditions d'admission article 33"
+    }
+  ],
+  "25_11_1991-1-art_35": [
+    {
+      "tableSlug": "signaletic-admissibility-article",
+      "code": "35",
+      "label": "Allocations de transition"
+    },
+    {
+      "tableSlug": "signaletic-admissibility-article",
+      "code": "35N",
+      "label": "Ne répond pas aux conditions d'admission article 35"
+    }
+  ],
+  "25_11_1991-1-art_36": [
+    {
+      "tableSlug": "signaletic-admissibility-article",
+      "code": "36",
+      "label": "Allocations d'attente"
+    },
+    {
+      "tableSlug": "signaletic-admissibility-article",
+      "code": "36A",
+      "label": "Formation en alternance terminée avec succès"
+    },
+    {
+      "tableSlug": "signaletic-admissibility-article",
+      "code": "36B",
+      "label": "formation en alternance terminée sans succès"
+    },
+    {
+      "tableSlug": "signaletic-admissibility-article",
+      "code": "36,1",
+      "label": "Stage d'attente non terminé"
+    },
+    {
+      "tableSlug": "signaletic-admissibility-article",
+      "code": "36,2",
+      "label": "Non admis sur base de l'article 36"
+    }
+  ],
+  "25_11_1991-1-art_36bis": [
+    {
+      "tableSlug": "signaletic-admissibility-article",
+      "code": "36BIS",
+      "label": "Admission vacances jeunes/senior"
+    },
+    {
+      "tableSlug": "signaletic-admissibility-article",
+      "code": "36BIS,1",
+      "label": "Condition d'âge non remplie"
+    },
+    {
+      "tableSlug": "signaletic-admissibility-article",
+      "code": "36BIS,2",
+      "label": "Etudes, apprentissage ou formation non terminées au cours de l'exercice…"
+    },
+    {
+      "tableSlug": "signaletic-admissibility-article",
+      "code": "36BIS,3",
+      "label": "Condition période d'occupation minimale pas remplie"
+    },
+    {
+      "tableSlug": "signaletic-admissibility-article",
+      "code": "36BIS,4",
+      "label": "Régime de vacances spécifique"
+    }
+  ],
+  "25_11_1991-1-art_36quater": [
+    {
+      "tableSlug": "signaletic-admissibility-article",
+      "code": "36QUATER",
+      "label": "Stage temps plein"
+    },
+    {
+      "tableSlug": "signaletic-admissibility-article",
+      "code": "36QUATER,1",
+      "label": "Pas droit à l'allocation de stage"
+    }
+  ],
+  "25_11_1991-1-art_36quinquies": [
+    {
+      "tableSlug": "signaletic-admissibility-article",
+      "code": "36QUINQUIES",
+      "label": "Formation ou stage temps partiel"
+    }
+  ],
+  "25_11_1991-1-art_36sexies": [
+    {
+      "tableSlug": "signaletic-admissibility-article",
+      "code": "36SEXIES",
+      "label": "Allocation d'établissement"
+    },
+    {
+      "tableSlug": "signaletic-admissibility-article",
+      "code": "36SEXIES,1",
+      "label": "Pas droit à l'allocation d'établissement"
+    }
+  ],
+  "25_11_1991-1-art_36ter": [
+    {
+      "tableSlug": "signaletic-admissibility-article",
+      "code": "36TER",
+      "label": "Formation Temps plein"
+    },
+    {
+      "tableSlug": "signaletic-admissibility-article",
+      "code": "36TER,1",
+      "label": "Pas droit à l'allocation de formation"
+    }
+  ],
+  "25_11_1991-1-art_37": [
+    {
+      "tableSlug": "signaletic-admissibility-article",
+      "code": "37",
+      "label": "Jours de travail/ prestations de travail prises en considération"
+    }
+  ],
+  "25_11_1991-1-art_42": [
+    {
+      "tableSlug": "signaletic-admissibility-article",
+      "code": "42&1,1",
+      "label": "Interruption chômage < 3 ans"
+    },
+    {
+      "tableSlug": "signaletic-admissibility-article",
+      "code": "42&1,2",
+      "label": "Maintien du droit allocations chômage temporaire pendant la fermeture…"
+    },
+    {
+      "tableSlug": "signaletic-admissibility-article",
+      "code": "42&2,1",
+      "label": "Période de 3 ans prolongée par période obligations de milice…"
+    },
+    {
+      "tableSlug": "signaletic-admissibility-article",
+      "code": "42&2,2",
+      "label": "Période de 3 ans prolongée par période éducation enfant"
+    },
+    {
+      "tableSlug": "signaletic-admissibility-article",
+      "code": "42&2,3",
+      "label": "Période de 3 ans prolongée par activité non assujettie Sécurité sociale…"
+    }
+  ],
+  "25_11_1991-1-art_43": [
+    {
+      "tableSlug": "signaletic-admissibility-article",
+      "code": "43",
+      "label": "Admission travailleur étranger ou apatride"
+    },
+    {
+      "tableSlug": "signaletic-admissibility-article",
+      "code": "43N",
+      "label": "Ne répond pas aux conditions d'admission article 43 (travailleur…"
+    }
+  ],
+  "25_11_1991-1-art_78": [
+    {
+      "tableSlug": "signaletic-admissibility-article",
+      "code": "78B,JV",
+      "label": "Vacances jeunes déjà octroyées l'année précédente"
+    },
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "78N",
+      "label": "date de fin provisoire - Passé professionnel 70&1 non encore connu"
+    },
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "78B,JV",
+      "label": "Vacances jeunes - pas indemnisable - autre régime de vacances"
+    }
+  ],
+  "25_11_1991-1-art_78bis": [
+    {
+      "tableSlug": "signaletic-admissibility-article",
+      "code": "78BIS,12",
+      "label": "Vacances Jeunes"
+    },
+    {
+      "tableSlug": "signaletic-admissibility-article",
+      "code": "78BIS,13",
+      "label": "Vacances Jeunes/Senior"
+    },
+    {
+      "tableSlug": "signaletic-admissibility-article",
+      "code": "78BIS,22",
+      "label": "Vacances Senior"
+    },
+    {
+      "tableSlug": "signaletic-admissibility-article",
+      "code": "78BIS,23",
+      "label": "Vacances Senior"
+    }
+  ],
+  "25_11_1991-1-art_91": [
+    {
+      "tableSlug": "signaletic-admissibility-article",
+      "code": "91,91",
+      "label": "Stage Temps partiel"
+    },
+    {
+      "tableSlug": "signaletic-admissibility-article",
+      "code": "91,92",
+      "label": "Stage Temps partiel"
+    },
+    {
+      "tableSlug": "signaletic-admissibility-article",
+      "code": "91,96",
+      "label": "Formation Temps partiel"
+    },
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "91,1",
+      "label": "Formation professionnelle collective à temps plein"
+    },
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "91,2",
+      "label": "Formation professionnelle individuelle à temps plein en entreprise"
+    },
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "91,3",
+      "label": "Formation professionnelle individuelle à temps plein dans un…"
+    },
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "91,4",
+      "label": "Formation collective à temps partiel"
+    },
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "91,5",
+      "label": "Formation professionnelle individuelle à temps partiel en entreprise"
+    }
+  ],
+  "25_11_1991-1-art_103": [
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "103",
+      "label": "Travailleur à temps partiel volontaire"
+    }
+  ],
+  "25_11_1991-1-art_104": [
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "104",
+      "label": "Travailleur à temps partiel non indemnisable suite reprise de travail"
+    },
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "104,1",
+      "label": "Chômage temporaire travailleur temps partiel volontaire qui remplit…"
+    }
+  ],
+  "25_11_1991-1-art_106": [
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "106",
+      "label": "Chômage temporaire - préfixe 97"
+    }
+  ],
+  "25_11_1991-1-art_110": [
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "110&2",
+      "label": "Isolé"
+    },
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "110&3",
+      "label": "Cohabitant"
+    },
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "110&4",
+      "label": "Nouvelle date d'échéance"
+    },
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "110,4",
+      "label": "Travailleurs commerce de combustibles"
+    },
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "110&1A",
+      "label": "Travailleur ayant charge de famille - conjoint sans revenus"
+    }
+  ],
+  "25_11_1991-1-art_114": [
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "114&7",
+      "label": "Allocation majorée durant période d'inscription dans la cellule pour…"
+    },
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "114B,1",
+      "label": "Refus de filet de sécurité - pas de demande de renouvellement"
+    },
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "114B,3",
+      "label": "Refus de filet de sécurité - pas d'allocation dans période d'application"
+    },
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "114&6B",
+      "label": "Formation en alternance: cumul d'allocations CC et CT"
+    }
+  ],
+  "25_11_1991-1-art_115": [
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "115,1D",
+      "label": "Droit au forfait majoré sans échapper à la limitation dans le temps"
+    }
+  ],
+  "25_11_1991-1-art_116": [
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "116&2",
+      "label": "Prolongation des périodes d'indemnisation après interruption"
+    }
+  ],
+  "25_11_1991-1-art_118": [
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "118",
+      "label": "Révision du code chômage"
+    }
+  ],
+  "25_11_1991-1-art_124": [
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "124,3",
+      "label": "Prolongation du code majoré en allocation d'insertion - F"
+    }
+  ],
+  "25_11_1991-1-art_125": [
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "125",
+      "label": "Indemnisation article 90"
+    }
+  ],
+  "25_11_1991-1-art_130": [
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "130B1",
+      "label": "Isolé ou allocataire ayant charge de famille - allocations réduites 4…"
+    },
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "130B2",
+      "label": "Isolé ou allocataire ayant charge de famille - allocations réduites 4…"
+    },
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "130B3",
+      "label": "Isolé ou allocataire ayant charge de famille - allocations réduites 6…"
+    },
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "130B4",
+      "label": "Isolé ou allocataire ayant charge de famille - allocations réduites 6…"
+    },
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "130B5",
+      "label": "Dispo - retour allocations complètes après diminution allocations 4 ou…"
+    }
+  ],
+  "25_11_1991-1-art_131bis": [
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "131BIS",
+      "label": "Pas droit à l'allocation garantie de revenu AGR"
+    }
+  ],
+  "25_11_1991-1-art_132": [
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "132",
+      "label": "Transfert dossier"
+    },
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "132C17",
+      "label": "Combinaison transfert et demande calcul passé professionnel pour octroi…"
+    }
+  ],
+  "25_11_1991-1-art_133": [
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "133",
+      "label": "Demande d'allocations (+ dossier administratif) incomplète"
+    },
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "133,4",
+      "label": "Demande de chômage temporaire après le 30.09"
+    },
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "133,7",
+      "label": "Demande d'allocations après sanction, exclusion, suspension"
+    }
+  ],
+  "25_11_1991-1-art_134": [
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "134",
+      "label": "Dossier administratif incomplet - changement situation familiale"
+    }
+  ],
+  "25_11_1991-1-art_138": [
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "138",
+      "label": "Introduction tardive"
+    }
+  ],
+  "25_11_1991-1-art_139": [
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "139",
+      "label": "Vérification déclaration"
+    }
+  ],
+  "25_11_1991-1-art_146": [
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "146",
+      "label": "Bénéficie d'une pension incomplète suite profession accessoire"
+    }
+  ],
+  "25_11_1991-1-art_158": [
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "158",
+      "label": "Prise de cours des sanctions administratives"
+    }
+  ],
+  "25_11_1991-1-art_184": [
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "184&2",
+      "label": "Travailleurs des arts - Renonciation Entrants"
+    }
+  ],
+  "25_11_1991-1-art_188": [
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "188&2",
+      "label": "Jours non indemnisables travailleurs des arts"
+    }
+  ],
+  "25_11_1991-1-art_189": [
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "189&1",
+      "label": "Travailleurs des arts - Revenu activité"
+    }
+  ],
+  "25_11_1991-1-art_22": [
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "22CRIS",
+      "label": "Suspension employés pour manque de travail"
+    }
+  ],
+  "25_11_1991-1-art_28": [
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "28&3,3",
+      "label": "Travailleur relevant de la sous-commission paritaire pour le commerce…"
+    },
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "28&3,4",
+      "label": "Pêcheur de mer reconnu"
+    }
+  ],
+  "25_11_1991-1-art_44": [
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "44",
+      "label": "Pas privé de travail et/ou rémunération"
+    },
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "44B",
+      "label": "Prêt pour installation comme indépendant"
+    },
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "44N",
+      "label": "Article 17 AR 28.11.1969 : pas de contrat avant la demande d’allocations"
+    }
+  ],
+  "25_11_1991-1-art_45": [
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "45",
+      "label": "Droit aux allocations d'établissement"
+    }
+  ],
+  "25_11_1991-1-art_47": [
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "47",
+      "label": "Allocations provisoires C4.2 et C4.2Bis"
+    }
+  ],
+  "25_11_1991-1-art_48": [
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "48",
+      "label": "Activité accessoire ou aide à indépendant"
+    },
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "48BIS2",
+      "label": "Jours non indemnisables artistes"
+    },
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "48BISS",
+      "label": "formulaire C3-artiste pas introduit"
+    },
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "48&1B",
+      "label": "Tremplin indépendants"
+    },
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "48&1BN",
+      "label": "Refus avantage Tremplin indépendants"
+    }
+  ],
+  "25_11_1991-1-art_51": [
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "51A",
+      "label": "Abandon d'emploi, stage, formation professionnelle ou contrat 1ère…"
+    },
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "51B",
+      "label": "Licenciement emploi, stage, formation professionnelle ou contrat 1ère…"
+    },
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "51C",
+      "label": "Refus d'emploi, stage, formation professionnelle ou contrat 1ère…"
+    },
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "51D",
+      "label": "Non présentation auprès employeur suite envoi service placement"
+    },
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "51E",
+      "label": "Non présentation après convocation par le service de placement ou…"
+    }
+  ],
+  "25_11_1991-1-art_53": [
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "53",
+      "label": "Prise de cours de la sanction vis à vis de l'organisme de paiement"
+    },
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "53COM4",
+      "label": "Période de sanction effective dans le module S10 combinée avec un…"
+    },
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "53,2",
+      "label": "Suspension provisoire des allocations"
+    }
+  ],
+  "25_11_1991-1-art_55": [
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "55,1",
+      "label": "Jours non indemnisables en raison des usages dans le secteur"
+    },
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "55,2",
+      "label": "Abandon d'emploi pour exercer activité non assujettie à l'ONSS (6 mois)"
+    },
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "55,3",
+      "label": "Suspension temporaire activité non assujettie à l'ONSS"
+    },
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "55,4",
+      "label": "Abandon d'emploi pour éducation des enfants (6 mois)"
+    },
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "55,6",
+      "label": "Interruption de carrière"
+    }
+  ],
+  "25_11_1991-1-art_60": [
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "60B",
+      "label": "Revenu partenaire salarié inconnu ou supérieur limite déterminé par…"
+    }
+  ],
+  "25_11_1991-1-art_61": [
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "61&1,1",
+      "label": "Interdiction cumul chômage et INAMI"
+    },
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "61&1,2",
+      "label": "Cumul entre INAMI et allocations chômage temporaire"
+    },
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "61&2,1",
+      "label": "Interdiction cumul indemnisation accident de travail/maladie…"
+    },
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "61&2,2",
+      "label": "Cumul indemnisation accident de travail/maladie professionnelle et…"
+    },
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "61&3,1",
+      "label": "Interdiction cumul allocations maladie étrangère et chômage"
+    }
+  ],
+  "25_11_1991-1-art_62": [
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "62&1,1",
+      "label": "Inapte au travail constaté par le médecin de l'ONEM"
+    },
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "62&2,1",
+      "label": "Conteste décision INAMI"
+    }
+  ],
+  "25_11_1991-1-art_63": [
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "63N",
+      "label": "3 ans épuisé"
+    },
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "63COV",
+      "label": "Prolongation des allocations d'insertion pendant la période de la crise…"
+    },
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "63,1",
+      "label": "Non indemnisable suite obligation scolaire"
+    },
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "63,2",
+      "label": "Allocation de transition"
+    },
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "63,23",
+      "label": "Prolongation période de 36 mois"
+    }
+  ],
+  "25_11_1991-1-art_64": [
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "64",
+      "label": "Atteint l'âge légal de la pension (65 ans)"
+    },
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "64,2,2",
+      "label": "Frontalier : CC après l'âge de 65 ans (pas droit au pension de retraite)"
+    }
+  ],
+  "25_11_1991-1-art_65": [
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "65&1",
+      "label": "Interdiction cumul pension et chômage"
+    },
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "65&2B",
+      "label": "Cumul de la pension de survie et du chômage autorisé pendant 12 mois"
+    },
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "65&2BP",
+      "label": "Interdiction cumul pension de survie et chômage"
+    }
+  ],
+  "25_11_1991-1-art_66": [
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "66",
+      "label": "Obligation de résidence habituelle et effective en Belgique"
+    }
+  ],
+  "25_11_1991-1-art_67": [
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "67",
+      "label": "Non indemnisable durant service militaire/détention"
+    }
+  ],
+  "25_11_1991-1-art_68": [
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "68,1",
+      "label": "Exclusion suite reprise d'études de plein exercice"
+    },
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "68,2",
+      "label": "Exclusion suite formation classes moyennes ou formation en alternance"
+    },
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "68,3",
+      "label": "Utilisation du préfixe 75/ pour formations"
+    }
+  ],
+  "25_11_1991-1-art_69": [
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "69",
+      "label": "Conditions d'indemnistation du travailleur étranger"
+    }
+  ],
+  "25_11_1991-1-art_70": [
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "70",
+      "label": "Absent à une convocation"
+    },
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "70,1",
+      "label": "Absence de réaction suite à l'invitation à venir retirer la lettre…"
+    },
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "70,2",
+      "label": "Absence injustifée au premier entretien"
+    },
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "70,3",
+      "label": "Absence injustifée au deuxième entretien"
+    },
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "70,4",
+      "label": "Aucune réaction à la demande de signer le contrat après le 1er entretien"
+    }
+  ],
+  "25_11_1991-1-art_73": [
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "73",
+      "label": "Indemnisation suite grève/lock-out"
+    }
+  ],
+  "25_11_1991-1-art_74": [
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "74",
+      "label": "Indemnisation 1/2 jours travailleurs des ports ou assimilés"
+    }
+  ],
+  "25_11_1991-1-art_75": [
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "75",
+      "label": "Travailleurs à domicile"
+    }
+  ],
+  "25_11_1991-1-art_79": [
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "79&5",
+      "label": "Suspension en application article 79§5 alinéa 2 ou 4 (ALE)"
+    },
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "79&10",
+      "label": "ALE - accident de travail"
+    }
+  ],
+  "25_11_1991-1-art_79ter": [
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "79TER",
+      "label": "Assistant de sécurité et prévention"
+    }
+  ],
+  "25_11_1991-1-art_90": [
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "90",
+      "label": "dispense article 90 ('aidant proche' à partir du 01.01.2015"
+    }
+  ],
+  "25_11_1991-1-art_93": [
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "93,6",
+      "label": "Etudes préparatoires à des professions non reprises sur la liste avec…"
+    },
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "93,6X",
+      "label": "Etudes préparatoires à des professions avec pénurie significative de…"
+    },
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "93,3AM",
+      "label": "Décision provisoire article 93,3 AM"
+    }
+  ],
+  "25_11_1991-1-art_94": [
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "94,4",
+      "label": "Refus dispense"
+    },
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "code": "94,2X",
+      "label": "Formation proposée par le service régional de l'emploi dans le cadre…"
     }
   ]
 }

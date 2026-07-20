@@ -426,21 +426,27 @@ export function MonDossierClient({
         </Link>
       </header>
 
-      <section id="dossier-en-cours" className="glass-surface flex flex-col gap-3 rounded-3xl p-3 sm:p-4" data-docbel-readable>
-          <div className="flex items-center justify-between gap-3">
-            <h2 className="text-lg font-bold text-[color:var(--glass-ink)]">{t("ongoingDossier")}</h2>
-            <span className="rounded-full bg-[color:var(--glass-pop-bg)] px-2.5 py-1 text-xs font-bold text-[color:var(--glass-accent-deep)]">{activeRuns.length}</span>
-          </div>
-          {activeRuns.length > 0 ? <div className="grid max-h-56 gap-2 overflow-y-auto pr-1">
-            {activeRuns.map((run) => <ActiveRunCard key={run.runId} run={run} />)}
-          </div> : <p className="rounded-xl border border-dashed border-[color:var(--glass-border)] px-3 py-3 text-sm text-[color:var(--glass-ink)]/65">{t("emptyNoneBody")}</p>}
-          <Link
-            href="/mes-demarches"
-            className="self-start text-xs font-semibold text-[color:var(--glass-accent-deep)] underline-offset-2 transition-colors hover:underline"
-          >
-            {t("seeAllDemarches")}
-          </Link>
-      </section>
+      {activeRuns.length > 0 && (
+        <Link
+          href="/mes-demarches"
+          className="glass-surface flex items-center gap-3 rounded-2xl px-4 py-3 transition-colors hover:bg-[color:var(--glass-pop-bg)]/40"
+        >
+          <span aria-hidden className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[color:var(--glass-pop-bg)] text-[color:var(--glass-accent-deep)]">
+            <RotateCcw className="size-5" />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-sm font-bold text-[color:var(--glass-ink)]">
+              {t("resumeBannerTitle", { count: activeRuns.length })}
+            </span>
+            <span className="block truncate text-xs text-[color:var(--glass-ink-soft)]">
+              {activeRuns.map((r) => r.name).join(" · ")}
+            </span>
+          </span>
+          <span className="shrink-0 text-sm font-bold text-[color:var(--glass-accent-deep)]">
+            {t("resumeBannerCta")} →
+          </span>
+        </Link>
+      )}
 
       <div id="guichet" className="flex flex-col gap-4 px-1" data-docbel-readable>
         <div className="flex flex-col gap-2">
@@ -590,7 +596,7 @@ export function MonDossierClient({
         </div>
         <HelpRow icon={HelpCircle} label={t("helpFindRightDossier")} href="#guichet" />
         <HelpRow icon={FileQuestion} label={t("helpCannotFind")} href="/contact" />
-        <HelpRow icon={RotateCcw} label={t("helpWhereIsRequest")} href="#dossier-en-cours" />
+        <HelpRow icon={RotateCcw} label={t("helpWhereIsRequest")} href="/mes-demarches" />
         <HelpRow icon={Phone} label={t("helpContactSupport")} href="/contact" />
       </section>
 

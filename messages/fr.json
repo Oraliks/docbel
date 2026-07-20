@@ -4782,6 +4782,8 @@
       "helpTitle": "Besoin d'aide ?",
       "helpSubtitle": "Trouvez rapidement une réponse.",
       "ongoingDossier": "Dossier en cours",
+      "resumeBannerTitle": "Vous avez {count, plural, one {1 démarche en cours} other {# démarches en cours}}",
+      "resumeBannerCta": "Reprendre",
       "seeAllDemarches": "Toutes mes démarches →",
       "runCompletedEditable": "Dossier complété — il reste modifiable",
       "reviewCompletedRun": "Consulter",

@@ -26,6 +26,21 @@ Tests end-to-end pour les flows critiques de Beldoc, lancés via Playwright.
    ```
    Sans ces variables, les tests sont **skipped** automatiquement.
 
+   Le compte doit **exister** en base : la Neon est partagée, on n'y crée pas de
+   fixtures. Pour éviter d'y mettre son mot de passe personnel, on peut en poser
+   un sur un compte admin de fixture déjà présent (`admin@docbel.local`) :
+
+   ```sh
+   # 1. renseigner E2E_ADMIN_EMAIL / E2E_ADMIN_PASSWORD dans .env.local
+   # 2. dry-run, puis application
+   pnpm e2e:set-admin-password
+   pnpm e2e:set-admin-password --yes
+   ```
+
+   Le script lit le mot de passe depuis `.env.local` (jamais affiché), et refuse
+   de créer un compte, d'en cibler un non-admin, ou un compte hors `*.local`
+   sans `--force`.
+
 ## Lancer les tests
 
 ```sh

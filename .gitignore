@@ -58,7 +58,9 @@ seed-pdfs/
 ONBOARDING_IMPLEMENTATION.md
 
 # Development tools
-.claude/
+.claude/*
+!.claude/agents/
+!.claude/commands/
 .agents/
 .codex/
 skills-lock.json

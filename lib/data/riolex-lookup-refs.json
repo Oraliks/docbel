@@ -1,4 +1,9 @@
 {
+  "25_11_1991-1-art_153": [
+    { "tableSlug": "signaletic-sanction-article", "code": "153,1", "label": "Exclusion — omission ou déclaration inexacte/incomplète" },
+    { "tableSlug": "signaletic-sanction-article", "code": "153,2", "label": "Idem 153,1 — base « chef de ménage / isolé » accordé à tort" },
+    { "tableSlug": "signaletic-sanction-article", "code": "153,3", "label": "Exclusion — récidive article 153" }
+  ],
   "__doc__": "Mappings éditoriaux article RioLex -> codes Lookup ONEM. Clé = riolexId (ex: '25_11_1991-1-art_52bis'), valeur = LookupCodeRef[]. Édite ce fichier puis lance `pnpm attach:lookup-refs --dry` (aperçu) puis sans --dry (écrit legalMeta.lookupRefs). tableSlug DOIT être le slug d'une LookupTable existante (cf. /admin/chomage/lookup ou table LookupTable). Les clés préfixées '__' sont ignorées par le script. Mappings à fournir/valider par Oraliks (domaine) — ne pas inventer.",
   "__example__": [
     {

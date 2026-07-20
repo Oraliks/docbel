@@ -868,6 +868,9 @@ function ResultPanel({
         <p className="text-[11px] text-muted-foreground">
           {t("agrResultDisclaimer")}
         </p>
+        <p className="text-[11px] text-muted-foreground">
+          {t("agrLegalWarning")}
+        </p>
       </CardContent>
     </Card>
   );

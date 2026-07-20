@@ -385,6 +385,9 @@ export function AgrDemo() {
           <p className="text-[11.5px] leading-[1.55] text-[color:var(--glass-ink-faint)]">
             {t("agrDemoFootnote")}
           </p>
+          <p className="text-[11.5px] leading-[1.55] text-[color:var(--glass-ink-faint)]">
+            {t("agrDemoLegalWarning")}
+          </p>
         </div>
       </div>
 

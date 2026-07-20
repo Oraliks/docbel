@@ -73,8 +73,17 @@ export async function loginAsAdmin(
     )
   }
   // Synchronise les cookies du request context vers le browser context (sinon
-  // le page.goto() suivant repart sans session). Playwright le fait
-  // automatiquement quand request hérite du context, donc on vérifie.
+  // le page.goto() suivant repart sans session).
+  //
+  // ⚠️ Le fixture `request` de Playwright est un APIRequestContext SÉPARÉ du
+  // navigateur : ses cookies ne remontent PAS tout seuls dans page.context().
+  // On les transfère explicitement — sans ça, le sign-in réussit (200) mais la
+  // page reste anonyme.
+  const apiState = await request.storageState()
+  if (apiState.cookies.length > 0) {
+    await page.context().addCookies(apiState.cookies)
+  }
+
   const cookies = await page.context().cookies()
   const hasSessionCookie = cookies.some((c) =>
     c.name.includes("session")

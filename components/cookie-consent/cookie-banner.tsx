@@ -32,10 +32,14 @@ export function CookieBanner() {
       role="dialog"
       aria-modal="false"
       aria-label={t("title")}
-      className="fixed inset-x-0 bottom-0 z-[60] flex justify-center px-3 pb-3 sm:px-4 sm:pb-4"
+      // Conteneur pleine largeur ancré en bas : `pointer-events-none` pour que
+      // ses gouttières transparentes latérales n'avalent PAS les clics sur le
+      // contenu situé derrière (liens catalogue, footer…). La carte réactive
+      // les pointer-events (`pointer-events-auto`) pour ses propres boutons.
+      className="pointer-events-none fixed inset-x-0 bottom-0 z-[60] flex justify-center px-3 pb-3 sm:px-4 sm:pb-4"
     >
       <div
-        className="glass-surface-strong animate-fade-in-up w-full max-w-3xl rounded-2xl p-4 sm:p-5"
+        className="glass-surface-strong animate-fade-in-up pointer-events-auto w-full max-w-3xl rounded-2xl p-4 sm:p-5"
         style={{ color: "var(--glass-ink)" }}
       >
         <div className="flex items-start gap-3">

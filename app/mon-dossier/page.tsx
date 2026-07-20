@@ -33,7 +33,7 @@ export default async function MonDossierPage({
 }) {
   const { situation } = await searchParams;
   // Fail-soft : si la base est froide (Neon) ou indisponible, on rend une page
-  // vide plutôt qu'une 500. Même pattern que /creer-ma-demande.
+  // vide plutôt qu'une 500.
   const bundles = await prisma.documentBundle
     .findMany({
       where: { active: true },

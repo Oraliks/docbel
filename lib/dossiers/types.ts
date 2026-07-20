@@ -324,7 +324,7 @@ export interface DossierDefinition {
   description: string;
   /// Clé i18n de la description (préférée si fournie).
   descriptionKey?: string;
-  /// Catégorie d'événement de vie (pour /creer-ma-demande).
+  /// Catégorie d'événement de vie (regroupement dans le guichet /mon-dossier).
   category: string;
   icon: string;
   color: string;

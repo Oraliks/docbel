@@ -506,7 +506,7 @@ export function MonDossierClient({
               initialSituation={presetSituation ?? undefined}
             />
 
-            <section className="glass-surface flex flex-col gap-4 p-3 sm:p-5" data-docbel-readable>
+            <section className="glass-surface flex flex-col gap-4 p-3 sm:p-5">
               <div className="flex items-center gap-3">
                 <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-[color:var(--glass-pop-bg)] text-[color:var(--glass-accent-deep)]" aria-hidden>
                   <FolderOpen />

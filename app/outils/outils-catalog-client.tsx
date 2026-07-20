@@ -217,7 +217,7 @@ export function OutilsCatalogClient({ tools }: Props) {
       id: "documents",
       label: t("quickDocuments"),
       Icon: FileTextIcon,
-      onClick: () => router.push("/creer-ma-demande"),
+      onClick: () => router.push("/mon-dossier"),
       active: false,
     },
   ];
@@ -495,7 +495,7 @@ export function OutilsCatalogClient({ tools }: Props) {
             </p>
             <button
               type="button"
-              onClick={() => router.push("/creer-ma-demande")}
+              onClick={() => router.push("/mon-dossier")}
               className="group relative mt-4 inline-flex w-fit items-center gap-2 rounded-full bg-white/95 px-5 py-2.5 text-[13px] font-bold text-[color:var(--glass-accent-deep)] transition hover:bg-white"
             >
               {t("helpStart")}

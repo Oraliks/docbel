@@ -19,6 +19,7 @@ import {
 import { IconDisplay } from "@/components/admin/documents/icon-picker";
 import { AccessibilityToolbar } from "@/components/docbel/accessibility-toolbar";
 import { DossierWizard } from "@/components/docbel/onboarding/dossier-wizard";
+import { IntentSearch } from "@/components/docbel/onboarding/intent-search";
 import { Button } from "@/components/ui/button";
 import {
   Empty,
@@ -527,13 +528,21 @@ export function MonDossierClient({
         ) : null}
 
         {empty ? (
-          <Empty>
-            <EmptyHeader>
-              <EmptyMedia variant="icon"><SearchIcon aria-hidden /></EmptyMedia>
-              <EmptyTitle className="text-lg">{bundles.length === 0 ? t("emptyNoneTitle") : t("emptyNoMatchTitle")}</EmptyTitle>
-              <EmptyDescription className="text-base">{bundles.length === 0 ? t("emptyNoneBody") : t("emptyNoMatchBody")}</EmptyDescription>
-            </EmptyHeader>
-          </Empty>
+          <div className="flex flex-col gap-4">
+            <Empty>
+              <EmptyHeader>
+                <EmptyMedia variant="icon"><SearchIcon aria-hidden /></EmptyMedia>
+                <EmptyTitle className="text-lg">{bundles.length === 0 ? t("emptyNoneTitle") : t("emptyNoMatchTitle")}</EmptyTitle>
+                <EmptyDescription className="text-base">{bundles.length === 0 ? t("emptyNoneBody") : t("emptyNoMatchBody")}</EmptyDescription>
+              </EmptyHeader>
+            </Empty>
+            <div className="flex flex-col gap-3 border-t border-[color:var(--glass-border)] pt-4">
+              <h3 className="text-sm font-bold text-[color:var(--glass-ink)]">
+                {t("intentFallbackTitle")}
+              </h3>
+              <IntentSearch />
+            </div>
+          </div>
         ) : isSearching ? (
           <div className="grid gap-3 sm:grid-cols-2">
             {searchResults.map((bundle) => <AccessRow key={bundle.slug} bundle={bundle} />)}

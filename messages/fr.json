@@ -4776,6 +4776,7 @@
       "emptyNoMatchTitle": "Aucun dossier ne correspond.",
       "emptyNoneBody": "Les dossiers ne sont pas encore disponibles. Réessayez dans un instant.",
       "emptyNoMatchBody": "Essayez un autre mot-clé, ou lancez le guide à gauche.",
+      "intentFallbackTitle": "Décrivez votre situation avec vos mots",
       "seeAllCategories": "Voir toutes les catégories ({count})",
       "seeLess": "Voir moins",
       "helpTitle": "Besoin d'aide ?",

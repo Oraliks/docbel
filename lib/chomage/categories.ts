@@ -19,14 +19,20 @@ export const SITUATIONS_FAMILIALES = [
 export type SituationFamiliale = (typeof SITUATIONS_FAMILIALES)[number];
 
 /**
- * Phases de dégressivité du chômage complet (ONEM).
- *  - 1A : mois 1-3   (taux maximal sur plafond A)
- *  - 1B : mois 4-6   (légère dégressivité sur plafond A bis, réforme 2026)
- *  - 2A : mois 7-12  (plafond intermédiaire B)
- *  - 2B : mois 13-24 (plafond C, aligné sur B depuis la réforme 2026)
- *  - 2C : an 2 → an 3 (forfaitaire dégressif intermédiaire)
- *  - 3  : au-delà (forfaitaire minimum)
+ * Phases d'indemnisation du chômage complet (ONEM, régime à partir du 01/03/2026).
+ *
+ * Structure sourcée (`chomage_complet_degressivite_structure`, AR 25/11/1991
+ * art. 114 & 116) : 1ʳᵉ période de 12 mois dégressive proportionnelle, puis
+ * 2ᵉ période de max 12 mois FORFAITAIRE selon la catégorie familiale (et non
+ * plus fonction du dernier salaire). Total limité à 24 mois.
+ *  - 1A : mois 1-3   (65 % du salaire plafonné, plafond A)
+ *  - 1B : mois 4-6   (60 %, plafond A bis)
+ *  - 2A : mois 7-12  (60 %, plafond B)
+ *  - 2B : mois 13-24 (2ᵉ période — forfait familial, montant à vérifier)
+ *
+ * Au-delà de 24 mois : fin de droit (limitation réforme 2026), ce n'est pas une
+ * phase de calcul. Les anciennes phases 2C/3 (3ᵉ période pré-réforme) sont retirées.
  */
-export const CHOMAGE_PHASES = ["1A", "1B", "2A", "2B", "2C", "3"] as const;
+export const CHOMAGE_PHASES = ["1A", "1B", "2A", "2B"] as const;
 
 export type ChomagePhase = (typeof CHOMAGE_PHASES)[number];

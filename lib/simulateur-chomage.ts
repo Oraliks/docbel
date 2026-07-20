@@ -8,7 +8,7 @@
  * ⚠️ ARCHITECTURE — pas de barème dupliqué ici :
  *   le repo possède DÉJÀ un moteur d'allocations ONEM complet,
  *   `lib/calculators/chomage.ts` (plafonds salariaux par phase, taux 65/60 %,
- *   forfaits min/max par catégorie, dégressivité 1A → 3), utilisé par le
+ *   forfaits min/max par catégorie, dégressivité 1A → 2B), utilisé par le
  *   calculateur public de /outils. Ce fichier est un ADAPTATEUR au-dessus de
  *   `calcChomage` : mêmes chiffres garantis entre la carte du hero et le
  *   calculateur complet (deux montants différents pour la même situation
@@ -230,6 +230,11 @@ export function estimerAllocation(input: SimulationInput): SimulationResult {
     // Défensif : les gardes ci-dessus couvrent déjà les cas d'erreur connus.
     throw new RangeError(res.error);
   }
+  if (res.statut !== "estime") {
+    // Défensif : le simulateur ne passe que des phases 1A/1B/2A (1ʳᵉ période),
+    // toujours chiffrées. La 2ᵉ période forfaitaire (2B) ne transite jamais ici.
+    throw new RangeError("Le simulateur ne couvre que la 1ʳᵉ période (mois 1-12).");
+  }
 
   // Le moteur central borne le montant en silence ; on re-dérive ici QUEL
   // mécanisme a joué pour pouvoir l'expliquer (± 1 centime d'arrondi).
@@ -264,6 +269,7 @@ export function estimerAllocation(input: SimulationInput): SimulationResult {
     });
     if (
       !("error" in suite) &&
+      suite.statut === "estime" &&
       suite.allocationJournaliere < res.allocationJournaliere
     ) {
       caveats.push(
@@ -273,11 +279,11 @@ export function estimerAllocation(input: SimulationInput): SimulationResult {
   }
   if (horsPeriode) {
     caveats.push(
-      "Au-delà de 12 mois, la dégressivité (2ᵉ et 3ᵉ périodes) s'applique : montant probablement surestimé, utilisez le calculateur complet.",
+      "Au-delà de 12 mois, la dégressivité se poursuit (2ᵉ période forfaitaire, puis fin de droit à 24 mois) : montant probablement surestimé, utilisez le calculateur complet.",
     );
   }
   caveats.push(
-    "Estimation indicative, hors dégressivité des 2ᵉ et 3ᵉ périodes d'indemnisation.",
+    "Estimation indicative, hors 2ᵉ période forfaitaire (mois 13-24) et fin de droit.",
     "Montants bruts ; seule la décision de l'ONEM fait foi.",
   );
 

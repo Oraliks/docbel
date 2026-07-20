@@ -44,23 +44,24 @@ export interface VersionedParams<T> {
   values: T;
 }
 
-/** Phases proportionnelles : celles qui ont un plafond salarial propre. */
-export type PhaseProportionnelle = Extract<ChomagePhase, "1A" | "1B" | "2A" | "2B">;
+/**
+ * Phases proportionnelles = 1ʳᵉ période (mois 1-12), seules à avoir un plafond
+ * salarial propre. La 2ᵉ période (2B, mois 13-24) est forfaitaire : montant à
+ * vérifier, aucun barème chiffré ici (cf. TODO_SOURCE_OFFICIELLE, barème ONEM
+ * en refonte) — voir docs/knowledge/chomage/chomage-complet.md.
+ */
+export type PhaseProportionnelle = Extract<ChomagePhase, "1A" | "1B" | "2A">;
 
 /** Montants réglementaires du chômage complet (€/mois sauf mention). */
 export interface ChomageParams {
-  /** Plafonds salariaux mensuels par phase proportionnelle. */
+  /** Plafonds salariaux mensuels par phase proportionnelle (1ʳᵉ période). */
   plafonds: Record<PhaseProportionnelle, number>;
   /** Taux appliqués au salaire plafonné : 1A puis toutes les autres phases. */
   taux: { "1A": number; autres: number };
-  /** Plancher mensuel par situation familiale (phases proportionnelles). */
+  /** Plancher mensuel par situation familiale (1ʳᵉ période). */
   forfaitMin: Record<SituationFamiliale, number>;
-  /** Plafond mensuel par situation familiale (phases proportionnelles). */
+  /** Plafond mensuel par situation familiale (1ʳᵉ période). */
   forfaitMax: Record<SituationFamiliale, number>;
-  /** Phase 2C — forfaitaire dégressif (an 2 → an 3), non re-borné. */
-  forfait2C: Record<SituationFamiliale, number>;
-  /** Phase 3 — forfaitaire minimal (au-delà d'an 3), non re-borné. */
-  forfait3: Record<SituationFamiliale, number>;
 }
 
 /**
@@ -85,13 +86,12 @@ export const CHOMAGE_PARAM_SETS: readonly VersionedParams<ChomageParams>[] = [
         "1A": 4265.98, // mois 1-3 (plafond A)
         "1B": 4010.98, // mois 4-6 (plafond A bis, introduit par la réforme 2026)
         "2A": 3262.99, // mois 7-12 (plafond B)
-        "2B": 3262.99, // mois 13+ (plafond C, aligné sur B après réforme 2026)
+        // mois 13-24 (2ᵉ période) = forfait familial, montant à vérifier : pas
+        // de plafond salarial (réforme 2026, cf. degressivite_structure).
       },
       taux: { "1A": 0.65, autres: 0.6 },
       forfaitMin: { chef_menage: 1500, isole: 1260, cohabitant: 1015 },
       forfaitMax: { chef_menage: 2200, isole: 1850, cohabitant: 1500 },
-      forfait2C: { chef_menage: 1700, isole: 1400, cohabitant: 800 },
-      forfait3: { chef_menage: 1500, isole: 1260, cohabitant: 670 },
     },
   },
 ];

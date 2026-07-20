@@ -36,12 +36,13 @@ describe("getChomageParams — résolution par date", () => {
 describe("CHOMAGE_PARAM_SETS — garde-fous des montants (réforme 2026)", () => {
   const reforme2026 = getChomageParams(new Date(2026, 2, 1)).values;
 
-  it("plafonds salariaux par phase proportionnelle", () => {
+  it("plafonds salariaux par phase proportionnelle (1ʳᵉ période seulement)", () => {
+    // La 2ᵉ période (mois 13-24) est forfaitaire depuis la réforme 2026 : plus
+    // aucun plafond salarial 2B (cf. chomage_complet_degressivite_structure).
     expect(reforme2026.plafonds).toEqual({
       "1A": 4265.98,
       "1B": 4010.98,
       "2A": 3262.99,
-      "2B": 3262.99,
     });
   });
 
@@ -49,7 +50,7 @@ describe("CHOMAGE_PARAM_SETS — garde-fous des montants (réforme 2026)", () =>
     expect(reforme2026.taux).toEqual({ "1A": 0.65, autres: 0.6 });
   });
 
-  it("forfaits min/max et forfaitaires 2C/3 par situation familiale", () => {
+  it("bornes forfaitaires min/max de la 1ʳᵉ période par situation familiale", () => {
     expect(reforme2026.forfaitMin).toEqual({
       chef_menage: 1500,
       isole: 1260,
@@ -60,16 +61,11 @@ describe("CHOMAGE_PARAM_SETS — garde-fous des montants (réforme 2026)", () =>
       isole: 1850,
       cohabitant: 1500,
     });
-    expect(reforme2026.forfait2C).toEqual({
-      chef_menage: 1700,
-      isole: 1400,
-      cohabitant: 800,
-    });
-    expect(reforme2026.forfait3).toEqual({
-      chef_menage: 1500,
-      isole: 1260,
-      cohabitant: 670,
-    });
+  });
+
+  it("n'expose plus de forfaits 2C/3 (structure pré-réforme retirée)", () => {
+    expect(reforme2026).not.toHaveProperty("forfait2C");
+    expect(reforme2026).not.toHaveProperty("forfait3");
   });
 });
 
@@ -138,12 +134,14 @@ describe("Jeux de paramètres — invariants structurels (chômage + insertion)"
     }
   });
 
-  it("les catégories canoniques sont complètes (3 situations, 6 phases)", () => {
+  it("les catégories canoniques sont complètes (3 situations, 4 phases)", () => {
     expect(SITUATIONS_FAMILIALES).toEqual([
       "chef_menage",
       "isole",
       "cohabitant",
     ]);
-    expect(CHOMAGE_PHASES).toEqual(["1A", "1B", "2A", "2B", "2C", "3"]);
+    // Phases post-réforme : 1A/1B/2A (1ʳᵉ période) + 2B (2ᵉ période forfaitaire).
+    // Les phases 2C/3 (3ᵉ période pré-réforme) sont supprimées.
+    expect(CHOMAGE_PHASES).toEqual(["1A", "1B", "2A", "2B"]);
   });
 });

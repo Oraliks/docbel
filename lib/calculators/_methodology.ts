@@ -978,22 +978,28 @@ const METHODOLOGIES: CalcMethodology[] = [
     sourceFile: "lib/calculators/chomage.ts",
     reliability: "low",
     reliabilityNote:
-      "Audit 2026-05 : plafonds salariaux mis à jour selon ONEM 01.03.2026 (PLAFOND_A 3 279,67→4 265,98 ; ajout PLAFOND_A_BIS 4 010,98 mois 4-6 ; PLAFOND_B 3 057,80→3 262,99). Les forfaits min/max restent à arbitrer (les valeurs ONEM journalières × 26 donnent ~2 773 €/mois pour la borne max, vs 1 850-2 200 € actuellement). La réforme 2026 a aussi introduit une limitation dans le temps non modélisée ici.",
+      "Audit 2026-07 : structure alignée sur la réforme du 01/03/2026 (feuille ONEM T201 ; AR 25/11/1991 art. 114 & 116). 1ʳᵉ période (mois 1-12) proportionnelle au salaire plafonné (65 % puis 60 %, plafonds A / A bis / B) ; 2ᵉ période (mois 13-24) FORFAITAIRE selon la catégorie familiale — montant non publié par l'ONEM (barème en refonte), donc renvoyé « à vérifier » sans chiffre ; droit limité à 24 mois (fin de droit au-delà, sauf exemptions). Les forfaits min/max de la 1ʳᵉ période restent à arbitrer face au barème publié (Loongrens).",
     year: 2026,
     inputs: [
       "Dernier salaire mensuel brut (€)",
       "Situation familiale : chef de ménage / isolé / cohabitant",
-      "Phase de chômage : 1A → 3",
+      "Ancienneté de chômage (mois) — la phase d'indemnisation en est déduite",
     ],
     formulas: [
       {
-        label: "Phases 1A → 2B",
-        expression: "allocation = min(brut, plafond_phase) × taux_phase (65 % ou 60 %)",
+        label: "1ʳᵉ période — mois 1-12 (phases 1A / 1B / 2A)",
+        expression:
+          "allocation = clamp(min(brut, plafond_phase) × taux_phase, FORFAIT_MIN, FORFAIT_MAX) ; taux 65 % (mois 1-3) puis 60 %",
       },
-      { label: "Phase 2C / 3", expression: "allocation = forfait_situation_familiale" },
       {
-        label: "Bornes",
-        expression: "allocation = clamp(allocation, FORFAIT_MIN, FORFAIT_MAX) sauf phases forfaitaires",
+        label: "2ᵉ période — mois 13-24 (phase 2B)",
+        expression:
+          "allocation FORFAITAIRE selon la catégorie familiale, indépendante du salaire — montant non publié (réforme 2026) → « à vérifier », aucun chiffre affiché",
+      },
+      {
+        label: "Au-delà de 24 mois",
+        expression:
+          "fin de droit (limitation réforme 2026), sauf exemptions (âge / inaptitude ≥ 33 % / passé professionnel)",
       },
       { label: "Journalier", expression: "journalier = mensuel / 26 (régime 6 jours/semaine)" },
     ],
@@ -1001,14 +1007,15 @@ const METHODOLOGIES: CalcMethodology[] = [
       { name: "Plafond A (mois 1–3)", value: "4 265,98 €/mois", note: "Phase 1A — taux 65 %." },
       { name: "Plafond A bis (mois 4–6)", value: "4 010,98 €/mois", note: "Phase 1B — taux 60 % (nouveau plafond réforme 2026)." },
       { name: "Plafond B (mois 7–12)", value: "3 262,99 €/mois", note: "Phase 2A." },
-      { name: "Plafond C (mois 13+)", value: "3 262,99 €/mois", note: "Phase 2B — aligné sur B après réforme 2026." },
       { name: "Forfait min chef de ménage", value: "1 500 €/mois" },
       { name: "Forfait min isolé", value: "1 260 €/mois" },
       { name: "Forfait min cohabitant", value: "1 015 €/mois" },
       { name: "Forfait max chef de ménage", value: "2 200 €/mois", note: "⚠️ À arbitrer : ONEM donne ~2 773 €/mois (max journalier 106,65 × 26)." },
-      { name: "Forfait 2C chef de ménage", value: "1 700 €/mois", note: "Phase 2 — an 2 à 3." },
-      { name: "Forfait 2C cohabitant", value: "800 €/mois" },
-      { name: "Forfait 3 cohabitant", value: "670 €/mois", note: "Après 3 ans de chômage." },
+      {
+        name: "2ᵉ période (mois 13-24)",
+        value: "Forfait familial — à vérifier",
+        note: "Montant non publié par l'ONEM (barème en refonte) : aucun chiffre affiché.",
+      },
       ...PHASES_INFO.map((p) => ({
         name: `Phase ${p.id}`,
         value: p.label,
@@ -1021,11 +1028,12 @@ const METHODOLOGIES: CalcMethodology[] = [
       { name: "CAPAC — Caisse Auxiliaire de Paiement", url: "https://www.capac.fgov.be" },
     ],
     limitations: [
+      "2ᵉ période (mois 13-24) : le montant forfaitaire exact n'est pas chiffré (barème ONEM en refonte) — l'outil renvoie « à vérifier ».",
+      "Exemptions à la limitation de 24 mois (âge, inaptitude ≥ 33 %, passé professionnel) non déterminées automatiquement.",
       "Pas de prise en compte du précompte professionnel sur l'allocation (~10,09 % chef de ménage avec personne à charge).",
       "Pas de complément d'ancienneté (travailleur âgé).",
       "Pas de calcul du supplément si conjoint à charge avec revenu.",
       "Pas de dispense pour études / formation.",
-      "Pas de gestion des chômeurs avec charge de famille → tarif différent.",
     ],
   },
 

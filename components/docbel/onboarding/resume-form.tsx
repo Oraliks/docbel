@@ -154,7 +154,7 @@ export function ResumeForm() {
           {t("resumeNoCodeBody")}
         </p>
         <Button
-          render={<Link href="/creer-ma-demande" />}
+          render={<Link href="/mon-dossier" />}
           variant="outline"
           size="lg"
           className="h-12 w-full text-base"

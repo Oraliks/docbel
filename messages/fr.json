@@ -2627,7 +2627,7 @@
       "documentFallback": "Document",
       "pdfSourceBadge": "PDF · {issuer}",
       "onboardingSection": "Onboarding « Quelle est ma situation ? »",
-      "onboardingHintBefore": "Configure comment ce bundle apparaît sur la page d'accueil",
+      "onboardingHintBefore": "Configure comment ce bundle apparaît dans le guichet",
       "onboardingHintAfter": "et comment la recherche libre le trouve.",
       "lifeEventCategoryLabel": "Catégorie événement de vie",
       "noneLabel": "Aucune",

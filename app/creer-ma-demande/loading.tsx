@@ -2,9 +2,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { CardGridSkeleton } from "@/components/ui/skeletons";
 
 /**
- * Loading pour /creer-ma-demande (onboarding public, design glass).
- * Mimique : hero + barre de recherche d'intention + grilles d'événements de
- * vie. Le shell public (header/footer) reste stable autour.
+ * ⚠️ CODE MORT (cf. docs/tasks/CLEANUP_QUEUE.md, Lot 3) : `/creer-ma-demande` a
+ * fusionné dans le guichet `/mon-dossier` (Task 4.3) et `page.tsx` est désormais
+ * un `redirect()` SYNCHRONE (aucun travail async) — ce loading de segment ne peut
+ * donc jamais s'afficher. Conservé (non supprimé) par convention de nettoyage ;
+ * à retirer avec le reste du résidu creer-ma-demande.
  */
 export default function OnboardingLoading() {
   return (

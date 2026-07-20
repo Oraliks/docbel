@@ -608,7 +608,7 @@ export function BundleEditor({
           </CardTitle>
           <p className="text-xs text-muted-foreground">
             {t("onboardingHintBefore")}
-            <code className="mx-1">/creer-ma-demande</code>
+            <code className="mx-1">/mon-dossier</code>
             {t("onboardingHintAfter")}
           </p>
         </CardHeader>

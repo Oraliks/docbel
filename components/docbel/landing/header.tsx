@@ -95,7 +95,6 @@ const DOSSIER_FUNNEL_PREFIXES = [
   "/d",
   "/document/",
   "/reprendre",
-  "/creer-ma-demande",
 ] as const;
 
 function resolveActiveNav(

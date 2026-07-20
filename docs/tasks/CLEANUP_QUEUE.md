@@ -22,6 +22,10 @@ items déjà faits). **Max 3–5 fichiers par lot.** Faire un lot, valider, comm
 - [ ] TODO trompeurs du chat IA (pin/archive/delete « Bientôt disponible » alors que le
       backend existe) : `sessions-rail.tsx`, `message-bubble.tsx`, `chat-full-shell.tsx`.
 - [ ] (`.bak` déjà absent — rien à faire.)
+- [ ] Résidu `/creer-ma-demande` (fusionné dans le guichet `/mon-dossier`, Task 4.3) :
+      `app/creer-ma-demande/loading.tsx` = loading de segment MORT (la page est un
+      `redirect()` synchrone → jamais rendu). Commentaires stale restants à toiletter :
+      `app/mon-dossier/page.tsx:36`, `lib/dossiers/types.ts:327`.
 
 ## Lot 4 — Typage session
 - [ ] Factoriser `(session.user as { role?: string })` (≈8 occurrences) via `declare module`

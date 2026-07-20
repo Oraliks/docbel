@@ -4904,6 +4904,8 @@
       "prequalVerdictDisclaimer": "Cette indication n'engage pas l'administration compétente — vérifiez toujours auprès de l'organisme officiel. Vous pouvez continuer la constitution du dossier dans tous les cas.",
       "prequalAnsweredCount": "{answered} sur {total} {total, plural, one {question} other {questions}} {answered, plural, one {répondue} other {répondues}}.",
       "prequalContinueAnyway": "Continuer quand même",
+      "prequalOrientationReused": "Vos réponses du guide ont été reprises.",
+      "prequalEditAnswers": "Les modifier",
       "allocTitle": "Estimation indicative de votre allocation",
       "allocIntro": "Trois infos pour un ordre de grandeur. Ce n'est pas une décision : seul l'ONEM fixe votre montant réel.",
       "allocFamilyLabel": "Votre situation familiale",

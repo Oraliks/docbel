@@ -139,14 +139,14 @@ export function EligibilityPrequalifier({
         <CardContent className="flex flex-wrap items-center justify-between gap-3">
           <span className="flex items-center gap-2 text-sm text-muted-foreground">
             <CheckCircle2 className="size-4 shrink-0 text-emerald-600" />
-            Vos réponses du guide ont été reprises.
+            {t("prequalOrientationReused")}
           </span>
           <Button
             variant="ghost"
             size="sm"
             onClick={() => setManuallyReopened(true)}
           >
-            Les modifier
+            {t("prequalEditAnswers")}
           </Button>
         </CardContent>
       </Card>

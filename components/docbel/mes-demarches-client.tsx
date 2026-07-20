@@ -82,7 +82,7 @@ export function MesDemarchesClient({ groups: initialGroups }: Props) {
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="flex flex-col gap-2">
           <h1 className="glass-display text-4xl font-semibold leading-tight sm:text-5xl">
-            {t("mesDemarchesTitle")}
+            {t.rich("mesDemarchesTitle", { em: (chunks) => <em>{chunks}</em> })}
           </h1>
           <p className="max-w-2xl text-sm leading-relaxed text-[color:var(--glass-ink)]/70 sm:text-base">
             {t("mesDemarchesSubtitle")}

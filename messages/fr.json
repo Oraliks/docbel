@@ -4519,6 +4519,7 @@
       "reglTocTitle": "Sommaire",
       "reglDefsTitle": "Définitions utiles",
       "reglDefsSource": "Voir la définition complète",
+      "reglLookupTitle": "Codes ONEM liés",
       "reglArAmTitle": "Article lié (AR ↔ AM)",
       "reglGraphLabel": "Carte des liens (renvois & AR/AM)",
       "reglModifiedOn": "modifié le {date}",

@@ -19,6 +19,7 @@ import { getCorrespondences } from "@/lib/reglementation/ar-am-map";
 import { getCorpusRiolexIds } from "@/lib/reglementation/get-article";
 import { deriveThemes } from "@/lib/reglementation/themes";
 import { getGlossary, termsInText } from "@/lib/reglementation/glossary";
+import { normalizeLookupRefs } from "@/lib/reglementation/lookup-refs";
 import { sectionAnchor } from "@/components/reglementation/legal-text";
 import { ConventionsLegend } from "@/components/reglementation/conventions-legend";
 import { CitationGraph, type GraphNode } from "@/components/reglementation/citation-graph";
@@ -422,6 +423,7 @@ export default async function ReglementationArticlePage({ params }: PageProps) {
             correspondences={correspondences}
             sections={sections}
             definitions={definitions}
+            lookupRefs={normalizeLookupRefs(meta.lookupRefs)}
           />
         </div>
       </div>

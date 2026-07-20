@@ -1,3 +1,5 @@
+import type { LookupCodeRef } from "@/lib/dossiers/types";
+
 export interface ResultItem {
   id: string;
   riolexId: string;
@@ -27,6 +29,9 @@ export interface LegalMeta {
   abroge?: boolean;
   isOnemCommentary?: boolean;
   refs?: string[];
+  /// Codes ONEM liés (encart éditorial). JSON libre en base, normalisé au rendu
+  /// via `normalizeLookupRefs`. Peuplé par scripts/attach-lookup-refs.ts.
+  lookupRefs?: LookupCodeRef[];
 }
 
 export interface Neighbor {

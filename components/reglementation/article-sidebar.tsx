@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, Search } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 
 import { natureMeta, naturePhrase } from "@/lib/reglementation/nature";
@@ -7,6 +7,8 @@ import type { AmendmentRef } from "@/lib/reglementation/parse-amendments";
 import type { Citation } from "@/lib/reglementation/backlinks";
 import type { Correspondence } from "@/lib/reglementation/ar-am-map";
 import type { GlossaryEntry } from "@/lib/reglementation/glossary";
+import { lookupUrl } from "@/lib/dossiers/procedures";
+import type { LookupCodeRef } from "@/lib/dossiers/types";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SectionToc, type TocSection } from "./section-toc";
@@ -24,6 +26,7 @@ interface ArticleSidebarProps {
   correspondences?: Correspondence[];
   sections?: TocSection[];
   definitions?: GlossaryEntry[];
+  lookupRefs?: LookupCodeRef[];
 }
 
 export async function ArticleSidebar({
@@ -38,6 +41,7 @@ export async function ArticleSidebar({
   correspondences = [],
   sections = [],
   definitions = [],
+  lookupRefs = [],
 }: ArticleSidebarProps) {
   const t = await getTranslations("public.pro");
   const nature = meta.natureJuridique ? natureMeta(meta.natureJuridique) : null;
@@ -71,6 +75,43 @@ export async function ArticleSidebar({
                   {t("reglDefsSource")}
                 </Link>
               </details>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Codes ONEM liés — deep-links éditoriaux vers le Lookup (legalMeta) */}
+      {lookupRefs.length > 0 && (
+        <Card size="sm">
+          <CardHeader className="pb-2">
+            <CardTitle>{t("reglLookupTitle")}</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-1.5">
+            {lookupRefs.map((r) => (
+              <div key={`${r.tableSlug}-${r.code ?? ""}`}>
+                <Link
+                  href={lookupUrl(r.tableSlug, r.code)}
+                  className="group flex items-start gap-1.5 text-sm underline-offset-2 hover:underline"
+                >
+                  <Search
+                    className="mt-0.5 size-3.5 shrink-0 text-muted-foreground group-hover:text-primary"
+                    aria-hidden
+                  />
+                  <span className="min-w-0">
+                    <span className="font-medium">{r.label}</span>
+                    {r.code && (
+                      <span className="ml-1 rounded bg-muted px-1 py-0.5 font-mono text-[0.7em] text-muted-foreground">
+                        {r.code}
+                      </span>
+                    )}
+                    {r.context && (
+                      <span className="block text-xs text-muted-foreground">
+                        {r.context}
+                      </span>
+                    )}
+                  </span>
+                </Link>
+              </div>
             ))}
           </CardContent>
         </Card>

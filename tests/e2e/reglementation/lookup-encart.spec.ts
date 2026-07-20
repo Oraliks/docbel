@@ -111,10 +111,11 @@ test.describe("Réglementation — encart « Codes ONEM liés »", () => {
       expect(layout!.encartIndex).toBeLessThan(layout!.propsIndex)
 
       // 6) Preuve visuelle (test-results/ est gitignoré).
-      await page.screenshot({
-        path: `test-results/lookup-encart-${c.rid}.png`,
-        fullPage: true,
-      })
+      //    Capture au viewport et NON `fullPage` : ces articles sont très longs
+      //    (art. 110 ≈ 3900 px avec ses 20 commentaires ONEM) et le rendu plein
+      //    écran dépassait le timeout de 60 s quand toute la suite tourne.
+      //    L'encart est haut dans la sidebar, donc visible sans défilement.
+      await page.screenshot({ path: `test-results/lookup-encart-${c.rid}.png` })
     })
   }
 })

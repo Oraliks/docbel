@@ -4,11 +4,12 @@ import {
   loginAsAdmin,
   requireAdminCredentials,
 } from "../helpers/auth"
+import { openViewAsMenu } from "../helpers/view-as"
 
 /**
  * Flow basique d'impersonation :
- *   admin → menu "Voir en tant que" → clique "Citoyen" → bannière apparaît
- *   → clique "Revenir admin" → retour /admin sans bannière.
+ *   admin → menu compte → sous-menu "Voir en tant que" → clique "Citoyen" →
+ *   bannière apparaît → clique "Revenir admin" → retour /admin sans bannière.
  *
  * Pré-requis :
  *   - DB seedée avec les 3 comptes demo (`pnpm tsx scripts/seed-demo-accounts.ts`)
@@ -25,12 +26,11 @@ test.describe("Impersonation — flow de base", () => {
     const creds = requireAdminCredentials(test)
 
     await loginAsAdmin(page, request, creds)
+    // Large viewport : la sidebar admin (qui porte le menu compte) doit être
+    // déployée, pas repliée en mode icônes.
+    await page.setViewportSize({ width: 1600, height: 900 })
 
-    // Le SiteHeader admin doit afficher le bouton "Voir en tant que". Texte
-    // exact côté desktop : "Voir en tant que" (cf. view-as-menu.tsx).
-    const viewAsButton = page.getByRole("button", { name: /voir en tant que/i })
-    await expect(viewAsButton).toBeVisible()
-    await viewAsButton.click()
+    await openViewAsMenu(page, creds.email)
 
     // Le menu lazy-fetch les comptes demo via /api/admin/demo-accounts dès
     // l'ouverture. On attend que l'item "Citoyen" soit présent.
@@ -48,7 +48,9 @@ test.describe("Impersonation — flow de base", () => {
       .locator("div")
       .filter({ hasText: /vous voyez le site comme/i })
       .first()
-    await expect(banner).toBeVisible()
+    // Timeout généreux : la bannière est un composant client qui attend la
+    // session, sur une home lourde à compiler en dev (~90 s à froid).
+    await expect(banner).toBeVisible({ timeout: 30_000 })
     await expect(banner).toContainText(/citoyen|demo/i)
 
     // Couleur verte pour le rôle citoyen (ROLE_THEME.user.wrap utilise
@@ -82,8 +84,9 @@ test.describe("Impersonation — flow de base", () => {
   }) => {
     const creds = requireAdminCredentials(test)
     await loginAsAdmin(page, request, creds)
+    await page.setViewportSize({ width: 1600, height: 900 })
 
-    await page.getByRole("button", { name: /voir en tant que/i }).click()
+    await openViewAsMenu(page, creds.email)
 
     // Section "Comptes demo" doit lister citoyen / partenaire / employeur
     // (cf. seed-demo-accounts.ts ACCOUNTS).

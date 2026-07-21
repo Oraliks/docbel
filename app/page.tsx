@@ -1,10 +1,8 @@
 import { getLocale } from "next-intl/server";
 import { prisma } from "@/lib/prisma";
 import { localizeRecords } from "@/lib/i18n/content";
-import { LandingBottom, type PopularBundle } from "@/components/docbel/landing/bottom";
 import { LandingHero } from "@/components/docbel/landing/hero";
 import { LandingToolsRow } from "@/components/docbel/landing/tools-row";
-import { HeroSearch } from "@/components/docbel/landing/hero-search";
 import { ResumeStrip } from "@/components/docbel/landing/resume-strip";
 import { TrustBand } from "@/components/docbel/landing/trust-band";
 import { WizardTeaser } from "@/components/docbel/landing/wizard-teaser";
@@ -31,7 +29,7 @@ export const dynamic = "force-dynamic";
 export default async function HomePage() {
   const locale = await getLocale();
 
-  const [articles, catalog, bundleRows, activeRun] = await Promise.all([
+  const [articles, catalog, activeRun] = await Promise.all([
     prisma.news
       .findMany({
         where: { status: "published", featured: true },
@@ -57,31 +55,16 @@ export default async function HomePage() {
     // déjà filtré sur active=true. Remplace l'ancienne liste statique TOOLS_DATA
     // → un outil ajouté/activé en admin apparaît automatiquement sur la home.
     getPublicCatalog().catch(() => []),
-    // Dossiers populaires (vrais DocumentBundle) — même pattern fail-soft
-    // que /mon-dossier : DB indisponible → liste vide, la home tient debout.
-    prisma.documentBundle
-      .findMany({
-        where: { active: true },
-        orderBy: [{ showOnOnboarding: "desc" }, { order: "asc" }, { name: "asc" }],
-        take: 4,
-        select: {
-          id: true,
-          slug: true,
-          name: true,
-          color: true,
-          lifeEventCategory: true,
-          items: { select: { id: true } },
-        },
-      })
-      .catch(() => []),
     // Dossier en cours du visiteur (fail-soft intégré : erreur → null).
     loadActiveBundleRun(),
   ]);
 
-  const [localizedArticles, localizedBundles] = await Promise.all([
-    localizeRecords("News", articles, ["title", "excerpt"], locale),
-    localizeRecords("DocumentBundle", bundleRows, ["name"], locale),
-  ]);
+  const localizedArticles = await localizeRecords(
+    "News",
+    articles,
+    ["title", "excerpt"],
+    locale,
+  );
 
   // Persona figé pour "/" (citoyen) — le header gère le changement d'espace.
   const persona = getAudienceFromPath("/");
@@ -117,23 +100,12 @@ export default async function HomePage() {
   // Les 5 premières « unes » alimentent le carrousel du hero (points de nav).
   const featuredArticles = news.slice(0, 5);
 
-  // Sérialisation minimale pour le panneau « Dossiers populaires ».
-  const popularBundles: PopularBundle[] = localizedBundles.map((bundle) => ({
-    slug: bundle.slug,
-    name: bundle.name,
-    color: bundle.color,
-    lifeEventCategory: bundle.lifeEventCategory,
-    itemCount: bundle.items.length,
-  }));
-
   return (
     <>
       {activeRun && <ResumeStrip run={activeRun} />}
       <LandingHero articles={featuredArticles} loading={false} />
       <WizardTeaser />
-      <HeroSearch />
       <LandingToolsRow tools={toolsForRow} />
-      <LandingBottom news={news} loading={false} bundles={popularBundles} />
       <TrustBand />
     </>
   );

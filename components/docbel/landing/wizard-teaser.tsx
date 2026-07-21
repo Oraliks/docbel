@@ -14,7 +14,6 @@ import {
   HelpCircle,
   Hourglass,
   MapPinned,
-  Sparkles,
   UserMinus,
   type LucideIcon,
 } from "lucide-react";
@@ -67,9 +66,12 @@ export function WizardTeaser() {
 
       <header className="relative mb-5 flex flex-col gap-2 sm:mb-6">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[color:var(--glass-ink-faint)]">
-            {t("wizardEyebrow")}
-          </p>
+          <h2
+            id="wizard-teaser-heading"
+            className="glass-display max-w-3xl text-[27px] font-semibold leading-[1.08] sm:text-[32px]"
+          >
+            {t("situationTitle")}
+          </h2>
           <Link
             href="/chomage"
             className="inline-flex min-h-11 items-center gap-1 rounded-full px-2 text-[12px] font-semibold text-[color:var(--glass-accent-deep)] underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)]"
@@ -78,14 +80,8 @@ export function WizardTeaser() {
             <ArrowRight className="size-3.5" aria-hidden />
           </Link>
         </div>
-        <h2
-          id="wizard-teaser-heading"
-          className="glass-display max-w-3xl text-[27px] font-semibold leading-[1.08] sm:text-[32px]"
-        >
-          {t("ctaCreateDossier")}
-        </h2>
         <p className="max-w-3xl text-[13px] leading-[1.65] text-[color:var(--glass-ink-soft)] sm:text-[14px]">
-          {t("wizardDescription")}
+          {t("situationDescription")}
         </p>
       </header>
 
@@ -131,21 +127,6 @@ export function WizardTeaser() {
           );
         })}
 
-        <Link
-          href="/mon-dossier"
-          className="glass-cta glass-interactive group flex min-h-[112px] items-center gap-3 rounded-[20px] p-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
-        >
-          <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[color:var(--glass-surface)]">
-            <Sparkles className="size-5" aria-hidden />
-          </span>
-          <span className="flex-1 text-[13.5px] font-bold leading-snug">
-            {t("wizardStartGuide")}
-          </span>
-          <ArrowRight
-            className="size-4 shrink-0 transition-transform duration-200 group-hover:translate-x-0.5 motion-reduce:transition-none"
-            aria-hidden
-          />
-        </Link>
       </div>
     </section>
   );

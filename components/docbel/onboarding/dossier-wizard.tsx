@@ -414,21 +414,6 @@ export function DossierWizard({
           />
         )}
 
-        {/* Échappatoire « je ne suis pas sûr » sur les étapes de questions. */}
-        {currentStep < 4 ? (
-          <div className="grid overflow-hidden rounded-2xl border border-[color:var(--glass-border)] sm:grid-cols-[1.15fr_repeat(3,1fr)]" data-a11y-secondary="true">
-            <div className="flex items-center gap-2 border-b border-[color:var(--glass-border)] px-3 py-2.5 sm:border-b-0 sm:border-r">
-              <span className="flex size-8 items-center justify-center rounded-lg bg-[color:var(--glass-pop-bg)] text-[color:var(--glass-accent-deep)]" aria-hidden><HelpCircle className="size-4" /></span>
-              <span>
-                <span className="block text-xs font-bold text-[color:var(--glass-ink)]">{t("helpTitle")}</span>
-                <span className="block text-xs text-[color:var(--glass-ink)]/60">{t("helpSubtitle")}</span>
-              </span>
-            </div>
-            <Link href="/contact" className="glass-interactive flex min-h-12 items-center justify-center gap-2 border-b border-[color:var(--glass-border)] px-3 text-xs font-semibold text-[color:var(--glass-accent-deep)] sm:border-b-0 sm:border-r"><FileText className="size-4" aria-hidden />{t("helpCannotFind")}</Link>
-            <Link href="/contact" className="glass-interactive flex min-h-12 items-center justify-center gap-2 border-b border-[color:var(--glass-border)] px-3 text-xs font-semibold text-[color:var(--glass-accent-deep)] sm:border-b-0 sm:border-r"><HelpCircle className="size-4" aria-hidden />{t("helpFindRightDossier")}</Link>
-            <Link href="/contact" className="glass-interactive flex min-h-12 items-center justify-center gap-2 px-3 text-xs font-semibold text-[color:var(--glass-accent-deep)]"><Building2 className="size-4" aria-hidden />{dryRun ? t("wizardHesitateDryRun") : t("helpContactSupport")}</Link>
-          </div>
-        ) : null}
       </CardContent>
     </Card>
     </DryRunContext.Provider>

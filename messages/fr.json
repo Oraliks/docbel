@@ -3730,6 +3730,8 @@
       "wizardEyebrow": "Mon dossier",
       "wizardTitle": "Trouvez le bon dossier <em>en quelques questions</em>",
       "wizardDescription": "Choisissez la situation qui vous correspond : le guide vous pose une à trois questions, puis vous oriente vers le dossier adapté — sans jargon, et vous pouvez revenir en arrière à tout moment.",
+      "situationTitle": "Partez de votre situation",
+      "situationDescription": "Choisissez ce qui vous arrive maintenant. Le guide adaptera les questions et vous montrera la prochaine action utile.",
       "wizardStartGuide": "Commencer le guide",
       "wizardHubLink": "Voir le pôle chômage",
       "recentNewsTitle": "Actualités récentes",

@@ -381,7 +381,7 @@ export function MonDossierClient({
 
   return (
     <section className="docbel-a11y-scope relative isolate flex w-full flex-col gap-4 sm:gap-5">
-      <header className="grid gap-4 px-1 lg:grid-cols-[minmax(0,1fr)_minmax(280px,0.42fr)] lg:items-end" data-docbel-readable>
+      <header className="flex flex-col gap-3 px-1" data-docbel-readable>
         <div className="flex flex-col gap-3">
           <nav aria-label={t("breadcrumbLabel")} className="flex items-center gap-2 text-sm text-[color:var(--glass-ink-soft)]" data-a11y-secondary="true">
             <Link href="/" className="font-medium hover:text-[color:var(--glass-ink)]">{t("breadcrumbHome")}</Link>
@@ -395,14 +395,6 @@ export function MonDossierClient({
             {t("monDossierIntro")}
           </p>
         </div>
-        <Link href="/contact" className="glass-interactive flex items-center gap-3 rounded-2xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] p-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)]">
-          <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[color:var(--glass-pop-bg)] text-[color:var(--glass-accent-deep)]" aria-hidden><HelpCircle /></span>
-          <span className="min-w-0 flex-1">
-            <span className="block text-sm font-bold text-[color:var(--glass-ink)]">{t("helpTitle")}</span>
-            <span className="mt-1 block text-xs leading-relaxed text-[color:var(--glass-ink)]/70">{t("helpSubtitle")}</span>
-          </span>
-          <ChevronRight className="shrink-0 text-[color:var(--glass-accent-deep)]" aria-hidden />
-        </Link>
       </header>
 
       {activeRuns.length > 0 && (

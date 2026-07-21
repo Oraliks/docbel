@@ -17,6 +17,7 @@ import {
 import type { NewsItem } from "@/lib/docbel-data";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAppState } from "@/lib/app-state-context";
+import { GLASS_INPUT } from "@/lib/glass-classes";
 
 interface LandingHeroProps {
   articles: NewsItem[];
@@ -155,7 +156,27 @@ function GuidedHero({ article }: { article: NewsItem }) {
             {t("wizardDescription")}
           </p>
 
-          <div className="mt-6 flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:flex-wrap">
+          <button
+            type="button"
+            onClick={openSearch}
+            className={`${GLASS_INPUT} search-glow glass-interactive mt-6 flex min-h-16 w-full max-w-2xl items-center gap-3 border px-4 py-3 text-left backdrop-blur-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)] sm:px-5`}
+            aria-label={t("searchOpenLabel", { modifier: "ctrl" })}
+          >
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[color:var(--glass-accent-deep)] text-[color:var(--glass-bg-a)]">
+              <SearchIcon className="size-5" aria-hidden />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-[14px] font-bold text-[color:var(--glass-ink)] sm:text-[15px]">
+                {t("searchPrefix")}
+              </span>
+              <span className="mt-0.5 block truncate text-[12px] text-[color:var(--glass-ink-soft)] sm:text-[13px]">
+                {t("searchExample1")} · {t("searchExample2")} · {t("searchExample3")}
+              </span>
+            </span>
+            <ArrowRightIcon className="size-5 shrink-0 text-[color:var(--glass-accent-deep)]" aria-hidden />
+          </button>
+
+          <div className="mt-4 flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:flex-wrap">
             <Link
               href="/mon-dossier"
               className="glass-cta glass-interactive inline-flex min-h-12 items-center justify-center gap-2 rounded-full px-6 py-3 text-[14px] font-bold"
@@ -164,14 +185,6 @@ function GuidedHero({ article }: { article: NewsItem }) {
               {t("ctaCreateDossier")}
               <ArrowRightIcon className="size-4" aria-hidden />
             </Link>
-            <button
-              type="button"
-              onClick={openSearch}
-              className="glass-interactive inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-6 py-3 text-[14px] font-bold text-[color:var(--glass-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)]"
-            >
-              <SearchIcon className="size-4" aria-hidden />
-              {t("searchPrefix")}
-            </button>
           </div>
         </div>
 

@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import {
-  Accessibility,
+  ArrowRight,
   ChevronDown,
   ChevronRight,
   FileQuestion,
@@ -12,10 +12,9 @@ import {
   HelpCircle,
   Phone,
   RotateCcw,
-  Sparkles,
+  type LucideIcon,
 } from "lucide-react";
 import { IconDisplay } from "@/components/admin/documents/icon-picker";
-import { AccessibilityToolbar } from "@/components/docbel/accessibility-toolbar";
 import { DossierWizard } from "@/components/docbel/onboarding/dossier-wizard";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -32,6 +31,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { trackBundleEventClient } from "@/lib/bundles/analytics-client";
 import { LIFE_EVENT_CATEGORIES } from "@/lib/bundles/types";
@@ -110,13 +110,51 @@ function RowIconTile({ bundle }: { bundle: MonDossierBundle }) {
   );
 }
 
-function AccessRow({ bundle }: { bundle: MonDossierBundle }) {
-  const t = useTranslations("public.dossier");
-  const subtitle =
+function bundleSubtitle(
+  bundle: MonDossierBundle,
+  t: ReturnType<typeof useTranslations<"public.dossier">>,
+): string {
+  return (
     bundle.organism?.trim() ||
     (bundle.itemCount > 0
       ? t("docsToPrepare", { count: bundle.itemCount })
-      : t("guidedDossier"));
+      : t("guidedDossier"))
+  );
+}
+
+function AccessTile({ bundle }: { bundle: MonDossierBundle }) {
+  const t = useTranslations("public.dossier");
+
+  return (
+    <Link
+      href={bundleHref(bundle.slug)}
+      onClick={() =>
+        trackBundleEventClient("bundle_opened", {
+          bundleId: bundle.slug,
+          metadata: { slug: bundle.slug, from: "direct" },
+        })
+      }
+      className="glass-interactive group flex min-h-[88px] items-center gap-3 rounded-xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-3 py-3 outline-none"
+    >
+      <RowIconTile bundle={bundle} />
+      <span className="min-w-0 flex-1">
+        <span className="block text-[13px] font-semibold leading-snug text-foreground">
+          {bundle.name}
+        </span>
+        <span className="mt-1 block line-clamp-1 text-xs text-muted-foreground">
+          {bundleSubtitle(bundle, t)}
+        </span>
+      </span>
+      <ChevronRight
+        className="size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 rtl:rotate-180"
+        aria-hidden
+      />
+    </Link>
+  );
+}
+
+function AccessRow({ bundle }: { bundle: MonDossierBundle }) {
+  const t = useTranslations("public.dossier");
 
   return (
     <Link
@@ -134,9 +172,14 @@ function AccessRow({ bundle }: { bundle: MonDossierBundle }) {
         <span className="block text-sm font-semibold leading-snug text-foreground">
           {bundle.name}
         </span>
-        <span className="mt-1 block text-xs text-muted-foreground">{subtitle}</span>
+        <span className="mt-1 block text-xs text-muted-foreground">
+          {bundleSubtitle(bundle, t)}
+        </span>
       </span>
-      <ChevronRight className="size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" aria-hidden />
+      <ChevronRight
+        className="size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 rtl:rotate-180"
+        aria-hidden
+      />
     </Link>
   );
 }
@@ -144,23 +187,109 @@ function AccessRow({ bundle }: { bundle: MonDossierBundle }) {
 function HelpLink({
   icon: Icon,
   label,
+  description,
   href,
 }: {
-  icon: typeof HelpCircle;
+  icon: LucideIcon;
   label: string;
+  description: string;
   href: string;
 }) {
   return (
     <Link
       href={href}
-      className="group flex min-h-12 items-center gap-3 rounded-lg px-2 py-2 outline-none transition-colors hover:bg-muted/60 focus-visible:ring-3 focus-visible:ring-ring/50"
+      className="glass-interactive group flex min-h-[72px] items-center gap-3 rounded-xl px-2.5 py-2 outline-none"
     >
-      <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted text-primary" aria-hidden>
+      <span
+        className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary"
+        aria-hidden
+      >
         <Icon className="size-4" />
       </span>
-      <span className="min-w-0 flex-1 text-sm font-medium text-foreground">{label}</span>
-      <ChevronRight className="size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" aria-hidden />
+      <span className="min-w-0 flex-1">
+        <span className="block text-[13px] font-semibold leading-snug text-foreground">
+          {label}
+        </span>
+        <span className="mt-1 block text-xs text-muted-foreground">
+          {description}
+        </span>
+      </span>
+      <ChevronRight
+        className="size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 rtl:rotate-180"
+        aria-hidden
+      />
     </Link>
+  );
+}
+
+function ActiveDossierCard({
+  run,
+  runCount,
+}: {
+  run: ActiveBundleRun;
+  runCount: number;
+}) {
+  const t = useTranslations("public.dossier");
+  const completed = run.lifecycle === "completed_editable";
+  const percentage = completed
+    ? 100
+    : run.total > 0
+      ? Math.min(100, Math.round((run.completed / run.total) * 100))
+      : 0;
+  const progressLabel = completed
+    ? t("runCompletedEditable")
+    : t("runProgress", { completed: run.completed, total: run.total });
+  const resumeHref = `/d/${encodeURIComponent(run.slug)}?bundleRun=${encodeURIComponent(run.runId)}&demarrer=1`;
+
+  return (
+    <Card size="sm" className="h-full rounded-2xl">
+      <CardHeader className="gap-2">
+        <div className="flex items-center gap-2 text-primary">
+          <span className="flex size-8 items-center justify-center rounded-xl bg-primary/10">
+            <FolderOpen aria-hidden />
+          </span>
+          <span className="text-[11px] font-bold uppercase tracking-[0.08em]">
+            {t("ongoingDossier")}
+          </span>
+        </div>
+        <CardTitle className="pr-14 text-base font-semibold leading-snug">
+          {run.name}
+        </CardTitle>
+        <CardDescription>{progressLabel}</CardDescription>
+        <CardAction>
+          <Badge variant={completed ? "secondary" : "outline"}>
+            {completed ? t("demandeStatusComplete") : `${run.completed}/${run.total}`}
+          </Badge>
+        </CardAction>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-3">
+        <Progress
+          value={percentage}
+          aria-label={progressLabel}
+          className="docbel-progress-feedback [&_[data-slot=progress-indicator]]:bg-[color:var(--glass-accent-deep)]"
+        />
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <Button
+            render={<Link href={resumeHref} />}
+            size="sm"
+            className="flex-1"
+          >
+            {completed ? t("reviewCompletedRun") : t("resumeBannerCta")}
+            <ArrowRight data-icon="inline-end" className="rtl:rotate-180" aria-hidden />
+          </Button>
+          {runCount > 1 ? (
+            <Button
+              render={<Link href="/mes-demarches" />}
+              variant="outline"
+              size="sm"
+              className="flex-1"
+            >
+              {t("seeAllDemarches")}
+            </Button>
+          ) : null}
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -172,7 +301,6 @@ export function MonDossierClient({
   initialSituation,
 }: Props) {
   const t = useTranslations("public.dossier");
-  const tA11y = useTranslations("public.accessibility");
   const validInitialSituation =
     initialSituation && situations.some((situation) => situation.value === initialSituation)
       ? initialSituation
@@ -223,82 +351,81 @@ export function MonDossierClient({
     return ordered;
   }, [bundles, t]);
 
+  const directBundles = useMemo(
+    () =>
+      [...bundles]
+        .sort((left, right) => Number(right.popular) - Number(left.popular))
+        .slice(0, 6),
+    [bundles],
+  );
+  const activeRun = activeRuns[0] ?? null;
+
   return (
-    <section className="docbel-a11y-scope relative isolate flex w-full flex-col gap-8 sm:gap-10" data-docbel-readable>
-      <header className="flex flex-col gap-4 px-1">
-        <nav aria-label={t("breadcrumbLabel")} className="flex items-center gap-2 text-sm text-muted-foreground" data-a11y-secondary="true">
-          <Link href="/" className="font-medium transition-colors hover:text-foreground">
-            {t("breadcrumbHome")}
-          </Link>
-          <span aria-hidden>/</span>
-          <span className="font-semibold text-foreground">{t("breadcrumbCurrent")}</span>
-        </nav>
-        <div className="flex max-w-3xl flex-col gap-3">
-          <Badge variant="secondary" className="w-fit">
-            <Sparkles data-icon="inline-start" aria-hidden />
-            {t("wizardAssistantTitle")}
-          </Badge>
-          <h1 className="glass-display text-4xl font-semibold leading-tight sm:text-5xl">
-            {t.rich("guichetTitle", { em: (chunks) => <em>{chunks}</em> })}
+    <section
+      className="docbel-a11y-scope relative isolate flex w-full flex-col gap-5 sm:gap-6"
+      data-docbel-readable
+    >
+      <header
+        className={cn(
+          "grid items-stretch gap-5 px-1",
+          activeRun && "lg:grid-cols-[minmax(0,1.25fr)_minmax(22rem,0.75fr)]",
+        )}
+      >
+        <div className="flex flex-col justify-center gap-3">
+          <nav
+            aria-label={t("breadcrumbLabel")}
+            className="flex items-center gap-2 text-xs text-muted-foreground"
+            data-a11y-secondary="true"
+          >
+            <Link href="/" className="font-medium transition-colors hover:text-foreground">
+              {t("breadcrumbHome")}
+            </Link>
+            <span aria-hidden>/</span>
+            <span className="font-semibold text-foreground">
+              {t("breadcrumbMonDossier")}
+            </span>
+          </nav>
+          <h1 className="glass-display text-4xl font-semibold leading-[1.05] sm:text-5xl">
+            {t.rich("monDossierTitle", { em: (chunks) => <em>{chunks}</em> })}
           </h1>
-          <p className="text-base leading-relaxed text-muted-foreground sm:text-lg">
+          <p className="max-w-3xl text-sm leading-relaxed text-muted-foreground sm:text-base">
             {t("monDossierIntro")}
           </p>
         </div>
+
+        {activeRun ? (
+          <ActiveDossierCard run={activeRun} runCount={activeRuns.length} />
+        ) : null}
       </header>
 
-      {activeRuns.length > 0 ? (
-        <Card size="sm">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <RotateCcw className="size-4 text-primary" aria-hidden />
-              {t("resumeBannerTitle", { count: activeRuns.length })}
-            </CardTitle>
-            <CardDescription className="truncate">
-              {activeRuns.map((run) => run.name).join(" · ")}
-            </CardDescription>
-            <CardAction>
-              <Button render={<Link href="/mes-demarches" />} variant="outline" size="lg" className="min-h-11">
-                {t("resumeBannerCta")}
-                <ChevronRight data-icon="inline-end" aria-hidden />
-              </Button>
-            </CardAction>
-          </CardHeader>
-        </Card>
-      ) : null}
-
-      <section id="guichet" className="flex flex-col gap-4" aria-labelledby="assistant-title">
-        <div className="flex max-w-2xl flex-col gap-1 px-1">
-          <h2 id="assistant-title" className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
-            {t("wizardAssistantTitle")}
-          </h2>
-          <p className="text-sm leading-relaxed text-muted-foreground sm:text-base">
-            {t("wizardAssistantSubtitle")}
-          </p>
-        </div>
-        <DossierWizard
-          key={presetSituation ?? "none"}
-          hideHeader
-          situations={situations}
-          catalog={catalog}
-          initialSituation={presetSituation ?? undefined}
-        />
-      </section>
+      <DossierWizard
+        key={presetSituation ?? "none"}
+        hideHeader
+        situations={situations}
+        catalog={catalog}
+        initialSituation={presetSituation ?? undefined}
+      />
 
       {bundles.length > 0 ? (
         <Collapsible open={catalogOpen} onOpenChange={setCatalogOpen}>
-          <Card size="sm">
+          <Card size="sm" className="rounded-2xl">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FolderOpen className="size-4 text-primary" aria-hidden />
-                {t("guichetBrowseAll")}
+              <CardTitle>
+                <h2 className="glass-display text-xl font-semibold sm:text-2xl">
+                  {t("directAccessTitle")}
+                </h2>
               </CardTitle>
               <CardDescription>{t("directAccessSubtitle")}</CardDescription>
               <CardAction>
                 <CollapsibleTrigger
-                  className={cn(buttonVariants({ variant: "outline", size: "lg" }), "min-h-11")}
+                  className={cn(
+                    buttonVariants({ variant: "ghost", size: "sm" }),
+                    "text-primary",
+                  )}
                 >
-                  {catalogOpen ? t("seeLess") : t("directAccessTitle")}
+                  {catalogOpen
+                    ? t("seeLess")
+                    : t("seeAllCategories", { count: groups.length })}
                   <ChevronDown
                     data-icon="inline-end"
                     className={cn("transition-transform", catalogOpen && "rotate-180")}
@@ -307,17 +434,31 @@ export function MonDossierClient({
                 </CollapsibleTrigger>
               </CardAction>
             </CardHeader>
+            <CardContent className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+              {directBundles.map((bundle) => (
+                <AccessTile key={bundle.slug} bundle={bundle} />
+              ))}
+            </CardContent>
             <CollapsibleContent>
               <Separator />
               <CardContent className="grid gap-6 pt-4 lg:grid-cols-2">
                 {groups.map((group) => (
-                  <section key={group.id} className="flex flex-col" aria-labelledby={`catalog-${group.id}`}>
+                  <section
+                    key={group.id}
+                    className="flex flex-col"
+                    aria-labelledby={`catalog-${group.id}`}
+                  >
                     <div className="flex items-center gap-2 px-2 pb-2">
                       <span aria-hidden>{group.emoji}</span>
-                      <h3 id={`catalog-${group.id}`} className="text-sm font-semibold text-foreground">
+                      <h3
+                        id={`catalog-${group.id}`}
+                        className="text-sm font-semibold text-foreground"
+                      >
                         {group.label}
                       </h3>
-                      <Badge variant="secondary" className="ms-auto">{group.items.length}</Badge>
+                      <Badge variant="secondary" className="ms-auto">
+                        {group.items.length}
+                      </Badge>
                     </div>
                     <Separator />
                     {group.items.map((bundle, index) => (
@@ -334,31 +475,40 @@ export function MonDossierClient({
         </Collapsible>
       ) : null}
 
-      <Card size="sm" data-a11y-secondary="true">
+      <Card size="sm" className="rounded-2xl" data-a11y-secondary="true">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <HelpCircle className="size-4 text-primary" aria-hidden />
-            {t("helpTitle")}
+          <CardTitle>
+            <h2 className="glass-display text-xl font-semibold sm:text-2xl">
+              {t("helpTitle")}
+            </h2>
           </CardTitle>
           <CardDescription>{t("helpSubtitle")}</CardDescription>
         </CardHeader>
-        <CardContent className="flex flex-col gap-3">
-          <div className="grid gap-1 sm:grid-cols-3">
-            <HelpLink icon={FileQuestion} label={t("helpCannotFind")} href="/contact" />
-            <HelpLink icon={RotateCcw} label={t("helpWhereIsRequest")} href="/mes-demarches" />
-            <HelpLink icon={Phone} label={t("helpContactSupport")} href="/contact" />
-          </div>
-          <Separator />
-          <Collapsible>
-            <CollapsibleTrigger className="flex min-h-11 w-full items-center gap-2 rounded-lg px-2 text-left text-sm font-medium text-foreground outline-none transition-colors hover:bg-muted/60 focus-visible:ring-3 focus-visible:ring-ring/50">
-              <Accessibility className="size-4 text-primary" aria-hidden />
-              {tA11y("title")}
-              <ChevronDown className="ms-auto size-4 text-muted-foreground transition-transform in-data-[state=open]:rotate-180" aria-hidden />
-            </CollapsibleTrigger>
-            <CollapsibleContent className="pt-3">
-              <AccessibilityToolbar />
-            </CollapsibleContent>
-          </Collapsible>
+        <CardContent className="grid gap-1 sm:grid-cols-2 xl:grid-cols-4">
+          <HelpLink
+            icon={FileQuestion}
+            label={t("helpFindRightDossier")}
+            description={t("helpFindRightDossierSub")}
+            href="#assistant-heading"
+          />
+          <HelpLink
+            icon={HelpCircle}
+            label={t("helpCannotFind")}
+            description={t("helpCannotFindSub")}
+            href="/contact"
+          />
+          <HelpLink
+            icon={RotateCcw}
+            label={t("helpWhereIsRequest")}
+            description={t("helpWhereIsRequestSub")}
+            href="/mes-demarches"
+          />
+          <HelpLink
+            icon={Phone}
+            label={t("helpContactSupport")}
+            description={t("helpContactSupportSub")}
+            href="/contact"
+          />
         </CardContent>
       </Card>
     </section>

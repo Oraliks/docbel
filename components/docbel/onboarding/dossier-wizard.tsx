@@ -25,8 +25,10 @@ import {
   AlertTriangle,
   ArrowLeft,
   ArrowRight,
+  Bot,
   Briefcase,
   Building2,
+  Check,
   ChevronRight,
   Clock,
   Construction,
@@ -38,6 +40,7 @@ import {
   HelpCircle,
   Home,
   Hourglass,
+  LockKeyhole,
   MapPinned,
   RotateCcw,
   Search,
@@ -342,85 +345,129 @@ export function DossierWizard({
     });
   }, [dryRun, currentStep, result, selectedSituation, selectedSubOption, selectedRefine]);
 
+  const wizardStep = (
+    <>
+      {/* Annonce du changement d'étape pour les lecteurs d'écran. */}
+      <p className="sr-only" role="status" aria-live="polite">
+        {t("wizardStepAnnounce", {
+          step: currentStep,
+          label: t(STEP_LABEL_KEYS[currentStep] as Parameters<typeof t>[0]),
+        })}
+      </p>
+
+      {currentStep === 1 && (
+        <StepSituation
+          situations={situations}
+          selected={selectedSituation}
+          onSelect={handleSituationSelect}
+          hideSearch={hideHeader}
+        />
+      )}
+
+      {currentStep === 2 && situation?.subQuestion && (
+        <StepSubQuestion
+          situationLabel={resolveText(tc, situation.labelKey, situation.label)}
+          subQuestion={situation.subQuestion}
+          selected={selectedSubOption}
+          onSelect={handleSubOptionSelect}
+          onBack={handleBack}
+        />
+      )}
+
+      {currentStep === 3 && subOption?.refineQuestion && (
+        <StepRefine
+          subOptionLabel={resolveText(tc, subOption.labelKey, subOption.label)}
+          refineQuestion={subOption.refineQuestion}
+          selected={selectedRefine}
+          onSelect={handleRefineSelect}
+          onBack={handleBack}
+        />
+      )}
+
+      {currentStep === 4 && result && (
+        <StepResults
+          result={result}
+          catalog={catalog}
+          onBack={handleBack}
+          onReset={handleReset}
+        />
+      )}
+    </>
+  );
+
   return (
     <DryRunContext.Provider value={dryRun}>
-    <Card className={cn(GLASS_CARD, "h-full overflow-hidden rounded-3xl")} data-docbel-readable>
-      {!hideHeader && (
-        <CardHeader className="p-4 pb-3 sm:p-5 sm:pb-3">
-          <CardTitle className="flex items-center gap-3">
-            <span
-              className="glass-icon-tile flex size-12 shrink-0 items-center justify-center rounded-2xl text-[color:var(--glass-accent-deep)]"
-              style={{
-                background:
-                  "color-mix(in oklab, var(--glass-accent-deep) 14%, transparent)",
-                "--tile-hue": "var(--glass-accent-deep)",
-              } as React.CSSProperties}
-              aria-hidden
-            >
-              <Sparkles />
-            </span>
-            <span className="flex flex-col gap-0.5">
-              <span className="text-2xl font-bold leading-tight">
-                {t("wizardAssistantTitle")}
-              </span>
-              <span className="text-sm font-normal text-muted-foreground">
-                {t("wizardAssistantSubtitle")}
-              </span>
-            </span>
-          </CardTitle>
-        </CardHeader>
-      )}
-      <CardContent className="flex flex-col gap-5 p-4 pt-0 sm:p-5 sm:pt-0">
-        <Stepper currentStep={currentStep} />
-
-        {/* Annonce du changement d'étape pour les lecteurs d'écran. */}
-        <p className="sr-only" role="status" aria-live="polite">
-          {t("wizardStepAnnounce", {
-            step: currentStep,
-            label: t(STEP_LABEL_KEYS[currentStep] as Parameters<typeof t>[0]),
-          })}
-        </p>
-
-        {currentStep === 1 && (
-          <StepSituation
-            situations={situations}
-            selected={selectedSituation}
-            onSelect={handleSituationSelect}
-            hideSearch={hideHeader}
-          />
+      <Card
+        className={cn(
+          GLASS_CARD,
+          "h-full overflow-hidden",
+          hideHeader ? "gap-0 rounded-2xl py-0" : "rounded-3xl",
         )}
-
-        {currentStep === 2 && situation?.subQuestion && (
-          <StepSubQuestion
-            situationLabel={resolveText(tc, situation.labelKey, situation.label)}
-            subQuestion={situation.subQuestion}
-            selected={selectedSubOption}
-            onSelect={handleSubOptionSelect}
-            onBack={handleBack}
-          />
+        data-docbel-readable
+      >
+        {hideHeader ? (
+          <CardContent className="grid min-h-[470px] p-0 lg:grid-cols-[184px_minmax(0,1fr)]">
+            <Stepper currentStep={currentStep} rail />
+            <div className="flex min-w-0 flex-col">
+              <div className="flex items-center gap-3 border-b border-[color:var(--glass-border)] px-4 py-4 sm:px-6">
+                <span
+                  className="glass-icon-tile flex size-12 shrink-0 items-center justify-center rounded-2xl text-[color:var(--glass-accent-deep)]"
+                  style={{
+                    background:
+                      "color-mix(in oklab, var(--glass-accent-deep) 14%, transparent)",
+                    "--tile-hue": "var(--glass-accent-deep)",
+                  } as React.CSSProperties}
+                  aria-hidden
+                >
+                  <Bot />
+                </span>
+                <div className="min-w-0">
+                  <h2
+                    id="assistant-heading"
+                    className="text-base font-semibold leading-tight text-foreground sm:text-lg"
+                  >
+                    {t("wizardAssistantTitle")}
+                  </h2>
+                  <p className="mt-1 text-xs leading-relaxed text-muted-foreground sm:text-sm">
+                    {t("wizardAssistantSubtitle")}
+                  </p>
+                </div>
+              </div>
+              <div className="flex-1 px-4 py-5 sm:px-6 sm:py-6">{wizardStep}</div>
+            </div>
+          </CardContent>
+        ) : (
+          <>
+            <CardHeader className="p-4 pb-3 sm:p-5 sm:pb-3">
+              <CardTitle className="flex items-center gap-3">
+                <span
+                  className="glass-icon-tile flex size-12 shrink-0 items-center justify-center rounded-2xl text-[color:var(--glass-accent-deep)]"
+                  style={{
+                    background:
+                      "color-mix(in oklab, var(--glass-accent-deep) 14%, transparent)",
+                    "--tile-hue": "var(--glass-accent-deep)",
+                  } as React.CSSProperties}
+                  aria-hidden
+                >
+                  <Sparkles />
+                </span>
+                <span className="flex flex-col gap-0.5">
+                  <span className="text-2xl font-bold leading-tight">
+                    {t("wizardAssistantTitle")}
+                  </span>
+                  <span className="text-sm font-normal text-muted-foreground">
+                    {t("wizardAssistantSubtitle")}
+                  </span>
+                </span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-5 p-4 pt-0 sm:p-5 sm:pt-0">
+              <Stepper currentStep={currentStep} />
+              {wizardStep}
+            </CardContent>
+          </>
         )}
-
-        {currentStep === 3 && subOption?.refineQuestion && (
-          <StepRefine
-            subOptionLabel={resolveText(tc, subOption.labelKey, subOption.label)}
-            refineQuestion={subOption.refineQuestion}
-            selected={selectedRefine}
-            onSelect={handleRefineSelect}
-            onBack={handleBack}
-          />
-        )}
-
-        {currentStep === 4 && result && (
-          <StepResults
-            result={result}
-            catalog={catalog}
-            onBack={handleBack}
-            onReset={handleReset}
-          />
-        )}
-
-      </CardContent>
-    </Card>
+      </Card>
     </DryRunContext.Provider>
   );
 }
@@ -430,10 +477,85 @@ export function DossierWizard({
 
 interface StepperProps {
   currentStep: StepNumber;
+  rail?: boolean;
 }
 
-function Stepper({ currentStep }: StepperProps) {
+function Stepper({ currentStep, rail = false }: StepperProps) {
   const t = useTranslations("public.dossier");
+
+  if (rail) {
+    return (
+      <aside
+        className="flex flex-col border-b border-[color:var(--glass-border)] bg-primary/[0.035] px-4 py-4 lg:border-b-0 lg:border-r lg:px-5 lg:py-6"
+        aria-label={t("wizardProgressLabel")}
+      >
+        <div className="lg:hidden">
+          <Progress value={currentStep * 25} className="docbel-progress-feedback gap-2">
+            <ProgressLabel>
+              {t(STEP_LABEL_KEYS[currentStep] as Parameters<typeof t>[0])}
+            </ProgressLabel>
+            <span className="ms-auto text-sm tabular-nums text-muted-foreground">
+              {currentStep}/4
+            </span>
+          </Progress>
+        </div>
+
+        <ol className="hidden flex-1 flex-col lg:flex">
+          {([1, 2, 3, 4] as const).map((step) => {
+            const completed = step < currentStep;
+            const current = step === currentStep;
+            return (
+              <li
+                key={step}
+                className="relative flex min-h-[78px] gap-3 last:min-h-0"
+                aria-current={current ? "step" : undefined}
+              >
+                {step < 4 ? (
+                  <span
+                    className={cn(
+                      "absolute left-[13px] top-7 h-[calc(100%-1px)] w-px bg-border",
+                      completed && "bg-primary/45",
+                    )}
+                    aria-hidden
+                  />
+                ) : null}
+                <span
+                  className={cn(
+                    "relative z-10 flex size-7 shrink-0 items-center justify-center rounded-full border bg-[color:var(--glass-surface)] text-[11px] font-semibold text-muted-foreground",
+                    current && "border-primary bg-primary text-primary-foreground shadow-sm",
+                    completed && "border-primary/40 bg-primary/10 text-primary",
+                  )}
+                  aria-hidden
+                >
+                  {completed ? <Check className="size-3.5" /> : step}
+                </span>
+                <span className="min-w-0 pt-1">
+                  <span
+                    className={cn(
+                      "block text-xs font-medium leading-snug text-muted-foreground",
+                      (current || completed) && "text-foreground",
+                      current && "font-semibold text-primary",
+                    )}
+                  >
+                    {t(STEP_LABEL_KEYS[step] as Parameters<typeof t>[0])}
+                  </span>
+                  <span className="mt-1 block text-[11px] leading-snug text-muted-foreground">
+                    {t(`wizardStep${step}Sub` as Parameters<typeof t>[0])}
+                  </span>
+                </span>
+              </li>
+            );
+          })}
+        </ol>
+
+        <div className="mt-5 hidden items-center gap-2 border-t border-[color:var(--glass-border)] pt-4 text-[11px] leading-snug text-muted-foreground lg:flex">
+          <LockKeyhole className="size-3.5 shrink-0 text-primary" aria-hidden />
+          {t("wizardAnswerConfidential")}
+        </div>
+      </aside>
+    );
+  }
+
   return (
     <div
       className="flex flex-col gap-3"
@@ -470,9 +592,8 @@ interface StepSituationProps {
   situations: WizardSituation[];
   selected: string | null;
   onSelect: (value: string) => void;
-  /// Masque le libellé de question (`wizardSituationQuestion` + aide) et la
-  /// barre de recherche. Les pills thématiques et la grille de tuiles restent
-  /// toujours rendues. Additif, défaut `false`.
+  /// Dans le guichet principal, masque la recherche et les filtres pour montrer
+  /// immédiatement toutes les situations, sans masquer la question.
   hideSearch?: boolean;
 }
 
@@ -488,6 +609,7 @@ function StepSituation({
   const [activeTheme, setActiveTheme] = useState<SituationTheme>("emploi");
   const normalizedQuery = query.trim().toLocaleLowerCase();
   const visibleSituations = useMemo(() => situations.filter((s) => {
+    if (hideSearch) return true;
     if (normalizedQuery) {
       const searchable = [
         resolveText(tc, s.labelKey, s.label),
@@ -496,20 +618,18 @@ function StepSituation({
       return searchable.includes(normalizedQuery);
     }
     return situationTheme(s.value) === activeTheme;
-  }), [activeTheme, normalizedQuery, situations, tc]);
+  }), [activeTheme, hideSearch, normalizedQuery, situations, tc]);
 
   return (
     <div className="animate-fade-in-up flex flex-col gap-4">
-      {!hideSearch && (
-        <div className="flex flex-col gap-2">
-          <Label className="block text-xl font-bold leading-tight text-[color:var(--glass-ink)]">
-            {t("wizardSituationQuestion")}
-          </Label>
-          <p className="text-sm leading-relaxed text-muted-foreground">
-            {t("wizardSituationHelp")}
-          </p>
-        </div>
-      )}
+      <div className="flex flex-col gap-2">
+        <Label className="block text-lg font-semibold leading-tight text-[color:var(--glass-ink)] sm:text-xl">
+          {t("wizardSituationQuestion")}
+        </Label>
+        <p className="text-sm leading-relaxed text-muted-foreground">
+          {t("wizardSituationHelp")}
+        </p>
+      </div>
 
       {!hideSearch && (
         <label className="flex min-h-14 items-center gap-3 rounded-2xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-4 focus-within:ring-2 focus-within:ring-[color:var(--glass-accent-deep)]/35">
@@ -526,35 +646,37 @@ function StepSituation({
         </label>
       )}
 
-      <ToggleGroup
-        value={normalizedQuery ? [] : [activeTheme]}
-        onValueChange={(values) => {
-          const nextTheme = values.at(-1) as SituationTheme | undefined;
-          if (!nextTheme) return;
-          setQuery("");
-          setActiveTheme(nextTheme);
-        }}
-        variant="outline"
-        size="default"
-        spacing={1}
-        className="no-scrollbar flex w-full justify-start overflow-x-auto pb-1"
-        aria-label={t("wizardThemeGroupLabel")}
-      >
-        {SITUATION_THEMES.map((theme) => {
-          const category = LIFE_EVENT_CATEGORIES.find((item) => item.id === theme.id);
-          const Icon = theme.icon;
-          return (
-            <ToggleGroupItem
-              key={theme.id}
-              value={theme.id}
-              className="min-h-11 shrink-0"
-            >
-              <Icon data-icon="inline-start" aria-hidden />
-              {category?.label ?? theme.id}
-            </ToggleGroupItem>
-          );
-        })}
-      </ToggleGroup>
+      {!hideSearch ? (
+        <ToggleGroup
+          value={normalizedQuery ? [] : [activeTheme]}
+          onValueChange={(values) => {
+            const nextTheme = values.at(-1) as SituationTheme | undefined;
+            if (!nextTheme) return;
+            setQuery("");
+            setActiveTheme(nextTheme);
+          }}
+          variant="outline"
+          size="default"
+          spacing={1}
+          className="no-scrollbar flex w-full justify-start overflow-x-auto pb-1"
+          aria-label={t("wizardThemeGroupLabel")}
+        >
+          {SITUATION_THEMES.map((theme) => {
+            const category = LIFE_EVENT_CATEGORIES.find((item) => item.id === theme.id);
+            const Icon = theme.icon;
+            return (
+              <ToggleGroupItem
+                key={theme.id}
+                value={theme.id}
+                className="min-h-11 shrink-0"
+              >
+                <Icon data-icon="inline-start" aria-hidden />
+                {category?.label ?? theme.id}
+              </ToggleGroupItem>
+            );
+          })}
+        </ToggleGroup>
+      ) : null}
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {visibleSituations.map((s) => {
@@ -567,9 +689,7 @@ function StepSituation({
               onClick={() => onSelect(s.value)}
               aria-pressed={isSelected}
               className={cn(
-                "group flex min-h-16 items-center gap-3 rounded-xl border bg-[color:var(--glass-surface)] px-3 py-2.5 text-left transition-all",
-                "hover:-translate-y-px hover:border-[color:var(--glass-accent-a)]/40 hover:shadow-sm",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-a)]/40",
+                "glass-interactive group flex min-h-[68px] items-center gap-3 rounded-xl border bg-[color:var(--glass-surface)] px-3 py-2.5 text-left",
                 isSelected
                   ? "border-[color:var(--glass-accent-a)] ring-1 ring-[color:var(--glass-accent-a)]/30"
                   : "border-[color:var(--glass-border)]",
@@ -665,9 +785,7 @@ function StepSubQuestion({
               onClick={() => onSelect(opt.value)}
               aria-pressed={isSelected}
               className={cn(
-                "group flex min-h-14 items-center gap-3 rounded-2xl border bg-[color:var(--glass-surface)] px-3 py-2.5 text-left transition-all",
-                "hover:-translate-y-px hover:border-[color:var(--glass-accent-a)]/40 hover:shadow-sm",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-a)]/40",
+                "glass-interactive group flex min-h-14 items-center gap-3 rounded-xl border bg-[color:var(--glass-surface)] px-3 py-2.5 text-left",
                 isSelected
                   ? "border-[color:var(--glass-accent-a)] ring-1 ring-[color:var(--glass-accent-a)]/30"
                   : "border-[color:var(--glass-border)]",
@@ -756,9 +874,7 @@ function StepRefine({
               onClick={() => onSelect(opt.value)}
               aria-pressed={isSelected}
               className={cn(
-                "group flex min-h-14 items-center gap-3 rounded-2xl border bg-[color:var(--glass-surface)] px-3 py-2.5 text-left transition-all",
-                "hover:-translate-y-px hover:border-[color:var(--glass-accent-a)]/40 hover:shadow-sm",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-a)]/40",
+                "glass-interactive group flex min-h-14 items-center gap-3 rounded-xl border bg-[color:var(--glass-surface)] px-3 py-2.5 text-left",
                 isSelected
                   ? "border-[color:var(--glass-accent-a)] ring-1 ring-[color:var(--glass-accent-a)]/30"
                   : "border-[color:var(--glass-border)]",

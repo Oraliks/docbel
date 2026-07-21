@@ -15,6 +15,10 @@ import { accountMenuButton, openViewAsMenu } from "../helpers/view-as"
  *     vers /admin.
  */
 test.describe("Impersonation — mode visiteur anonyme", () => {
+  // Dev server : compilation à la demande, mesurée entre 30 s et 230 s selon la
+  // route. Le timeout par défaut de 60 s rend la suite ingérable à froid.
+  test.describe.configure({ timeout: 240_000 })
+
   test("admin peut basculer en visiteur anonyme et revenir admin", async ({
     page,
     request,
@@ -46,7 +50,7 @@ test.describe("Impersonation — mode visiteur anonyme", () => {
 
     // /api/admin/view-as-visitor redirige vers / via window.location.
     // Timeout généreux : la home est lourde à compiler en dev.
-    await page.waitForURL(/\/$/, { timeout: 30_000 })
+    await page.waitForURL(/\/$/, { timeout: 90_000 })
 
     // Bannière grise spécifique "Vous voyez le site en visiteur anonyme"
     // (cf. impersonation-banner.tsx branche `if (!session && isVisitor)`).
@@ -66,7 +70,7 @@ test.describe("Impersonation — mode visiteur anonyme", () => {
     // Clic "Revenir admin" → POST /api/admin/restore-admin → window.location = /admin
     await banner.getByRole("button", { name: /revenir admin/i }).click()
 
-    await page.waitForURL(/\/admin/, { timeout: 15_000 })
+    await page.waitForURL(/\/admin/, { timeout: 90_000 })
 
     // Plus aucune bannière (ni impersonation ni visiteur). La session admin
     // est restaurée → le shell admin est rendu, donc son menu compte est là.

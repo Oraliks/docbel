@@ -19,6 +19,10 @@ import { openViewAsMenu } from "../helpers/view-as"
  *   - E2E_ADMIN_EMAIL / E2E_ADMIN_PASSWORD définies sur un VRAI compte admin.
  */
 test.describe("Impersonation — flow de base", () => {
+  // Dev server : compilation à la demande, mesurée entre 30 s et 230 s selon la
+  // route. Le timeout par défaut de 60 s rend la suite ingérable à froid.
+  test.describe.configure({ timeout: 240_000 })
+
   test("admin peut impersonifier le compte demo citoyen puis revenir", async ({
     page,
     request,
@@ -40,7 +44,7 @@ test.describe("Impersonation — flow de base", () => {
 
     // Le hard reload via window.location.href = "/" suit. On attend que
     // l'URL passe à "/" et que la bannière sticky soit montée.
-    await page.waitForURL(/\/$/, { timeout: 15_000 })
+    await page.waitForURL(/\/$/, { timeout: 90_000 })
 
     // La bannière contient "Vous voyez le site comme" + le nom du target.
     // On cible une zone stricte (le banner est sticky top, z-60).
@@ -66,7 +70,7 @@ test.describe("Impersonation — flow de base", () => {
     await stopButton.click()
 
     // Hard redirect vers /admin via window.location.href.
-    await page.waitForURL(/\/admin/, { timeout: 15_000 })
+    await page.waitForURL(/\/admin/, { timeout: 90_000 })
 
     // La bannière ne doit plus être visible (session admin restaurée,
     // impersonatedBy === null).

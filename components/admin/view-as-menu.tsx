@@ -290,6 +290,12 @@ export function ViewAsMenu({
         <DropdownMenuLabel>Modes</DropdownMenuLabel>
         <DropdownMenuItem
           disabled={pending !== null}
+          // ⚠️ NE PAS fermer le menu : ce composant (et donc le dialog de
+          // confirmation qu'il rend) vit dans le DropdownMenuContent de
+          // nav-user. base-ui démonte ce sous-arbre à la fermeture, ce qui
+          // détruirait le dialog avant qu'il ne s'affiche. `e.preventDefault()`
+          // est l'idiome Radix (`onSelect`) et n'a aucun effet ici.
+          closeOnClick={false}
           onClick={(e) => {
             e.preventDefault()
             void goVisitor()

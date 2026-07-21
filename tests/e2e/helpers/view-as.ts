@@ -28,10 +28,21 @@ export function accountMenuButton(page: Page, adminEmail: string) {
  */
 export async function openViewAsMenu(page: Page, adminEmail: string) {
   const account = accountMenuButton(page, adminEmail)
-  await expect(account).toBeVisible({ timeout: 15_000 })
-  await account.click()
+  await expect(account).toBeVisible({ timeout: 30_000 })
 
   const trigger = page.getByRole("menuitem", { name: /voir en tant que/i })
-  await expect(trigger).toBeVisible({ timeout: 10_000 })
+
+  // Le bouton est dans le DOM dès le SSR, mais en dev React peut ne pas être
+  // encore hydraté : le clic part alors dans le vide, sans erreur. On réessaie
+  // jusqu'à ce que le sous-menu apparaisse.
+  // ⚠️ On ne reclique QUE si le menu n'est pas déjà ouvert — un second clic sur
+  // le déclencheur le refermerait (bascule).
+  await expect(async () => {
+    if (!(await trigger.isVisible())) {
+      await account.click()
+    }
+    await expect(trigger).toBeVisible({ timeout: 3_000 })
+  }).toPass({ timeout: 90_000 })
+
   await trigger.click()
 }

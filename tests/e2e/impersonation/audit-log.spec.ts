@@ -19,6 +19,10 @@ import {
  * récente.
  */
 test.describe("Impersonation — page audit /admin/impersonation", () => {
+  // Dev server : compilation à la demande, mesurée entre 30 s et 230 s selon la
+  // route. Le timeout par défaut de 60 s rend la suite ingérable à froid.
+  test.describe.configure({ timeout: 240_000 })
+
   test("liste les events d'impersonation après un cycle complet", async ({
     page,
     request,

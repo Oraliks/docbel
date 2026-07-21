@@ -1,9 +1,9 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTheme } from "@/components/theme-provider";
-import { LandingCommandPalette } from "./landing/command-palette";
 import { LandingFooter } from "./landing/footer";
 import { LandingHeader } from "./landing/header";
 import { AppStateContext } from "@/lib/app-state-context";
@@ -16,6 +16,14 @@ import { AnnouncementBanner } from "./announcement-banner";
 import { MaintenanceScreen } from "./maintenance-screen";
 import { ProShell } from "./pro/pro-shell";
 import type { ProSegment } from "@/lib/pro-nav";
+
+const LandingCommandPalette = dynamic(
+  () =>
+    import("./landing/command-palette").then(
+      (module) => module.LandingCommandPalette,
+    ),
+  { ssr: false },
+);
 
 /**
  * Espaces pros connectés (partenaire/employeur) → shell Dashboard (sidebar)
@@ -60,6 +68,18 @@ export function AppLayoutClient({ children }: { children: React.ReactNode }) {
 
   const dark = resolvedTheme === "dark";
   const visibleTools = TOOLS_DATA.filter((t) => !inactiveSlugs.has(getToolSlug(t)));
+
+  useEffect(() => {
+    const handleGlobalSearchShortcut = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        setPaletteOpen((currentOpen) => !currentOpen);
+      }
+    };
+
+    window.addEventListener("keydown", handleGlobalSearchShortcut);
+    return () => window.removeEventListener("keydown", handleGlobalSearchShortcut);
+  }, []);
 
   // /admin owns its own chrome (AppSidebar inside app/admin/layout).
   // /login, /inscription, /mot-de-passe-oublie et /reinitialiser-mot-de-passe
@@ -119,20 +139,24 @@ export function AppLayoutClient({ children }: { children: React.ReactNode }) {
         {/* Bandeau d'annonce : barre pleine largeur collée en haut, HORS du
             <main> (qui a une largeur max + padding) pour être edge-to-edge. */}
         <AnnouncementBanner />
-        <main className="mx-auto flex min-h-svh w-full max-w-[1840px] flex-col gap-4 px-4 pt-4 pb-10 sm:gap-6 sm:px-6 sm:pt-6 sm:pb-12 lg:px-12 2xl:px-16">
+        <div className="mx-auto flex min-h-svh w-full max-w-[1840px] flex-col gap-4 px-4 pt-4 pb-10 sm:gap-6 sm:px-6 sm:pt-6 sm:pb-12 lg:px-12 2xl:px-16">
           <LandingHeader
             persona={audience}
             onSearchOpen={() => setPaletteOpen(true)}
           />
-          {children}
+          <main id="main-content" className="flex w-full flex-1 flex-col">
+            {children}
+          </main>
           <LandingFooter />
-        </main>
+        </div>
 
-        <LandingCommandPalette
-          open={paletteOpen}
-          setOpen={setPaletteOpen}
-          tools={visibleTools}
-        />
+        {paletteOpen ? (
+          <LandingCommandPalette
+            open={paletteOpen}
+            setOpen={setPaletteOpen}
+            tools={visibleTools}
+          />
+        ) : null}
       </div>
     </AppStateContext.Provider>
   );

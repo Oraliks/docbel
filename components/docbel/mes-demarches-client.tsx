@@ -6,10 +6,19 @@ import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { ArrowRight, Download, FolderOpen, Plus, Trash2 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Empty,
+  EmptyContent,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
 import { useConfirm } from "@/components/ui/confirm-dialog";
+import { ProgressFeedback } from "@/components/docbel/progress-feedback";
 import { ResumeForm } from "@/components/docbel/onboarding/resume-form";
-import { GLASS_POP_STYLE } from "@/lib/glass-classes";
+import { formatDate } from "@/lib/i18n/format";
 import type { MesDemarchesGroup } from "@/lib/bundles/mes-demarches";
 import type { DemandeSummary } from "@/lib/bundles/demande-summary";
 
@@ -17,20 +26,7 @@ interface Props {
   groups: MesDemarchesGroup[];
 }
 
-/// Écran transversal « Mes démarches » (/mes-demarches, Lot 3 Task 3.2) : TOUS
-/// les dossiers confondus, contrairement à `DemandeList`
-/// (`components/docbel/demande-list.tsx`) qui liste les démarches d'UN SEUL
-/// dossier. Parcours 100 % anonyme (cookie `beldoc-bundle-session` + code de
-/// reprise) — ne JAMAIS proposer de connexion ici.
-///
-/// La grammaire visuelle de chaque ligne (icône, libellé "Démarche n°N",
-/// barre de progression, Abandonner) reprend celle de `DemandeList` — mais
-/// dupliquée en `DemarcheRow` (composant local ci-dessous) plutôt
-/// qu'importée : cette vue ajoute une pastille d'état et une action
-/// « Récupérer mes documents » que `DemandeList` n'a pas, et `DemandeList`
-/// reste scopée à un seul dossier (bouton "Nouvelle demande" inclus dans son
-/// header). Factoriser aurait complexifié les deux call-sites pour peu de
-/// gain — cf. consigne de ne pas refactorer lourdement `demande-list.tsx`.
+/** Cockpit transversal et anonyme de toutes les demarches en cours. */
 export function MesDemarchesClient({ groups: initialGroups }: Props) {
   const t = useTranslations("public.dossier");
   const router = useRouter();
@@ -38,9 +34,6 @@ export function MesDemarchesClient({ groups: initialGroups }: Props) {
   const [groups, setGroups] = useState(initialGroups);
   const [busyId, setBusyId] = useState<string | null>(null);
 
-  // Même flux (confirm + DELETE + refresh) que `DemandeList.abandon` — seule
-  // différence : on retire la démarche de SON groupe, et on efface le groupe
-  // entier s'il ne lui reste plus aucune démarche.
   async function abandon(runId: string) {
     if (busyId) return;
     const ok = await confirm({
@@ -61,11 +54,11 @@ export function MesDemarchesClient({ groups: initialGroups }: Props) {
       }
       setGroups((prev) =>
         prev
-          .map((g) => ({
-            ...g,
-            demarches: g.demarches.filter((d) => d.runId !== runId),
+          .map((group) => ({
+            ...group,
+            demarches: group.demarches.filter((item) => item.runId !== runId),
           }))
-          .filter((g) => g.demarches.length > 0),
+          .filter((group) => group.demarches.length > 0),
       );
       router.refresh();
     } catch {
@@ -75,49 +68,60 @@ export function MesDemarchesClient({ groups: initialGroups }: Props) {
     }
   }
 
-  const isEmpty = groups.length === 0;
-
   return (
     <section className="flex w-full flex-col gap-6">
-      <div className="flex flex-wrap items-start justify-between gap-4">
+      <header className="flex flex-wrap items-start justify-between gap-4">
         <div className="flex flex-col gap-2">
           <h1 className="glass-display text-4xl font-semibold leading-tight sm:text-5xl">
             {t.rich("mesDemarchesTitle", { em: (chunks) => <em>{chunks}</em> })}
           </h1>
-          <p className="max-w-2xl text-sm leading-relaxed text-[color:var(--glass-ink)]/70 sm:text-base">
+          <p className="max-w-2xl text-sm leading-relaxed text-[color:var(--glass-ink-soft)] sm:text-base">
             {t("mesDemarchesSubtitle")}
           </p>
         </div>
-        <Button render={<Link href="/mon-dossier" />} size="lg" className="min-h-11">
-          <Plus data-icon="inline-start" aria-hidden />
-          {t("demandeNew")}
-        </Button>
-      </div>
+        {groups.length > 0 ? (
+          <Button
+            render={<Link href="/mon-dossier" />}
+            nativeButton={false}
+            variant="outline"
+            size="lg"
+            className="min-h-11"
+          >
+            <Plus data-icon="inline-start" aria-hidden />
+            {t("demandeNew")}
+          </Button>
+        ) : null}
+      </header>
 
-      {isEmpty ? (
-        <div
-          className="glass-surface flex flex-col items-center gap-4 rounded-3xl p-10 text-center"
+      {groups.length === 0 ? (
+        <Empty
+          className="glass-surface min-h-64 rounded-3xl border border-[color:var(--glass-border)]"
           data-docbel-readable
         >
-          <span
-            className="flex size-14 items-center justify-center rounded-2xl bg-[color:var(--glass-pop-bg)] text-[color:var(--glass-accent-deep)]"
-            aria-hidden
-          >
-            <FolderOpen className="size-6" />
-          </span>
-          <p className="text-base font-semibold text-[color:var(--glass-ink)]">
-            {t("mesDemarchesEmpty")}
-          </p>
-          <Button render={<Link href="/mon-dossier" />} size="lg">
-            {t("mesDemarchesEmptyCta")}
-            <ArrowRight data-icon="inline-end" aria-hidden />
-          </Button>
-        </div>
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <FolderOpen aria-hidden />
+            </EmptyMedia>
+            <EmptyTitle className="text-[color:var(--glass-ink)]">
+              {t("mesDemarchesEmpty")}
+            </EmptyTitle>
+          </EmptyHeader>
+          <EmptyContent>
+            <Button
+              render={<Link href="/mon-dossier" />}
+              nativeButton={false}
+              size="lg"
+            >
+              {t("mesDemarchesEmptyCta")}
+              <ArrowRight data-icon="inline-end" aria-hidden />
+            </Button>
+          </EmptyContent>
+        </Empty>
       ) : (
         <div className="flex flex-col gap-4">
-          {groups.map((g) => (
+          {groups.map((group) => (
             <section
-              key={g.bundle.id}
+              key={group.bundle.id}
               className="glass-surface flex flex-col gap-4 rounded-3xl p-4 sm:p-5"
               data-docbel-readable
             >
@@ -129,17 +133,17 @@ export function MesDemarchesClient({ groups: initialGroups }: Props) {
                   <FolderOpen />
                 </span>
                 <h2 className="text-xl font-bold text-[color:var(--glass-ink)]">
-                  {g.bundle.name}
+                  {group.bundle.name}
                 </h2>
               </div>
-              <ul className="flex flex-col gap-2">
-                {g.demarches.map((d) => (
+              <ul className="flex flex-col gap-3">
+                {group.demarches.map((demarche) => (
                   <DemarcheRow
-                    key={d.runId}
-                    demarche={d}
-                    slug={g.bundle.slug}
-                    busy={busyId === d.runId}
-                    onAbandon={() => abandon(d.runId)}
+                    key={demarche.runId}
+                    demarche={demarche}
+                    slug={group.bundle.slug}
+                    busy={busyId === demarche.runId}
+                    onAbandon={() => abandon(demarche.runId)}
                   />
                 ))}
               </ul>
@@ -165,10 +169,6 @@ export function MesDemarchesClient({ groups: initialGroups }: Props) {
   );
 }
 
-/// Ligne d'une démarche — même grammaire visuelle que `DemandeList` (icône,
-/// libellé, barre de progression, Abandonner) + pastille d'état et action
-/// « Récupérer mes documents » (visible seulement si complète), absentes de
-/// `DemandeList`.
 function DemarcheRow({
   demarche,
   slug,
@@ -188,95 +188,100 @@ function DemarcheRow({
     : demarche.total > 0
       ? Math.round((demarche.completed / demarche.total) * 100)
       : 0;
-  const fmtDate = (iso: string) =>
-    new Intl.DateTimeFormat(locale, {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    }).format(new Date(iso));
+  const resumeHref = `/d/${encodeURIComponent(slug)}?bundleRun=${encodeURIComponent(demarche.runId)}&demarrer=1`;
+  const retrieveHref = `/d/${encodeURIComponent(slug)}?bundleRun=${encodeURIComponent(demarche.runId)}#recuperer-envoyer`;
 
   return (
-    <li className="flex flex-wrap items-center gap-3 rounded-2xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-3 py-3">
-      <span
-        className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-[color:var(--glass-pop-bg)] text-[color:var(--glass-accent-deep)]"
-        aria-hidden
-      >
-        <FolderOpen className="size-4" />
-      </span>
-      <span className="min-w-0 flex-1">
-        <span className="flex flex-wrap items-center gap-2">
-          <span className="block text-sm font-bold text-[color:var(--glass-ink)]">
-            {t("demandeLabel", { index: demarche.index })}
-          </span>
-          <span
-            className={
-              completed
-                ? "rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.06em]"
-                : "rounded-full border border-[color:var(--glass-border)] px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.06em] text-[color:var(--glass-ink-soft)]"
-            }
-            style={completed ? GLASS_POP_STYLE : undefined}
-          >
-            {completed ? t("demandeStatusComplete") : t("demandeStatusInProgress")}
-          </span>
-        </span>
-        <span className="mt-0.5 block text-xs text-[color:var(--glass-ink)]/65">
-          {t("demandeStartedOn", { date: fmtDate(demarche.startedAtISO) })} ·{" "}
-          {t("demandeProgress", { completed: demarche.completed, total: demarche.total })}
-        </span>
-      </span>
-      <span className="hidden w-24 flex-col gap-1 sm:flex">
-        <span className="text-xs font-semibold text-[color:var(--glass-ink)]/70">
-          {percentage}%
-        </span>
+    <li className="grid gap-3 rounded-2xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] p-3 sm:grid-cols-[minmax(0,1fr)_minmax(150px,0.35fr)_auto] sm:items-center">
+      <div className="flex min-w-0 items-start gap-3">
         <span
-          className="h-1.5 w-full overflow-hidden rounded-full bg-[color:var(--glass-ink-line)]"
+          className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-[color:var(--glass-pop-bg)] text-[color:var(--glass-accent-deep)]"
           aria-hidden
         >
-          <span
-            className="block h-full rounded-full bg-[color:var(--glass-accent-deep)]"
-            style={{ width: `${percentage}%` }}
-          />
+          <FolderOpen />
         </span>
-      </span>
-      <Button
-        type="button"
-        variant="ghost"
-        size="sm"
-        className="min-h-10 text-destructive"
-        onClick={onAbandon}
-        disabled={busy}
-        aria-label={t("demandeAbandon")}
-      >
-        <Trash2 className="size-4" aria-hidden />
-      </Button>
-      {completed ? (
+        <span className="min-w-0 flex-1">
+          <span className="flex flex-wrap items-center gap-2">
+            <span className="text-sm font-bold text-[color:var(--glass-ink)]">
+              {t("demandeLabel", { index: demarche.index })}
+            </span>
+            <Badge
+              variant="outline"
+              className={
+                completed
+                  ? "border-[color:var(--success-border)] bg-[color:var(--success-subtle)] text-[color:var(--success-subtle-foreground)]"
+                  : undefined
+              }
+            >
+              {completed
+                ? t("demandeStatusComplete")
+                : t("demandeStatusInProgress")}
+            </Badge>
+          </span>
+          <span className="mt-1 block text-xs text-[color:var(--glass-ink-soft)]">
+            {t("demandeStartedOn", {
+              date: formatDate(demarche.startedAtISO, locale),
+            })}
+          </span>
+        </span>
+      </div>
+
+      <ProgressFeedback
+        label={t("demandeProgress", {
+          completed: demarche.completed,
+          total: demarche.total,
+        })}
+        value={percentage}
+        valueText={`${percentage}%`}
+        state={completed ? "done" : "current"}
+        compact
+      />
+
+      <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+        {completed ? (
+          <Button
+            render={<Link href={retrieveHref} />}
+            nativeButton={false}
+            size="sm"
+            className="min-h-10"
+          >
+            <Download data-icon="inline-start" aria-hidden />
+            {t("mesDemarchesRetrieve")}
+          </Button>
+        ) : (
+          <Button
+            render={<Link href={resumeHref} />}
+            nativeButton={false}
+            size="sm"
+            className="min-h-10"
+          >
+            {t("demandeResume")}
+            <ArrowRight data-icon="inline-end" aria-hidden />
+          </Button>
+        )}
+        {completed ? (
+          <Button
+            render={<Link href={resumeHref} />}
+            nativeButton={false}
+            variant="outline"
+            size="sm"
+            className="min-h-10"
+          >
+            {t("demandeReview")}
+          </Button>
+        ) : null}
         <Button
-          render={
-            <Link
-              href={`/d/${encodeURIComponent(slug)}?bundleRun=${encodeURIComponent(demarche.runId)}#recuperer-envoyer`}
-            />
-          }
-          variant="outline"
-          size="sm"
-          className="min-h-10"
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="min-h-10 text-destructive"
+          onClick={onAbandon}
+          disabled={busy}
+          aria-label={t("demandeAbandon")}
         >
-          <Download className="size-4" aria-hidden />
-          {t("mesDemarchesRetrieve")}
+          <Trash2 aria-hidden />
         </Button>
-      ) : null}
-      <Button
-        render={
-          <Link
-            href={`/d/${encodeURIComponent(slug)}?bundleRun=${encodeURIComponent(demarche.runId)}&demarrer=1`}
-          />
-        }
-        variant="outline"
-        size="sm"
-        className="min-h-10"
-      >
-        {completed ? t("demandeReview") : t("demandeResume")}
-        <ArrowRight data-icon="inline-end" aria-hidden />
-      </Button>
+      </div>
     </li>
   );
 }

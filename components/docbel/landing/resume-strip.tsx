@@ -6,18 +6,11 @@ import { useTranslations } from "next-intl";
 import { ArrowRightIcon, XIcon } from "lucide-react";
 import { FolderOpen } from "@phosphor-icons/react";
 
-/**
- * Clé sessionStorage ET nom du cookie de session posés à la fermeture (✕).
- * Le cookie jumeau permet au serveur (lib/landing/resume.ts) de ne plus
- * rendre la bande au prochain chargement complet → pas de mismatch
- * d'hydratation entre le HTML serveur et le premier rendu client.
- */
 const DISMISS_KEY = "docbel-resume-dismissed";
 
 /**
- * Données du dossier en cours — type local (mêmes champs que
- * `ActiveBundleRun` de lib/landing/resume.ts) pour ne pas importer un
- * module serveur (next/headers, prisma) depuis un composant client.
+ * Type local afin de ne jamais importer le loader serveur (headers/prisma)
+ * dans ce composant client.
  */
 export interface ResumeStripRun {
   runId: string;
@@ -34,7 +27,6 @@ interface ResumeStripProps {
   run: ResumeStripRun;
 }
 
-/** Lecture SSR-safe du flag de fermeture (navigation privée : peut jeter). */
 function readDismissed(): boolean {
   if (typeof window === "undefined") return false;
   try {
@@ -45,25 +37,15 @@ function readDismissed(): boolean {
 }
 
 /**
- * Bande fine « Reprenez votre dossier » — posée au-dessus du hero de la home
- * quand un parcours (BundleRun) est en cours. Fermable pour la session de
- * navigation (✕ → sessionStorage + cookie de session), progression animée à
- * l'apparition, entrée fadeInUp ; tout est neutralisé par
- * prefers-reduced-motion via les utilitaires motion-reduce.
+ * La reprise met l'action suivante avant la metrique. Les donnees restent
+ * celles preparees au serveur et la fermeture ne dure que la session.
  */
 export function ResumeStrip({ run }: ResumeStripProps) {
   const t = useTranslations("public.home");
-  // Initialisation paresseuse (SSR-safe) : pas d'accès à window côté serveur.
   const [dismissed, setDismissed] = useState<boolean>(readDismissed);
-  // Pilote la transition de largeur de la barre de progression : false au
-  // premier rendu (barre à 0 %), passe à true après montage.
   const [entered, setEntered] = useState(false);
 
   useEffect(() => {
-    // Double rAF : on laisse le navigateur peindre la barre à 0 % avant de
-    // déclencher la transition de largeur (sinon elle apparaît sans
-    // animation). setState dans un callback rAF = asynchrone → conforme à
-    // react-hooks/set-state-in-effect.
     let second = 0;
     const first = window.requestAnimationFrame(() => {
       second = window.requestAnimationFrame(() => setEntered(true));
@@ -82,7 +64,6 @@ export function ResumeStrip({ run }: ResumeStripProps) {
     : run.total > 0
       ? Math.min(100, Math.round((run.completed / run.total) * 100))
       : 0;
-  // Phrase de progression (pluriels via ICU) — réutilisée desktop/mobile/aria.
   const progressText = completed
     ? t("resumeCompletedProgress")
     : t("resumeProgress", {
@@ -95,11 +76,8 @@ export function ResumeStrip({ run }: ResumeStripProps) {
     try {
       window.sessionStorage.setItem(DISMISS_KEY, "1");
     } catch {
-      // Stockage indisponible (navigation privée) : on masque quand même
-      // pour ce rendu, le cookie ci-dessous prend le relais côté serveur.
+      // Le masquage React reste effectif si le stockage est indisponible.
     }
-    // Cookie de session jumeau (sans expiration → meurt avec le navigateur,
-    // comme sessionStorage) : le serveur ne re-rendra pas la bande.
     document.cookie = `${DISMISS_KEY}=1; path=/; SameSite=Lax`;
   };
 
@@ -110,12 +88,11 @@ export function ResumeStrip({ run }: ResumeStripProps) {
           ? t("resumeCompletedAriaLabel", { name: run.name })
           : t("resumeAriaLabel", { name: run.name })
       }
-      className="glass-surface relative flex w-full animate-[fadeInUp_0.45s_ease] flex-wrap items-center gap-x-4 gap-y-3 px-4 py-3 motion-reduce:animate-none sm:flex-nowrap sm:px-5"
+      className="glass-surface relative grid w-full animate-[fadeInUp_0.35s_ease] grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-3 px-4 py-4 motion-reduce:animate-none sm:grid-cols-[auto_minmax(0,1fr)_auto_auto] sm:gap-x-4 sm:px-5"
     >
-      {/* Pastille dossier — accent violet, icône Phosphor duotone. */}
       <span
         aria-hidden
-        className="flex size-10 shrink-0 items-center justify-center rounded-xl"
+        className="flex size-11 shrink-0 items-center justify-center rounded-2xl border border-[color:var(--glass-border)]"
         style={{
           background:
             "color-mix(in oklab, var(--glass-accent-deep) 14%, transparent)",
@@ -128,33 +105,25 @@ export function ResumeStrip({ run }: ResumeStripProps) {
         />
       </span>
 
-      {/* Texte + barre de progression fine. */}
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-[13px] leading-snug text-[color:var(--glass-ink-soft)]">
-          <span className="font-bold text-[color:var(--glass-ink)]">
-            {completed
-              ? t("resumeCompletedTitle", { name: run.name })
-              : t("resumeTitle", { name: run.name })}
-          </span>
-          <span className="hidden sm:inline">
-            {" — "}
-            {progressText}
-          </span>
+      <div className="min-w-0">
+        <p className="pr-8 text-[13px] font-bold leading-snug text-[color:var(--glass-ink)] sm:pr-0 sm:text-[14px]">
+          {completed
+            ? t("resumeCompletedTitle", { name: run.name })
+            : t("resumeTitle", { name: run.name })}
         </p>
-        {/* Sur mobile, le compte passe sous le titre plutôt que d'être tronqué. */}
-        <p className="text-[11.5px] text-[color:var(--glass-ink-faint)] sm:hidden">
+        <p className="mt-1 text-[12px] leading-snug text-[color:var(--glass-ink-soft)]">
           {progressText}
         </p>
         <div
           role="progressbar"
           aria-valuemin={0}
-          aria-valuemax={run.total}
-          aria-valuenow={run.completed}
+          aria-valuemax={Math.max(run.total, 1)}
+          aria-valuenow={completed ? Math.max(run.total, 1) : run.completed}
           aria-label={t("resumeProgressAria", {
             completed: run.completed,
             total: run.total,
           })}
-          className="mt-1.5 h-1 w-full max-w-[420px] overflow-hidden rounded-full"
+          className="mt-2 h-1.5 w-full max-w-[460px] overflow-hidden rounded-full"
           style={{
             background:
               "color-mix(in oklab, var(--glass-accent-deep) 14%, transparent)",
@@ -170,32 +139,30 @@ export function ResumeStrip({ run }: ResumeStripProps) {
         </div>
       </div>
 
-      {/* CTA reprendre + fermer. */}
-      <div className="flex shrink-0 items-center gap-2">
-        <div className="flex flex-col items-end gap-1">
-          <Link
-            href={`/d/${run.slug}?bundleRun=${encodeURIComponent(run.runId)}&demarrer=1`}
-            className="glass-cta inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-[12.5px] font-bold"
-          >
-            {completed ? t("resumeCompletedCta") : t("resumeCta")}
-            <ArrowRightIcon className="size-3.5" />
-          </Link>
-          <Link
-            href="/mes-demarches"
-            className="text-[11px] font-semibold text-[color:var(--glass-ink-faint)] underline-offset-2 transition-colors hover:text-[color:var(--glass-ink)] hover:underline"
-          >
-            {t("resumeSeeAllCta")}
-          </Link>
-        </div>
-        <button
-          type="button"
-          onClick={dismiss}
-          aria-label={t("resumeDismiss")}
-          className="inline-flex size-8 items-center justify-center rounded-full text-[color:var(--glass-ink-faint)] transition-colors hover:bg-white/50 hover:text-[color:var(--glass-ink)] focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)] focus-visible:outline-none motion-reduce:transition-none dark:hover:bg-white/10"
+      <div className="col-span-2 flex min-w-0 flex-col gap-2 sm:col-span-1 sm:items-end">
+        <Link
+          href={`/d/${run.slug}?bundleRun=${encodeURIComponent(run.runId)}&demarrer=1`}
+          className="glass-cta glass-interactive inline-flex min-h-11 items-center justify-center gap-2 rounded-full px-5 py-2.5 text-[13px] font-bold"
         >
-          <XIcon className="size-4" />
-        </button>
+          {completed ? t("resumeCompletedCta") : t("resumeCta")}
+          <ArrowRightIcon className="size-4" aria-hidden />
+        </Link>
+        <Link
+          href="/mes-demarches"
+          className="self-center text-[11px] font-semibold text-[color:var(--glass-ink-faint)] underline-offset-2 transition-colors hover:text-[color:var(--glass-ink)] hover:underline motion-reduce:transition-none sm:self-auto"
+        >
+          {t("resumeSeeAllCta")}
+        </Link>
       </div>
+
+      <button
+        type="button"
+        onClick={dismiss}
+        aria-label={t("resumeDismiss")}
+        className="absolute top-2.5 right-2.5 inline-flex size-8 items-center justify-center rounded-full text-[color:var(--glass-ink-faint)] transition-colors hover:bg-[color:var(--glass-surface-strong)] hover:text-[color:var(--glass-ink)] focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)] focus-visible:outline-none motion-reduce:transition-none sm:static sm:col-start-4 sm:row-start-1 sm:-ml-2"
+      >
+        <XIcon className="size-4" aria-hidden />
+      </button>
     </aside>
   );
 }

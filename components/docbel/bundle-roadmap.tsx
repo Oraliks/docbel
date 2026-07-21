@@ -1,22 +1,8 @@
 "use client";
 
-/**
- * Feuille de route de fin de parcours — l'écran de sortie du dossier.
- *
- * Affichée par BundleRunner quand tous les documents OBLIGATOIRES sont
- * complétés : elle transforme « une liste de téléchargements » en plan
- * d'action concret (imprimer/signer → joindre les pièces tierces → envoyer
- * à l'organisme de paiement → garder le code de reprise).
- *
- * Informatif, jamais bloquant : aucune décision, le disclaimer rappelle que
- * seuls l'organisme de paiement et l'ONEM font foi. Les étapes sont
- * numérotées dynamiquement (la section « pièces tierces » n'apparaît que si
- * le dossier en comporte).
- */
-
-import { useState } from "react";
-import { useTranslations } from "next-intl";
+import { useState, type ReactNode } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import {
   Archive,
@@ -30,12 +16,9 @@ import {
   ShieldAlert,
   Signature,
 } from "lucide-react";
-
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Dialog,
   DialogContent,
@@ -44,19 +27,18 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
+import { CompletionFeedback } from "@/components/docbel/completion-feedback";
 
-/** Document rempli par l'utilisateur (PDF généré), avec lien de relecture. */
 export interface RoadmapDocument {
   slug: string;
   title: string;
-  /// Lien de relecture/édition (rouvre le formulaire dans le dossier).
   href: string;
-  /// Id du PdfForm — cible du téléchargement individuel du PDF régénéré
-  /// (`/api/bundles/runs/{runId}/download/{pdfFormId}`).
   pdfFormId: string;
 }
 
-/** Pièce à charge d'un tiers, reprise de l'aide-mémoire du parcours. */
 export interface RoadmapExternalDocument {
   slug: string;
   title: string;
@@ -68,22 +50,19 @@ interface BundleRoadmapProps {
   documents: RoadmapDocument[];
   externalDocuments: RoadmapExternalDocument[];
   resumeCode: string | null;
-  /// Id du BundleRun — nécessaire pour les actions groupées (zip, mail).
-  /// `null` ne devrait pas arriver ici (la feuille de route n'apparaît
-  /// qu'avec un run existant) mais reste défensif.
   bundleRunId: string | null;
-  /// Email de la session connectée, pré-rempli dans le dialogue d'envoi.
   userEmail: string | null;
 }
 
 interface RoadmapStep {
   key: string;
-  icon: React.ReactNode;
+  icon: ReactNode;
   title: string;
   body?: string;
-  content?: React.ReactNode;
+  content?: ReactNode;
 }
 
+/** Ecran de sortie sobre : recuperer, verifier puis envoyer le dossier. */
 export function BundleRoadmap({
   documents,
   externalDocuments,
@@ -120,61 +99,58 @@ export function BundleRoadmap({
     }
   }
 
-  const requiredExternal = externalDocuments.filter((d) => d.required);
-
+  const requiredExternal = externalDocuments.filter((document) => document.required);
   const steps: RoadmapStep[] = [];
 
   if (documents.length > 0) {
     steps.push({
       key: "docs",
-      icon: <Signature className="w-4 h-4" />,
+      icon: <Signature className="size-4" aria-hidden />,
       title: t("roadmapStepDocs"),
       body: t("roadmapStepDocsHint"),
       content: (
         <>
-          <ul className="space-y-1.5 mt-2">
-            {documents.map((d) => (
-              <li key={d.slug} className="flex items-center gap-2 flex-wrap">
-                <span className="text-sm font-medium">{d.title}</span>
-                {bundleRunId && (
+          <ul className="mt-2 flex flex-col gap-2">
+            {documents.map((document) => (
+              <li
+                key={document.slug}
+                className="flex flex-wrap items-center gap-2"
+              >
+                <span className="text-sm font-medium">{document.title}</span>
+                {bundleRunId ? (
                   <Button
+                    render={
+                      <a
+                        href={`/api/bundles/runs/${bundleRunId}/download/${document.pdfFormId}`}
+                      />
+                    }
+                    nativeButton={false}
                     size="sm"
-                    variant="default"
-                    className="h-7 text-xs"
-                    render={<a href={`/api/bundles/runs/${bundleRunId}/download/${d.pdfFormId}`} />}
                   >
-                    <Download className="w-3 h-3 mr-1" />
+                    <Download data-icon="inline-start" aria-hidden />
                     {t("roadmapDownloadOne")}
                   </Button>
-                )}
+                ) : null}
                 <Button
+                  render={<Link href={document.href} />}
+                  nativeButton={false}
                   size="sm"
                   variant="outline"
-                  className="h-7 text-xs"
-                  render={<Link href={d.href} />}
                 >
-                  <ExternalLink className="w-3 h-3 mr-1" />
+                  <ExternalLink data-icon="inline-start" aria-hidden />
                   {t("roadmapReview")}
                 </Button>
               </li>
             ))}
           </ul>
-          {bundleRunId && documents.length > 0 && (
-            <div className="flex items-center gap-2 flex-wrap mt-3 print:hidden">
-              <Button
-                size="sm"
-                variant="default"
-                className="h-8 text-xs"
-                render={<a href={`/api/bundles/runs/${bundleRunId}/download-all`} />}
-              >
-                <Archive className="w-3.5 h-3.5 mr-1" />
-                {t("roadmapDownloadAll")}
-              </Button>
+
+          {bundleRunId ? (
+            <div className="mt-3 flex flex-wrap items-center gap-2 print:hidden">
               <Dialog open={emailDialogOpen} onOpenChange={setEmailDialogOpen}>
                 <DialogTrigger
                   render={
-                    <Button size="sm" variant="outline" className="h-8 text-xs">
-                      <Mail className="w-3.5 h-3.5 mr-1" />
+                    <Button size="sm" variant="outline">
+                      <Mail data-icon="inline-start" aria-hidden />
                       {t("roadmapSendByEmail")}
                     </Button>
                   }
@@ -183,40 +159,47 @@ export function BundleRoadmap({
                   <DialogHeader>
                     <DialogTitle>{t("roadmapSendByEmail")}</DialogTitle>
                   </DialogHeader>
-                  <div className="space-y-3 py-2">
-                    <div className="space-y-1.5">
-                      <Label htmlFor="roadmap-email-to">{t("roadmapEmailToLabel")}</Label>
+                  <FieldGroup>
+                    <Field>
+                      <FieldLabel htmlFor="roadmap-email-to">
+                        {t("roadmapEmailToLabel")}
+                      </FieldLabel>
                       <Input
                         id="roadmap-email-to"
                         type="email"
                         value={emailTo}
-                        onChange={(e) => setEmailTo(e.target.value)}
-                        placeholder="vous@exemple.be"
+                        onChange={(event) => setEmailTo(event.target.value)}
                       />
-                    </div>
-                    <div className="flex items-start gap-2">
+                    </Field>
+                    <Field orientation="horizontal">
                       <Checkbox
                         id="roadmap-email-consent"
                         checked={emailConsent}
-                        onCheckedChange={(c) => setEmailConsent(c === true)}
+                        onCheckedChange={(checked) =>
+                          setEmailConsent(checked === true)
+                        }
                       />
-                      <Label htmlFor="roadmap-email-consent" className="text-xs font-normal leading-snug">
+                      <FieldLabel htmlFor="roadmap-email-consent">
                         {t("roadmapEmailConsent")}
-                      </Label>
-                    </div>
-                  </div>
+                      </FieldLabel>
+                    </Field>
+                  </FieldGroup>
                   <DialogFooter>
                     <Button
                       onClick={sendByEmail}
-                      disabled={sendingEmail || !emailConsent || !emailTo.trim()}
+                      disabled={
+                        sendingEmail || !emailConsent || !emailTo.trim()
+                      }
                     >
-                      {sendingEmail ? t("roadmapEmailSending") : t("roadmapSendByEmail")}
+                      {sendingEmail
+                        ? t("roadmapEmailSending")
+                        : t("roadmapSendByEmail")}
                     </Button>
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
             </div>
-          )}
+          ) : null}
         </>
       ),
     });
@@ -225,16 +208,19 @@ export function BundleRoadmap({
   if (requiredExternal.length > 0) {
     steps.push({
       key: "attach",
-      icon: <Paperclip className="w-4 h-4" />,
+      icon: <Paperclip className="size-4" aria-hidden />,
       title: t("roadmapStepAttach"),
       body: t("roadmapStepAttachHint"),
       content: (
-        <ul className="space-y-1.5 mt-2">
-          {requiredExternal.map((d) => (
-            <li key={d.slug} className="flex items-center gap-2 flex-wrap">
-              <span className="text-sm font-medium">{d.title}</span>
-              <Badge variant="outline" className="text-xs">
-                {t("roadmapAttachFrom", { issuer: d.issuer })}
+        <ul className="mt-2 flex flex-col gap-2">
+          {requiredExternal.map((document) => (
+            <li
+              key={document.slug}
+              className="flex flex-wrap items-center gap-2"
+            >
+              <span className="text-sm font-medium">{document.title}</span>
+              <Badge variant="outline">
+                {t("roadmapAttachFrom", { issuer: document.issuer })}
               </Badge>
             </li>
           ))}
@@ -245,7 +231,7 @@ export function BundleRoadmap({
 
   steps.push({
     key: "send",
-    icon: <Landmark className="w-4 h-4" />,
+    icon: <Landmark className="size-4" aria-hidden />,
     title: t("roadmapStepSend"),
     body: t("roadmapStepSendBody"),
   });
@@ -253,7 +239,7 @@ export function BundleRoadmap({
   if (resumeCode) {
     steps.push({
       key: "keep",
-      icon: <ListChecks className="w-4 h-4" />,
+      icon: <ListChecks className="size-4" aria-hidden />,
       title: t("roadmapStepKeep"),
       body: t("roadmapStepKeepBody"),
       content: (
@@ -267,54 +253,61 @@ export function BundleRoadmap({
   return (
     <section
       id="recuperer-envoyer"
-      className="glass-surface flex flex-col gap-4 rounded-3xl border border-emerald-500/25 p-4 sm:p-5"
+      className="glass-surface flex flex-col gap-5 rounded-3xl p-4 sm:p-5"
     >
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h2 className="flex items-center gap-2 text-lg font-semibold text-[color:var(--glass-ink)]">
-            <ListChecks className="w-5 h-5 text-emerald-600" />
-            {t("roadmapTitle")}
-          </h2>
-          <p className="mt-1 text-sm text-[color:var(--glass-ink-soft)]">
-            {t("roadmapIntro")}
-          </p>
-        </div>
-        <Button
-          size="sm"
-          variant="outline"
-          className="print:hidden"
-          onClick={() => window.print()}
-        >
-          <Printer className="w-4 h-4 mr-1" />
-          {t("roadmapPrint")}
-        </Button>
-      </div>
-      <div className="space-y-4">
-        {steps.map((step, idx) => (
-          <div key={step.key} className="flex items-start gap-3">
-            <div className="w-7 h-7 rounded-full bg-emerald-500/15 text-green-700 dark:text-green-400 flex items-center justify-center text-sm font-semibold flex-shrink-0">
-              {idx + 1}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="font-medium flex items-center gap-2">
+      <CompletionFeedback
+        kind="dossier"
+        title={t("roadmapTitle")}
+        description={t("roadmapIntro")}
+        action={
+          <>
+            {bundleRunId ? (
+              <Button
+                render={
+                  <a href={`/api/bundles/runs/${bundleRunId}/download-all`} />
+                }
+                nativeButton={false}
+                size="sm"
+              >
+                <Archive data-icon="inline-start" aria-hidden />
+                {t("roadmapDownloadAll")}
+              </Button>
+            ) : null}
+            <Button size="sm" variant="outline" onClick={() => window.print()}>
+              <Printer data-icon="inline-start" aria-hidden />
+              {t("roadmapPrint")}
+            </Button>
+          </>
+        }
+      />
+
+      <ol className="flex flex-col gap-4">
+        {steps.map((step, index) => (
+          <li key={step.key} className="flex items-start gap-3">
+            <span className="flex size-8 shrink-0 items-center justify-center rounded-full border border-[color:var(--success-border)] bg-[color:var(--success-subtle)] text-sm font-semibold text-[color:var(--success-subtle-foreground)]">
+              {index + 1}
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="flex items-center gap-2 font-medium text-[color:var(--glass-ink)]">
                 {step.icon}
                 {step.title}
               </p>
-              {step.body && (
-                <p className="text-sm text-[color:var(--glass-ink-soft)] mt-0.5">
+              {step.body ? (
+                <p className="mt-0.5 text-sm text-[color:var(--glass-ink-soft)]">
                   {step.body}
                 </p>
-              )}
+              ) : null}
               {step.content}
             </div>
-          </div>
+          </li>
         ))}
+      </ol>
 
-        <p className="text-xs text-[color:var(--glass-ink-soft)] flex items-start gap-2 border-t border-[color:var(--glass-border)] pt-3">
-          <ShieldAlert className="w-4 h-4 flex-shrink-0 mt-0.5" />
-          {t("roadmapDisclaimer")}
-        </p>
-      </div>
+      <Separator />
+      <p className="flex items-start gap-2 text-xs text-[color:var(--glass-ink-soft)]">
+        <ShieldAlert className="mt-0.5 size-4 shrink-0" aria-hidden />
+        {t("roadmapDisclaimer")}
+      </p>
     </section>
   );
 }

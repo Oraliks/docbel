@@ -1,82 +1,89 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { AlertTriangle, AlertOctagon, Info, ExternalLink } from "lucide-react";
+import {
+  AlertOctagon,
+  AlertTriangle,
+  ExternalLink,
+  Info,
+} from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { cn } from "@/lib/utils";
 import type { BundleWarning } from "@/lib/bundles/types";
 
 interface Props {
   warnings: BundleWarning[];
 }
 
-/// Affiche les avertissements (warnings) d'un bundle en haut du parcours.
-/// Trie par sévérité décroissante : critical → warning → info.
+/** Affiche les avertissements par severite, sans changer leur contenu. */
 export function BundleWarnings({ warnings }: Props) {
   if (!warnings || warnings.length === 0) return null;
 
-  const sorted = [...warnings].sort((a, b) => severityWeight(b.severity) - severityWeight(a.severity));
+  const sorted = [...warnings].sort(
+    (left, right) =>
+      severityWeight(right.severity) - severityWeight(left.severity),
+  );
 
   return (
-    <div className="space-y-2">
-      {sorted.map((w) => (
-        <WarningCard key={w.id} warning={w} />
+    <div className="flex flex-col gap-2">
+      {sorted.map((warning) => (
+        <WarningAlert key={warning.id} warning={warning} />
       ))}
     </div>
   );
 }
 
-function WarningCard({ warning }: { warning: BundleWarning }) {
+function WarningAlert({ warning }: { warning: BundleWarning }) {
   const t = useTranslations("public.dossier");
-  const styles = stylesForSeverity(warning.severity);
-  const Icon = styles.Icon;
+  const presentation = presentationForSeverity(warning.severity);
+  const Icon = presentation.Icon;
+
   return (
-    <div
-      className={`rounded-md border p-3 text-sm flex items-start gap-2 ${styles.container}`}
+    <Alert
+      variant={warning.severity === "critical" ? "destructive" : "default"}
       role={warning.severity === "critical" ? "alert" : "status"}
+      className={cn(presentation.className, "rounded-2xl p-3")}
     >
-      <Icon className="size-4 mt-0.5 flex-shrink-0" aria-hidden="true" />
-      <div className="flex-1 space-y-1">
-        <p className="font-semibold">{warning.title}</p>
-        <p className="text-xs opacity-90 whitespace-pre-line">{warning.message}</p>
-        {warning.helpUrl && (
+      <Icon aria-hidden />
+      <AlertTitle>{warning.title}</AlertTitle>
+      <AlertDescription className="flex flex-col items-start gap-2 text-current/90">
+        <p className="whitespace-pre-line">{warning.message}</p>
+        {warning.helpUrl ? (
           <a
             href={warning.helpUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 text-xs underline mt-1"
+            className="inline-flex items-center gap-1 font-medium text-current"
           >
             {t("learnMore")}
-            <ExternalLink className="size-3" />
+            <ExternalLink className="size-3.5" aria-hidden />
           </a>
-        )}
-      </div>
-    </div>
+        ) : null}
+      </AlertDescription>
+    </Alert>
   );
 }
 
-function severityWeight(s: BundleWarning["severity"]): number {
-  if (s === "critical") return 3;
-  if (s === "warning") return 2;
+function severityWeight(severity: BundleWarning["severity"]): number {
+  if (severity === "critical") return 3;
+  if (severity === "warning") return 2;
   return 1;
 }
 
-function stylesForSeverity(s: BundleWarning["severity"]) {
-  if (s === "critical") {
-    return {
-      Icon: AlertOctagon,
-      container:
-        "bg-red-500/10 border-red-500/20 text-red-900 dark:text-red-200",
-    };
+function presentationForSeverity(severity: BundleWarning["severity"]) {
+  if (severity === "critical") {
+    return { Icon: AlertOctagon, className: undefined };
   }
-  if (s === "warning") {
+  if (severity === "warning") {
     return {
       Icon: AlertTriangle,
-      container:
-        "bg-amber-500/10 border-amber-500/20 text-amber-900 dark:text-amber-200",
+      className:
+        "border-[color:var(--attention-border)] bg-[color:var(--attention-subtle)] text-[color:var(--attention-subtle-foreground)]",
     };
   }
   return {
     Icon: Info,
-    container:
-      "bg-sky-500/10 border-sky-500/20 text-sky-900 dark:text-sky-200",
+    className:
+      "border-[color:var(--info-border)] bg-[color:var(--info-subtle)] text-[color:var(--info-subtle-foreground)]",
   };
 }

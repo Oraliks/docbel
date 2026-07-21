@@ -1,4 +1,4 @@
-import { getTranslations, getLocale } from "next-intl/server";
+import { getLocale } from "next-intl/server";
 import { prisma } from "@/lib/prisma";
 import { localizeRecords } from "@/lib/i18n/content";
 import { LandingBottom, type PopularBundle } from "@/components/docbel/landing/bottom";
@@ -12,35 +12,9 @@ import { getAudienceFromPath } from "@/lib/audience";
 import { type NewsItem } from "@/lib/docbel-data";
 import { filterByAudience, getPublicCatalog } from "@/lib/outils-catalog";
 import { loadActiveBundleRun } from "@/lib/landing/resume";
+import { formatDate } from "@/lib/i18n/format";
 
 export const dynamic = "force-dynamic";
-
-// Abréviations de mois (clés i18n) — l'ordre suit getMonth() (0 = janvier).
-const MONTH_KEYS = [
-  "monthJan",
-  "monthFeb",
-  "monthMar",
-  "monthApr",
-  "monthMay",
-  "monthJun",
-  "monthJul",
-  "monthAug",
-  "monthSep",
-  "monthOct",
-  "monthNov",
-  "monthDec",
-] as const;
-
-function formatShortDate(
-  value: string,
-  monthLabels: readonly string[],
-): string {
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) return value;
-  return `${String(parsed.getDate()).padStart(2, "0")} ${
-    monthLabels[parsed.getMonth()]
-  } ${String(parsed.getFullYear()).slice(2)}`;
-}
 
 /**
  * Accueil — Server Component.
@@ -55,13 +29,7 @@ function formatShortDate(
  * Le persona switcher / la recherche restent des îlots client (header).
  */
 export default async function HomePage() {
-  const [t, locale] = await Promise.all([
-    getTranslations("public.home"),
-    getLocale(),
-  ]);
-  const monthLabels = MONTH_KEYS.map((key) =>
-    t(key as Parameters<typeof t>[0]),
-  );
+  const locale = await getLocale();
 
   const [articles, catalog, bundleRows, activeRun] = await Promise.all([
     prisma.news
@@ -135,9 +103,9 @@ export default async function HomePage() {
     desc: article.excerpt,
     // publishedAt si dispo, sinon createdAt → une date réelle s'affiche toujours
     // dans le hero/listing (un article publié sans publishedAt reste daté).
-    date: formatShortDate(
+    date: formatDate(
       (article.publishedAt ?? article.createdAt).toISOString(),
-      monthLabels,
+      locale,
     ),
     color: article.color,
     readingTime: article.readingTime ?? undefined,

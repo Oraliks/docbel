@@ -1,12 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useSyncExternalStore } from "react";
 import {
   ArrowLeftIcon,
   ArrowRightIcon,
   BookmarkIcon,
-  BriefcaseIcon,
   CalendarIcon,
   CheckIcon,
   ChevronDownIcon,
@@ -20,44 +19,39 @@ import { useTranslations } from "next-intl";
 import type { NewsItem } from "@/lib/docbel-data";
 import { enrichHtmlWithAcronyms } from "@/lib/acronyms-html";
 import { sanitizeHtml } from "@/lib/sanitize-html";
+import { cn } from "@/lib/utils";
 import { AcronymText } from "@/components/docbel/acronym";
 import { ShareMenu } from "./share-menu";
 import { SmartImage } from "@/components/ui/smart-image";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 
 interface ArticleViewProps {
   article: NewsItem;
-  /** 3 articles « À lire aussi » (même catégorie, fallback récents). */
   related?: NewsItem[];
-  /**
-   * Illustration dédiée du hero, définie par article (champ heroIllustration
-   * en base) — SEULE source du visuel de hero. Ne jamais confondre avec
-   * article.image qui est la thumbnail/bannière OG réservée aux listes.
-   */
   articleHeroIllustration?: string;
-  /** Passé depuis le server component via getCurrentUser() — zéro flash côté client. */
   isAdmin?: boolean;
-  // Kept for API compatibility with the route. Unused — glass tokens drive
-  // the accent now.
-  accent?: string;
 }
 
 const BOOKMARK_PREFIX = "docbel:bookmark:";
+const BOOKMARK_EVENT = "docbel:bookmark-change";
 const CONTENT_ANCHOR = "article-content";
 
-/** Badge de catégorie réutilisé (header + cartes liées). */
+function getServerBookmarkSnapshot() {
+  return false;
+}
+
 function CategoryBadge({ children }: { children: React.ReactNode }) {
-  return (
-    <span
-      className="inline-flex w-fit items-center gap-2 rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-[0.1em]"
-      style={{ background: "var(--glass-ink)", color: "var(--glass-bg-a)" }}
-    >
-      <span
-        className="size-1.5 rounded-full"
-        style={{ background: "var(--glass-accent-c)" }}
-      />
-      {children}
-    </span>
-  );
+  return <Badge variant="secondary">{children}</Badge>;
 }
 
 export function ArticleView({
@@ -67,50 +61,66 @@ export function ArticleView({
   isAdmin = false,
 }: ArticleViewProps) {
   const t = useTranslations("public.article");
-  // Enrichit l'HTML rich-text avec les <abbr> du glossaire. Mémoïsé
-  // pour ne pas re-tokeniser à chaque re-render (le contenu d'un
-  // article ne change pas pendant la vie de la page).
   const enrichedContent = useMemo(
-    () => (article.content ? enrichHtmlWithAcronyms(sanitizeHtml(article.content)) : ""),
+    () =>
+      article.content
+        ? enrichHtmlWithAcronyms(sanitizeHtml(article.content))
+        : "",
     [article.content],
   );
 
-  // « Enregistrer » : bookmark persistant en localStorage, clé par slug.
   const bookmarkKey = `${BOOKMARK_PREFIX}${article.slug ?? article.id}`;
-  const [saved, setSaved] = useState(false);
-  useEffect(() => {
+  const subscribeBookmark = useCallback(
+    (onStoreChange: () => void) => {
+      const handleStorage = (event: StorageEvent) => {
+        if (event.key === bookmarkKey) onStoreChange();
+      };
+      window.addEventListener("storage", handleStorage);
+      window.addEventListener(BOOKMARK_EVENT, onStoreChange);
+      return () => {
+        window.removeEventListener("storage", handleStorage);
+        window.removeEventListener(BOOKMARK_EVENT, onStoreChange);
+      };
+    },
+    [bookmarkKey],
+  );
+  const getBookmarkSnapshot = useCallback(() => {
     try {
-      setSaved(window.localStorage.getItem(bookmarkKey) === "1");
+      return window.localStorage.getItem(bookmarkKey) === "1";
     } catch {
-      /* localStorage indisponible (mode privé strict) → on reste à false */
+      return false;
     }
   }, [bookmarkKey]);
+  const saved = useSyncExternalStore(
+    subscribeBookmark,
+    getBookmarkSnapshot,
+    getServerBookmarkSnapshot,
+  );
 
   const toggleSaved = useCallback(() => {
-    setSaved((prev) => {
-      const next = !prev;
-      try {
-        if (next) window.localStorage.setItem(bookmarkKey, "1");
-        else window.localStorage.removeItem(bookmarkKey);
-      } catch {
-        /* ignore */
+    const nextSaved = !saved;
+    try {
+      if (nextSaved) {
+        window.localStorage.setItem(bookmarkKey, "1");
+      } else {
+        window.localStorage.removeItem(bookmarkKey);
       }
-      toast.success(next ? t("articleSaved") : t("articleUnsaved"));
-      return next;
-    });
-  }, [bookmarkKey, t]);
+      window.dispatchEvent(new Event(BOOKMARK_EVENT));
+    } catch {
+      // L'article reste lisible si le stockage navigateur est indisponible.
+    }
+    toast.success(nextSaved ? t("articleSaved") : t("articleUnsaved"));
+  }, [bookmarkKey, saved, t]);
 
   const scrollToContent = useCallback(() => {
-    document
-      .getElementById(CONTENT_ANCHOR)
-      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    const reducedMotion =
+      document.documentElement.dataset.docbelMotion === "reduced" ||
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    document.getElementById(CONTENT_ANCHOR)?.scrollIntoView({
+      behavior: reducedMotion ? "auto" : "smooth",
+      block: "start",
+    });
   }, []);
-
-  // Image du hero = illustration ÉDITORIALE dédiée à l'article, et RIEN d'autre.
-  // Plus de repli sur l'illustration de catégorie : chaque article publié porte
-  // sa propre illustration (obligatoire à la publication). `article.image` reste
-  // exclue (bannière « image à la une », titre/ONEM cuits → OG + vignettes).
-  const heroImage = articleHeroIllustration;
 
   const hasSummary = Boolean(article.summary?.length);
   const hasDocs = Boolean(article.linkedDocs?.length);
@@ -118,227 +128,189 @@ export function ArticleView({
   const hasRightRail = hasSummary || hasDocs || hasFaqs;
 
   return (
-    <div className="flex flex-col gap-5 sm:gap-8">
-      {/* ── Grille 3 colonnes (desktop ≥ lg). Mobile → 1 colonne empilée.
-          Largeur pleine : pas de max-w sur la racine (le shell 1840px borne
-          déjà). ─────────────────────────────────────────────────────────── */}
-      <div className="grid grid-cols-1 gap-4 sm:gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
-        {/* ── COLONNE CENTRALE (contenu principal) ─────────────────────── */}
-        <article className="flex min-w-0 flex-col gap-4 sm:gap-6">
-          <div className="glass-surface flex flex-col overflow-hidden">
-            {/* ── HERO — image IA en COUCHE DE FOND ─────────────────────────
-                Une seule carte (pas de grille texte/image). L'image IA couvre
-                TOUT le hero (`absolute inset-0`, `object-cover`) avec une
-                opacité réduite, surmontée d'un voile clair pour la lisibilité,
-                et le contenu (titre HTML, méta, À retenir, actions) passe
-                AU-DESSUS. Le titre cuit dans l'image IA devient un wash /
-                texture d'ambiance, le titre HTML reste le texte principal. ── */}
-            <div className="relative overflow-hidden">
-              {heroImage ? (
-                <>
-                  {/* Image IA en COUCHE DE FOND : couvre tout, opacité réduite */}
-                  <SmartImage
-                    src={heroImage}
-                    alt=""
-                    fit="cover"
-                    fallbackMode="hide"
-                    className="pointer-events-none absolute inset-0 size-full"
-                    imgClassName="object-cover opacity-30"
-                  />
-                  {/* Voile clair (couleur du hero) pour assurer la lisibilité
-                      du texte HTML et adoucir le rendu de l'image en fond. */}
-                  <div
-                    aria-hidden
-                    className="pointer-events-none absolute inset-0"
-                    style={{
-                      background:
-                        "color-mix(in oklab, var(--glass-surface) 62%, transparent)",
-                    }}
-                  />
-                </>
-              ) : null}
+    <div className="flex w-full flex-col gap-6 sm:gap-8">
+      <div className="flex flex-wrap items-center justify-between gap-3 px-1">
+        <Button
+          render={<Link href="/actualites" />}
+          nativeButton={false}
+          variant="ghost"
+          size="sm"
+        >
+          <ArrowLeftIcon data-icon="inline-start" aria-hidden />
+          {t("backToNews")}
+        </Button>
 
-              {/* Contenu textuel — par-dessus la couche de fond. Pleine
-                  largeur (plus de padding-right réservé). */}
-              <div className="relative z-[1] flex flex-col gap-3 p-4 sm:p-7">
-                <Link
-                  href="/actualites"
-                  className="inline-flex w-fit items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-[0.1em] outline-none transition-opacity hover:opacity-75 focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)]"
-                  style={{
-                    background: `color-mix(in oklab, ${article.color ?? "var(--glass-accent-deep)"} 15%, transparent)`,
-                    color: article.color ?? "var(--glass-accent-deep)",
-                  }}
-                >
-                  <ArrowLeftIcon className="size-3" />
-                  {t("backToNews")}
-                </Link>
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          {isAdmin ? (
+            <Button
+              render={
+                <a
+                  href={`/admin/news/${article.id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                />
+              }
+              nativeButton={false}
+              variant="outline"
+              size="icon-lg"
+              aria-label={t("editArticleAria")}
+            >
+              <PencilIcon aria-hidden />
+            </Button>
+          ) : null}
+          <Button
+            type="button"
+            variant={saved ? "default" : "outline"}
+            size="sm"
+            onClick={toggleSaved}
+            aria-pressed={saved}
+            aria-label={saved ? t("unsaveArticleAria") : t("saveArticleAria")}
+          >
+            <BookmarkIcon
+              data-icon="inline-start"
+              aria-hidden
+              fill={saved ? "currentColor" : "none"}
+            />
+            <span className="hidden sm:inline">
+              {saved ? t("unsaveArticleAria") : t("saveArticleAria")}
+            </span>
+          </Button>
+          <ShareMenu compact title={article.title} text={article.desc} />
+        </div>
+      </div>
 
-                <h1 className="glass-display text-[27px] font-semibold leading-[1.05] sm:text-[40px]">
+      <div
+        className={cn(
+          "grid grid-cols-1",
+          hasRightRail && "gap-5 xl:grid-cols-[minmax(0,1fr)_320px]",
+        )}
+      >
+        <article className="flex min-w-0 flex-col gap-6">
+          <Card className="gap-0 rounded-3xl py-0">
+            {articleHeroIllustration ? (
+              <div className="relative h-52 overflow-hidden sm:h-72 lg:h-80">
+                <SmartImage
+                  src={articleHeroIllustration}
+                  alt=""
+                  fit="cover"
+                  fallbackMode="hide"
+                  className="absolute inset-0 size-full"
+                  imgClassName="object-cover"
+                />
+                <div
+                  aria-hidden
+                  className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[color:var(--glass-surface-strong)] via-transparent to-transparent"
+                />
+              </div>
+            ) : null}
+
+            <CardHeader className="gap-4 px-5 py-6 sm:px-8 sm:py-8">
+              <CategoryBadge>{article.tag}</CategoryBadge>
+              <CardTitle>
+                <h1 className="glass-display text-3xl font-semibold leading-[1.08] sm:text-5xl">
                   <AcronymText>{article.title}</AcronymText>
                 </h1>
+              </CardTitle>
+              {article.desc ? (
+                <CardDescription className="max-w-4xl text-base leading-relaxed sm:text-lg">
+                  <AcronymText>{article.desc}</AcronymText>
+                </CardDescription>
+              ) : null}
 
-                {/* Méta : date · lecture · catégorie */}
-                <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[12.5px] font-medium text-[color:var(--glass-ink-soft)]">
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-[color:var(--glass-ink-soft)]">
+                {article.date ? (
                   <span className="inline-flex items-center gap-2">
-                    <span
-                      className="flex size-7 items-center justify-center rounded-lg"
-                      style={{
-                        background: "color-mix(in oklab, var(--glass-accent-deep) 12%, transparent)",
-                        color: "var(--glass-accent-deep)",
-                      }}
-                    >
-                      <CalendarIcon className="size-3.5" />
-                    </span>
+                    <CalendarIcon className="size-4" aria-hidden />
                     {article.date}
                   </span>
-
-                  {article.readingTime ? (
-                    <>
-                      <span aria-hidden className="h-4 w-px bg-[color:var(--glass-ink-line)]" />
-                      <span className="inline-flex items-center gap-2">
-                        <span
-                          className="flex size-7 items-center justify-center rounded-lg"
-                          style={{
-                            background: "color-mix(in oklab, var(--glass-accent-deep) 12%, transparent)",
-                            color: "var(--glass-accent-deep)",
-                          }}
-                        >
-                          <ClockIcon className="size-3.5" />
-                        </span>
-                        {t("readingTimeMin", { min: article.readingTime })}
-                      </span>
-                    </>
-                  ) : null}
-
-                  <span aria-hidden className="h-4 w-px bg-[color:var(--glass-ink-line)]" />
-                  <span className="inline-flex items-center gap-2">
-                    <span
-                      className="flex size-7 items-center justify-center rounded-lg"
-                      style={{
-                        background: "color-mix(in oklab, var(--glass-accent-deep) 12%, transparent)",
-                        color: "var(--glass-accent-deep)",
-                      }}
-                    >
-                      <BriefcaseIcon className="size-3.5" />
-                    </span>
-                    {article.tag}
-                  </span>
-                </div>
-
-                {/* « À retenir » — pastille compacte (étoile) */}
-                {article.keyTakeaway ? (
-                  <div
-                    className="flex w-fit max-w-xl items-start gap-2.5 rounded-2xl p-3"
-                    style={{
-                      background:
-                        "color-mix(in oklab, var(--glass-accent-deep) 9%, var(--glass-surface))",
-                    }}
-                  >
-                    <span
-                      className="flex size-8 shrink-0 items-center justify-center rounded-full"
-                      style={{
-                        background: "color-mix(in oklab, var(--glass-accent-deep) 16%, transparent)",
-                        color: "var(--glass-accent-deep)",
-                      }}
-                    >
-                      <StarIcon className="size-4" />
-                    </span>
-                    <div className="flex flex-col gap-0.5">
-                      <p className="text-[12.5px] font-bold text-[color:var(--glass-accent-deep)]">
-                        {t("keyTakeawayLabel")}
-                      </p>
-                      <p className="text-[12.5px] leading-[1.45] text-[color:var(--glass-ink-soft)]">
-                        <AcronymText>{article.keyTakeaway}</AcronymText>
-                      </p>
-                    </div>
-                  </div>
                 ) : null}
-
-                {/* Actions — icônes SEULES (pas de label) */}
-                <div className="mt-1 flex items-center gap-2">
-                  {isAdmin && (
-                    <a
-                      href={`/admin/news/${article.id}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      aria-label={t("editArticleAria")}
-                      className="inline-flex size-10 items-center justify-center rounded-full border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] text-[color:var(--glass-ink-soft)] outline-none transition-colors hover:bg-white/65 focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)]"
-                    >
-                      <PencilIcon className="size-4" />
-                    </a>
-                  )}
-                  <button
-                    type="button"
-                    onClick={toggleSaved}
-                    aria-pressed={saved}
-                    aria-label={saved ? t("unsaveArticleAria") : t("saveArticleAria")}
-                    className="inline-flex size-10 items-center justify-center rounded-full border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] text-[color:var(--glass-ink-soft)] outline-none transition-colors hover:bg-white/65 focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)]"
-                    style={
-                      saved
-                        ? {
-                            background: "color-mix(in oklab, var(--glass-accent-deep) 14%, transparent)",
-                            borderColor: "color-mix(in oklab, var(--glass-accent-deep) 40%, transparent)",
-                            color: "var(--glass-accent-deep)",
-                          }
-                        : undefined
-                    }
-                  >
-                    <BookmarkIcon className="size-4" fill={saved ? "currentColor" : "none"} />
-                  </button>
-                  <ShareMenu compact title={article.title} text={article.desc} />
-                </div>
+                {article.readingTime ? (
+                  <span className="inline-flex items-center gap-2">
+                    <ClockIcon className="size-4" aria-hidden />
+                    {t("readingTimeMin", { min: article.readingTime })}
+                  </span>
+                ) : null}
               </div>
-            </div>
+            </CardHeader>
 
-            {/* ── Contenu de l'article (filet pleine largeur au-dessus) ──── */}
-            <div className="border-t border-[color:var(--glass-ink-line)] p-4 sm:p-9">
+            {article.keyTakeaway ? (
+              <CardContent className="px-5 pb-7 sm:px-8">
+                <div className="flex max-w-4xl items-start gap-3 rounded-2xl bg-[color:var(--glass-surface-strong)] p-4">
+                  <span className="flex size-9 shrink-0 items-center justify-center rounded-full text-[color:var(--glass-accent-deep)]">
+                    <StarIcon className="size-4" aria-hidden />
+                  </span>
+                  <div className="flex flex-col gap-1">
+                    <p className="text-sm font-bold text-[color:var(--glass-accent-deep)]">
+                      {t("keyTakeawayLabel")}
+                    </p>
+                    <p className="text-sm leading-relaxed text-[color:var(--glass-ink-soft)]">
+                      <AcronymText>{article.keyTakeaway}</AcronymText>
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            ) : null}
+
+            <Separator className="bg-[color:var(--glass-ink-line)]" />
+            <CardContent className="px-5 py-7 sm:px-8 sm:py-10">
               {article.content ? (
                 <div
                   id={CONTENT_ANCHOR}
-                  className="prose prose-neutral max-w-none scroll-mt-6 text-[15.5px] leading-[1.7] [&_a]:font-semibold [&_a]:text-[color:var(--glass-accent-deep)] [&_h2]:glass-display [&_h2]:mt-8 [&_h2]:text-[26px] [&_h2]:font-semibold [&_h3]:glass-display [&_h3]:mt-6 [&_h3]:text-[20px] [&_h3]:font-semibold [&_p]:mt-4 [&_strong]:text-[color:var(--glass-ink)] dark:prose-invert"
-                  style={{ color: "var(--glass-ink)" }}
+                  className="prose max-w-4xl scroll-mt-28 [--tw-prose-body:var(--glass-ink)] [--tw-prose-bold:var(--glass-ink)] [--tw-prose-headings:var(--glass-ink)] [--tw-prose-links:var(--glass-accent-deep)] [--tw-prose-quotes:var(--glass-ink-soft)] [--tw-prose-rule:var(--glass-ink-line)] prose-a:font-semibold prose-h2:glass-display prose-h2:mt-10 prose-h2:text-3xl prose-h2:font-semibold prose-h3:glass-display prose-h3:mt-8 prose-h3:text-2xl prose-h3:font-semibold prose-p:leading-relaxed"
                   dangerouslySetInnerHTML={{ __html: enrichedContent }}
                 />
               ) : (
                 <p
                   id={CONTENT_ANCHOR}
-                  className="scroll-mt-6 text-[14px] text-[color:var(--glass-ink-soft)]"
+                  className="max-w-3xl scroll-mt-28 text-sm text-[color:var(--glass-ink-soft)]"
                 >
                   {t("articleContentUnavailable")}
                 </p>
               )}
-            </div>
-          </div>
+            </CardContent>
+          </Card>
 
-          {/* ── « À lire aussi » (sous le contenu) ──────────────────────── */}
           {related.length > 0 ? (
             <section className="flex flex-col gap-4">
-              <h2 className="glass-display px-1 text-[22px] font-semibold leading-none">
+              <h2 className="glass-display px-1 text-2xl font-semibold">
                 {t("readAlso")}
               </h2>
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                 {related.map((item) => (
                   <Link
                     key={item.id}
                     href={`/actualites/${item.slug ?? item.id}`}
-                    className="glass-surface glass-interactive group flex flex-col gap-3 p-5"
+                    className="group rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)] focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--glass-bg-a)]"
                   >
-                    <CategoryBadge>{item.tag}</CategoryBadge>
-                    <h3 className="text-[15px] font-bold leading-[1.3] text-[color:var(--glass-ink)]">
-                      <AcronymText>{item.title}</AcronymText>
-                    </h3>
-                    <div className="mt-auto flex flex-wrap items-center gap-3 text-[11.5px] text-[color:var(--glass-ink-faint)]">
-                      <span className="inline-flex items-center gap-1.5">
-                        <CalendarIcon className="size-3.5" />
-                        {item.date}
-                      </span>
-                      {item.readingTime ? (
-                        <span className="inline-flex items-center gap-1.5">
-                          <ClockIcon className="size-3.5" />
-                          {t("readingMinShort", { min: item.readingTime })}
-                        </span>
-                      ) : null}
-                    </div>
+                    <Card className="h-full transition-colors group-hover:ring-[color:var(--glass-accent-deep)]">
+                      <CardHeader className="gap-2">
+                        <CategoryBadge>{item.tag}</CategoryBadge>
+                        <CardTitle>
+                          <h3 className="text-base font-bold leading-snug">
+                            <AcronymText>{item.title}</AcronymText>
+                          </h3>
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="flex-1">
+                        <CardDescription className="line-clamp-3 leading-relaxed">
+                          <AcronymText>{item.desc}</AcronymText>
+                        </CardDescription>
+                      </CardContent>
+                      <CardFooter className="flex-wrap gap-3 text-xs text-[color:var(--glass-ink-faint)]">
+                        {item.date ? (
+                          <span className="inline-flex items-center gap-1.5">
+                            <CalendarIcon className="size-3.5" aria-hidden />
+                            {item.date}
+                          </span>
+                        ) : null}
+                        {item.readingTime ? (
+                          <span className="inline-flex items-center gap-1.5">
+                            <ClockIcon className="size-3.5" aria-hidden />
+                            {t("readingMinShort", { min: item.readingTime })}
+                          </span>
+                        ) : null}
+                      </CardFooter>
+                    </Card>
                   </Link>
                 ))}
               </div>
@@ -346,117 +318,102 @@ export function ArticleView({
           ) : null}
         </article>
 
-        {/* ── COLONNE DROITE (sticky desktop). Chaque carte = données non
-            vides uniquement. ──────────────────────────────────────────── */}
         {hasRightRail ? (
-          <aside className="flex min-w-0 flex-col gap-4">
-            <div className="flex flex-col gap-4 xl:sticky xl:top-6">
-              {/* Résumé en 30 sec */}
+          <aside className="flex min-w-0 flex-col gap-4" aria-label={t("summaryLabel")}>
+            <div className="flex flex-col gap-4 xl:sticky xl:top-28">
               {hasSummary ? (
-                <div className="glass-surface flex flex-col gap-3 p-5">
-                  <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-[color:var(--glass-ink-faint)]">
-                    {t("summaryLabel")}
-                  </p>
-                  <ul className="flex flex-col gap-2.5">
-                    {article.summary!.map((point, i) => (
-                      <li key={i} className="flex gap-2.5">
-                        <span
-                          className="mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full"
-                          style={{
-                            background:
-                              "color-mix(in oklab, var(--glass-accent-deep) 16%, transparent)",
-                            color: "var(--glass-accent-deep)",
-                          }}
-                        >
-                          <CheckIcon className="size-3" strokeWidth={3} />
-                        </span>
-                        <span className="text-[13px] leading-[1.5] text-[color:var(--glass-ink-soft)]">
-                          <AcronymText>{point}</AcronymText>
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
+                <Card>
+                  <CardHeader>
+                    <CardTitle>{t("summaryLabel")}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ul className="flex flex-col gap-3">
+                      {article.summary!.map((point, index) => (
+                        <li key={index} className="flex gap-2.5">
+                          <span className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full text-[color:var(--glass-accent-deep)]">
+                            <CheckIcon className="size-3.5" strokeWidth={3} aria-hidden />
+                          </span>
+                          <span className="text-sm leading-relaxed text-[color:var(--glass-ink-soft)]">
+                            <AcronymText>{point}</AcronymText>
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </CardContent>
                   {article.content ? (
-                    <button
-                      type="button"
-                      onClick={scrollToContent}
-                      className="inline-flex w-fit items-center gap-1.5 text-[12.5px] font-semibold text-[color:var(--glass-accent-deep)] outline-none transition-opacity hover:opacity-80 focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)]"
-                    >
-                      {t("seeDetailedSummary")}
-                      <ArrowRightIcon className="size-3.5" />
-                    </button>
+                    <CardFooter>
+                      <Button
+                        type="button"
+                        variant="link"
+                        size="sm"
+                        onClick={scrollToContent}
+                        className="px-0"
+                      >
+                        {t("seeDetailedSummary")}
+                        <ArrowRightIcon data-icon="inline-end" aria-hidden />
+                      </Button>
+                    </CardFooter>
                   ) : null}
-                </div>
+                </Card>
               ) : null}
 
-              {/* Documents liés */}
               {hasDocs ? (
-                <div className="glass-surface flex flex-col gap-3 p-5">
-                  <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-[color:var(--glass-ink-faint)]">
-                    {t("linkedDocsLabel")}
-                  </p>
-                  <div className="flex flex-col gap-1">
-                    {article.linkedDocs!.map((doc, i) => {
+                <Card>
+                  <CardHeader>
+                    <CardTitle>{t("linkedDocsLabel")}</CardTitle>
+                  </CardHeader>
+                  <CardContent className="flex flex-col gap-1">
+                    {article.linkedDocs!.map((doc, index) => {
                       const isPdf = /\.pdf(\?|#|$)/i.test(doc.url);
                       return (
                         <a
-                          key={i}
+                          key={index}
                           href={doc.url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="group flex items-center gap-3 rounded-xl px-2.5 py-2 outline-none transition-colors hover:bg-white/45 focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)]"
+                          className="flex min-h-11 items-center gap-3 rounded-xl px-2 py-2 outline-none transition-colors hover:bg-[color:var(--glass-surface-strong)] focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)]"
                         >
-                          <span
-                            className="flex size-8 shrink-0 items-center justify-center rounded-lg"
-                            style={{
-                              background:
-                                "color-mix(in oklab, var(--glass-accent-deep) 12%, transparent)",
-                              color: "var(--glass-accent-deep)",
-                            }}
-                          >
-                            <FileTextIcon className="size-4" />
-                          </span>
-                          <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-[color:var(--glass-ink)]">
+                          <FileTextIcon
+                            className="size-4 shrink-0 text-[color:var(--glass-accent-deep)]"
+                            aria-hidden
+                          />
+                          <span className="min-w-0 flex-1 text-sm font-medium text-[color:var(--glass-ink)]">
                             {doc.title}
                           </span>
-                          <span
-                            className="shrink-0 rounded-full px-2 py-0.5 text-[9.5px] font-bold uppercase tracking-[0.06em] text-[color:var(--glass-ink-soft)]"
-                            style={{ background: "var(--glass-surface-strong)" }}
-                          >
+                          <Badge variant="outline">
                             {isPdf ? t("docBadgePdf") : t("docBadgeDoc")}
-                          </span>
+                          </Badge>
                         </a>
                       );
                     })}
-                  </div>
-                </div>
+                  </CardContent>
+                </Card>
               ) : null}
 
-              {/* Questions fréquentes — accordéon <details>/<summary>. */}
               {hasFaqs ? (
-                <div className="glass-surface flex flex-col gap-2 p-5">
-                  <p className="mb-1 text-[11px] font-bold uppercase tracking-[0.12em] text-[color:var(--glass-ink-faint)]">
-                    {t("faqLabel")}
-                  </p>
-                  <div className="flex flex-col gap-1.5">
-                    {article.faqs!.map((faq, i) => (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>{t("faqLabel")}</CardTitle>
+                  </CardHeader>
+                  <CardContent className="flex flex-col gap-2">
+                    {article.faqs!.map((faq, index) => (
                       <details
-                        key={i}
-                        className="group rounded-xl border border-[color:var(--glass-ink-line)] bg-[color:var(--glass-surface)] px-3.5 py-2.5 open:bg-[color:var(--glass-surface-strong)]"
+                        key={index}
+                        className="group rounded-xl border border-[color:var(--glass-ink-line)] bg-[color:var(--glass-surface)] px-3.5 py-3 open:bg-[color:var(--glass-surface-strong)]"
                       >
-                        <summary className="flex cursor-pointer list-none items-center justify-between gap-2 text-[13px] font-semibold text-[color:var(--glass-ink)] outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)] [&::-webkit-details-marker]:hidden">
+                        <summary className="flex min-h-6 cursor-pointer list-none items-center justify-between gap-2 text-sm font-semibold text-[color:var(--glass-ink)] outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)] [&::-webkit-details-marker]:hidden">
                           <span>
                             <AcronymText>{faq.q}</AcronymText>
                           </span>
-                          <ChevronDownIcon className="size-4 shrink-0 text-[color:var(--glass-ink-faint)] transition-transform group-open:rotate-180" />
+                          <ChevronDownIcon className="size-4 shrink-0 text-[color:var(--glass-ink-faint)] transition-transform group-open:rotate-180" aria-hidden />
                         </summary>
-                        <p className="mt-2 text-[12.5px] leading-[1.55] text-[color:var(--glass-ink-soft)]">
+                        <p className="mt-3 text-sm leading-relaxed text-[color:var(--glass-ink-soft)]">
                           <AcronymText>{faq.a}</AcronymText>
                         </p>
                       </details>
                     ))}
-                  </div>
-                </div>
+                  </CardContent>
+                </Card>
               ) : null}
             </div>
           </aside>

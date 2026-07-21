@@ -15,6 +15,7 @@ import {
   RotateCcw,
   Search as SearchIcon,
   SlidersHorizontal,
+  X,
 } from "lucide-react";
 import { IconDisplay } from "@/components/admin/documents/icon-picker";
 import { AccessibilityToolbar } from "@/components/docbel/accessibility-toolbar";
@@ -24,6 +25,7 @@ import { Button } from "@/components/ui/button";
 import {
   InputGroup,
   InputGroupAddon,
+  InputGroupButton,
   InputGroupInput,
 } from "@/components/ui/input-group";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
@@ -427,7 +429,6 @@ export function MonDossierClient({
 
       <div id="guichet" className="flex flex-col gap-4 px-1" data-docbel-readable>
         <InputGroup className="min-h-14 rounded-2xl">
-          <InputGroupAddon><SearchIcon aria-hidden /></InputGroupAddon>
           <InputGroupInput
             type="search"
             value={search}
@@ -436,6 +437,14 @@ export function MonDossierClient({
             aria-label={t("guichetSearchPlaceholder")}
             className="text-base"
           />
+          <InputGroupAddon align="inline-start"><SearchIcon aria-hidden /></InputGroupAddon>
+          {search ? (
+            <InputGroupAddon align="inline-end">
+              <InputGroupButton size="icon-sm" onClick={() => setSearch("")} aria-label={t("clear")}>
+                <X aria-hidden />
+              </InputGroupButton>
+            </InputGroupAddon>
+          ) : null}
         </InputGroup>
 
         {isSearching ? (
@@ -445,7 +454,7 @@ export function MonDossierClient({
               <h3 className="text-sm font-bold text-[color:var(--glass-ink)]">
                 {t("intentFallbackTitle")}
               </h3>
-              <IntentSearch />
+              <IntentSearch query={search} />
             </div>
           ) : (
             <div className="flex flex-col gap-6">

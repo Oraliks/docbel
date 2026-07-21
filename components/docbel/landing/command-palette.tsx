@@ -1,7 +1,6 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
 import { useTranslations } from "next-intl";
 import {
   Command,
@@ -12,7 +11,6 @@ import {
   CommandItem,
   CommandList,
   CommandSeparator,
-  CommandShortcut,
 } from "@/components/ui/command";
 import { AUDIENCES } from "@/lib/audience";
 import {
@@ -40,18 +38,17 @@ interface LandingCommandPaletteProps {
 
 // `tKey` is the i18n key under `public.chrome` for the link label.
 const QUICK_LINKS = [
-  { icon: HomeIcon, tKey: "navHome", href: "/", shortcut: "H" },
-  { icon: FolderOpenIcon, tKey: "navMyDossier", href: "/mon-dossier", shortcut: "D" },
-  { icon: ListChecksIcon, tKey: "navMesDemarches", href: "/mes-demarches", shortcut: "M" },
-  { icon: KeyRoundIcon, tKey: "quickResume", href: "/reprendre", shortcut: "R" },
-  { icon: BriefcaseIcon, tKey: "navChomage", href: "/chomage", shortcut: "U" },
-  { icon: WrenchIcon, tKey: "quickAllTools", href: "/outils", shortcut: "O" },
-  { icon: NewspaperIcon, tKey: "quickNews", href: "/actualites", shortcut: "A" },
-  { icon: PhoneIcon, tKey: "contact", href: "/contact", shortcut: "C" },
-];
+  { icon: HomeIcon, tKey: "navHome", href: "/" },
+  { icon: FolderOpenIcon, tKey: "navMyDossier", href: "/mon-dossier" },
+  { icon: ListChecksIcon, tKey: "navMesDemarches", href: "/mes-demarches" },
+  { icon: WrenchIcon, tKey: "navTools", href: "/outils" },
+  { icon: NewspaperIcon, tKey: "quickNews", href: "/actualites" },
+  { icon: KeyRoundIcon, tKey: "quickResume", href: "/reprendre" },
+  { icon: BriefcaseIcon, tKey: "navChomage", href: "/chomage" },
+  { icon: PhoneIcon, tKey: "contact", href: "/contact" },
+] as const;
 
-// Rounded items need a small vertical gap so adjacent rows don't visually merge.
-const ITEM_CLASS = "rounded-lg mt-1 first:mt-0";
+const ITEM_CLASS = "min-h-10 rounded-lg";
 
 export function LandingCommandPalette({
   open,
@@ -60,17 +57,6 @@ export function LandingCommandPalette({
 }: LandingCommandPaletteProps) {
   const t = useTranslations("public.chrome");
   const router = useRouter();
-
-  useEffect(() => {
-    const onKey = (event: KeyboardEvent) => {
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
-        event.preventDefault();
-        setOpen(!open);
-      }
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [open, setOpen]);
 
   const run = (action: () => void) => {
     setOpen(false);
@@ -83,11 +69,11 @@ export function LandingCommandPalette({
       onOpenChange={setOpen}
       title={t("paletteTitle")}
       description={t("paletteDescription")}
-      className="sm:max-w-xl"
+      className="glass-surface-strong border-[color:var(--glass-border)] sm:max-w-2xl"
     >
       <Command>
         <CommandInput placeholder={t("palettePlaceholder")} />
-        <CommandList>
+        <CommandList className="max-h-[min(70svh,32rem)]">
           <CommandEmpty>{t("noResults")}</CommandEmpty>
           <CommandGroup heading={t("groupShortcuts")}>
             {QUICK_LINKS.map((link) => {
@@ -95,14 +81,12 @@ export function LandingCommandPalette({
               return (
                 <CommandItem
                   key={link.href}
+                  value={t(link.tKey)}
                   onSelect={() => run(() => router.push(link.href))}
                   className={ITEM_CLASS}
                 >
-                  <Icon />
-                  <span className="flex-1">
-                    {t(link.tKey as Parameters<typeof t>[0])}
-                  </span>
-                  <CommandShortcut>⌘{link.shortcut}</CommandShortcut>
+                  <Icon aria-hidden />
+                  <span className="flex-1">{t(link.tKey)}</span>
                 </CommandItem>
               );
             })}
@@ -117,7 +101,7 @@ export function LandingCommandPalette({
                   onSelect={() => run(() => router.push(aud.path))}
                   className={ITEM_CLASS}
                 >
-                  <AudIcon />
+                  <AudIcon aria-hidden />
                   <span className="flex-1">{aud.label}</span>
                   <span className="text-[11px] text-muted-foreground">
                     {aud.description}
@@ -137,7 +121,11 @@ export function LandingCommandPalette({
                 }
                 className={ITEM_CLASS}
               >
-                {tool.cat === "Documents" ? <FileTextIcon /> : <Building2Icon />}
+                {tool.cat === "Documents" ? (
+                  <FileTextIcon aria-hidden />
+                ) : (
+                  <Building2Icon aria-hidden />
+                )}
                 <span className="flex-1 truncate">{tool.title}</span>
                 <span className="text-[11px] text-muted-foreground">
                   {tool.cat}

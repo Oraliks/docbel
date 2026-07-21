@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { ProgressFeedback } from "./progress-feedback";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import { NouvelleDemandeButton } from "./nouvelle-demande-button";
 import {
@@ -47,6 +48,8 @@ import {
 import { DemarcheRail } from "./demarche-rail";
 import { buildDemarcheRailModel } from "@/lib/bundles/rail-model";
 import type { DemandeSummary } from "@/lib/bundles/demande-summary";
+import { formatDate } from "@/lib/i18n/format";
+import { cn } from "@/lib/utils";
 
 interface Bundle {
   id: string;
@@ -315,6 +318,10 @@ export function BundleRunner({
     completedCount,
     allRequiredDone,
   } = computeItemStatuses(bundle.items, completedTemplateIds, payloads, applicableSlugs);
+  const nextActionId = visibleItems.find(
+    ({ item, completed, eligibility }) =>
+      !completed && eligibility !== "pending" && Boolean(item.pdfForm),
+  )?.item.id;
 
   // --- Auto-ouverture du formulaire principal (opt-in `?demarrer=1`) ---
   // On saute la liste « Documents du parcours » et on ouvre directement le
@@ -355,7 +362,7 @@ export function BundleRunner({
   if (canAutoForward) {
     return (
       <div className="flex min-h-[40vh] flex-col items-center justify-center gap-3 text-center">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        <Loader2 className="size-6 animate-spin text-muted-foreground" />
         <p className="text-sm text-muted-foreground">{t("runnerStarting")}</p>
         <a
           href={
@@ -405,33 +412,29 @@ export function BundleRunner({
           ) : undefined
         }
       />
-      <div className="min-w-0 space-y-6">
+      <div className="flex min-w-0 flex-col gap-6">
         {/* Alerte « demande reprise » : cette demande a été clonée d'une précédente. */}
         {clonedFromDate && (
           <div className="rounded-2xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] p-3 text-sm text-[color:var(--glass-ink-soft)]">
             {t("demandeClonedNotice", {
-              date: new Intl.DateTimeFormat(locale, {
-                day: "2-digit",
-                month: "2-digit",
-                year: "numeric",
-              }).format(new Date(clonedFromDate)),
+              date: formatDate(clonedFromDate, locale),
             })}
           </div>
         )}
-        <div className="space-y-2">
+        <div className="flex flex-col gap-2">
           <div className="flex items-center gap-2">
             <div
-              className="w-10 h-10 rounded-md flex items-center justify-center text-white"
+              className="flex size-10 items-center justify-center rounded-md text-white"
               style={{ backgroundColor: bundle.color }}
             >
-              <Package className="w-5 h-5" />
+                <Package className="size-5" />
             </div>
             <div className="flex-1">
               <h1 className="glass-display text-2xl font-semibold text-[color:var(--glass-ink)]">{bundle.name}</h1>
             </div>
             {runId && completedCount > 0 && (
               <Button variant="ghost" size="sm" onClick={reset}>
-                <RefreshCw className="w-4 h-4 mr-1" />
+                <RefreshCw data-icon="inline-start" aria-hidden />
                 {t("restart")}
               </Button>
             )}
@@ -465,7 +468,7 @@ export function BundleRunner({
               onClick={() => setEditingEligibility(true)}
               className="text-xs"
             >
-              <Pencil className="w-3 h-3 mr-1" />
+              <Pencil data-icon="inline-start" aria-hidden />
               {t("runnerEditAnswers")}
             </Button>
           </div>
@@ -513,26 +516,43 @@ export function BundleRunner({
               <h2 className="text-base font-semibold text-[color:var(--glass-ink)]">
                 {t("runnerFlowDocuments")}
               </h2>
+              <ProgressFeedback
+                label={t("demandeProgress", {
+                  completed: completedCount,
+                  total: visibleItems.length,
+                })}
+                value={completedCount}
+                max={visibleItems.length}
+                state={allRequiredDone ? "done" : "current"}
+                compact
+                className="mb-2"
+              />
                 {visibleItems.map(({ item, completed, eligibility }, idx) => {
                   const isPending = eligibility === "pending";
+                  const isNextAction = item.id === nextActionId;
                   return (
                     <div
                       key={item.id}
-                      className={`flex items-start gap-3 rounded-2xl border p-3 transition-colors ${
-                        completed
-                          ? "border-emerald-500/25 bg-emerald-500/10"
-                          : isPending
-                            ? "border-dashed border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] opacity-70"
-                            : "border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] hover:bg-[color:var(--glass-pop-bg)]/40"
-                      }`}
+                      className={cn(
+                        "flex items-start gap-3 rounded-2xl border p-3 transition-colors",
+                        completed &&
+                          "border-[color:var(--success-border)] bg-[color:var(--success-subtle)]",
+                        isPending &&
+                          "border-dashed border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] opacity-70",
+                        !completed &&
+                          !isPending &&
+                          "border-[color:var(--glass-border)] bg-[color:var(--glass-surface)]",
+                        isNextAction &&
+                          "border-[color:var(--glass-accent-deep)] shadow-[0_12px_30px_-24px_var(--glass-accent-deep)]",
+                      )}
                     >
-                      <div className="w-8 h-8 rounded-full flex items-center justify-center font-medium text-sm flex-shrink-0">
+                      <div className="flex size-8 shrink-0 items-center justify-center rounded-full text-sm font-medium">
                         {completed ? (
-                          <CheckCircle2 className="w-6 h-6 text-green-600" />
+                          <CheckCircle2 className="size-6 text-[color:var(--success)]" />
                         ) : isPending ? (
-                          <Clock className="w-5 h-5 text-[color:var(--glass-ink-soft)]" />
+                          <Clock className="size-5 text-[color:var(--glass-ink-soft)]" />
                         ) : (
-                          <Circle className="w-5 h-5 text-[color:var(--glass-ink-soft)]" />
+                          <Circle className="size-5 text-[color:var(--glass-ink-soft)]" />
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
@@ -560,7 +580,7 @@ export function BundleRunner({
                           {item.triggered && (
                             <Badge
                               variant="outline"
-                              className="text-xs border-amber-500 text-amber-700 dark:text-amber-300"
+                              className="border-[color:var(--attention-border)] bg-[color:var(--attention-subtle)] text-xs text-[color:var(--attention-subtle-foreground)]"
                             >
                               {t("runnerTriggeredBadge")}
                             </Badge>
@@ -577,14 +597,14 @@ export function BundleRunner({
                           </p>
                         )}
                         {isPending && (
-                          <p className="text-[11px] text-amber-700 mt-1">
+                          <p className="mt-1 text-[11px] text-[color:var(--attention)]">
                             {t("runnerPendingHint")}
                           </p>
                         )}
                       </div>
                       <Button
                         size="sm"
-                        variant={completed ? "outline" : "default"}
+                        variant={completed || !isNextAction ? "outline" : "default"}
                         onClick={() => handleStart(item)}
                         disabled={isPending || starting}
                       >
@@ -593,7 +613,9 @@ export function BundleRunner({
                           : starting
                             ? t("runnerStarting")
                             : t("complete")}
-                        {!completed && <ArrowRight className="w-4 h-4 ml-1" />}
+                        {!completed && (
+                          <ArrowRight data-icon="inline-end" aria-hidden />
+                        )}
                       </Button>
                     </div>
                   );
@@ -601,9 +623,9 @@ export function BundleRunner({
             </section>
 
             {externalDocuments.length > 0 && (
-              <section className="glass-surface flex flex-col gap-2 rounded-3xl border border-amber-500/25 p-4 sm:p-5">
+              <section className="glass-surface flex flex-col gap-2 rounded-3xl border border-[color:var(--attention-border)] p-4 sm:p-5">
                   <h2 className="flex items-center gap-2 text-base font-semibold text-[color:var(--glass-ink)]">
-                    <Inbox className="w-4 h-4 text-amber-700 dark:text-amber-300" />
+                    <Inbox className="size-4 text-[color:var(--attention)]" />
                     {t("runnerExternalDocsTitle", { count: externalDocuments.length })}
                   </h2>
                   <p className="text-xs text-[color:var(--glass-ink-soft)]">
@@ -612,17 +634,17 @@ export function BundleRunner({
                   {externalDocuments.map((d) => (
                     <div
                       key={d.slug}
-                      className="flex items-start gap-3 p-3 border rounded-2xl border-amber-500/20 bg-[color:var(--glass-surface)]"
+                      className="flex items-start gap-3 rounded-2xl border border-[color:var(--attention-border)] bg-[color:var(--attention-subtle)] p-3"
                     >
-                      <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0">
-                        <Building2 className="w-5 h-5 text-amber-700 dark:text-amber-300" />
+                      <div className="flex size-8 shrink-0 items-center justify-center rounded-full">
+                        <Building2 className="size-5 text-[color:var(--attention)]" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="font-medium">{d.title}</span>
                           <Badge
                             variant="outline"
-                            className="text-xs border-amber-500 text-amber-700 dark:text-amber-300"
+                            className="border-[color:var(--attention-border)] text-xs text-[color:var(--attention-subtle-foreground)]"
                           >
                             {t(RESPONSIBILITY_LABEL_KEYS[d.responsibility] as Parameters<typeof t>[0])}
                           </Badge>
@@ -657,7 +679,7 @@ export function BundleRunner({
                             onClick={() => handleGenerateLetter(d)}
                             disabled={generatingLetter === d.slug}
                           >
-                            <Mail className="w-4 h-4 mr-1" />
+                            <Mail data-icon="inline-start" aria-hidden />
                             {generatingLetter === d.slug
                               ? t("runnerLetterGenerating")
                               : t("runnerGenerateLetter")}
@@ -672,7 +694,7 @@ export function BundleRunner({
             {hiddenItems.length > 0 && (
               <section className="flex flex-col gap-1.5 rounded-3xl border border-dashed border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] p-4">
                   <h2 className="flex items-center gap-2 text-sm font-semibold text-[color:var(--glass-ink-soft)]">
-                    <EyeOff className="w-4 h-4" />
+                    <EyeOff className="size-4" />
                     {t("runnerHiddenDocsTitle", { count: hiddenItems.length })}
                   </h2>
                   {hiddenItems.map(({ item }) => (
@@ -680,7 +702,7 @@ export function BundleRunner({
                       key={item.id}
                       className="text-xs text-muted-foreground flex items-center gap-2"
                     >
-                      <Circle className="w-3 h-3" />
+                      <Circle className="size-3" />
                       <span>{itemTitle(item)}</span>
                       {item.condition && (
                         <span className="italic">

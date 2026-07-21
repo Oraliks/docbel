@@ -2,6 +2,7 @@
 
 import { AlertCircle, CheckCircle2 } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { ProgressFeedback } from "@/components/docbel/progress-feedback";
 import { cn } from "@/lib/utils";
 
 export interface FormStepperItem {
@@ -51,21 +52,15 @@ export function FormStepper({ steps, activeIndex, onSelect, showNavigation = tru
         {activeStep?.hasError ? (
           <AlertCircle className="shrink-0 text-destructive" aria-label={t("runnerStepErrorsAria")} />
         ) : activeStep?.complete ? (
-          <CheckCircle2 className="shrink-0 text-emerald-600" aria-hidden />
+          <CheckCircle2 className="shrink-0 text-[color:var(--success)]" aria-hidden />
         ) : null}
-        <span
-          className="relative order-5 h-2 w-full shrink-0 overflow-hidden rounded-full bg-[color:var(--glass-pop-bg)] sm:order-none sm:w-[34%] sm:min-w-48 sm:max-w-[34rem]"
-          role="progressbar"
-          aria-valuemin={1}
-          aria-valuemax={total}
-          aria-valuenow={activeIndex + 1}
-          aria-label={t("runnerStepCounter", { current: activeIndex + 1, total })}
-        >
-          <span
-            className="absolute inset-y-0 left-0 rounded-full bg-[color:var(--glass-accent-deep,#5B46E5)] transition-[width] duration-300"
-            style={{ width: `${pct}%` }}
-          />
-        </span>
+        <ProgressFeedback
+          label={t("runnerStepCounter", { current: activeIndex + 1, total })}
+          value={pct}
+          compact
+          labelMode="sr-only"
+          className="order-5 w-full shrink-0 sm:order-none sm:w-[34%] sm:min-w-48 sm:max-w-[34rem]"
+        />
       </div>
     );
   }
@@ -90,22 +85,14 @@ export function FormStepper({ steps, activeIndex, onSelect, showNavigation = tru
           {activeStep?.hasError ? (
             <AlertCircle className="shrink-0 text-destructive" aria-label={t("runnerStepErrorsAria")} />
           ) : activeStep?.complete ? (
-            <CheckCircle2 className="shrink-0 text-emerald-600" aria-hidden />
+            <CheckCircle2 className="shrink-0 text-[color:var(--success)]" aria-hidden />
           ) : null}
         </div>
-        <span
-          className="relative h-2.5 overflow-hidden rounded-full bg-[color:var(--glass-pop-bg)]"
-          role="progressbar"
-          aria-valuemin={1}
-          aria-valuemax={total}
-          aria-valuenow={activeIndex + 1}
-          aria-label={t("runnerStepCounter", { current: activeIndex + 1, total })}
-        >
-          <span
-            className="absolute inset-y-0 left-0 rounded-full bg-[color:var(--glass-accent-deep,#5B46E5)] transition-[width] duration-300"
-            style={{ width: `${pct}%` }}
-          />
-        </span>
+        <ProgressFeedback
+          label={t("runnerStepCounter", { current: activeIndex + 1, total })}
+          value={pct}
+          labelMode="sr-only"
+        />
       </div>
 
       {showNavigation && (
@@ -141,7 +128,7 @@ export function FormStepper({ steps, activeIndex, onSelect, showNavigation = tru
                   {step.hasError ? (
                     <span className="size-2 shrink-0 rounded-full bg-destructive" aria-label={t("runnerStepErrorsAria")} />
                   ) : step.complete ? (
-                    <CheckCircle2 className="shrink-0 text-emerald-600" aria-hidden />
+                    <CheckCircle2 className="shrink-0 text-[color:var(--success)]" aria-hidden />
                   ) : null}
                 </button>
               </li>

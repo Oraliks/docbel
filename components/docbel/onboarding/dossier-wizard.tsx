@@ -446,7 +446,7 @@ function Stepper({ currentStep }: StepperProps) {
   const t = useTranslations("public.dossier");
   return (
     <div
-      className="grid overflow-hidden rounded-xl border border-[color:var(--glass-border)] sm:grid-cols-4"
+      className="grid grid-cols-4 overflow-hidden rounded-xl border border-[color:var(--glass-border)]"
       aria-label={t("wizardProgressLabel")}
       role="progressbar"
       aria-valuemin={1}
@@ -460,14 +460,14 @@ function Stepper({ currentStep }: StepperProps) {
           <span
             key={step}
             className={cn(
-              "flex min-h-12 items-center justify-center gap-2 border-b border-[color:var(--glass-border)] px-3 text-sm last:border-b-0 sm:border-b-0 sm:border-r sm:last:border-r-0",
+              "flex min-h-16 flex-col items-center justify-center gap-1 border-e border-[color:var(--glass-border)] px-1 text-center text-[11px] last:border-e-0 sm:min-h-12 sm:flex-row sm:gap-2 sm:px-3 sm:text-sm",
               active && "bg-[color:var(--glass-pop-bg)] font-bold text-[color:var(--glass-accent-deep)]",
               !active && "text-[color:var(--glass-ink)]/65",
             )}
           >
             <span className={cn(
-              "flex size-6 items-center justify-center rounded-full bg-[color:var(--glass-pop-bg)] text-xs font-bold",
-              (active || completed) && "bg-[color:var(--glass-accent-deep)] text-white",
+              "flex size-5 shrink-0 items-center justify-center rounded-full bg-[color:var(--glass-pop-bg)] text-xs font-bold sm:size-6",
+              (active || completed) && "bg-[color:var(--glass-accent-deep)] text-primary-foreground",
             )}>{step}</span>
             <span>{t(STEP_LABEL_KEYS[step] as Parameters<typeof t>[0])}</span>
           </span>
@@ -513,7 +513,7 @@ function StepSituation({
   }), [activeTheme, normalizedQuery, situations, tc]);
 
   return (
-    <div className="flex flex-col gap-4 transition-opacity duration-200">
+    <div className="animate-fade-in-up flex flex-col gap-4">
       {!hideSearch && (
         <div className="flex flex-col gap-2">
           <Label className="block text-xl font-bold leading-tight text-[color:var(--glass-ink)]">
@@ -647,7 +647,7 @@ function StepSubQuestion({
   const subQuestionText = resolveText(tc, subQuestion.questionKey, subQuestion.question);
   const subHelpText = resolveText(tc, subQuestion.helpTextKey, subQuestion.helpText ?? "");
   return (
-    <div className="flex flex-col gap-5 transition-opacity duration-200">
+    <div className="animate-fade-in-up flex flex-col gap-5">
       <div className="flex flex-col gap-2">
         <p className="text-sm font-semibold text-[color:var(--glass-accent-deep)]">
           {situationLabel}
@@ -738,7 +738,7 @@ function StepRefine({
   const refineQuestionText = resolveText(tc, refineQuestion.questionKey, refineQuestion.question);
   const refineHelpText = resolveText(tc, refineQuestion.helpTextKey, refineQuestion.helpText ?? "");
   return (
-    <div className="flex flex-col gap-5 transition-opacity duration-200">
+    <div className="animate-fade-in-up flex flex-col gap-5">
       <div className="flex flex-col gap-2">
         <p className="text-sm font-semibold text-[color:var(--glass-accent-deep)]">
           {subOptionLabel}
@@ -861,7 +861,7 @@ function BulletList({
         className={cn(
           "flex items-center gap-2 text-base font-bold",
           tone === "warn"
-            ? "text-amber-700 dark:text-amber-300"
+            ? "text-[color:var(--glass-warning-ink)]"
             : "text-[color:var(--glass-ink-soft)]",
         )}
       >
@@ -1009,17 +1009,17 @@ function PrimaryUnavailable({
     ? resolveText(tc, result.nextStepKey, primary.nextStep ?? "")
     : primary.nextStep;
   return (
-    <div className="space-y-3 rounded-2xl border border-amber-500/30 bg-amber-50/60 p-4 dark:bg-amber-950/20">
+    <div className="glass-feedback flex flex-col gap-3 rounded-2xl p-4" data-tone="attention">
       <div className="flex items-start gap-2">
-        <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-amber-500 text-white">
+        <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-[color:var(--glass-warning)] text-[color:var(--attention-foreground)]">
           <Construction className="size-4" aria-hidden />
         </span>
-        <div className="flex-1 space-y-1">
-          <p className="text-xs font-medium uppercase tracking-wide text-amber-900 dark:text-amber-200">
+        <div className="flex flex-1 flex-col gap-1">
+          <p className="text-xs font-medium uppercase tracking-wide text-[color:var(--glass-warning-ink)]">
             {t("wizardComingSoon")}
           </p>
           <h3 className="text-base font-semibold">{title}</h3>
-          <p className="text-sm text-amber-900/80 dark:text-amber-100/80">
+          <p className="text-sm text-[color:var(--glass-warning-ink)]">
             {rationale}{" "}
             {t.rich("wizardUnavailableInfo", {
               link: (chunks) => (
@@ -1093,17 +1093,17 @@ function PrimaryExternal({
     ? resolveText(tc, result.nextStepKey, primary.nextStep ?? "")
     : primary.nextStep;
   return (
-    <div className="space-y-3 rounded-2xl border border-sky-500/30 bg-sky-50/60 p-4 dark:bg-sky-950/20">
+    <div className="glass-feedback flex flex-col gap-3 rounded-2xl p-4" data-tone="info">
       <div className="flex items-start gap-2">
-        <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-sky-500 text-white">
+        <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-[color:var(--glass-info)] text-[color:var(--info-foreground)]">
           <Building2 className="size-4" aria-hidden />
         </span>
-        <div className="flex-1 space-y-1">
-          <p className="text-xs font-medium uppercase tracking-wide text-sky-900 dark:text-sky-200">
+        <div className="flex flex-1 flex-col gap-1">
+          <p className="text-xs font-medium uppercase tracking-wide text-[color:var(--glass-info-ink)]">
             {t("wizardOrientation")}
           </p>
           <h3 className="text-base font-semibold">{title}</h3>
-          <p className="text-sm text-sky-900/80 dark:text-sky-100/80">
+          <p className="text-sm text-[color:var(--glass-info-ink)]">
             {rationale}
           </p>
         </div>
@@ -1193,7 +1193,7 @@ function StepResults({ result, catalog, onBack, onReset }: StepResultsProps) {
   const { primary, related } = deriveWizardResults(result, catalog);
 
   return (
-    <div className="flex flex-col gap-5 transition-opacity duration-200">
+    <div className="animate-fade-in-up flex flex-col gap-5">
       {primary.availability === "orientation_externe" ? (
         <PrimaryExternal primary={primary} result={result} onReset={onReset} />
       ) : primary.available ? (

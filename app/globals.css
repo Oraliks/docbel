@@ -46,6 +46,37 @@
   --nav-bg: #FAF7FF;
   --nav-border: #E7E3EF;
 
+  /* Semantic feedback colors. Each state exposes a solid pair plus a subtle
+     surface pair so color is never the only carrier of meaning. */
+  --success: #1f7a55;
+  --success-foreground: #ffffff;
+  --success-subtle: #e4f7ed;
+  --success-subtle-foreground: #15583e;
+  --success-border: #6dbb94;
+  --attention: #8a4b08;
+  --attention-foreground: #ffffff;
+  --attention-subtle: #fff2cc;
+  --attention-subtle-foreground: #603500;
+  --attention-border: #c98a22;
+  --info: #315da8;
+  --info-foreground: #ffffff;
+  --info-subtle: #e5edff;
+  --info-subtle-foreground: #22457f;
+  --info-border: #84a5dc;
+
+  /* Shared motion contract: immediate feedback, interaction, step change,
+     completion and the exceptional dossier-level celebration. */
+  --motion-duration-press: 160ms;
+  --motion-duration-hover: 200ms;
+  --motion-duration-step: 380ms;
+  --motion-duration-completion: 480ms;
+  --motion-duration-celebration: 800ms;
+  --motion-ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --motion-ease-enter: cubic-bezier(0.16, 1, 0.3, 1);
+  --motion-ease-emphasized: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --motion-lift-distance: 3px;
+  --motion-press-scale: 0.985;
+
   /* Landing (glass) tokens — LIGHT mode. Promoted from the prototype
      route at /glass so the home page (and any other page that opts in
      via the .glass-root class) can share the same design language. */
@@ -72,6 +103,18 @@
   --glass-status-from: #8b6cf5;
   --glass-status-to: #4a2178;
   --glass-noise-opacity: 0.32;
+  --glass-success: var(--success);
+  --glass-success-surface: var(--success-subtle);
+  --glass-success-ink: var(--success-subtle-foreground);
+  --glass-success-border: var(--success-border);
+  --glass-warning: var(--attention);
+  --glass-warning-surface: var(--attention-subtle);
+  --glass-warning-ink: var(--attention-subtle-foreground);
+  --glass-warning-border: var(--attention-border);
+  --glass-info: var(--info);
+  --glass-info-surface: var(--info-subtle);
+  --glass-info-ink: var(--info-subtle-foreground);
+  --glass-info-border: var(--info-border);
 }
 
 .dark {
@@ -115,6 +158,24 @@
   --text-faint: #555C70;
   --nav-bg: #161920;
   --nav-border: #252830;
+
+  /* Semantic feedback colors — dark surfaces keep a readable, non-neon
+     status vocabulary while the public accents remain visibly DocBel. */
+  --success: #76d7a8;
+  --success-foreground: #082319;
+  --success-subtle: rgba(40, 171, 111, 0.16);
+  --success-subtle-foreground: #a3edc8;
+  --success-border: rgba(118, 215, 168, 0.58);
+  --attention: #f5c45a;
+  --attention-foreground: #2d1a00;
+  --attention-subtle: rgba(217, 148, 27, 0.17);
+  --attention-subtle-foreground: #ffe09a;
+  --attention-border: rgba(245, 196, 90, 0.6);
+  --info: #8bb8ff;
+  --info-foreground: #0b1d3a;
+  --info-subtle: rgba(70, 125, 219, 0.18);
+  --info-subtle-foreground: #bdd5ff;
+  --info-border: rgba(139, 184, 255, 0.58);
 
   /* Landing (glass) tokens — DARK premium « néon glassmorphism » (cf.
      AGENTS.md › Design dark). Fond noir-violet profond, accents vifs
@@ -278,14 +339,15 @@
 /* ── Polish /outils — micro-interactions douces (cf. AGENTS.md › Design) ── */
 /* Entrée échelonnée des sections (réutilise @keyframes fadeInUp). */
 .outils-rise {
-  animation: fadeInUp 0.5s cubic-bezier(0.4, 0, 0.2, 1) both;
+  --motion-enter-distance: 20px;
+  animation: fadeInUp var(--motion-duration-step) var(--motion-ease-enter) both;
 }
 
 /* Halo de focus diffus sur la recherche (au lieu d'un anneau dur). */
 .search-glow {
   transition:
-    box-shadow 260ms cubic-bezier(0.4, 0, 0.2, 1),
-    background-color 260ms ease;
+    box-shadow var(--motion-duration-hover) var(--motion-ease-standard),
+    background-color var(--motion-duration-hover) var(--motion-ease-standard);
 }
 .search-glow:focus-visible {
   outline: none;
@@ -294,15 +356,15 @@
     0 8px 28px rgba(80, 40, 140, 0.16);
 }
 
-/* Pop du cœur favori. */
-@keyframes heart-pop {
+/* Pop bref partagé par le cœur favori et les coches de complétion. */
+@keyframes docbel-pop {
   0% { transform: scale(1); }
   40% { transform: scale(1.32); }
   70% { transform: scale(0.92); }
   100% { transform: scale(1); }
 }
 .animate-heart-pop {
-  animation: heart-pop 360ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: docbel-pop var(--motion-duration-completion) var(--motion-ease-emphasized);
 }
 
 /* Reflet lent et discret sur les cartes dégradées (Nouveau / Aide). */
@@ -318,8 +380,8 @@
 /* Pastille d'icône : glow teinté (var --tile-hue) ; doux en clair, néon en dark. */
 .glass-icon-tile {
   transition:
-    box-shadow 200ms ease,
-    transform 200ms ease;
+    box-shadow var(--motion-duration-hover) var(--motion-ease-standard),
+    transform var(--motion-duration-hover) var(--motion-ease-standard);
   box-shadow: 0 4px 14px
     color-mix(in oklab, var(--tile-hue, var(--glass-accent-deep)) 20%, transparent);
 }
@@ -337,8 +399,8 @@
   background: var(--glass-ink);
   color: var(--glass-bg-a);
   transition:
-    box-shadow 220ms ease,
-    opacity 200ms ease;
+    box-shadow var(--motion-duration-hover) var(--motion-ease-standard),
+    opacity var(--motion-duration-hover) var(--motion-ease-standard);
 }
 .glass-cta:hover {
   opacity: 0.92;
@@ -465,19 +527,11 @@
    ============================================================ */
 .glass-interactive {
   transition:
-    transform 200ms cubic-bezier(0.4, 0, 0.2, 1),
-    box-shadow 200ms cubic-bezier(0.4, 0, 0.2, 1),
-    border-color 200ms ease,
-    background-color 200ms ease;
+    transform var(--motion-duration-hover) var(--motion-ease-standard),
+    box-shadow var(--motion-duration-hover) var(--motion-ease-standard),
+    border-color var(--motion-duration-hover) var(--motion-ease-standard),
+    background-color var(--motion-duration-hover) var(--motion-ease-standard);
   outline: none;
-}
-
-.glass-interactive:hover {
-  transform: translateY(-3px);
-  border-color: rgba(255, 255, 255, 0.95);
-  box-shadow:
-    0 18px 44px rgba(80, 40, 140, 0.18),
-    inset 0 1px 0 rgba(255, 255, 255, 0.75);
 }
 
 .glass-interactive:focus-visible {
@@ -486,18 +540,38 @@
     0 0 0 4px var(--glass-accent-deep);
 }
 
-.dark .glass-interactive:hover {
-  border-color: rgba(170, 132, 255, 0.45);
-  box-shadow:
-    0 18px 48px rgba(0, 0, 0, 0.6),
-    0 0 28px rgba(139, 92, 246, 0.3),
-    inset 0 1px 0 rgba(255, 255, 255, 0.07);
+.glass-interactive:active:not(:disabled, [aria-disabled="true"], [data-disabled]) {
+  transform: translateY(-1px) scale(var(--motion-press-scale));
+  transition-duration: var(--motion-duration-press);
 }
 
 .dark .glass-interactive:focus-visible {
   box-shadow:
     0 0 0 2px var(--glass-bg-c),
     0 0 0 4px var(--glass-accent-deep);
+}
+
+.glass-interactive:is(:disabled, [aria-disabled="true"], [data-disabled]) {
+  cursor: not-allowed;
+  opacity: 0.62;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .glass-interactive:hover:not(:disabled, [aria-disabled="true"], [data-disabled]) {
+    transform: translateY(calc(-1 * var(--motion-lift-distance)));
+    border-color: color-mix(in oklab, var(--glass-accent-deep) 44%, var(--glass-border));
+    box-shadow:
+      0 18px 44px rgba(80, 40, 140, 0.18),
+      inset 0 1px 0 rgba(255, 255, 255, 0.75);
+  }
+
+  .dark .glass-interactive:hover:not(:disabled, [aria-disabled="true"], [data-disabled]) {
+    border-color: color-mix(in oklab, var(--glass-accent-deep) 56%, var(--glass-border));
+    box-shadow:
+      0 18px 48px rgba(0, 0, 0, 0.6),
+      0 0 28px color-mix(in oklab, var(--glass-accent-deep) 30%, transparent),
+      inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -507,6 +581,106 @@
   .glass-interactive:hover {
     transform: none;
   }
+}
+
+/* Semantic public feedback. Consumers must pair the tone with an icon and an
+   explicit label; these surfaces are not a replacement for accessible copy. */
+.glass-feedback,
+.docbel-progress-feedback,
+.docbel-completion-feedback {
+  --feedback-accent: var(--glass-info);
+  --feedback-surface: var(--glass-info-surface);
+  --feedback-ink: var(--glass-info-ink);
+  --feedback-border: var(--glass-info-border);
+  position: relative;
+  border: 1px solid var(--feedback-border);
+  border-inline-start-width: 4px;
+  border-radius: 18px;
+  background: var(--feedback-surface);
+  color: var(--feedback-ink);
+  box-shadow: 0 10px 30px color-mix(in oklab, var(--feedback-accent) 10%, transparent);
+}
+
+.glass-feedback[data-tone="success"],
+.docbel-completion-feedback {
+  --feedback-accent: var(--glass-success);
+  --feedback-surface: var(--glass-success-surface);
+  --feedback-ink: var(--glass-success-ink);
+  --feedback-border: var(--glass-success-border);
+}
+
+.glass-feedback[data-tone="attention"] {
+  --feedback-accent: var(--glass-warning);
+  --feedback-surface: var(--glass-warning-surface);
+  --feedback-ink: var(--glass-warning-ink);
+  --feedback-border: var(--glass-warning-border);
+}
+
+.glass-feedback[data-tone="info"],
+.docbel-progress-feedback {
+  --feedback-accent: var(--glass-info);
+  --feedback-surface: var(--glass-info-surface);
+  --feedback-ink: var(--glass-info-ink);
+  --feedback-border: var(--glass-info-border);
+}
+
+.docbel-progress-feedback[data-state="done"] {
+  --feedback-accent: var(--glass-success);
+  --feedback-surface: var(--glass-success-surface);
+  --feedback-ink: var(--glass-success-ink);
+  --feedback-border: var(--glass-success-border);
+}
+
+.docbel-progress-feedback[data-state="attention"] {
+  --feedback-accent: var(--glass-warning);
+  --feedback-surface: var(--glass-warning-surface);
+  --feedback-ink: var(--glass-warning-ink);
+  --feedback-border: var(--glass-warning-border);
+}
+
+.docbel-progress-feedback[data-state="locked"] {
+  --feedback-accent: var(--glass-ink-faint);
+  --feedback-surface: var(--glass-surface);
+  --feedback-ink: var(--glass-ink-soft);
+  --feedback-border: var(--glass-border);
+}
+
+.docbel-progress-feedback,
+.docbel-completion-feedback {
+  padding: 0.875rem 1rem;
+}
+
+/* The progress container stays still: only its indicator interpolates. This
+   prevents a second competing animation around forms or legal copy. */
+.docbel-progress-feedback
+  :is([data-progress-indicator], [data-slot="progress-indicator"]) {
+  transition:
+    inline-size var(--motion-duration-step) var(--motion-ease-standard),
+    transform var(--motion-duration-step) var(--motion-ease-standard);
+}
+
+/* Completion feedback is one-shot. `step` is restrained; `dossier` receives a
+   stronger static halo, never a loop or a score-like reward. */
+.docbel-completion-feedback[data-kind="step"],
+.docbel-completion-feedback[data-kind="dossier"] {
+  --motion-enter-distance: 8px;
+  animation: fadeInUp var(--motion-duration-completion) var(--motion-ease-enter) both;
+}
+
+.docbel-completion-feedback[data-kind="step"] [data-feedback-icon],
+.docbel-completion-feedback[data-kind="dossier"] [data-feedback-icon] {
+  animation: docbel-pop var(--motion-duration-completion) var(--motion-ease-emphasized);
+}
+
+.docbel-completion-feedback [data-feedback-icon] {
+  background: color-mix(in oklab, var(--feedback-accent) 14%, transparent);
+  color: var(--feedback-accent);
+}
+
+.docbel-completion-feedback[data-kind="dossier"] {
+  box-shadow:
+    0 12px 36px color-mix(in oklab, var(--glass-success) 18%, transparent),
+    inset 0 1px 0 color-mix(in oklab, var(--glass-success) 18%, transparent);
 }
 
 .glass-display {
@@ -594,6 +768,21 @@
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-success-subtle: var(--success-subtle);
+  --color-success-subtle-foreground: var(--success-subtle-foreground);
+  --color-success-border: var(--success-border);
+  --color-attention: var(--attention);
+  --color-attention-foreground: var(--attention-foreground);
+  --color-attention-subtle: var(--attention-subtle);
+  --color-attention-subtle-foreground: var(--attention-subtle-foreground);
+  --color-attention-border: var(--attention-border);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+  --color-info-subtle: var(--info-subtle);
+  --color-info-subtle-foreground: var(--info-subtle-foreground);
+  --color-info-border: var(--info-border);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
@@ -729,7 +918,7 @@ body {
 @keyframes fadeInUp {
   from {
     opacity: 0;
-    transform: translateY(20px);
+    transform: translateY(var(--motion-enter-distance, 20px));
   }
   to {
     opacity: 1;
@@ -882,12 +1071,9 @@ body {
 
 /* Fade-in-up court utilisé quand on change la phrase rotative du loader.
    key={idx} sur le <p> force le remount → l'anim rejoue à chaque message. */
-@keyframes fade-in-up {
-  from { opacity: 0; transform: translateY(4px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
 .animate-fade-in-up {
-  animation: fade-in-up 0.35s ease-out;
+  --motion-enter-distance: 4px;
+  animation: fadeInUp var(--motion-duration-step) var(--motion-ease-enter);
 }
 
 /* ─── GPS Loader ─── 3 satellites + lignes "marching ants" via
@@ -1224,6 +1410,21 @@ html[data-docbel-contrast="high"] .glass-root {
   --glass-ink-line: rgba(45, 30, 70, 0.32);
   --glass-surface: rgba(250, 247, 255, 0.82);
   --glass-surface-strong: rgba(250, 247, 255, 0.94);
+  --success: #075c37;
+  --success-foreground: #ffffff;
+  --success-subtle: #f5fff9;
+  --success-subtle-foreground: #063d26;
+  --success-border: #075c37;
+  --attention: #6c3900;
+  --attention-foreground: #ffffff;
+  --attention-subtle: #fffaf0;
+  --attention-subtle-foreground: #4a2500;
+  --attention-border: #6c3900;
+  --info: #173f8f;
+  --info-foreground: #ffffff;
+  --info-subtle: #f4f7ff;
+  --info-subtle-foreground: #112f6e;
+  --info-border: #173f8f;
 }
 
 .dark[data-docbel-contrast="high"] .glass-root {
@@ -1232,10 +1433,35 @@ html[data-docbel-contrast="high"] .glass-root {
   --glass-ink-faint: #d5caff;
   --glass-border: rgba(233, 224, 255, 0.6);
   --glass-ink-line: rgba(233, 224, 255, 0.42);
+  --success: #98f5c7;
+  --success-foreground: #031b11;
+  --success-subtle: #062d1d;
+  --success-subtle-foreground: #c7ffe2;
+  --success-border: #98f5c7;
+  --attention: #ffd978;
+  --attention-foreground: #241500;
+  --attention-subtle: #332400;
+  --attention-subtle-foreground: #ffecb0;
+  --attention-border: #ffd978;
+  --info: #b7d4ff;
+  --info-foreground: #07162f;
+  --info-subtle: #0a234f;
+  --info-subtle-foreground: #e0ecff;
+  --info-border: #b7d4ff;
 }
 
 html[data-docbel-simple="true"] [data-a11y-secondary="true"] {
   display: none !important;
+}
+
+html[data-docbel-motion="reduced"] {
+  --motion-duration-press: 0.001ms;
+  --motion-duration-hover: 0.001ms;
+  --motion-duration-step: 0.001ms;
+  --motion-duration-completion: 0.001ms;
+  --motion-duration-celebration: 0.001ms;
+  --motion-lift-distance: 0px;
+  --motion-press-scale: 1;
 }
 
 html[data-docbel-motion="reduced"] *,
@@ -1245,4 +1471,48 @@ html[data-docbel-motion="reduced"] *::after {
   animation-duration: 0.001ms !important;
   animation-iteration-count: 1 !important;
   transition-duration: 0.001ms !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --motion-duration-press: 0.001ms;
+    --motion-duration-hover: 0.001ms;
+    --motion-duration-step: 0.001ms;
+    --motion-duration-completion: 0.001ms;
+    --motion-duration-celebration: 0.001ms;
+    --motion-lift-distance: 0px;
+    --motion-press-scale: 1;
+  }
+
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+@media (forced-colors: active) {
+  .glass-root :is(
+      .glass-surface,
+      .glass-surface-strong,
+      .glass-feedback,
+      .docbel-progress-feedback,
+      .docbel-completion-feedback
+    ) {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    border-color: CanvasText;
+    background: Canvas;
+    color: CanvasText;
+    box-shadow: none;
+  }
+
+  .glass-root .glass-interactive:focus-visible {
+    outline: 2px solid Highlight;
+    outline-offset: 3px;
+    box-shadow: none;
+  }
 }

@@ -1,11 +1,11 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { Search, Sparkles, Loader2, ArrowRight, MessageCircle, X } from "lucide-react";
+import { AlertCircle, ArrowRight, Loader2, MessageCircle, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { GLASS_INPUT } from "@/lib/glass-classes";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 interface Suggestion {
   bundleId: string;
@@ -21,105 +21,84 @@ interface IntentResponse {
   aiMessage?: string;
 }
 
-/// Champ de recherche libre couplé à l'endpoint /api/intent-detect.
-/// Affiche les suggestions de parcours et un éventuel message de l'IA.
-export function IntentSearch() {
-  const router = useRouter();
-  const t = useTranslations("public.dossier");
-  const [query, setQuery] = useState("");
-  const [pending, startTransition] = useTransition();
-  const [response, setResponse] = useState<IntentResponse | null>(null);
-  const [error, setError] = useState<string | null>(null);
+interface IntentSearchProps {
+  query: string;
+}
 
-  function handleSubmit(event: React.FormEvent) {
-    event.preventDefault();
-    if (!query.trim() || query.trim().length < 2) return;
+/// Analyse la requête du guichet via /api/intent-detect, sans dupliquer son
+/// champ de recherche. Affiche les suggestions locales ou assistées par l'IA.
+export function IntentSearch({ query }: IntentSearchProps) {
+  const t = useTranslations("public.dossier");
+  const [pending, startTransition] = useTransition();
+  const [result, setResult] = useState<{ query: string; response: IntentResponse } | null>(null);
+  const [error, setError] = useState<{ query: string; message: string } | null>(null);
+  const normalizedQuery = query.trim();
+  const response = result?.query === normalizedQuery ? result.response : null;
+  const visibleError = error?.query === normalizedQuery ? error.message : null;
+
+  function handleIdentify() {
+    if (normalizedQuery.length < 2) return;
     setError(null);
     startTransition(async () => {
       try {
         const res = await fetch("/api/intent-detect", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ query: query.trim() }),
+          body: JSON.stringify({ query: normalizedQuery }),
         });
         if (!res.ok) {
           const data = await res.json().catch(() => ({}));
           if (res.status === 429) {
-            setError(t("intentRateLimited"));
+            setError({ query: normalizedQuery, message: t("intentRateLimited") });
           } else {
-            setError(data.error || t("intentError"));
+            setError({ query: normalizedQuery, message: data.error || t("intentError") });
           }
-          setResponse(null);
+          setResult(null);
           return;
         }
         const data = (await res.json()) as IntentResponse;
-        setResponse(data);
+        setResult({ query: normalizedQuery, response: data });
       } catch {
-        setError(t("networkError"));
-        setResponse(null);
+        setError({ query: normalizedQuery, message: t("networkError") });
+        setResult(null);
       }
     });
   }
 
-  function clear() {
-    setQuery("");
-    setResponse(null);
-    setError(null);
-  }
-
   return (
-    <div className="space-y-3">
-      <form onSubmit={handleSubmit} className="relative">
-        <Search className="pointer-events-none absolute top-1/2 left-4 size-5 -translate-y-1/2 text-[color:var(--glass-ink-faint)]" />
-        <input
-          type="search"
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-          placeholder={t("intentPlaceholder")}
-          aria-label={t("intentAriaLabel")}
-          className={`${GLASS_INPUT} h-14 w-full rounded-3xl border-0 pr-32 pl-12 text-[15px]`}
-        />
-        <div className="absolute top-1/2 right-2 -translate-y-1/2 flex items-center gap-1.5">
-          {query && (
-            <button
-              type="button"
-              onClick={clear}
-              className="p-1 text-[color:var(--glass-ink-faint)] hover:text-[color:var(--glass-ink)] focus-visible:outline-none"
-              aria-label={t("clear")}
-            >
-              <X className="size-4" />
-            </button>
-          )}
-          <Button
-            type="submit"
-            size="sm"
-            disabled={pending || query.trim().length < 2}
-            className="rounded-2xl"
-          >
-            {pending ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4" />}
-            {t("intentIdentify")}
-          </Button>
-        </div>
-      </form>
+    <div className="flex flex-col gap-3">
+      <Button
+        type="button"
+        size="lg"
+        disabled={pending || normalizedQuery.length < 2}
+        className="min-h-11 self-start"
+        onClick={handleIdentify}
+      >
+        {pending ? (
+          <Loader2 data-icon="inline-start" className="animate-spin" aria-hidden />
+        ) : (
+          <Sparkles data-icon="inline-start" aria-hidden />
+        )}
+        {t("intentIdentify")}
+      </Button>
 
-      {error && (
-        <div className="rounded-2xl border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-900 dark:text-red-200">
-          {error}
-        </div>
+      {visibleError && (
+        <Alert variant="destructive" className="rounded-2xl">
+          <AlertCircle aria-hidden />
+          <AlertDescription>{visibleError}</AlertDescription>
+        </Alert>
       )}
 
       {response && (
-        <div className="glass-surface space-y-3 rounded-3xl p-4">
+        <div className="glass-feedback flex flex-col gap-3 rounded-3xl p-4" data-tone="info">
           {response.aiUsed && response.aiMessage && (
-            <div className="flex items-start gap-2 rounded-2xl bg-[color:var(--glass-surface)] p-3">
-              <MessageCircle className="size-4 mt-0.5 flex-shrink-0 text-[color:var(--glass-ink-soft)]" />
-              <p className="text-[13px] text-[color:var(--glass-ink-soft)]">
-                <span className="font-medium text-[color:var(--glass-ink)]">
-                  {t("intentAssistantSuggests")}
-                </span>{" "}
+            <Alert role="status" className="rounded-2xl border-[color:var(--info-border)] bg-[color:var(--info-subtle)] text-[color:var(--glass-ink)]">
+              <MessageCircle aria-hidden />
+              <AlertTitle>{t("intentAssistantSuggests")}</AlertTitle>
+              <AlertDescription className="text-[color:var(--glass-ink-soft)]">
                 {response.aiMessage}
-              </p>
-            </div>
+              </AlertDescription>
+            </Alert>
           )}
 
           {response.suggestions.length === 0 ? (
@@ -131,31 +110,31 @@ export function IntentSearch() {
               <p className="text-[11px] font-bold uppercase tracking-[0.08em] text-[color:var(--glass-ink-faint)]">
                 {t("intentSuggestedFlows")}
               </p>
-              <div className="space-y-1.5">
+              <div className="flex flex-col gap-2">
                 {response.suggestions.slice(0, 3).map((s, idx) => (
-                  <button
+                  <Button
                     key={s.bundleId}
-                    type="button"
-                    onClick={() => router.push(`/d/${s.slug}`)}
-                    className="flex w-full items-center justify-between gap-3 rounded-2xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] p-3 text-left transition-colors hover:bg-white/55 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)]"
+                    variant="outline"
+                    render={<Link href={`/d/${s.slug}`} />}
+                    className="glass-interactive h-auto min-h-14 w-full justify-between gap-3 whitespace-normal rounded-2xl border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] p-3 text-start"
                   >
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
+                    <span className="min-w-0 flex-1">
+                      <span className="flex items-center gap-2">
                         <span className="text-sm font-medium text-[color:var(--glass-ink)]">
                           {idx === 0 && response.aiUsed && (
-                            <Sparkles className="inline size-3 mr-1 text-amber-600" />
+                            <Sparkles className="me-1 inline text-[color:var(--attention-subtle-foreground)]" aria-hidden />
                           )}
                           {s.name}
                         </span>
-                      </div>
+                      </span>
                       {s.reason && (
-                        <p className="text-[12px] text-[color:var(--glass-ink-soft)] mt-0.5 line-clamp-2">
+                        <span className="mt-0.5 line-clamp-2 text-xs font-normal text-[color:var(--glass-ink-soft)]">
                           {s.reason}
-                        </p>
+                        </span>
                       )}
-                    </div>
-                    <ArrowRight className="size-4 flex-shrink-0 text-[color:var(--glass-ink-faint)]" />
-                  </button>
+                    </span>
+                    <ArrowRight data-icon="inline-end" className="shrink-0 text-[color:var(--glass-ink-faint)] rtl:rotate-180" aria-hidden />
+                  </Button>
                 ))}
               </div>
             </>

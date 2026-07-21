@@ -1,6 +1,15 @@
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { Wrench, ArrowLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
 
 interface Props {
   toolName: string;
@@ -13,59 +22,50 @@ interface Props {
  */
 export async function DisabledToolView({ toolName }: Props) {
   const t = await getTranslations("public.outils");
-  return (
-    <section className="flex flex-col gap-6">
-      <div className="glass-surface relative flex flex-col items-center gap-5 px-8 py-16 text-center">
-        <span className="flex size-16 items-center justify-center rounded-2xl bg-orange-100 text-orange-600 dark:bg-orange-950/30 dark:text-orange-300">
-          <Wrench className="size-7" />
-        </span>
 
-        <div className="max-w-xl space-y-3">
+  return (
+    <section className="flex w-full flex-col gap-6">
+      <Empty className="glass-feedback py-16" data-tone="attention">
+        <EmptyHeader>
+          <EmptyMedia
+            variant="icon"
+            className="border border-attention-border bg-attention-subtle text-attention-subtle-foreground"
+          >
+            <Wrench />
+          </EmptyMedia>
           <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[color:var(--glass-ink-faint)]">
             {t("disabledEyebrow")}
           </p>
-          <h1 className="glass-display text-[32px] font-semibold leading-[1.1] sm:text-[40px]">
+          <EmptyTitle className="glass-display text-[30px] leading-[1.1] sm:text-[38px]">
             {toolName}{" "}
             <em className="text-[color:var(--glass-ink-soft)]">
               {t("disabledTitle")}
             </em>
-          </h1>
-          <p className="text-[14px] text-[color:var(--glass-ink-soft)]">
+          </EmptyTitle>
+          <EmptyDescription className="max-w-xl text-[color:var(--glass-ink-soft)]">
             {t.rich("disabledBody", {
               strong: (c) => (
                 <strong className="text-[color:var(--glass-ink)]">{c}</strong>
               ),
             })}
-          </p>
-        </div>
+          </EmptyDescription>
+        </EmptyHeader>
 
-        <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
-          <Link
-            href="/outils"
-            className="inline-flex items-center gap-2 rounded-full border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-4 py-2 text-[13px] font-semibold text-[color:var(--glass-ink)] transition hover:bg-white/55"
-          >
-            <ArrowLeft className="size-3.5" />
-            {t("backToCatalog")}
-          </Link>
-          <Link
-            href="/aidez-moi"
-            className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-[13px] font-semibold text-[color:var(--glass-bg-a)] transition"
-            style={{ background: "var(--glass-ink)" }}
+        <EmptyContent className="sm:flex-row sm:justify-center">
+          <Button
+            render={<Link href="/mon-dossier" />}
           >
             {t("needHelp")}
-          </Link>
-        </div>
-
-        <p className="pt-4 text-[11px] text-[color:var(--glass-ink-faint)]">
-          {t.rich("disabledReport", {
-            report: (c) => (
-              <Link href="/aidez-moi" className="underline">
-                {c}
-              </Link>
-            ),
-          })}
-        </p>
-      </div>
+          </Button>
+          <Button
+            variant="outline"
+            render={<Link href="/outils" />}
+          >
+            <ArrowLeft data-icon="inline-start" />
+            {t("backToCatalog")}
+          </Button>
+        </EmptyContent>
+      </Empty>
     </section>
   );
 }

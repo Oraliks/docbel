@@ -32,7 +32,7 @@ export async function TrustBand() {
   return (
     <section
       aria-label={t("trustHeading")}
-      className="glass-surface outils-rise flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:gap-6 sm:p-6"
+      className="glass-surface flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:gap-6 sm:p-6"
     >
       {/* En-tête : tuile + titre — compact, posé à gauche sur desktop. */}
       <div className="flex shrink-0 items-center gap-2.5 sm:max-w-[190px]">
@@ -63,7 +63,7 @@ export async function TrustBand() {
               strokeWidth={2}
               aria-hidden
             />
-            <p className="text-[12px] leading-[1.5] text-[color:var(--glass-ink-soft)]">
+            <p className="text-xs leading-relaxed text-[color:var(--glass-ink-soft)]">
               {t.rich(key as Parameters<typeof t.rich>[0], {
                 strong: (chunks) => (
                   <strong className="font-bold text-[color:var(--glass-ink)]">

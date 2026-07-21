@@ -10,18 +10,11 @@ import { SuggestCorrection } from "@/components/i18n/suggest-correction";
 import type { NewsItem } from "@/lib/docbel-data";
 import { resolveArticleImage } from "@/lib/featured-image";
 import { getSiteSettings } from "@/lib/site-settings.server";
+import { formatDate } from "@/lib/i18n/format";
 
 export const dynamic = "force-dynamic";
 
 type RouteParams = { params: Promise<{ slug: string }> };
-
-function frDate(value: Date) {
-  return new Date(value).toLocaleDateString("fr-BE", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
-}
 
 async function loadArticle(slug: string) {
   const article = await prisma.news.findUnique({ where: { slug } });
@@ -187,8 +180,8 @@ export default async function ArticleRoute({ params }: RouteParams) {
     tag: article.category,
     title: article.title,
     desc: article.excerpt,
-    date: frDate(article.publishedAt ?? article.createdAt),
-    color: article.color || "#7C3AED",
+    date: formatDate(article.publishedAt ?? article.createdAt, locale),
+    color: article.color || "var(--glass-accent-deep)",
     readingTime: article.readingTime ?? undefined,
     popular: article.featured,
     // Image unique = illustration (hero) ; repli sur l'image héritée (legacy).
@@ -210,8 +203,8 @@ export default async function ArticleRoute({ params }: RouteParams) {
     tag: a.category,
     title: a.title,
     desc: a.excerpt,
-    date: frDate(a.publishedAt ?? a.createdAt),
-    color: a.color || "#7C3AED",
+    date: formatDate(a.publishedAt ?? a.createdAt, locale),
+    color: a.color || "var(--glass-accent-deep)",
     readingTime: a.readingTime ?? undefined,
     image: a.heroIllustration ?? a.image ?? undefined,
   }));
@@ -223,7 +216,6 @@ export default async function ArticleRoute({ params }: RouteParams) {
         related={relatedItems}
         articleHeroIllustration={newsItem.heroIllustration}
         isAdmin={user?.isAdmin === true}
-        accent="#7C3AED"
       />
       {/* Correction communautaire de traduction : ne s'affiche que hors FR.
           sourceText = contenu FR original (loaded), currentText = la

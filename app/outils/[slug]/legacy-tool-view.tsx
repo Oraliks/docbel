@@ -1,58 +1,62 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { ArrowLeftIcon, WrenchIcon } from "lucide-react";
 import { ToolPage } from "@/components/docbel/tool-page";
-import { Tool } from "@/lib/docbel-data";
+import { Button } from "@/components/ui/button";
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
+import type { Tool } from "@/lib/docbel-data";
+import { glyphForTool } from "@/lib/tool-glyphs";
 
 interface LegacyToolViewProps {
   tool: Tool | null;
 }
 
 export function LegacyToolView({ tool }: LegacyToolViewProps) {
+  const locale = useLocale();
   const router = useRouter();
   const t = useTranslations("public.outils");
 
   if (!tool) {
     return (
-      <section className="flex flex-col gap-6">
-        <button
-          type="button"
-          onClick={() => router.push("/")}
-          className="inline-flex w-fit items-center gap-2 rounded-full border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-4 py-2 text-[12.5px] font-semibold text-[color:var(--glass-ink-soft)] transition-colors outline-none hover:bg-white/55 focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)]"
-        >
-          <ArrowLeftIcon className="size-4" />
-          {t("backToHome")}
-        </button>
-
-        <div className="glass-surface flex flex-col items-center gap-3 px-6 py-16 text-center">
-          <span
-            className="flex size-14 items-center justify-center rounded-2xl text-white"
-            style={{
-              backgroundImage:
-                "linear-gradient(135deg, var(--glass-accent-a), var(--glass-accent-deep))",
-            }}
-          >
-            <WrenchIcon className="size-6" />
-          </span>
-          <h1 className="glass-display text-[24px] font-semibold">
-            {t("notFoundTitle")}
-          </h1>
-          <p className="max-w-md text-[13px] text-[color:var(--glass-ink-soft)]">
-            {t("notFoundBody")}
-          </p>
-        </div>
+      <section className="flex w-full flex-col gap-6">
+        <Empty className="glass-surface py-16">
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <WrenchIcon />
+            </EmptyMedia>
+            <EmptyTitle className="glass-display text-2xl">
+              {t("notFoundTitle")}
+            </EmptyTitle>
+            <EmptyDescription>{t("notFoundBody")}</EmptyDescription>
+          </EmptyHeader>
+          <EmptyContent>
+            <Button type="button" onClick={() => router.push("/outils")}>
+              <ArrowLeftIcon data-icon="inline-start" />
+              {t("backToCatalog")}
+            </Button>
+          </EmptyContent>
+        </Empty>
       </section>
     );
   }
 
+  const { hue } = glyphForTool(tool);
+
   return (
     <ToolPage
       tool={tool}
-      accent="#7C3AED"
-      onBack={() => router.back()}
-      lang="FR"
+      accent={hue}
+      onBack={() => router.push("/outils")}
+      lang={locale}
     />
   );
 }

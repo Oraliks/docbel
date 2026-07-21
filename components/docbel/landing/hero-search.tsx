@@ -1,36 +1,22 @@
 "use client";
 
-// Barre de recherche héroïque de la home.
-//
-// C'est volontairement un BOUTON stylisé comme un champ dépoli, pas un vrai
-// <input> : la saisie se fait dans la palette de recherche globale
-// (LandingCommandPalette, ouverte via `openSearch()` du contexte). On évite
-// ainsi une double gestion du focus champ → palette. Clic / Entrée / Espace
-// ouvrent la palette ; le focus seul ne déclenche rien (un changement de
-// contexte au focus piégerait la navigation clavier — WCAG 3.2.1).
+// Point d'entree recherche de l'accueil. Il ouvre la palette globale deja
+// chargee par le shell : aucun second moteur, aucun fetch au premier rendu.
 
-import { useEffect, useState, useSyncExternalStore } from "react";
-import { SearchIcon } from "lucide-react";
+import { useSyncExternalStore } from "react";
+import { ArrowRightIcon, SearchIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useAppState } from "@/lib/app-state-context";
 import { GLASS_INPUT } from "@/lib/glass-classes";
 
-/// Clés des exemples du domaine — le « placeholder » alterne doucement entre
-/// eux pour montrer ce que la recherche sait trouver (outils, documents,
-/// notions). Les valeurs (localisées) viennent des traductions.
 const SEARCH_EXAMPLE_KEYS = [
   "searchExample1",
   "searchExample2",
   "searchExample3",
-  "searchExample4",
 ] as const;
 
-/// Intervalle de rotation du placeholder (assez lent pour rester lisible).
-const ROTATE_INTERVAL_MS = 3600;
-
-// Détection de plateforme Apple (⌘K vs Ctrl K) hydration-safe : le serveur
-// rend « Ctrl K » (snapshot serveur), React resynchronise après hydratation —
-// sans warning de mismatch ni setState synchrone dans un effet.
+// Detection hydration-safe : le serveur rend Ctrl, puis le navigateur expose
+// eventuellement le raccourci Commande sans setState dans un effet.
 const subscribeNoop = () => () => {};
 function useIsApplePlatform(): boolean {
   return useSyncExternalStore(
@@ -44,67 +30,53 @@ export function HeroSearch() {
   const t = useTranslations("public.home");
   const { openSearch } = useAppState();
   const isApple = useIsApplePlatform();
-  const [exampleIndex, setExampleIndex] = useState(0);
-
-  // Rotation douce des exemples. Coupée si l'utilisateur préfère moins
-  // d'animations (le texte reste alors sur le premier exemple). setState
-  // uniquement dans le callback du timer (asynchrone — lint OK).
-  useEffect(() => {
-    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) {
-      return;
-    }
-    const id = window.setInterval(
-      () => setExampleIndex((i) => (i + 1) % SEARCH_EXAMPLE_KEYS.length),
-      ROTATE_INTERVAL_MS,
-    );
-    return () => window.clearInterval(id);
-  }, []);
-
   const shortcut = isApple ? "⌘" : "Ctrl";
 
   return (
-    <div role="search" aria-label={t("searchRegionLabel")} className="w-full">
+    <section
+      role="search"
+      aria-label={t("searchRegionLabel")}
+      className="glass-surface relative overflow-hidden p-3 sm:p-4"
+    >
+      <div
+        aria-hidden
+        data-a11y-secondary="true"
+        className="pointer-events-none absolute -top-16 right-8 size-36 rounded-full opacity-40 blur-3xl"
+        style={{ background: "var(--glass-accent-c)" }}
+      />
+
       <button
         type="button"
         onClick={openSearch}
         aria-label={t("searchOpenLabel", {
           modifier: isApple ? "cmd" : "ctrl",
         })}
-        className={`${GLASS_INPUT} search-glow flex h-14 w-full items-center gap-3 border px-5 text-left backdrop-blur-xl transition-colors hover:bg-white/55 sm:h-16 sm:gap-4 sm:px-6 dark:hover:bg-white/8`}
+        className={`${GLASS_INPUT} search-glow glass-interactive relative flex min-h-16 w-full items-center gap-3 border px-4 py-3 text-left backdrop-blur-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)] sm:gap-4 sm:px-5`}
       >
-        <SearchIcon
-          className="size-5 shrink-0 text-[color:var(--glass-ink-faint)]"
-          aria-hidden
-        />
+        <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[color:var(--glass-accent-deep)] text-[color:var(--glass-bg-a)] shadow-[0_8px_24px_-12px_var(--glass-accent-deep)]">
+          <SearchIcon className="size-5" aria-hidden />
+        </span>
 
-        {/* Pseudo-placeholder : préfixe stable + exemple qui tourne (fondu
-            via fadeInUp re-déclenché par la key ; statique en reduced-motion). */}
-        <span
-          aria-hidden
-          className="flex min-w-0 flex-1 items-baseline gap-1.5 text-[14px] sm:text-[15px]"
-        >
-          <span className="shrink-0 text-[color:var(--glass-ink-soft)]">
+        <span className="min-w-0 flex-1">
+          <span className="block text-[14px] font-bold text-[color:var(--glass-ink)] sm:text-[15px]">
             {t("searchPrefix")}
           </span>
-          <span
-            key={exampleIndex}
-            className="truncate animate-[fadeInUp_0.4s_ease] font-semibold text-[color:var(--glass-ink)] motion-reduce:animate-none"
-          >
-            «&nbsp;
-            {t(
-              SEARCH_EXAMPLE_KEYS[exampleIndex] as Parameters<typeof t>[0],
-            )}
-            &nbsp;»
+          <span className="mt-0.5 block truncate text-[12px] text-[color:var(--glass-ink-soft)] sm:text-[13px]">
+            {SEARCH_EXAMPLE_KEYS.map((key) => t(key)).join(" · ")}
           </span>
         </span>
 
         <kbd
           aria-hidden
-          className="hidden shrink-0 items-center gap-1 rounded-lg border border-[color:var(--glass-border)] bg-[color:var(--glass-surface-strong)] px-2 py-1 text-[11px] font-bold text-[color:var(--glass-ink-soft)] sm:inline-flex"
+          className="hidden shrink-0 rounded-lg border border-[color:var(--glass-border)] bg-[color:var(--glass-surface-strong)] px-2 py-1 text-[11px] font-bold text-[color:var(--glass-ink-soft)] sm:block"
         >
           {shortcut}&nbsp;K
         </kbd>
+        <ArrowRightIcon
+          className="size-5 shrink-0 text-[color:var(--glass-accent-deep)]"
+          aria-hidden
+        />
       </button>
-    </div>
+    </section>
   );
 }

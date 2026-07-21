@@ -20,10 +20,12 @@ import {
   updateAccessibilityPreferences,
   type DocbelTextSize,
 } from "@/lib/accessibility-preferences";
+import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
+  DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuItem,
@@ -31,6 +33,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Separator } from "@/components/ui/separator";
 import {
   Sheet,
   SheetContent,
@@ -40,16 +43,25 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import {
+  AccessibilityIcon,
   Building2Icon,
-  type LucideIcon,
+  CompassIcon,
+  ContrastIcon,
+  GaugeIcon,
+  HomeIcon,
+  ListChecksIcon,
   LogInIcon,
   LogOutIcon,
   MenuIcon,
   MoonIcon,
+  NewspaperIcon,
+  PauseIcon,
   SearchIcon,
   SettingsIcon,
   SunIcon,
   UserIcon,
+  WrenchIcon,
+  type LucideIcon,
 } from "lucide-react";
 
 interface LandingHeaderProps {
@@ -57,71 +69,60 @@ interface LandingHeaderProps {
   onSearchOpen: () => void;
 }
 
-// `tKey` is the i18n key under `public.chrome` for the item label.
 const NAV_ITEMS: ReadonlyArray<{
   id: string;
-  tKey: string;
-  href: string;
-  icon?: LucideIcon;
-}> = [
-  { id: "accueil", tKey: "navHome", href: "/" },
-  { id: "actualites", tKey: "navNews", href: "/actualites" },
-  { id: "mon-dossier", tKey: "navMyDossier", href: "/mon-dossier" },
-  { id: "mes-demarches", tKey: "navMesDemarches", href: "/mes-demarches" },
-  { id: "outils", tKey: "navTools", href: "/outils" },
-] as const;
-
-// Liens directs vers les landings marketing des segments employeur/partenaire.
-// Le citoyen est l'espace par défaut (`/`) et n'a pas de landing dédiée.
-const AUDIENCE_NAV_ITEMS: ReadonlyArray<{
-  id: string;
-  tKey: string;
+  tKey:
+    | "navHome"
+    | "navMyDossier"
+    | "navMesDemarches"
+    | "navTools"
+    | "quickNews";
   href: string;
   icon: LucideIcon;
 }> = [
-  { id: "employeurs", tKey: "navEmployers", href: "/p/employeur", icon: Building2Icon },
+  { id: "accueil", tKey: "navHome", href: "/", icon: HomeIcon },
+  {
+    id: "mon-dossier",
+    tKey: "navMyDossier",
+    href: "/mon-dossier",
+    icon: CompassIcon,
+  },
+  {
+    id: "mes-demarches",
+    tKey: "navMesDemarches",
+    href: "/mes-demarches",
+    icon: ListChecksIcon,
+  },
+  { id: "outils", tKey: "navTools", href: "/outils", icon: WrenchIcon },
+  {
+    id: "actualites",
+    tKey: "quickNews",
+    href: "/actualites",
+    icon: NewspaperIcon,
+  },
 ] as const;
 
-// Pick the nav item whose href is the longest prefix of the current pathname.
-// `/` is treated as an exact match so `/outils` doesn't also light up Accueil
-// (every pathname starts with `/`). Returns null on persona routes
-// (`/employeur`, `/partenaire`) and other unmatched paths — the brand chip
-// is the indicator there, no nav item should light up.
-/// Routes du funnel dossier qui n'ont pas d'item de nav propre : elles
-/// allument « Démarches » (id "mon-dossier") pour garder le repère
-/// « où suis-je » pendant tout le parcours.
+const AUDIENCE_NAV_ITEMS: ReadonlyArray<{
+  id: string;
+  tKey: "navEmployers";
+  href: string;
+  icon: LucideIcon;
+}> = [
+  {
+    id: "employeurs",
+    tKey: "navEmployers",
+    href: "/p/employeur",
+    icon: Building2Icon,
+  },
+] as const;
+
 const DOSSIER_FUNNEL_PREFIXES = [
-  "/d/",
+  "/mon-dossier",
+  "/onboarding",
   "/d",
-  "/document/",
+  "/document",
   "/reprendre",
 ] as const;
-
-function resolveActiveNav(
-  pathname: string,
-): (typeof NAV_ITEMS)[number]["id"] | null {
-  if (
-    DOSSIER_FUNNEL_PREFIXES.some(
-      (p) => pathname === p || pathname.startsWith(p.endsWith("/") ? p : `${p}/`) || pathname === p.replace(/\/$/, ""),
-    )
-  ) {
-    return "mon-dossier";
-  }
-  const match = [...NAV_ITEMS]
-    .filter((item) => {
-      if (item.href === "#") return false;
-      if (item.href === "/") return pathname === "/";
-      return pathname.startsWith(item.href);
-    })
-    .sort((a, b) => b.href.length - a.href.length)[0];
-  return match?.id ?? null;
-}
-
-// Layout only — the hover/focus/highlight background lives in glass.css
-// (Tailwind v4's arbitrary `/opacity` on var(...) doesn't resolve reliably
-// for `bg-[color:var(--…)]/22`, so a real CSS rule is more dependable).
-const ITEM_BASE =
-  "flex items-center gap-3 rounded-xl px-3 py-2 transition-colors";
 
 const TEXT_SIZE_STEPS: readonly DocbelTextSize[] = [
   "small",
@@ -130,8 +131,44 @@ const TEXT_SIZE_STEPS: readonly DocbelTextSize[] = [
   "xlarge",
 ];
 
+const TEXT_SIZE_KEYS: Record<
+  DocbelTextSize,
+  | "textSize.small"
+  | "textSize.normal"
+  | "textSize.large"
+  | "textSize.xlarge"
+> = {
+  small: "textSize.small",
+  normal: "textSize.normal",
+  large: "textSize.large",
+  xlarge: "textSize.xlarge",
+};
+
+const ITEM_BASE = "flex items-center gap-3 rounded-xl px-3 py-2";
+
+function matchesPath(pathname: string, href: string) {
+  return href === "/"
+    ? pathname === href
+    : pathname === href || pathname.startsWith(`${href}/`);
+}
+
+function resolveActiveNav(
+  pathname: string,
+): (typeof NAV_ITEMS)[number]["id"] | null {
+  if (DOSSIER_FUNNEL_PREFIXES.some((prefix) => matchesPath(pathname, prefix))) {
+    return "mon-dossier";
+  }
+
+  return (
+    [...NAV_ITEMS]
+      .filter((item) => matchesPath(pathname, item.href))
+      .sort((a, b) => b.href.length - a.href.length)[0]?.id ?? null
+  );
+}
+
 export function LandingHeader({ persona, onSearchOpen }: LandingHeaderProps) {
   const t = useTranslations("public.chrome");
+  const tAccessibility = useTranslations("public.accessibility");
   const router = useRouter();
   const pathname = usePathname();
   const visible = useScrollReveal();
@@ -146,12 +183,10 @@ export function LandingHeader({ persona, onSearchOpen }: LandingHeaderProps) {
     getAccessibilityPreferencesServerSnapshot,
   );
 
-  const current = AUDIENCES.find((aud) => aud.id === persona) ?? AUDIENCES[0];
-  const Icon = current.Icon;
+  const current = AUDIENCES.find((audience) => audience.id === persona) ?? AUDIENCES[0];
+  const PersonaIcon = current.Icon;
   const dark = resolvedTheme === "dark";
-  const textSizeIndex = TEXT_SIZE_STEPS.indexOf(
-    accessibilityPreferences.textSize,
-  );
+  const textSizeIndex = TEXT_SIZE_STEPS.indexOf(accessibilityPreferences.textSize);
   const canDecreaseTextSize = textSizeIndex > 0;
   const canIncreaseTextSize = textSizeIndex < TEXT_SIZE_STEPS.length - 1;
 
@@ -174,8 +209,9 @@ export function LandingHeader({ persona, onSearchOpen }: LandingHeaderProps) {
 
   const changeTextSize = (direction: -1 | 1) => {
     const nextTextSize = TEXT_SIZE_STEPS[textSizeIndex + direction];
-    if (!nextTextSize) return;
-    updateAccessibilityPreferences({ textSize: nextTextSize });
+    if (nextTextSize) {
+      updateAccessibilityPreferences({ textSize: nextTextSize });
+    }
   };
 
   const textSizeControls = (
@@ -192,10 +228,13 @@ export function LandingHeader({ persona, onSearchOpen }: LandingHeaderProps) {
         disabled={!canDecreaseTextSize}
         aria-label={t("decreaseTextSize")}
         title={t("decreaseTextSize")}
-        className="size-8 rounded-xl text-base text-[color:var(--glass-ink)] hover:bg-white/55 dark:hover:bg-white/10"
+        className="size-8 rounded-xl text-base"
       >
         <span aria-hidden>−</span>
       </Button>
+      <span className="sr-only">
+        {tAccessibility(TEXT_SIZE_KEYS[accessibilityPreferences.textSize])}
+      </span>
       <Button
         type="button"
         variant="ghost"
@@ -204,9 +243,73 @@ export function LandingHeader({ persona, onSearchOpen }: LandingHeaderProps) {
         disabled={!canIncreaseTextSize}
         aria-label={t("increaseTextSize")}
         title={t("increaseTextSize")}
-        className="size-8 rounded-xl text-base text-[color:var(--glass-ink)] hover:bg-white/55 dark:hover:bg-white/10"
+        className="size-8 rounded-xl text-base"
       >
         <span aria-hidden>+</span>
+      </Button>
+    </div>
+  );
+
+  const mobileAccessibilityControls = (
+    <div className="grid grid-cols-1 gap-2 px-4 pb-5 sm:grid-cols-2">
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        onClick={() => setTheme(dark ? "light" : "dark")}
+        className="min-h-11 justify-start"
+      >
+        {dark ? (
+          <SunIcon data-icon="inline-start" aria-hidden />
+        ) : (
+          <MoonIcon data-icon="inline-start" aria-hidden />
+        )}
+        {t("toggleTheme")}
+      </Button>
+      <Button
+        type="button"
+        variant={accessibilityPreferences.highContrast ? "default" : "outline"}
+        size="sm"
+        aria-pressed={accessibilityPreferences.highContrast}
+        onClick={() =>
+          updateAccessibilityPreferences({
+            highContrast: !accessibilityPreferences.highContrast,
+          })
+        }
+        className="min-h-11 justify-start"
+      >
+        <ContrastIcon data-icon="inline-start" aria-hidden />
+        {tAccessibility("contrast")}
+      </Button>
+      <Button
+        type="button"
+        variant={accessibilityPreferences.simpleMode ? "default" : "outline"}
+        size="sm"
+        aria-pressed={accessibilityPreferences.simpleMode}
+        onClick={() =>
+          updateAccessibilityPreferences({
+            simpleMode: !accessibilityPreferences.simpleMode,
+          })
+        }
+        className="min-h-11 justify-start"
+      >
+        <GaugeIcon data-icon="inline-start" aria-hidden />
+        {tAccessibility("simpleMode")}
+      </Button>
+      <Button
+        type="button"
+        variant={accessibilityPreferences.reducedMotion ? "default" : "outline"}
+        size="sm"
+        aria-pressed={accessibilityPreferences.reducedMotion}
+        onClick={() =>
+          updateAccessibilityPreferences({
+            reducedMotion: !accessibilityPreferences.reducedMotion,
+          })
+        }
+        className="min-h-11 justify-start"
+      >
+        <PauseIcon data-icon="inline-start" aria-hidden />
+        {tAccessibility("reduceMotion")}
       </Button>
     </div>
   );
@@ -214,62 +317,76 @@ export function LandingHeader({ persona, onSearchOpen }: LandingHeaderProps) {
   return (
     <header
       data-hidden={!visible}
-      className="glass-header-shell glass-surface sticky top-4 z-30 mx-auto flex w-full items-center gap-2 px-3 py-3 sm:gap-4 sm:px-5"
+      className="glass-header-shell glass-surface sticky top-3 z-30 flex w-full items-center gap-2 px-3 py-2.5 sm:top-4 sm:gap-3 sm:px-4"
     >
       <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
         <SheetTrigger
-          className="flex size-10 items-center justify-center rounded-2xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] text-[color:var(--glass-ink)] transition-colors hover:bg-white/55 dark:hover:bg-white/10 xl:hidden"
-          aria-label={t("menu")}
+          render={
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-lg"
+              aria-label={t("menu")}
+              className="size-11 rounded-2xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] min-[1180px]:hidden"
+            />
+          }
         >
-          <MenuIcon className="size-5" />
+          <MenuIcon aria-hidden />
         </SheetTrigger>
         <SheetContent
           side="left"
-          className="glass-popup glass-surface-strong border-r-0 p-0 text-[color:var(--glass-ink)] sm:max-w-xs"
+          className="glass-popup glass-surface-strong gap-0 overflow-y-auto border-r-0 p-0 text-[color:var(--glass-ink)] sm:max-w-sm"
         >
-          <SheetHeader className="border-b border-[color:var(--glass-ink-line)] p-5">
-            <SheetTitle className="text-[18px] font-extrabold tracking-tight">
+          <SheetHeader className="px-5 py-5">
+            <SheetTitle className="text-lg font-extrabold tracking-tight">
               {siteName}
             </SheetTitle>
-            <SheetDescription className="text-[11px] font-bold uppercase tracking-[0.14em] text-[color:var(--glass-ink-soft)]">
+            <SheetDescription className="text-xs font-bold uppercase tracking-[0.14em] text-[color:var(--glass-ink-soft)]">
               {current.label}
             </SheetDescription>
           </SheetHeader>
-          <nav className="flex flex-col gap-1 p-3">
+          <Separator className="bg-[color:var(--glass-ink-line)]" />
+          <div className="px-4 pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              size="lg"
+              onClick={() => {
+                setMobileOpen(false);
+                onSearchOpen();
+              }}
+              className="min-h-12 w-full justify-start rounded-2xl"
+            >
+              <SearchIcon data-icon="inline-start" aria-hidden />
+              <span className="truncate">{t("searchPlaceholder")}</span>
+            </Button>
+          </div>
+          <nav aria-label={t("menu")} className="flex flex-col gap-1 p-4">
             {NAV_ITEMS.map((item) => {
               const active = item.id === activeNav;
               const ItemIcon = item.icon;
-              const className = `inline-flex items-center gap-2 rounded-xl px-3.5 py-2.5 text-[14px] font-semibold transition-colors ${
-                active
-                  ? "bg-white/60 text-[color:var(--glass-ink)] dark:bg-white/10"
-                  : "text-[color:var(--glass-ink-soft)] hover:bg-white/40 dark:hover:bg-white/8"
-              }`;
-              if (item.href === "#") {
-                return (
-                  <span
-                    key={item.id}
-                    className={`${className} cursor-not-allowed opacity-60`}
-                  >
-                    {ItemIcon ? <ItemIcon className="size-4" /> : null}
-                    {t(item.tKey as Parameters<typeof t>[0])}
-                  </span>
-                );
-              }
               return (
                 <Link
                   key={item.id}
                   href={item.href}
+                  aria-current={active ? "page" : undefined}
                   onClick={() => setMobileOpen(false)}
-                  className={className}
+                  className={cn(
+                    "flex min-h-11 items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-semibold outline-none transition-colors focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)]",
+                    active
+                      ? "bg-[color:var(--glass-surface-strong)] text-[color:var(--glass-ink)] shadow-[inset_0_0_0_1px_var(--glass-border)]"
+                      : "text-[color:var(--glass-ink-soft)] hover:bg-[color:var(--glass-surface)] hover:text-[color:var(--glass-ink)]",
+                  )}
                 >
-                  {ItemIcon ? <ItemIcon className="size-4" /> : null}
-                  {t(item.tKey as Parameters<typeof t>[0])}
+                  <ItemIcon className="size-4" aria-hidden />
+                  {t(item.tKey)}
                 </Link>
               );
             })}
           </nav>
-          <div className="border-t border-[color:var(--glass-ink-line)] p-3">
-            <p className="px-3 pb-2 text-[10px] font-extrabold uppercase tracking-[0.14em] text-[color:var(--glass-ink-faint)]">
+          <Separator className="bg-[color:var(--glass-ink-line)]" />
+          <div className="p-4">
+            <p className="px-3 pb-2 text-xs font-extrabold uppercase tracking-[0.14em] text-[color:var(--glass-ink-faint)]">
               {t("discover")}
             </p>
             {AUDIENCE_NAV_ITEMS.map((item) => {
@@ -279,102 +396,72 @@ export function LandingHeader({ persona, onSearchOpen }: LandingHeaderProps) {
                   key={item.id}
                   href={item.href}
                   onClick={() => setMobileOpen(false)}
-                  className="flex items-center gap-3 rounded-xl px-3 py-2 transition-colors hover:bg-white/40 dark:hover:bg-white/8"
+                  className="flex min-h-11 items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold outline-none transition-colors hover:bg-[color:var(--glass-surface)] focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)]"
                 >
-                  <span
-                    className="flex size-8 items-center justify-center rounded-lg text-[#2a0f4d] dark:text-white"
-                    style={{
-                      backgroundImage:
-                        item.id === "employeurs"
-                          ? "linear-gradient(135deg, var(--glass-accent-c), var(--glass-accent-d))"
-                          : "linear-gradient(135deg, var(--glass-accent-deep), var(--glass-accent-a))",
-                    }}
-                  >
-                    <ItemIcon className="size-4" strokeWidth={2.2} />
-                  </span>
-                  <span className="flex-1 text-[13px] font-semibold">
-                    {t(item.tKey as Parameters<typeof t>[0])}
-                  </span>
+                  <ItemIcon className="size-4" aria-hidden />
+                  {t(item.tKey)}
                 </Link>
               );
             })}
+            <div className="mt-3 flex items-center justify-between gap-3 px-3">
+              <LocaleSwitcher
+                localeList={publicLocales}
+                className="min-h-11 rounded-2xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-3"
+              />
+              {textSizeControls}
+            </div>
           </div>
-          <div className="flex items-center justify-between gap-3 border-t border-[color:var(--glass-ink-line)] p-3 sm:hidden">
-            <span className="px-3 text-[12px] font-bold text-[color:var(--glass-ink-soft)]">
-              {t("textSizeControls")}
-            </span>
-            {textSizeControls}
-          </div>
+          <Separator className="bg-[color:var(--glass-ink-line)]" />
+          <p className="px-5 pt-4 pb-2 text-xs font-extrabold uppercase tracking-[0.14em] text-[color:var(--glass-ink-faint)]">
+            {tAccessibility("title")}
+          </p>
+          {mobileAccessibilityControls}
         </SheetContent>
       </Sheet>
 
-      <div className="flex items-center gap-1">
-        <Link
-          href="/"
-          aria-label={t("backToHome")}
-          className="flex size-10 items-center justify-center rounded-xl text-white shadow-[0_4px_16px_rgba(159,124,255,0.45)] outline-none transition-transform hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)]"
+      <Link
+        href="/"
+        aria-label={t("backToHome")}
+        className="flex min-w-0 items-center gap-2 rounded-2xl p-1 outline-none transition-colors hover:bg-[color:var(--glass-surface)] focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)]"
+      >
+        <span
+          className="flex size-9 shrink-0 items-center justify-center rounded-xl text-primary-foreground shadow-[0_4px_16px_color-mix(in_oklab,var(--glass-accent-deep)_35%,transparent)] sm:size-10"
           style={{
             backgroundImage:
               "linear-gradient(135deg, var(--glass-accent-a), var(--glass-accent-c))",
           }}
         >
-          <Icon className="size-5" />
-        </Link>
-
-        <Link
-          href="/"
-          className="flex items-center gap-2 rounded-2xl px-2 py-1 text-left transition hover:bg-white/40 dark:hover:bg-white/5"
-        >
-          <span className="hidden flex-col leading-tight sm:flex">
-            <span className="text-[18px] font-extrabold tracking-tight">{siteName}</span>
-            <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-[color:var(--glass-ink-soft)]">
-              <span
-                className="mr-1.5 inline-block size-1.5 rounded-full align-middle"
-                style={{ background: "var(--glass-accent-a)" }}
-              />
-              {current.label}
-            </span>
+          <PersonaIcon className="size-5" aria-hidden />
+        </span>
+        <span className="hidden min-w-0 flex-col leading-tight sm:flex">
+          <span className="truncate text-lg font-extrabold tracking-tight">{siteName}</span>
+          <span className="truncate text-[10px] font-bold uppercase tracking-[0.14em] text-[color:var(--glass-ink-soft)]">
+            {current.label}
           </span>
-        </Link>
-      </div>
+        </span>
+      </Link>
 
-      <nav className="ml-2 hidden items-center gap-0.5 xl:flex">
+      <nav
+        aria-label={t("menu")}
+        className="ml-1 hidden items-center gap-0.5 min-[1180px]:flex"
+      >
         {NAV_ITEMS.map((item) => {
           const active = item.id === activeNav;
           const ItemIcon = item.icon;
-          const className = `inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-[13px] font-semibold transition-colors ${
-            active
-              ? "bg-white/60 text-[color:var(--glass-ink)] shadow-[inset_0_0_0_1px_var(--glass-border)] dark:bg-white/10"
-              : "text-[color:var(--glass-ink-soft)] hover:bg-white/40 hover:text-[color:var(--glass-ink)] dark:hover:bg-white/8"
-          }`;
-          if (item.href === "#") {
-            return (
-              <span key={item.id} className={`${className} cursor-not-allowed opacity-60`}>
-                {ItemIcon ? <ItemIcon className="size-4" /> : null}
-                {t(item.tKey as Parameters<typeof t>[0])}
-              </span>
-            );
-          }
           return (
-            <Link key={item.id} href={item.href} className={className}>
-              {ItemIcon ? <ItemIcon className="size-4" /> : null}
-              {t(item.tKey as Parameters<typeof t>[0])}
-            </Link>
-          );
-        })}
-        <div className="mx-1 h-6 w-px bg-[color:var(--glass-ink-line)]" />
-        {AUDIENCE_NAV_ITEMS.map((item) => {
-          const ItemIcon = item.icon;
-          const active = pathname.startsWith(item.href);
-          const className = `inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-[13px] font-semibold transition-colors ${
-            active
-              ? "bg-white/60 text-[color:var(--glass-ink)] shadow-[inset_0_0_0_1px_var(--glass-border)] dark:bg-white/10"
-              : "text-[color:var(--glass-ink-soft)] hover:bg-white/40 hover:text-[color:var(--glass-ink)] dark:hover:bg-white/8"
-          }`;
-          return (
-            <Link key={item.id} href={item.href} className={className}>
-              <ItemIcon className="size-4" />
-              {t(item.tKey as Parameters<typeof t>[0])}
+            <Link
+              key={item.id}
+              href={item.href}
+              aria-current={active ? "page" : undefined}
+              className={cn(
+                "inline-flex min-h-10 items-center gap-1.5 rounded-xl px-2.5 py-2 text-[13px] font-semibold outline-none transition-colors focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)]",
+                active
+                  ? "bg-[color:var(--glass-surface-strong)] text-[color:var(--glass-ink)] shadow-[inset_0_0_0_1px_var(--glass-border)]"
+                  : "text-[color:var(--glass-ink-soft)] hover:bg-[color:var(--glass-surface)] hover:text-[color:var(--glass-ink)]",
+              )}
+            >
+              <ItemIcon className="size-3.5" aria-hidden />
+              {t(item.tKey)}
             </Link>
           );
         })}
@@ -384,111 +471,172 @@ export function LandingHeader({ persona, onSearchOpen }: LandingHeaderProps) {
         type="button"
         onClick={onSearchOpen}
         aria-label={t("search")}
-        className="ml-auto hidden min-w-[240px] items-center gap-2.5 rounded-2xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-4 py-2.5 text-[13px] text-[color:var(--glass-ink-soft)] transition-colors hover:bg-white/55 dark:hover:bg-white/8 min-[1600px]:flex"
+        className="search-glow ml-auto flex size-11 shrink-0 items-center justify-center rounded-2xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] text-[color:var(--glass-ink-soft)] outline-none transition-colors hover:bg-[color:var(--glass-surface-strong)] hover:text-[color:var(--glass-ink)] md:min-w-48 md:flex-1 md:justify-start md:gap-2.5 md:px-3 min-[1180px]:max-w-64 min-[1180px]:flex-none"
       >
-        <SearchIcon className="size-4" />
-        <span className="truncate">{t("searchPlaceholder")}</span>
-        <kbd className="ml-auto rounded-md bg-[color:var(--glass-surface-strong)] px-1.5 py-0.5 text-[10px] font-semibold">
+        <SearchIcon className="size-4 shrink-0" aria-hidden />
+        <span className="hidden min-w-0 flex-1 truncate text-left text-[13px] md:block">
+          {t("searchPlaceholder")}
+        </span>
+        <kbd className="hidden shrink-0 rounded-md bg-[color:var(--glass-surface-strong)] px-1.5 py-0.5 text-[10px] font-semibold lg:block">
           ⌘K
         </kbd>
       </button>
 
-      <Button
-        variant="ghost"
-        size="icon-sm"
-        onClick={onSearchOpen}
-        aria-label={t("search")}
-        className="ml-auto size-10 rounded-2xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] text-[color:var(--glass-ink)] hover:bg-white/55 dark:hover:bg-white/10 min-[1600px]:hidden"
-      >
-        <SearchIcon />
-      </Button>
-
-      <div className="flex items-center gap-2">
+      <div className="hidden items-center gap-1.5 md:flex">
         <LocaleSwitcher
           localeList={publicLocales}
-          className="h-10 rounded-2xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-2.5 text-[color:var(--glass-ink)] hover:bg-white/55 dark:hover:bg-white/10"
+          compact
+          className="min-h-10 rounded-2xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-2.5"
         />
         <Button
+          type="button"
           variant="ghost"
-          size="icon-sm"
+          size="icon-lg"
           onClick={() => setTheme(dark ? "light" : "dark")}
-          className="size-10 rounded-2xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] text-[color:var(--glass-ink)] hover:bg-white/55 dark:hover:bg-white/10"
+          className="size-10 rounded-2xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)]"
           aria-label={t("toggleTheme")}
         >
-          {dark ? <SunIcon /> : <MoonIcon />}
+          {dark ? <SunIcon aria-hidden /> : <MoonIcon aria-hidden />}
         </Button>
-        <div className="hidden sm:block">{textSizeControls}</div>
-        <NotificationBell />
-
-        {userLoggedIn ? (
-          <DropdownMenu>
-            <DropdownMenuTrigger className="flex items-center gap-2 rounded-full border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] p-1 transition-colors hover:bg-white/55 dark:hover:bg-white/8 2xl:pr-3.5">
-              <Avatar size="sm">
-                <AvatarFallback
-                  className="text-[11px] font-bold text-white"
-                  style={{
-                    backgroundImage:
-                      "linear-gradient(135deg, var(--glass-accent-c), var(--glass-accent-d))",
-                  }}
-                >
-                  {initials}
-                </AvatarFallback>
-              </Avatar>
-              <span className="hidden max-w-[120px] truncate text-[12.5px] font-bold 2xl:inline">
-                {userName.split(" ")[0]}
-              </span>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent
-              align="end"
-              className="glass-popup glass-surface-strong min-w-[220px] border-0 p-2 text-[color:var(--glass-ink)]"
-            >
-              <DropdownMenuGroup>
-                <DropdownMenuLabel className="px-3 pt-2 pb-1 text-[10px] font-extrabold uppercase tracking-[0.14em] text-[color:var(--glass-ink-faint)]">
-                  {t("myAccount")}
-                </DropdownMenuLabel>
-              </DropdownMenuGroup>
-              <DropdownMenuItem
-                render={<Link href="/profil" />}
-                className={`${ITEM_BASE} text-[13px]`}
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            render={
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-lg"
+                aria-label={tAccessibility("title")}
+                className="size-10 rounded-2xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)]"
+              />
+            }
+          >
+            <AccessibilityIcon aria-hidden />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent
+            align="end"
+            className="glass-popup glass-surface-strong min-w-64 border-0 p-2 text-[color:var(--glass-ink)]"
+          >
+            <DropdownMenuGroup>
+              <DropdownMenuLabel className="px-3 pt-2 pb-1 text-xs font-extrabold uppercase tracking-[0.14em] text-[color:var(--glass-ink-faint)]">
+                {tAccessibility("title")}
+              </DropdownMenuLabel>
+              <div className="flex items-center justify-between gap-3 px-3 py-2">
+                <span className="text-sm font-semibold">
+                  {tAccessibility(TEXT_SIZE_KEYS[accessibilityPreferences.textSize])}
+                </span>
+                {textSizeControls}
+              </div>
+            </DropdownMenuGroup>
+            <DropdownMenuSeparator className="bg-[color:var(--glass-ink-line)]" />
+            <DropdownMenuGroup>
+              <DropdownMenuCheckboxItem
+                checked={accessibilityPreferences.highContrast}
+                onCheckedChange={(checked) =>
+                  updateAccessibilityPreferences({ highContrast: checked })
+                }
+                className={ITEM_BASE}
               >
-                <UserIcon className="size-4" />
+                {tAccessibility("contrast")}
+              </DropdownMenuCheckboxItem>
+              <DropdownMenuCheckboxItem
+                checked={accessibilityPreferences.simpleMode}
+                onCheckedChange={(checked) =>
+                  updateAccessibilityPreferences({ simpleMode: checked })
+                }
+                className={ITEM_BASE}
+              >
+                {tAccessibility("simpleMode")}
+              </DropdownMenuCheckboxItem>
+              <DropdownMenuCheckboxItem
+                checked={accessibilityPreferences.reducedMotion}
+                onCheckedChange={(checked) =>
+                  updateAccessibilityPreferences({ reducedMotion: checked })
+                }
+                className={ITEM_BASE}
+              >
+                {tAccessibility("reduceMotion")}
+              </DropdownMenuCheckboxItem>
+            </DropdownMenuGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
+      <div className="hidden sm:block">
+        <NotificationBell />
+      </div>
+
+      {userLoggedIn ? (
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            render={
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-lg"
+                aria-label={t("myAccount")}
+                className="size-11 rounded-full border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] p-1 xl:w-auto xl:px-1 xl:pr-3"
+              />
+            }
+          >
+            <Avatar size="sm">
+              <AvatarFallback
+                className="text-xs font-bold text-primary-foreground"
+                style={{
+                  backgroundImage:
+                    "linear-gradient(135deg, var(--glass-accent-c), var(--glass-accent-d))",
+                }}
+              >
+                {initials}
+              </AvatarFallback>
+            </Avatar>
+            <span className="hidden max-w-28 truncate text-xs font-bold xl:inline">
+              {userName.split(" ")[0]}
+            </span>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent
+            align="end"
+            className="glass-popup glass-surface-strong min-w-56 border-0 p-2 text-[color:var(--glass-ink)]"
+          >
+            <DropdownMenuGroup>
+              <DropdownMenuLabel className="px-3 pt-2 pb-1 text-xs font-extrabold uppercase tracking-[0.14em] text-[color:var(--glass-ink-faint)]">
+                {t("myAccount")}
+              </DropdownMenuLabel>
+              <DropdownMenuItem render={<Link href="/profil" />} className={ITEM_BASE}>
+                <UserIcon aria-hidden />
                 <span className="flex-1 truncate font-semibold">{userName}</span>
               </DropdownMenuItem>
               {userRole === "admin" ? (
                 <DropdownMenuItem
-                  render={
-                    <a href="/admin" target="_blank" rel="noopener noreferrer" />
-                  }
-                  className={`${ITEM_BASE} text-[13px]`}
+                  render={<a href="/admin" target="_blank" rel="noopener noreferrer" />}
+                  className={ITEM_BASE}
                 >
-                  <SettingsIcon className="size-4" />
+                  <SettingsIcon aria-hidden />
                   {t("administration")}
                 </DropdownMenuItem>
               ) : null}
-              <DropdownMenuSeparator className="my-1 bg-[color:var(--glass-ink-line)]" />
-              <DropdownMenuItem
-                onClick={handleSignOut}
-                className={`${ITEM_BASE} text-[13px] text-[color:var(--glass-ink-soft)]`}
-              >
-                <LogOutIcon className="size-4" />
+            </DropdownMenuGroup>
+            <DropdownMenuSeparator className="bg-[color:var(--glass-ink-line)]" />
+            <DropdownMenuGroup>
+              <DropdownMenuItem onClick={handleSignOut} className={ITEM_BASE}>
+                <LogOutIcon aria-hidden />
                 {t("signOut")}
               </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        ) : (
-          // Déconnecté : pas d'avatar ni de « Invité » — lien direct de connexion.
-          <Link
-            href="/login"
-            aria-label={t("signIn")}
-            className="flex items-center gap-2 rounded-full border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-3 py-2 text-[color:var(--glass-ink)] outline-none transition-colors hover:bg-white/55 focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)] dark:hover:bg-white/8"
-          >
-            <LogInIcon className="size-4" />
-            <span className="hidden text-[12.5px] font-bold sm:inline">
-              {t("signIn")}
-            </span>
-          </Link>
-        )}
-      </div>
+            </DropdownMenuGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ) : (
+        <Button
+          render={<Link href="/login" />}
+          nativeButton={false}
+          variant="ghost"
+          size="icon-lg"
+          aria-label={t("signIn")}
+          className="size-11 rounded-full border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] lg:w-auto lg:px-3"
+        >
+          <LogInIcon data-icon="inline-start" aria-hidden />
+          <span className="hidden text-xs font-bold lg:inline">{t("signIn")}</span>
+        </Button>
+      )}
     </header>
   );
 }

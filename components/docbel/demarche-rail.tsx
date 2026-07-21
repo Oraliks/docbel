@@ -13,6 +13,7 @@ import {
   FolderOpen,
   Lock,
 } from "lucide-react";
+import { ProgressFeedback } from "@/components/docbel/progress-feedback";
 import { GLASS_INPUT } from "@/lib/glass-classes";
 import type { DemandeSummary } from "@/lib/bundles/demande-summary";
 import type { DemarcheRailModel, RailDoc, RailStepState } from "@/lib/bundles/rail-model";
@@ -162,6 +163,18 @@ function RailBody({
             total: model.documents.totalCount,
           })}
         >
+          <ProgressFeedback
+            label={t("railDocsProgress", {
+              completed: model.documents.completedCount,
+              total: model.documents.totalCount,
+            })}
+            value={model.documents.completedCount}
+            max={Math.max(1, model.documents.totalCount)}
+            state={model.documents.state === "done" ? "done" : "current"}
+            compact
+            labelMode="sr-only"
+            className="mt-2"
+          />
           <ul className="mt-1.5 flex flex-col gap-0.5">
             {model.documents.docs.map((doc) => (
               <RailDocRow
@@ -229,7 +242,7 @@ function RailStep({
   const t = useTranslations("public.dossier");
   const badge =
     state === "done" ? (
-      <CheckCircle2 className="size-5 shrink-0 text-emerald-600" aria-hidden />
+      <CheckCircle2 className="size-5 shrink-0 text-[color:var(--success)]" aria-hidden />
     ) : state === "locked" ? (
       <Lock className="size-4 shrink-0 text-[color:var(--glass-ink-faint)]" aria-hidden />
     ) : (
@@ -277,7 +290,7 @@ function RailDocRow({ doc, href, active }: { doc: RailDoc; href: string | null; 
   const t = useTranslations("public.dossier");
   const icon =
     doc.state === "done" ? (
-      <CheckCircle2 className="size-3.5 shrink-0 text-emerald-600" aria-hidden />
+      <CheckCircle2 className="size-3.5 shrink-0 text-[color:var(--success)]" aria-hidden />
     ) : doc.state === "pending" ? (
       <Clock className="size-3.5 shrink-0 text-[color:var(--glass-ink-faint)]" aria-hidden />
     ) : (

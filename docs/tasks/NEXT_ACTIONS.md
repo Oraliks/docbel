@@ -32,7 +32,15 @@ Légende priorité : **P0** critique · **P1** important · **P2** souhaitable �
 | 21 | P2 | Dette | Identifier les 3 vrais noms AcroForm des dates de modification C1 (adresse/situation familiale/compte) via `scripts/dump-c1.ts` et stamper `dateModificationEffective` dessus à la génération PDF | `lib/pdf-forms/seed/c1-fields-improvements.ts`, `lib/pdf-forms/filler.ts` | Faible | `pnpm test` + génération PDF réelle | à faire |
 | 22 | P3 | RioLex | Mappings « Codes ONEM liés » : **99 articles peuplés** via `scripts/generate-lookup-refs.ts` — code#→article# (sanction/admissibilité/indemnisation) **+ pont thématique dispo S38 / vérification V** (lien « table entière » sur articles titrés disponibilité/surveillance/révision/vérification, dont art. 168bis). Abrogés + pseudo-articles méta exclus, variantes Y/Z écartées. **Reste : QA visuelle Oraliks** | `lib/data/riolex-lookup-refs.json`, `scripts/generate-lookup-refs.ts` | Faible | `pnpm attach:lookup-refs --dry` + fiches article | en cours |
 
-## Plans en attente de validation
+## Plans de design
+- **Refonte design complète du front public** — **VAGUE PUBLIQUE V1 LIVRÉE le 2026-07-21** →
+  [2026-07-21-refonte-design-public-docbel.md](../superpowers/plans/2026-07-21-refonte-design-public-docbel.md).
+  Direction hybride : accueil « guichet guidé » + cockpit `/mes-demarches` + portail éditorial/outils.
+  Gamification douce intégrée comme règle transversale : progression, micro-feedback et célébration sobre,
+  jamais de points/classements/streaks ni d'effet festif sur une inéligibilité ou un résultat réglementaire.
+  Fondations, shell, accueil, guichet, cockpit, reprise, outils et actualités livrés ; build 235 pages,
+  i18n, smoke test responsive/sombre et vérification réglementaire validés. Front public uniquement,
+  zéro migration et aucune nouvelle bibliothèque d'animation.
 - **Refonte parcours citoyen « Mes démarches »** — **VALIDÉ par Oraliks 2026-07-19, prêt à exécuter** →
   [2026-07-19-parcours-mes-demarches.md](../superpowers/plans/2026-07-19-parcours-mes-demarches.md).
   29 tâches en 5 lots, ordre **0 → 1 → 3 → 2 → 4** : quick wins (liens qui perdent `bundleRun`,

@@ -5,6 +5,7 @@ import { localizeRecords } from "@/lib/i18n/content";
 import { ActualitesView } from "@/components/docbel/actualites-view";
 import type { NewsItem } from "@/lib/docbel-data";
 import { resolveArticleImage } from "@/lib/featured-image";
+import { formatDate } from "@/lib/i18n/format";
 
 export const dynamic = "force-dynamic";
 
@@ -16,9 +17,13 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-export default async function ActualitesRoute({ searchParams }: { searchParams: Promise<{ cat?: string }> }) {
+export default async function ActualitesRoute({
+  searchParams,
+}: {
+  searchParams: Promise<{ cat?: string }>;
+}) {
   const { cat } = await searchParams;
-  const [articles, cats] = await Promise.all([
+  const [articles, cats, locale] = await Promise.all([
     prisma.news.findMany({
       where: { status: "published" },
       orderBy: { publishedAt: "desc" },
@@ -39,14 +44,15 @@ export default async function ActualitesRoute({ searchParams }: { searchParams: 
       },
     }),
     prisma.category.findMany({
+      take: 100,
       select: { name: true, color: true, illustrationUrl: true },
     }),
+    getLocale(),
   ]);
 
   const catMap = new Map(cats.map((c) => [c.name, c]));
 
   // Overlay traductions DB (NL/EN…) sur les champs affichés ; no-op si FR.
-  const locale = await getLocale();
   const localized = await localizeRecords("News", articles, ["title", "excerpt"], locale);
 
   const initialArticles: NewsItem[] = localized.map((article) => ({
@@ -55,14 +61,8 @@ export default async function ActualitesRoute({ searchParams }: { searchParams: 
     tag: article.category,
     title: article.title,
     desc: article.excerpt,
-    date: article.publishedAt
-      ? new Date(article.publishedAt).toLocaleDateString("fr-BE", {
-          year: "numeric",
-          month: "short",
-          day: "numeric",
-        })
-      : "",
-    color: article.color || "#7C3AED",
+    date: article.publishedAt ? formatDate(article.publishedAt, locale) : "",
+    color: article.color || "var(--glass-accent-deep)",
     readingTime: article.readingTime ?? undefined,
     popular: article.featured,
     image: resolveArticleImage({

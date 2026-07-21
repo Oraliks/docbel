@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useTranslations } from "next-intl";
 import {
   ArrowRightIcon,
@@ -83,7 +83,7 @@ const RESOURCE_BG: Record<ResourceItem["variant"], string> = {
   a: "linear-gradient(135deg, var(--glass-accent-a), var(--glass-accent-c))",
   b: "linear-gradient(135deg, var(--glass-accent-c), var(--glass-accent-d))",
   c: "linear-gradient(135deg, var(--glass-accent-deep), var(--glass-accent-a))",
-  d: "linear-gradient(135deg, var(--glass-accent-d), #FFE070)",
+  d: "linear-gradient(135deg, var(--glass-accent-d), var(--glass-warning))",
 };
 
 // Icône par catégorie d'événement de vie (cf. DocumentBundle.lifeEventCategory :
@@ -102,45 +102,12 @@ function bundleIcon(category: string | null): LucideIcon {
   return CATEGORY_ICONS[category.toLowerCase()] ?? FolderOpenIcon;
 }
 
-// Abréviations de mois (clés i18n) — l'ordre suit getMonth() (0 = janvier).
-const MONTH_KEYS = [
-  "monthJan",
-  "monthFeb",
-  "monthMar",
-  "monthApr",
-  "monthMay",
-  "monthJun",
-  "monthJul",
-  "monthAug",
-  "monthSep",
-  "monthOct",
-  "monthNov",
-  "monthDec",
-] as const;
-
-function splitDate(date: string, monthLabels: readonly string[]) {
-  const parsed = new Date(date);
-  if (!Number.isNaN(parsed.getTime())) {
-    return {
-      day: String(parsed.getDate()).padStart(2, "0"),
-      month: monthLabels[parsed.getMonth()],
-    };
-  }
-  const tokens = date.split(/\s+/);
-  const day = tokens[0] ?? "—";
-  const month = (tokens[1] ?? "").toUpperCase().slice(0, 4);
-  return { day, month };
-}
-
 export function LandingBottom({
   news,
   loading = false,
   bundles,
 }: LandingBottomProps) {
-  const router = useRouter();
   const t = useTranslations("public.home");
-  // Libellés de mois résolus une fois (clés dynamiques → cast requis).
-  const monthLabels = MONTH_KEYS.map((key) => t(key as Parameters<typeof t>[0]));
   const visibleNews = news.slice(0, 4);
   // Dossiers réels disponibles → ils remplacent les guides statiques du
   // panneau « Ressources » ; sinon le rendu d'origine est conservé tel quel.
@@ -154,14 +121,13 @@ export function LandingBottom({
           <h2 className="glass-display text-[24px] font-semibold leading-none">
             {t("recentNewsTitle")}
           </h2>
-          <button
-            type="button"
-            onClick={() => router.push("/actualites")}
-            className="inline-flex items-center gap-1.5 text-[12.5px] font-semibold text-[color:var(--glass-ink-soft)] transition hover:text-[color:var(--glass-ink)]"
+          <Link
+            href="/actualites"
+            className="glass-interactive inline-flex min-h-11 items-center gap-1.5 rounded-xl px-2 text-[12.5px] font-semibold text-[color:var(--glass-ink-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)]"
           >
             {t("seeAll")}
-            <ArrowRightIcon className="size-3.5" />
-          </button>
+            <ArrowRightIcon className="size-3.5" aria-hidden />
+          </Link>
         </div>
         <div className="flex flex-col">
           {loading ? (
@@ -189,32 +155,20 @@ export function LandingBottom({
             </p>
           ) : (
             visibleNews.map((item, index) => {
-              const { day, month } = splitDate(item.date, monthLabels);
               return (
-                <button
+                <Link
                   key={item.id}
-                  type="button"
-                  onClick={() =>
-                    router.push(`/actualites/${item.slug ?? item.id}`)
-                  }
-                  className={`-mx-3 grid grid-cols-[60px_1fr_auto] items-center gap-4 rounded-xl px-3 py-3.5 text-left outline-none transition-colors hover:bg-white/45 focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent dark:hover:bg-white/[0.05] ${
+                  href={`/actualites/${item.slug ?? item.id}`}
+                  className={`glass-interactive -mx-3 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-xl px-3 py-3.5 text-left outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)] sm:grid-cols-[7rem_minmax(0,1fr)_auto] ${
                     index < visibleNews.length - 1
                       ? "border-b border-[color:var(--glass-ink-line)]"
                       : ""
                   }`}
                 >
-                  <div className="text-center">
-                    <div className="glass-display text-[22px] font-semibold leading-none">
-                      {day}
-                    </div>
-                    <div
-                      className="mt-0.5 text-[11px] font-bold uppercase tracking-[0.05em]"
-                      style={{ color: "var(--glass-accent-deep)" }}
-                    >
-                      {month}
-                    </div>
-                  </div>
-                  <div>
+                  <time className="col-span-2 text-xs font-bold text-[color:var(--glass-accent-deep)] sm:col-span-1">
+                    {item.date}
+                  </time>
+                  <div className="min-w-0">
                     <div className="text-[14.5px] font-bold tracking-tight">{item.title}</div>
                     <div className="mt-1 text-[11.5px] text-[color:var(--glass-ink-faint)]">
                       {item.readingTime
@@ -222,13 +176,10 @@ export function LandingBottom({
                         : item.desc.slice(0, 80)}
                     </div>
                   </div>
-                  <span
-                    className="rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.05em] text-[color:var(--glass-ink-soft)]"
-                    style={{ background: "var(--glass-surface)" }}
-                  >
+                  <span className="rounded-full bg-[color:var(--glass-surface)] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.05em] text-[color:var(--glass-ink-soft)]">
                     {item.tag}
                   </span>
-                </button>
+                </Link>
               );
             })
           )}
@@ -240,35 +191,32 @@ export function LandingBottom({
           <h2 className="glass-display text-[24px] font-semibold leading-none">
             {showBundles ? t("popularDossiersTitle") : t("resourcesTitle")}
           </h2>
-          <button
-            type="button"
-            onClick={() => router.push(showBundles ? "/mon-dossier" : "/outils")}
-            className="inline-flex items-center gap-1.5 text-[12.5px] font-semibold text-[color:var(--glass-ink-soft)] transition hover:text-[color:var(--glass-ink)]"
+          <Link
+            href={showBundles ? "/mon-dossier" : "/outils"}
+            className="glass-interactive inline-flex min-h-11 items-center gap-1.5 rounded-xl px-2 text-[12.5px] font-semibold text-[color:var(--glass-ink-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)]"
           >
             {t("seeAll")}
-            <ArrowRightIcon className="size-3.5" />
-          </button>
+            <ArrowRightIcon className="size-3.5" aria-hidden />
+          </Link>
         </div>
         {showBundles &&
           bundleList.slice(0, 4).map((bundle) => {
             const Icon = bundleIcon(bundle.lifeEventCategory);
             return (
-              <button
+              <Link
                 key={bundle.slug}
-                type="button"
-                onClick={() => router.push(`/d/${bundle.slug}`)}
-                className="group flex items-center gap-3.5 rounded-2xl p-3 text-left outline-none transition-colors hover:bg-white/60 focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent dark:hover:bg-white/[0.08]"
+                href={`/d/${bundle.slug}`}
+                className="glass-interactive group flex min-h-16 items-center gap-3.5 rounded-2xl p-3 text-left outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)]"
                 style={{ background: "var(--glass-surface)" }}
               >
                 <span
-                  className="flex size-12 shrink-0 items-center justify-center rounded-2xl text-white"
+                  className="flex size-12 shrink-0 items-center justify-center rounded-2xl border border-[color:var(--glass-border)]"
                   style={{
-                    // Pastille teintée à la couleur du dossier — léger dégradé
-                    // pour rester dans le langage des tuiles existantes.
-                    backgroundImage: `linear-gradient(135deg, color-mix(in oklab, ${bundle.color} 78%, #fff) 0%, ${bundle.color} 100%)`,
+                    background: `color-mix(in oklab, ${bundle.color} 16%, transparent)`,
+                    color: bundle.color,
                   }}
                 >
-                  <Icon className="size-5" />
+                  <Icon className="size-5" aria-hidden />
                 </span>
                 <div className="flex-1">
                   <div className="text-[13.5px] font-bold tracking-tight">
@@ -282,24 +230,23 @@ export function LandingBottom({
                   className="size-3.5 shrink-0 transition-transform group-hover:translate-x-0.5"
                   style={{ color: "var(--glass-ink-faint)" }}
                 />
-              </button>
+              </Link>
             );
           })}
         {!showBundles && RESOURCES.map((res) => {
           const Icon = res.Icon;
           return (
-            <button
+            <Link
               key={res.titleKey}
-              type="button"
-              onClick={() => res.href && router.push(res.href)}
-              className="group flex items-center gap-3.5 rounded-2xl p-3 text-left outline-none transition-colors hover:bg-white/60 focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent dark:hover:bg-white/[0.08]"
+              href={res.href ?? "/outils"}
+              className="glass-interactive group flex min-h-16 items-center gap-3.5 rounded-2xl p-3 text-left outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)]"
               style={{ background: "var(--glass-surface)" }}
             >
               <span
-                className="flex size-12 shrink-0 items-center justify-center rounded-2xl text-white"
+                className="flex size-12 shrink-0 items-center justify-center rounded-2xl text-primary-foreground"
                 style={{ backgroundImage: RESOURCE_BG[res.variant] }}
               >
-                <Icon className="size-5" />
+                <Icon className="size-5" aria-hidden />
               </span>
               <div className="flex-1">
                 <div className="text-[13.5px] font-bold tracking-tight">
@@ -313,7 +260,7 @@ export function LandingBottom({
                 className="size-3.5 shrink-0 transition-transform group-hover:translate-x-0.5"
                 style={{ color: "var(--glass-ink-faint)" }}
               />
-            </button>
+            </Link>
           );
         })}
       </div>

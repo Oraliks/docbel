@@ -22,6 +22,13 @@ export const GLASS_CARD =
   "glass-surface !border-0 !bg-transparent !shadow-none";
 
 /**
+ * Repeated clickable-card composition. Keeps the shadcn chrome reset from
+ * `GLASS_CARD` and opts into the shared hover, press, focus and disabled
+ * behavior from `.glass-interactive`.
+ */
+export const GLASS_INTERACTIVE_CARD = `${GLASS_CARD} glass-interactive`;
+
+/**
  * Input / Select trigger / Textarea field surface. Uses glass tokens for
  * border + background and keeps text/placeholder colours readable in both
  * light and dark mode.

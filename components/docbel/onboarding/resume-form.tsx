@@ -1,19 +1,38 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
-import { ArrowRight, KeyRound, Loader2 } from "lucide-react";
+import {
+  AlertCircleIcon,
+  ArrowRightIcon,
+  CompassIcon,
+  KeyRoundIcon,
+  Loader2Icon,
+} from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Field,
+  FieldDescription,
+  FieldGroup,
+  FieldLabel,
+} from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   isValidResumeCodeFormat,
   normalizeResumeCode,
 } from "@/lib/bundles/resume-code";
-import { GLASS_INPUT, GLASS_LABEL } from "@/lib/glass-classes";
 
 export function ResumeForm() {
   const router = useRouter();
@@ -23,7 +42,8 @@ export function ResumeForm() {
   const [error, setError] = useState<string | null>(null);
 
   const normalized = normalizeResumeCode(code);
-  const formatLooksValid = code.length === 0 || isValidResumeCodeFormat(normalized);
+  const formatLooksValid =
+    code.length === 0 || isValidResumeCodeFormat(normalized);
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -37,29 +57,31 @@ export function ResumeForm() {
 
     setLoading(true);
     try {
-      const res = await fetch("/api/bundles/resume", {
+      const response = await fetch("/api/bundles/resume", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ code: finalCode }),
       });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        if (res.status === 410) {
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        if (response.status === 410) {
           setError(t("resumeExpiredError"));
-        } else if (res.status === 404) {
+        } else if (response.status === 404) {
           setError(t("resumeNotFoundError"));
-        } else if (res.status === 429) {
+        } else if (response.status === 429) {
           setError(t("resumeRateLimitedError"));
         } else {
           setError(data.error || t("resumeGenericError"));
         }
         return;
       }
-      const data = (await res.json()) as { runId: string; bundleSlug: string; bundleName: string };
+
+      const data = (await response.json()) as {
+        runId: string;
+        bundleSlug: string;
+        bundleName: string;
+      };
       toast.success(t("resumeSuccess", { name: data.bundleName }));
-      // Reprise par code → ouverture directe de LA démarche du code (`bundleRun`),
-      // pas de la plus récente : en multi-démarche, /d/[slug] ouvrirait sinon
-      // runsWithProgress[0].
       router.push(
         `/d/${data.bundleSlug}?bundleRun=${encodeURIComponent(data.runId)}&demarrer=1`,
       );
@@ -71,101 +93,127 @@ export function ResumeForm() {
   }
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[1fr_auto_1fr] lg:items-start">
-      <form
-        onSubmit={handleSubmit}
-        className="glass-surface flex flex-col gap-4 rounded-3xl p-6"
-      >
-        <div className="flex items-center gap-2 text-[color:var(--glass-ink)]">
-          <KeyRound className="size-5" />
-          <h2 className="text-lg font-semibold">{t("resumeHasCodeTitle")}</h2>
-        </div>
-        <p className="text-[13px] text-[color:var(--glass-ink-soft)]">
-          {t.rich("resumeHasCodeBody", { code: (chunks) => <code>{chunks}</code> })}
-        </p>
+    <div className="grid gap-4 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] lg:gap-6">
+      <Card className="rounded-3xl">
+        <form onSubmit={handleSubmit} className="flex h-full flex-col gap-5">
+          <CardHeader className="gap-2 px-5 sm:px-6">
+            <div className="flex items-center gap-3">
+              <span className="flex size-10 shrink-0 items-center justify-center rounded-2xl bg-[color:var(--glass-pop-bg)] text-[color:var(--glass-accent-deep)]">
+                <KeyRoundIcon className="size-5" aria-hidden />
+              </span>
+              <CardTitle>
+                <h2 className="text-xl font-semibold">{t("resumeHasCodeTitle")}</h2>
+              </CardTitle>
+            </div>
+            <CardDescription className="text-sm leading-relaxed">
+              {t.rich("resumeHasCodeBody", {
+                code: (chunks) => <code>{chunks}</code>,
+              })}
+            </CardDescription>
+          </CardHeader>
 
-        <div className="space-y-1.5">
-          <Label htmlFor="resume-code" className={GLASS_LABEL}>
-            {t("resumeCodeLabel")}
-          </Label>
-          <Input
-            id="resume-code"
-            value={code}
-            onChange={(event) => {
-              setCode(event.target.value);
-              setError(null);
-            }}
-            placeholder={t("resumeCodePlaceholder")}
-            autoComplete="off"
-            autoCapitalize="characters"
-            spellCheck={false}
-            className={`${GLASS_INPUT} h-12 font-mono text-base tracking-[0.12em] uppercase`}
-            aria-invalid={!formatLooksValid}
-            aria-describedby={error ? "resume-error" : undefined}
-          />
-          {!formatLooksValid && !error && (
-            <p className="text-xs text-amber-700">
-              {t("resumeFormatHint")}
-            </p>
-          )}
-          {error && (
-            <p id="resume-error" className="text-xs text-red-700">
-              {error}
-            </p>
-          )}
-        </div>
+          <CardContent className="flex-1 px-5 sm:px-6">
+            <FieldGroup>
+              <Field
+                data-invalid={Boolean(error) || (!formatLooksValid && code.length > 0)}
+              >
+                <FieldLabel htmlFor="resume-code">
+                  {t("resumeCodeLabel")}
+                </FieldLabel>
+                <Input
+                  id="resume-code"
+                  value={code}
+                  onChange={(event) => {
+                    setCode(event.target.value);
+                    setError(null);
+                  }}
+                  placeholder={t("resumeCodePlaceholder")}
+                  autoComplete="off"
+                  autoCapitalize="characters"
+                  spellCheck={false}
+                  aria-invalid={Boolean(error) || (!formatLooksValid && code.length > 0)}
+                  aria-describedby={error ? "resume-error" : "resume-code-help"}
+                  className="h-12 font-mono text-base tracking-[0.12em] uppercase"
+                />
+                <FieldDescription id="resume-code-help">
+                  {t("resumeFormatHint")}
+                </FieldDescription>
+              </Field>
 
-        <Button
-          type="submit"
-          size="lg"
-          disabled={loading || !isValidResumeCodeFormat(normalized)}
-          className="h-12 w-full text-base"
-        >
-          {loading ? (
-            <>
-              <Loader2 className="size-4 animate-spin" />
-              {t("resumeSearching")}
-            </>
-          ) : (
-            <>
-              {t("resume")}
-              <ArrowRight className="size-4" />
-            </>
-          )}
-        </Button>
-      </form>
+              {error ? (
+                <Alert id="resume-error" variant="destructive">
+                  <AlertCircleIcon aria-hidden />
+                  <AlertTitle>{t("error")}</AlertTitle>
+                  <AlertDescription className="flex flex-col items-start gap-3">
+                    <p>{error}</p>
+                    <Button
+                      render={<Link href="/mon-dossier" />}
+                      nativeButton={false}
+                      variant="outline"
+                      size="sm"
+                    >
+                      {t("resumeStartDossier")}
+                      <ArrowRightIcon data-icon="inline-end" aria-hidden />
+                    </Button>
+                  </AlertDescription>
+                </Alert>
+              ) : null}
+            </FieldGroup>
+          </CardContent>
 
-      <div
-        className="hidden lg:flex lg:flex-col lg:items-center lg:justify-center lg:gap-3 lg:pt-12 text-[color:var(--glass-ink-faint)]"
-        aria-hidden="true"
-      >
-        <div className="h-12 w-px bg-[color:var(--glass-border)]" />
-        <span className="rounded-full border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-3 py-1 text-[10px] font-bold uppercase tracking-[0.14em]">
-          {t("or")}
-        </span>
-        <div className="h-12 w-px bg-[color:var(--glass-border)]" />
-      </div>
+          <CardFooter className="border-0 bg-transparent px-5 pt-0 sm:px-6">
+            <Button
+              type="submit"
+              size="lg"
+              disabled={loading || !isValidResumeCodeFormat(normalized)}
+              className="min-h-12 w-full text-base"
+            >
+              {loading ? (
+                <Loader2Icon
+                  data-icon="inline-start"
+                  className="animate-spin"
+                  aria-hidden
+                />
+              ) : null}
+              {loading ? t("resumeSearching") : t("resume")}
+              {!loading ? (
+                <ArrowRightIcon data-icon="inline-end" aria-hidden />
+              ) : null}
+            </Button>
+          </CardFooter>
+        </form>
+      </Card>
 
-      <div className="glass-surface flex flex-col gap-4 rounded-3xl p-6">
-        <h2 className="text-lg font-semibold text-[color:var(--glass-ink)]">
-          {t("resumeNoCodeTitle")}
-        </h2>
-        <p className="text-[13px] text-[color:var(--glass-ink-soft)]">
-          {t("resumeNoCodeBody")}
-        </p>
-        <Button
-          render={<Link href="/mon-dossier" />}
-          variant="outline"
-          size="lg"
-          className="h-12 w-full text-base"
-        >
-          {t("resumeStartDossier")}
-          <ArrowRight className="size-4" />
-        </Button>
-        <p className="text-[11px] text-[color:var(--glass-ink-faint)] italic">
-          {t("resumeNoCodeNote")}
-        </p>
-      </div>
+      <Card className="rounded-3xl">
+        <CardHeader className="gap-3 px-5 sm:px-6">
+          <span className="flex size-10 items-center justify-center rounded-2xl bg-[color:var(--glass-surface-strong)] text-[color:var(--glass-accent-deep)]">
+            <CompassIcon className="size-5" aria-hidden />
+          </span>
+          <CardTitle>
+            <h2 className="text-xl font-semibold">{t("resumeNoCodeTitle")}</h2>
+          </CardTitle>
+          <CardDescription className="text-sm leading-relaxed">
+            {t("resumeNoCodeBody")}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex-1 px-5 sm:px-6">
+          <p className="text-xs leading-relaxed text-[color:var(--glass-ink-faint)]">
+            {t("resumeNoCodeNote")}
+          </p>
+        </CardContent>
+        <CardFooter className="border-0 bg-transparent px-5 pt-0 sm:px-6">
+          <Button
+            render={<Link href="/mon-dossier" />}
+            nativeButton={false}
+            variant="outline"
+            size="lg"
+            className="min-h-12 w-full text-base"
+          >
+            {t("resumeStartDossier")}
+            <ArrowRightIcon data-icon="inline-end" aria-hidden />
+          </Button>
+        </CardFooter>
+      </Card>
     </div>
   );
 }

@@ -1,12 +1,22 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { ArrowRight, FolderOpen, Trash2 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Empty,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
 import { useConfirm } from "@/components/ui/confirm-dialog";
+import { ProgressFeedback } from "@/components/docbel/progress-feedback";
+import { formatDate } from "@/lib/i18n/format";
 import type { DemandeSummary } from "@/lib/bundles/demande-summary";
 import { NouvelleDemandeButton } from "./nouvelle-demande-button";
 
@@ -17,9 +27,6 @@ interface Props {
   demandes: DemandeSummary[];
 }
 
-/// Écran « Mes demandes » : liste les demandes (BundleRun) d'un dossier quand il
-/// y en a plusieurs. Chaque ligne = libellé calculé (Demande n°N · date ·
-/// progression), Reprendre/Revoir, Abandonner (soft-delete). + Nouvelle demande.
 export function DemandeList({ bundleId, slug, bundleName, demandes }: Props) {
   const t = useTranslations("public.dossier");
   const locale = useLocale();
@@ -27,13 +34,6 @@ export function DemandeList({ bundleId, slug, bundleName, demandes }: Props) {
   const confirm = useConfirm();
   const [items, setItems] = useState(demandes);
   const [busy, setBusy] = useState<string | null>(null);
-
-  const fmtDate = (iso: string) =>
-    new Intl.DateTimeFormat(locale, {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    }).format(new Date(iso));
 
   async function abandon(runId: string) {
     if (busy) return;
@@ -53,7 +53,7 @@ export function DemandeList({ bundleId, slug, bundleName, demandes }: Props) {
         toast.error(t("demandeAbandonError"));
         return;
       }
-      setItems((prev) => prev.filter((d) => d.runId !== runId));
+      setItems((prev) => prev.filter((item) => item.runId !== runId));
       router.refresh();
     } catch {
       toast.error(t("demandeAbandonError"));
@@ -67,7 +67,7 @@ export function DemandeList({ bundleId, slug, bundleName, demandes }: Props) {
       className="glass-surface flex flex-col gap-4 rounded-3xl p-4 sm:p-5"
       data-docbel-readable
     >
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <header className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <span
             className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-[color:var(--glass-pop-bg)] text-[color:var(--glass-accent-deep)]"
@@ -84,80 +84,110 @@ export function DemandeList({ bundleId, slug, bundleName, demandes }: Props) {
             </p>
           </div>
         </div>
-        <NouvelleDemandeButton bundleId={bundleId} slug={slug} variant="default" />
-      </div>
+        <NouvelleDemandeButton
+          bundleId={bundleId}
+          slug={slug}
+          variant="default"
+        />
+      </header>
 
-      <ul className="flex flex-col gap-2">
-        {items.map((d) => {
-          const completed = d.lifecycle === "completed_editable";
-          const percentage = completed
-            ? 100
-            : d.total > 0
-              ? Math.round((d.completed / d.total) * 100)
-              : 0;
-          return (
-            <li
-              key={d.runId}
-              className="flex flex-wrap items-center gap-3 rounded-2xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-3 py-3"
-            >
-              <span
-                className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-[color:var(--glass-pop-bg)] text-[color:var(--glass-accent-deep)]"
-                aria-hidden
+      {items.length === 0 ? (
+        <Empty className="min-h-44 border border-[color:var(--glass-border)]">
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <FolderOpen aria-hidden />
+            </EmptyMedia>
+            <EmptyTitle>{t("mesDemarchesEmpty")}</EmptyTitle>
+          </EmptyHeader>
+        </Empty>
+      ) : (
+        <ul className="flex flex-col gap-3">
+          {items.map((demarche) => {
+            const completed = demarche.lifecycle === "completed_editable";
+            const percentage = completed
+              ? 100
+              : demarche.total > 0
+                ? Math.round((demarche.completed / demarche.total) * 100)
+                : 0;
+            const href = `/d/${encodeURIComponent(slug)}?bundleRun=${encodeURIComponent(demarche.runId)}&demarrer=1`;
+
+            return (
+              <li
+                key={demarche.runId}
+                className="grid gap-3 rounded-2xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] p-3 sm:grid-cols-[minmax(0,1fr)_minmax(150px,0.35fr)_auto] sm:items-center"
               >
-                <FolderOpen className="size-4" />
-              </span>
-              <span className="min-w-0 flex-1">
-                <span className="block text-sm font-bold text-[color:var(--glass-ink)]">
-                  {t("demandeLabel", { index: d.index })}
-                </span>
-                <span className="mt-0.5 block text-xs text-[color:var(--glass-ink)]/65">
-                  {t("demandeStartedOn", { date: fmtDate(d.startedAtISO) })} ·{" "}
-                  {t("demandeProgress", { completed: d.completed, total: d.total })}
-                </span>
-              </span>
-              <span className="hidden w-24 flex-col gap-1 sm:flex">
-                <span className="text-xs font-semibold text-[color:var(--glass-ink)]/70">
-                  {percentage}%
-                </span>
-                <span
-                  className="h-1.5 w-full overflow-hidden rounded-full bg-[color:var(--glass-ink-line)]"
-                  aria-hidden
-                >
+                <div className="flex min-w-0 items-start gap-3">
                   <span
-                    className="block h-full rounded-full bg-[color:var(--glass-accent-deep)]"
-                    style={{ width: `${percentage}%` }}
-                  />
-                </span>
-              </span>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="min-h-10 text-destructive"
-                onClick={() => abandon(d.runId)}
-                disabled={busy === d.runId}
-                aria-label={t("demandeAbandon")}
-              >
-                <Trash2 className="size-4" aria-hidden />
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="min-h-10"
-                onClick={() =>
-                  router.push(
-                    `/d/${encodeURIComponent(slug)}?bundleRun=${encodeURIComponent(d.runId)}&demarrer=1`,
-                  )
-                }
-              >
-                {completed ? t("demandeReview") : t("demandeResume")}
-                <ArrowRight data-icon="inline-end" aria-hidden />
-              </Button>
-            </li>
-          );
-        })}
-      </ul>
+                    className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-[color:var(--glass-pop-bg)] text-[color:var(--glass-accent-deep)]"
+                    aria-hidden
+                  >
+                    <FolderOpen />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="flex flex-wrap items-center gap-2">
+                      <span className="text-sm font-bold text-[color:var(--glass-ink)]">
+                        {t("demandeLabel", { index: demarche.index })}
+                      </span>
+                      <Badge
+                        variant="outline"
+                        className={
+                          completed
+                            ? "border-[color:var(--success-border)] bg-[color:var(--success-subtle)] text-[color:var(--success-subtle-foreground)]"
+                            : undefined
+                        }
+                      >
+                        {completed
+                          ? t("demandeStatusComplete")
+                          : t("demandeStatusInProgress")}
+                      </Badge>
+                    </span>
+                    <span className="mt-1 block text-xs text-[color:var(--glass-ink-soft)]">
+                      {t("demandeStartedOn", {
+                        date: formatDate(demarche.startedAtISO, locale),
+                      })}
+                    </span>
+                  </span>
+                </div>
+
+                <ProgressFeedback
+                  label={t("demandeProgress", {
+                    completed: demarche.completed,
+                    total: demarche.total,
+                  })}
+                  value={percentage}
+                  valueText={`${percentage}%`}
+                  state={completed ? "done" : "current"}
+                  compact
+                />
+
+                <div className="flex items-center gap-2 sm:justify-end">
+                  <Button
+                    render={<Link href={href} />}
+                    nativeButton={false}
+                    variant={completed ? "outline" : "default"}
+                    size="sm"
+                    className="min-h-10"
+                  >
+                    {completed ? t("demandeReview") : t("demandeResume")}
+                    <ArrowRight data-icon="inline-end" aria-hidden />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="min-h-10 text-destructive"
+                    onClick={() => abandon(demarche.runId)}
+                    disabled={busy === demarche.runId}
+                    aria-label={t("demandeAbandon")}
+                  >
+                    <Trash2 aria-hidden />
+                  </Button>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
     </section>
   );
 }

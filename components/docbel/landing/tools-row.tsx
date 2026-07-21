@@ -1,8 +1,12 @@
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { ArrowRightIcon, Clock3Icon } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { buttonVariants } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
 import { type Tool, getToolSlug } from "@/lib/docbel-data";
 import { glyphForTool } from "@/lib/tool-glyphs";
+import { cn } from "@/lib/utils";
 
 interface LandingToolsRowProps {
   tools: Tool[];
@@ -15,24 +19,17 @@ interface LandingToolsRowProps {
  */
 export async function LandingToolsRow({
   tools,
-  max = 8,
+  max = 3,
 }: LandingToolsRowProps) {
   const t = await getTranslations("public.home");
-  const visible = tools.slice(0, max);
+  const visible = tools.slice(0, Math.max(0, Math.min(max, 3)));
 
   return (
     <section
       aria-labelledby="landing-tools-heading"
-      className="glass-surface relative overflow-hidden p-4 sm:p-6 lg:p-7"
+      className="glass-surface p-4 sm:p-6 lg:p-7"
     >
-      <div
-        aria-hidden
-        data-a11y-secondary="true"
-        className="pointer-events-none absolute -right-20 -bottom-24 size-60 rounded-full opacity-30 blur-3xl"
-        style={{ background: "var(--glass-accent-c)" }}
-      />
-
-      <header className="relative mb-5 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:items-end sm:justify-between">
+      <header className="mb-4 flex flex-col gap-3 sm:mb-5 sm:flex-row sm:items-end sm:justify-between">
         <h2
           id="landing-tools-heading"
           className="glass-display text-[27px] font-semibold leading-[1.05] sm:text-[32px]"
@@ -44,58 +41,58 @@ export async function LandingToolsRow({
         </h2>
         <Link
           href="/outils"
-          className="glass-interactive inline-flex min-h-11 w-fit items-center gap-2 rounded-full border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-4 py-2 text-[12.5px] font-bold text-[color:var(--glass-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)]"
+          className={cn(buttonVariants({ variant: "outline", size: "lg" }), "min-h-11 w-fit")}
         >
           {t.rich("seeAllTools", { br: () => " " })}
-          <ArrowRightIcon className="size-4" aria-hidden />
+          <ArrowRightIcon data-icon="inline-end" className="rtl:rotate-180" aria-hidden />
         </Link>
       </header>
 
-      <ul className="relative grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <ul className="flex flex-col lg:flex-row">
         {visible.map((tool, index) => {
           const { Icon, hue } = glyphForTool(tool);
           const href = tool.href ?? `/outils/${getToolSlug(tool)}`;
           const tint = `color-mix(in oklab, ${hue} 14%, transparent)`;
 
           return (
-            <li key={tool.id} className="min-w-0">
+            <li key={tool.id} className="flex min-w-0 flex-1 flex-col lg:flex-row">
               <Link
                 href={href}
-                className="glass-interactive group flex h-full min-h-[150px] flex-col rounded-[20px] border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] p-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)]"
+                className="glass-interactive group flex min-h-24 flex-1 items-center gap-3 rounded-xl px-2 py-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)] lg:px-5"
               >
-                <span className="flex items-start justify-between gap-3">
-                  <span
-                    aria-hidden
-                    className="flex size-11 shrink-0 items-center justify-center rounded-2xl border border-[color:var(--glass-border)] transition-transform duration-200 group-active:scale-95 motion-reduce:transition-none"
-                    style={{ background: tint, color: hue }}
-                  >
-                    <Icon className="size-5" strokeWidth={1.9} />
-                  </span>
-                  {index === 0 && tool.popular && (
-                    <span className="rounded-full bg-[color:var(--glass-pop-bg)] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.08em] text-[color:var(--glass-pop-fg)]">
-                      {t("toolPopularBadge")}
+                <span
+                  aria-hidden
+                  className="flex size-10 shrink-0 items-center justify-center rounded-xl"
+                  style={{ background: tint, color: hue }}
+                >
+                  <Icon className="size-5" strokeWidth={1.9} />
+                </span>
+
+                <span className="min-w-0 flex-1">
+                  <span className="flex flex-wrap items-center gap-2">
+                    <span className="text-sm font-bold leading-snug text-[color:var(--glass-ink)]">
+                      {tool.title}
                     </span>
-                  )}
-                </span>
-
-                <span className="mt-3 block text-[14px] font-bold leading-snug text-[color:var(--glass-ink)]">
-                  {tool.title}
-                </span>
-                <span className="mt-1.5 line-clamp-2 text-[11.5px] leading-relaxed text-[color:var(--glass-ink-soft)]">
-                  {tool.desc}
-                </span>
-
-                <span className="mt-auto flex items-center justify-between gap-3 pt-3 text-[11px] font-semibold text-[color:var(--glass-ink-faint)]">
-                  <span className="inline-flex items-center gap-1.5">
+                    {index === 0 && tool.popular ? (
+                      <Badge variant="secondary">{t("toolPopularBadge")}</Badge>
+                    ) : null}
+                  </span>
+                  <span className="mt-1 line-clamp-2 block text-xs leading-relaxed text-[color:var(--glass-ink-soft)]">
+                    {tool.desc}
+                  </span>
+                  <span className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold text-[color:var(--glass-ink-faint)]">
                     <Clock3Icon className="size-3.5" aria-hidden />
                     {tool.time}
                   </span>
-                  <ArrowRightIcon
-                    className="size-4 text-[color:var(--glass-accent-deep)] transition-transform duration-200 group-hover:translate-x-0.5 motion-reduce:transition-none"
-                    aria-hidden
-                  />
                 </span>
+                <ArrowRightIcon className="shrink-0 text-[color:var(--glass-accent-deep)] rtl:rotate-180" aria-hidden />
               </Link>
+              {index < visible.length - 1 ? (
+                <>
+                  <Separator className="lg:hidden" />
+                  <Separator orientation="vertical" className="hidden lg:block" />
+                </>
+              ) : null}
             </li>
           );
         })}

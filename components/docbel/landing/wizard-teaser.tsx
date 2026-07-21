@@ -9,7 +9,6 @@ import {
   Accessibility,
   ArrowRight,
   Briefcase,
-  ChevronRight,
   GraduationCap,
   HelpCircle,
   Hourglass,
@@ -17,7 +16,9 @@ import {
   UserMinus,
   type LucideIcon,
 } from "lucide-react";
+import { buttonVariants } from "@/components/ui/button";
 import { WIZARD_SITUATIONS } from "@/lib/dossier-wizard/config";
+import { cn } from "@/lib/utils";
 
 const ICONS: Record<string, LucideIcon> = {
   Briefcase,
@@ -29,11 +30,7 @@ const ICONS: Record<string, LucideIcon> = {
   MapPinned,
 };
 
-const TILE_HUES = [
-  "var(--glass-accent-deep)",
-  "var(--glass-accent-a)",
-  "var(--glass-accent-c)",
-] as const;
+const FEATURED_SITUATIONS = WIZARD_SITUATIONS.slice(0, 4);
 
 function resolveIcon(name: string): LucideIcon {
   return ICONS[name] ?? HelpCircle;
@@ -55,16 +52,9 @@ export function WizardTeaser() {
   return (
     <section
       aria-labelledby="wizard-teaser-heading"
-      className="glass-surface relative overflow-hidden p-4 sm:p-6 lg:p-7"
+      className="glass-surface p-4 sm:p-6 lg:p-7"
     >
-      <div
-        aria-hidden
-        data-a11y-secondary="true"
-        className="pointer-events-none absolute -top-24 -left-16 size-52 rounded-full opacity-35 blur-3xl"
-        style={{ background: "var(--glass-accent-a)" }}
-      />
-
-      <header className="relative mb-5 flex flex-col gap-2 sm:mb-6">
+      <header className="mb-5 flex flex-col gap-2 sm:mb-6">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h2
             id="wizard-teaser-heading"
@@ -74,10 +64,10 @@ export function WizardTeaser() {
           </h2>
           <Link
             href="/chomage"
-            className="inline-flex min-h-11 items-center gap-1 rounded-full px-2 text-[12px] font-semibold text-[color:var(--glass-accent-deep)] underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)]"
+            className={cn(buttonVariants({ variant: "ghost", size: "lg" }), "min-h-11")}
           >
             {t("wizardHubLink")}
-            <ArrowRight className="size-3.5" aria-hidden />
+            <ArrowRight data-icon="inline-end" className="rtl:rotate-180" aria-hidden />
           </Link>
         </div>
         <p className="max-w-3xl text-[13px] leading-[1.65] text-[color:var(--glass-ink-soft)] sm:text-[14px]">
@@ -85,48 +75,32 @@ export function WizardTeaser() {
         </p>
       </header>
 
-      <div className="relative grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        {WIZARD_SITUATIONS.map((situation, index) => {
+      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+        {FEATURED_SITUATIONS.map((situation) => {
           const Icon = resolveIcon(situation.icon);
-          const hue = TILE_HUES[index % TILE_HUES.length];
           const label = resolve(situation.labelKey, situation.label);
-          const description = resolve(
-            situation.descriptionKey,
-            situation.description ?? "",
-          );
 
           return (
             <Link
               key={situation.value}
               href={`/mon-dossier?situation=${encodeURIComponent(situation.value)}`}
-              className="glass-interactive group flex min-h-[112px] items-start gap-3 rounded-[20px] border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] p-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)]"
+              className={cn(
+                buttonVariants({ variant: "outline", size: "lg" }),
+                "glass-interactive h-auto min-h-12 justify-start whitespace-normal px-4 py-3 text-start",
+              )}
             >
               <span
                 aria-hidden
-                className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-[color:var(--glass-border)] transition-transform duration-200 group-active:scale-95 motion-reduce:transition-none"
-                style={{
-                  background: `color-mix(in oklab, ${hue} 18%, transparent)`,
-                  color: hue,
-                }}
+                className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-[color:var(--glass-pop-bg)] text-[color:var(--glass-accent-deep)]"
               >
-                <Icon className="size-5" strokeWidth={1.9} />
+                <Icon data-icon="inline-start" strokeWidth={1.9} />
               </span>
-              <span className="min-w-0 flex-1">
-                <span className="block text-[13.5px] font-bold leading-snug tracking-tight text-[color:var(--glass-ink)]">
-                  {label}
-                </span>
-                <span className="mt-1.5 block text-[11.5px] leading-relaxed text-[color:var(--glass-ink-soft)]">
-                  {description}
-                </span>
+              <span className="min-w-0 text-sm font-semibold leading-snug text-[color:var(--glass-ink)]">
+                {label}
               </span>
-              <ChevronRight
-                className="mt-1 size-4 shrink-0 text-[color:var(--glass-ink-faint)] transition-transform duration-200 group-hover:translate-x-0.5 motion-reduce:transition-none"
-                aria-hidden
-              />
             </Link>
           );
         })}
-
       </div>
     </section>
   );

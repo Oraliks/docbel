@@ -1,41 +1,44 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
-import { useLocale, useTranslations } from "next-intl";
+import { useTranslations } from "next-intl";
 import {
   Accessibility,
-  ArrowRight,
+  ChevronDown,
   ChevronRight,
   FileQuestion,
   FolderOpen,
   HelpCircle,
-  Layers,
   Phone,
   RotateCcw,
-  Search as SearchIcon,
-  SlidersHorizontal,
-  X,
+  Sparkles,
 } from "lucide-react";
 import { IconDisplay } from "@/components/admin/documents/icon-picker";
 import { AccessibilityToolbar } from "@/components/docbel/accessibility-toolbar";
-import { DossierWizard, resolveIcon, resolveText } from "@/components/docbel/onboarding/dossier-wizard";
-import { IntentSearch } from "@/components/docbel/onboarding/intent-search";
-import { Button } from "@/components/ui/button";
+import { DossierWizard } from "@/components/docbel/onboarding/dossier-wizard";
+import { Badge } from "@/components/ui/badge";
+import { Button, buttonVariants } from "@/components/ui/button";
 import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupButton,
-  InputGroupInput,
-} from "@/components/ui/input-group";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import { Separator } from "@/components/ui/separator";
 import { trackBundleEventClient } from "@/lib/bundles/analytics-client";
 import { LIFE_EVENT_CATEGORIES } from "@/lib/bundles/types";
-import { scoreBundleMatch } from "@/lib/bundles/vocabulary";
-import { matchSituations } from "@/lib/dossier-wizard/match-situations";
 import type { WizardSituation } from "@/lib/dossier-wizard/config";
 import type { WizardCatalog } from "@/lib/dossier-wizard/derive-results";
 import type { ActiveBundleRun } from "@/lib/landing/resume";
+import { cn } from "@/lib/utils";
 
 export interface MonDossierBundle {
   slug: string;
@@ -58,21 +61,8 @@ interface Props {
   catalog: WizardCatalog;
   activeRuns: ActiveBundleRun[];
   situations: WizardSituation[];
-  /// Situation présélectionnée via `?situation=` (tuile home ou lien externe).
-  /// Si elle correspond à une entrée de `situations`, le guichet (toujours
-  /// ouvert) saute directement à l'étape 2 (cf. DossierWizard.initialSituation).
-  /// `null`/absent = le guichet démarre à l'étape 1 (choix de situation).
   initialSituation?: string | null;
 }
-
-type Sort = "populaires" | "az" | "categories" | "recents";
-
-const SORT_PILLS = [
-  { id: "populaires", labelKey: "sortPopular" },
-  { id: "az", labelKey: "sortAz" },
-  { id: "categories", labelKey: "sortCategories" },
-  { id: "recents", labelKey: "sortRecent" },
-] as const satisfies ReadonlyArray<{ id: Sort; labelKey: string }>;
 
 const CATEGORY_HUE: Record<string, string> = {
   emploi: "#5B46E5",
@@ -87,18 +77,6 @@ const CATEGORY_HUE: Record<string, string> = {
 
 function bundleHref(slug: string): string {
   return `/d/${slug}`;
-}
-
-function substringHit(bundle: MonDossierBundle, query: string): boolean {
-  if (!query) return false;
-  if (bundle.name.toLowerCase().includes(query)) return true;
-  if ((bundle.description ?? "").toLowerCase().includes(query)) return true;
-  if ((bundle.organism ?? "").toLowerCase().includes(query)) return true;
-  return [
-    ...bundle.vocabularyTags,
-    ...bundle.keywords,
-    ...bundle.synonyms,
-  ].some((term) => term.toLowerCase().includes(query));
 }
 
 function hueForBundle(bundle: MonDossierBundle): string {
@@ -117,22 +95,16 @@ function RowIconTile({ bundle }: { bundle: MonDossierBundle }) {
 
   return (
     <span
-      className="glass-icon-tile flex size-12 shrink-0 items-center justify-center rounded-2xl"
-      style={
-        {
-          background: `color-mix(in oklab, ${hue} 18%, transparent)`,
-          color: hue,
-          "--tile-hue": hue,
-        } as React.CSSProperties
-      }
+      className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground"
+      style={{ color: hue } as React.CSSProperties}
       aria-hidden
     >
       {bundle.icon ? (
-        <IconDisplay value={bundle.icon} className="size-6" />
+        <IconDisplay value={bundle.icon} className="size-5" />
       ) : category ? (
-        <span className="text-2xl leading-none">{category.emoji}</span>
+        <span className="text-xl leading-none">{category.emoji}</span>
       ) : (
-        <Layers />
+        <FolderOpen className="size-5" />
       )}
     </span>
   );
@@ -155,55 +127,40 @@ function AccessRow({ bundle }: { bundle: MonDossierBundle }) {
           metadata: { slug: bundle.slug, from: "direct" },
         })
       }
-      className="glass-interactive group flex min-h-16 items-center gap-3 rounded-2xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-3 py-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)]"
+      className="group flex min-h-16 items-center gap-3 rounded-lg px-2 py-3 outline-none transition-colors hover:bg-muted/60 focus-visible:ring-3 focus-visible:ring-ring/50"
     >
       <RowIconTile bundle={bundle} />
       <span className="min-w-0 flex-1">
-        <span className="block text-base font-bold leading-snug text-[color:var(--glass-ink)]">
+        <span className="block text-sm font-semibold leading-snug text-foreground">
           {bundle.name}
         </span>
-        <span className="mt-1 block text-sm text-[color:var(--glass-ink-soft)]">
-          {subtitle}
-        </span>
+        <span className="mt-1 block text-xs text-muted-foreground">{subtitle}</span>
       </span>
-      <ChevronRight className="shrink-0 text-[color:var(--glass-accent-deep)]" aria-hidden />
+      <ChevronRight className="size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" aria-hidden />
     </Link>
   );
 }
 
-function HelpRow({
+function HelpLink({
   icon: Icon,
   label,
   href,
-  onClick,
 }: {
   icon: typeof HelpCircle;
   label: string;
-  href?: string;
-  onClick?: () => void;
+  href: string;
 }) {
-  const content = (
-    <>
-      <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-[color:var(--glass-pop-bg)] text-[color:var(--glass-accent-deep)]" aria-hidden>
+  return (
+    <Link
+      href={href}
+      className="group flex min-h-12 items-center gap-3 rounded-lg px-2 py-2 outline-none transition-colors hover:bg-muted/60 focus-visible:ring-3 focus-visible:ring-ring/50"
+    >
+      <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted text-primary" aria-hidden>
         <Icon className="size-4" />
       </span>
-      <span className="min-w-0 flex-1 text-xs font-semibold leading-relaxed text-[color:var(--glass-ink)]">
-        {label}
-      </span>
-      <ChevronRight className="size-4 shrink-0 text-[color:var(--glass-accent-deep)]" aria-hidden />
-    </>
-  );
-  const className =
-    "glass-interactive flex min-h-14 w-full items-center gap-2 border-b border-[color:var(--glass-border)] px-3 py-2 text-left last:border-b-0 sm:border-r sm:last:border-r-0 lg:border-b-0";
-
-  return href ? (
-    <Link href={href} className={className}>
-      {content}
+      <span className="min-w-0 flex-1 text-sm font-medium text-foreground">{label}</span>
+      <ChevronRight className="size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" aria-hidden />
     </Link>
-  ) : (
-    <button type="button" onClick={onClick} className={className}>
-      {content}
-    </button>
   );
 }
 
@@ -215,414 +172,195 @@ export function MonDossierClient({
   initialSituation,
 }: Props) {
   const t = useTranslations("public.dossier");
-  const tc = useTranslations("public.dossierContent");
   const tA11y = useTranslations("public.accessibility");
-  const locale = useLocale();
-  // Présélection home (`?situation=`), validée contre `situations` (le query
-  // param peut être arbitraire ou périmé). Recalculée à chaque rendu — sert
-  // uniquement d'init pour le useState suivant (pas de setState dans un
-  // effect).
   const validInitialSituation =
-    initialSituation && situations.some((s) => s.value === initialSituation)
+    initialSituation && situations.some((situation) => situation.value === initialSituation)
       ? initialSituation
       : null;
-  // Situation à transmettre au DossierWizard (initialSituation/key) : fixée
-  // une fois depuis le query param. Le guichet est toujours ouvert ; toute
-  // sélection ultérieure se fait dans le wizard lui-même (step 1), sans
-  // remonter jusqu'ici.
-  const [presetSituation, setPresetSituation] = useState<string | null>(validInitialSituation);
-  const [search, setSearch] = useState("");
-  const [sort, setSort] = useState<Sort>("populaires");
-  const [filtersOpen, setFiltersOpen] = useState(false);
-  const [activeCats, setActiveCats] = useState<Set<string>>(new Set());
-  const [showAllCats, setShowAllCats] = useState(false);
-  const emittedSearches = useRef<Set<string>>(new Set());
-  const trimmed = search.trim().toLowerCase();
-  const isSearching = trimmed.length > 0;
-
-  const categoryFiltered = useMemo(() => {
-    if (activeCats.size === 0) return bundles;
-    return bundles.filter(
-      (bundle) =>
-        bundle.lifeEventCategory && activeCats.has(bundle.lifeEventCategory),
-    );
-  }, [activeCats, bundles]);
-
-  const searchResults = useMemo(() => {
-    if (!isSearching) return [] as MonDossierBundle[];
-    return categoryFiltered
-      .map((bundle) => {
-        const score = scoreBundleMatch(search, {
-          id: bundle.slug,
-          slug: bundle.slug,
-          name: bundle.name,
-          description: bundle.description,
-          vocabularyTags: bundle.vocabularyTags,
-          keywords: bundle.keywords,
-          synonyms: bundle.synonyms,
-          organism: bundle.organism,
-        }).score;
-        return {
-          bundle,
-          score: score + (score === 0 && substringHit(bundle, trimmed) ? 1 : 0),
-        };
-      })
-      .filter((item) => item.score > 0)
-      .sort((left, right) => right.score - left.score)
-      .map((item) => item.bundle);
-  }, [categoryFiltered, isSearching, search, trimmed]);
-
-  const sortItems = useMemo(
-    () => (items: MonDossierBundle[]) => {
-      const next = [...items];
-      if (sort === "az") next.sort((a, b) => a.name.localeCompare(b.name, locale));
-      else if (sort === "recents") {
-        next.sort((a, b) => (b.createdAt ?? "").localeCompare(a.createdAt ?? ""));
-      } else next.sort((a, b) => Number(b.popular) - Number(a.popular));
-      return next;
-    },
-    [locale, sort],
-  );
+  const [presetSituation] = useState<string | null>(validInitialSituation);
+  const [catalogOpen, setCatalogOpen] = useState(false);
 
   const groups = useMemo(() => {
-    const map = new Map<string, MonDossierBundle[]>();
+    const grouped = new Map<string, MonDossierBundle[]>();
     const uncategorized: MonDossierBundle[] = [];
-    for (const bundle of categoryFiltered) {
-      if (bundle.lifeEventCategory && CATEGORY_HUE[bundle.lifeEventCategory]) {
-        map.set(bundle.lifeEventCategory, [
-          ...(map.get(bundle.lifeEventCategory) ?? []),
+
+    for (const bundle of bundles) {
+      if (bundle.lifeEventCategory) {
+        grouped.set(bundle.lifeEventCategory, [
+          ...(grouped.get(bundle.lifeEventCategory) ?? []),
           bundle,
         ]);
-      } else uncategorized.push(bundle);
+      } else {
+        uncategorized.push(bundle);
+      }
     }
+
     const ordered: Array<{
       id: string;
       label: string;
       emoji: string;
       items: MonDossierBundle[];
-    }> = LIFE_EVENT_CATEGORIES.filter((category) => map.has(category.id)).map(
+    }> = LIFE_EVENT_CATEGORIES.filter((category) => grouped.has(category.id)).map(
       (category) => ({
         id: category.id,
         label: category.label,
         emoji: category.emoji,
-        items: sortItems(map.get(category.id) ?? []),
+        items: [...(grouped.get(category.id) ?? [])].sort(
+          (left, right) => Number(right.popular) - Number(left.popular),
+        ),
       }),
     );
+
     if (uncategorized.length > 0) {
       ordered.push({
         id: "_autres",
         label: t("otherDossiers"),
         emoji: "📁",
-        items: sortItems(uncategorized),
+        items: uncategorized,
       });
     }
+
     return ordered;
-  }, [categoryFiltered, sortItems, t]);
-
-  const availableCats = useMemo(
-    () =>
-      LIFE_EVENT_CATEGORIES.filter((category) =>
-        bundles.some((bundle) => bundle.lifeEventCategory === category.id),
-      ),
-    [bundles],
-  );
-  const collapsed = !isSearching && !showAllCats && sort !== "categories";
-  const visibleGroups = collapsed ? groups.slice(0, 3) : groups;
-
-  // Recherche universelle : on matche aussi les SITUATIONS de l'assistant (pas
-  // seulement les dossiers), pour les proposer côte à côte dans les résultats.
-  // `text` = label + description résolus (i18n) ; le filtre pur vit dans
-  // `lib/dossier-wizard/match-situations` (insensible casse/accents).
-  const situationIndex = useMemo(
-    () =>
-      situations.map((s) => ({
-        value: s.value,
-        text: `${resolveText(tc, s.labelKey, s.label)} ${resolveText(tc, s.descriptionKey, s.description ?? "")}`,
-      })),
-    [situations, tc],
-  );
-  const matchedSituationValues = useMemo(
-    () => matchSituations(search, situationIndex),
-    [search, situationIndex],
-  );
-  const matchedSituations = useMemo(
-    () => situations.filter((s) => matchedSituationValues.includes(s.value)),
-    [situations, matchedSituationValues],
-  );
-
-  // Une situation choisie depuis les RÉSULTATS de recherche : on préremplit
-  // l'assistant (remonté à l'étape 2 via presetSituation/key) et on vide la
-  // recherche pour revenir à la vue par défaut (l'assistant visible).
-  const pickSituation = (value: string) => {
-    setPresetSituation(value);
-    setSearch("");
-  };
-
-  function toggleCategory(id: string) {
-    setActiveCats((previous) => {
-      const next = new Set(previous);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  }
-
-  useEffect(() => {
-    if (!isSearching || trimmed.length < 2 || emittedSearches.current.has(trimmed)) return;
-    const timer = setTimeout(() => {
-      emittedSearches.current.add(trimmed);
-      trackBundleEventClient(
-        searchResults.length === 0 ? "search_no_result" : "search_performed",
-        { metadata: { q: trimmed, results: searchResults.length } },
-      );
-    }, 700);
-    return () => clearTimeout(timer);
-  }, [isSearching, searchResults.length, trimmed]);
+  }, [bundles, t]);
 
   return (
-    <section className="docbel-a11y-scope relative isolate flex w-full flex-col gap-4 sm:gap-5">
-      <header className="flex flex-col gap-3 px-1" data-docbel-readable>
-        <div className="flex flex-col gap-3">
-          <nav aria-label={t("breadcrumbLabel")} className="flex items-center gap-2 text-sm text-[color:var(--glass-ink-soft)]" data-a11y-secondary="true">
-            <Link href="/" className="font-medium hover:text-[color:var(--glass-ink)]">{t("breadcrumbHome")}</Link>
-            <span aria-hidden>/</span>
-            <span className="font-bold text-[color:var(--glass-ink)]">{t("breadcrumbCurrent")}</span>
-          </nav>
-          <h1 className="glass-display max-w-3xl text-4xl font-semibold leading-tight sm:text-5xl">
+    <section className="docbel-a11y-scope relative isolate flex w-full flex-col gap-8 sm:gap-10" data-docbel-readable>
+      <header className="flex flex-col gap-4 px-1">
+        <nav aria-label={t("breadcrumbLabel")} className="flex items-center gap-2 text-sm text-muted-foreground" data-a11y-secondary="true">
+          <Link href="/" className="font-medium transition-colors hover:text-foreground">
+            {t("breadcrumbHome")}
+          </Link>
+          <span aria-hidden>/</span>
+          <span className="font-semibold text-foreground">{t("breadcrumbCurrent")}</span>
+        </nav>
+        <div className="flex max-w-3xl flex-col gap-3">
+          <Badge variant="secondary" className="w-fit">
+            <Sparkles data-icon="inline-start" aria-hidden />
+            {t("wizardAssistantTitle")}
+          </Badge>
+          <h1 className="glass-display text-4xl font-semibold leading-tight sm:text-5xl">
             {t.rich("guichetTitle", { em: (chunks) => <em>{chunks}</em> })}
           </h1>
-          <p className="max-w-3xl text-sm leading-relaxed text-[color:var(--glass-ink)]/70 sm:text-base">
+          <p className="text-base leading-relaxed text-muted-foreground sm:text-lg">
             {t("monDossierIntro")}
           </p>
         </div>
       </header>
 
-      {activeRuns.length > 0 && (
-        <Link
-          href="/mes-demarches"
-          className="glass-surface flex items-center gap-3 rounded-2xl px-4 py-3 transition-colors hover:bg-[color:var(--glass-pop-bg)]/40"
-        >
-          <span aria-hidden className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[color:var(--glass-pop-bg)] text-[color:var(--glass-accent-deep)]">
-            <RotateCcw className="size-5" />
-          </span>
-          <span className="min-w-0 flex-1">
-            <span className="block text-sm font-bold text-[color:var(--glass-ink)]">
+      {activeRuns.length > 0 ? (
+        <Card size="sm">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <RotateCcw className="size-4 text-primary" aria-hidden />
               {t("resumeBannerTitle", { count: activeRuns.length })}
-            </span>
-            <span className="block truncate text-xs text-[color:var(--glass-ink-soft)]">
-              {activeRuns.map((r) => r.name).join(" · ")}
-            </span>
-          </span>
-          <span className="shrink-0 text-sm font-bold text-[color:var(--glass-accent-deep)]">
-            {t("resumeBannerCta")} →
-          </span>
-        </Link>
-      )}
+            </CardTitle>
+            <CardDescription className="truncate">
+              {activeRuns.map((run) => run.name).join(" · ")}
+            </CardDescription>
+            <CardAction>
+              <Button render={<Link href="/mes-demarches" />} variant="outline" size="lg" className="min-h-11">
+                {t("resumeBannerCta")}
+                <ChevronRight data-icon="inline-end" aria-hidden />
+              </Button>
+            </CardAction>
+          </CardHeader>
+        </Card>
+      ) : null}
 
-      <div id="guichet" className="flex flex-col gap-4 px-1" data-docbel-readable>
-        <InputGroup className="min-h-14 rounded-2xl">
-          <InputGroupInput
-            type="search"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder={t("guichetSearchPlaceholder")}
-            aria-label={t("guichetSearchPlaceholder")}
-            className="text-base"
-          />
-          <InputGroupAddon align="inline-start"><SearchIcon aria-hidden /></InputGroupAddon>
-          {search ? (
-            <InputGroupAddon align="inline-end">
-              <InputGroupButton size="icon-sm" onClick={() => setSearch("")} aria-label={t("clear")}>
-                <X aria-hidden />
-              </InputGroupButton>
-            </InputGroupAddon>
-          ) : null}
-        </InputGroup>
-
-        {isSearching ? (
-          // ===== RÉSULTATS FUSIONNÉS (situations de l'assistant + dossiers) =====
-          matchedSituations.length === 0 && searchResults.length === 0 ? (
-            <div className="glass-surface flex flex-col gap-3 rounded-3xl p-5">
-              <h3 className="text-sm font-bold text-[color:var(--glass-ink)]">
-                {t("intentFallbackTitle")}
-              </h3>
-              <IntentSearch query={search} />
-            </div>
-          ) : (
-            <div className="flex flex-col gap-6">
-              {matchedSituations.length > 0 && (
-                <section className="flex flex-col gap-3">
-                  <h3 className="flex items-center gap-2 text-lg font-bold text-[color:var(--glass-ink)]">
-                    {t("guichetResultsSituations")}
-                    <span className="rounded-full bg-[color:var(--glass-pop-bg)] px-3 py-1 text-sm text-[color:var(--glass-accent-deep)]">{matchedSituations.length}</span>
-                  </h3>
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    {matchedSituations.map((s) => {
-                      const Icon = resolveIcon(s.icon);
-                      return (
-                        <button
-                          key={s.value}
-                          type="button"
-                          onClick={() => pickSituation(s.value)}
-                          className="glass-interactive flex min-h-16 items-center gap-3 rounded-2xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] p-4 text-left transition hover:-translate-y-px focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)]"
-                        >
-                          <span aria-hidden className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[color:var(--glass-pop-bg)] text-[color:var(--glass-accent-deep)]">
-                            <Icon className="size-5" />
-                          </span>
-                          <span className="min-w-0">
-                            <span className="block text-sm font-semibold text-[color:var(--glass-ink)]">
-                              {resolveText(tc, s.labelKey, s.label)}
-                            </span>
-                            <span className="block truncate text-xs text-[color:var(--glass-ink-soft)]">
-                              {resolveText(tc, s.descriptionKey, s.description ?? "")}
-                            </span>
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </section>
-              )}
-              {searchResults.length > 0 && (
-                <section className="flex flex-col gap-3">
-                  <h3 className="flex items-center gap-2 text-lg font-bold text-[color:var(--glass-ink)]">
-                    {t("guichetResultsDossiers")}
-                    <span className="rounded-full bg-[color:var(--glass-pop-bg)] px-3 py-1 text-sm text-[color:var(--glass-accent-deep)]">{searchResults.length}</span>
-                  </h3>
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    {searchResults.map((bundle) => <AccessRow key={bundle.slug} bundle={bundle} />)}
-                  </div>
-                </section>
-              )}
-            </div>
-          )
-        ) : (
-          // ===== VUE PAR DÉFAUT (assistant + parcours de tous les dossiers) =====
-          <div className="flex flex-col gap-8">
-            <DossierWizard
-              key={presetSituation ?? "none"}
-              hideHeader
-              situations={situations}
-              catalog={catalog}
-              initialSituation={presetSituation ?? undefined}
-            />
-
-            {/* Catalogue « Parcourir tous les dossiers » — masqué s'il n'y a aucun
-                dossier publié (évite un en-tête + tris/filtres sans rien dessous). */}
-            {bundles.length > 0 && (
-            <section className="glass-surface flex flex-col gap-4 p-3 sm:p-5">
-              <div className="flex items-center gap-3">
-                <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-[color:var(--glass-pop-bg)] text-[color:var(--glass-accent-deep)]" aria-hidden>
-                  <FolderOpen />
-                </span>
-                <div>
-                  <h2 className="text-xl font-bold text-[color:var(--glass-ink)]">{t("guichetBrowseAll")}</h2>
-                  <p className="mt-1 text-base text-[color:var(--glass-ink-soft)]">{t("directAccessSubtitle")}</p>
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between" data-a11y-secondary="true">
-                <ToggleGroup
-                  value={[sort]}
-                  onValueChange={(values) => {
-                    const selected = values.at(-1) as Sort | undefined;
-                    if (selected) setSort(selected);
-                  }}
-                  variant="outline"
-                  spacing={1}
-                  className="flex w-full flex-wrap sm:w-auto"
-                  aria-label={t("sortGroupLabel")}
-                >
-                  {SORT_PILLS.map((pill) => (
-                    <ToggleGroupItem key={pill.id} value={pill.id} className="min-h-11 flex-1 px-3 text-sm sm:flex-none">
-                      {t(pill.labelKey)}
-                    </ToggleGroupItem>
-                  ))}
-                </ToggleGroup>
-                <Button type="button" variant="outline" size="lg" className="min-h-11" aria-pressed={filtersOpen} onClick={() => setFiltersOpen((open) => !open)}>
-                  <SlidersHorizontal data-icon="inline-start" aria-hidden />
-                  {t("filters")}{activeCats.size > 0 ? ` (${activeCats.size})` : ""}
-                </Button>
-              </div>
-
-              {filtersOpen && availableCats.length > 0 ? (
-                <div className="flex flex-wrap gap-2 rounded-2xl border border-[color:var(--glass-border)] p-3" data-a11y-secondary="true">
-                  {availableCats.map((category) => (
-                    <Button
-                      key={category.id}
-                      type="button"
-                      variant={activeCats.has(category.id) ? "default" : "outline"}
-                      size="lg"
-                      className="min-h-11"
-                      aria-pressed={activeCats.has(category.id)}
-                      onClick={() => toggleCategory(category.id)}
-                    >
-                      <span aria-hidden>{category.emoji}</span>{category.label}
-                    </Button>
-                  ))}
-                  {activeCats.size > 0 ? (
-                    <Button type="button" variant="ghost" size="lg" className="min-h-11" onClick={() => setActiveCats(new Set())}>{t("reset")}</Button>
-                  ) : null}
-                </div>
-              ) : null}
-
-              <div className="flex flex-col gap-6">
-                {visibleGroups.map((group) => (
-                  <section key={group.id} className="flex flex-col gap-3">
-                    <h3 className="flex items-center gap-2 text-lg font-bold text-[color:var(--glass-ink)]">
-                      <span aria-hidden>{group.emoji}</span>{group.label}
-                      <span className="ml-auto rounded-full bg-[color:var(--glass-pop-bg)] px-3 py-1 text-sm text-[color:var(--glass-accent-deep)]">{group.items.length}</span>
-                    </h3>
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      {group.items.map((bundle) => <AccessRow key={bundle.slug} bundle={bundle} />)}
-                    </div>
-                  </section>
-                ))}
-              </div>
-
-              {groups.length > 3 ? (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="lg"
-                  className="min-h-11 w-full"
-                  onClick={() => {
-                    setShowAllCats((shown) => !shown);
-                    if (!showAllCats) setSort("categories");
-                  }}
-                >
-                  {collapsed ? t("seeAllCategories", { count: groups.length }) : t("seeLess")}
-                  <ArrowRight data-icon="inline-end" aria-hidden />
-                </Button>
-              ) : null}
-            </section>
-            )}
-          </div>
-        )}
-      </div>
-
-      <section className="glass-surface grid overflow-hidden rounded-2xl border border-[color:var(--glass-border)] sm:grid-cols-2 lg:grid-cols-[1.2fr_repeat(4,1fr)]" aria-labelledby="help-title" data-a11y-secondary="true">
-        <div className="flex items-center gap-2 border-b border-[color:var(--glass-border)] px-3 py-3 sm:col-span-2 lg:col-span-1 lg:border-b-0 lg:border-r">
-          <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-[color:var(--glass-pop-bg)] text-[color:var(--glass-accent-deep)]" aria-hidden><HelpCircle className="size-4" /></span>
-          <div>
-            <h2 id="help-title" className="text-sm font-bold text-[color:var(--glass-ink)]">{t("helpTitle")}</h2>
-            <p className="text-xs text-[color:var(--glass-ink)]/65">{t("helpSubtitle")}</p>
-          </div>
+      <section id="guichet" className="flex flex-col gap-4" aria-labelledby="assistant-title">
+        <div className="flex max-w-2xl flex-col gap-1 px-1">
+          <h2 id="assistant-title" className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
+            {t("wizardAssistantTitle")}
+          </h2>
+          <p className="text-sm leading-relaxed text-muted-foreground sm:text-base">
+            {t("wizardAssistantSubtitle")}
+          </p>
         </div>
-        <HelpRow icon={HelpCircle} label={t("helpFindRightDossier")} href="#guichet" />
-        <HelpRow icon={FileQuestion} label={t("helpCannotFind")} href="/contact" />
-        <HelpRow icon={RotateCcw} label={t("helpWhereIsRequest")} href="/mes-demarches" />
-        <HelpRow icon={Phone} label={t("helpContactSupport")} href="/contact" />
+        <DossierWizard
+          key={presetSituation ?? "none"}
+          hideHeader
+          situations={situations}
+          catalog={catalog}
+          initialSituation={presetSituation ?? undefined}
+        />
       </section>
 
-      <details className="group glass-surface rounded-xl px-3 py-2" data-a11y-secondary="true">
-        <summary className="flex cursor-pointer list-none items-center gap-2 text-xs font-bold text-[color:var(--glass-ink)]">
-          <Accessibility className="size-4 text-[color:var(--glass-accent-deep)]" aria-hidden />
-          {tA11y("title")}
-          <ChevronRight className="ml-auto size-4 transition-transform group-open:rotate-90" aria-hidden />
-        </summary>
-        <div className="mt-2"><AccessibilityToolbar /></div>
-      </details>
+      {bundles.length > 0 ? (
+        <Collapsible open={catalogOpen} onOpenChange={setCatalogOpen}>
+          <Card size="sm">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FolderOpen className="size-4 text-primary" aria-hidden />
+                {t("guichetBrowseAll")}
+              </CardTitle>
+              <CardDescription>{t("directAccessSubtitle")}</CardDescription>
+              <CardAction>
+                <CollapsibleTrigger
+                  className={cn(buttonVariants({ variant: "outline", size: "lg" }), "min-h-11")}
+                >
+                  {catalogOpen ? t("seeLess") : t("directAccessTitle")}
+                  <ChevronDown
+                    data-icon="inline-end"
+                    className={cn("transition-transform", catalogOpen && "rotate-180")}
+                    aria-hidden
+                  />
+                </CollapsibleTrigger>
+              </CardAction>
+            </CardHeader>
+            <CollapsibleContent>
+              <Separator />
+              <CardContent className="grid gap-6 pt-4 lg:grid-cols-2">
+                {groups.map((group) => (
+                  <section key={group.id} className="flex flex-col" aria-labelledby={`catalog-${group.id}`}>
+                    <div className="flex items-center gap-2 px-2 pb-2">
+                      <span aria-hidden>{group.emoji}</span>
+                      <h3 id={`catalog-${group.id}`} className="text-sm font-semibold text-foreground">
+                        {group.label}
+                      </h3>
+                      <Badge variant="secondary" className="ms-auto">{group.items.length}</Badge>
+                    </div>
+                    <Separator />
+                    {group.items.map((bundle, index) => (
+                      <div key={bundle.slug}>
+                        <AccessRow bundle={bundle} />
+                        {index < group.items.length - 1 ? <Separator /> : null}
+                      </div>
+                    ))}
+                  </section>
+                ))}
+              </CardContent>
+            </CollapsibleContent>
+          </Card>
+        </Collapsible>
+      ) : null}
+
+      <Card size="sm" data-a11y-secondary="true">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <HelpCircle className="size-4 text-primary" aria-hidden />
+            {t("helpTitle")}
+          </CardTitle>
+          <CardDescription>{t("helpSubtitle")}</CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-3">
+          <div className="grid gap-1 sm:grid-cols-3">
+            <HelpLink icon={FileQuestion} label={t("helpCannotFind")} href="/contact" />
+            <HelpLink icon={RotateCcw} label={t("helpWhereIsRequest")} href="/mes-demarches" />
+            <HelpLink icon={Phone} label={t("helpContactSupport")} href="/contact" />
+          </div>
+          <Separator />
+          <Collapsible>
+            <CollapsibleTrigger className="flex min-h-11 w-full items-center gap-2 rounded-lg px-2 text-left text-sm font-medium text-foreground outline-none transition-colors hover:bg-muted/60 focus-visible:ring-3 focus-visible:ring-ring/50">
+              <Accessibility className="size-4 text-primary" aria-hidden />
+              {tA11y("title")}
+              <ChevronDown className="ms-auto size-4 text-muted-foreground transition-transform in-data-[state=open]:rotate-180" aria-hidden />
+            </CollapsibleTrigger>
+            <CollapsibleContent className="pt-3">
+              <AccessibilityToolbar />
+            </CollapsibleContent>
+          </Collapsible>
+        </CardContent>
+      </Card>
     </section>
   );
 }

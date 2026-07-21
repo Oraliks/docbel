@@ -17,6 +17,7 @@ import {
   UserXIcon,
   type LucideIcon,
 } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
 
 /// Engagements de confidentialité — formulations alignées sur celles déjà
 /// affichées dans le parcours dossier (cf. commentaire d'en-tête du fichier).
@@ -32,32 +33,23 @@ export async function TrustBand() {
   return (
     <section
       aria-label={t("trustHeading")}
-      className="glass-surface flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:gap-6 sm:p-6"
+      className="flex flex-col gap-4 border-y border-[color:var(--glass-border)] px-2 py-5 lg:flex-row lg:items-stretch lg:gap-5 lg:px-4"
     >
       {/* En-tête : tuile + titre — compact, posé à gauche sur desktop. */}
-      <div className="flex shrink-0 items-center gap-2.5 sm:max-w-[190px]">
-        <span
-          className="glass-icon-tile flex size-9 shrink-0 items-center justify-center rounded-lg"
-          style={
-            {
-              background:
-                "color-mix(in oklab, var(--glass-accent-deep) 18%, transparent)",
-              color: "var(--glass-accent-deep)",
-              "--tile-hue": "var(--glass-accent-deep)",
-            } as React.CSSProperties
-          }
-        >
-          <ShieldCheckIcon className="size-[18px]" strokeWidth={1.9} aria-hidden />
-        </span>
+      <div className="flex shrink-0 items-center gap-3 lg:w-52">
+        <ShieldCheckIcon className="size-6 shrink-0 text-[color:var(--glass-accent-deep)]" strokeWidth={1.9} aria-hidden />
         <h2 className="glass-display text-[19px] font-semibold leading-tight sm:text-[21px]">
           {t("trustHeading")}
         </h2>
       </div>
 
+      <Separator className="lg:hidden" />
+      <Separator orientation="vertical" className="hidden lg:block" />
+
       {/* 3 engagements en ligne, compacts. */}
-      <div className="grid flex-1 gap-x-8 gap-y-2.5 sm:grid-cols-3">
+      <div className="grid flex-1 gap-4 md:grid-cols-3 md:gap-5">
         {PRIVACY_POINTS.map(({ Icon, key }) => (
-          <div key={key} className="flex items-start gap-2.5">
+          <div key={key} className="flex items-start gap-2.5 sm:px-1">
             <Icon
               className="mt-0.5 size-4 shrink-0 text-[color:var(--glass-accent-deep)]"
               strokeWidth={2}

@@ -3,132 +3,121 @@
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import {
-  ArrowRightIcon,
-  BookOpenIcon,
-  FolderOpenIcon,
-  SearchIcon,
+  ArrowRight,
+  BriefcaseBusiness,
+  GraduationCap,
+  PauseCircle,
+  Sparkles,
 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
-  Briefcase,
-  Buildings,
-  Calculator,
-  Scales,
-} from "@phosphor-icons/react";
-import type { NewsItem } from "@/lib/docbel-data";
-import { Skeleton } from "@/components/ui/skeleton";
-import { useAppState } from "@/lib/app-state-context";
-import { GLASS_INPUT } from "@/lib/glass-classes";
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import {
+  ResumeStrip,
+  type ResumeStripRun,
+} from "@/components/docbel/landing/resume-strip";
 
 interface LandingHeroProps {
-  articles: NewsItem[];
-  loading?: boolean;
+  activeRun: ResumeStripRun | null;
 }
 
-// Article de repli localise : le hero reste utile lorsque la source de donnees
-// est momentanement indisponible, sans fetch client au premier affichage.
-function buildFallbackArticle(t: ReturnType<typeof useTranslations>): NewsItem {
-  return {
-    id: "placeholder-c1",
-    slug: undefined,
-    tag: t("fallbackTag"),
-    title: t("fallbackTitle"),
-    desc: t("fallbackDesc"),
-    date: t("fallbackDate"),
-    color: "var(--glass-accent-deep)",
-  };
-}
+const SITUATIONS = [
+  {
+    value: "perte-emploi",
+    labelKey: "wizard.s.perteEmploi.label",
+    Icon: BriefcaseBusiness,
+  },
+  {
+    value: "jeune-etudes",
+    labelKey: "wizard.s.jeuneEtudes.label",
+    Icon: GraduationCap,
+  },
+  {
+    value: "contrat-suspendu",
+    labelKey: "wizard.s.contratSuspendu.label",
+    Icon: PauseCircle,
+  },
+] as const;
 
-/**
- * Illustration volontairement secondaire : elle donne du relief au guichet
- * sans bouger en boucle, disparait en mode simple et reste neutre pour les
- * technologies d'assistance.
- */
-function GuidedArtwork() {
-  const tiles = [Briefcase, Scales, Buildings, Calculator];
+function HowItWorksCard() {
+  const t = useTranslations("public.home");
+  const steps = [
+    {
+      title: t("guidedStep1Title"),
+      description: t("guidedStep1Description"),
+    },
+    {
+      title: t("guidedStep2Title"),
+      description: t("guidedStep2Description"),
+    },
+    {
+      title: t("guidedStep3Title"),
+      description: t("guidedStep3Description"),
+    },
+  ];
 
   return (
-    <div
-      aria-hidden
-      data-a11y-secondary="true"
-      className="pointer-events-none relative hidden min-h-[230px] items-center justify-center sm:flex"
-    >
-      <div
-        className="absolute size-48 rounded-full opacity-70 blur-3xl"
-        style={{ background: "var(--glass-accent-c)" }}
-      />
-      <div className="absolute size-44 rounded-full border border-[color:var(--glass-border)]" />
-      <div className="absolute size-28 rounded-full border border-[color:var(--glass-border)] opacity-70" />
-
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src="/3d/book.png"
-        alt=""
-        className="relative z-10 size-32 object-contain drop-shadow-[0_18px_24px_rgba(50,34,100,0.28)] motion-safe:animate-[fadeInUp_0.45s_ease_both] sm:size-40"
-      />
-
-      {tiles.map((Icon, index) => (
-        <span
-          key={Icon.displayName ?? index}
-          className={`glass-icon-tile absolute z-20 flex size-10 items-center justify-center rounded-2xl sm:size-11 ${
-            index === 0
-              ? "top-[7%] left-[20%]"
-              : index === 1
-                ? "top-[12%] right-[17%]"
-                : index === 2
-                  ? "bottom-[8%] left-[17%]"
-                  : "right-[20%] bottom-[4%]"
-          }`}
-        >
-          <Icon
-            weight="duotone"
-            className="size-5 text-[color:var(--glass-accent-deep)]"
-          />
-        </span>
-      ))}
-    </div>
+    <Card className="h-full">
+      <CardHeader>
+        <Badge variant="secondary" className="w-fit">
+          {t("guidedHowBadge")}
+        </Badge>
+        <CardTitle>{t("guidedHowTitle")}</CardTitle>
+        <CardDescription>{t("guidedHowDescription")}</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <ol className="flex flex-col" aria-label={t("guidedHowTitle")}>
+          {steps.map((step, index) => (
+            <li key={step.title}>
+              <div className="flex items-start gap-3 py-3 first:pt-0">
+                <Badge
+                  variant="outline"
+                  className="mt-0.5 size-7 shrink-0 rounded-full p-0"
+                  aria-hidden
+                >
+                  {index + 1}
+                </Badge>
+                <div className="min-w-0 flex-1">
+                  <p className="font-semibold text-[color:var(--glass-ink)]">
+                    {step.title}
+                  </p>
+                  <p className="mt-1 text-sm leading-relaxed text-[color:var(--glass-ink-soft)]">
+                    {step.description}
+                  </p>
+                </div>
+              </div>
+              {index < steps.length - 1 ? <Separator /> : null}
+            </li>
+          ))}
+        </ol>
+      </CardContent>
+      <CardFooter>
+        <p className="text-xs text-muted-foreground">
+          {t("guidedHowFooter")}
+        </p>
+      </CardFooter>
+    </Card>
   );
 }
 
-function FeaturedStory({ article }: { article: NewsItem }) {
+/** Premier ecran de la home : une seule action dominante vers le guichet. */
+export function LandingHero({ activeRun }: LandingHeroProps) {
   const t = useTranslations("public.home");
-  const content = (
-    <>
-      <div className="flex flex-wrap items-center gap-2 text-[11px] font-bold uppercase tracking-[0.1em] text-[color:var(--glass-ink-faint)]">
-        <span className="rounded-full bg-[color:var(--glass-surface-strong)] px-2.5 py-1 text-[color:var(--glass-accent-deep)]">
-          {article.tag}
-        </span>
-        {article.date && <span>{article.date}</span>}
-      </div>
-      <p className="mt-2 line-clamp-2 text-[14px] font-bold leading-snug text-[color:var(--glass-ink)]">
-        {article.title}
-      </p>
-      <span className="mt-3 inline-flex items-center gap-1.5 text-[12px] font-semibold text-[color:var(--glass-accent-deep)]">
-        <BookOpenIcon className="size-3.5" aria-hidden />
-        {t("ctaReadArticle")}
-        <ArrowRightIcon className="size-3.5" aria-hidden />
-      </span>
-    </>
-  );
-
-  const className =
-    "glass-interactive block rounded-2xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] p-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)]";
-  const href = article.slug ? `/actualites/${article.slug}` : "/actualites";
-
-  return (
-    <Link href={href} className={className}>
-      {content}
-    </Link>
-  );
-}
-
-function GuidedHero({ article }: { article: NewsItem }) {
-  const t = useTranslations("public.home");
-  const { openSearch } = useAppState();
+  const tc = useTranslations("public.dossierContent");
 
   return (
     <section
       aria-labelledby="home-guided-heading"
-      className="glass-surface relative isolate overflow-hidden p-5 sm:p-7 lg:p-9"
+      className="relative isolate overflow-hidden rounded-[32px] border border-[color:var(--glass-border)] px-5 py-7 sm:px-8 sm:py-9 lg:px-10 lg:py-11"
+      data-docbel-readable
     >
       <div
         aria-hidden
@@ -136,90 +125,69 @@ function GuidedHero({ article }: { article: NewsItem }) {
         className="pointer-events-none absolute inset-0 -z-10 opacity-80"
         style={{
           background:
-            "radial-gradient(circle at 82% 22%, var(--glass-accent-a), transparent 32%), radial-gradient(circle at 55% 110%, var(--glass-accent-c), transparent 42%)",
+            "radial-gradient(circle at 8% 12%, var(--glass-accent-c), transparent 28%), radial-gradient(circle at 88% 18%, var(--glass-accent-a), transparent 32%), linear-gradient(135deg, var(--glass-surface), transparent 72%)",
         }}
       />
 
-      <div className="grid items-center gap-7 lg:grid-cols-[minmax(0,1.12fr)_minmax(300px,0.88fr)] lg:gap-10">
-        <div className="flex min-w-0 flex-col items-start">
-          <p className="mb-3 inline-flex items-center gap-2 rounded-full border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.12em] text-[color:var(--glass-accent-deep)]">
-            <span className="size-1.5 rounded-full bg-[color:var(--glass-accent-deep)]" />
-            {t("wizardEyebrow")}
-          </p>
+      <div className="grid items-stretch gap-8 lg:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)] lg:gap-10">
+        <div className="flex min-w-0 flex-col items-start justify-center py-1 sm:py-3">
+          <Badge variant="secondary">{t("guidedEyebrow")}</Badge>
           <h1
             id="home-guided-heading"
-            className="glass-display max-w-3xl text-[34px] font-semibold leading-[1.02] sm:text-[46px] lg:text-[52px]"
+            className="glass-display mt-4 max-w-3xl text-[36px] font-semibold leading-[1.02] sm:text-[48px] lg:text-[56px]"
           >
-            {t.rich("wizardTitle", { em: (chunks) => <em>{chunks}</em> })}
+            {t("guidedTitle")}
           </h1>
-          <p className="mt-4 max-w-2xl text-[14px] leading-[1.7] text-[color:var(--glass-ink-soft)] sm:text-[15px]">
-            {t("wizardDescription")}
+          <p className="mt-5 max-w-2xl text-[15px] leading-[1.75] text-[color:var(--glass-ink-soft)] sm:text-base">
+            {t("guidedDescription")}
           </p>
 
-          <button
-            type="button"
-            onClick={openSearch}
-            className={`${GLASS_INPUT} search-glow glass-interactive mt-6 flex min-h-16 w-full max-w-2xl items-center gap-3 border px-4 py-3 text-left backdrop-blur-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)] sm:px-5`}
-            aria-label={t("searchOpenLabel", { modifier: "ctrl" })}
+          <Button
+            render={<Link href="/mon-dossier" />}
+            nativeButton={false}
+            size="lg"
+            className="mt-7 min-h-12 px-6"
           >
-            <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[color:var(--glass-accent-deep)] text-[color:var(--glass-bg-a)]">
-              <SearchIcon className="size-5" aria-hidden />
-            </span>
-            <span className="min-w-0 flex-1">
-              <span className="block text-[14px] font-bold text-[color:var(--glass-ink)] sm:text-[15px]">
-                {t("searchPrefix")}
-              </span>
-              <span className="mt-0.5 block truncate text-[12px] text-[color:var(--glass-ink-soft)] sm:text-[13px]">
-                {t("searchExample1")} · {t("searchExample2")} · {t("searchExample3")}
-              </span>
-            </span>
-            <ArrowRightIcon className="size-5 shrink-0 text-[color:var(--glass-accent-deep)]" aria-hidden />
-          </button>
+            <Sparkles data-icon="inline-start" aria-hidden />
+            {t("guidedCta")}
+            <ArrowRight
+              data-icon="inline-end"
+              className="rtl:rotate-180"
+              aria-hidden
+            />
+          </Button>
 
-          <div className="mt-4 flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:flex-wrap">
-            <Link
-              href="/mon-dossier"
-              className="glass-cta glass-interactive inline-flex min-h-12 items-center justify-center gap-2 rounded-full px-6 py-3 text-[14px] font-bold"
-            >
-              <FolderOpenIcon className="size-4" aria-hidden />
-              {t("ctaCreateDossier")}
-              <ArrowRightIcon className="size-4" aria-hidden />
-            </Link>
+          <div
+            className="mt-7 flex w-full flex-col items-start gap-3"
+            aria-label={t("guidedSituationsLabel")}
+          >
+            <p className="text-xs font-semibold uppercase tracking-[0.1em] text-[color:var(--glass-ink-faint)]">
+              {t("guidedSituationsLabel")}
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {SITUATIONS.map(({ value, labelKey, Icon }) => (
+                <Badge
+                  key={value}
+                  render={
+                    <Link
+                      href={`/mon-dossier?situation=${encodeURIComponent(value)}`}
+                    />
+                  }
+                  variant="outline"
+                  className="glass-interactive min-h-9 px-3 text-[12px]"
+                >
+                  <Icon data-icon="inline-start" aria-hidden />
+                  {tc(labelKey)}
+                </Badge>
+              ))}
+            </div>
           </div>
         </div>
 
-        <aside className="grid min-w-0 gap-3 sm:grid-cols-[0.9fr_1.1fr] lg:grid-cols-1">
-          <GuidedArtwork />
-          <FeaturedStory article={article} />
+        <aside className="min-w-0" aria-label={t("guidedAsideLabel")}>
+          {activeRun ? <ResumeStrip run={activeRun} /> : <HowItWorksCard />}
         </aside>
       </div>
     </section>
-  );
-}
-
-function GuidedHeroSkeleton() {
-  return (
-    <section className="glass-surface grid min-h-[420px] gap-8 p-6 sm:p-8 lg:grid-cols-[1.12fr_0.88fr] lg:items-center">
-      <div className="flex flex-col gap-4">
-        <Skeleton className="h-7 w-28 rounded-full" />
-        <Skeleton className="h-12 w-full" />
-        <Skeleton className="h-12 w-4/5" />
-        <Skeleton className="h-4 w-full" />
-        <Skeleton className="h-4 w-3/4" />
-        <Skeleton className="mt-3 h-12 w-48 rounded-full" />
-      </div>
-      <Skeleton className="h-[300px] w-full rounded-[24px]" />
-    </section>
-  );
-}
-
-export function LandingHero({ articles, loading = false }: LandingHeroProps) {
-  const t = useTranslations("public.home");
-  const article = articles[0] ?? buildFallbackArticle(t);
-
-  return loading && articles.length === 0 ? (
-    <GuidedHeroSkeleton />
-  ) : (
-    <GuidedHero article={article} />
   );
 }

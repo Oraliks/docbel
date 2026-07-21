@@ -56,6 +56,11 @@ import {
 } from "@/components/ui/accordion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
+import {
+  Progress,
+  ProgressLabel,
+} from "@/components/ui/progress";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { cn } from "@/lib/utils";
 import { GLASS_CARD } from "@/lib/glass-classes";
 import { formatDate } from "@/lib/i18n/format";
@@ -431,33 +436,29 @@ function Stepper({ currentStep }: StepperProps) {
   const t = useTranslations("public.dossier");
   return (
     <div
-      className="grid grid-cols-4 overflow-hidden rounded-xl border border-[color:var(--glass-border)]"
+      className="flex flex-col gap-3"
       aria-label={t("wizardProgressLabel")}
-      role="progressbar"
-      aria-valuemin={1}
-      aria-valuemax={4}
-      aria-valuenow={currentStep}
     >
-      {([1, 2, 3, 4] as const).map((step) => {
-        const active = step === currentStep;
-        const completed = step < currentStep;
-        return (
+      <Progress value={currentStep * 25} className="docbel-progress-feedback gap-2">
+        <ProgressLabel>{t(STEP_LABEL_KEYS[currentStep] as Parameters<typeof t>[0])}</ProgressLabel>
+        <span className="ms-auto text-sm tabular-nums text-muted-foreground">
+          {currentStep}/4
+        </span>
+      </Progress>
+      <div className="grid grid-cols-4 gap-2" aria-hidden>
+        {([1, 2, 3, 4] as const).map((step) => (
           <span
             key={step}
             className={cn(
-              "flex min-h-16 flex-col items-center justify-center gap-1 border-e border-[color:var(--glass-border)] px-1 text-center text-[11px] last:border-e-0 sm:min-h-12 sm:flex-row sm:gap-2 sm:px-3 sm:text-sm",
-              active && "bg-[color:var(--glass-pop-bg)] font-bold text-[color:var(--glass-accent-deep)]",
-              !active && "text-[color:var(--glass-ink)]/65",
+              "text-center text-[11px] leading-tight text-muted-foreground sm:text-xs",
+              step === currentStep && "font-semibold text-primary",
+              step < currentStep && "text-foreground",
             )}
           >
-            <span className={cn(
-              "flex size-5 shrink-0 items-center justify-center rounded-full bg-[color:var(--glass-pop-bg)] text-xs font-bold sm:size-6",
-              (active || completed) && "bg-[color:var(--glass-accent-deep)] text-primary-foreground",
-            )}>{step}</span>
-            <span>{t(STEP_LABEL_KEYS[step] as Parameters<typeof t>[0])}</span>
+            {t(STEP_LABEL_KEYS[step] as Parameters<typeof t>[0])}
           </span>
-        );
-      })}
+        ))}
+      </div>
     </div>
   );
 }
@@ -525,30 +526,35 @@ function StepSituation({
         </label>
       )}
 
-      <div className="no-scrollbar flex gap-2 overflow-x-auto pb-1" aria-label={t("sortGroupLabel")}>
+      <ToggleGroup
+        value={normalizedQuery ? [] : [activeTheme]}
+        onValueChange={(values) => {
+          const nextTheme = values.at(-1) as SituationTheme | undefined;
+          if (!nextTheme) return;
+          setQuery("");
+          setActiveTheme(nextTheme);
+        }}
+        variant="outline"
+        size="default"
+        spacing={1}
+        className="no-scrollbar flex w-full justify-start overflow-x-auto pb-1"
+        aria-label={t("wizardThemeGroupLabel")}
+      >
         {SITUATION_THEMES.map((theme) => {
           const category = LIFE_EVENT_CATEGORIES.find((item) => item.id === theme.id);
           const Icon = theme.icon;
-          const active = activeTheme === theme.id && !normalizedQuery;
           return (
-            <button
+            <ToggleGroupItem
               key={theme.id}
-              type="button"
-              aria-pressed={active}
-              onClick={() => { setQuery(""); setActiveTheme(theme.id); }}
-              className={cn(
-                "glass-interactive flex min-h-11 shrink-0 items-center gap-2 rounded-xl border px-4 text-sm font-semibold",
-                active
-                  ? "border-[color:var(--glass-accent-deep)] bg-[color:var(--glass-pop-bg)] text-[color:var(--glass-accent-deep)]"
-                  : "border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] text-[color:var(--glass-ink)]",
-              )}
+              value={theme.id}
+              className="min-h-11 shrink-0"
             >
-              <Icon className="size-4" aria-hidden />
+              <Icon data-icon="inline-start" aria-hidden />
               {category?.label ?? theme.id}
-            </button>
+            </ToggleGroupItem>
           );
         })}
-      </div>
+      </ToggleGroup>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {visibleSituations.map((s) => {

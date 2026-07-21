@@ -693,6 +693,21 @@
   color: var(--glass-accent-deep);
 }
 
+/* Accueil : direction du mockup validé — fond plus clair, panneaux plus nets
+   et ombres plus courtes. Le scope évite toute dérive sur les autres pages. */
+html:not(.dark) .glass-root:has(.docbel-home)::before {
+  background:
+    radial-gradient(ellipse 68% 48% at 78% 0%, color-mix(in oklab, var(--glass-bg-d) 44%, transparent), transparent 66%),
+    radial-gradient(ellipse 55% 45% at 0% 36%, color-mix(in oklab, var(--glass-bg-b) 34%, transparent), transparent 68%),
+    linear-gradient(145deg, color-mix(in oklab, var(--glass-surface-strong) 86%, var(--glass-bg-a)), color-mix(in oklab, var(--glass-surface-strong) 92%, var(--glass-bg-c)));
+}
+
+.docbel-home :is(.glass-surface, [data-slot="card"]) {
+  box-shadow:
+    0 10px 30px color-mix(in oklab, var(--glass-accent-deep) 8%, transparent),
+    inset 0 1px 0 color-mix(in oklab, var(--glass-border) 88%, transparent);
+}
+
 .glass-header-shell {
   transition: transform 250ms cubic-bezier(0.4, 0, 0.2, 1);
   will-change: transform;

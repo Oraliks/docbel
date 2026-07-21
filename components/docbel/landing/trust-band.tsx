@@ -1,14 +1,3 @@
-// Bande de confiance de la home : uniquement les engagements de
-// confidentialité, affichés en TEXTE compact et prominent (plus de compteurs,
-// plus de carte). Formulations alignées sur celles déjà présentes dans le
-// produit (rien n'est promis ici qui ne soit pas dans le code) :
-//   - « Aucune donnée nominative n'est conservée »
-//     → components/docbel/onboarding/resume-code-banner.tsx
-//   - code de reprise anonyme, sans compte (parcours via cookie de session)
-//     → lib/bundles/resume-code.ts + app/d/[slug]/page.tsx
-//   - expiration automatique après 30 jours
-//     → RESUME_CODE_DEFAULT_TTL_DAYS (lib/bundles/resume-code.ts)
-
 import { getTranslations } from "next-intl/server";
 import {
   KeyRoundIcon,
@@ -17,11 +6,13 @@ import {
   UserXIcon,
   type LucideIcon,
 } from "lucide-react";
-import { Separator } from "@/components/ui/separator";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
-/// Engagements de confidentialité — formulations alignées sur celles déjà
-/// affichées dans le parcours dossier (cf. commentaire d'en-tête du fichier).
-/// Le texte (avec emphase <strong>) vient des traductions via `t.rich`.
 const PRIVACY_POINTS: { Icon: LucideIcon; key: string }[] = [
   { Icon: UserXIcon, key: "trustPoint1" },
   { Icon: KeyRoundIcon, key: "trustPoint2" },
@@ -30,43 +21,61 @@ const PRIVACY_POINTS: { Icon: LucideIcon; key: string }[] = [
 
 export async function TrustBand() {
   const t = await getTranslations("public.home");
+
   return (
-    <section
+    <Card
       aria-label={t("trustHeading")}
-      className="flex flex-col gap-4 border-y border-[color:var(--glass-border)] px-2 py-5 lg:flex-row lg:items-stretch lg:gap-5 lg:px-4"
+      className="relative min-h-[172px] overflow-hidden rounded-[24px] py-5 sm:py-6"
     >
-      {/* En-tête : tuile + titre — compact, posé à gauche sur desktop. */}
-      <div className="flex shrink-0 items-center gap-3 lg:w-52">
-        <ShieldCheckIcon className="size-6 shrink-0 text-[color:var(--glass-accent-deep)]" strokeWidth={1.9} aria-hidden />
-        <h2 className="glass-display text-[19px] font-semibold leading-tight sm:text-[21px]">
-          {t("trustHeading")}
-        </h2>
+      <div
+        aria-hidden
+        data-a11y-secondary="true"
+        className="pointer-events-none absolute right-[-44px] top-1/2 hidden size-56 -translate-y-1/2 rounded-full bg-primary/10 blur-2xl lg:block"
+      />
+      <div className="relative z-10 lg:pr-44">
+        <CardHeader className="px-5 sm:px-7">
+          <CardTitle className="flex items-center gap-3">
+            <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+              <ShieldCheckIcon aria-hidden />
+            </span>
+            <h2 className="glass-display text-[23px] font-semibold leading-tight sm:text-[27px]">
+              {t("trustHeading")}
+            </h2>
+          </CardTitle>
+        </CardHeader>
+
+        <CardContent className="grid gap-4 px-5 sm:px-7 md:grid-cols-3">
+          {PRIVACY_POINTS.map(({ Icon, key }) => (
+            <div key={key} className="flex items-start gap-3">
+              <span className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                <Icon aria-hidden />
+              </span>
+              <p className="text-[11px] leading-relaxed text-[color:var(--glass-ink-soft)] sm:text-xs">
+                {t.rich(key as Parameters<typeof t.rich>[0], {
+                  strong: (chunks) => (
+                    <strong className="font-bold text-[color:var(--glass-ink)]">
+                      {chunks}
+                    </strong>
+                  ),
+                })}
+              </p>
+            </div>
+          ))}
+        </CardContent>
       </div>
 
-      <Separator className="lg:hidden" />
-      <Separator orientation="vertical" className="hidden lg:block" />
-
-      {/* 3 engagements en ligne, compacts. */}
-      <div className="grid flex-1 gap-4 md:grid-cols-3 md:gap-5">
-        {PRIVACY_POINTS.map(({ Icon, key }) => (
-          <div key={key} className="flex items-start gap-2.5 sm:px-1">
-            <Icon
-              className="mt-0.5 size-4 shrink-0 text-[color:var(--glass-accent-deep)]"
-              strokeWidth={2}
-              aria-hidden
-            />
-            <p className="text-xs leading-relaxed text-[color:var(--glass-ink-soft)]">
-              {t.rich(key as Parameters<typeof t.rich>[0], {
-                strong: (chunks) => (
-                  <strong className="font-bold text-[color:var(--glass-ink)]">
-                    {chunks}
-                  </strong>
-                ),
-              })}
-            </p>
-          </div>
-        ))}
+      <div
+        aria-hidden
+        data-a11y-secondary="true"
+        className="pointer-events-none absolute right-8 top-1/2 hidden -translate-y-1/2 lg:block"
+      >
+        <div className="relative flex size-28 items-center justify-center rounded-[32px] border border-[color:var(--glass-border)] bg-[color:var(--glass-surface-strong)] text-primary shadow-[0_22px_50px_rgba(91,70,229,0.22)] rotate-3">
+          <ShieldCheckIcon className="size-14" strokeWidth={1.6} aria-hidden />
+          <span className="absolute -bottom-2 -right-2 flex size-9 items-center justify-center rounded-full bg-[color:var(--glass-pop-fg)] text-primary-foreground shadow-lg">
+            <ShieldCheckIcon className="size-4" aria-hidden />
+          </span>
+        </div>
       </div>
-    </section>
+    </Card>
   );
 }

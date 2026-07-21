@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { ArrowRight, FolderOpen } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import {
   Card,
   CardAction,
@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
+import { cn } from "@/lib/utils";
 
 export interface ResumeStripRun {
   runId: string;
@@ -51,46 +52,50 @@ export function ResumeStrip({ run }: ResumeStripProps) {
 
   return (
     <Card
-      className="h-full"
+      className="h-full rounded-[24px] py-5"
       aria-label={
         completed
           ? t("resumeCompletedAriaLabel", { name: run.name })
           : t("resumeAriaLabel", { name: run.name })
       }
     >
-      <CardHeader>
+      <CardHeader className="gap-3 px-5">
         <div className="flex items-center gap-2 text-[color:var(--glass-accent-deep)]">
-          <FolderOpen className="size-5" aria-hidden />
-          <Badge variant="secondary">{t("guidedResumeEyebrow")}</Badge>
+          <span className="flex size-8 items-center justify-center rounded-xl bg-primary/10">
+            <FolderOpen aria-hidden />
+          </span>
+          <span className="text-[11px] font-bold uppercase tracking-[0.08em]">
+            {t("guidedResumeEyebrow")}
+          </span>
         </div>
-        <CardTitle>
+        <CardTitle className="glass-display pr-12 text-[22px] font-semibold leading-tight sm:text-[25px]">
           {completed
             ? t("resumeCompletedTitle", { name: run.name })
             : t("resumeTitle", { name: run.name })}
         </CardTitle>
         <CardDescription>{progressText}</CardDescription>
         <CardAction>
-          <Badge variant="outline">
+          <Badge variant={completed ? "secondary" : "outline"}>
             {completed ? "100 %" : `${run.completed}/${run.total}`}
           </Badge>
         </CardAction>
       </CardHeader>
 
-      <CardContent className="flex flex-col gap-4">
+      <CardContent className="flex flex-1 flex-col gap-5 px-5">
         <Progress
           value={percentage}
           aria-label={t("resumeProgressAria", {
             completed: run.completed,
             total: run.total,
           })}
-          className="[&_[data-slot=progress-indicator]]:bg-[color:var(--glass-accent-deep)]"
+          className="h-2 [&_[data-slot=progress-indicator]]:bg-[color:var(--glass-accent-deep)]"
         />
         <Separator />
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.1em] text-[color:var(--glass-ink-faint)]">
+          <p className="text-[11px] font-bold uppercase tracking-[0.08em] text-[color:var(--glass-ink-faint)]">
             {t("guidedResumeNext")}
           </p>
-          <p className="mt-2 font-semibold text-[color:var(--glass-ink)]">
+          <p className="mt-2 font-semibold leading-relaxed text-[color:var(--glass-ink)]">
             {completed
               ? t("resumeCompletedProgress")
               : t("guidedResumeNextDescription")}
@@ -98,27 +103,23 @@ export function ResumeStrip({ run }: ResumeStripProps) {
         </div>
       </CardContent>
 
-      <CardFooter className="flex flex-wrap gap-2">
-        <Button
-          render={<Link href={resumeHref} />}
-          nativeButton={false}
-          className="min-h-10 flex-1"
+      <CardFooter className="flex-col gap-2 border-0 bg-transparent px-5 pt-0">
+        <Link
+          href={resumeHref}
+          className={cn(buttonVariants({ size: "lg" }), "w-full")}
         >
           {completed ? t("resumeCompletedCta") : t("resumeCta")}
-          <ArrowRight
-            data-icon="inline-end"
-            className="rtl:rotate-180"
-            aria-hidden
-          />
-        </Button>
-        <Button
-          render={<Link href="/mes-demarches" />}
-          nativeButton={false}
-          variant="outline"
-          className="min-h-10"
+          <ArrowRight data-icon="inline-end" className="rtl:rotate-180" aria-hidden />
+        </Link>
+        <Link
+          href="/mes-demarches"
+          className={cn(
+            buttonVariants({ variant: "outline", size: "lg" }),
+            "w-full",
+          )}
         >
           {t("resumeSeeAllCta")}
-        </Button>
+        </Link>
       </CardFooter>
     </Card>
   );

@@ -1,18 +1,20 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import {
   ArrowRight,
-  BriefcaseBusiness,
-  GraduationCap,
-  PauseCircle,
-  Sparkles,
+  CheckCircle2,
+  FileSearch,
+  ListChecks,
+  Search,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import {
   Card,
+  CardAction,
   CardContent,
   CardDescription,
   CardFooter,
@@ -20,6 +22,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { useAppState } from "@/lib/app-state-context";
+import { cn } from "@/lib/utils";
 import {
   ResumeStrip,
   type ResumeStripRun,
@@ -29,22 +33,10 @@ interface LandingHeroProps {
   activeRun: ResumeStripRun | null;
 }
 
-const SITUATIONS = [
-  {
-    value: "perte-emploi",
-    labelKey: "wizard.s.perteEmploi.label",
-    Icon: BriefcaseBusiness,
-  },
-  {
-    value: "jeune-etudes",
-    labelKey: "wizard.s.jeuneEtudes.label",
-    Icon: GraduationCap,
-  },
-  {
-    value: "contrat-suspendu",
-    labelKey: "wizard.s.contratSuspendu.label",
-    Icon: PauseCircle,
-  },
+const SEARCH_EXAMPLES = [
+  "searchExample1",
+  "searchExample2",
+  "searchExample3",
 ] as const;
 
 function HowItWorksCard() {
@@ -53,44 +45,52 @@ function HowItWorksCard() {
     {
       title: t("guidedStep1Title"),
       description: t("guidedStep1Description"),
+      Icon: FileSearch,
     },
     {
       title: t("guidedStep2Title"),
       description: t("guidedStep2Description"),
+      Icon: ListChecks,
     },
     {
       title: t("guidedStep3Title"),
       description: t("guidedStep3Description"),
+      Icon: CheckCircle2,
     },
   ];
 
   return (
-    <Card className="h-full">
-      <CardHeader>
+    <Card className="h-full rounded-[24px] py-5">
+      <CardHeader className="gap-2 px-5">
         <Badge variant="secondary" className="w-fit">
           {t("guidedHowBadge")}
         </Badge>
-        <CardTitle>{t("guidedHowTitle")}</CardTitle>
-        <CardDescription>{t("guidedHowDescription")}</CardDescription>
+        <CardTitle className="glass-display text-[22px] font-semibold leading-tight sm:text-[25px]">
+          {t("guidedHowTitle")}
+        </CardTitle>
+        <CardDescription className="leading-relaxed">
+          {t("guidedHowDescription")}
+        </CardDescription>
+        <CardAction>
+          <span className="flex size-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
+            <ListChecks aria-hidden />
+          </span>
+        </CardAction>
       </CardHeader>
-      <CardContent>
-        <ol className="flex flex-col" aria-label={t("guidedHowTitle")}>
-          {steps.map((step, index) => (
-            <li key={step.title}>
+      <CardContent className="flex-1 px-5">
+        <ol aria-label={t("guidedHowTitle")}>
+          {steps.map(({ title, description, Icon }, index) => (
+            <li key={title}>
               <div className="flex items-start gap-3 py-3 first:pt-0">
-                <Badge
-                  variant="outline"
-                  className="mt-0.5 size-7 shrink-0 rounded-full p-0"
-                  aria-hidden
-                >
-                  {index + 1}
-                </Badge>
+                <span className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                  <Icon aria-hidden />
+                </span>
                 <div className="min-w-0 flex-1">
                   <p className="font-semibold text-[color:var(--glass-ink)]">
-                    {step.title}
+                    {title}
                   </p>
-                  <p className="mt-1 text-sm leading-relaxed text-[color:var(--glass-ink-soft)]">
-                    {step.description}
+                  <p className="mt-1 text-xs leading-relaxed text-[color:var(--glass-ink-soft)]">
+                    {description}
                   </p>
                 </div>
               </div>
@@ -99,95 +99,113 @@ function HowItWorksCard() {
           ))}
         </ol>
       </CardContent>
-      <CardFooter>
-        <p className="text-xs text-muted-foreground">
-          {t("guidedHowFooter")}
-        </p>
+      <CardFooter className="border-0 bg-transparent px-5 pt-0">
+        <Link
+          href="/mon-dossier"
+          className={cn(buttonVariants({ size: "lg" }), "w-full")}
+        >
+          {t("guidedCta")}
+          <ArrowRight data-icon="inline-end" className="rtl:rotate-180" aria-hidden />
+        </Link>
       </CardFooter>
     </Card>
   );
 }
 
-/** Premier ecran de la home : une seule action dominante vers le guichet. */
+/** Accueil guide : recherche dominante, illustration et reprise reelle du dossier. */
 export function LandingHero({ activeRun }: LandingHeroProps) {
   const t = useTranslations("public.home");
-  const tc = useTranslations("public.dossierContent");
+  const tc = useTranslations("public.chrome");
+  const { openSearch } = useAppState();
 
   return (
     <section
       aria-labelledby="home-guided-heading"
-      className="relative isolate overflow-hidden rounded-[32px] border border-[color:var(--glass-border)] px-5 py-7 sm:px-8 sm:py-9 lg:px-10 lg:py-11"
-      data-docbel-readable
+      className="grid items-stretch gap-4 lg:grid-cols-[minmax(0,2.08fr)_minmax(330px,0.98fr)]"
     >
       <div
-        aria-hidden
-        data-a11y-secondary="true"
-        className="pointer-events-none absolute inset-0 -z-10 opacity-80"
-        style={{
-          background:
-            "radial-gradient(circle at 8% 12%, var(--glass-accent-c), transparent 28%), radial-gradient(circle at 88% 18%, var(--glass-accent-a), transparent 32%), linear-gradient(135deg, var(--glass-surface), transparent 72%)",
-        }}
-      />
+        className="glass-surface relative isolate min-h-[360px] overflow-hidden rounded-[28px] px-5 py-8 sm:px-8 lg:px-10"
+        data-docbel-readable
+      >
+        <div
+          aria-hidden
+          data-a11y-secondary="true"
+          className="absolute inset-0 -z-20"
+          style={{
+            background:
+              "radial-gradient(circle at 0% 100%, color-mix(in oklab, var(--glass-accent-c) 32%, transparent), transparent 38%), radial-gradient(circle at 72% 20%, color-mix(in oklab, var(--glass-accent-a) 30%, transparent), transparent 42%), linear-gradient(115deg, var(--glass-surface-strong), color-mix(in oklab, var(--glass-bg-d) 50%, transparent))",
+          }}
+        />
 
-      <div className="grid items-stretch gap-8 lg:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)] lg:gap-10">
-        <div className="flex min-w-0 flex-col items-start justify-center py-1 sm:py-3">
-          <Badge variant="secondary">{t("guidedEyebrow")}</Badge>
+        <div className="relative z-10 flex h-full max-w-[620px] flex-col justify-center lg:w-[68%]">
+          <Badge variant="secondary" className="mb-4 w-fit">
+            {t("guidedEyebrow")}
+          </Badge>
           <h1
             id="home-guided-heading"
-            className="glass-display mt-4 max-w-3xl text-[36px] font-semibold leading-[1.02] sm:text-[48px] lg:text-[56px]"
+            className="glass-display max-w-[620px] text-[40px] font-semibold leading-[0.98] tracking-[-0.035em] sm:text-[48px] lg:text-[50px]"
           >
             {t("guidedTitle")}
           </h1>
-          <p className="mt-5 max-w-2xl text-[15px] leading-[1.75] text-[color:var(--glass-ink-soft)] sm:text-base">
+          <p className="mt-5 max-w-[590px] text-sm leading-[1.75] text-[color:var(--glass-ink-soft)] sm:text-base">
             {t("guidedDescription")}
           </p>
 
           <Button
-            render={<Link href="/mon-dossier" />}
-            nativeButton={false}
+            type="button"
+            variant="outline"
             size="lg"
-            className="mt-7 min-h-12 px-6"
+            onClick={openSearch}
+            aria-label={t("searchOpenLabel", { modifier: "ctrl" })}
+            className="mt-7 h-15 w-full justify-start rounded-2xl border-[color:var(--glass-border)] bg-[color:var(--glass-surface-strong)] px-4 text-[color:var(--glass-ink-soft)] shadow-[0_12px_28px_rgba(91,70,229,0.10)] sm:h-16 sm:px-5"
           >
-            <Sparkles data-icon="inline-start" aria-hidden />
-            {t("guidedCta")}
-            <ArrowRight
-              data-icon="inline-end"
-              className="rtl:rotate-180"
-              aria-hidden
-            />
+            <Search data-icon="inline-start" className="text-[color:var(--glass-ink)]" aria-hidden />
+            <span className="min-w-0 flex-1 truncate text-start text-sm font-medium sm:text-base">
+              {tc("searchPlaceholder")}
+            </span>
+            <kbd className="hidden rounded-lg bg-[color:var(--glass-surface-strong)] px-2 py-1 text-xs font-bold text-[color:var(--glass-ink-faint)] shadow-[inset_0_0_0_1px_var(--glass-border)] sm:inline-flex">
+              Ctrl K
+            </kbd>
           </Button>
 
-          <div
-            className="mt-7 flex w-full flex-col items-start gap-3"
-            aria-label={t("guidedSituationsLabel")}
-          >
-            <p className="text-xs font-semibold uppercase tracking-[0.1em] text-[color:var(--glass-ink-faint)]">
-              {t("guidedSituationsLabel")}
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {SITUATIONS.map(({ value, labelKey, Icon }) => (
-                <Badge
-                  key={value}
-                  render={
-                    <Link
-                      href={`/mon-dossier?situation=${encodeURIComponent(value)}`}
-                    />
-                  }
-                  variant="outline"
-                  className="glass-interactive min-h-9 px-3 text-[12px]"
-                >
-                  <Icon data-icon="inline-start" aria-hidden />
-                  {tc(labelKey)}
-                </Badge>
-              ))}
-            </div>
+          <div className="mt-4 flex flex-wrap items-center gap-2">
+            <span className="text-xs font-semibold text-[color:var(--glass-ink-faint)]">
+              {t("searchPrefix")}
+            </span>
+            {SEARCH_EXAMPLES.map((key) => (
+              <button
+                key={key}
+                type="button"
+                onClick={openSearch}
+                className="glass-interactive min-h-8 rounded-xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-3 text-xs font-semibold text-[color:var(--glass-ink-soft)] outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)]"
+              >
+                {t(key)}
+              </button>
+            ))}
           </div>
         </div>
 
-        <aside className="min-w-0" aria-label={t("guidedAsideLabel")}>
-          {activeRun ? <ResumeStrip run={activeRun} /> : <HowItWorksCard />}
-        </aside>
+        <div
+          aria-hidden
+          data-a11y-secondary="true"
+          className="pointer-events-none absolute -right-10 bottom-[-66px] hidden w-[45%] min-w-[355px] max-w-[480px] lg:block"
+        >
+          <div className="absolute inset-[18%] -z-10 rounded-full bg-[color:var(--glass-accent-b)] opacity-30 blur-3xl" />
+          <Image
+            src="/illustrations/docbel-home-hero.png"
+            alt=""
+            width={900}
+            height={900}
+            priority
+            sizes="(min-width: 1280px) 520px, 40vw"
+            className="h-auto w-full drop-shadow-[0_28px_34px_rgba(91,70,229,0.24)]"
+          />
+        </div>
       </div>
+
+      <aside className="min-w-0" aria-label={t("guidedAsideLabel")}>
+        {activeRun ? <ResumeStrip run={activeRun} /> : <HowItWorksCard />}
+      </aside>
     </section>
   );
 }

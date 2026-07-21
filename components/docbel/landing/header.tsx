@@ -176,6 +176,7 @@ export function LandingHeader({ persona, onSearchOpen }: LandingHeaderProps) {
   const { data: session } = useAuthSession();
   const siteName = useSiteSettings()?.identity.name ?? "Docbel";
   const activeNav = resolveActiveNav(pathname);
+  const onHome = pathname === "/";
   const [mobileOpen, setMobileOpen] = useState(false);
   const accessibilityPreferences = useSyncExternalStore(
     subscribeAccessibilityPreferences,
@@ -467,22 +468,24 @@ export function LandingHeader({ persona, onSearchOpen }: LandingHeaderProps) {
         })}
       </nav>
 
-      <button
-        type="button"
-        onClick={onSearchOpen}
-        aria-label={t("search")}
-        className="search-glow ml-auto flex size-11 shrink-0 items-center justify-center rounded-2xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] text-[color:var(--glass-ink-soft)] outline-none transition-colors hover:bg-[color:var(--glass-surface-strong)] hover:text-[color:var(--glass-ink)] md:min-w-48 md:flex-1 md:justify-start md:gap-2.5 md:px-3 min-[1180px]:max-w-64 min-[1180px]:flex-none"
-      >
-        <SearchIcon className="size-4 shrink-0" aria-hidden />
-        <span className="hidden min-w-0 flex-1 truncate text-left text-[13px] md:block">
-          {t("searchPlaceholder")}
-        </span>
-        <kbd className="hidden shrink-0 rounded-md bg-[color:var(--glass-surface-strong)] px-1.5 py-0.5 text-[10px] font-semibold lg:block">
-          ⌘K
-        </kbd>
-      </button>
+      {!onHome ? (
+        <button
+          type="button"
+          onClick={onSearchOpen}
+          aria-label={t("search")}
+          className="search-glow ml-auto flex size-11 shrink-0 items-center justify-center rounded-2xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] text-[color:var(--glass-ink-soft)] outline-none transition-colors hover:bg-[color:var(--glass-surface-strong)] hover:text-[color:var(--glass-ink)] md:min-w-48 md:flex-1 md:justify-start md:gap-2.5 md:px-3 min-[1180px]:max-w-64 min-[1180px]:flex-none"
+        >
+          <SearchIcon className="size-4 shrink-0" aria-hidden />
+          <span className="hidden min-w-0 flex-1 truncate text-left text-[13px] md:block">
+            {t("searchPlaceholder")}
+          </span>
+          <kbd className="hidden shrink-0 rounded-md bg-[color:var(--glass-surface-strong)] px-1.5 py-0.5 text-[10px] font-semibold lg:block">
+            Ctrl K
+          </kbd>
+        </button>
+      ) : null}
 
-      <div className="hidden items-center gap-1.5 md:flex">
+      <div className={cn("hidden items-center gap-1.5 md:flex", onHome && "ml-auto")}>
         <LocaleSwitcher
           localeList={publicLocales}
           compact
@@ -498,67 +501,69 @@ export function LandingHeader({ persona, onSearchOpen }: LandingHeaderProps) {
         >
           {dark ? <SunIcon aria-hidden /> : <MoonIcon aria-hidden />}
         </Button>
-        <DropdownMenu>
-          <DropdownMenuTrigger
-            render={
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon-lg"
-                aria-label={tAccessibility("title")}
-                className="size-10 rounded-2xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)]"
-              />
-            }
-          >
-            <AccessibilityIcon aria-hidden />
-          </DropdownMenuTrigger>
-          <DropdownMenuContent
-            align="end"
-            className="glass-popup glass-surface-strong min-w-64 border-0 p-2 text-[color:var(--glass-ink)]"
-          >
-            <DropdownMenuGroup>
-              <DropdownMenuLabel className="px-3 pt-2 pb-1 text-xs font-extrabold uppercase tracking-[0.14em] text-[color:var(--glass-ink-faint)]">
-                {tAccessibility("title")}
-              </DropdownMenuLabel>
-              <div className="flex items-center justify-between gap-3 px-3 py-2">
-                <span className="text-sm font-semibold">
-                  {tAccessibility(TEXT_SIZE_KEYS[accessibilityPreferences.textSize])}
-                </span>
-                {textSizeControls}
-              </div>
-            </DropdownMenuGroup>
-            <DropdownMenuSeparator className="bg-[color:var(--glass-ink-line)]" />
-            <DropdownMenuGroup>
-              <DropdownMenuCheckboxItem
-                checked={accessibilityPreferences.highContrast}
-                onCheckedChange={(checked) =>
-                  updateAccessibilityPreferences({ highContrast: checked })
-                }
-                className={ITEM_BASE}
-              >
-                {tAccessibility("contrast")}
-              </DropdownMenuCheckboxItem>
-              <DropdownMenuCheckboxItem
-                checked={accessibilityPreferences.simpleMode}
-                onCheckedChange={(checked) =>
-                  updateAccessibilityPreferences({ simpleMode: checked })
-                }
-                className={ITEM_BASE}
-              >
-                {tAccessibility("simpleMode")}
-              </DropdownMenuCheckboxItem>
-              <DropdownMenuCheckboxItem
-                checked={accessibilityPreferences.reducedMotion}
-                onCheckedChange={(checked) =>
-                  updateAccessibilityPreferences({ reducedMotion: checked })
-                }
-                className={ITEM_BASE}
-              >
-                {tAccessibility("reduceMotion")}
-              </DropdownMenuCheckboxItem>
-            </DropdownMenuGroup>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        {!onHome ? (
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              render={
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-lg"
+                  aria-label={tAccessibility("title")}
+                  className="size-10 rounded-2xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)]"
+                />
+              }
+            >
+              <AccessibilityIcon aria-hidden />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align="end"
+              className="glass-popup glass-surface-strong min-w-64 border-0 p-2 text-[color:var(--glass-ink)]"
+            >
+              <DropdownMenuGroup>
+                <DropdownMenuLabel className="px-3 pt-2 pb-1 text-xs font-extrabold uppercase tracking-[0.14em] text-[color:var(--glass-ink-faint)]">
+                  {tAccessibility("title")}
+                </DropdownMenuLabel>
+                <div className="flex items-center justify-between gap-3 px-3 py-2">
+                  <span className="text-sm font-semibold">
+                    {tAccessibility(TEXT_SIZE_KEYS[accessibilityPreferences.textSize])}
+                  </span>
+                  {textSizeControls}
+                </div>
+              </DropdownMenuGroup>
+              <DropdownMenuSeparator className="bg-[color:var(--glass-ink-line)]" />
+              <DropdownMenuGroup>
+                <DropdownMenuCheckboxItem
+                  checked={accessibilityPreferences.highContrast}
+                  onCheckedChange={(checked) =>
+                    updateAccessibilityPreferences({ highContrast: checked })
+                  }
+                  className={ITEM_BASE}
+                >
+                  {tAccessibility("contrast")}
+                </DropdownMenuCheckboxItem>
+                <DropdownMenuCheckboxItem
+                  checked={accessibilityPreferences.simpleMode}
+                  onCheckedChange={(checked) =>
+                    updateAccessibilityPreferences({ simpleMode: checked })
+                  }
+                  className={ITEM_BASE}
+                >
+                  {tAccessibility("simpleMode")}
+                </DropdownMenuCheckboxItem>
+                <DropdownMenuCheckboxItem
+                  checked={accessibilityPreferences.reducedMotion}
+                  onCheckedChange={(checked) =>
+                    updateAccessibilityPreferences({ reducedMotion: checked })
+                  }
+                  className={ITEM_BASE}
+                >
+                  {tAccessibility("reduceMotion")}
+                </DropdownMenuCheckboxItem>
+              </DropdownMenuGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : null}
       </div>
 
       <div className="hidden sm:block">

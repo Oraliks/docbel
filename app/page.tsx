@@ -32,6 +32,8 @@ export default async function HomePage() {
         color: true,
         readingTime: true,
         featured: true,
+        image: true,
+        heroIllustration: true,
       },
     }).catch(() => []),
     getPublicCatalog().catch(() => []),
@@ -59,15 +61,26 @@ export default async function HomePage() {
     color: article.color || "var(--glass-accent-deep)",
     readingTime: article.readingTime ?? undefined,
     popular: article.featured,
+    image: article.heroIllustration ?? article.image ?? undefined,
   }));
 
   return (
-    <div className="flex w-full flex-col gap-6 sm:gap-8">
+    <div className="docbel-home flex w-full flex-col gap-4 sm:gap-5">
       <LandingHero activeRun={activeRun} />
       <WizardTeaser />
-      <LandingToolsRow tools={toolsForRow} />
-      <LandingEditorialStrip articles={news} />
-      <TrustBand />
+      <div
+        className={
+          news.length > 0
+            ? "grid items-stretch gap-4 xl:grid-cols-[minmax(0,1.62fr)_minmax(360px,1fr)]"
+            : "flex flex-col"
+        }
+      >
+        <div className="flex min-w-0 flex-col gap-4">
+          <LandingToolsRow tools={toolsForRow} max={4} />
+          <TrustBand />
+        </div>
+        {news.length > 0 ? <LandingEditorialStrip articles={news} /> : null}
+      </div>
     </div>
   );
 }

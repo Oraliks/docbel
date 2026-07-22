@@ -54,7 +54,7 @@ export function GeolocBanner({ onLocated, located, onClear }: Props) {
           ? located.postcode
           : null
     return (
-      <div className="flex items-center gap-2 text-xs text-green-700 dark:text-green-400 bg-green-50/60 dark:bg-green-950/20 border border-green-200/60 rounded-md px-3 py-1.5">
+      <div className="flex items-center gap-2 text-xs text-[color:var(--glass-success-ink)] bg-[color:var(--glass-success-surface)] border border-[color:var(--glass-success-border)] rounded-md px-3 py-1.5">
         <Check className="w-3.5 h-3.5 shrink-0" />
         <span className="flex-1">
           {place ? (
@@ -142,7 +142,7 @@ export function GeolocBanner({ onLocated, located, onClear }: Props) {
         <p className="text-foreground">
           {t.rich('geolocPromptRich', { strong: (c) => <strong>{c}</strong> })}
         </p>
-        {error && <p className="text-[10px] text-red-600 mt-0.5">{error}</p>}
+        {error && <p className="text-[10px] text-[color:var(--destructive)] mt-0.5">{error}</p>}
       </div>
       <Button
         type="button"

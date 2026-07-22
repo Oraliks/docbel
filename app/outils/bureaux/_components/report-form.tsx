@@ -48,7 +48,7 @@ export function ReportForm({ bureauId, onClose }: Props) {
 
   if (done) {
     return (
-      <div className="text-[11px] text-green-700 bg-green-50 border border-green-200 rounded px-2 py-1.5">
+      <div className="text-[11px] text-[color:var(--glass-success-ink)] bg-[color:var(--glass-success-surface)] border border-[color:var(--glass-success-border)] rounded px-2 py-1.5">
         {t('rfSubmittedConfirm')}
       </div>
     )
@@ -94,7 +94,7 @@ export function ReportForm({ bureauId, onClose }: Props) {
         placeholder={t('rfEmailPlaceholder')}
         className="w-full text-[11px] border rounded px-1.5 py-1 bg-background"
       />
-      {err && <p className="text-[10px] text-red-600">{err}</p>}
+      {err && <p className="text-[10px] text-[color:var(--destructive)]">{err}</p>}
       <button
         type="button"
         onClick={handleSubmit}

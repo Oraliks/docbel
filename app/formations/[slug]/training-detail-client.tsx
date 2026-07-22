@@ -102,7 +102,7 @@ export function TrainingDetailClient({ training }: { training: TrainingDetailVie
   const { isSaved, toggle } = useSavedFormations();
   const saved = isSaved(training.slug);
   const Icon = resolveIcon(training.category?.icon);
-  const accent = training.category?.color ?? "#7C3AED";
+  const accent = training.category?.color ?? "var(--primary)";
   const [activeSession, setActiveSession] = useState<string | null>(null);
   const [reportOpen, setReportOpen] = useState(false);
 

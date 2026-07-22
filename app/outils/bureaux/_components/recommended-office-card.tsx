@@ -53,7 +53,7 @@ export function RecommendedOfficeCard({
     segments.push({
       key: 'status',
       text: t('bureauxStatusOpen'),
-      className: 'font-semibold text-emerald-700 dark:text-emerald-300',
+      className: 'font-semibold text-[color:var(--glass-success-ink)]',
     })
   } else if (status.state !== 'no_data') {
     segments.push({ key: 'status', text: t('bureauxStatusClosed') })
@@ -70,7 +70,7 @@ export function RecommendedOfficeCard({
           {office.number}
         </span>
         {office.isCompetent ? (
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-[color:var(--glass-success-surface)] px-3 py-1 text-xs font-bold text-[color:var(--glass-success-ink)]">
             <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
             {t('recommendedCompetent')}
           </span>

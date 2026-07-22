@@ -31,7 +31,7 @@ export default async function VerifyCertificatePage({
       <section className="glass-surface mx-auto flex w-full max-w-xl flex-col items-center gap-4 px-6 py-14 text-center">
         {valid && cert ? (
           <>
-            <span className="flex size-16 items-center justify-center rounded-2xl bg-[color:color-mix(in_oklab,#16A34A_16%,transparent)] text-[#16A34A]">
+            <span className="flex size-16 items-center justify-center rounded-2xl bg-[color:var(--glass-success-surface)] text-[color:var(--glass-success-ink)]">
               <BadgeCheckIcon className="size-8" />
             </span>
             <h1 className="glass-display text-[24px] font-semibold">{t("certValidTitle")}</h1>
@@ -49,7 +49,7 @@ export default async function VerifyCertificatePage({
           </>
         ) : (
           <>
-            <span className="flex size-16 items-center justify-center rounded-2xl bg-[color:color-mix(in_oklab,#DC2626_14%,transparent)] text-[#DC2626]">
+            <span className="flex size-16 items-center justify-center rounded-2xl bg-[color:var(--destructive)]/10 text-[color:var(--destructive)]">
               <XCircleIcon className="size-8" />
             </span>
             <h1 className="glass-display text-[24px] font-semibold">{t("certNotFoundTitle")}</h1>

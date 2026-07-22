@@ -110,8 +110,8 @@ function LoginForm() {
         <div
           className="flex items-start gap-3 rounded-2xl p-3.5 text-[13px]"
           style={{
-            background: "rgba(220, 80, 100, 0.12)",
-            color: "#b8324a",
+            background: "color-mix(in oklab, var(--destructive) 10%, transparent)",
+            color: "var(--destructive)",
           }}
         >
           <AlertCircleIcon className="mt-0.5 size-4 shrink-0" />
@@ -290,11 +290,11 @@ function LoginPageContent() {
                   ● ● ●
                 </span>
               </div>
-              <div className="h-1.5 w-3/4 rounded-full bg-[rgba(159,124,255,0.20)]" />
-              <div className="h-1.5 rounded-full bg-[rgba(159,124,255,0.20)]" />
-              <div className="h-1.5 w-1/2 rounded-full bg-[rgba(159,124,255,0.20)]" />
-              <div className="h-1.5 rounded-full bg-[rgba(159,124,255,0.20)]" />
-              <div className="h-1.5 w-3/4 rounded-full bg-[rgba(159,124,255,0.20)]" />
+              <div className="h-1.5 w-3/4 rounded-full bg-[color:var(--glass-accent-a)]/20" />
+              <div className="h-1.5 rounded-full bg-[color:var(--glass-accent-a)]/20" />
+              <div className="h-1.5 w-1/2 rounded-full bg-[color:var(--glass-accent-a)]/20" />
+              <div className="h-1.5 rounded-full bg-[color:var(--glass-accent-a)]/20" />
+              <div className="h-1.5 w-3/4 rounded-full bg-[color:var(--glass-accent-a)]/20" />
               <div
                 className="absolute right-3 bottom-3 size-10 rounded-xl"
                 style={{
@@ -306,9 +306,9 @@ function LoginPageContent() {
             <div
               className="absolute -right-12 top-32 flex w-[140px] flex-col gap-1.5 rotate-[10deg] rounded-xl bg-white/95 p-3 shadow-[0_12px_30px_rgba(40,15,80,0.25)]"
             >
-              <div className="h-1 rounded-full bg-[rgba(159,124,255,0.20)]" />
-              <div className="h-1 w-1/2 rounded-full bg-[rgba(159,124,255,0.20)]" />
-              <div className="h-1 w-3/4 rounded-full bg-[rgba(159,124,255,0.20)]" />
+              <div className="h-1 rounded-full bg-[color:var(--glass-accent-a)]/20" />
+              <div className="h-1 w-1/2 rounded-full bg-[color:var(--glass-accent-a)]/20" />
+              <div className="h-1 w-3/4 rounded-full bg-[color:var(--glass-accent-a)]/20" />
             </div>
           </div>
           <div className="relative max-w-sm">

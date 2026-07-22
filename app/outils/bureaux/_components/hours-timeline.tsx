@@ -158,7 +158,7 @@ export function HoursTimeline({ hours, notes, type, onReport }: Props) {
                     className={`w-9 shrink-0 font-medium ${
                       isToday
                         ? status.tone === 'open'
-                          ? 'text-green-700 dark:text-green-400'
+                          ? 'text-[color:var(--glass-success-ink)]'
                           : 'text-primary'
                         : 'text-muted-foreground'
                     }`}
@@ -195,7 +195,7 @@ export function HoursTimeline({ hours, notes, type, onReport }: Props) {
           <span
             className={`shrink-0 font-medium ${
               status.tone === 'open'
-                ? 'text-green-700 dark:text-green-400'
+                ? 'text-[color:var(--glass-success-ink)]'
                 : 'text-muted-foreground'
             }`}
           >
@@ -227,9 +227,9 @@ function StatusPill({
   const t = useTranslations('public.outils')
   const cls =
     status.tone === 'open'
-      ? 'bg-green-100 text-green-800 dark:bg-green-950/40 dark:text-green-300'
+      ? 'bg-[color:var(--glass-success-surface)] text-[color:var(--glass-success-ink)]'
       : status.tone === 'soon'
-        ? 'bg-orange-100 text-orange-800 dark:bg-orange-950/40 dark:text-orange-300'
+        ? 'bg-[color:var(--glass-warning-surface)] text-[color:var(--glass-warning-ink)]'
         : 'bg-muted text-muted-foreground'
   return (
     <span
@@ -240,9 +240,9 @@ function StatusPill({
       <span
         className={`size-1.5 rounded-full ${
           status.tone === 'open'
-            ? 'bg-green-500'
+            ? 'bg-[color:var(--glass-success)]'
             : status.tone === 'soon'
-              ? 'bg-orange-500'
+              ? 'bg-[color:var(--glass-warning)]'
               : 'bg-muted-foreground/40'
         }`}
       />

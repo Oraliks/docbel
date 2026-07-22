@@ -32,7 +32,7 @@ function ResetForm() {
       <div className="flex flex-col items-center gap-3 rounded-3xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] p-8 text-center">
         <span
           className="flex size-12 items-center justify-center rounded-2xl"
-          style={{ background: "rgba(220, 80, 100, 0.12)", color: "#b8324a" }}
+          style={{ background: "color-mix(in oklab, var(--destructive) 10%, transparent)", color: "var(--destructive)" }}
         >
           <AlertCircleIcon className="size-6" />
         </span>
@@ -129,7 +129,7 @@ function ResetForm() {
         {error ? (
           <div
             className="flex items-start gap-2 rounded-2xl p-3 text-[13px]"
-            style={{ background: "rgba(220, 80, 100, 0.12)", color: "#b8324a" }}
+            style={{ background: "color-mix(in oklab, var(--destructive) 10%, transparent)", color: "var(--destructive)" }}
           >
             <AlertCircleIcon className="mt-0.5 size-4 shrink-0" />
             {error}

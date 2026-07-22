@@ -501,7 +501,7 @@ export function AddressSearch({
         {t('bureauxUseLocation')}
       </button>
       {geolocError && (
-        <p role="alert" className="text-xs font-medium text-amber-700 dark:text-amber-400">
+        <p role="alert" className="text-xs font-medium text-[color:var(--glass-warning-ink)]">
           {geolocError}
         </p>
       )}

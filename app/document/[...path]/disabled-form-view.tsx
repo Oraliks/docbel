@@ -18,7 +18,7 @@ export async function DisabledFormView({ formTitle, customMessage }: Props) {
   return (
     <section className="flex flex-col gap-6">
       <div className="glass-surface relative flex flex-col items-center gap-5 px-8 py-16 text-center">
-        <span className="flex size-16 items-center justify-center rounded-2xl bg-orange-100 text-orange-600 dark:bg-orange-950/30 dark:text-orange-300">
+        <span className="flex size-16 items-center justify-center rounded-2xl bg-[color:var(--glass-warning-surface)] text-[color:var(--glass-warning-ink)]">
           <FileWarningIcon className="size-7" />
         </span>
 

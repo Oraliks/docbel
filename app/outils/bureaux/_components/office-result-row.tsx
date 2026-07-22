@@ -61,7 +61,7 @@ export function OfficeResultRow({
     segments.push({
       key: 'status',
       text: t('bureauxStatusOpen'),
-      className: 'font-semibold text-emerald-700 dark:text-emerald-300',
+      className: 'font-semibold text-[color:var(--glass-success-ink)]',
     })
   } else if (status.state !== 'no_data') {
     segments.push({ key: 'status', text: t('bureauxStatusClosed') })

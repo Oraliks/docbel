@@ -51,8 +51,8 @@ export default async function PreviewPage({
           padding: "0.5rem 1rem",
           fontSize: "0.8125rem",
           fontWeight: 600,
-          color: "#fff",
-          background: "#7c3aed",
+          color: "var(--primary-foreground)",
+          background: "var(--primary)",
           boxShadow: "0 1px 4px rgba(0,0,0,0.15)",
         }}
       >

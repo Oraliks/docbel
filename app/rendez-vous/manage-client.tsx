@@ -42,14 +42,14 @@ interface PickedSlot {
 // ---------------------------------------------------------------------------
 
 const STATUS_CHIP: Record<BookingStatus, string> = {
-  pending_verification: "bg-slate-100 text-slate-700",
-  pending_approval: "bg-amber-100 text-amber-800",
-  confirmed: "bg-emerald-100 text-emerald-800",
-  rejected: "bg-rose-100 text-rose-800",
-  cancelled_citizen: "bg-gray-100 text-gray-600",
-  cancelled_partner: "bg-gray-100 text-gray-600",
-  no_show: "bg-orange-100 text-orange-800",
-  completed: "bg-violet-100 text-violet-800",
+  pending_verification: "bg-[color:var(--glass-surface-strong)] text-[color:var(--glass-ink-soft)]",
+  pending_approval: "bg-[color:var(--glass-warning-surface)] text-[color:var(--glass-warning-ink)]",
+  confirmed: "bg-[color:var(--glass-success-surface)] text-[color:var(--glass-success-ink)]",
+  rejected: "bg-[color:var(--destructive)]/10 text-[color:var(--destructive)]",
+  cancelled_citizen: "bg-[color:var(--glass-surface-strong)] text-[color:var(--glass-ink-soft)]",
+  cancelled_partner: "bg-[color:var(--glass-surface-strong)] text-[color:var(--glass-ink-soft)]",
+  no_show: "bg-[color:var(--chart-1)]/15 text-[color:var(--chart-1)]",
+  completed: "bg-[color:var(--chart-4)]/15 text-[color:var(--chart-4)]",
 };
 
 // ---------------------------------------------------------------------------
@@ -177,7 +177,9 @@ export function ManageClient({ token }: { token: string }) {
     );
   }
 
-  const chipClass = STATUS_CHIP[data.status] ?? "bg-gray-100 text-gray-600";
+  const chipClass =
+    STATUS_CHIP[data.status] ??
+    "bg-[color:var(--glass-surface-strong)] text-[color:var(--glass-ink-soft)]";
 
   return (
     <div className="flex flex-col gap-4">
@@ -251,13 +253,13 @@ export function ManageClient({ token }: { token: string }) {
 
           {/* Rejection / cancel reason */}
           {data.status === "rejected" && data.rejectionReason && (
-            <div className="rounded-xl bg-rose-50 px-4 py-3 text-[13px] text-rose-700">
+            <div className="rounded-xl bg-[color:var(--destructive)]/10 px-4 py-3 text-[13px] text-[color:var(--destructive)]">
               <strong>{t("manageRejectionReason")}</strong> {data.rejectionReason}
             </div>
           )}
           {(data.status === "cancelled_citizen" || data.status === "cancelled_partner") &&
             data.cancelReason && (
-              <div className="rounded-xl bg-gray-100 px-4 py-3 text-[13px] text-gray-600">
+              <div className="rounded-xl bg-[color:var(--glass-surface-strong)] px-4 py-3 text-[13px] text-[color:var(--glass-ink-soft)]">
                 <strong>{t("manageCancelReason")}</strong> {data.cancelReason}
               </div>
             )}
@@ -290,7 +292,7 @@ export function ManageClient({ token }: { token: string }) {
           {data.canCancel && !confirmCancel && !rescheduling && (
             <button
               onClick={() => setConfirmCancel(true)}
-              className="flex items-center gap-2 rounded-full border border-rose-300 px-4 py-2 text-[13px] font-medium text-rose-600 transition-colors hover:border-rose-500 hover:text-rose-700"
+              className="flex items-center gap-2 rounded-full border border-[color:var(--destructive)]/40 px-4 py-2 text-[13px] font-medium text-[color:var(--destructive)] transition-colors hover:border-[color:var(--destructive)] hover:text-[color:var(--destructive)]"
             >
               <X size={14} />
               {t("manageCancel")}

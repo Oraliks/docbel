@@ -471,7 +471,7 @@ export function BookingFlow({
     const strVal = typeof val === "string" ? val : "";
     const boolVal = typeof val === "boolean" ? val : false;
     const err = fieldErrors[f.key];
-    const errBorder = err ? " !border-rose-400 focus:!ring-rose-300" : "";
+    const errBorder = err ? " !border-[color:var(--destructive)] focus:!ring-[color:var(--destructive)]/40" : "";
 
     // Determine if this field triggers dedupe check on blur
     const isDedupeField =
@@ -493,10 +493,10 @@ export function BookingFlow({
             />
             <span className="text-[14px] text-[color:var(--glass-ink-soft)]">
               {f.label}
-              {f.required && <span className="ml-1 text-rose-500">*</span>}
+              {f.required && <span className="ml-1 text-[color:var(--destructive)]">*</span>}
             </span>
           </label>
-          {err && <p className="text-[12px] font-medium text-rose-600">{err}</p>}
+          {err && <p className="text-[12px] font-medium text-[color:var(--destructive)]">{err}</p>}
         </div>
       );
     }
@@ -506,7 +506,7 @@ export function BookingFlow({
         <div key={f.key} className="flex flex-col gap-1.5">
           <label htmlFor={f.key} className={GLASS_LABEL}>
             {f.label}
-            {f.required && <span className="ml-1 text-rose-500">*</span>}
+            {f.required && <span className="ml-1 text-[color:var(--destructive)]">*</span>}
           </label>
           <select
             id={f.key}
@@ -521,7 +521,7 @@ export function BookingFlow({
               </option>
             ))}
           </select>
-          {err && <p className="text-[12px] font-medium text-rose-600">{err}</p>}
+          {err && <p className="text-[12px] font-medium text-[color:var(--destructive)]">{err}</p>}
         </div>
       );
     }
@@ -531,7 +531,7 @@ export function BookingFlow({
         <div key={f.key} className="flex flex-col gap-1.5">
           <label htmlFor={f.key} className={GLASS_LABEL}>
             {f.label}
-            {f.required && <span className="ml-1 text-rose-500">*</span>}
+            {f.required && <span className="ml-1 text-[color:var(--destructive)]">*</span>}
           </label>
           <textarea
             id={f.key}
@@ -542,7 +542,7 @@ export function BookingFlow({
             rows={3}
             className={`${GLASS_INPUT} w-full rounded-2xl border px-3 py-2 text-[14px] outline-none focus:ring-2 focus:ring-[color:var(--glass-accent-deep)]${errBorder}`}
           />
-          {err && <p className="text-[12px] font-medium text-rose-600">{err}</p>}
+          {err && <p className="text-[12px] font-medium text-[color:var(--destructive)]">{err}</p>}
         </div>
       );
     }
@@ -577,7 +577,7 @@ export function BookingFlow({
       <div key={f.key} className="flex flex-col gap-1.5">
         <label htmlFor={f.key} className={GLASS_LABEL}>
           {f.label}
-          {f.required && <span className="ml-1 text-rose-500">*</span>}
+          {f.required && <span className="ml-1 text-[color:var(--destructive)]">*</span>}
         </label>
         <input
           id={f.key}
@@ -590,7 +590,7 @@ export function BookingFlow({
           onBlur={isDedupeField ? () => handleDedupeBlur(strVal) : undefined}
           className={`${commonInputClass}${errBorder}`}
         />
-        {err && <p className="text-[12px] font-medium text-rose-600">{err}</p>}
+        {err && <p className="text-[12px] font-medium text-[color:var(--destructive)]">{err}</p>}
       </div>
     );
   }
@@ -606,13 +606,13 @@ export function BookingFlow({
         <div className="flex flex-col gap-4">
           <div
             className={`flex h-12 w-12 items-center justify-center rounded-full ${
-              pv ? "bg-amber-100" : "bg-emerald-100"
+              pv ? "bg-[color:var(--glass-warning-surface)]" : "bg-[color:var(--glass-success-surface)]"
             }`}
           >
             {pv ? (
-              <Mail className="text-amber-600" size={24} />
+              <Mail className="text-[color:var(--glass-warning-ink)]" size={24} />
             ) : (
-              <CalendarDays className="text-emerald-600" size={24} />
+              <CalendarDays className="text-[color:var(--glass-success-ink)]" size={24} />
             )}
           </div>
           <div>
@@ -650,8 +650,8 @@ export function BookingFlow({
     return (
       <div className={`${GLASS_CARD} glass-surface mx-auto w-full max-w-xl rounded-2xl p-6`}>
         <div className="flex flex-col gap-4">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-amber-100">
-            <Clock className="text-amber-600" size={24} />
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[color:var(--glass-warning-surface)]">
+            <Clock className="text-[color:var(--glass-warning-ink)]" size={24} />
           </div>
           <div>
             <h2 className="text-[20px] font-semibold text-[color:var(--glass-ink)]">
@@ -688,7 +688,7 @@ export function BookingFlow({
             {t("bookingWaitlistFullDesc", { date: localeDate(screen.date, locale), time: screen.startTime })}
           </p>
           {!canJoin && (
-            <p className="text-[13px] text-amber-700">
+            <p className="text-[13px] text-[color:var(--glass-warning-ink)]">
               {t("bookingWaitlistNeedEmail")}
             </p>
           )}

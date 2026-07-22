@@ -3,5 +3,5 @@
 import { ContactPage } from "@/components/docbel/contact-page";
 
 export default function ContactRoute() {
-  return <ContactPage accent="#7C3AED" />;
+  return <ContactPage accent="var(--primary)" />;
 }

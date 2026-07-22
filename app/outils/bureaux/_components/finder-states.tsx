@@ -55,7 +55,7 @@ export function ErrorState({
   const t = useTranslations('public.outils')
   return (
     <div className="flex flex-col items-center gap-3 rounded-2xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-6 py-10 text-center">
-      <AlertCircle className="h-8 w-8 text-amber-600 dark:text-amber-400" aria-hidden />
+      <AlertCircle className="h-8 w-8 text-[color:var(--glass-warning)]" aria-hidden />
       <p className="max-w-sm text-sm text-foreground">{message}</p>
       {onRetry && (
         <Button type="button" variant="outline" size="sm" onClick={onRetry}>

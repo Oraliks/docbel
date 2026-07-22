@@ -39,19 +39,19 @@ export async function generateMetadata(): Promise<Metadata> {
 type IconHue = "violet" | "orange" | "rose" | "blue" | "green" | "mauve";
 const ICON_BG: Record<IconHue, string> = {
   violet: "linear-gradient(135deg, var(--glass-accent-a), var(--glass-accent-deep))",
-  orange: "linear-gradient(135deg, var(--glass-accent-d), #FF8050)",
-  rose: "linear-gradient(135deg, var(--glass-accent-c), #E060A0)",
-  blue: "linear-gradient(135deg, #80B0FF, #5060FF)",
-  green: "linear-gradient(135deg, #80E0C0, #40C0A0)",
-  mauve: "linear-gradient(135deg, #D08CFF, var(--glass-accent-a))",
+  orange: "linear-gradient(135deg, var(--glass-accent-d), var(--chart-1))",
+  rose: "linear-gradient(135deg, var(--glass-accent-c), var(--chart-5))",
+  blue: "linear-gradient(135deg, var(--chart-2), var(--glass-accent-deep))",
+  green: "linear-gradient(135deg, var(--chart-3), var(--glass-success))",
+  mauve: "linear-gradient(135deg, var(--glass-accent-b), var(--glass-accent-a))",
 };
 const ICON_SHADOW: Record<IconHue, string> = {
-  violet: "0 6px 20px rgba(159,124,255,0.35)",
-  orange: "0 6px 20px rgba(255,176,112,0.35)",
-  rose: "0 6px 20px rgba(255,140,192,0.35)",
-  blue: "0 6px 20px rgba(128,176,255,0.35)",
-  green: "0 6px 20px rgba(128,224,192,0.35)",
-  mauve: "0 6px 20px rgba(208,140,255,0.30)",
+  violet: "0 6px 20px color-mix(in oklab, var(--glass-accent-a) 35%, transparent)",
+  orange: "0 6px 20px color-mix(in oklab, var(--glass-accent-d) 35%, transparent)",
+  rose: "0 6px 20px color-mix(in oklab, var(--glass-accent-c) 35%, transparent)",
+  blue: "0 6px 20px color-mix(in oklab, var(--chart-2) 35%, transparent)",
+  green: "0 6px 20px color-mix(in oklab, var(--chart-3) 35%, transparent)",
+  mauve: "0 6px 20px color-mix(in oklab, var(--glass-accent-b) 30%, transparent)",
 };
 
 interface BenefitItem {
@@ -319,7 +319,7 @@ export default async function EmployeurLandingPage() {
               ].map((k) => (
                 <li key={k} className="inline-flex items-center gap-2">
                   <span
-                    className="flex size-5 items-center justify-center rounded-full bg-white text-emerald-600"
+                    className="flex size-5 items-center justify-center rounded-full bg-white text-[color:var(--glass-success)]"
                     aria-hidden
                   >
                     <CheckIcon className="size-3" strokeWidth={3} />

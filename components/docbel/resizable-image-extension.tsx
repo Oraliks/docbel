@@ -55,12 +55,12 @@ function ResizableImageView({ node, updateAttributes, selected, editor, getPos }
         "position:fixed",
         "pointer-events:none",
         "z-index:9999",
-        "background:rgba(59,130,246,0.15)",
-        "border:2px dashed #3b82f6",
+        "background:color-mix(in oklab, var(--glass-info) 15%, transparent)",
+        "border:2px dashed var(--glass-info)",
         "border-radius:6px",
         "padding:6px 10px",
         "font-size:12px",
-        "color:#3b82f6",
+        "color:var(--glass-info)",
         "font-family:sans-serif",
         "white-space:nowrap",
         "box-shadow:0 4px 12px rgba(0,0,0,0.2)",
@@ -170,7 +170,7 @@ function ResizableImageView({ node, updateAttributes, selected, editor, getPos }
                 onMouseDown={(e) => { e.preventDefault(); updateAttributes({ align: value }); }}
                 title={label}
                 style={{
-                  background: align === value ? "#3b82f6" : "transparent",
+                  background: align === value ? "var(--glass-info)" : "transparent",
                   border: "none",
                   borderRadius: 4,
                   color: "white",
@@ -228,9 +228,9 @@ function ResizableImageView({ node, updateAttributes, selected, editor, getPos }
             display: "block",
             borderRadius: 6,
             outline: selected
-              ? "2px solid #3b82f6"
+              ? "2px solid var(--glass-info)"
               : hovered
-              ? "2px solid rgba(59,130,246,0.45)"
+              ? "2px solid color-mix(in oklab, var(--glass-info) 45%, transparent)"
               : "2px solid transparent",
             outlineOffset: 2,
             userSelect: "none",
@@ -252,7 +252,7 @@ function ResizableImageView({ node, updateAttributes, selected, editor, getPos }
               display: "inline-block",
               width: 13,
               height: 13,
-              background: "#3b82f6",
+              background: "var(--glass-info)",
               border: "2px solid white",
               borderRadius: "50%",
               cursor: "se-resize",
@@ -274,7 +274,7 @@ function ResizableImageView({ node, updateAttributes, selected, editor, getPos }
               display: "inline-block",
               width: 13,
               height: 13,
-              background: "#3b82f6",
+              background: "var(--glass-info)",
               border: "2px solid white",
               borderRadius: "50%",
               cursor: "sw-resize",

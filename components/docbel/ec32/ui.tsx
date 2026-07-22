@@ -68,7 +68,7 @@ export function Ec32Section({
         >
           <div className={cn(headerAside && 'min-w-0 max-w-3xl flex-1')}>
             {eyebrow && (
-              <div className="mb-2 inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-[color:var(--glass-accent-deep,#5B46E5)]">
+              <div className="mb-2 inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-[color:var(--glass-accent-deep)]">
                 {Icon && <Icon className="size-3.5" />}
                 {eyebrow}
               </div>
@@ -145,19 +145,19 @@ const INFO_TONES: Record<
   { wrap: string; icon: ComponentType<{ className?: string }>; iconCls: string }
 > = {
   info: {
-    wrap: 'border-sky-300/50 bg-sky-50/70 text-sky-900 dark:border-sky-400/30 dark:bg-sky-950/40 dark:text-sky-100',
+    wrap: 'border-[color:var(--glass-info-border)] bg-[color:var(--glass-info-surface)] text-[color:var(--glass-info-ink)]',
     icon: Info,
-    iconCls: 'text-sky-600 dark:text-sky-300',
+    iconCls: 'text-[color:var(--glass-info)]',
   },
   warning: {
-    wrap: 'border-orange-400/70 bg-orange-100/80 text-orange-950 dark:border-orange-500/40 dark:bg-orange-950/50 dark:text-orange-100',
+    wrap: 'border-[color:var(--glass-warning-border)] bg-[color:var(--glass-warning-surface)] text-[color:var(--glass-warning-ink)]',
     icon: TriangleAlert,
-    iconCls: 'text-orange-600 dark:text-orange-300',
+    iconCls: 'text-[color:var(--glass-warning)]',
   },
   success: {
-    wrap: 'border-emerald-300/50 bg-emerald-50/70 text-emerald-950 dark:border-emerald-400/30 dark:bg-emerald-950/40 dark:text-emerald-100',
+    wrap: 'border-[color:var(--glass-success-border)] bg-[color:var(--glass-success-surface)] text-[color:var(--glass-success-ink)]',
     icon: Sparkles,
-    iconCls: 'text-emerald-600 dark:text-emerald-300',
+    iconCls: 'text-[color:var(--glass-success)]',
   },
   neutral: {
     wrap: 'border-border bg-muted/50 text-foreground',
@@ -165,9 +165,9 @@ const INFO_TONES: Record<
     iconCls: 'text-muted-foreground',
   },
   legal: {
-    wrap: 'border-red-400/70 bg-red-100/80 text-red-950 dark:border-red-500/40 dark:bg-red-950/50 dark:text-red-100',
+    wrap: 'border-[color:var(--destructive)]/40 bg-[color:var(--destructive)]/10 text-[color:var(--destructive)]',
     icon: ShieldAlert,
-    iconCls: 'text-red-600 dark:text-red-300',
+    iconCls: 'text-[color:var(--destructive)]',
   },
 }
 
@@ -219,76 +219,76 @@ export interface SituationVisual {
 export const SITUATION_VISUALS: Record<Ec32SituationType, SituationVisual> = {
   temporary_unemployment: {
     icon: Hourglass,
-    chip: 'border-violet-300/60 bg-violet-100/70 text-violet-800 dark:border-violet-400/30 dark:bg-violet-950/50 dark:text-violet-200',
-    cell: 'bg-violet-100/60 dark:bg-violet-900/30',
-    dot: 'bg-white ring-1 ring-violet-400 dark:ring-violet-300',
-    accent: 'text-violet-600 dark:text-violet-300',
+    chip: 'border-[color:var(--chart-4)]/40 bg-[color:var(--chart-4)]/15 text-[color:var(--chart-4)]',
+    cell: 'bg-[color:var(--chart-4)]/12',
+    dot: 'bg-[color:var(--glass-surface-strong)] ring-1 ring-[color:var(--chart-4)]',
+    accent: 'text-[color:var(--chart-4)]',
   },
   work_own_employer: {
     icon: Briefcase,
-    chip: 'border-indigo-300/60 bg-indigo-100/70 text-indigo-800 dark:border-indigo-400/30 dark:bg-indigo-950/50 dark:text-indigo-200',
-    cell: 'bg-indigo-200/70 dark:bg-indigo-800/40',
-    dot: 'bg-indigo-500',
-    accent: 'text-indigo-600 dark:text-indigo-300',
+    chip: 'border-[color:var(--primary)]/40 bg-[color:var(--primary)]/15 text-[color:var(--primary)]',
+    cell: 'bg-[color:var(--primary)]/20',
+    dot: 'bg-[color:var(--primary)]',
+    accent: 'text-[color:var(--primary)]',
   },
   // Axe secondaire « travail ailleurs » — icônes glyphes (■ carré plein).
   work_elsewhere_usual_day: {
     icon: Square,
-    chip: 'border-sky-300/60 bg-sky-100/70 text-sky-800 dark:border-sky-400/30 dark:bg-sky-950/50 dark:text-sky-200',
-    cell: 'bg-sky-200/70 dark:bg-sky-800/40',
-    dot: 'bg-sky-500',
-    accent: 'text-sky-600 dark:text-sky-300',
+    chip: 'border-[color:var(--chart-2)]/40 bg-[color:var(--chart-2)]/15 text-[color:var(--chart-2)]',
+    cell: 'bg-[color:var(--chart-2)]/20',
+    dot: 'bg-[color:var(--chart-2)]',
+    accent: 'text-[color:var(--chart-2)]',
   },
   // ▲ triangle plein.
   work_elsewhere_non_usual_day: {
     icon: Triangle,
-    chip: 'border-cyan-300/60 bg-cyan-100/70 text-cyan-800 dark:border-cyan-400/30 dark:bg-cyan-950/50 dark:text-cyan-200',
-    cell: 'bg-cyan-200/70 dark:bg-cyan-800/40',
-    dot: 'bg-cyan-500',
-    accent: 'text-cyan-600 dark:text-cyan-300',
+    chip: 'border-[color:var(--chart-3)]/40 bg-[color:var(--chart-3)]/15 text-[color:var(--chart-3)]',
+    cell: 'bg-[color:var(--chart-3)]/20',
+    dot: 'bg-[color:var(--chart-3)]',
+    accent: 'text-[color:var(--chart-3)]',
   },
   // 👥 autre employeur fixe.
   work_other_regular_employer: {
     icon: UserPlus,
-    chip: 'border-fuchsia-300/60 bg-fuchsia-100/70 text-fuchsia-800 dark:border-fuchsia-400/30 dark:bg-fuchsia-950/50 dark:text-fuchsia-200',
-    cell: 'bg-fuchsia-200/70 dark:bg-fuchsia-800/40',
-    dot: 'bg-fuchsia-500',
-    accent: 'text-fuchsia-600 dark:text-fuchsia-300',
+    chip: 'border-[color:var(--glass-accent-b)]/40 bg-[color:var(--glass-accent-b)]/15 text-[color:var(--glass-accent-b)]',
+    cell: 'bg-[color:var(--glass-accent-b)]/20',
+    dot: 'bg-[color:var(--glass-accent-b)]',
+    accent: 'text-[color:var(--glass-accent-b)]',
   },
   incapacity: {
     icon: Stethoscope,
-    chip: 'border-rose-300/60 bg-rose-100/70 text-rose-800 dark:border-rose-400/30 dark:bg-rose-950/50 dark:text-rose-200',
-    cell: 'bg-rose-200/70 dark:bg-rose-800/40',
-    dot: 'bg-rose-500',
-    accent: 'text-rose-600 dark:text-rose-300',
+    chip: 'border-[color:var(--chart-5)]/40 bg-[color:var(--chart-5)]/15 text-[color:var(--chart-5)]',
+    cell: 'bg-[color:var(--chart-5)]/20',
+    dot: 'bg-[color:var(--chart-5)]',
+    accent: 'text-[color:var(--chart-5)]',
   },
   vacation: {
     icon: Palmtree,
     chip: 'border-primary/40 bg-primary/15 text-primary',
-    cell: 'bg-violet-100/60 dark:bg-violet-900/30',
+    cell: 'bg-[color:var(--primary)]/12',
     dot: 'bg-primary',
     accent: 'text-primary',
   },
   other: {
     icon: Tag,
-    chip: 'border-amber-300/60 bg-amber-100/70 text-amber-900 dark:border-amber-400/30 dark:bg-amber-950/50 dark:text-amber-200',
-    cell: 'bg-amber-200/70 dark:bg-amber-800/40',
-    dot: 'bg-amber-500',
-    accent: 'text-amber-600 dark:text-amber-300',
+    chip: 'border-[color:var(--chart-1)]/40 bg-[color:var(--chart-1)]/15 text-[color:var(--chart-1)]',
+    cell: 'bg-[color:var(--chart-1)]/20',
+    dot: 'bg-[color:var(--chart-1)]',
+    accent: 'text-[color:var(--chart-1)]',
   },
   not_applicable: {
     icon: Ban,
-    chip: 'border-slate-300/60 bg-slate-100/70 text-slate-600 dark:border-slate-500/30 dark:bg-slate-800/50 dark:text-slate-300',
-    cell: 'bg-slate-200/50 dark:bg-slate-800/40',
-    dot: 'bg-slate-400',
-    accent: 'text-slate-500 dark:text-slate-400',
+    chip: 'border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] text-[color:var(--glass-ink-faint)]',
+    cell: 'bg-[color:var(--glass-surface)]',
+    dot: 'bg-[color:var(--glass-ink-faint)]',
+    accent: 'text-[color:var(--glass-ink-faint)]',
   },
   first_effective_unemployment_day: {
     icon: Flag,
-    chip: 'border-emerald-300/60 bg-emerald-100/70 text-emerald-800 dark:border-emerald-400/30 dark:bg-emerald-950/50 dark:text-emerald-200',
-    cell: 'bg-emerald-200/70 dark:bg-emerald-800/40',
-    dot: 'bg-emerald-500',
-    accent: 'text-emerald-600 dark:text-emerald-300',
+    chip: 'border-[color:var(--glass-success-border)] bg-[color:var(--glass-success-surface)] text-[color:var(--glass-success-ink)]',
+    cell: 'bg-[color:var(--glass-success-surface)]',
+    dot: 'bg-[color:var(--glass-success)]',
+    accent: 'text-[color:var(--glass-success)]',
   },
 }
 

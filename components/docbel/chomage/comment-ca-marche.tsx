@@ -99,7 +99,7 @@ export async function CommentCaMarche() {
               textAnchor="middle"
               fontSize="8"
               fontWeight="700"
-              fill="#fff"
+              fill="white"
             >
               {i + 1}
             </text>

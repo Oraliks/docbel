@@ -223,7 +223,7 @@ export function ShareMenu({ title, text, url, className, compact }: ShareMenuPro
               copied ? <CheckIcon className="size-[15px]" /> : <Link2Icon className="size-[15px]" />
             }
             label={copied ? t("shareLinkCopied") : t("shareCopyLink")}
-            tint="#7c5cff"
+            tint="var(--glass-accent-deep)"
             onClick={copyLink}
           />
 
@@ -254,7 +254,7 @@ export function ShareMenu({ title, text, url, className, compact }: ShareMenuPro
           <ShareRow
             icon={<MailIcon className="size-[15px]" />}
             label={t("shareEmail")}
-            tint="#6b54e8"
+            tint="var(--glass-accent-deep)"
             onClick={() => shareExternal("email")}
           />
         </div>

@@ -871,17 +871,17 @@ export function FileManager() {
     const iconClass = "w-5 h-5";
     switch (fileType) {
       case "pdf":
-        return <FileText className={`${iconClass} text-red-500`} />;
+        return <FileText className={`${iconClass} text-[color:var(--chart-5)]`} />;
       case "docx":
-        return <FileText className={`${iconClass} text-blue-500`} />;
+        return <FileText className={`${iconClass} text-[color:var(--chart-2)]`} />;
       case "xlsx":
-        return <FileText className={`${iconClass} text-green-500`} />;
+        return <FileText className={`${iconClass} text-[color:var(--chart-3)]`} />;
       case "image":
-        return <FileImage className={`${iconClass} text-purple-500`} />;
+        return <FileImage className={`${iconClass} text-[color:var(--chart-4)]`} />;
       case "video":
-        return <FileVideo className={`${iconClass} text-pink-500`} />;
+        return <FileVideo className={`${iconClass} text-[color:var(--glass-accent-c)]`} />;
       case "archive":
-        return <Archive className={`${iconClass} text-yellow-500`} />;
+        return <Archive className={`${iconClass} text-[color:var(--chart-1)]`} />;
       default:
         return <File className={`${iconClass} text-muted-foreground`} />;
     }
@@ -917,7 +917,7 @@ export function FileManager() {
             value="public"
             className={`rounded-none ${
               viewMode === "public"
-                ? "border-b-2 border-emerald-500 text-foreground"
+                ? "border-b-2 border-[color:var(--glass-success)] text-foreground"
                 : "text-muted-foreground"
             }`}
           >
@@ -927,7 +927,7 @@ export function FileManager() {
             value="private"
             className={`rounded-none ${
               viewMode === "private"
-                ? "border-b-2 border-orange-500 text-foreground"
+                ? "border-b-2 border-[color:var(--glass-warning)] text-foreground"
                 : "text-muted-foreground"
             }`}
           >
@@ -992,10 +992,10 @@ export function FileManager() {
                 <div
                   className={`h-full transition-all ${
                     quota.used / quota.quota > 0.9
-                      ? "bg-red-500"
+                      ? "bg-[color:var(--destructive)]"
                       : quota.used / quota.quota > 0.7
-                      ? "bg-orange-500"
-                      : "bg-emerald-500"
+                      ? "bg-[color:var(--glass-warning)]"
+                      : "bg-[color:var(--glass-success)]"
                   }`}
                   style={{
                     width: `${Math.min(100, (quota.used / quota.quota) * 100)}%`,
@@ -1093,7 +1093,7 @@ export function FileManager() {
       {/* Files Grid/List */}
       <div
         className={`flex-1 overflow-y-auto px-5 py-4 transition-all ${
-          dragOver ? "bg-card border-2 border-dashed border-blue-500" : ""
+          dragOver ? "bg-card border-2 border-dashed border-[color:var(--glass-info)]" : ""
         }`}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
@@ -1114,11 +1114,11 @@ export function FileManager() {
                       selectedFiles.has(file.id) ? "bg-muted" : "bg-card hover:bg-muted"
                     } ${
                       draggedFileIds.has(file.id)
-                        ? "border-blue-500 opacity-50"
+                        ? "border-[color:var(--glass-info)] opacity-50"
                         : selectedFiles.has(file.id)
-                        ? "border-blue-500"
+                        ? "border-[color:var(--glass-info)]"
                         : file.isPrivate
-                        ? "border-orange-500"
+                        ? "border-[color:var(--glass-warning)]"
                         : "border-border"
                     }`}
                     onDragStart={(e) => handleFileDragStart(file.id, e)}
@@ -1226,7 +1226,7 @@ export function FileManager() {
                   </ContextMenuItem>
                   <ContextMenuItem
                     onClick={() => handleDelete(file)}
-                    className="text-red-500"
+                    className="text-[color:var(--destructive)]"
                   >
                     <Trash2 className="w-3 h-3 mr-2" />
                     {t("fmDelete")}
@@ -1320,10 +1320,10 @@ export function FileManager() {
                       selectedFiles.has(file.id) ? "bg-muted" : ""
                     } ${draggedFileIds.has(file.id) ? "opacity-50" : ""} border-l-4 ${
                       draggedFileIds.has(file.id) || selectedFiles.has(file.id)
-                        ? "border-l-blue-500"
+                        ? "border-l-[color:var(--glass-info)]"
                         : file.isPrivate
-                        ? "border-l-orange-500"
-                        : "border-l-emerald-500"
+                        ? "border-l-[color:var(--glass-warning)]"
+                        : "border-l-[color:var(--glass-success)]"
                     }`}
                     onDragStart={(e) => handleFileDragStart(file.id, e)}
                     onDragEnd={() => setDraggedFileIds(new Set())}
@@ -1411,7 +1411,7 @@ export function FileManager() {
                             </ContextMenuItem>
                             <ContextMenuItem
                               onClick={() => handleDelete(file)}
-                              className="text-red-500"
+                              className="text-[color:var(--destructive)]"
                             >
                               <Trash2 className="w-3 h-3 mr-2" />
                               {t("fmDelete")}
@@ -1537,7 +1537,7 @@ export function FileManager() {
                       className="w-full h-full object-cover"
                     />
                   ) : usageWarning.fileType === "pdf" ? (
-                    <FileText className="w-7 h-7 text-red-500" />
+                    <FileText className="w-7 h-7 text-[color:var(--chart-5)]" />
                   ) : (
                     getFileIcon(usageWarning.fileType)
                   )}
@@ -1566,10 +1566,10 @@ export function FileManager() {
                   ? t("fmStatusDraft")
                   : status;
                 const statusClass = deleted
-                  ? "bg-red-500/15 text-red-500"
+                  ? "bg-[color:var(--destructive)]/15 text-[color:var(--destructive)]"
                   : status === "published"
-                  ? "bg-emerald-500/15 text-emerald-600"
-                  : "bg-orange-500/15 text-orange-600";
+                  ? "bg-[color:var(--glass-success-surface)] text-[color:var(--glass-success-ink)]"
+                  : "bg-[color:var(--glass-warning-surface)] text-[color:var(--glass-warning-ink)]";
                 return (
                   <div
                     key={u.id}

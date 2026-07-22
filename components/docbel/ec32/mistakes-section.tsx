@@ -53,9 +53,9 @@ function MistakeCard({
       )}
 
       {advice && (
-        <div className="flex gap-2.5 rounded-2xl border border-emerald-300/50 bg-emerald-50/70 p-3 text-sm leading-relaxed text-emerald-950 dark:border-emerald-400/30 dark:bg-emerald-950/40 dark:text-emerald-100">
+        <div className="flex gap-2.5 rounded-2xl border border-[color:var(--glass-success-border)] bg-[color:var(--glass-success-surface)] p-3 text-sm leading-relaxed text-[color:var(--glass-success-ink)]">
           <Lightbulb
-            className="mt-0.5 size-4 shrink-0 text-emerald-600 dark:text-emerald-300"
+            className="mt-0.5 size-4 shrink-0 text-[color:var(--glass-success)]"
             aria-hidden
           />
           <p className="min-w-0">
@@ -152,7 +152,7 @@ export function Ec32MistakesSection({
                           </p>
                         )}
                         {advice && (
-                          <p className="mt-1 text-sm leading-relaxed text-emerald-700 dark:text-emerald-300">
+                          <p className="mt-1 text-sm leading-relaxed text-[color:var(--glass-success-ink)]">
                             <span className="font-semibold">Conseil : </span>
                             {advice}
                           </p>

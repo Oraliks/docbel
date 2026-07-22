@@ -49,7 +49,7 @@ export function CpFinderTeaser() {
             style={{
               backgroundImage:
                 "linear-gradient(135deg, var(--glass-accent-a), var(--glass-accent-deep))",
-              boxShadow: "0 6px 20px rgba(159,124,255,0.35)",
+              boxShadow: "0 6px 20px color-mix(in oklab, var(--glass-accent-a) 35%, transparent)",
             }}
           >
             <Building2Icon className="size-5" strokeWidth={2.2} />

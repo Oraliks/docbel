@@ -25,10 +25,10 @@ const TYPE_LABEL_KEYS: Record<ChangelogNotification["type"], string> = {
 };
 
 const TYPE_DOT: Record<ChangelogNotification["type"], string> = {
-  feature: "bg-green-500",
-  fix: "bg-red-500",
-  improvement: "bg-blue-500",
-  breaking: "bg-amber-500",
+  feature: "bg-[color:var(--chart-3)]",
+  fix: "bg-[color:var(--chart-5)]",
+  improvement: "bg-[color:var(--chart-2)]",
+  breaking: "bg-[color:var(--chart-1)]",
 };
 
 export function NotificationBell() {

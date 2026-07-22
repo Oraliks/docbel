@@ -337,8 +337,8 @@ export function SignupForm({
               <div
                 className="flex items-start gap-2 rounded-2xl p-3 text-[12.5px]"
                 style={{
-                  background: "rgba(80, 200, 140, 0.12)",
-                  color: "#1d6b3e",
+                  background: "var(--glass-success-surface)",
+                  color: "var(--glass-success-ink)",
                 }}
               >
                 <CheckCircle2Icon className="mt-0.5 size-4 shrink-0" />
@@ -350,8 +350,8 @@ export function SignupForm({
                       <span
                         className="ml-auto rounded-full px-1.5 py-0.5 text-[10px] font-bold uppercase"
                         style={{
-                          background: "rgba(255, 200, 140, 0.40)",
-                          color: "#8a4f0a",
+                          background: "var(--glass-warning-surface)",
+                          color: "var(--glass-warning-ink)",
                         }}
                       >
                         {t("signupTestBadge")}
@@ -367,8 +367,8 @@ export function SignupForm({
               <div
                 className="flex items-start gap-2 rounded-2xl p-3 text-[12.5px]"
                 style={{
-                  background: "rgba(255, 200, 140, 0.18)",
-                  color: "#8a4f0a",
+                  background: "var(--glass-warning-surface)",
+                  color: "var(--glass-warning-ink)",
                 }}
               >
                 <AlertCircleIcon className="mt-0.5 size-4 shrink-0" />
@@ -408,8 +408,8 @@ export function SignupForm({
               <div
                 className="flex items-start gap-2 rounded-2xl p-3 text-[12.5px]"
                 style={{
-                  background: "rgba(255, 200, 140, 0.18)",
-                  color: "#8a4f0a",
+                  background: "var(--glass-warning-surface)",
+                  color: "var(--glass-warning-ink)",
                 }}
               >
                 <AlertCircleIcon className="mt-0.5 size-4 shrink-0" />
@@ -475,8 +475,8 @@ export function SignupForm({
             <div
               className="flex items-start gap-2 rounded-2xl p-3 text-[13px]"
               style={{
-                background: "rgba(220, 80, 100, 0.12)",
-                color: "#b8324a",
+                background: "color-mix(in oklab, var(--destructive) 10%, transparent)",
+                color: "var(--destructive)",
               }}
             >
               <AlertCircleIcon className="mt-0.5 size-4 shrink-0" />

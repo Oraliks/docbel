@@ -38,10 +38,10 @@ const TYPE_CONFIG: Record<
   string,
   { labelKey: string; dot: string; textColor: string }
 > = {
-  feature: { labelKey: "feature", dot: "#10B981", textColor: "#10B981" },
-  fix: { labelKey: "fix", dot: "#EF4444", textColor: "#EF4444" },
-  improvement: { labelKey: "improvement", dot: "#3B82F6", textColor: "#3B82F6" },
-  breaking: { labelKey: "breaking", dot: "#F59E0B", textColor: "#F59E0B" },
+  feature: { labelKey: "feature", dot: "var(--glass-success)", textColor: "var(--glass-success)" },
+  fix: { labelKey: "fix", dot: "var(--destructive)", textColor: "var(--destructive)" },
+  improvement: { labelKey: "improvement", dot: "var(--glass-info)", textColor: "var(--glass-info)" },
+  breaking: { labelKey: "breaking", dot: "var(--glass-warning)", textColor: "var(--glass-warning)" },
 };
 
 const formatDate = (iso: string) =>
@@ -139,7 +139,7 @@ export function ChangelogFeed({
                 className="absolute -left-[20px] sm:-left-[26px] top-1.5 size-3 rounded-full ring-4 ring-[color:var(--background)]"
                 style={{
                   background: cfg.dot,
-                  boxShadow: `0 0 0 2px ${cfg.dot}22`,
+                  boxShadow: `0 0 0 2px color-mix(in oklab, ${cfg.dot} 13%, transparent)`,
                 }}
               />
 

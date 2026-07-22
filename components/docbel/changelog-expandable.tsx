@@ -108,9 +108,9 @@ export function ChangelogExpandable({
           )}
           style={{
             color: accent,
-            borderColor: `${accent}25`,
-            background: `linear-gradient(180deg, ${accent}0d 0%, ${accent}1a 100%)`,
-            ["--tw-ring-color" as string]: `${accent}40`,
+            borderColor: `color-mix(in oklab, ${accent} 15%, transparent)`,
+            background: `linear-gradient(180deg, color-mix(in oklab, ${accent} 5%, transparent) 0%, color-mix(in oklab, ${accent} 10%, transparent) 100%)`,
+            ["--tw-ring-color" as string]: `color-mix(in oklab, ${accent} 25%, transparent)`,
           }}
         >
           {/* Calque hover qui s'éclaircit */}
@@ -118,7 +118,7 @@ export function ChangelogExpandable({
             aria-hidden
             className="pointer-events-none absolute inset-0 rounded-b-2xl opacity-0 transition-opacity duration-200 group-hover:opacity-100"
             style={{
-              background: `linear-gradient(180deg, ${accent}1a 0%, ${accent}2e 100%)`,
+              background: `linear-gradient(180deg, color-mix(in oklab, ${accent} 10%, transparent) 0%, color-mix(in oklab, ${accent} 18%, transparent) 100%)`,
             }}
           />
           <span className="relative inline-flex items-center gap-2">

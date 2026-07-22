@@ -43,21 +43,21 @@ function levelBadge(level: string) {
   const normalized = level.trim().toLowerCase()
   if (normalized.startsWith('débutant') || normalized.startsWith('debutant')) {
     return (
-      <Badge className="border-transparent bg-emerald-100 font-medium text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300">
+      <Badge className="border-transparent bg-[color:var(--glass-success-surface)] font-medium text-[color:var(--glass-success-ink)]">
         {level}
       </Badge>
     )
   }
   if (normalized.startsWith('intermédiaire') || normalized.startsWith('intermediaire')) {
     return (
-      <Badge className="border-transparent bg-amber-100 font-medium text-amber-700 dark:bg-amber-500/15 dark:text-amber-300">
+      <Badge className="border-transparent bg-[color:var(--glass-warning-surface)] font-medium text-[color:var(--glass-warning-ink)]">
         {level}
       </Badge>
     )
   }
   if (normalized.startsWith('avancé') || normalized.startsWith('avance')) {
     return (
-      <Badge className="border-transparent bg-rose-100 font-medium text-rose-700 dark:bg-rose-500/15 dark:text-rose-300">
+      <Badge className="border-transparent bg-[color:var(--chart-5)]/12 font-medium text-[color:var(--chart-5)]">
         {level}
       </Badge>
     )

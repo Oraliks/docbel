@@ -88,7 +88,7 @@ export function OfficePreview({ url, mode }: OfficePreviewProps) {
   if (status === "error") {
     return (
       <div className="flex flex-col items-center justify-center w-full h-[400px] text-sm text-muted-foreground gap-2">
-        <AlertCircle className="w-6 h-6 text-orange-500" />
+        <AlertCircle className="w-6 h-6 text-[color:var(--glass-warning)]" />
         <p>Aperçu impossible à générer</p>
         {errorMsg && <code className="text-[11px]">{errorMsg}</code>}
       </div>
@@ -117,7 +117,7 @@ export function OfficePreview({ url, mode }: OfficePreviewProps) {
               onClick={() => setActiveSheet(idx)}
               className={`text-xs px-2 py-1 rounded ${
                 idx === activeSheet
-                  ? "bg-emerald-500/15 text-emerald-600 font-medium"
+                  ? "bg-[color:var(--chart-3)]/15 text-[color:var(--chart-3)] font-medium"
                   : "hover:bg-muted text-muted-foreground"
               }`}
             >

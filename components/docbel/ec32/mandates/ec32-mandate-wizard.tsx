@@ -398,7 +398,7 @@ function StepSend({
                     )}
                   />
                   {draft.personEmail.length > 0 && !isValidEmail(draft.personEmail) && (
-                    <p className="text-xs text-red-600">
+                    <p className="text-xs text-[color:var(--destructive)]">
                       {t('mandateWizard.send.channel.email.invalid')}
                     </p>
                   )}
@@ -433,7 +433,7 @@ function StepSend({
           <div className="flex items-center gap-4 rounded-2xl border border-primary/10 bg-card p-4">
             <div
               aria-hidden
-              className="grid size-20 shrink-0 grid-cols-5 grid-rows-5 gap-0.5 rounded-lg border border-border bg-white p-1.5"
+              className="grid size-20 shrink-0 grid-cols-5 grid-rows-5 gap-0.5 rounded-lg border border-border bg-[color:var(--glass-surface-strong)] p-1.5"
             >
               {QR_PATTERN.map((on, i) => (
                 <span

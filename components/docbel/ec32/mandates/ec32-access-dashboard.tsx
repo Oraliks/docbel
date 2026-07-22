@@ -73,20 +73,20 @@ function StatusBadge({ status }: { status: Ec32MandateAccess['status'] }) {
   const t = useTranslations('public.ec32')
   if (status === 'active') {
     return (
-      <span className="inline-flex items-center rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-700">
+      <span className="inline-flex items-center rounded-full bg-[color:var(--glass-success-surface)] px-2.5 py-1 text-xs font-semibold text-[color:var(--glass-success-ink)]">
         {t('accessDashboard.status.active')}
       </span>
     )
   }
   if (status === 'pending') {
     return (
-      <span className="inline-flex items-center rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-700">
+      <span className="inline-flex items-center rounded-full bg-[color:var(--glass-warning-surface)] px-2.5 py-1 text-xs font-semibold text-[color:var(--glass-warning-ink)]">
         {t('accessDashboard.status.pending')}
       </span>
     )
   }
   return (
-    <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">
+    <span className="inline-flex items-center rounded-full bg-[color:var(--glass-surface-strong)] px-2.5 py-1 text-xs font-semibold text-[color:var(--glass-ink-soft)]">
       {t('accessDashboard.status.expired')}
     </span>
   )
@@ -134,7 +134,7 @@ function AccessRow({
           <Button
             variant="outline"
             size="sm"
-            className="border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"
+            className="border-[color:var(--destructive)]/30 text-[color:var(--destructive)] hover:bg-[color:var(--destructive)]/10"
             onClick={() => onAction?.(access.id)}
           >
             {actionLabel}

@@ -105,8 +105,8 @@ export function ContactPage(_: ContactPageProps) {
             <div
               className="flex items-start gap-3 rounded-2xl p-4 text-[13.5px]"
               style={{
-                background: "rgba(80, 200, 140, 0.12)",
-                color: "#1d6b3e",
+                background: "var(--glass-success-surface)",
+                color: "var(--glass-success-ink)",
               }}
             >
               <CheckCircle2Icon className="mt-0.5 size-5 shrink-0" />
@@ -121,8 +121,8 @@ export function ContactPage(_: ContactPageProps) {
             <div
               className="rounded-2xl p-4 text-[13.5px] font-semibold"
               style={{
-                background: "rgba(220, 80, 100, 0.12)",
-                color: "#b8324a",
+                background: "color-mix(in oklab, var(--destructive) 10%, transparent)",
+                color: "var(--destructive)",
               }}
             >
               {error}

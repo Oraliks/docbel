@@ -32,15 +32,15 @@ const ASSET_GLOW =
 const TILES: { bg: string; shadow: string }[] = [
   {
     bg: "linear-gradient(135deg, var(--glass-accent-a), var(--glass-accent-deep))",
-    shadow: "0 6px 20px rgba(159,124,255,0.35)",
+    shadow: "0 6px 20px color-mix(in oklab, var(--glass-accent-a) 35%, transparent)",
   },
   {
-    bg: "linear-gradient(135deg, var(--glass-accent-d), #FF8050)",
-    shadow: "0 6px 20px rgba(255,176,112,0.35)",
+    bg: "linear-gradient(135deg, var(--glass-accent-d), var(--chart-1))",
+    shadow: "0 6px 20px color-mix(in oklab, var(--glass-accent-d) 35%, transparent)",
   },
   {
-    bg: "linear-gradient(135deg, var(--glass-accent-c), #E060A0)",
-    shadow: "0 6px 20px rgba(255,140,192,0.35)",
+    bg: "linear-gradient(135deg, var(--glass-accent-c), var(--chart-5))",
+    shadow: "0 6px 20px color-mix(in oklab, var(--glass-accent-c) 35%, transparent)",
   },
 ];
 

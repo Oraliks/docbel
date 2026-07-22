@@ -47,11 +47,17 @@ function formatDate(iso: string): string {
 }
 
 const TYPE_BADGE: Record<string, { bg: string; color: string }> = {
-  commission_paritaire: { bg: "rgba(159, 124, 255, 0.18)", color: "#5a2a8c" },
-  sous_commission_paritaire: { bg: "rgba(128, 176, 255, 0.18)", color: "#1d3a7a" },
+  commission_paritaire: {
+    bg: "color-mix(in oklab, var(--chart-4) 18%, transparent)",
+    color: "var(--chart-4)",
+  },
+  sous_commission_paritaire: {
+    bg: "color-mix(in oklab, var(--chart-2) 18%, transparent)",
+    color: "var(--chart-2)",
+  },
   sous_secteur_officieux_ou_interne: {
-    bg: "rgba(255, 200, 140, 0.22)",
-    color: "#8a4f0a",
+    bg: "color-mix(in oklab, var(--chart-1) 22%, transparent)",
+    color: "var(--chart-1)",
   },
 };
 

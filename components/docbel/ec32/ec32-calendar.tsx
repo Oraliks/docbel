@@ -177,22 +177,22 @@ function Ec32Legend({
       })}
       {/* Notification téléphonique (auto) */}
       <LegendItem
-        swatch={<Phone className="size-3 shrink-0 text-red-500" />}
+        swatch={<Phone className="size-3 shrink-0 text-[color:var(--destructive)]" />}
         label={t('calendar.legend.phoneNotification')}
       />
       {/* 1er jour de chômage effectif (case verte, auto) */}
       <LegendItem
-        swatch={<span className="size-3 shrink-0 rounded bg-emerald-400" />}
+        swatch={<span className="size-3 shrink-0 rounded bg-[color:var(--glass-success)]" />}
         label={situationLabel('first_effective_unemployment_day')}
       />
       {/* Pas d'application (case grise, auto) */}
       <LegendItem
-        swatch={<span className="size-3 shrink-0 rounded bg-slate-300 dark:bg-slate-600" />}
+        swatch={<span className="size-3 shrink-0 rounded bg-[color:var(--glass-ink-faint)]" />}
         label={situationLabel('not_applicable')}
       />
       {/* 1ʳᵉ date d'envoi possible (pastille pêche) */}
       <LegendItem
-        swatch={<span className="size-3 shrink-0 rounded-full bg-orange-200" />}
+        swatch={<span className="size-3 shrink-0 rounded-full bg-[color:var(--glass-accent-d)]/70" />}
         label={t('calendar.legend.firstSendDate')}
       />
     </div>
@@ -248,7 +248,7 @@ function Ec32CalendarCell({
     return (
       <div
         className={cn(
-          'flex aspect-square min-h-8 flex-col rounded-xl border border-dashed border-border/40 bg-slate-200/50 p-1.5 text-xs dark:bg-slate-800/40',
+          'flex aspect-square min-h-8 flex-col rounded-xl border border-dashed border-border/40 bg-[color:var(--glass-surface)] p-1.5 text-xs',
           cell.inMonth ? 'opacity-60' : 'opacity-35',
         )}
         aria-hidden
@@ -291,7 +291,7 @@ function Ec32CalendarCell({
   const cellTone = isWork
     ? 'bg-primary text-primary-foreground'
     : isFirstEffective
-      ? 'bg-emerald-200/70 dark:bg-emerald-800/40'
+      ? 'bg-[color:var(--glass-success-surface)]'
       : 'bg-card'
 
   const markerColor = (situation: Ec32SituationType) =>
@@ -318,7 +318,7 @@ function Ec32CalendarCell({
         className={cn(
           'flex size-5 items-center justify-center self-start rounded-full text-[0.8rem] font-semibold',
           isWork ? 'text-primary-foreground' : 'text-foreground',
-          cell.isFirstSendDay && 'bg-orange-200/90 text-orange-900',
+          cell.isFirstSendDay && 'bg-[color:var(--glass-accent-d)]/80 text-[color:var(--glass-ink)]',
         )}
       >
         {cell.day}

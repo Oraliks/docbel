@@ -702,7 +702,7 @@ function TarifSocialResultPanel({
   exporting: boolean;
 }) {
   const t = useTranslations("public.outils");
-  const eligibilityColor = result.eligible ? "#22a06b" : "#a87b1a";
+  const eligibilityTone = result.eligible ? "success" : "warning";
 
   return (
     <div className="flex flex-col gap-4">
@@ -729,9 +729,9 @@ function TarifSocialResultPanel({
       <div
         className="inline-flex w-fit items-center gap-1.5 rounded-full border-[1.5px] px-3 py-1 text-[12px] font-bold uppercase tracking-[0.04em]"
         style={{
-          borderColor: `${eligibilityColor}55`,
-          background: `${eligibilityColor}15`,
-          color: eligibilityColor,
+          borderColor: `var(--glass-${eligibilityTone}-border)`,
+          background: `var(--glass-${eligibilityTone}-surface)`,
+          color: `var(--glass-${eligibilityTone}-ink)`,
         }}
       >
         {result.eligible ? (
@@ -775,17 +775,17 @@ function TarifSocialResultPanel({
           className="rounded-xl p-3"
           style={{
             background: "var(--glass-surface)",
-            border: "1px solid #BBF7D0",
+            border: "1px solid var(--glass-success-border)",
           }}
         >
-          <div className="mb-1.5 flex items-center gap-1.5 text-[10.5px] font-bold uppercase tracking-[0.06em] text-[#22a06b]">
+          <div className="mb-1.5 flex items-center gap-1.5 text-[10.5px] font-bold uppercase tracking-[0.06em] text-[color:var(--glass-success)]">
             <CheckCircle2 className="size-3" />
             {t("tsMotifsTitle", { count: result.motifsEligibilite.length })}
           </div>
           <ul className="space-y-1 text-[11.5px] leading-[1.5] text-[color:var(--glass-ink)]">
             {result.motifsEligibilite.map((m) => (
               <li key={m} className="flex items-start gap-1.5">
-                <CheckCircle2 className="mt-0.5 size-3 shrink-0 text-[#22a06b]" />
+                <CheckCircle2 className="mt-0.5 size-3 shrink-0 text-[color:var(--glass-success)]" />
                 <span>{m}</span>
               </li>
             ))}
@@ -798,9 +798,9 @@ function TarifSocialResultPanel({
         <div
           className="rounded-xl p-3 text-[11.5px] leading-[1.55]"
           style={{
-            background: "#FEF3C7",
-            border: "1px solid #FCD34D",
-            color: "#92400E",
+            background: "var(--glass-warning-surface)",
+            border: "1px solid var(--glass-warning-border)",
+            color: "var(--glass-warning-ink)",
           }}
         >
           <div className="mb-1 flex items-center gap-1.5 font-bold">
@@ -829,7 +829,7 @@ function TarifSocialResultPanel({
           <div className="rounded-xl bg-[color:var(--glass-surface)] p-3">
             <div className="flex items-baseline justify-between gap-2">
               <span className="inline-flex items-center gap-1.5 text-[12.5px] font-semibold text-[color:var(--glass-ink)]">
-                <Zap className="size-3.5" style={{ color: "#f59e0b" }} />
+                <Zap className="size-3.5" style={{ color: "var(--chart-1)" }} />
                 {t("tsDetailElec")}
               </span>
               <span className="text-[14px] font-extrabold text-[color:var(--glass-ink)]">
@@ -853,7 +853,7 @@ function TarifSocialResultPanel({
           <div className="rounded-xl bg-[color:var(--glass-surface)] p-3">
             <div className="flex items-baseline justify-between gap-2">
               <span className="inline-flex items-center gap-1.5 text-[12.5px] font-semibold text-[color:var(--glass-ink)]">
-                <Flame className="size-3.5" style={{ color: "#ef4444" }} />
+                <Flame className="size-3.5" style={{ color: "var(--chart-5)" }} />
                 {t("tsDetailGaz")}
               </span>
               <span className="text-[14px] font-extrabold text-[color:var(--glass-ink)]">
@@ -919,15 +919,15 @@ function TarifSocialResultPanel({
         <div
           className="rounded-xl p-3 text-[11.5px] leading-[1.6]"
           style={{
-            background: "#EFF6FF",
-            border: "1px solid #BFDBFE",
-            color: "#1E40AF",
+            background: "var(--glass-info-surface)",
+            border: "1px solid var(--glass-info-border)",
+            color: "var(--glass-info-ink)",
           }}
         >
           <div className="mb-1 flex items-center gap-1.5 font-bold">
             <Info className="size-3.5" /> {t("tsNotEligibleBlockTitle")}
           </div>
-          <ul className="list-inside list-disc space-y-1 text-[#1E3A8A]">
+          <ul className="list-inside list-disc space-y-1 text-[color:var(--glass-info-ink)]">
             <li>{t.rich("tsNotEligibleBlockItem1", { strong: (c) => <strong>{c}</strong> })}</li>
             <li>{t.rich("tsNotEligibleBlockItem2", { strong: (c) => <strong>{c}</strong> })}</li>
             <li>{t("tsNotEligibleBlockItem3")}</li>

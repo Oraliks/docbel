@@ -66,18 +66,18 @@ const STATUS_STYLE: Record<
 > = {
   honore: {
     labelKey: "espacePreviewStatusHonore",
-    chip: "bg-violet-100 text-violet-800 dark:bg-violet-400/15 dark:text-violet-200",
-    dot: "bg-violet-500 dark:bg-violet-300",
+    chip: "bg-[color:var(--chart-4)]/15 text-[color:var(--chart-4)]",
+    dot: "bg-[color:var(--chart-4)]",
   },
   confirme: {
     labelKey: "espacePreviewStatusConfirme",
-    chip: "bg-emerald-100 text-emerald-800 dark:bg-emerald-400/15 dark:text-emerald-200",
-    dot: "bg-emerald-500 dark:bg-emerald-300",
+    chip: "bg-[color:var(--glass-success-surface)] text-[color:var(--glass-success-ink)]",
+    dot: "bg-[color:var(--glass-success)]",
   },
   attente: {
     labelKey: "espacePreviewStatusAttente",
-    chip: "bg-amber-100 text-amber-800 dark:bg-amber-400/15 dark:text-amber-200",
-    dot: "bg-amber-500 dark:bg-amber-300",
+    chip: "bg-[color:var(--glass-warning-surface)] text-[color:var(--glass-warning-ink)]",
+    dot: "bg-[color:var(--glass-warning)]",
   },
 };
 
@@ -232,7 +232,7 @@ function AgrMock({ t }: { t: T }) {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center gap-2">
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-2.5 py-1 text-[11px] font-bold text-emerald-800 dark:bg-emerald-400/15 dark:text-emerald-200">
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-[color:var(--glass-success-surface)] px-2.5 py-1 text-[11px] font-bold text-[color:var(--glass-success-ink)]">
           <FileCheck2Icon className="size-3.5" strokeWidth={2.4} />
           {t("espacePreviewAgrWechImported")}
         </span>

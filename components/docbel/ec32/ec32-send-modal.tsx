@@ -119,7 +119,7 @@ export function Ec32SendModal({
           <>
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
-                <CheckCircle2 className="size-5 text-emerald-600 dark:text-emerald-400" aria-hidden />
+                <CheckCircle2 className="size-5 text-[color:var(--glass-success)]" aria-hidden />
                 {labels.successTitle}
               </DialogTitle>
               <DialogDescription>{successBody}</DialogDescription>

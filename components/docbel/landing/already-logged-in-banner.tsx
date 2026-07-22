@@ -60,7 +60,7 @@ export function AlreadyLoggedInBanner({
         type="button"
         onClick={() => setDismissed(true)}
         aria-label={t("bannerClose")}
-        className="inline-flex size-7 items-center justify-center rounded-full text-[color:var(--glass-ink-faint)] transition hover:bg-white/40 hover:text-[color:var(--glass-ink)] dark:hover:bg-white/10"
+        className="inline-flex size-7 items-center justify-center rounded-full text-[color:var(--glass-ink-faint)] transition hover:bg-[color:var(--glass-surface)] hover:text-[color:var(--glass-ink)]"
       >
         <XIcon className="size-3.5" strokeWidth={2.4} />
       </button>

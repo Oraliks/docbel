@@ -156,7 +156,7 @@ export function GlossairePage() {
                 inputRef.current?.focus();
               }}
               aria-label={t("clearSearch")}
-              className="absolute right-4 top-1/2 -translate-y-1/2 rounded-full p-1.5 text-[color:var(--glass-ink-soft)] transition hover:bg-white/40 hover:text-[color:var(--glass-ink)]"
+              className="absolute right-4 top-1/2 -translate-y-1/2 rounded-full p-1.5 text-[color:var(--glass-ink-soft)] transition hover:bg-[color:var(--glass-surface)] hover:text-[color:var(--glass-ink)]"
             >
               <XIcon className="size-4" />
             </button>
@@ -176,7 +176,7 @@ export function GlossairePage() {
                   resetSearchState(entry.code);
                   inputRef.current?.focus();
                 }}
-                className="glass-surface rounded-full border-0 px-3 py-1 text-[12px] font-semibold text-[color:var(--glass-ink)] transition hover:bg-white/55 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)]"
+                className="glass-surface rounded-full border-0 px-3 py-1 text-[12px] font-semibold text-[color:var(--glass-ink)] transition hover:bg-[color:var(--glass-surface)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)]"
               >
                 {entry.code}
               </button>
@@ -316,7 +316,7 @@ function DomainTile({
         {featured.map((entry) => (
           <span
             key={entry.code}
-            className="rounded-full bg-white/40 px-2 py-0.5 text-[11px] font-semibold text-[color:var(--glass-ink)] group-hover:bg-white/65"
+            className="rounded-full bg-[color:var(--glass-surface)] px-2 py-0.5 text-[11px] font-semibold text-[color:var(--glass-ink)] group-hover:bg-[color:var(--glass-surface-strong)]"
           >
             {entry.code}
           </span>
@@ -414,7 +414,7 @@ function CompactList({
               type="button"
               aria-expanded={open}
               onClick={() => onToggle(entry.code, open)}
-              className="flex w-full items-baseline gap-3 py-2.5 text-left outline-none transition focus-visible:bg-white/30"
+              className="flex w-full items-baseline gap-3 py-2.5 text-left outline-none transition focus-visible:bg-[color:var(--glass-surface)]"
             >
               <span className="glass-display min-w-[72px] text-[15px] font-semibold text-[color:var(--glass-ink)]">
                 {entry.code}
@@ -474,7 +474,7 @@ function EmptyResults({
                 key={entry.code}
                 type="button"
                 onClick={() => onPick(entry.code)}
-                className="glass-surface rounded-full border-0 px-3.5 py-1.5 text-[13px] font-semibold text-[color:var(--glass-ink)] transition hover:bg-white/55 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)]"
+                className="glass-surface rounded-full border-0 px-3.5 py-1.5 text-[13px] font-semibold text-[color:var(--glass-ink)] transition hover:bg-[color:var(--glass-surface)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)]"
               >
                 {entry.code}
               </button>

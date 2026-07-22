@@ -1702,7 +1702,7 @@ function Ec32ControlsPanel({
           </Button>
         )}
         {isLocked && (
-          <span className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-emerald-50 px-3 py-2 text-xs font-medium text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200">
+          <span className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-[color:var(--glass-success-surface)] px-3 py-2 text-xs font-medium text-[color:var(--glass-success-ink)]">
             <Check className="size-3.5" aria-hidden />
             {tx('ec32Sim.cardSentSimulation')}
           </span>

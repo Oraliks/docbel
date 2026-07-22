@@ -1122,12 +1122,12 @@ function IPPResultPanel({
         <div
           className="rounded-xl p-3 text-[11.5px] leading-[1.55]"
           style={{
-            background: "rgba(245, 158, 11, 0.08)",
-            border: "1.5px solid rgba(245, 158, 11, 0.30)",
-            color: "rgb(120, 53, 15)",
+            background: "var(--glass-warning-surface)",
+            border: "1.5px solid var(--glass-warning-border)",
+            color: "var(--glass-warning-ink)",
           }}
         >
-          <div className="mb-1 flex items-center gap-1.5 font-bold text-[color:rgb(180,83,9)]">
+          <div className="mb-1 flex items-center gap-1.5 font-bold text-[color:var(--glass-warning-ink)]">
             <AlertCircle className="size-3.5" />
             {t("ippMarginal50Title")}
           </div>

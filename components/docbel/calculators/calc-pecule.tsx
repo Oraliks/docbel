@@ -767,15 +767,15 @@ function PeculeResultPanel({
         <div
           className="rounded-xl p-3 text-[11.5px] leading-[1.55]"
           style={{
-            background: "#EFF6FF",
-            border: "1px solid #BFDBFE",
-            color: "#1E40AF",
+            background: "var(--glass-info-surface)",
+            border: "1px solid var(--glass-info-border)",
+            color: "var(--glass-info-ink)",
           }}
         >
           <div className="mb-1 flex items-center gap-1.5 font-bold">
             <Info className="size-3.5" /> {t("pecJeunesTitle")}
           </div>
-          <p className="text-[#1E3A8A]">
+          <p className="text-[color:var(--glass-info-ink)]">
             {t.rich("pecJeunesText", {
               strong: (chunks) => <strong>{chunks}</strong>,
             })}

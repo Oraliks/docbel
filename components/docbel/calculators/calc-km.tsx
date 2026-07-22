@@ -787,7 +787,7 @@ function KmResultPanel({
     result.tauxApplique === 0.15;
 
   const veloPlafondAtteint = isVelo && result.plafondAtteint;
-  const recoColor = result.recommandationFraisReels ? "#22a06b" : "#a87b1a";
+  const recoTone = result.recommandationFraisReels ? "success" : "warning";
 
   return (
     <div className="flex flex-col gap-4">
@@ -858,9 +858,9 @@ function KmResultPanel({
       <div
         className="rounded-xl border-[1.5px] p-3 text-[11.5px] leading-[1.55]"
         style={{
-          borderColor: `${recoColor}55`,
-          background: `${recoColor}10`,
-          color: recoColor,
+          borderColor: `var(--glass-${recoTone}-border)`,
+          background: `var(--glass-${recoTone}-surface)`,
+          color: `var(--glass-${recoTone}-ink)`,
         }}
       >
         <div className="mb-1 flex items-center gap-1.5 font-bold">
@@ -972,16 +972,16 @@ function KmResultPanel({
         <div
           className="rounded-xl p-3 text-[11.5px] leading-[1.55]"
           style={{
-            background: "#EFF6FF",
-            border: "1px solid #BFDBFE",
-            color: "#1E40AF",
+            background: "var(--glass-info-surface)",
+            border: "1px solid var(--glass-info-border)",
+            color: "var(--glass-info-ink)",
           }}
         >
           <div className="mb-1 flex items-center gap-1.5 font-bold">
             <Lightbulb className="size-3.5" />
             {t("kmTeleworkTitle")}
           </div>
-          <p className="text-[#1E3A8A]">
+          <p className="text-[color:var(--glass-info-ink)]">
             {t.rich("kmTeleworkBody", {
               n: fmtNumber(result.kmTeleworkEvites),
               strong: (chunks) => <strong>{chunks}</strong>,

@@ -151,7 +151,7 @@ export function BureauCard({
           )}
           {bureau.verified && (
             <span
-              className="text-[9.5px] font-semibold uppercase tracking-wider text-green-700 dark:text-green-400"
+              className="text-[9.5px] font-semibold uppercase tracking-wider text-[color:var(--glass-success-ink)]"
               title={t("verifiedTitle")}
             >
               ✓ {t("verified")}
@@ -177,7 +177,7 @@ export function BureauCard({
 
       {/* Notes horaires en alerte */}
       {bureau.hoursNotes && !isCompact && (
-        <div className="text-[11px] flex items-start gap-1.5 px-2.5 py-1.5 rounded-md bg-amber-100/40 border border-amber-300/40 text-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
+        <div className="text-[11px] flex items-start gap-1.5 px-2.5 py-1.5 rounded-md bg-[color:var(--glass-warning-surface)] border border-[color:var(--glass-warning-border)] text-[color:var(--glass-warning-ink)]">
           <AlertTriangle size={11} className="shrink-0 mt-0.5" />
           <span>{bureau.hoursNotes}</span>
         </div>
@@ -331,27 +331,27 @@ function OpenChip({
   const base = "text-[10px] font-bold px-1.5 py-0.5 rounded inline-flex items-center gap-1 shrink-0";
   if (status.state === "open") {
     return (
-      <span className={`${base} bg-green-500/20 text-green-700 dark:text-green-400`}>
+      <span className={`${base} bg-[color:var(--glass-success-surface)] text-[color:var(--glass-success-ink)]`}>
         ● {t("open")}
       </span>
     );
   }
   if (status.state === "holiday") {
     return (
-      <span className={`${base} bg-purple-500/20 text-purple-700 dark:text-purple-400`}>
+      <span className={`${base} bg-[color:var(--chart-4)]/20 text-[color:var(--chart-4)]`}>
         {t("holiday")}
       </span>
     );
   }
   return (
-    <span className={`${base} bg-red-500/15 text-red-700 dark:text-red-400`}>{t("closed")}</span>
+    <span className={`${base} bg-[color:var(--destructive)]/10 text-[color:var(--destructive)]`}>{t("closed")}</span>
   );
 }
 
 function getTodayBackground(status: ReturnType<typeof computeOpenStatus>): string {
-  if (status.state === "open") return "bg-green-50 dark:bg-green-950/30 text-green-900 dark:text-green-200";
-  if (status.state === "holiday") return "bg-purple-50 dark:bg-purple-950/30 text-purple-900 dark:text-purple-200";
-  return "bg-red-50 dark:bg-red-950/30 text-red-900 dark:text-red-200";
+  if (status.state === "open") return "bg-[color:var(--glass-success-surface)] text-[color:var(--glass-success-ink)]";
+  if (status.state === "holiday") return "bg-[color:var(--chart-4)]/10 text-[color:var(--chart-4)]";
+  return "bg-[color:var(--destructive)]/10 text-[color:var(--destructive)]";
 }
 
 /** "9h–12h · 13h–16h" pour aujourd'hui, ou "Fermé · ouvre lun. 09:00" */

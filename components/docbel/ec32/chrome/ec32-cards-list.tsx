@@ -158,7 +158,7 @@ export function Ec32CardsList({
                       variant="outline"
                       size="sm"
                       onClick={() => onUnarchive?.(month.key)}
-                      className="border-orange-300 text-orange-700 hover:bg-orange-50 hover:text-orange-800 dark:border-orange-500/40 dark:text-orange-200 dark:hover:bg-orange-950/40"
+                      className="border-[color:var(--glass-warning-border)] text-[color:var(--glass-warning-ink)] hover:bg-[color:var(--glass-warning-surface)]"
                     >
                       Désarchiver
                     </Button>
@@ -167,7 +167,7 @@ export function Ec32CardsList({
                       variant="outline"
                       size="sm"
                       onClick={() => onArchive?.(month.key)}
-                      className="border-orange-300 text-orange-700 hover:bg-orange-50 hover:text-orange-800 dark:border-orange-500/40 dark:text-orange-200 dark:hover:bg-orange-950/40"
+                      className="border-[color:var(--glass-warning-border)] text-[color:var(--glass-warning-ink)] hover:bg-[color:var(--glass-warning-surface)]"
                     >
                       Archiver
                     </Button>

@@ -302,7 +302,7 @@ export function AgrDemo() {
             style={{
               backgroundImage:
                 "linear-gradient(135deg, var(--glass-accent-a), var(--glass-accent-deep))",
-              boxShadow: "0 14px 36px rgba(91,70,229,0.28)",
+              boxShadow: "0 14px 36px color-mix(in oklab, var(--glass-accent-deep) 28%, transparent)",
             }}
           >
             <div className="text-[11px] font-bold uppercase tracking-[0.12em] text-white/80">

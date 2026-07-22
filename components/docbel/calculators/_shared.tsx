@@ -405,8 +405,12 @@ export function CalcBadge({
     <span
       className="inline-flex items-center gap-1 rounded-full border-[1.5px] px-2.5 py-0.5 text-[10.5px] font-bold uppercase tracking-[0.04em]"
       style={{
-        background: accent ? `${accent}15` : "var(--glass-surface)",
-        borderColor: accent ? `${accent}40` : "var(--glass-border)",
+        background: accent
+          ? `color-mix(in oklab, ${accent} 8%, transparent)`
+          : "var(--glass-surface)",
+        borderColor: accent
+          ? `color-mix(in oklab, ${accent} 25%, transparent)`
+          : "var(--glass-border)",
         color: accent ?? "var(--glass-ink-soft)",
       }}
     >
@@ -519,7 +523,7 @@ export function ResultRow({
     direction === "minus"
       ? "var(--glass-ink-faint)"
       : direction === "plus"
-        ? "#22a06b"
+        ? "var(--glass-success)"
         : "var(--glass-ink-faint)";
   return (
     <div

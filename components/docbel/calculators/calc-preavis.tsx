@@ -614,9 +614,9 @@ export function CalcPreavis({ accent }: { accent: string }) {
               <span
                 className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-[0.04em]"
                 style={{
-                  background: "#E8F5E9",
-                  border: "1px solid #66BB6A",
-                  color: "#2E7D32",
+                  background: "var(--glass-success-surface)",
+                  border: "1px solid var(--glass-success-border)",
+                  color: "var(--glass-success-ink)",
                 }}
               >
                 <Check className="size-3.5" strokeWidth={3} />
@@ -941,7 +941,7 @@ function PreavisResultPanel({
           {t("pvResDays", { jours: result.delaiJours })}
         </div>
         <div className="mt-2">
-          <CalcBadge accent="#8B5CF6">
+          <CalcBadge accent="var(--chart-4)">
             {t("pvResRegimeBadge", {
               regime: result.regime === "avant2014" ? "avant" : "apres",
             })}
@@ -995,15 +995,15 @@ function PreavisResultPanel({
       <div
         className="rounded-xl p-3 text-[11.5px] leading-[1.6]"
         style={{
-          background: "#EFF6FF",
-          border: "1px solid #BFDBFE",
-          color: "#1E40AF",
+          background: "var(--glass-info-surface)",
+          border: "1px solid var(--glass-info-border)",
+          color: "var(--glass-info-ink)",
         }}
       >
         <div className="mb-1 flex items-center gap-1.5 font-bold">
           <Info className="size-3.5" /> {t("pvNoticeTitle")}
         </div>
-        <ul className="list-inside list-disc space-y-1 text-[#1E3A8A]">
+        <ul className="list-inside list-disc space-y-1 text-[color:var(--glass-info-ink)]">
           <li>{t("pvNoticeBullet1")}</li>
           <li>{t("pvNoticeBullet2")}</li>
         </ul>

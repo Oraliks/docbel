@@ -13,10 +13,22 @@ const STYLES: Record<
   AnnouncementLevel,
   { wrap: string; icon: typeof Info }
 > = {
-  info: { wrap: "bg-blue-600 text-white", icon: Info },
-  success: { wrap: "bg-emerald-600 text-white", icon: CircleCheck },
-  warning: { wrap: "bg-amber-400 text-amber-950", icon: TriangleAlert },
-  critical: { wrap: "bg-red-600 text-white", icon: CircleAlert },
+  info: {
+    wrap: "bg-[color:var(--glass-info)] text-[color:var(--info-foreground)]",
+    icon: Info,
+  },
+  success: {
+    wrap: "bg-[color:var(--glass-success)] text-[color:var(--success-foreground)]",
+    icon: CircleCheck,
+  },
+  warning: {
+    wrap: "bg-[color:var(--glass-warning)] text-[color:var(--attention-foreground)]",
+    icon: TriangleAlert,
+  },
+  critical: {
+    wrap: "bg-[color:var(--destructive)] text-[color:var(--destructive-foreground)]",
+    icon: CircleAlert,
+  },
 };
 
 /**

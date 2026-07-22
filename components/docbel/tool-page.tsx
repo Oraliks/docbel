@@ -81,7 +81,7 @@ export function ToolPage({ tool, accent, onBack, lang }: ToolPageProps) {
         <button
           type="button"
           onClick={onBack}
-          className="inline-flex items-center gap-2 rounded-full border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-4 py-2 text-[12.5px] font-semibold text-[color:var(--glass-ink-soft)] transition-colors outline-none hover:bg-white/55 focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)]"
+          className="inline-flex items-center gap-2 rounded-full border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-4 py-2 text-[12.5px] font-semibold text-[color:var(--glass-ink-soft)] transition-colors outline-none hover:bg-[color:var(--glass-surface-strong)] focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)]"
         >
           <ArrowLeftIcon className="size-4" />
           {t("back")}

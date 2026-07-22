@@ -26,8 +26,8 @@ export function Ec32Hero({
     <section id="haut" className="relative w-full overflow-hidden scroll-mt-28">
       <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
         <div className="absolute -left-24 -top-24 size-[22rem] rounded-full bg-primary/15 blur-3xl" />
-        <div className="absolute -right-16 top-8 size-[20rem] rounded-full bg-violet-400/15 blur-3xl" />
-        <div className="absolute bottom-0 left-1/3 size-[16rem] rounded-full bg-sky-300/10 blur-3xl" />
+        <div className="absolute -right-16 top-8 size-[20rem] rounded-full bg-[color:var(--glass-accent-a)]/15 blur-3xl" />
+        <div className="absolute bottom-0 left-1/3 size-[16rem] rounded-full bg-[color:var(--chart-2)]/10 blur-3xl" />
       </div>
 
       <div className="relative grid items-center gap-6 pb-4 md:gap-8 md:pb-6 lg:grid-cols-[1.1fr_0.9fr]">

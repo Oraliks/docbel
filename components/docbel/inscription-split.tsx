@@ -19,11 +19,16 @@ const THEME: Record<
 > = {
   partenaire: {
     bg: "radial-gradient(ellipse at 30% 30%, var(--glass-accent-d) 0%, transparent 60%), linear-gradient(135deg, var(--glass-accent-c) 0%, var(--glass-accent-a) 60%, var(--glass-accent-deep) 100%)",
-    accent: "#6D28D9",
+    // accent = texte sur la carte mockup TOUJOURS blanche → on force le sombre
+    // dans les deux thèmes (les tokens seuls s'éclaircissent en dark).
+    accent: "color-mix(in oklab, var(--glass-accent-deep) 42%, black)",
   },
   employeur: {
-    bg: "radial-gradient(ellipse at 30% 30%, rgba(94,234,212,0.45) 0%, transparent 60%), linear-gradient(135deg, #2DD4BF 0%, #0F766E 60%, #134E4A 100%)",
-    accent: "#0F766E",
+    // Identité distincte du citoyen (violet chaud) via le bleu système
+    // (--chart-2), au lieu du teal hors-palette d'origine. Reste lisible/dark
+    // via l'override --chart-* de .glass-root.
+    bg: "radial-gradient(ellipse at 30% 30%, color-mix(in oklab, var(--chart-2) 45%, transparent) 0%, transparent 60%), linear-gradient(135deg, var(--chart-2) 0%, color-mix(in oklab, var(--chart-2) 65%, black) 55%, color-mix(in oklab, var(--chart-2) 45%, black) 100%)",
+    accent: "color-mix(in oklab, var(--chart-2) 42%, black)",
   },
 };
 

@@ -301,6 +301,21 @@
   --ring: var(--glass-accent-deep);
 }
 
+/* Front en sombre : la palette de charts shadcn permute les TEINTES en dark
+   (chart-1 ambre→bleu-violet, chart-2 bleu→vert, chart-3 émeraude→ambre…),
+   ce qui casse le repérage par couleur des usages DÉCORATIFS front (teintes
+   de catégorie, icônes par type de fichier, tuiles d'outils). On la ré-ancre
+   sur les mêmes teintes qu'en clair, éclaircies pour rester lisibles sur fond
+   sombre. Scopé à .glass-root → les vrais graphes de l'admin (hors verre)
+   gardent la palette shadcn d'origine. */
+.dark .glass-root {
+  --chart-1: #fbbf24;
+  --chart-2: #60a5fa;
+  --chart-3: #34d399;
+  --chart-4: #a78bfa;
+  --chart-5: #f472b6;
+}
+
 /* Surfaces shadcn (cartes + menus déroulants/dialogs) → verre dépoli. */
 .glass-root :is(
     [data-slot="card"],

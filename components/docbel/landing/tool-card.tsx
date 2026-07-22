@@ -48,24 +48,24 @@ export function pickToolVisual(tool: Tool, index = 0): ToolVisual {
 
 const VARIANT_BG: Record<ToolVisual["variant"], string> = {
   a: "linear-gradient(135deg, var(--glass-accent-a), var(--glass-accent-deep))",
-  b: "linear-gradient(135deg, var(--glass-accent-c), #E060A0)",
-  c: "linear-gradient(135deg, var(--glass-accent-d), #FF8050)",
-  d: "linear-gradient(135deg, #80E0C0, #40C0A0)",
-  e: "linear-gradient(135deg, #80B0FF, #5060FF)",
-  f: "linear-gradient(135deg, #FFE070, var(--glass-accent-d))",
-  g: "linear-gradient(135deg, #D08CFF, var(--glass-accent-a))",
-  h: "linear-gradient(135deg, #FF8CC0, #FFB070)",
+  b: "linear-gradient(135deg, var(--glass-accent-c), var(--chart-5))",
+  c: "linear-gradient(135deg, var(--glass-accent-d), var(--chart-1))",
+  d: "linear-gradient(135deg, color-mix(in oklab, var(--chart-3) 60%, white), var(--chart-3))",
+  e: "linear-gradient(135deg, color-mix(in oklab, var(--chart-2) 55%, white), var(--glass-accent-deep))",
+  f: "linear-gradient(135deg, color-mix(in oklab, var(--chart-1) 45%, white), var(--glass-accent-d))",
+  g: "linear-gradient(135deg, var(--glass-accent-b), var(--glass-accent-a))",
+  h: "linear-gradient(135deg, var(--glass-accent-c), var(--glass-accent-d))",
 };
 
 const VARIANT_SHADOW: Record<ToolVisual["variant"], string> = {
-  a: "0 6px 20px rgba(159,124,255,0.35)",
-  b: "0 6px 20px rgba(255,140,192,0.35)",
-  c: "0 6px 20px rgba(255,176,112,0.35)",
-  d: "0 6px 20px rgba(128,224,192,0.35)",
-  e: "0 6px 20px rgba(128,176,255,0.35)",
-  f: "0 6px 20px rgba(255,224,112,0.40)",
-  g: "0 6px 20px rgba(208,140,255,0.30)",
-  h: "0 6px 20px rgba(255,140,192,0.30)",
+  a: "0 6px 20px color-mix(in oklab, var(--glass-accent-a) 35%, transparent)",
+  b: "0 6px 20px color-mix(in oklab, var(--chart-5) 35%, transparent)",
+  c: "0 6px 20px color-mix(in oklab, var(--chart-1) 35%, transparent)",
+  d: "0 6px 20px color-mix(in oklab, var(--chart-3) 35%, transparent)",
+  e: "0 6px 20px color-mix(in oklab, var(--chart-2) 35%, transparent)",
+  f: "0 6px 20px color-mix(in oklab, var(--chart-1) 40%, transparent)",
+  g: "0 6px 20px color-mix(in oklab, var(--glass-accent-b) 30%, transparent)",
+  h: "0 6px 20px color-mix(in oklab, var(--glass-accent-c) 30%, transparent)",
 };
 
 interface LandingToolCardProps {

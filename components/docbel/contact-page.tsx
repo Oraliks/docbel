@@ -280,7 +280,7 @@ export function ContactPage(_: ContactPageProps) {
               className="flex size-11 shrink-0 items-center justify-center rounded-2xl text-white"
               style={{
                 backgroundImage:
-                  "linear-gradient(135deg, #80B0FF, #5060FF)",
+                  "linear-gradient(135deg, color-mix(in oklab, var(--chart-2) 55%, white), var(--glass-accent-deep))",
               }}
             >
               <MessageCircleIcon className="size-5" />

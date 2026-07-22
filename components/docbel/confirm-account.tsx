@@ -78,7 +78,8 @@ export function ConfirmAccount({ token }: ConfirmAccountProps) {
         <span
           className="flex size-14 items-center justify-center rounded-2xl text-white"
           style={{
-            backgroundImage: "linear-gradient(135deg, #80E0C0, #40C0A0)",
+            backgroundImage:
+              "linear-gradient(135deg, color-mix(in oklab, var(--glass-success) 55%, white), var(--glass-success))",
           }}
         >
           <CheckCircle2Icon className="size-6" />
@@ -109,7 +110,7 @@ export function ConfirmAccount({ token }: ConfirmAccountProps) {
       <span
         className="flex size-14 items-center justify-center rounded-2xl text-white"
         style={{
-          backgroundImage: "linear-gradient(135deg, #FF8CC0, #E0506A)",
+          backgroundImage: "linear-gradient(135deg, color-mix(in oklab, var(--destructive) 65%, white), var(--destructive))",
         }}
       >
         <AlertCircleIcon className="size-6" />

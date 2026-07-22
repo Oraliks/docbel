@@ -28,13 +28,13 @@ import {
 
 const VARIANT_BG: Record<string, string> = {
   a: "linear-gradient(135deg, var(--glass-accent-a), var(--glass-accent-deep))",
-  b: "linear-gradient(135deg, var(--glass-accent-c), #E060A0)",
-  c: "linear-gradient(135deg, var(--glass-accent-d), #FF8050)",
-  d: "linear-gradient(135deg, #80E0C0, #40C0A0)",
-  e: "linear-gradient(135deg, #80B0FF, #5060FF)",
-  f: "linear-gradient(135deg, #FFE070, var(--glass-accent-d))",
-  g: "linear-gradient(135deg, #D08CFF, var(--glass-accent-a))",
-  h: "linear-gradient(135deg, #FF8CC0, #FFB070)",
+  b: "linear-gradient(135deg, var(--glass-accent-c), var(--chart-5))",
+  c: "linear-gradient(135deg, var(--glass-accent-d), var(--chart-1))",
+  d: "linear-gradient(135deg, color-mix(in oklab, var(--chart-3) 60%, white), var(--chart-3))",
+  e: "linear-gradient(135deg, color-mix(in oklab, var(--chart-2) 55%, white), var(--glass-accent-deep))",
+  f: "linear-gradient(135deg, color-mix(in oklab, var(--chart-1) 45%, white), var(--glass-accent-d))",
+  g: "linear-gradient(135deg, var(--glass-accent-b), var(--glass-accent-a))",
+  h: "linear-gradient(135deg, var(--glass-accent-c), var(--glass-accent-d))",
 };
 
 interface ToolPageProps {

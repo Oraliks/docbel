@@ -51,6 +51,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   Accordion,
   AccordionContent,
@@ -434,6 +435,15 @@ export function DossierWizard({
                 </div>
               </div>
               <div className="flex-1 px-4 py-5 sm:px-6 sm:py-6">{wizardStep}</div>
+              {currentStep < 4 ? (
+                <div className="px-4 pb-4 sm:px-6 sm:pb-6">
+                  <Alert className="glass-feedback rounded-xl border-0" data-tone="info">
+                    <Sparkles aria-hidden />
+                    <AlertTitle>{t("wizardAnswerConfidential")}</AlertTitle>
+                    <AlertDescription>{t("wizardFooterDisclaimer")}</AlertDescription>
+                  </Alert>
+                </div>
+              ) : null}
             </div>
           </CardContent>
         ) : (

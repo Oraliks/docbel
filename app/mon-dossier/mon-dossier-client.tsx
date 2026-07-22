@@ -10,6 +10,7 @@ import {
   FileQuestion,
   FolderOpen,
   HelpCircle,
+  KeyRound,
   Phone,
   RotateCcw,
   type LucideIcon,
@@ -293,6 +294,43 @@ function ActiveDossierCard({
   );
 }
 
+function ResumeDossierCard() {
+  const t = useTranslations("public.dossier");
+
+  return (
+    <Card size="sm" className="h-full rounded-2xl">
+      <CardHeader className="gap-2">
+        <div className="flex items-center gap-2 text-primary">
+          <span className="flex size-8 items-center justify-center rounded-xl bg-primary/10">
+            <KeyRound aria-hidden />
+          </span>
+          <span className="text-[11px] font-bold uppercase tracking-[0.08em]">
+            {t("resumeHasCodeTitle")}
+          </span>
+        </div>
+        <CardTitle className="text-base font-semibold leading-snug">
+          {t("onboardingResumeTitle")}
+        </CardTitle>
+        <CardDescription className="leading-relaxed">
+          {t.rich("onboardingResumeBody", {
+            code: (chunks) => (
+              <code className="rounded-md bg-primary/10 px-1.5 py-0.5 font-mono text-xs text-primary">
+                {chunks}
+              </code>
+            ),
+          })}
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Button render={<Link href="/reprendre" />} size="sm" className="w-full">
+          {t("onboardingResumeCta")}
+          <ArrowRight data-icon="inline-end" className="rtl:rotate-180" aria-hidden />
+        </Button>
+      </CardContent>
+    </Card>
+  );
+}
+
 export function MonDossierClient({
   bundles,
   catalog,
@@ -366,10 +404,7 @@ export function MonDossierClient({
       data-docbel-readable
     >
       <header
-        className={cn(
-          "grid items-stretch gap-5 px-1",
-          activeRun && "lg:grid-cols-[minmax(0,1.25fr)_minmax(22rem,0.75fr)]",
-        )}
+        className="grid items-stretch gap-5 px-1 lg:grid-cols-[minmax(0,1.25fr)_minmax(22rem,0.75fr)]"
       >
         <div className="flex flex-col justify-center gap-3">
           <nav
@@ -395,7 +430,9 @@ export function MonDossierClient({
 
         {activeRun ? (
           <ActiveDossierCard run={activeRun} runCount={activeRuns.length} />
-        ) : null}
+        ) : (
+          <ResumeDossierCard />
+        )}
       </header>
 
       <DossierWizard

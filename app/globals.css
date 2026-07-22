@@ -693,16 +693,18 @@
   color: var(--glass-accent-deep);
 }
 
-/* Accueil : direction du mockup validé — fond plus clair, panneaux plus nets
-   et ombres plus courtes. Le scope évite toute dérive sur les autres pages. */
-html:not(.dark) .glass-root:has(.docbel-home)::before {
+/* Front public : direction du mockup validé sur l'accueil — base blanc cassé,
+   halos mauve/rose localisés et panneaux plus nets. Cette règle est commune à
+   toutes les routes sous le shell public pour éviter un changement de fond en
+   naviguant entre l'accueil, les démarches, les outils et les actualités. */
+html:not(.dark) .glass-root::before {
   background:
     radial-gradient(ellipse 68% 48% at 78% 0%, color-mix(in oklab, var(--glass-bg-d) 44%, transparent), transparent 66%),
     radial-gradient(ellipse 55% 45% at 0% 36%, color-mix(in oklab, var(--glass-bg-b) 34%, transparent), transparent 68%),
     linear-gradient(145deg, color-mix(in oklab, var(--glass-surface-strong) 86%, var(--glass-bg-a)), color-mix(in oklab, var(--glass-surface-strong) 92%, var(--glass-bg-c)));
 }
 
-.docbel-home :is(.glass-surface, [data-slot="card"]) {
+html:not(.dark) .glass-root :is(.glass-surface, [data-slot="card"]) {
   box-shadow:
     0 10px 30px color-mix(in oklab, var(--glass-accent-deep) 8%, transparent),
     inset 0 1px 0 color-mix(in oklab, var(--glass-border) 88%, transparent);

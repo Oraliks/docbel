@@ -284,11 +284,18 @@
    .dark. Tuner : ajuster les --glass-* (déjà définis plus haut).
    ============================================================ */
 .glass-root {
+  /* On complète le remap : --foreground / --secondary-foreground étaient les
+     deux oublis qui laissaient le texte front sur l'encre neutre shadcn
+     (#1A1A24) au lieu de l'encre violacée du verre. Toute page sous
+     .glass-root (accueil, mon-dossier, calculateurs, auth…) hérite ainsi de
+     la même couleur de texte, sans toucher les composants un par un. */
+  --foreground: var(--glass-ink);
   --card: var(--glass-surface);
   --card-foreground: var(--glass-ink);
   --popover: var(--glass-surface-strong);
   --popover-foreground: var(--glass-ink);
   --muted-foreground: var(--glass-ink-soft);
+  --secondary-foreground: var(--glass-ink);
   --border: var(--glass-ink-line);
   --input: color-mix(in oklab, var(--glass-ink) 22%, transparent);
   --ring: var(--glass-accent-deep);

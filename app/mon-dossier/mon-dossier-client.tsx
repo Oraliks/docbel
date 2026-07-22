@@ -65,15 +65,18 @@ interface Props {
   initialSituation?: string | null;
 }
 
+// Teintes de catégorie tirées de la palette système (charts + accents verre),
+// jamais des hex bruts : on reste aligné sur l'accueil et sur DESIGN_RULES.
+// Valeurs `var()` → résolues dans le style inline sous .glass-root.
 const CATEGORY_HUE: Record<string, string> = {
-  emploi: "#5B46E5",
-  formation: "#7C3AED",
-  famille: "#ff5fa2",
-  logement: "#0ea5e9",
-  sante: "#10b981",
-  pension: "#f59e0b",
-  social: "#ff7a7a",
-  independant: "#8b5cf6",
+  emploi: "var(--primary)",
+  formation: "var(--chart-4)",
+  famille: "var(--chart-5)",
+  logement: "var(--chart-2)",
+  sante: "var(--chart-3)",
+  pension: "var(--chart-1)",
+  social: "var(--glass-accent-d)",
+  independant: "var(--glass-accent-a)",
 };
 
 function bundleHref(slug: string): string {

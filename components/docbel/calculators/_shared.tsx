@@ -370,7 +370,7 @@ export function CalcResult({
 export function CalcError({ children }: { children: React.ReactNode }) {
   if (!children) return null;
   return (
-    <div className="flex items-start gap-2 rounded-xl border-[1.5px] border-amber-300/40 bg-amber-50/50 p-3 text-[12px] text-amber-900 dark:border-amber-500/40 dark:bg-amber-950/30 dark:text-amber-200">
+    <div className="flex items-start gap-2 rounded-xl border-[1.5px] border-[color:var(--glass-warning-border)] bg-[color:var(--glass-warning-surface)] p-3 text-[12px] text-[color:var(--glass-warning-ink)]">
       <AlertCircle className="mt-0.5 size-4 shrink-0" />
       <span>{children}</span>
     </div>

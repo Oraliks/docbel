@@ -320,7 +320,7 @@ model FileUsage {
 model Category {
   id              String   @id @default(cuid())
   name            String   @unique
-  color           String   @default("#7C3AED")
+  color           String   @default("#5B46E5")
   // Illustration 3D (PNG, fond transparent) composée dans l'image à la une
   // générée (/api/featured). Optionnelle : sans elle, scène vectorielle de repli.
   illustrationUrl String?
@@ -415,7 +415,7 @@ model News {
   content     String    @default("")
   excerpt     String
   category    String
-  color       String    @default("#7C3AED")
+  color       String    @default("#5B46E5")
   emoji       String    @default("📰")
   status      String    @default("draft")
   featured    Boolean   @default(false)
@@ -897,7 +897,7 @@ model Organisme {
   name        String // "Office National de l'Emploi"
   shortName   String? // "ONEM"
   type        OrganismeType @default(other)
-  color       String        @default("#7C3AED")
+  color       String        @default("#5B46E5")
   logoUrl     String?
   website     String?
   description String?
@@ -997,7 +997,7 @@ model DocumentBundle {
   name        String
   description String?
   icon        String?
-  color       String  @default("#7C3AED")
+  color       String  @default("")
   active      Boolean @default(true)
   order       Int     @default(0)
 
@@ -1645,7 +1645,7 @@ model ChatSession {
 }
 
 /// Dossier de groupement coloré pour ranger les ChatSession.
-/// Couleurs : hex ("#7C3AED") ou nom Tailwind ("blue", "amber") au choix
+/// Couleurs : hex ("#5B46E5") ou nom Tailwind ("blue", "amber") au choix
 /// — le front décidera comment matcher (palette préset côté UI).
 model ChatFolder {
   id          String        @id @default(cuid())
@@ -2887,7 +2887,7 @@ model TrainingCategory {
   name        String
   description String?
   icon        String?
-  color       String   @default("#7C3AED")
+  color       String   @default("#5B46E5")
   parentId    String?
   isActive    Boolean  @default(true)
   order       Int      @default(0)
@@ -3228,7 +3228,7 @@ model OrientationBranch {
   description  String?
   possibleJobs String[] @default([])
   icon         String?
-  color        String   @default("#7C3AED")
+  color        String   @default("#5B46E5")
   isActive     Boolean  @default(true)
   order        Int      @default(0)
   createdAt    DateTime @default(now())

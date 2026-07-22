@@ -306,7 +306,7 @@ export function TrainingDetailClient({ training }: { training: TrainingDetailVie
               <button
                 type="button"
                 onClick={() => toggle(training.slug)}
-                className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-full border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-4 py-2.5 text-[12.5px] font-bold transition hover:bg-white/55 dark:hover:bg-white/10"
+                className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-full border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-4 py-2.5 text-[12.5px] font-bold transition hover:bg-[color:var(--glass-surface-strong)]"
                 style={{ color: saved ? "var(--glass-accent-c)" : "var(--glass-ink)" }}
               >
                 <HeartIcon className={`size-4 ${saved ? "fill-current" : ""}`} />
@@ -316,7 +316,7 @@ export function TrainingDetailClient({ training }: { training: TrainingDetailVie
                 type="button"
                 onClick={() => setReportOpen((v) => !v)}
                 aria-label={t("reportAria")}
-                className="inline-flex items-center justify-center rounded-full border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-4 py-2.5 text-[12.5px] font-bold text-[color:var(--glass-ink-soft)] transition hover:bg-white/55 dark:hover:bg-white/10"
+                className="inline-flex items-center justify-center rounded-full border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-4 py-2.5 text-[12.5px] font-bold text-[color:var(--glass-ink-soft)] transition hover:bg-[color:var(--glass-surface-strong)]"
               >
                 <FlagIcon className="size-4" />
               </button>

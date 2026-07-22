@@ -348,7 +348,7 @@ export function PricingEmployeur() {
               <div className="mt-auto flex flex-col gap-3 pt-2">
                 <Link
                   href="/inscription/employeur"
-                  className="inline-flex w-fit items-center gap-1.5 rounded-full border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-6 py-3.5 text-[13.5px] font-semibold text-[color:var(--glass-ink-soft)] transition hover:bg-white/55 hover:text-[color:var(--glass-ink)] motion-reduce:transition-none dark:hover:bg-white/10"
+                  className="inline-flex w-fit items-center gap-1.5 rounded-full border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-6 py-3.5 text-[13.5px] font-semibold text-[color:var(--glass-ink-soft)] transition hover:bg-[color:var(--glass-surface-strong)] hover:text-[color:var(--glass-ink)] motion-reduce:transition-none"
                 >
                   {t("pricingCtaFree")}
                 </Link>

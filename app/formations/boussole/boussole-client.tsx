@@ -149,7 +149,7 @@ export function BoussoleClient({ questions }: { questions: PublicQuestion[] }) {
               </button>
               <Link
                 href="/formations"
-                className="inline-flex items-center gap-2 rounded-full border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-6 py-3 text-[14px] font-bold text-[color:var(--glass-ink)] transition hover:bg-white/55 dark:hover:bg-white/10"
+                className="inline-flex items-center gap-2 rounded-full border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-6 py-3 text-[14px] font-bold text-[color:var(--glass-ink)] transition hover:bg-[color:var(--glass-surface-strong)]"
               >
                 {t("introSeeTrainings")}
                 <ArrowRightIcon className="size-4" />
@@ -220,7 +220,7 @@ export function BoussoleClient({ questions }: { questions: PublicQuestion[] }) {
             type="button"
             onClick={saveResult}
             disabled={saved}
-            className="inline-flex items-center gap-2 rounded-full border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-5 py-2.5 text-[13px] font-bold text-[color:var(--glass-ink)] transition hover:bg-white/55 disabled:opacity-60 dark:hover:bg-white/10"
+            className="inline-flex items-center gap-2 rounded-full border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-5 py-2.5 text-[13px] font-bold text-[color:var(--glass-ink)] transition hover:bg-[color:var(--glass-surface-strong)] disabled:opacity-60"
           >
             <HeartIcon className={`size-4 ${saved ? "fill-current text-[color:var(--glass-accent-c)]" : ""}`} />
             {saved ? t("resultSaved") : t("resultSave")}

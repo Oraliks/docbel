@@ -104,7 +104,7 @@ export function CpFinderTeaser() {
                 key={s}
                 type="button"
                 onClick={() => goTo(s)}
-                className="rounded-full border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-3.5 py-1.5 text-[12px] font-semibold text-[color:var(--glass-ink-soft)] transition hover:bg-white/55 hover:text-[color:var(--glass-ink)] motion-reduce:transition-none dark:hover:bg-white/10"
+                className="rounded-full border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-3.5 py-1.5 text-[12px] font-semibold text-[color:var(--glass-ink-soft)] transition hover:bg-[color:var(--glass-surface-strong)] hover:text-[color:var(--glass-ink)] motion-reduce:transition-none"
               >
                 {s}
               </button>

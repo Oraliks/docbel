@@ -105,7 +105,7 @@ export function CatalogueClient({ trainings, categories }: Props) {
             </button>
             <a
               href="#catalogue"
-              className="inline-flex items-center gap-2 rounded-full border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-5 py-2.5 text-[13px] font-bold text-[color:var(--glass-ink)] transition hover:bg-white/55 dark:hover:bg-white/10"
+              className="inline-flex items-center gap-2 rounded-full border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-5 py-2.5 text-[13px] font-bold text-[color:var(--glass-ink)] transition hover:bg-[color:var(--glass-surface-strong)]"
             >
               {t("ctaSeeTrainings")}
               <ArrowRightIcon className="size-4" />

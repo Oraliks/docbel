@@ -40,7 +40,7 @@ export async function DisabledFormView({ formTitle, customMessage }: Props) {
         <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
           <Link
             href="/outils"
-            className="inline-flex items-center gap-2 rounded-full border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-4 py-2 text-[13px] font-semibold text-[color:var(--glass-ink)] transition hover:bg-white/55"
+            className="inline-flex items-center gap-2 rounded-full border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-4 py-2 text-[13px] font-semibold text-[color:var(--glass-ink)] transition hover:bg-[color:var(--glass-surface-strong)]"
           >
             <ArrowLeft className="size-3.5" />
             {t("formDisabledBackToCatalog")}

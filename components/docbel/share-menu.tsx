@@ -194,8 +194,8 @@ export function ShareMenu({ title, text, url, className, compact }: ShareMenuPro
         aria-label={t("shareArticleAria")}
         className={
           compact
-            ? "inline-flex size-10 items-center justify-center rounded-full border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] text-[color:var(--glass-ink-soft)] outline-none transition-colors hover:bg-white/65 focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)]"
-            : "inline-flex items-center gap-1.5 rounded-full border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-3.5 py-2 text-[12.5px] font-semibold text-[color:var(--glass-ink-soft)] outline-none transition-colors hover:bg-white/55 focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)]"
+            ? "inline-flex size-10 items-center justify-center rounded-full border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] text-[color:var(--glass-ink-soft)] outline-none transition-colors hover:bg-[color:var(--glass-surface-strong)] focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)]"
+            : "inline-flex items-center gap-1.5 rounded-full border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-3.5 py-2 text-[12.5px] font-semibold text-[color:var(--glass-ink-soft)] outline-none transition-colors hover:bg-[color:var(--glass-surface-strong)] focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)]"
         }
       >
         <Share2Icon className="size-4" />
@@ -303,7 +303,7 @@ function ShareRow({
       type="button"
       role="menuitem"
       onClick={onClick}
-      className="group flex w-full items-center gap-2.5 rounded-xl px-2 py-1.5 text-left outline-none transition-colors hover:bg-white/55 focus-visible:bg-white/55 focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)]"
+      className="group flex w-full items-center gap-2.5 rounded-xl px-2 py-1.5 text-left outline-none transition-colors hover:bg-[color:var(--glass-surface-strong)] focus-visible:bg-[color:var(--glass-surface-strong)] focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)]"
     >
       <span
         className="flex size-7 shrink-0 items-center justify-center rounded-lg transition-transform duration-150 group-hover:scale-110"

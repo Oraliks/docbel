@@ -66,7 +66,7 @@ export function NotificationBell() {
     >
       <DropdownMenuTrigger
         aria-label={ariaLabel}
-        className="relative flex size-10 items-center justify-center rounded-2xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] text-[color:var(--glass-ink)] transition-colors hover:bg-white/55 dark:hover:bg-white/10"
+        className="relative flex size-10 items-center justify-center rounded-2xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] text-[color:var(--glass-ink)] transition-colors hover:bg-[color:var(--glass-surface-strong)]"
       >
         <BellIcon className="size-4" />
         {unreadCount > 0 ? (
@@ -115,7 +115,7 @@ export function NotificationBell() {
                 <DropdownMenuItem
                   key={entry.id}
                   render={<Link href={`/changelog#v${entry.version}`} />}
-                  className="flex items-start gap-3 rounded-xl px-3 py-2.5 transition-colors data-[highlighted]:bg-white/40 dark:data-[highlighted]:bg-white/5"
+                  className="flex items-start gap-3 rounded-xl px-3 py-2.5 transition-colors data-[highlighted]:bg-[color:var(--glass-surface)]"
                 >
                   <span
                     aria-hidden
@@ -146,7 +146,7 @@ export function NotificationBell() {
         <DropdownMenuSeparator className="my-1 bg-[color:var(--glass-ink-line)]" />
         <DropdownMenuItem
           render={<Link href="/changelog" />}
-          className="flex items-center justify-center gap-2 rounded-xl px-3 py-2 text-[12px] font-semibold text-[color:var(--glass-accent-deep)] data-[highlighted]:bg-white/40 dark:data-[highlighted]:bg-white/5"
+          className="flex items-center justify-center gap-2 rounded-xl px-3 py-2 text-[12px] font-semibold text-[color:var(--glass-accent-deep)] data-[highlighted]:bg-[color:var(--glass-surface)]"
         >
           <SparklesIcon className="size-3.5" />
           {t("notifSeeAllHistory")}

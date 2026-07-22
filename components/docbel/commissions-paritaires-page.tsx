@@ -324,7 +324,7 @@ export function CommissionsParitairesPage() {
               size="sm"
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={currentPage === 1}
-              className="rounded-full border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] text-[color:var(--glass-ink-soft)] hover:bg-white/55"
+              className="rounded-full border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] text-[color:var(--glass-ink-soft)] hover:bg-[color:var(--glass-surface-strong)]"
             >
               Précédent
             </Button>
@@ -333,7 +333,7 @@ export function CommissionsParitairesPage() {
               size="sm"
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               disabled={currentPage === totalPages}
-              className="rounded-full border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] text-[color:var(--glass-ink-soft)] hover:bg-white/55"
+              className="rounded-full border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] text-[color:var(--glass-ink-soft)] hover:bg-[color:var(--glass-surface-strong)]"
             >
               Suivant
             </Button>

@@ -107,7 +107,7 @@ export default function ForgotPasswordPage() {
         <main className="relative flex flex-col p-6 sm:p-10 lg:p-14">
           <Link
             href="/login"
-            className="inline-flex w-fit items-center gap-2 rounded-full border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-4 py-2 text-[12.5px] font-semibold text-[color:var(--glass-ink-soft)] transition hover:bg-white/55 dark:hover:bg-white/10"
+            className="inline-flex w-fit items-center gap-2 rounded-full border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-4 py-2 text-[12.5px] font-semibold text-[color:var(--glass-ink-soft)] transition hover:bg-[color:var(--glass-surface-strong)]"
           >
             <ArrowLeftIcon className="size-4" />
             {t("backToSignIn")}

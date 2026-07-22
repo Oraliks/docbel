@@ -423,7 +423,7 @@ export function EspacePreview() {
             </Link>
             <Link
               href="/contact"
-              className="inline-flex items-center justify-center rounded-full border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-5 py-3 text-[13px] font-semibold text-[color:var(--glass-ink-soft)] transition hover:bg-white/55 hover:text-[color:var(--glass-ink)] motion-reduce:transition-none dark:hover:bg-white/10"
+              className="inline-flex items-center justify-center rounded-full border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-5 py-3 text-[13px] font-semibold text-[color:var(--glass-ink-soft)] transition hover:bg-[color:var(--glass-surface-strong)] hover:text-[color:var(--glass-ink)] motion-reduce:transition-none"
             >
               {t("espacePreviewCtaSecondary")}
             </Link>
@@ -456,7 +456,7 @@ export function EspacePreview() {
                   className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-[12.5px] font-bold transition-colors focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)] focus-visible:outline-none motion-reduce:transition-none ${
                     selected
                       ? ""
-                      : "text-[color:var(--glass-ink-soft)] hover:bg-white/45 hover:text-[color:var(--glass-ink)] dark:hover:bg-white/10"
+                      : "text-[color:var(--glass-ink-soft)] hover:bg-[color:var(--glass-surface)] hover:text-[color:var(--glass-ink)]"
                   }`}
                   style={selected ? GLASS_PRIMARY_STYLE : undefined}
                 >

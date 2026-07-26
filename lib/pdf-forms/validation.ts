@@ -313,6 +313,43 @@ export function isFieldVisible(cond: VisibleIf | undefined, payload: FormPayload
   return true;
 }
 
+/// Le payload amputé des champs que le citoyen NE VOYAIT PAS au moment d'envoyer.
+///
+/// Un champ masqué par `visibleIf` garde sa valeur dans le state du runner : le
+/// citoyen qui saisit son IBAN puis bascule sur « chèque circulaire » laisse un
+/// IBAN derrière lui. Le filler le sait et saute ces champs (cf. `filler.ts`),
+/// mais le moteur de règles serveur, lui, lit le payload brut — il imprimait
+/// donc un numéro de compte à côté d'une case « chèque » cochée, et des
+/// remarques sur des cohabitants d'un dossier déclaré isolé. Deux déclarations
+/// officielles fausses, produites par la seule persistance du state.
+///
+/// À appliquer AVANT `resolveStamps`. Ne filtre QUE sur `visibleIf` : `hidden`
+/// est une décision de présentation, et plusieurs règles compensent justement
+/// un champ masqué (les cases « non » de la rubrique hors-EEE, par exemple).
+/// Le filtrage est TRANSITIF, par point fixe : retirer un champ peut en rendre
+/// un autre invisible à son tour. Le C1 en donne le cas exact —
+/// `statutJugementPensionAlimentaire` dépend de `pensionAlimentaire`, qui dépend
+/// de `statutFamilial`. Un citoyen isolé qui déclare un jugement puis se dit
+/// cohabitant laisse les deux valeurs derrière lui ; une passe simple garderait
+/// le jugement, puisque `pensionAlimentaire` vaut encore « oui » dans le payload
+/// brut. On itère donc jusqu'à ce que plus rien ne tombe.
+export function visiblePayload(fields: PdfFormField[], payload: FormPayload): FormPayload {
+  const out: FormPayload = { ...payload };
+  const gated = fields.filter((f) => f.visibleIf && f.id in out);
+  let removed = true;
+  while (removed) {
+    removed = false;
+    for (const f of gated) {
+      if (!(f.id in out)) continue;
+      if (!isFieldVisible(f.visibleIf, out)) {
+        delete out[f.id];
+        removed = true;
+      }
+    }
+  }
+  return out;
+}
+
 /// Construit le validateur Zod d'un formulaire pour une locale donnée.
 /// Les champs requis ne sont vérifiés que s'ils sont visibles.
 export function buildValidator(fields: PdfFormField[], lang: Locale = DEFAULT_LOCALE) {

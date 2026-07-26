@@ -133,6 +133,49 @@ function stampPipeRadio(
 /// = un seul point d'ajustement pour toute la famille.
 const UNIFORM_TEXT_FONT_SIZE = 10;
 
+/// Plancher de réduction. En dessous, le texte devient illisible — mieux vaut
+/// alors laisser déborder (et le voir) que produire une ligne microscopique.
+const MIN_TEXT_FONT_SIZE = 5;
+
+/// Marge intérieure d'un widget AcroForm, de chaque côté. Les lecteurs PDF
+/// insèrent ~2 pt ; sans la retirer, un texte calculé « juste à la limite »
+/// est quand même rogné à l'affichage.
+const TEXT_WIDGET_PADDING = 2;
+
+/// Taille de police qui fait TENIR `text` dans la boîte du widget.
+///
+/// Sans ça, un texte plus large que sa case n'est PAS réduit : pdf-lib pose une
+/// clôture de découpe et le coupe en plein glyphe, sans avertissement. Ce
+/// n'était pas un cas limite — à 10 pt, TOUTE date `DD/MM/YYYY` (58 pt) déborde
+/// des colonnes « date de naissance » de la grille cohabitants (51 pt), et
+/// « Époux/se » (46 pt) déborde de la colonne « lien de parenté » (39 pt). Le
+/// lien le plus fréquent, sur la déclaration la plus courante.
+///
+/// Ne s'applique pas aux widgets multilignes (le texte y est replié, pas
+/// tronqué : réduire la police n'aurait aucun sens) ni aux champs marqués
+/// `autoSizeFont`, qui délèguent l'ajustement au lecteur PDF.
+function fitFontSize(font: PDFFont, text: string, field: PDFTextField): number {
+  if (!text) return UNIFORM_TEXT_FONT_SIZE;
+  let usable = Infinity;
+  try {
+    if (field.isMultiline()) return UNIFORM_TEXT_FONT_SIZE;
+    // Un champ peut porter plusieurs widgets (même valeur répétée sur
+    // plusieurs pages) : on vise le plus étroit, pour tenir partout.
+    for (const w of field.acroField.getWidgets()) {
+      const width = w.getRectangle().width;
+      if (width > 0) usable = Math.min(usable, width - 2 * TEXT_WIDGET_PADDING);
+    }
+  } catch {
+    return UNIFORM_TEXT_FONT_SIZE;
+  }
+  if (!Number.isFinite(usable) || usable <= 0) return UNIFORM_TEXT_FONT_SIZE;
+  let size = UNIFORM_TEXT_FONT_SIZE;
+  while (size > MIN_TEXT_FONT_SIZE && font.widthOfTextAtSize(text, size) > usable) {
+    size -= 0.5;
+  }
+  return size;
+}
+
 /// Stampe une valeur scalaire sur un widget AcroForm résolu, en dispatchant
 /// sur son type (texte / checkbox / dropdown / radio group). Centralise la
 /// logique pour la réutiliser depuis le stamping de lignes d'`array`.
@@ -151,7 +194,14 @@ function stampScalarWidget(
     // parenté `pere` → « Père »). Une valeur absente de la table est stampée
     // brute (ex. codes officiels `FAC`/`NFAC`). Court-circuite date/iban.
     const mapped = stampMap ? stampMap[String(value)] : undefined;
-    const raw = value === false ? "" : String(value);
+    // Un booléen sur un widget TEXTE s'imprime « X », jamais le mot « true ».
+    // Le C1C en est la preuve : `affirmationSincereEtComplete` est déclaré
+    // `checkbox` dans le seed, mais le widget visé est un champ texte dans le
+    // PDF réel (vérifié) — chaque C1C généré portait donc le mot « true » au
+    // milieu de la phrase d'affirmation sur l'honneur. Le garde est ici, et
+    // pas seulement dans le seed, pour qu'aucune erreur de type future ne
+    // puisse réimprimer un littéral de programmation sur un document officiel.
+    const raw = typeof value === "boolean" ? (value ? "X" : "") : String(value);
     // Reformatage des dates ISO → FR au stamping : le form runner stocke en
     // ISO côté state (format standard <input type="date">), l'usager veut
     // du DD/MM/YYYY sur le PDF final.
@@ -165,10 +215,11 @@ function stampScalarWidget(
     // préfixe est étranger (FR, DE, …) → pas de strip.
     if (stampMap === undefined && fieldType === "iban") text = raw.replace(/^\s*[Bb][Ee]\s*/, "").trim();
     pdfField.setText(text);
-    // Taille uniforme partout (cf. UNIFORM_TEXT_FONT_SIZE), sauf
-    // `autoSizeFont` (0 = auto-fit lecteur PDF, cf. PdfFormField.autoSizeFont).
+    // Taille uniforme partout (cf. UNIFORM_TEXT_FONT_SIZE), réduite si le
+    // texte ne tient pas dans la case (cf. fitFontSize), sauf `autoSizeFont`
+    // (0 = auto-fit lecteur PDF, cf. PdfFormField.autoSizeFont).
     try {
-      pdfField.setFontSize(autoSizeFont ? 0 : UNIFORM_TEXT_FONT_SIZE);
+      pdfField.setFontSize(autoSizeFont ? 0 : fitFontSize(font, text, pdfField));
     } catch {
       /* certains widgets rejettent setFontSize — on garde la taille par défaut */
     }
@@ -213,12 +264,34 @@ function stampScalarWidget(
 ///        - un nom de widget standard → stamping scalaire
 ///        - un nom pipe-séparé "w1|w2" sur un sous-champ `radio` → convention
 ///          ONEM (paire oui/non ou N options).
+/// Un sous-champ de grille suit les MÊMES règles de visibilité qu'à l'écran
+/// (cf. `array-field.tsx`) : `visibleIfParent` s'évalue contre le payload du
+/// formulaire, `visibleIf` contre la LIGNE courante — pas contre le payload.
+///
+/// La boucle principale du filler applique cette règle depuis le bug « grille
+/// cohabitants stampée en mode isolé », mais `stampArrayField` ne l'avait
+/// jamais reçue. Conséquence : un cohabitant passé de « Employé / 1500 » à
+/// « Aucun » repartait sur le PDF avec un montant de 1500 € en face d'une
+/// activité déclarée inexistante — une déclaration officielle qui se
+/// contredit elle-même. Aggravant, les lignes ne traversent aucun contrôle
+/// Zod (`z.array(z.any())`), donc rien d'autre ne rattrapait ça.
+function isSubFieldVisible(
+  sub: PdfFormField,
+  row: FieldValueRecord,
+  payload: FormPayload
+): boolean {
+  if (sub.visibleIfParent && !isFieldVisible(sub.visibleIfParent, payload)) return false;
+  if (sub.visibleIf && !isFieldVisible(sub.visibleIf, row as FormPayload)) return false;
+  return true;
+}
+
 function stampArrayField(
   form: PDFForm,
   font: PDFFont,
   unicodeFont: boolean,
   field: PdfFormField,
-  rows: FieldValueRecord[]
+  rows: FieldValueRecord[],
+  payload: FormPayload
 ): void {
   const subFields = field.itemFields ?? [];
   if (subFields.length === 0) return;
@@ -232,6 +305,7 @@ function stampArrayField(
     const oneBased = String(i + 1);
     for (const sub of subFields) {
       if (!sub.pdfFieldNameTemplate) continue;
+      if (!isSubFieldVisible(sub, row, payload)) continue;
       const subValue = row[sub.id];
       if (subValue === null || subValue === undefined) continue;
       const widgetName = sub.pdfFieldNameTemplate.replace(/\{index\}/g, oneBased);
@@ -264,6 +338,7 @@ function stampArrayField(
     if (!widgetName) continue;
     const sub = subFields.find((s) => s.id === subId);
     if (!sub) continue;
+    if (!isSubFieldVisible(sub, match, payload)) continue;
     const subValue = match[subId];
     if (subValue === null || subValue === undefined) continue;
     if (
@@ -369,7 +444,7 @@ export async function fillForm(
     if (field.type === "array") {
       const rows = payload[field.id];
       if (!isFieldValueRecordArray(rows)) continue;
-      stampArrayField(form, font, unicodeFont, field, rows);
+      stampArrayField(form, font, unicodeFont, field, rows, payload);
       continue;
     }
 
@@ -503,7 +578,11 @@ export async function fillForm(
           }
           widget.setText(value);
           try {
-            widget.setFontSize(UNIFORM_TEXT_FONT_SIZE);
+            // Même ajustement que la boucle schéma : les règles serveur n'ont
+            // pas d'équivalent de `autoSizeFont`, et « NomPrenom » (121 pt) ne
+            // tient pas un nom composé à 10 pt (« Jean-Baptiste Vandenberghe »
+            // = 128 pt).
+            widget.setFontSize(fitFontSize(font, value, widget));
           } catch {
             /* certains widgets rejettent setFontSize — on garde la taille par défaut */
           }

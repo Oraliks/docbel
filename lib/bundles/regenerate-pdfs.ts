@@ -12,6 +12,7 @@ import { getRulesForSlug } from "@/lib/pdf-forms/bindings/registry";
 import { readSourcePdf } from "@/lib/pdf-forms/storage";
 import { renderFilename } from "@/lib/pdf-forms/filename";
 import { applyServerAutoFields } from "@/lib/pdf-forms/auto-fields";
+import { visiblePayload } from "@/lib/pdf-forms/validation";
 import { todayISO } from "@/lib/pdf-forms/system-values";
 import { shouldFlattenGeneratedPdf } from "@/lib/pdf-forms/flatten-policy";
 import type { PdfFormField, AcroFieldRaw, FormPayload } from "@/lib/pdf-forms/types";
@@ -86,7 +87,10 @@ async function regenerateItems(
     // depuis un dossier (téléchargement individuel, zip, email) sortaient sans
     // date ni signature — cf. applyServerAutoFields.
     const filled = applyServerAutoFields(fields, payload, todayISO());
-    const extraStamps = resolveStamps(filled, getRulesForSlug(form.slug));
+    // Même filtre de visibilité que la route /generate : le zip et l'e-mail
+    // repartent du payload stocké, qui contient lui aussi les valeurs devenues
+    // invisibles avant l'envoi.
+    const extraStamps = resolveStamps(visiblePayload(fields, filled), getRulesForSlug(form.slug));
     const { bytes } = await fillForm(source, fields, filled, {
       flatten: shouldFlattenGeneratedPdf(form.slug),
       technicalSchema,

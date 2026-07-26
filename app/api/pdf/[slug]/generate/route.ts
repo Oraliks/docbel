@@ -7,7 +7,7 @@ import { readSourcePdf } from "@/lib/pdf-forms/storage";
 import { fillForm } from "@/lib/pdf-forms/filler";
 import { resolveStamps } from "@/lib/pdf-forms/bindings/engine";
 import { getRulesForSlug } from "@/lib/pdf-forms/bindings/registry";
-import { buildValidator } from "@/lib/pdf-forms/validation";
+import { buildValidator, visiblePayload } from "@/lib/pdf-forms/validation";
 import { renderFilename } from "@/lib/pdf-forms/filename";
 import { sha256Hex, checkRateLimit, getClientIp } from "@/lib/pdf-forms/security";
 import { sendToDoccle, isDoccleConfigured } from "@/lib/pdf-forms/integrations/doccle";
@@ -242,7 +242,11 @@ export async function POST(
   // additionnel (safe par défaut). Les 6 transforms client-side
   // historiques restent temporairement actifs côté runner : les règles
   // sont IDEMPOTENTES par-dessus (mêmes valeurs), retrait en Phase 7.
-  const extraStamps = resolveStamps(validated, getRulesForSlug(form.slug));
+  // `visiblePayload` : les regles serveur ne doivent voir que ce que le
+  // citoyen voyait. Un IBAN saisi puis masque par un passage au cheque
+  // circulaire restait dans le payload et s'imprimait a cote de la case
+  // « cheque » cochee.
+  const extraStamps = resolveStamps(visiblePayload(fields, validated), getRulesForSlug(form.slug));
 
   let pdfBytes: Buffer;
   try {

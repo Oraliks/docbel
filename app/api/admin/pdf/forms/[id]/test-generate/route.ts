@@ -8,6 +8,7 @@ import { getRulesForSlug } from "@/lib/pdf-forms/bindings/registry";
 import { resolveStamps } from "@/lib/pdf-forms/bindings/engine";
 import { PdfFormField, FormPayload, AcroFieldRaw } from "@/lib/pdf-forms/types";
 import { sanitizeFields } from "@/lib/pdf-forms/sanitize-fields";
+import { visiblePayload } from "@/lib/pdf-forms/validation";
 import { shouldFlattenGeneratedPdf } from "@/lib/pdf-forms/flatten-policy";
 import { apiError } from "@/lib/api/response";
 
@@ -47,7 +48,9 @@ export async function POST(
     // L'aperçu admin doit suivre exactement la même voie de génération que
     // le parcours citoyen : les bindings serveur complètent les widgets qui
     // n'ont pas d'ancre directe dans le schéma du FormRunner.
-    const extraStamps = resolveStamps(payload, getRulesForSlug(form.slug));
+    // « Exactement la même voie » inclut le filtre de visibilité : sans lui,
+    // l'aperçu admin ne montrerait pas le document que le citoyen reçoit.
+    const extraStamps = resolveStamps(visiblePayload(fields, payload), getRulesForSlug(form.slug));
     result = await fillForm(source, fields, payload, {
       flatten: shouldFlattenGeneratedPdf(form.slug),
       technicalSchema: form.technicalSchema as unknown as AcroFieldRaw[],

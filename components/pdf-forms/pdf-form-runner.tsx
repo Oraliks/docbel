@@ -1748,6 +1748,33 @@ function MacroRunnerBody({
     attemptAdvance(macroSteps.slice(activeIndex, targetIndex).map(stepFieldsOf), activeIndex, targetIndex);
   };
 
+  // Les métadonnées d'étape sont mémoïsées plutôt que recalculées DANS le
+  // rendu : le `.map` en appelait une par étape à chaque frappe, et chacune
+  // rejoue les contrôles de format (checksums NISS/IBAN compris) sur tous les
+  // champs de son étape. Ne dépend que des valeurs et de la langue.
+  const stepperItems = useMemo(
+    () =>
+      macroSteps.map((s) => {
+        const stepFields = [...s.sections.flatMap((sec) => sec.fields), ...s.advanced];
+        const meta = computeStepMeta(
+          stepFields,
+          values,
+          locale,
+          (c) => t("runnerStepRemaining", { count: c }),
+          verifiedStreets,
+        );
+        return {
+          id: s.id,
+          label: titleFor(s.id),
+          description: descFor(s.id),
+          hasError: stepHasError(s),
+          ...meta,
+        };
+      }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [macroSteps, values, locale, verifiedStreets, errors, t]
+  );
+
   const cluster = (fields: PublicField[]) => (
     <FieldsCluster
       fields={fields}
@@ -1821,10 +1848,7 @@ function MacroRunnerBody({
             className="border-b border-[color:var(--glass-border)] px-3 outline-none"
           >
             <FormStepper
-              steps={macroSteps.map((s) => {
-                const meta = computeStepMeta(stepFieldsOf(s), values, locale, (c) => t("runnerStepRemaining", { count: c }), verifiedStreets);
-                return { id: s.id, label: titleFor(s.id), description: descFor(s.id), hasError: stepHasError(s), ...meta };
-              })}
+              steps={stepperItems}
               activeIndex={activeIndex}
               onSelect={handleStepSelect}
               showNavigation={!isStreamlinedC1}

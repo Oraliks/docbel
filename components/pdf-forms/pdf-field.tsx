@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { memo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { CheckCircle2Icon } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -127,7 +127,7 @@ function LabelWithTooltip({
   );
 }
 
-export function PdfField({
+function PdfFieldImpl({
   field, value, error, locale, onChange, formId, formSlug, rowLayout = false,
   segmentedVariant = "connected",
   autoLocked = false,
@@ -689,3 +689,35 @@ export function PdfField({
     </Field>
   );
 }
+
+/// `PdfField` est mémoïsé — c'est le levier de perf du runner.
+///
+/// L'état du formulaire vit au sommet : chaque frappe recrée `values` et
+/// re-rend TOUS les champs de l'étape, alors qu'un seul a changé. Sur le C1,
+/// 88 champs sont rendus.
+///
+/// Le comparateur ignore délibérément les props FONCTIONS
+/// (`onChange`, `onFocusField`, `onSelectStreetSuggestion`,
+/// `onStreetVerifiedChange`) : elles sont recréées à chaque rendu par les
+/// appelants (`(v) => setValue(f.id, v)`) mais leur COMPORTEMENT est stable —
+/// `setValue` est un `useCallback` stable et `f.id` ne bouge pas. Les comparer
+/// annulerait toute la mémoïsation sans rien protéger.
+///
+/// `parentValues` porte le payload COMPLET (il change donc à chaque frappe) et
+/// n'est lu que par les champs `array`, pour évaluer `visibleIfParent` sur
+/// leurs sous-champs : on ne le compare QUE pour ce type, sinon aucun champ ne
+/// serait jamais mémoïsé.
+export const PdfField = memo(PdfFieldImpl, (prev, next) => {
+  if (prev.field !== next.field) return false;
+  if (prev.value !== next.value) return false;
+  if (prev.error !== next.error) return false;
+  if (prev.locale !== next.locale) return false;
+  if (prev.derivedValue !== next.derivedValue) return false;
+  if (prev.relatedPostalCode !== next.relatedPostalCode) return false;
+  if (prev.autoLocked !== next.autoLocked) return false;
+  if (prev.rowLayout !== next.rowLayout) return false;
+  if (prev.segmentedVariant !== next.segmentedVariant) return false;
+  if (prev.formId !== next.formId || prev.formSlug !== next.formSlug) return false;
+  if (next.field.type === "array" && prev.parentValues !== next.parentValues) return false;
+  return true;
+});

@@ -44,6 +44,88 @@ const YN_DECLARE = [
   { value: "non", label: { fr: "Non, à compléter maintenant" } },
 ];
 
+/// Date « À partir du » adossée à une question oui/non : elle n'apparaît que
+/// si la déclaration parente vaut « oui ». Quatre lignes du C1 suivent ce
+/// moule (études, apprentissage, formation Syntra, congé sans solde), chacune
+/// avec son propre widget de date sur le PDF.
+function dateAPartirDu(opts: {
+  id: string;
+  pdfFieldName: string;
+  parentId: string;
+  section: string;
+  order: number;
+}): PdfFormField {
+  return {
+    id: opts.id,
+    pdfFieldName: opts.pdfFieldName,
+    type: "date",
+    required: false,
+    label: { fr: "À partir du" },
+    visibleIf: { fieldId: opts.parentId, op: "equals", value: "oui" },
+    section: opts.section,
+    order: opts.order,
+    stepPriority: "optional",
+  };
+}
+
+/// Case « J'ai joint … » de la rubrique Annexes. Le libellé se déduit du nom
+/// du document : le PDF officiel nomme son widget d'après le document lui-même
+/// (« une copie de l'extrait de la pension »), et la case imprimée se lit
+/// « j'ai joint <document> ».
+function annexeJointe(opts: {
+  id: string;
+  /// Nom EXACT du widget, qui sert aussi de complément au libellé.
+  pdfFieldName: string;
+  /// À fournir quand le libellé ne se déduit pas du nom du widget.
+  label?: string;
+  order: number;
+}): PdfFormField {
+  return {
+    id: opts.id,
+    pdfFieldName: opts.pdfFieldName,
+    type: "checkbox",
+    required: false,
+    label: { fr: opts.label ?? `J'ai joint ${opts.pdfFieldName}` },
+    section: SECTION_ANNEXES,
+    order: opts.order,
+    stepPriority: "optional",
+  };
+}
+
+/// Question officielle oui/non du C1 — le moule le plus répandu du formulaire :
+/// une paire de cases `oui_N`/`non_N` sur le PDF, deux options, « Non » en
+/// valeur de départ.
+///
+/// `defaultValue: "non"` : la majorité des C1 servent à déclarer un AUTRE
+/// motif ; partir de « Non » évite de faire cocher quinze réponses négatives à
+/// quelqu'un qui vient simplement changer d'adresse. Toujours modifiable.
+///
+/// `stepPriority: "optional"` : ces déclarations vivent dans l'accordéon
+/// « Autres informations », pas dans le flux principal.
+function ouiNon(opts: {
+  id: string;
+  /// Paire de widgets, dans l'ordre des options : "oui_N|non_N".
+  pdfFieldName: string;
+  label: string;
+  help?: string;
+  section: string;
+  order: number;
+}): PdfFormField {
+  return {
+    id: opts.id,
+    pdfFieldName: opts.pdfFieldName,
+    type: "radio",
+    required: true,
+    label: { fr: opts.label },
+    ...(opts.help ? { help: { fr: opts.help } } : {}),
+    options: YN,
+    defaultValue: "non",
+    section: opts.section,
+    order: opts.order,
+    stepPriority: "optional",
+  };
+}
+
 /// Construit un champ radio "déjà déclaré ?" virtuel par défaut (pas de widget
 /// PDF correspondant). Si `pdfFieldName` est fourni (paire dejaDeclareWidget|
 /// declareWidget), on stamp les deux cases : "oui = déjà déclaré" coche la 1ʳᵉ,
@@ -979,105 +1061,59 @@ export const C1_QUESTIONS: PdfFormField[] = [
   },
 
   // ---------- MES ACTIVITÉS (10 questions, page 2) ----------
-  {
+  ouiNon({
     id: "etudesPleinExercice",
     pdfFieldName: "oui_2|non_2",
-    type: "radio",
-    required: true,
-    label: { fr: "Je suis des études de plein exercice (cours du jour)" },
-    help: {
-      fr: "⚠ Si oui, perte du droit aux allocations sauf dispense FOREM / ACTIRIS / VDAB / ARBEITSAMT DG.",
-    },
-    options: YN,
-    // La majorité des C1 servent à déclarer un autre motif : Non est la
-    // valeur de départ, toujours modifiable par le demandeur.
-    defaultValue: "non",
+    label: "Je suis des études de plein exercice (cours du jour)",
+    help: "⚠ Si oui, perte du droit aux allocations sauf dispense FOREM / ACTIRIS / VDAB / ARBEITSAMT DG.",
     section: SECTION_ACTIVITES,
     order: 200,
-    stepPriority: "optional",
-  },
-  {
+  }),
+  dateAPartirDu({
     id: "etudesPleinExerciceDate",
-    // Widget « À partir du » de la ligne « études de plein exercice » (page 1,
-    // même Y que la case oui_2). Était vide → la date saisie n'était jamais
-    // stampée (Oraliks 2026-07-18 : « seule la 3e date fonctionne »).
     pdfFieldName: "DateEtudes",
-    type: "date",
-    required: false,
-    label: { fr: "À partir du" },
-    visibleIf: { fieldId: "etudesPleinExercice", op: "equals", value: "oui" },
+    parentId: "etudesPleinExercice",
     section: SECTION_ACTIVITES,
     order: 201,
-    stepPriority: "optional",
-  },
-  {
+  }),
+  ouiNon({
     id: "apprentissageAlternance",
     pdfFieldName: "oui_3|non_3",
-    type: "radio",
-    required: true,
-    label: { fr: "Je suis un apprentissage ou une formation en alternance" },
-    help: {
-      fr: "⚠ Idem études — perte du droit sauf dispense. Si chômage temporaire pendant la formation, complète aussi la section « Situation familiale ».",
-    },
-    options: YN,
-    defaultValue: "non",
+    label: "Je suis un apprentissage ou une formation en alternance",
+    help: "⚠ Idem études — perte du droit sauf dispense. Si chômage temporaire pendant la formation, complète aussi la section « Situation familiale ».",
     section: SECTION_ACTIVITES,
     order: 210,
-    stepPriority: "optional",
-  },
-  {
+  }),
+  dateAPartirDu({
     id: "apprentissageAlternanceDate",
-    // Widget « À partir du » de la ligne « apprentissage / formation en
-    // alternance » (page 1, même Y que la case oui_3). Était vide → date non
-    // stampée (même bug qu'`etudesPleinExerciceDate`).
     pdfFieldName: "DateFormation",
-    type: "date",
-    required: false,
-    label: { fr: "À partir du" },
-    visibleIf: { fieldId: "apprentissageAlternance", op: "equals", value: "oui" },
+    parentId: "apprentissageAlternance",
     section: SECTION_ACTIVITES,
     order: 211,
-    stepPriority: "optional",
-  },
-  {
+  }),
+  ouiNon({
     id: "formationStageSyntra",
     pdfFieldName: "oui_4|non_4",
-    type: "radio",
-    required: true,
-    label: { fr: "Je suis une formation avec convention de stage (SYNTRA / IFAPME / EFEPME / IAWM)" },
-    help: { fr: "⚠ Idem études — perte du droit sauf dispense." },
-    options: YN,
-    defaultValue: "non",
+    label: "Je suis une formation avec convention de stage (SYNTRA / IFAPME / EFEPME / IAWM)",
+    help: "⚠ Idem études — perte du droit sauf dispense.",
     section: SECTION_ACTIVITES,
     order: 220,
-    stepPriority: "optional",
-  },
-  {
+  }),
+  dateAPartirDu({
     id: "formationStageSyntraDate",
     pdfFieldName: "DateFormationStageSyntraIfapmeEpepmeIawm",
-    type: "date",
-    required: false,
-    label: { fr: "À partir du" },
-    visibleIf: { fieldId: "formationStageSyntra", op: "equals", value: "oui" },
+    parentId: "formationStageSyntra",
     section: SECTION_ACTIVITES,
     order: 221,
-    stepPriority: "optional",
-  },
-  {
+  }),
+  ouiNon({
     id: "mandatArtistique",
     pdfFieldName: "oui_5|non_5",
-    type: "radio",
-    required: true,
-    label: {
-      fr: "J'exerce un mandat rémunéré dans un organe consultatif du secteur culturel ou de la Commission du travail des arts",
-    },
-    help: { fr: "→ Joindre un FORMULAIRE C46 si pas encore déclaré." },
-    options: YN,
-    defaultValue: "non",
+    label: "J'exerce un mandat rémunéré dans un organe consultatif du secteur culturel ou de la Commission du travail des arts",
+    help: "→ Joindre un FORMULAIRE C46 si pas encore déclaré.",
     section: SECTION_ACTIVITES,
     order: 230,
-    stepPriority: "optional",
-  },
+  }),
   dejaDeclare({
       id: "mandatArtistiqueDejaDeclare",
       parentId: "mandatArtistique",
@@ -1087,21 +1123,14 @@ export const C1_QUESTIONS: PdfFormField[] = [
       pdfFieldName: "Oui_PremièreFoisC45DéjàDéclaré|Oui_PremièreFoisC46",
       stepPriority: "optional",
     }),
-  {
+  ouiNon({
     id: "mandatPolitique",
     pdfFieldName: "oui_6|non_6",
-    type: "radio",
-    required: true,
-    label: { fr: "J'exerce un mandat politique" },
-    help: {
-      fr: "→ Joindre un FORMULAIRE C1A. Exception : si tu es conseiller communal ou membre du Conseil de l'action sociale, réponds « non » (pas de C1A à joindre).",
-    },
-    options: YN,
-    defaultValue: "non",
+    label: "J'exerce un mandat politique",
+    help: "→ Joindre un FORMULAIRE C1A. Exception : si tu es conseiller communal ou membre du Conseil de l'action sociale, réponds « non » (pas de C1A à joindre).",
     section: SECTION_ACTIVITES,
     order: 240,
-    stepPriority: "optional",
-  },
+  }),
   {
     // La paire « 1ʳᵉ fois / déjà déclaré » imprimée en marge du mandat
     // politique (et de lui SEUL — arbitrage Oraliks 2026-07-26, malgré sa
@@ -1122,36 +1151,22 @@ export const C1_QUESTIONS: PdfFormField[] = [
     }),
     stepPriority: "optional",
   },
-  {
+  ouiNon({
     id: "chapitreXIIArts",
     pdfFieldName: "oui_7|non_7",
-    type: "radio",
-    required: true,
-    label: {
-      fr: "Je bénéficie (ou souhaite bénéficier) du Chapitre XII sur la base de l'attestation du travail des arts",
-    },
-    help: { fr: "Demande des explications à ton organisme de paiement." },
-    options: YN,
-    defaultValue: "non",
+    label: "Je bénéficie (ou souhaite bénéficier) du Chapitre XII sur la base de l'attestation du travail des arts",
+    help: "Demande des explications à ton organisme de paiement.",
     section: SECTION_ACTIVITES,
     order: 250,
-    stepPriority: "optional",
-  },
-  {
+  }),
+  ouiNon({
     id: "tremplinIndependants",
     pdfFieldName: "oui_8|non_8",
-    type: "radio",
-    required: true,
-    label: {
-      fr: "J'exerce une activité accessoire comme indépendant et je bénéficie (ou souhaite bénéficier) de la mesure « Tremplin-indépendants »",
-    },
-    help: { fr: "→ Joindre un FORMULAIRE C1C si pas encore déclaré." },
-    options: YN,
-    defaultValue: "non",
+    label: "J'exerce une activité accessoire comme indépendant et je bénéficie (ou souhaite bénéficier) de la mesure « Tremplin-indépendants »",
+    help: "→ Joindre un FORMULAIRE C1C si pas encore déclaré.",
     section: SECTION_ACTIVITES,
     order: 270,
-    stepPriority: "optional",
-  },
+  }),
   dejaDeclare({
       id: "tremplinIndependantsDejaDeclare",
       parentId: "tremplinIndependants",
@@ -1162,19 +1177,14 @@ export const C1_QUESTIONS: PdfFormField[] = [
       pdfFieldName: "Oui_PremièreFoisC1CDéjàDéclaré|Oui_PremièreFoisC1C",
       stepPriority: "optional",
     }),
-  {
+  ouiNon({
     id: "activiteAccessoireOuAide",
     pdfFieldName: "oui_9|non_9",
-    type: "radio",
-    required: true,
-    label: { fr: "J'exerce une activité accessoire ou j'aide un travailleur indépendant" },
-    help: { fr: "→ Joindre un FORMULAIRE C1A si pas encore déclaré." },
-    options: YN,
-    defaultValue: "non",
+    label: "J'exerce une activité accessoire ou j'aide un travailleur indépendant",
+    help: "→ Joindre un FORMULAIRE C1A si pas encore déclaré.",
     section: SECTION_ACTIVITES,
     order: 280,
-    stepPriority: "optional",
-  },
+  }),
   dejaDeclare({
       id: "activiteAccessoireDejaDeclare",
       parentId: "activiteAccessoireOuAide",
@@ -1184,19 +1194,14 @@ export const C1_QUESTIONS: PdfFormField[] = [
       pdfFieldName: "Oui_PremièreFoisC1A2DejaDéclaré|Oui_PremièreFoisC1A2",
       stepPriority: "optional",
     }),
-  {
+  ouiNon({
     id: "administrateurSociete",
     pdfFieldName: "oui_10|non_10",
-    type: "radio",
-    required: true,
-    label: { fr: "Je suis administrateur de société" },
-    help: { fr: "→ Joindre un FORMULAIRE C1A si pas encore déclaré." },
-    options: YN,
-    defaultValue: "non",
+    label: "Je suis administrateur de société",
+    help: "→ Joindre un FORMULAIRE C1A si pas encore déclaré.",
     section: SECTION_ACTIVITES,
     order: 290,
-    stepPriority: "optional",
-  },
+  }),
   dejaDeclare({
       id: "administrateurSocieteDejaDeclare",
       parentId: "administrateurSociete",
@@ -1210,21 +1215,14 @@ export const C1_QUESTIONS: PdfFormField[] = [
       pdfFieldName: "Oui_PremièreFoisC1A2DejaDéclaré|Oui_PremièreFoisC1A2",
       stepPriority: "optional",
     }),
-  {
+  ouiNon({
     id: "independantAccessoireOuPrincipal",
     pdfFieldName: "oui_11|non_11",
-    type: "radio",
-    required: true,
-    label: { fr: "Je suis inscrit comme indépendant à titre accessoire ou principal" },
-    help: {
-      fr: "⚠ Si à titre principal, pas de droit aux allocations de chômage. Si accessoire, joindre un FORMULAIRE C1A si pas encore déclaré.",
-    },
-    options: YN,
-    defaultValue: "non",
+    label: "Je suis inscrit comme indépendant à titre accessoire ou principal",
+    help: "⚠ Si à titre principal, pas de droit aux allocations de chômage. Si accessoire, joindre un FORMULAIRE C1A si pas encore déclaré.",
     section: SECTION_ACTIVITES,
     order: 500,
-    stepPriority: "optional",
-  },
+  }),
   dejaDeclare({
       id: "independantAccessoireDejaDeclare",
       parentId: "independantAccessoireOuPrincipal",
@@ -1237,38 +1235,22 @@ export const C1_QUESTIONS: PdfFormField[] = [
     }),
 
   // ---------- MES REVENUS (5 questions, page 2) ----------
-  {
+  ouiNon({
     id: "pensionCategorieParticuliere",
     pdfFieldName: "oui_12|non_12",
-    type: "radio",
-    required: true,
-    label: {
-      fr: "J'appartiens à une catégorie professionnelle particulière (mineur, pilote, marin…) et j'ai droit à une pension complète",
-    },
-    help: {
-      fr: "⚠ Si tu remplis les conditions d'âge et d'ancienneté pour la pension spécifique, pas de droit aux allocations.",
-    },
-    options: YN,
-    defaultValue: "non",
+    label: "J'appartiens à une catégorie professionnelle particulière (mineur, pilote, marin…) et j'ai droit à une pension complète",
+    help: "⚠ Si tu remplis les conditions d'âge et d'ancienneté pour la pension spécifique, pas de droit aux allocations.",
     section: SECTION_REVENUS,
     order: 510,
-    stepPriority: "optional",
-  },
-  {
+  }),
+  ouiNon({
     id: "pensionRetraiteSurvie",
     pdfFieldName: "oui_13|non_13",
-    type: "radio",
-    required: true,
-    label: { fr: "Je perçois une pension de retraite ou de survie" },
-    help: {
-      fr: "→ Joindre un FORMULAIRE C1B si pas encore déclaré. Exception : une « allocation de transition » (limitée dans le temps) se déclare « non » — cumulable sans limite.",
-    },
-    options: YN,
-    defaultValue: "non",
+    label: "Je perçois une pension de retraite ou de survie",
+    help: "→ Joindre un FORMULAIRE C1B si pas encore déclaré. Exception : une « allocation de transition » (limitée dans le temps) se déclare « non » — cumulable sans limite.",
     section: SECTION_REVENUS,
     order: 520,
-    stepPriority: "optional",
-  },
+  }),
   dejaDeclare({
       id: "pensionRetraiteDejaDeclare",
       parentId: "pensionRetraiteSurvie",
@@ -1279,49 +1261,30 @@ export const C1_QUESTIONS: PdfFormField[] = [
         "ma déclaration précédente sur le FORMULAIRE C1B reste inchangée|je le déclare pour la première fois ou je déclare une modification et je",
       stepPriority: "optional",
     }),
-  {
+  ouiNon({
     id: "indemniteMaladieInvalidite",
     pdfFieldName: "oui_14|non_14",
-    type: "radio",
-    required: true,
-    label: { fr: "Je perçois une indemnité de maladie ou d'invalidité" },
-    help: { fr: "À déclarer. Demande des explications à ton organisme de paiement." },
-    options: YN,
-    defaultValue: "non",
+    label: "Je perçois une indemnité de maladie ou d'invalidité",
+    help: "À déclarer. Demande des explications à ton organisme de paiement.",
     section: SECTION_REVENUS,
     order: 530,
-    stepPriority: "optional",
-  },
-  {
+  }),
+  ouiNon({
     id: "indemniteAccidentTravail",
     pdfFieldName: "oui_15|non_15",
-    type: "radio",
-    required: true,
-    label: { fr: "Je perçois une indemnité pour accident du travail ou maladie professionnelle" },
-    help: { fr: "À déclarer." },
-    options: YN,
-    defaultValue: "non",
+    label: "Je perçois une indemnité pour accident du travail ou maladie professionnelle",
+    help: "À déclarer.",
     section: SECTION_REVENUS,
     order: 540,
-    stepPriority: "optional",
-  },
-  {
+  }),
+  ouiNon({
     id: "avantageFinancierFormation",
     pdfFieldName: "oui_16|non_16",
-    type: "radio",
-    required: true,
-    label: {
-      fr: "Je perçois un avantage financier dans le cadre ou à la suite d'une formation, d'études, d'un apprentissage, d'un stage ou d'une activité dans une coopérative d'activités",
-    },
-    help: {
-      fr: "⚠ Entraîne la perte du droit aux allocations sauf dispense ou autorisation du service régional de l'emploi.",
-    },
-    options: YN,
-    defaultValue: "non",
+    label: "Je perçois un avantage financier dans le cadre ou à la suite d'une formation, d'études, d'un apprentissage, d'un stage ou d'une activité dans une coopérative d'activités",
+    help: "⚠ Entraîne la perte du droit aux allocations sauf dispense ou autorisation du service régional de l'emploi.",
     section: SECTION_REVENUS,
     order: 550,
-    stepPriority: "optional",
-  },
+  }),
 
   // ====================================================================
   // SECTION — MODE DE PAIEMENT
@@ -1642,29 +1605,20 @@ export const C1_QUESTIONS: PdfFormField[] = [
   // ====================================================================
   // SECTION — DIVERS
   // ====================================================================
-  {
+  ouiNon({
     id: "congeSansSolde",
     pdfFieldName: "oui du|non_20",
-    type: "radio",
-    required: true,
-    label: { fr: "Je suis actuellement dans une période de congé sans solde" },
-    options: YN,
-    defaultValue: "non",
+    label: "Je suis actuellement dans une période de congé sans solde",
     section: SECTION_DIVERS,
     order: 900,
-    stepPriority: "optional",
-  },
-  {
+  }),
+  dateAPartirDu({
     id: "congeSansSoldeDate",
     pdfFieldName: "Date11_af_date",
-    type: "date",
-    required: false,
-    label: { fr: "À partir du" },
-    visibleIf: { fieldId: "congeSansSolde", op: "equals", value: "oui" },
+    parentId: "congeSansSolde",
     section: SECTION_DIVERS,
     order: 901,
-    stepPriority: "optional",
-  },
+  }),
   {
     // La ligne imprimée est « oui, du … au … » : seule la borne de DÉBUT était
     // branchée, la case de fin (`Date12_af_date`) restait orpheline et la
@@ -1702,23 +1656,14 @@ export const C1_QUESTIONS: PdfFormField[] = [
     order: 950,
     stepPriority: "optional",
   },
-  {
+  ouiNon({
     id: "incapacite33",
     pdfFieldName: "oui_19|non_21",
-    type: "radio",
-    required: true,
-    label: {
-      fr: "Je présente une incapacité de travail permanente d'au moins 33 %",
-    },
-    help: {
-      fr: "→ Si oui, joindre un FORMULAIRE C47-DEMANDE pour fixer le montant des allocations (pas de dégressivité).",
-    },
-    options: YN,
-    defaultValue: "non",
+    label: "Je présente une incapacité de travail permanente d'au moins 33 %",
+    help: "→ Si oui, joindre un FORMULAIRE C47-DEMANDE pour fixer le montant des allocations (pas de dégressivité).",
     section: SECTION_DIVERS,
     order: 910,
-    stepPriority: "optional",
-  },
+  }),
   dejaDeclare({
       id: "incapacite33DejaDeclare",
       parentId: "incapacite33",
@@ -1774,56 +1719,32 @@ export const C1_QUESTIONS: PdfFormField[] = [
   // ====================================================================
   // SECTION — ANNEXES (optionnelles)
   // ====================================================================
-  {
+  annexeJointe({
     id: "annexeHandicap",
     pdfFieldName: "une attestation de la DG Personnes handicapées du SPF Sécurité sociale",
-    type: "checkbox",
-    required: false,
-    label: { fr: "J'ai joint une attestation de la DG Personnes handicapées du SPF Sécurité sociale" },
-    section: SECTION_ANNEXES,
     order: 1100,
-    stepPriority: "optional",
-  },
-  {
+  }),
+  annexeJointe({
     id: "annexeExtraitPension",
     pdfFieldName: "une copie de l'extrait de la pension",
-    type: "checkbox",
-    required: false,
-    label: { fr: "J'ai joint une copie de l'extrait de la pension" },
-    section: SECTION_ANNEXES,
     order: 1101,
-    stepPriority: "optional",
-  },
-  {
+  }),
+  annexeJointe({
     id: "annexeC1Regis",
     pdfFieldName: "un FORMULAIRE C1 ANNEXE REGIS",
-    type: "checkbox",
-    required: false,
-    label: { fr: "J'ai joint un FORMULAIRE C1 ANNEXE REGIS" },
-    section: SECTION_ANNEXES,
     order: 1102,
-    stepPriority: "optional",
-  },
-  {
+  }),
+  annexeJointe({
     id: "annexePermisSejour",
     pdfFieldName: "une copie du permis de séjour et/ou du permis de travail",
-    type: "checkbox",
-    required: false,
-    label: { fr: "J'ai joint une copie du permis de séjour et/ou du permis de travail" },
-    section: SECTION_ANNEXES,
     order: 1103,
-    stepPriority: "optional",
-  },
-  {
+  }),
+  annexeJointe({
     id: "annexeAutre",
     pdfFieldName: "autre",
-    type: "checkbox",
-    required: false,
-    label: { fr: "J'ai joint un autre document (préciser ci-dessous)" },
-    section: SECTION_ANNEXES,
+    label: "J'ai joint un autre document (préciser ci-dessous)",
     order: 1104,
-    stepPriority: "optional",
-  },
+  }),
   {
     id: "annexeAutreDescription",
     pdfFieldName: "Texte18",

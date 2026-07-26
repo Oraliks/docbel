@@ -13,7 +13,6 @@ import {
   FolderOpen,
   Lock,
 } from "lucide-react";
-import { ProgressFeedback } from "@/components/docbel/progress-feedback";
 import { GLASS_INPUT } from "@/lib/glass-classes";
 import type { DemandeSummary } from "@/lib/bundles/demande-summary";
 import type { DemarcheRailModel, RailDoc, RailStepState } from "@/lib/bundles/rail-model";
@@ -163,18 +162,11 @@ function RailBody({
             total: model.documents.totalCount,
           })}
         >
-          <ProgressFeedback
-            label={t("railDocsProgress", {
-              completed: model.documents.completedCount,
-              total: model.documents.totalCount,
-            })}
-            value={model.documents.completedCount}
-            max={Math.max(1, model.documents.totalCount)}
-            state={model.documents.state === "done" ? "done" : "current"}
-            compact
-            labelMode="sr-only"
-            className="mt-2"
-          />
+          {/* Pas de barre de progression ici : `ProgressFeedback` porte la
+              surface « feedback » (bordure + fond bleu + padding) et ses libellés
+              sont en sr-only — à 0 document complété, elle ne rendait qu'une carte
+              bleue vide. Le compteur « n/N document(s) » est déjà affiché en
+              `meta` et chaque ligne ci-dessous porte son propre état. */}
           <ul className="mt-1.5 flex flex-col gap-0.5">
             {model.documents.docs.map((doc) => (
               <RailDocRow

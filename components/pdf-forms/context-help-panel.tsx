@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRightIcon, CheckIcon, InfoIcon, LifeBuoyIcon } from "lucide-react";
+import { ArrowRightIcon, CheckIcon, InfoIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { getSectionHelp } from "@/lib/pdf-forms/section-help";
 import type { Locale, Localized } from "@/lib/pdf-forms/types";
@@ -43,8 +43,9 @@ interface ContextHelpPanelProps {
 /// Panneau d'aide contextuelle (colonne de GAUCHE). Affiche les « infos
 /// importantes » contextuelles au motif coché / à l'étape active
 /// (`form-context-tips.ts`) ; à défaut d'entrée applicable, retombe sur l'aide
-/// générique de section (`section-help.ts`) — jamais de panneau vide. Le bloc
-/// « Besoin d'aide ? » pointe vers la page contact réelle.
+/// générique de section (`section-help.ts`) — jamais de panneau vide. Pas de
+/// bloc « contactez-nous » : l'accompagnement d'une démarche relève de
+/// l'organisme payeur (OP), pas de Docbel.
 export function ContextHelpPanel({
   formSlug,
   sectionKeys,
@@ -208,29 +209,6 @@ export function ContextHelpPanel({
         </>
       )}
 
-      <div className="border-t border-[color:var(--glass-border)] pt-3.5">
-        <div className="flex items-start gap-3">
-          <span
-            aria-hidden
-            className="flex size-8 shrink-0 items-center justify-center rounded-full text-[color:var(--glass-accent-deep,#5B46E5)]"
-            style={{ background: "var(--glass-pop-bg)" }}
-          >
-            <LifeBuoyIcon className="size-4" />
-          </span>
-          <div className="flex flex-col gap-1">
-            <p className="text-sm font-semibold text-[color:var(--glass-ink)]">
-              {t("runnerHelpNeedHelpTitle")}
-            </p>
-            <Link
-              href="/contact"
-              className="inline-flex items-center gap-1 text-[13px] font-semibold text-[color:var(--glass-accent-deep,#5B46E5)] hover:underline"
-            >
-              {t("runnerHelpContactCta")}
-              <ArrowRightIcon className="size-3.5" aria-hidden />
-            </Link>
-          </div>
-        </div>
-      </div>
     </aside>
   );
 }

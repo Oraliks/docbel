@@ -50,7 +50,6 @@ import { ResetFormButton } from "./reset-form-button";
 import { MacroFinalSummary } from "./macro-final-summary";
 import { PaymentMethodPanel } from "./payment-method-panel";
 import { OptionCard } from "@/components/ui/option-card";
-import { AccessibilityToolbar } from "@/components/docbel/accessibility-toolbar";
 
 const LOCALE_NAMES: Record<Locale, string> = { fr: "FR", nl: "NL", de: "DE" };
 
@@ -892,7 +891,6 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
 
   return (
     <div className="flex flex-col gap-3">
-      <AccessibilityToolbar />
       {/* Barre langue + itsme (au-dessus de la carte) */}
       {(form.locales.length > 1 || form.allowItsme) && (
         <div className="flex flex-wrap items-center gap-2">
@@ -1498,10 +1496,6 @@ function MacroRunnerBody({
 
   return (
     <div className="flex flex-col gap-3">
-      <AccessibilityToolbar
-        showSimpleMode={!isStreamlinedC1}
-        showReducedMotion={!isStreamlinedC1}
-      />
       {(form.locales.length > 1 || form.allowItsme) && (
         <div className="flex flex-wrap items-center gap-2">
           {form.locales.length > 1 &&

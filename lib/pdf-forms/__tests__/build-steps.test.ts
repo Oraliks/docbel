@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { buildSteps, buildMacroSteps } from "../build-steps";
+import { getFormPresentation } from "../form-presentation";
 import type { PublicField } from "../public-serializer";
 
 const LABELS = { fallbackTitle: "Informations", fallbackSubtitle: "Complétez les champs" };
@@ -134,16 +135,20 @@ describe("buildMacroSteps — regroupement en macro-étapes (mode opt-in)", () =
     expect(buildMacroSteps(fields, {})).toBeNull();
   });
 
-  it("ordonne selon l'ordre canonique du C1, pas l'ordre des champs du PDF", () => {
+  it("ordonne selon l'ordre canonique du formulaire, pas l'ordre des champs du PDF", () => {
     // Champs dans l'ordre PDF : identité d'abord, motif ensuite — l'ordre du
     // parcours doit rester Motif → Identité → Activités&revenus → Famille.
+    // L'ordre n'est plus codé en dur dans build-steps : il vient de
+    // `form-presentation.ts`, ce qui rend la fonction utilisable par un autre
+    // formulaire à macro-étapes.
+    const ordreDuC1 = getFormPresentation("c1-changement-situation").stepGroupOrder ?? [];
     const fields = [
       field({ id: "i1", section: "identite", stepGroup: "identite" }),
       field({ id: "m", section: "demande", stepGroup: "motif" }),
       field({ id: "f", section: "situation-familiale", stepGroup: "famille" }),
       field({ id: "a", section: "mes-activites", stepGroup: "activites-revenus" }),
     ];
-    const steps = buildMacroSteps(fields, {});
+    const steps = buildMacroSteps(fields, {}, ordreDuC1);
     expect(steps).not.toBeNull();
     expect(steps!.map((s) => s.id)).toEqual(["motif", "identite", "activites-revenus", "famille"]);
   });
@@ -182,5 +187,18 @@ describe("buildMacroSteps — regroupement en macro-étapes (mode opt-in)", () =
     const steps = buildMacroSteps(fields, {})!;
     // "gated" caché (m != x) et "sig" auto → seul "motif" reste, pas de "final".
     expect(steps.map((s) => s.id)).toEqual(["motif"]);
+  });
+});
+
+describe("buildMacroSteps — formulaire non enregistré", () => {
+  it("retombe sur l'ordre de première apparition, sans ordre canonique", () => {
+    // Comportement de repli : un formulaire à macro-étapes qui n'a pas encore
+    // d'entrée dans `form-presentation.ts` reste utilisable — ses étapes
+    // suivent simplement l'ordre de ses champs.
+    const fields = [
+      field({ id: "b", section: "identite", stepGroup: "deuxieme" }),
+      field({ id: "a", section: "demande", stepGroup: "premier" }),
+    ];
+    expect(buildMacroSteps(fields, {})!.map((s) => s.id)).toEqual(["deuxieme", "premier"]);
   });
 });

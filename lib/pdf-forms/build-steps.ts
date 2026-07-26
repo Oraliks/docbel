@@ -117,10 +117,6 @@ export interface MacroStep {
 }
 
 /// Ordre canonique des macro-étapes du C1 (les groupes hors de cette liste
-/// sont ajoutés après, par ordre de première apparition). L'ordre des champs
-/// dans le PDF ne correspond pas au parcours voulu (identité en tête sur le
-/// papier), d'où cet ordre explicite.
-const MACRO_STEP_ORDER = ["motif", "identite", "activites-revenus", "famille", "final"];
 
 /// Construit les macro-étapes à partir de `stepGroup`. Renvoie null si aucun
 /// champ visible ne porte de `stepGroup` (→ formulaire non-macro, comportement
@@ -128,7 +124,11 @@ const MACRO_STEP_ORDER = ["motif", "identite", "activites-revenus", "famille", "
 /// `stepGroup` dans l'ordre des champs.
 export function buildMacroSteps(
   fields: PublicField[],
-  values: FormPayload
+  values: FormPayload,
+  /// Ordre canonique des groupes, propre au formulaire (cf.
+  /// `form-presentation.ts`). Vide = ordre de première apparition, ce qui
+  /// reste un comportement sensé pour un formulaire non enregistré.
+  canonicalOrder: readonly string[] = []
 ): MacroStep[] | null {
   const visible = fields.filter((f) => isFieldVisible(f.visibleIf, values) && !isAutoField(f));
   const hasGroup = visible.some((f) => f.stepGroup);
@@ -146,8 +146,8 @@ export function buildMacroSteps(
     }
   }
   const order = [
-    ...MACRO_STEP_ORDER.filter((g) => seen.has(g)),
-    ...present.filter((g) => !MACRO_STEP_ORDER.includes(g)),
+    ...canonicalOrder.filter((g) => seen.has(g)),
+    ...present.filter((g) => !canonicalOrder.includes(g)),
   ];
 
   const steps: MacroStep[] = order.map((id) => {

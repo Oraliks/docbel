@@ -35,6 +35,7 @@ import type { PublicForm, PublicField } from "@/lib/pdf-forms/public-serializer"
 import { buildSteps, buildMacroSteps, type OptionalSection, type MacroStep } from "@/lib/pdf-forms/build-steps";
 import { resolveStepIndexById } from "@/lib/pdf-forms/resume-step";
 import { sectionLabel } from "@/lib/pdf-forms/section-labels";
+import { getFormPresentation, stepGroupTitle, stepGroupDescription } from "@/lib/pdf-forms/form-presentation";
 import { FormStepper } from "./form-stepper";
 import { FormShell } from "./form-shell";
 import { ContextHelpPanel } from "./context-help-panel";
@@ -447,7 +448,14 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
   // Mode « macro-étapes » (ex. C1 → 5 étapes) : non-null si des champs portent
   // `stepGroup`. Supersède `steps` (pas de résumé, envoi sur la dernière
   // étape). Null pour les autres formulaires → rendu classique inchangé.
-  const macroSteps = useMemo(() => buildMacroSteps(form.fields, derivedValues), [form.fields, derivedValues]);
+  // L'ordre canonique des macro-étapes est propre au formulaire : celui du PDF
+  // ne correspond pas au parcours voulu (l'identité est en tête sur le papier,
+  // pas à l'écran). Un formulaire non enregistré retombe sur l'ordre de
+  // première apparition de ses groupes.
+  const macroSteps = useMemo(
+    () => buildMacroSteps(form.fields, derivedValues, getFormPresentation(form.slug).stepGroupOrder ?? []),
+    [form.fields, derivedValues, form.slug]
+  );
 
   // Nom du signataire résolu depuis les champs saisis (pour la signature
   // numérique). "" si aucun nom exploitable.
@@ -1649,25 +1657,6 @@ function ConfirmationCard({ hasSignature, signerName }: { hasSignature: boolean;
   );
 }
 
-/// Titres i18n des 5 macro-étapes du C1 (repli sur l'id si clé absente).
-const MACRO_TITLE_KEY: Record<string, string> = {
-  motif: "runnerGroupMotif",
-  identite: "runnerGroupIdentite",
-  "activites-revenus": "runnerGroupActivitesRevenus",
-  famille: "runnerGroupFamille",
-  final: "runnerGroupFinal",
-};
-
-/// Description courte affichée sous le titre dans le nouveau stepper
-/// (barre de progression + liste numérotée) — cf. FormStepperItem.description.
-const MACRO_DESC_KEY: Record<string, string> = {
-  motif: "runnerGroupMotifDesc",
-  identite: "runnerGroupIdentiteDesc",
-  "activites-revenus": "runnerGroupActivitesRevenusDesc",
-  famille: "runnerGroupFamilleDesc",
-  final: "runnerGroupFinalDesc",
-};
-
 interface MacroRunnerBodyProps {
   form: PublicForm;
   macroSteps: MacroStep[];
@@ -1720,7 +1709,11 @@ function MacroRunnerBody({
   const current = macroSteps[activeIndex];
   const isLast = activeIndex === macroSteps.length - 1;
   const multiSection = current.sections.length > 1;
-  const isStreamlinedC1 = form.slug === "c1-changement-situation";
+  // Présentation propre au formulaire (ordre, titres, chrome) — plus aucun
+  // `form.slug === "..."` dans le rendu : un second formulaire à macro-étapes
+  // s'enregistre dans `form-presentation.ts` au lieu de venir modifier ce
+  // composant.
+  const presentation = getFormPresentation(form.slug);
   const detectedBic = useMemo(() => {
     const ibanField = form.fields.find((field) => field.canonicalKey === "banque.iban");
     const ibanValue = ibanField ? values[ibanField.id] : undefined;
@@ -1729,14 +1722,8 @@ function MacroRunnerBody({
     }
     return bicFromForeignIban(ibanValue);
   }, [form.fields, values]);
-  const titleFor = (id: string) => {
-    const k = MACRO_TITLE_KEY[id];
-    return k ? t(k) : id;
-  };
-  const descFor = (id: string) => {
-    const k = MACRO_DESC_KEY[id];
-    return k ? t(k) : undefined;
-  };
+  const titleFor = (id: string) => stepGroupTitle(presentation, id, locale, t);
+  const descFor = (id: string) => stepGroupDescription(presentation, id, t);
   const stepHasError = (ms: MacroStep) =>
     ms.sections.some((sec) => sec.fields.some((f) => errors[f.id])) ||
     ms.advanced.some((f) => errors[f.id]);
@@ -1851,7 +1838,7 @@ function MacroRunnerBody({
               steps={stepperItems}
               activeIndex={activeIndex}
               onSelect={handleStepSelect}
-              showNavigation={!isStreamlinedC1}
+              showNavigation={!presentation.hideStepList}
             />
           </div>
 
@@ -1881,7 +1868,10 @@ function MacroRunnerBody({
                     />
                   );
                 }
-                if (isStreamlinedC1 && sec.key === "mode-paiement") {
+                // Détection PAR LA DONNÉE, comme le picker de motifs juste
+                // au-dessus : toute section « mode de paiement » mérite ce
+                // rendu, quel que soit le formulaire qui la porte.
+                if (sec.key === "mode-paiement") {
                   return (
                     <PaymentMethodPanel
                       key={sec.key}

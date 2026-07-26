@@ -13,7 +13,7 @@ import { DisabledFormView } from "./disabled-form-view";
 import { getDossier } from "@/lib/dossiers/registry";
 import { familyAnswersToC1Prefill } from "@/lib/dossiers/family-prefill";
 import { orientationAnswersToC1Prefill } from "@/lib/dossiers/orientation";
-import type { PdfFormField, FormPayload } from "@/lib/pdf-forms/types";
+import type { PdfFormField, FormPayload, FieldValue } from "@/lib/pdf-forms/types";
 import { pickInitialStepId } from "@/lib/pdf-forms/resume-step";
 import { buildProfilePrefill } from "@/lib/pdf-forms/profile-prefill";
 import {
@@ -304,22 +304,36 @@ export default async function PdfFormPage({
       // Priorité à `canonicalKey` sur `prefillFrom` — cf. le pourquoi (et le
       // bug qu'inversait l'ordre historique) sur `mergePrefillSources`.
       bundlePrefill = mergePrefillSources(bySharedFrom, byCanonical);
-      // L'assistant enrichi préremplit uniquement les champs de situation
-      // familiale du C1. Le PDF officiel reste inchangé et chaque valeur est
-      // modifiable dans le Form Runner.
-      if (form.slug.startsWith("c1-")) {
-        bundlePrefill = {
-          ...familyAnswersToC1Prefill(eligibilityAnswers),
-          ...bundlePrefill,
-        };
-      }
+      // Assistants du parcours (situation familiale, orientation) : ils
+      // produisent des ids de champs du C1 (`statutFamilial`, `cohabiteType`…).
+      // On ne garde que ceux que CE formulaire connaît réellement, au lieu de
+      // filtrer sur le slug (2026-07-26). `startsWith("c1-")` visait le C1
+      // mais attrapait aussi `c1-regis` et `c1-partenaire`, à qui on injectait
+      // des clés inexistantes ; et il MANQUAIT `c1a`/`c1b`/`c1c`, qui ne
+      // commencent pas par « c1- ». Le filtre par la donnée n'a ni faux
+      // positif ni faux négatif, et un futur formulaire portant ces champs en
+      // bénéficiera sans qu'on touche à ce fichier.
+      const idsDuFormulaire = new Set(form.fields.map((f) => f.id));
+      const gardeChampsConnus = (prefill: Record<string, FieldValue>): PrefillMap =>
+        Object.fromEntries(
+          Object.entries(prefill).filter(
+            ([id, valeur]) => idsDuFormulaire.has(id) && valeur !== null
+          )
+        ) as PrefillMap;
+
+      // Le PDF officiel reste inchangé et chaque valeur est modifiable dans le
+      // Form Runner.
+      bundlePrefill = {
+        ...gardeChampsConnus(familyAnswersToC1Prefill(eligibilityAnswers)),
+        ...bundlePrefill,
+      };
       initialStepId = pickInitialStepId(lastFormId, lastStepId, form.id);
       // Les cases issues de l'assistant sont des valeurs initiales. Un vrai
       // brouillon enregistré est fusionné ensuite et reste donc prioritaire
       // (ex. l'utilisateur a volontairement décoché la suggestion).
-      const orientationPrefill = form.slug === "c1-changement-situation"
-        ? orientationAnswersToC1Prefill(orientationAnswers)
-        : {};
+      const orientationPrefill = gardeChampsConnus(
+        orientationAnswersToC1Prefill(orientationAnswers) as Record<string, FieldValue>
+      );
       const hasInitialValues =
         draftForForm !== undefined || Object.keys(orientationPrefill).length > 0;
       draftValues = hasInitialValues

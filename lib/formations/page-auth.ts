@@ -60,13 +60,18 @@ export async function getFormationsPageUser(): Promise<FormationsPageUser | null
  * si son rôle correspond au segment (ou admin), sinon null — la page redirige
  * alors vers la landing marketing du segment.
  */
+const EXPECTED_ROLE: Record<"employeur" | "partenaire" | "organisme", string> = {
+  employeur: "employer",
+  partenaire: "partner",
+  organisme: "organisme",
+};
+
 export async function getOrgPageUser(
-  segment: "employeur" | "partenaire",
+  segment: "employeur" | "partenaire" | "organisme",
 ): Promise<FormationsPageUser | null> {
   const u = await getFormationsPageUser();
   if (!u) return null;
-  const expectedRole = segment === "employeur" ? "employer" : "partner";
-  if (u.isAdmin || u.role === expectedRole) return u;
+  if (u.isAdmin || u.role === EXPECTED_ROLE[segment]) return u;
   return null;
 }
 

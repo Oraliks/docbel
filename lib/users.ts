@@ -5,6 +5,7 @@ export const USER_ROLES: readonly UserRole[] = [
   UserRole.user,
   UserRole.partner,
   UserRole.employer,
+  UserRole.organisme,
   UserRole.moderator,
   UserRole.admin,
 ]
@@ -61,8 +62,10 @@ export function isPartnerType(value: string): value is PartnerType {
 }
 
 /// Segment de COMPTE (les citoyens n'ont pas de compte → pas de "citoyen").
-export function isAccountSegment(value: string): value is "partenaire" | "employeur" {
-  return value === "partenaire" || value === "employeur"
+export function isAccountSegment(
+  value: string,
+): value is "partenaire" | "employeur" | "organisme" {
+  return value === "partenaire" || value === "employeur" || value === "organisme"
 }
 
 /// Champs liés au segment d'un compte, normalisés de façon cohérente.
@@ -142,6 +145,23 @@ export function resolveUserSegmentFields(
         partnerOrganization: org,
         isOrgManager: Boolean(input.isOrgManager),
         canViewRdvHistory: Boolean(input.canViewRdvHistory),
+      },
+    }
+  }
+
+  if (rawSegment === "organisme") {
+    // Organisme de formation (école, ASBL, société…) : pas de TVA obligatoire
+    // (un formateur indépendant peut ne pas en avoir), pas de partnerType.
+    // Le n° d'entreprise vit sur FormationOrganization, pas sur le compte.
+    return {
+      ok: true,
+      fields: {
+        segment: "organisme",
+        partnerType: null,
+        vatNumber: null,
+        partnerOrganization: org,
+        isOrgManager: false,
+        canViewRdvHistory: false,
       },
     }
   }

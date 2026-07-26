@@ -26,12 +26,12 @@ const LandingCommandPalette = dynamic(
 );
 
 /**
- * Espaces pros connectés (partenaire/employeur) → shell Dashboard (sidebar)
- * au lieu du header glass. Décision par RÔLE : la session expose `role` mais
- * pas `partnerOrganization` ; en pratique un partner/employer a toujours une
- * org (posée à l'inscription), donc ça reflète la condition serveur des pages
- * `/partenaire` et `/employeur`. Les visiteurs/citoyens/admins gardent la
- * vitrine glass.
+ * Espaces pros connectés (partenaire/employeur/organisme) → shell Dashboard
+ * (sidebar) au lieu du header glass. Décision par RÔLE : la session expose
+ * `role` mais pas `partnerOrganization` ; en pratique un partner/employer/
+ * organisme a toujours une org (posée à l'inscription), donc ça reflète la
+ * condition serveur des pages `/partenaire`, `/employeur` et `/organisme`.
+ * Les visiteurs/citoyens/admins gardent la vitrine glass.
  */
 function resolveProSegment(
   pathname: string,
@@ -54,6 +54,7 @@ function resolveProSegment(
     (under("/employeur") || under("/partenaire/booking"))
   )
     return "employeur";
+  if (role === "organisme" && under("/organisme")) return "organisme";
   return null;
 }
 

@@ -59,9 +59,9 @@ export type UsersListUser = {
   id: string
   name: string | null
   email: string
-  role: "user" | "partner" | "employer" | "moderator" | "admin"
+  role: "user" | "partner" | "employer" | "organisme" | "moderator" | "admin"
   status: "active" | "pending" | "locked" | "disabled"
-  segment: "partenaire" | "employeur" | null
+  segment: "partenaire" | "employeur" | "organisme" | null
   partnerType: string | null
   partnerOrganization: string | null
   vatNumber: string | null
@@ -85,7 +85,7 @@ export type UsersListStats = {
 export type UsersListQuery = {
   q: string
   role: UsersListUser["role"] | null
-  segment: "partenaire" | "employeur" | "none" | null
+  segment: "partenaire" | "employeur" | "organisme" | "none" | null
   status: UsersListUser["status"] | null
   sort: UserListSort
 }
@@ -103,6 +103,7 @@ const ROLE_LABEL_KEYS: Record<UsersListUser["role"], string> = {
   user: "roleUser",
   partner: "rolePartner",
   employer: "roleEmployer",
+  organisme: "roleOrganisme",
   moderator: "roleModerator",
   admin: "roleAdmin",
 }
@@ -110,6 +111,7 @@ const ROLE_LABEL_KEYS: Record<UsersListUser["role"], string> = {
 const SEGMENT_LABEL_KEYS: Record<NonNullable<UsersListUser["segment"]>, string> = {
   partenaire: "segmentPartenaire",
   employeur: "segmentEmployeur",
+  organisme: "segmentOrganisme",
 }
 
 const PARTNER_TYPE_LABEL_KEYS: Record<string, string> = {
@@ -172,6 +174,8 @@ function roleBadgeClass(role: UsersListUser["role"]): string {
       return "bg-violet-500/10 text-violet-600 dark:bg-violet-500/20 dark:text-violet-300"
     case "employer":
       return "bg-teal-500/10 text-teal-600 dark:bg-teal-500/20 dark:text-teal-300"
+    case "organisme":
+      return "bg-amber-500/10 text-amber-600 dark:bg-amber-500/20 dark:text-amber-300"
     default:
       return "bg-slate-500/10 text-slate-600 dark:bg-slate-500/20 dark:text-slate-300"
   }
@@ -358,6 +362,7 @@ export function UsersListClient({
               { value: "all", label: t("filterAll") },
               { value: "partenaire", label: t("segmentPartenaire") },
               { value: "employeur", label: t("segmentEmployeur") },
+              { value: "organisme", label: t("segmentOrganisme") },
               { value: "none", label: t("segmentNone") },
             ]}
           />

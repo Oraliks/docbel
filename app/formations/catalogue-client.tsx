@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import {
   ArrowRightIcon,
   BookmarkIcon,
+  BuildingIcon,
   CompassIcon,
   SearchIcon,
   SparklesIcon,
@@ -117,6 +118,14 @@ export function CatalogueClient({ trainings, categories }: Props) {
             >
               <BookmarkIcon className="size-4" />
               {t("ctaMyTrainings")}
+            </button>
+            <button
+              type="button"
+              onClick={() => router.push("/formations/proposer")}
+              className="inline-flex items-center gap-2 rounded-full px-4 py-2.5 text-[13px] font-semibold text-[color:var(--glass-ink-soft)] transition hover:text-[color:var(--glass-ink)]"
+            >
+              <BuildingIcon className="size-4" />
+              {t("ctaProposeTrainings")}
             </button>
           </div>
         </header>

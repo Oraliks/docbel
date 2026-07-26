@@ -1,10 +1,10 @@
 /**
- * Configuration de navigation de l'espace Dashboard pro (partenaires +
- * employeurs). Module PUR (pas d'import client) : la sidebar mappe les noms
- * d'icônes vers les composants lucide.
+ * Configuration de navigation de l'espace Dashboard pro (partenaires,
+ * employeurs, organismes de formation). Module PUR (pas d'import client) :
+ * la sidebar mappe les noms d'icônes vers les composants lucide.
  */
 
-export type ProSegment = "partenaire" | "employeur";
+export type ProSegment = "partenaire" | "employeur" | "organisme";
 
 export type ProIcon =
   | "dashboard"
@@ -134,6 +134,45 @@ const EMPLOYER_SPACE: ProSpace = {
   ],
 };
 
+/**
+ * Espace Organisme de formation (écoles, ASBL, sociétés, administrations,
+ * formateurs). Volontairement centré sur les formations : pas d'outils
+ * chômage/employeur, l'organisme ne gère que son catalogue et son équipe.
+ */
+const ORGANISME_SPACE: ProSpace = {
+  segment: "organisme",
+  label: "Espace Organisme",
+  homeUrl: "/organisme",
+  groups: [
+    {
+      label: "Tableau de bord",
+      items: [
+        { title: "Vue d'ensemble", url: "/organisme", icon: "dashboard", exact: true },
+      ],
+    },
+    {
+      label: "Formations",
+      items: [
+        { title: "Mes formations", url: "/organisme/formations", icon: "graduate" },
+        { title: "Créer une formation", url: "/organisme/formations/nouvelle", icon: "plus" },
+      ],
+    },
+    {
+      label: "Organisation",
+      items: [
+        { title: "Profil public", url: "/organisme/profil", icon: "building" },
+        { title: "Mon équipe", url: "/organisme/equipe", icon: "users" },
+      ],
+    },
+  ],
+};
+
+const SPACES: Record<ProSegment, ProSpace> = {
+  partenaire: PARTNER_SPACE,
+  employeur: EMPLOYER_SPACE,
+  organisme: ORGANISME_SPACE,
+};
+
 export function getProSpace(segment: ProSegment): ProSpace {
-  return segment === "partenaire" ? PARTNER_SPACE : EMPLOYER_SPACE;
+  return SPACES[segment];
 }

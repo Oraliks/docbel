@@ -54,6 +54,13 @@ const ICONS: Record<ProIcon, LucideIcon> = {
   document: FilesIcon,
 };
 
+/** Clé i18n du badge de segment affiché dans l'en-tête de la sidebar. */
+const SEGMENT_BADGE_KEYS = {
+  partenaire: "navSegPartner",
+  employeur: "navSegEmployer",
+  organisme: "navSegOrganisme",
+} as const;
+
 /** Les ancres (#…) ne portent pas d'état actif ; sinon match exact ou préfixe. */
 function isItemActive(pathname: string, url: string, exact?: boolean): boolean {
   if (url.includes("#")) return false;
@@ -89,7 +96,7 @@ export function ProSidebar({
               <CommandIcon className="size-5!" />
               <span className="text-base font-semibold">Docbel</span>
               <span className="ml-auto text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-                {t(segment === "partenaire" ? "navSegPartner" : "navSegEmployer")}
+                {t(SEGMENT_BADGE_KEYS[segment])}
               </span>
             </SidebarMenuButton>
           </SidebarMenuItem>

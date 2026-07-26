@@ -282,6 +282,7 @@ export const CERTIFICATE_LABEL_KEYS: Record<CertificateType, string> = {
 
 // --- Type d'organisation ---------------------------------------------------
 export const ORG_TYPES = [
+  "ecole",
   "employeur",
   "partenaire",
   "asbl",
@@ -293,6 +294,7 @@ export const ORG_TYPES = [
 ] as const;
 export type FormationOrgType = (typeof ORG_TYPES)[number];
 export const ORG_TYPE_LABELS: Record<FormationOrgType, string> = {
+  ecole: "École / établissement d'enseignement",
   employeur: "Employeur",
   partenaire: "Partenaire",
   asbl: "ASBL",
@@ -305,6 +307,7 @@ export const ORG_TYPE_LABELS: Record<FormationOrgType, string> = {
 
 /** Clés i18n (sous `public.formationsLib`) jumelles de ORG_TYPE_LABELS. */
 export const ORG_TYPE_LABEL_KEYS: Record<FormationOrgType, string> = {
+  ecole: "orgType.ecole",
   employeur: "orgType.employeur",
   partenaire: "orgType.partenaire",
   asbl: "orgType.asbl",
@@ -314,6 +317,43 @@ export const ORG_TYPE_LABEL_KEYS: Record<FormationOrgType, string> = {
   formateur: "orgType.formateur",
   interne_docbel: "orgType.interne_docbel",
 };
+
+/**
+ * Types sélectionnables dans le parcours public d'inscription
+ * (`/formations/proposer`). `interne_docbel` est réservé à Docbel ;
+ * `employeur`/`partenaire` proviennent des segments existants.
+ */
+export const PUBLIC_ORG_TYPES = [
+  "ecole",
+  "asbl",
+  "organisme_formation",
+  "administration",
+  "prive",
+  "formateur",
+] as const satisfies readonly FormationOrgType[];
+
+// --- Statut d'une organisation de formation --------------------------------
+export const ORG_STATUSES = ["pending", "active", "suspended", "rejected"] as const;
+export type FormationOrgStatus = (typeof ORG_STATUSES)[number];
+export const ORG_STATUS_LABELS: Record<FormationOrgStatus, string> = {
+  pending: "En attente de validation",
+  active: "Validée",
+  suspended: "Suspendue",
+  rejected: "Refusée",
+};
+
+// --- Statut d'une invitation d'équipe --------------------------------------
+export const ORG_INVITE_STATUSES = ["pending", "accepted", "revoked", "expired"] as const;
+export type FormationOrgInviteStatus = (typeof ORG_INVITE_STATUSES)[number];
+export const ORG_INVITE_STATUS_LABELS: Record<FormationOrgInviteStatus, string> = {
+  pending: "En attente",
+  accepted: "Acceptée",
+  revoked: "Révoquée",
+  expired: "Expirée",
+};
+
+/** Durée de validité d'une invitation d'équipe (jours). */
+export const ORG_INVITE_TTL_DAYS = 14;
 
 // --- Rôle membre d'organisation -------------------------------------------
 export const ORG_MEMBER_ROLES = [
@@ -406,6 +446,8 @@ export const isFormat = inSet(TRAINING_FORMATS);
 export const isLevel = inSet(TRAINING_LEVELS);
 export const isOrgType = inSet(ORG_TYPES);
 export const isOrgRole = inSet(ORG_MEMBER_ROLES);
+export const isOrgStatus = inSet(ORG_STATUSES);
+export const isPublicOrgType = inSet(PUBLIC_ORG_TYPES);
 export const isReportReason = inSet(REPORT_REASONS);
 
 /** Devise par défaut. */

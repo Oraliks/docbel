@@ -29,7 +29,11 @@ function slugify(input: string): string {
 
 /** Type d'org dérivé du rôle pro. */
 function orgTypeForRole(role: string): string {
-  return role === "employer" ? "employeur" : "partenaire";
+  if (role === "employer") return "employeur";
+  // Un organisme self-service choisit son type précis (école, ASBL…) au
+  // moment de sa demande ; ce défaut ne sert qu'aux orgs auto-créées.
+  if (role === "organisme") return "organisme_formation";
+  return "partenaire";
 }
 
 /**

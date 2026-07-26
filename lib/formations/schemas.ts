@@ -16,6 +16,7 @@ import {
   ACCESS_RULE_TYPES,
   REPORT_REASONS,
   TRAINING_STATUSES,
+  PUBLIC_ORG_TYPES,
 } from "./constants";
 
 /** z.enum tolérant aux tableaux `as const` readonly. */
@@ -215,7 +216,7 @@ export const orgSchema = z.object({
   website: optionalUrl,
   contactEmail: optionalEmail,
   notifyEmail: optionalEmail,
-  status: z.enum(["active", "suspended", "pending"]).optional(),
+  status: z.enum(["active", "suspended", "pending", "rejected"]).optional(),
 });
 export type OrgInput = z.infer<typeof orgSchema>;
 
@@ -224,6 +225,88 @@ export const orgMemberSchema = z.object({
   userId: z.string().min(1),
   role: zEnum(ORG_MEMBER_ROLES),
 });
+
+// ===========================================================================
+// Lot A — Inscription self-service des organismes
+// ===========================================================================
+
+/**
+ * Numéro d'entreprise belge (BCE/KBO) : 10 chiffres, saisi librement
+ * (0123.456.789, BE0123456789, 0123456789…). La normalisation + le checksum
+ * mod-97 sont faits par `lib/formations/enterprise-number.ts`.
+ */
+export const enterpriseNumberSchema = z
+  .string()
+  .trim()
+  .min(8)
+  .max(24)
+  .regex(/^[0-9.\s-]*(BE)?[0-9.\s-]+$/i, "Numéro d'entreprise invalide");
+
+/** Demande publique d'inscription d'un organisme (`/formations/proposer`). */
+export const orgApplicationSchema = z.object({
+  // Organisation
+  name: z.string().trim().min(2, "Nom de l'organisation requis").max(200),
+  type: zEnum(PUBLIC_ORG_TYPES),
+  /** Optionnel : un formateur indépendant peut ne pas avoir de BCE. */
+  enterpriseNumber: enterpriseNumberSchema.optional().or(z.literal("")),
+  description: z.string().trim().min(20, "Décrivez votre organisation en quelques lignes").max(2000),
+  website: optionalUrl,
+  street: z.string().trim().max(300).optional(),
+  postalCode: z.string().trim().max(12).optional(),
+  city: z.string().trim().max(120).optional(),
+  // Personne de contact (deviendra le compte propriétaire)
+  contactName: z.string().trim().min(2, "Nom du contact requis").max(160),
+  contactRole: z.string().trim().max(120).optional(),
+  contactEmail: z.string().trim().email("Email invalide").max(320),
+  contactPhone: z.string().trim().max(40).optional(),
+  // Compte propriétaire créé avec la demande (connexion possible une fois
+  // l'organisation validée par Docbel).
+  password: z.string().min(10, "10 caractères minimum").max(200),
+  // Consentement
+  acceptTerms: z.literal(true, { message: "Veuillez accepter les conditions" }),
+});
+export type OrgApplicationInput = z.infer<typeof orgApplicationSchema>;
+
+/** Décision admin sur une demande d'organisme. */
+export const orgReviewActionSchema = z.object({
+  action: z.enum(["approve", "reject", "suspend", "reactivate"]),
+  note: z.string().trim().max(2000).optional(),
+});
+export type OrgReviewActionInput = z.infer<typeof orgReviewActionSchema>;
+
+/** Profil éditable par l'organisation elle-même. */
+export const orgProfileSchema = z.object({
+  name: z.string().trim().min(2).max(200).optional(),
+  description: z.string().trim().max(2000).optional(),
+  website: optionalUrl,
+  logoUrl: optionalUrl,
+  brandColor: z.string().trim().max(20).optional(),
+  contactEmail: optionalEmail,
+  notifyEmail: optionalEmail,
+  contactName: z.string().trim().max(160).optional(),
+  contactRole: z.string().trim().max(120).optional(),
+  contactPhone: z.string().trim().max(40).optional(),
+  street: z.string().trim().max(300).optional(),
+  postalCode: z.string().trim().max(12).optional(),
+  city: z.string().trim().max(120).optional(),
+});
+export type OrgProfileInput = z.infer<typeof orgProfileSchema>;
+
+/** Invitation d'un membre d'équipe. Le rôle `owner` n'est pas invitable. */
+export const orgInviteSchema = z.object({
+  email: z.string().trim().email("Email invalide").max(320),
+  role: z.enum(["manager", "trainer", "viewer", "admin_contact"]),
+});
+export type OrgInviteInput = z.infer<typeof orgInviteSchema>;
+
+/** Acceptation d'une invitation (utilisateur connecté ou création de compte). */
+export const orgInviteAcceptSchema = z.object({
+  token: z.string().trim().min(10).max(120),
+  /** Fournis uniquement si l'invité n'a pas encore de compte. */
+  name: z.string().trim().min(2).max(160).optional(),
+  password: z.string().min(10, "10 caractères minimum").max(200).optional(),
+});
+export type OrgInviteAcceptInput = z.infer<typeof orgInviteAcceptSchema>;
 
 // --- Admin : règle d'accès (audience privée/interne) -----------------------
 export const accessRuleSchema = z.object({

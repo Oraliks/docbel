@@ -15,6 +15,9 @@ enum UserRole {
   user
   partner
   employer
+  /// Organisme de formation self-service (école, ASBL, société, administration,
+  /// formateur). Espace dédié /organisme — cf. lib/formations/* (Lot A).
+  organisme
   moderator
   admin
 }
@@ -2815,19 +2818,71 @@ model FormationOrganization {
   contactEmail        String?
   /// Email de l'équipe notifié (nouvelle inscription, etc.).
   notifyEmail         String?
-  /// active | suspended | pending
+  /// active | suspended | pending | rejected
   status              String   @default("active")
   createdById         String?
+
+  // --- Inscription self-service & vérification (Lot A) --------------------
+  /// Numéro d'entreprise BCE/KBO (10 chiffres, forme canonique sans points).
+  /// Null pour une organisation interne ou un formateur sans BCE.
+  enterpriseNumber     String?
+  /// Dénomination officielle récupérée depuis la BCE (peut différer de `name`).
+  legalName            String?
+  /// true si le numéro a été retrouvé dans les tables KBO au moment de la demande.
+  enterpriseVerified   Boolean  @default(false)
+  enterpriseVerifiedAt DateTime?
+  /// Adresse (pré-remplie depuis la BCE, éditable par l'organisation).
+  street               String?
+  postalCode           String?
+  city                 String?
+  /// Nom + fonction de la personne qui a introduit la demande.
+  contactName          String?
+  contactRole          String?
+  contactPhone         String?
+  /// Horodatage de la soumission publique (parcours /formations/proposer).
+  submittedAt          DateTime?
+  /// Décision admin.
+  reviewedById         String?
+  reviewedAt           DateTime?
+  reviewNote           String?
+  rejectedReason       String?
+
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
 
   permission OrganizationTrainingPermission?
   members    FormationOrgMember[]
+  invites    FormationOrgInvite[]
   trainings  Training[]
 
   @@index([partnerOrganization])
   @@index([status])
   @@index([type])
+  @@index([enterpriseNumber])
+}
+
+/// Invitation d'un collaborateur à rejoindre une organisation de formation.
+/// Le lien email porte un `token` opaque. `email` est normalisé en minuscules.
+model FormationOrgInvite {
+  id             String                @id @default(cuid())
+  organizationId String
+  organization   FormationOrganization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  email          String
+  /// owner | manager | trainer | viewer | admin_contact
+  role           String                @default("viewer")
+  token          String                @unique
+  /// pending | accepted | revoked | expired
+  status         String                @default("pending")
+  invitedById    String?
+  expiresAt      DateTime
+  acceptedAt     DateTime?
+  acceptedByUserId String?
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+
+  @@unique([organizationId, email])
+  @@index([email])
+  @@index([status])
 }
 
 /// Membre d'une organisation de formation (équipe). Rôle fin par membre.

@@ -43,6 +43,8 @@ function destForRole(role: string | null | undefined): string {
       return "/partenaire";
     case "employer":
       return "/employeur";
+    case "organisme":
+      return "/organisme";
     case "admin":
     case "moderator":
       return "/admin";

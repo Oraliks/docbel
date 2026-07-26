@@ -11,6 +11,7 @@ const ROLE_VALUES = [
   "user",
   "partner",
   "employer",
+  "organisme",
   "moderator",
   "admin",
 ] as const satisfies readonly UserRole[]
@@ -49,7 +50,7 @@ export const DEFAULT_USER_PAGE_SIZE = 20
 export const DEFAULT_USER_SORT: UserListSort = "-createdAt"
 
 /// Filtre segment : "none" = compte SANS segment (legacy/admin/citoyen).
-export type UserSegmentFilter = "partenaire" | "employeur" | "none"
+export type UserSegmentFilter = "partenaire" | "employeur" | "organisme" | "none"
 
 export interface UsersQuery {
   q: string
@@ -86,6 +87,7 @@ export function parseUsersQuery(
   const segment: UserSegmentFilter | null =
     rawSegment === "partenaire" ||
     rawSegment === "employeur" ||
+    rawSegment === "organisme" ||
     rawSegment === "none"
       ? rawSegment
       : null

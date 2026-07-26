@@ -223,6 +223,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       items: [
         { title: t("formationsOverview"), url: "/admin/formations" },
         { title: t("formationsModule"), url: "/admin/modules/formations" },
+        { title: t("formationsOrganismes"), url: "/admin/formations/organismes" },
         { title: t("formationsValidation"), url: "/admin/formations/validation" },
         { title: t("formationsPermissions"), url: "/admin/formations/permissions" },
         { title: t("formationsCategories"), url: "/admin/formations/categories" },

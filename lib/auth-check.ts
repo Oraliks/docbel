@@ -85,7 +85,7 @@ export async function requireAdminAuth(): Promise<AdminAuthResult> {
  * espaces séparés plutôt qu'un guard fourre-tout.
  */
 async function requireProOrAdminAuth(
-  proRole: "partner" | "employer",
+  proRole: "partner" | "employer" | "organisme",
   forbiddenMessage: string
 ): Promise<PartnerAuthResult> {
   const headerList = await headers();
@@ -175,11 +175,13 @@ export async function requirePartnerOrAdminAuth(): Promise<PartnerAuthResult> {
 }
 
 /**
- * Auth pour la plateforme de booking : autorise les utilisateurs PRO actifs
- * (admin, partner OU employer). L'accès à un tenant précis est ensuite décidé
- * par `tenantAccess()` (admin → owner ; membre explicite → son rôle ; partenaire
- * de l'organisation → owner/agent). Les employeurs accèdent uniquement aux
- * tenants où ils sont membres.
+ * Auth pour les acteurs PRO : autorise les utilisateurs actifs (admin, partner,
+ * employer OU organisme). Sert au booking ET aux routes Formations côté
+ * organisation. L'accès à une ressource précise est ensuite décidé par
+ * `tenantAccess()` (booking) ou `guardFormationOrg()` (formations) : admin →
+ * owner ; membre explicite → son rôle ; partenaire de l'organisation →
+ * owner/agent. Les employeurs et organismes accèdent uniquement aux entités
+ * dont ils sont membres.
  */
 export async function requireBookingActorAuth(): Promise<PartnerAuthResult> {
   const headerList = await headers();
@@ -223,7 +225,10 @@ export async function requireBookingActorAuth(): Promise<PartnerAuthResult> {
 
   const isAdmin = dbUser.role === "admin";
   const allowed =
-    isAdmin || dbUser.role === "partner" || dbUser.role === "employer";
+    isAdmin ||
+    dbUser.role === "partner" ||
+    dbUser.role === "employer" ||
+    dbUser.role === "organisme";
 
   if (!allowed) {
     return {
@@ -264,6 +269,23 @@ export async function requireEmployerOrAdminAuth(): Promise<PartnerAuthResult> {
   return requireProOrAdminAuth(
     "employer",
     "Forbidden - Employer or Admin access required"
+  );
+}
+
+/**
+ * Auth pour les pages/routes "Espace Organisme" (écoles, ASBL, sociétés,
+ * administrations, formateurs inscrits en self-service). Autorise :
+ *   - les admins (role=admin, active) → accès complet
+ *   - les organismes actifs avec une organisation rattachée
+ *     (role=organisme + partnerOrganization)
+ *
+ * Comme pour les autres segments, l'accès à une organisation PRÉCISE est
+ * ensuite décidé par `formationOrgAccess()` / `guardFormationOrg()`.
+ */
+export async function requireOrganismeOrAdminAuth(): Promise<PartnerAuthResult> {
+  return requireProOrAdminAuth(
+    "organisme",
+    "Forbidden - Organisme or Admin access required"
   );
 }
 

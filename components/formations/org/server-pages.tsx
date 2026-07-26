@@ -17,13 +17,28 @@ import { TrainingWizard, type WizardInitial } from "./training-wizard";
 import { TrainingManage, type OrgManageView, type ManageCaps } from "./training-manage";
 import { EnrollmentsManager } from "./enrollments-manager";
 
-type Segment = "employeur" | "partenaire";
+type Segment = "employeur" | "partenaire" | "organisme";
 
 function basePathFor(segment: Segment) {
   return `/${segment}/formations`;
 }
 
-/** Module désactivé pour cet espace → 404 (l'org ne voit rien). */
+/**
+ * Landing à servir quand l'utilisateur n'a pas accès à cet espace.
+ * `/p/organisme` n'existe pas : un organisme non connecté doit être envoyé
+ * vers le parcours public d'inscription.
+ */
+function landingFor(segment: Segment): string {
+  return segment === "organisme" ? "/formations/proposer" : `/p/${segment}`;
+}
+
+/**
+ * Module désactivé pour cet espace → 404 (l'org ne voit rien).
+ * Les organismes sont rattachés à l'espace pro « partner » pour le gating :
+ * la config du module n'expose que 4 bascules d'audience (public / citoyen /
+ * employeur / partenaire) et un organisme est un acteur pro au même titre
+ * qu'un partenaire.
+ */
 async function ensureOrgModule(segment: Segment, user: { role: string; isAdmin: boolean }) {
   const space = segment === "employeur" ? "employer" : "partner";
   const { access } = await getTrainingAccess({ role: user.role, isAdmin: user.isAdmin }, space);
@@ -33,7 +48,7 @@ async function ensureOrgModule(segment: Segment, user: { role: string; isAdmin: 
 /** /[seg]/formations — liste + stats. */
 export async function OrgFormationsListPage({ segment }: { segment: Segment }) {
   const user = await getOrgPageUser(segment);
-  if (!user) redirect(`/p/${segment}`);
+  if (!user) redirect(landingFor(segment));
   await ensureOrgModule(segment, user);
 
   const { orgIds } = await getOrgContext(user.id, user.role);
@@ -45,7 +60,7 @@ export async function OrgFormationsListPage({ segment }: { segment: Segment }) {
 /** /[seg]/formations/nouvelle — wizard de création. */
 export async function OrgFormationsNewPage({ segment }: { segment: Segment }) {
   const user = await getOrgPageUser(segment);
-  if (!user) redirect(`/p/${segment}`);
+  if (!user) redirect(landingFor(segment));
   await ensureOrgModule(segment, user);
   if (!(await isFlagEnabled("organizationCreation"))) notFound();
 
@@ -68,7 +83,7 @@ export async function OrgFormationsNewPage({ segment }: { segment: Segment }) {
 
 async function loadOwnedTraining(segment: Segment, id: string) {
   const user = await getOrgPageUser(segment);
-  if (!user) redirect(`/p/${segment}`);
+  if (!user) redirect(landingFor(segment));
   await ensureOrgModule(segment, user);
   const training = await getOrgTraining(id);
   if (!training) notFound();

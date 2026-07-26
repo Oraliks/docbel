@@ -7,6 +7,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   Building2Icon,
+  GraduationCapIcon,
   HandshakeIcon,
   HomeIcon,
   MoonIcon,
@@ -84,8 +85,18 @@ function ProTopbar({ segment }: { segment: ProSegment }) {
     router.refresh();
   };
 
-  const SegmentIcon = segment === "partenaire" ? HandshakeIcon : Building2Icon;
-  const label = t(segment === "partenaire" ? "navSpacePartner" : "navSpaceEmployer");
+  const SEGMENT_ICONS = {
+    partenaire: HandshakeIcon,
+    employeur: Building2Icon,
+    organisme: GraduationCapIcon,
+  } as const;
+  const SEGMENT_LABEL_KEYS = {
+    partenaire: "navSpacePartner",
+    employeur: "navSpaceEmployer",
+    organisme: "navSpaceOrganisme",
+  } as const;
+  const SegmentIcon = SEGMENT_ICONS[segment];
+  const label = t(SEGMENT_LABEL_KEYS[segment]);
 
   return (
     <header className="flex h-(--header-height) shrink-0 items-center border-b bg-background/95 backdrop-blur transition-[width,height] ease-linear">

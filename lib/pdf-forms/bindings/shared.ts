@@ -83,6 +83,37 @@ export function fullnameBinding(opts: {
   };
 }
 
+/// Fabrique une règle qui remplit UN widget avec la concaténation de plusieurs
+/// champs du formulaire, séparés par un espace, les vides ignorés.
+///
+/// Pattern très fréquent chez ONEM : le PDF imprime « Rue et numéro » ou
+/// « Code postal et commune » sur une seule ligne, alors que la saisie garde
+/// les valeurs séparées — c'est indispensable pour les hériter d'un autre
+/// document du dossier, une clé canonique ne portant qu'UNE valeur.
+///
+/// Ne stampe rien si tout est vide : une ligne blanche vaut mieux qu'un espace
+/// isolé sur un document officiel.
+export function concatBinding(opts: {
+  widget: string;
+  fields: readonly string[];
+  name?: string;
+}): MappingRule {
+  const join = (payload: FormPayload): string =>
+    opts.fields
+      .map((id) => (typeof payload[id] === "string" ? (payload[id] as string).trim() : ""))
+      .filter(Boolean)
+      .join(" ");
+  return {
+    name: opts.name ?? `concat:${opts.widget}`,
+    whenFn: (payload) => join(payload) !== "",
+    stampFn: (payload) => {
+      const value = join(payload);
+      return value ? [{ widget: opts.widget, value }] : [];
+    },
+    declaredWidgets: [opts.widget],
+  };
+}
+
 export interface AddressWidgets {
   rue: string;
   numero: string;

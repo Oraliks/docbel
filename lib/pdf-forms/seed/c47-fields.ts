@@ -31,34 +31,69 @@ export const C47_FIELDS: PdfFormField[] = [
   // Votre identité
   // ==========================================================================
   {
+    // `prefillFrom` retiré le 2026-07-26 : sur un champ `fullname` il ne
+    // transportait que le NOM, et le runner relisant une chaîne comme un nom,
+    // le prénom se perdait. Le type suffit — cf. `canonicalToPrefill` et
+    // `buildProfilePrefill`, qui remplissent tous deux les composites.
     id: "pr_nom_et_nom",
     pdfFieldName: "Prénom et nom",
     type: "fullname",
     required: true,
     label: { fr: "Prénom et nom", nl: "", de: "" },
-    prefillFrom: "profile.lastName",
     section: SECTION_IDENTITE,
     order: 0,
   },
+  // ADRESSE — les deux widgets du PDF fusionnent chacun DEUX informations. On
+  // saisit donc les quatre valeurs séparément, chacune canonisée pour hériter
+  // du C1, et deux règles serveur recomposent les lignes imprimées
+  // (`bindings/per-form/c47.ts`). Même pattern que le C1A.
+  //
+  // ⚠ Ordre d'assemblage : convention belge (« Rue de la Loi 16 »,
+  // « 1000 Bruxelles »), cohérente avec le C1 et le C1A. Les noms de widgets
+  // du C47 suggèrent l'inverse (« Commune et code postal ») et son libellé
+  // d'origine disait « Numéro et rue » — à confirmer sur le formulaire papier.
   {
     id: "rue",
-    pdfFieldName: "Rue",
+    pdfFieldName: "",
     type: "text",
     required: true,
-    label: { fr: "Numéro et rue", nl: "", de: "" },
+    label: { fr: "Rue", nl: "", de: "" },
     prefillFrom: "profile.street",
+    canonicalKey: "adresse.rue",
     section: SECTION_ADRESSE,
     order: 1,
   },
   {
-    id: "commune_et_code_postal",
-    pdfFieldName: "Commune et code postal",
+    id: "numero",
+    pdfFieldName: "",
+    type: "text",
+    required: true,
+    label: { fr: "Numéro", nl: "", de: "" },
+    canonicalKey: "adresse.numero",
+    section: SECTION_ADRESSE,
+    order: 1.5,
+  },
+  {
+    id: "codePostal",
+    pdfFieldName: "",
     type: "postal_be",
     required: true,
-    label: { fr: "Code postal et commune", nl: "", de: "" },
+    label: { fr: "Code postal", nl: "", de: "" },
     prefillFrom: "profile.postalCode",
+    canonicalKey: "adresse.codePostal",
     section: SECTION_ADRESSE,
     order: 2,
+  },
+  {
+    id: "commune",
+    pdfFieldName: "",
+    type: "text",
+    required: true,
+    label: { fr: "Commune", nl: "", de: "" },
+    prefillFrom: "profile.city",
+    canonicalKey: "adresse.commune",
+    section: SECTION_ADRESSE,
+    order: 2.5,
   },
   {
     id: "niss",
@@ -226,8 +261,20 @@ export const C47_FIELDS: PdfFormField[] = [
 /// Applique le schéma enrichi sur une liste de champs bruts (typiquement
 /// issue de l'inférence automatique au moment de l'import). Idempotent :
 /// ré-exécutable sans dupliquer (compare les `id`).
+/// Champs d'une version antérieure dont le widget est désormais écrit par une
+/// RÈGLE serveur. Sans cette liste ils survivraient en base — ce filtre ne
+/// compare que les `id`, pas les `pdfFieldName` — et se battraient avec la
+/// règle pour le même widget.
+const LEGACY_C47_FIELD_IDS = new Set<string>([
+  // Scindé en `codePostal` + `commune` (2026-07-26) ; le widget fusionné est
+  // recomposé par `bindings/per-form/c47.ts`.
+  "commune_et_code_postal",
+]);
+
 export function applyC47Improvements(fields: PdfFormField[]): PdfFormField[] {
   const newIds = new Set(C47_FIELDS.map((f) => f.id));
-  const preserved = fields.filter((f) => !newIds.has(f.id));
+  const preserved = fields.filter(
+    (f) => !newIds.has(f.id) && !LEGACY_C47_FIELD_IDS.has(f.id)
+  );
   return [...preserved, ...C47_FIELDS];
 }

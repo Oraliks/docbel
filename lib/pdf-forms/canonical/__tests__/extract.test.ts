@@ -309,3 +309,46 @@ describe("C1B / C1C — héritage depuis le C1", () => {
     expect(prefill.niss).toBe("85073003328");
   });
 });
+
+describe("C46 / C47 / REGIS / C1-Partenaire — héritage depuis le C1", () => {
+  const canonicalDuC1 = extractCanonical(C1_QUESTIONS, {
+    nom: "Dupont",
+    pr_nom: "Marie",
+    niss: "85073003328",
+    adresse_rue: "Rue de la Loi",
+    num_ro: "16",
+    code_postal: "1000",
+    commune: "Bruxelles",
+  });
+
+  it("C46 : le nom composite et le NISS arrivent", () => {
+    const prefill = canonicalToPrefill(C46_FIELDS, canonicalDuC1);
+    expect(prefill.nom_et_pr_nom).toEqual({ first: "Marie", last: "Dupont" });
+    expect(prefill.niss).toBe("85073003328");
+  });
+
+  it("C47 : nom composite + les quatre valeurs d'adresse", () => {
+    const prefill = canonicalToPrefill(C47_FIELDS, canonicalDuC1);
+    expect(prefill.pr_nom_et_nom).toEqual({ first: "Marie", last: "Dupont" });
+    expect(prefill.rue).toBe("Rue de la Loi");
+    expect(prefill.numero).toBe("16");
+    expect(prefill.codePostal).toBe("1000");
+    expect(prefill.commune).toBe("Bruxelles");
+  });
+
+  it("REGIS : nom et prénom, saisis séparément sur ce formulaire", () => {
+    const prefill = canonicalToPrefill(C1_REGIS_FIELDS, canonicalDuC1);
+    expect(prefill.nom).toBe("Dupont");
+    expect(prefill.prenom).toBe("Marie");
+  });
+
+  it("C1-Partenaire : l'identité du CITOYEN arrive, celle du PARTENAIRE reste vierge", () => {
+    const prefill = canonicalToPrefill(C1_PARTENAIRE_FIELDS, canonicalDuC1);
+    expect(prefill.nom_ch_meur).toEqual({ first: "Marie", last: "Dupont" });
+    expect(prefill.niss_ch_meur).toBe("85073003328");
+    // Garde-fou : ces deux champs visent un TIERS. Les préremplir avec
+    // l'identité du citoyen produirait un document faux.
+    expect(prefill.niss_partenaire).toBeUndefined();
+    expect(prefill.nom_partenaire).toBeUndefined();
+  });
+});

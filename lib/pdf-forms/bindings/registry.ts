@@ -9,19 +9,19 @@ import type { MappingRule } from "./types";
 import { C1_CHANGEMENT_RULES } from "./per-form/c1-changement";
 import { C1A_RULES } from "./per-form/c1a";
 import { C1B_RULES } from "./per-form/c1b";
+import { C47_RULES } from "./per-form/c47";
 
 const RULES_BY_SLUG: Record<string, MappingRule[]> = {
   "c1-changement-situation": C1_CHANGEMENT_RULES,
   c1a: C1A_RULES,
   c1b: C1B_RULES,
-  // Le C1C n'a besoin d'AUCUNE règle : aucun de ses widgets ne fusionne
-  // plusieurs informations, et son « Prénom et nom » est un champ `fullname`
-  // que le filler assemble tout seul.
-  //
-  // Restent à brancher : c46 / c47 / c1-partenaire / c1-regis.
-  // Chacun demande un dump AcroForm dédié (noms de widgets EXACTS) — un slug
-  // sans entrée ici renvoie [] et se comporte comme avant, sans stamp
-  // additionnel : l'absence est sûre, elle n'est simplement pas complète.
+  c47: C47_RULES,
+  // Les 8 formulaires sont branchés. Ceux qui n'ont pas d'entrée ici — c1c,
+  // c46, c1-regis, c1-partenaire — n'en ont pas BESOIN : aucun de leurs
+  // widgets ne fusionne plusieurs informations, et leurs champs « nom et
+  // prénom » sont de type `fullname`, que le filler assemble tout seul.
+  // Un slug absent renvoie [] : pas de stamp additionnel, comportement
+  // strictement identique au mapping du schéma seul.
 };
 
 /// Récupère les règles à appliquer pour un slug donné. Renvoie un tableau

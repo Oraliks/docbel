@@ -5,8 +5,14 @@ describe("C47_FIELDS", () => {
   it("couvre l'identité, l'adresse, la demande et la signature", () => {
     const ids = C47_FIELDS.map((f) => f.id);
     expect(ids).toContain("pr_nom_et_nom");
+    // Adresse scindée le 2026-07-26 : quatre valeurs canoniques héritables
+    // du C1, recomposées sur les deux lignes imprimées par les règles
+    // serveur (bindings/per-form/c47.ts).
     expect(ids).toContain("rue");
-    expect(ids).toContain("commune_et_code_postal");
+    expect(ids).toContain("numero");
+    expect(ids).toContain("codePostal");
+    expect(ids).toContain("commune");
+    expect(ids).not.toContain("commune_et_code_postal");
     expect(ids).toContain("niss");
     expect(ids).toContain("t_l_phone");
     expect(ids).toContain("email");
@@ -17,15 +23,20 @@ describe("C47_FIELDS", () => {
     expect(ids).toContain("signature");
   });
 
-  it("compte exactement 11 champs (1 par widget AcroForm du dump officiel)", () => {
-    expect(C47_FIELDS.length).toBe(11);
+  it("compte 13 champs — 11 widgets AcroForm + 2 sous-champs d'adresse", () => {
+    // « rue + numéro » et « code postal + commune » sont saisis séparément
+    // mais imprimés sur une seule ligne chacun : plus de champs que de
+    // widgets, l'écart étant comblé par les règles serveur.
+    expect(C47_FIELDS.length).toBe(13);
   });
 
   it("les pdfFieldName sont copiés exactement depuis le dump AcroForm (casse, espaces, retours à la ligne)", () => {
     const byId = new Map(C47_FIELDS.map((f) => [f.id, f]));
     expect(byId.get("pr_nom_et_nom")?.pdfFieldName).toBe("Prénom et nom");
-    expect(byId.get("rue")?.pdfFieldName).toBe("Rue");
-    expect(byId.get("commune_et_code_postal")?.pdfFieldName).toBe("Commune et code postal");
+    // `rue` / `numero` / `codePostal` / `commune` n'ont volontairement PAS
+    // de pdfFieldName : leurs deux widgets sont écrits par des règles.
+    expect(byId.get("rue")?.pdfFieldName).toBe("");
+    expect(byId.get("commune")?.pdfFieldName).toBe("");
     expect(byId.get("niss")?.pdfFieldName).toBe("NISS");
     expect(byId.get("t_l_phone")?.pdfFieldName).toBe("Téléphone");
     expect(byId.get("email")?.pdfFieldName).toBe("Email");
@@ -51,7 +62,9 @@ describe("C47_FIELDS", () => {
     expect(byId.get("pr_nom_et_nom")?.section).toBe("identite");
     expect(byId.get("niss")?.section).toBe("identite");
     expect(byId.get("rue")?.section).toBe("adresse");
-    expect(byId.get("commune_et_code_postal")?.section).toBe("adresse");
+    expect(byId.get("numero")?.section).toBe("adresse");
+    expect(byId.get("codePostal")?.section).toBe("adresse");
+    expect(byId.get("commune")?.section).toBe("adresse");
     expect(byId.get("dateDA")?.section).toBe("demande");
     expect(byId.get("jeuneTravailleurStageInsertion")?.section).toBe("demande");
     expect(byId.get("chomeurCompletIndemniseInaptitude")?.section).toBe("demande");
@@ -81,7 +94,8 @@ describe("C47_FIELDS", () => {
     const byId = new Map(C47_FIELDS.map((f) => [f.id, f]));
     expect(byId.get("pr_nom_et_nom")?.required).toBe(true);
     expect(byId.get("rue")?.required).toBe(true);
-    expect(byId.get("commune_et_code_postal")?.required).toBe(true);
+    expect(byId.get("codePostal")?.required).toBe(true);
+    expect(byId.get("commune")?.required).toBe(true);
     expect(byId.get("niss")?.required).toBe(true);
     expect(byId.get("dateDA")?.required).toBe(true);
     expect(byId.get("aujourd_hui")?.required).toBe(true);

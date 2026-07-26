@@ -80,12 +80,24 @@ export const C1_PARTENAIRE_FIELDS: PdfFormField[] = [
     section: SECTION_IDENTITE,
     order: -100,
   },
-  // NOTE canonique : `nom_ch_meur` (label « Ton nom et prénom »)
-  // combine nom + prénom en un champ texte simple — non taguable en 1 clé.
   {
+    // Champ COMPOSITE (2026-07-26) : deux cases à l'écran, une seule chaîne
+    // sur le PDF, assemblée dans l'ordre du libellé imprimé (« nom et
+    // prénom »). C'est le type — et non une clé canonique — qui fait le lien :
+    // `canonicalToPrefill` et `buildProfilePrefill` remplissent tout champ
+    // `fullname` depuis `identity.prenom` + `identity.nom`.
+    //
+    // Avant, ce champ n'avait NI `prefillFrom` NI `canonicalKey` : c'était le
+    // seul du formulaire à être intégralement ressaisi par le citoyen.
+    //
+    // ⚠ Ce champ désigne LE CITOYEN (« Ton nom et prénom »). Les champs
+    // `niss_partenaire` et `nom_partenaire` visent LE PARTENAIRE : ne jamais y
+    // poser de clé `identity.*`, ni les passer en `fullname` — le prefill y
+    // injecterait l'identité du citoyen à la place de celle du tiers.
     id: "nom_ch_meur",
     pdfFieldName: "Nom chômeur",
-    type: "text",
+    type: "fullname",
+    nameOrder: "last-first",
     required: true,
     label: { fr: "Ton nom et prénom", nl: "", de: "" },
     section: SECTION_IDENTITE,

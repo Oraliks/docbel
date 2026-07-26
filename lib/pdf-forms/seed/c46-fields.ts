@@ -48,10 +48,17 @@ export const C46_FIELDS: PdfFormField[] = [
   {
     id: "nom_et_pr_nom",
     pdfFieldName: "Nom et prénom",
+    // PAS de `prefillFrom` (retiré le 2026-07-26) : un champ `fullname` porte
+    // un `{ first, last }`, que `prefillFrom` ne sait pas transporter — il ne
+    // connaît que des chaînes, et le runner relit une chaîne comme un NOM.
+    // Avec `profile.lastName`, le nom arrivait seul et le prénom se perdait.
+    // Le type suffit : `canonicalToPrefill` (héritage depuis le dossier) et
+    // `buildProfilePrefill` (profil du compte) remplissent tous deux ce type.
     type: "fullname",
+    // Le libellé imprimé est « Nom et prénom » → on assemble dans cet ordre.
+    nameOrder: "last-first",
     required: true,
     label: { fr: "Nom et prénom", nl: "", de: "" },
-    prefillFrom: "profile.lastName",
     section: SECTION_IDENTITE,
     order: -100,
   },

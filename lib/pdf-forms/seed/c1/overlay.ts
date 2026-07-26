@@ -83,12 +83,6 @@ const LEGACY_C1_WORKAROUND_FIELD_IDS = new Set<string>([
   "pensionAlimentaireDejaDeclare",
 ]);
 
-/// Applique les améliorations du schéma C1 sur la liste de champs existante
-/// (typiquement issue de l'inférence automatique au moment de l'import).
-///
-/// Comportement :
-/// 1. Retire tous les champs inférés correspondant aux 15 paires oui_N/non_N
-///    (les nouveaux champs `radio` les couvrent).
 export interface ApplyC1ImprovementsOptions {
   /// Valeur par défaut à appliquer sur `motifIntroduction` pour CETTE cible
   /// uniquement (ne mute jamais le tableau partagé `C1_QUESTIONS`). Utilisé
@@ -176,13 +170,7 @@ const TRANSFERE_ORGANISME_FIELD: PdfFormField = {
 // gonfler le bundle client de CHAQUE formulaire avec ~150 définitions de
 // champs qui ne le concernent pas.
 
-/// 2. Append les 15 questions enrichies + 5 follow-ups virtuels.
-/// 3. Tous les autres champs (identité, adresse, mode de paiement, situation
-///    familiale…) sont préservés tels quels.
-///
-/// Idempotent : ré-exécutable sans dupliquer (compare les `id`).
-///
-/// Regroupe aussi les 12 sections en 5 macro-étapes (cf. spec
+/// Regroupement des 12 sections en 5 macro-étapes (cf. spec
 /// 2026-07-06-form-runner-5-macro-steps) via `stepGroup`, consommé par
 /// `buildMacroSteps`. Sections inférées non enrichies (`adresse`, `banque`)
 /// → identité ; champs sans section → pas de groupe → accordéon « Autres
@@ -297,18 +285,27 @@ function curatePreserved(f: PdfFormField, covered: Set<string>): PdfFormField {
   return isDuplicate || isAutoWidget || isJunk ? { ...f, hidden: true } : f;
 }
 
-export function applyC1Improvements(
+// ---------------------------------------------------------------------------
+// Étape 1 — élaguer ce que le schéma enrichi rend caduc.
+// ---------------------------------------------------------------------------
+
+/// Retire des champs déjà en base tout ce que `C1_QUESTIONS` remplace :
+/// anciennes checkboxes couvertes par un radio, jumeaux inférés portant le même
+/// widget sous un `id` différent, workarounds legacy, et champs cachés pointant
+/// vers un widget absent du PDF importé. Ne garde que ce qui n'a pas d'équivalent
+/// enrichi — ce résidu sera curé à l'étape 3.
+function dropSupersededFields(
   fields: PdfFormField[],
-  opts?: ApplyC1ImprovementsOptions
+  technicalSchema?: readonly AcroFieldRaw[]
 ): PdfFormField[] {
   const covered = coveredCheckboxNames();
   const coveredSingle = coveredSingleNames();
   const newIds = new Set(C1_QUESTIONS.map((q) => q.id));
-  const technicalNames = opts?.technicalSchema
-    ? new Set(opts.technicalSchema.map((field) => field.pdfFieldName))
+  const technicalNames = technicalSchema
+    ? new Set(technicalSchema.map((field) => field.pdfFieldName))
     : null;
 
-  const preserved = fields.filter((f) => {
+  return fields.filter((f) => {
     if (LEGACY_C1_WORKAROUND_FIELD_IDS.has(f.id)) return false;
     // Retire les anciens checkboxes individuels désormais couverts par radio.
     if (covered.has(f.pdfFieldName)) return false;
@@ -336,139 +333,158 @@ export function applyC1Improvements(
     }
     return true;
   });
+}
 
-  let questions = opts?.defaultMotif
-    ? C1_QUESTIONS.map((q) =>
-        q.id === "motifIntroduction" ? { ...q, defaultValue: opts.defaultMotif } : q
-      )
-    : C1_QUESTIONS;
+// ---------------------------------------------------------------------------
+// Étape 2 — le profil « changement de situation personnelle ».
+// ---------------------------------------------------------------------------
 
-  if (opts?.restrictMotifTo5Situations) {
-    questions = questions
-      .map((q) => {
-        const override = RESTRICTED_MOTIF_OVERRIDES[q.id];
-        if (override) {
-          return {
-            ...q,
-            label: { ...q.label, fr: override.label },
-            labelShort: override.labelShort
-              ? { ...(q.labelShort ?? {}), fr: override.labelShort }
-              : q.labelShort,
-            order: override.order,
-            requiredGroup: MOTIF_SITUATION_GROUP,
-            // Retire l'ancien visibleIf sur motifIntroduction === "modification" :
-            // motifIntroduction est autoAnswered, donc ABSENT du schéma Zod
-            // scindé par étape (validateStepFields) — son isFieldVisible()
-            // y voit toujours `undefined` et exclut ces 4 champs du groupe,
-            // laissant SEULE transfereOrganismePaiement pouvoir satisfaire
-            // "au moins une situation" → blocage bloquant à tort l'avancée
-            // d'étape (bug remonté par Oraliks, 2026-07-07). Dans ce flux
-            // restreint motifIntroduction vaut "modification" tout du long
-            // (sauf override au submit), donc ce gate était de toute façon
-            // toujours vrai : plus rien à conditionner.
-            visibleIf: undefined,
-            // Message custom sur l'ANCRE (1ʳᵉ des 5, order=5) uniquement —
-            // les 4 autres membres du groupe n'ont pas besoin du leur, seul
-            // le 1er visible reçoit l'erreur (cf. buildValidator).
-            ...(q.id === "modificationAdresse"
-              ? {
-                  errorMsg: {
-                    fr: "Choisis au moins une situation parmi les 5 ci-dessus.",
-                  },
-                }
-              : {}),
-          };
-        }
-        if (q.id === "modificationCotisationSyndicale") return { ...q, hidden: true };
-        if (q.id === "dateChangementOrganisme") {
-          return {
-            ...q,
-            label: { ...q.label, fr: "Transférer mon dossier à partir du" },
-            visibleIf: { fieldId: "transfereOrganismePaiement", op: "equals" as const, value: true },
-          };
-        }
-        // Retirée du form runner pour ce type de dossier (Oraliks 2026-07-10 :
-        // « c'est pas une option pour ce type de dossier autant le retirer »).
-        // `hidden` = ni rendue à l'écran, ni stampée (les 2 cases oui/non
-        // restent neutres sur le PDF).
-        if (q.id === "chomeurTemporaireAlternance") return { ...q, hidden: true };
-        // Libellés courts du panneau bancaire dédié au parcours de
-        // changement de situation. Les valeurs métier et le mapping PDF ne
-        // changent pas, seul le phrasé visible est rapproché de la maquette.
-        if (q.id === "modePaiement") {
-          return {
-            ...q,
-            label: { ...q.label, fr: "Réception des allocations" },
-            options: q.options?.map((option) => ({
-              ...option,
-              label: {
-                ...option.label,
-                fr: option.value === "virement"
-                  ? "Virement bancaire"
-                  : "Chèque circulaire envoyé à mon adresse",
-              },
-            })),
-          };
-        }
-        if (q.id === "titulaireCompte") {
-          return {
-            ...q,
-            label: { ...q.label, fr: "Titulaire du compte" },
-            options: q.options?.map((option) => ({
-              ...option,
-              label: {
-                ...option.label,
-                fr: option.value === "mon-nom"
-                  ? "À mon nom"
-                  : "Au nom d'une autre personne",
-              },
-            })),
-          };
-        }
-        // Libellé/aide raccourcis pour l'étape Motif. La date de changement
-        // (saisie ici) est stampée par BINDINGS (c1-changement.ts) sur la ligne
-        // « à partir du » du/des motif(s) COCHÉ(s) uniquement. Oraliks a scindé
-        // le champ unique `DateModification` (1 champ / 5 widgets) en 5 widgets
-        // distincts le 2026-07-10 : « dates identiques sauf pour transfert ».
-        // → DateAdresse / DatePersonnelleOuMenage / DateBanque reçoivent CETTE
-        // date ; le transfert porte la sienne (dateChangementOrganisme →
-        // DateDeTransfert). Le champ garde donc `pdfFieldName: ""` (pas de
-        // stamp direct 1↔1, tout passe par les règles conditionnelles).
-        if (q.id === "dateModificationEffective") {
-          return {
-            ...q,
-            required: true,
-            // Dans ce parcours, motifIntroduction est toujours répondu
-            // automatiquement à "modification" puis retiré du schéma Zod
-            // de l'étape. Garder ce visibleIf ferait donc considérer la date
-            // comme invisible pendant validateStepFields et permettrait de
-            // continuer malgré required=true.
-            visibleIf: undefined,
-            label: { ...q.label, fr: "Date de changement" },
-            help: {
-              ...q.help,
-              fr: "Date de la demande de changement. Une seule date pour l'adresse, la situation personnelle/du ménage et le compte bancaire. Si tes changements n'ont pas tous la même date d'effet, fais une déclaration séparée pour chaque date différente. Ne concerne pas la cotisation syndicale ni le permis de séjour (pas de date sur le formulaire officiel).",
+/// Transforme le schéma nominal en variante restreinte aux 5 situations
+/// (cf. `restrictMotifTo5Situations`) : relabelle et réordonne les 4 chips de
+/// modification, masque ce qui sort du périmètre, raccourcit les libellés du
+/// panneau bancaire, et ajoute le 5e chip virtuel `transfereOrganismePaiement`.
+/// Pure : ne mute jamais le tableau reçu.
+function applyRestrictedMotifProfile(questions: PdfFormField[]): PdfFormField[] {
+  return questions
+    .map((q) => {
+      const override = RESTRICTED_MOTIF_OVERRIDES[q.id];
+      if (override) {
+        return {
+          ...q,
+          label: { ...q.label, fr: override.label },
+          labelShort: override.labelShort
+            ? { ...(q.labelShort ?? {}), fr: override.labelShort }
+            : q.labelShort,
+          order: override.order,
+          requiredGroup: MOTIF_SITUATION_GROUP,
+          // Retire l'ancien visibleIf sur motifIntroduction === "modification" :
+          // motifIntroduction est autoAnswered, donc ABSENT du schéma Zod
+          // scindé par étape (validateStepFields) — son isFieldVisible()
+          // y voit toujours `undefined` et exclut ces 4 champs du groupe,
+          // laissant SEULE transfereOrganismePaiement pouvoir satisfaire
+          // "au moins une situation" → blocage bloquant à tort l'avancée
+          // d'étape (bug remonté par Oraliks, 2026-07-07). Dans ce flux
+          // restreint motifIntroduction vaut "modification" tout du long
+          // (sauf override au submit), donc ce gate était de toute façon
+          // toujours vrai : plus rien à conditionner.
+          visibleIf: undefined,
+          // Message custom sur l'ANCRE (1ʳᵉ des 5, order=5) uniquement —
+          // les 4 autres membres du groupe n'ont pas besoin du leur, seul
+          // le 1er visible reçoit l'erreur (cf. buildValidator).
+          ...(q.id === "modificationAdresse"
+            ? {
+                errorMsg: {
+                  fr: "Choisis au moins une situation parmi les 5 ci-dessus.",
+                },
+              }
+            : {}),
+        };
+      }
+      if (q.id === "modificationCotisationSyndicale") return { ...q, hidden: true };
+      if (q.id === "dateChangementOrganisme") {
+        return {
+          ...q,
+          label: { ...q.label, fr: "Transférer mon dossier à partir du" },
+          visibleIf: { fieldId: "transfereOrganismePaiement", op: "equals" as const, value: true },
+        };
+      }
+      // Retirée du form runner pour ce type de dossier (Oraliks 2026-07-10 :
+      // « c'est pas une option pour ce type de dossier autant le retirer »).
+      // `hidden` = ni rendue à l'écran, ni stampée (les 2 cases oui/non
+      // restent neutres sur le PDF).
+      if (q.id === "chomeurTemporaireAlternance") return { ...q, hidden: true };
+      // Libellés courts du panneau bancaire dédié au parcours de
+      // changement de situation. Les valeurs métier et le mapping PDF ne
+      // changent pas, seul le phrasé visible est rapproché de la maquette.
+      if (q.id === "modePaiement") {
+        return {
+          ...q,
+          label: { ...q.label, fr: "Réception des allocations" },
+          options: q.options?.map((option) => ({
+            ...option,
+            label: {
+              ...option.label,
+              fr: option.value === "virement"
+                ? "Virement bancaire"
+                : "Chèque circulaire envoyé à mon adresse",
             },
-          };
-        }
-        // « Je demande des allocations à partir du » ne s'applique PAS à un
-        // dossier de changement de situation → on n'imprime pas sa date (elle
-        // vaut aujourd'hui par défaut, prefill system.today). Reste validée/auto
-        // en interne, juste non stampée (widget DateAllocation laissé vide).
-        if (q.id === "dateDemande") return { ...q, pdfFieldName: "" };
-        // Reste réel/requis/soumis (nécessaire au filler + à la validation),
-        // mais n'est plus montré comme sélecteur : les 5 chips pilotent sa
-        // valeur (defaultValue "modification", ou "changement-op" via
-        // applyMotifTransferOverride au submit). Cf. doc de
-        // `autoAnswered` dans types.ts.
-        if (q.id === "motifIntroduction") return { ...q, autoAnswered: true };
-        return q;
-      })
-      .concat(TRANSFERE_ORGANISME_FIELD);
-  }
+          })),
+        };
+      }
+      if (q.id === "titulaireCompte") {
+        return {
+          ...q,
+          label: { ...q.label, fr: "Titulaire du compte" },
+          options: q.options?.map((option) => ({
+            ...option,
+            label: {
+              ...option.label,
+              fr: option.value === "mon-nom"
+                ? "À mon nom"
+                : "Au nom d'une autre personne",
+            },
+          })),
+        };
+      }
+      // Libellé/aide raccourcis pour l'étape Motif. La date de changement
+      // (saisie ici) est stampée par BINDINGS (c1-changement.ts) sur la ligne
+      // « à partir du » du/des motif(s) COCHÉ(s) uniquement. Oraliks a scindé
+      // le champ unique `DateModification` (1 champ / 5 widgets) en 5 widgets
+      // distincts le 2026-07-10 : « dates identiques sauf pour transfert ».
+      // → DateAdresse / DatePersonnelleOuMenage / DateBanque reçoivent CETTE
+      // date ; le transfert porte la sienne (dateChangementOrganisme →
+      // DateDeTransfert). Le champ garde donc `pdfFieldName: ""` (pas de
+      // stamp direct 1↔1, tout passe par les règles conditionnelles).
+      if (q.id === "dateModificationEffective") {
+        return {
+          ...q,
+          required: true,
+          // Dans ce parcours, motifIntroduction est toujours répondu
+          // automatiquement à "modification" puis retiré du schéma Zod
+          // de l'étape. Garder ce visibleIf ferait donc considérer la date
+          // comme invisible pendant validateStepFields et permettrait de
+          // continuer malgré required=true.
+          visibleIf: undefined,
+          label: { ...q.label, fr: "Date de changement" },
+          help: {
+            ...q.help,
+            fr: "Date de la demande de changement. Une seule date pour l'adresse, la situation personnelle/du ménage et le compte bancaire. Si tes changements n'ont pas tous la même date d'effet, fais une déclaration séparée pour chaque date différente. Ne concerne pas la cotisation syndicale ni le permis de séjour (pas de date sur le formulaire officiel).",
+          },
+        };
+      }
+      // « Je demande des allocations à partir du » ne s'applique PAS à un
+      // dossier de changement de situation → on n'imprime pas sa date (elle
+      // vaut aujourd'hui par défaut, prefill system.today). Reste validée/auto
+      // en interne, juste non stampée (widget DateAllocation laissé vide).
+      if (q.id === "dateDemande") return { ...q, pdfFieldName: "" };
+      // Reste réel/requis/soumis (nécessaire au filler + à la validation),
+      // mais n'est plus montré comme sélecteur : les 5 chips pilotent sa
+      // valeur (defaultValue "modification", ou "changement-op" via
+      // applyMotifTransferOverride au submit). Cf. doc de
+      // `autoAnswered` dans types.ts.
+      if (q.id === "motifIntroduction") return { ...q, autoAnswered: true };
+      return q;
+    })
+    .concat(TRANSFERE_ORGANISME_FIELD);
+}
 
-  // Pose `stepGroup` sur les champs sectionnés, puis cure les widgets bruts
-  // non sectionnés (masque doublons / auto / junk — jamais un widget unique).
+// ---------------------------------------------------------------------------
+// Étape 3 — assembler, grouper en macro-étapes, curer le résidu.
+// ---------------------------------------------------------------------------
+
+/// Fusionne le résidu préservé et les questions enrichies, pose `stepGroup` et
+/// `noWeekend`, puis masque les widgets bruts non sectionnés qui sont des
+/// doublons, des widgets auto ou du junk.
+///
+/// `hideRemainingRawWidgets` ferme le filet : dans le dossier restreint, tout ce
+/// qui reste sans section est masqué pour supprimer l'accordéon « Autres
+/// informations » de l'étape finale. C'est la règle la plus brutale du fichier —
+/// un champ enrichi qui oublierait sa `section` disparaîtrait ici en silence.
+function curateAndGroup(
+  preserved: PdfFormField[],
+  questions: PdfFormField[],
+  hideRemainingRawWidgets: boolean
+): PdfFormField[] {
   const coveredNames = collectCoveredPdfNames(questions);
   const curated = [...preserved, ...questions]
     .map(withStepGroup)
@@ -485,8 +501,41 @@ export function applyC1Improvements(
   // On les cache pour retirer l'accordeon « Autres informations » du step
   // final. Ils restent dans le payload et peuvent etre stampes au submit si
   // besoin (mais non-required, non-obligatoires).
-  if (opts?.restrictMotifTo5Situations) {
+  if (hideRemainingRawWidgets) {
     return curated.map((f) => (f.section || f.hidden ? f : { ...f, hidden: true }));
   }
   return curated;
+}
+
+// ---------------------------------------------------------------------------
+// Orchestration.
+// ---------------------------------------------------------------------------
+
+/// Applique les améliorations du schéma C1 sur la liste de champs existante
+/// (typiquement issue de l'inférence automatique au moment de l'import), en
+/// trois temps : élaguer ce qui est remplacé, choisir le profil de motif,
+/// assembler et curer.
+///
+/// Les champs non couverts par le schéma enrichi (identité, adresse, mode de
+/// paiement, situation familiale…) traversent intacts.
+///
+/// Idempotent : ré-exécutable sans dupliquer (compare les `id`).
+export function applyC1Improvements(
+  fields: PdfFormField[],
+  opts?: ApplyC1ImprovementsOptions
+): PdfFormField[] {
+  const preserved = dropSupersededFields(fields, opts?.technicalSchema);
+
+  // Le motif d'entrée peut être imposé par le dossier appelant — sur une COPIE,
+  // jamais en mutant le tableau partagé `C1_QUESTIONS`.
+  const base = opts?.defaultMotif
+    ? C1_QUESTIONS.map((q) =>
+        q.id === "motifIntroduction" ? { ...q, defaultValue: opts.defaultMotif } : q
+      )
+    : C1_QUESTIONS;
+
+  const restricted = opts?.restrictMotifTo5Situations === true;
+  const questions = restricted ? applyRestrictedMotifProfile(base) : base;
+
+  return curateAndGroup(preserved, questions, restricted);
 }

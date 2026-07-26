@@ -1067,6 +1067,12 @@ const LEGACY_C1A_FIELD_IDS = new Set<string>([
   // Scindé en `codePostal` + `commune` (2026-07-26) ; le widget fusionné
   // « Code postal et commune » est recomposé par `bindings/per-form/c1a.ts`.
   "codePostalEtCommune",
+  // Même widget, mais l'`id` produit par l'INFÉRENCE à l'import — distinct du
+  // camelCase ci-dessus, donc jamais attrapé par cette liste. Il survivait, et
+  // avec un libellé faux : l'inférence déduit le sien de l'infobulle du widget,
+  // qui dit ici « rue ». Le citoyen se voyait donc poser une seconde question
+  // « rue » qui attendait en réalité un code postal.
+  "code_postal_et_commune",
 ]);
 
 export function applyC1AImprovements(fields: PdfFormField[]): PdfFormField[] {

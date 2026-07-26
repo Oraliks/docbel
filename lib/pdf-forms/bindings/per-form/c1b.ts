@@ -11,8 +11,10 @@
 // serveur lit la valeur au moment de générer le PDF : elle ne peut pas être
 // désynchronisée de la page 1.
 //
-// Le NISS de ce même en-tête n'a pas de widget propre dans C1B_FR.pdf (vérifié
-// au dump) — rien à écrire de ce côté.
+// Le NISS de ce même en-tête a bien son widget (« NISS », page 2, x=123 y=793),
+// contrairement à ce que disait ce commentaire jusqu'au 2026-07-26 — mais il est
+// déjà revendiqué par le champ `niss` du seed. Aucune règle à écrire de ce côté,
+// pour une autre raison que celle annoncée.
 //
 // ⚠ `pdfFieldName` = nom EXACT du widget. Le copier depuis
 // `pnpm tsx scripts/dump-pdf-widgets.ts C1B_FR`, jamais le retaper.

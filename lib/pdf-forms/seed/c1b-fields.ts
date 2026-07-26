@@ -587,6 +587,12 @@ export const C1B_FIELDS: PdfFormField[] = [
 const LEGACY_C1B_FIELD_IDS = new Set<string>([
   // En-tête page 2 → règle `bind:Nom` (bindings/per-form/c1b.ts).
   "nomPage2",
+  // Même widget « Nom » (en-tête page 2, y=793), mais l'`id` produit par
+  // l'INFÉRENCE à l'import — distinct du camelCase ci-dessus, donc jamais
+  // attrapé. Il posait une seconde question « Nom » au citoyen, à côté du champ
+  // `nom` du seed qui vise, lui, le widget « nom » de la PAGE 1 (y=499) : le
+  // PDF distingue les deux par la casse.
+  "nom_1",
 ]);
 
 export function applyC1BImprovements(fields: PdfFormField[]): PdfFormField[] {

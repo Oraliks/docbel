@@ -94,6 +94,12 @@ const LEGACY_C1_WORKAROUND_FIELD_IDS = new Set<string>([
   // est purement UI (`pdfFieldName` vide) — le widget est stampé côté serveur
   // par la règle `titulaire-autre`, qui reste la seule source légitime.
   "nomtitulairesipasok",
+  // Inféré sur le widget fusionné « CodePostal et Commune », recompose par la
+  // règle `code-postal-commune`. Le seed pose déjà `code_postal` et `commune`
+  // avec un `pdfFieldName` VIDE, justement pour laisser la règle assembler les
+  // deux — mais cette absence d'ancre empêche le dédoublonnage de reconnaître
+  // le doublon, et l'inféré revenait poser une 3ᵉ question « code postal ».
+  "codepostal_et_commune",
 ]);
 
 export interface ApplyC1ImprovementsOptions {

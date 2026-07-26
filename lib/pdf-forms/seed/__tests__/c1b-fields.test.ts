@@ -135,6 +135,8 @@ describe("C1B_FIELDS", () => {
   it("le nombre de champs après application sur le dump brut correspond au schéma enrichi attendu (40 champs)", () => {
     const improved = applyC1BImprovements([]);
     expect(improved.length).toBe(C1B_FIELDS.length);
-    expect(improved.length).toBe(40);
+    // 39 depuis le 2026-07-26 : `nomPage2` (doublon de l'en-tête page 2) a
+    // quitté le schéma au profit de la règle serveur `bind:Nom`.
+    expect(improved.length).toBe(39);
   });
 });

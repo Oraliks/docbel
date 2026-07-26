@@ -37,12 +37,18 @@ export const C1C_FIELDS: PdfFormField[] = [
   // Votre identité
   // ==========================================================================
   {
+    // PAS de `prefillFrom` (retiré le 2026-07-26). Un champ `fullname` porte
+    // un composite `{ first, last }` ; `prefillFrom` ne sait transporter
+    // qu'une chaîne, et le runner relit une chaîne comme un NOM. Avec
+    // `profile.firstName`, le PRÉNOM du citoyen atterrissait donc dans la case
+    // « Nom » et son nom disparaissait. Les deux voies qui savent remplir ce
+    // type composite s'en chargent : `canonicalToPrefill` (héritage depuis un
+    // autre document du dossier) et `buildProfilePrefill` (profil du compte).
     id: "pr_nom_et_nom",
     pdfFieldName: "Prénom et nom",
     type: "fullname",
     required: true,
     label: { fr: "Prénom et nom", nl: "", de: "" },
-    prefillFrom: "profile.firstName",
     section: SECTION_IDENTITE,
     order: 0,
   },
@@ -62,10 +68,10 @@ export const C1C_FIELDS: PdfFormField[] = [
     section: SECTION_IDENTITE,
     order: 1,
   },
-  // NOTE canonique : `pr_nom_et_nom` (type "fullname" = { first, last })
-  // n'est pas tagué canonicalKey car il combine deux clés canoniques
-  // distinctes (identity.prenom + identity.nom). Le prefillFrom "itsme"
-  // reste la voie de pré-remplissage pour ce champ composite.
+  // NOTE canonique : `pr_nom_et_nom` n'a PAS besoin de `canonicalKey`. Sa
+  // sémantique (composite prénom+nom) suffit : `canonicalToPrefill` remplit
+  // tout champ `type: "fullname"` à partir de `identity.prenom` +
+  // `identity.nom`, et `buildProfilePrefill` fait de même depuis le profil.
 
   // ==========================================================================
   // Votre déclaration (intro) — date de début de l'activité accessoire.

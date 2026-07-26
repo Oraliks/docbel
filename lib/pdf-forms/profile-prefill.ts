@@ -13,6 +13,7 @@
 import type { PrefillSource } from "./types";
 import type { SharedBundleValues } from "@/lib/bundles/shared-values";
 import { applySharedValuesToForm } from "@/lib/bundles/shared-values";
+import type { PrefillMap } from "./canonical/extract";
 import type { PublicField } from "./public-serializer";
 
 /// Sous-ensemble du `UserProfile` Prisma exploitable pour le prefill. Toutes
@@ -82,6 +83,23 @@ export function profileToSharedValues(profile: ProfilePrefillInput): SharedBundl
 export function buildProfilePrefill(
   fields: PublicField[],
   profile: ProfilePrefillInput
-): Record<string, string> {
-  return applySharedValuesToForm(fields, profileToSharedValues(profile));
+): PrefillMap {
+  const out: PrefillMap = applySharedValuesToForm(fields, profileToSharedValues(profile));
+
+  // Champs COMPOSITES `fullname` (« Prénom et nom » du C1C, « Nom et prénom »
+  // du C1A…) : ils portent un `{ first, last }`, que `prefillFrom` ne sait pas
+  // transporter — il ne connaît que des chaînes, et le runner relit une chaîne
+  // comme un NOM. C'est pourquoi ces champs n'ont PAS de `prefillFrom` : sans
+  // le traitement ci-dessous, le profil ne les remplissait pas du tout.
+  //
+  // Même règle que la voie canonique (`canonicalToPrefill`) : on remplit dès
+  // qu'UNE des deux moitiés est connue, l'autre reste vide.
+  const first = (profile.firstName ?? "").trim();
+  const last = (profile.lastName ?? "").trim();
+  if (first || last) {
+    for (const field of fields) {
+      if (field.type === "fullname") out[field.id] = { first, last };
+    }
+  }
+  return out;
 }

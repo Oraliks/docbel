@@ -256,7 +256,10 @@ export default async function PdfFormPage({
   // mécanisme que le prefill cross-document. Anonyme → aucun prefill profil.
   const session = await auth.api.getSession({ headers: await headers() });
   const userId = session?.user?.id;
-  let profilePrefill: Record<string, string> | undefined;
+  // `PrefillMap` et non `Record<string, string>` : le profil sait désormais
+  // remplir les champs composites `fullname` (« Prénom et nom »), qui portent
+  // un `{ first, last }` et non une chaîne.
+  let profilePrefill: PrefillMap | undefined;
   if (userId) {
     const profile = await prisma.userProfile.findUnique({ where: { userId } });
     if (profile) {

@@ -316,6 +316,7 @@ export const C1A_FIELDS: PdfFormField[] = [
     type: "text",
     required: true,
     label: { fr: "Commune", nl: "", de: "" },
+    prefillFrom: "profile.city",
     canonicalKey: "adresse.commune",
     section: SECTION_IDENTITE,
     order: -96.5,

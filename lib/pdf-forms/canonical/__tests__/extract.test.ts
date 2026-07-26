@@ -280,3 +280,32 @@ describe("C1A — l'en-tête hérite du C1", () => {
     expect(prefill.niss).toBe("85073003328");
   });
 });
+
+describe("C1B / C1C — héritage depuis le C1", () => {
+  const canonicalDuC1 = extractCanonical(C1_QUESTIONS, {
+    nom: "Dupont",
+    pr_nom: "Marie",
+    niss: "85073003328",
+    adresse_rue: "Rue de la Loi",
+    num_ro: "16",
+    code_postal: "1000",
+    commune: "Bruxelles",
+  });
+
+  it("C1B : l'adresse complète arrive, commune incluse", () => {
+    const prefill = canonicalToPrefill(C1B_FIELDS, canonicalDuC1);
+    expect(prefill.nom).toBe("Dupont");
+    expect(prefill.pr_nom).toBe("Marie");
+    expect(prefill.rue).toBe("Rue de la Loi");
+    expect(prefill.num_ro).toBe("16");
+    expect(prefill.code_postal).toBe("1000");
+    // Seul champ d'adresse du C1B qui n'héritait de rien avant le 2026-07-26.
+    expect(prefill.commune).toBe("Bruxelles");
+  });
+
+  it("C1C : le nom composite arrive dans le bon ordre", () => {
+    const prefill = canonicalToPrefill(C1C_FIELDS, canonicalDuC1);
+    expect(prefill.pr_nom_et_nom).toEqual({ first: "Marie", last: "Dupont" });
+    expect(prefill.niss).toBe("85073003328");
+  });
+});

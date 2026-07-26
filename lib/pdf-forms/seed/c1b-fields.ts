@@ -115,23 +115,23 @@ export const C1B_FIELDS: PdfFormField[] = [
     type: "text",
     required: true,
     label: { fr: "Commune", nl: "", de: "" },
+    // Seul champ d'adresse du C1B sans clé canonique jusqu'au 2026-07-26 : le
+    // citoyen retapait sa commune alors que tout le reste de son adresse
+    // arrivait tout seul.
+    prefillFrom: "profile.city",
+    canonicalKey: "adresse.commune",
     section: SECTION_IDENTITE,
     order: -94,
   },
-  // En-tête de la page 2 ("Suite C1B NISS ... Nom ..."). Doublon du nom déjà
-  // saisi page 1 — champ caché et pré-rempli automatiquement, pas de nouvelle
-  // saisie demandée au citoyen.
-  {
-    id: "nomPage2",
-    pdfFieldName: "Nom",
-    type: "text",
-    required: false,
-    label: { fr: "Nom (en-tête page 2)", nl: "", de: "" },
-    prefillFrom: "profile.lastName",
-    readOnly: true,
-    section: SECTION_IDENTITE,
-    order: -93,
-  },
+  // En-tête de la page 2 (« Suite C1B — NISS … Nom … ») : c'est un DOUBLON du
+  // nom saisi page 1. Il n'est plus un champ du schéma (2026-07-26) mais un
+  // widget écrit par la règle serveur `bind:Nom` (bindings/per-form/c1b.ts),
+  // qui le recopie depuis le champ `nom` au moment de générer le PDF.
+  //
+  // En tant que champ, il était `readOnly` + `prefillFrom: profile.lastName` :
+  // il ne se remplissait qu'au montage et depuis le PROFIL. Un citoyen qui
+  // saisissait son nom directement dans le C1B laissait donc l'en-tête de la
+  // page 2 VIDE, sans pouvoir y remédier puisque le champ était verrouillé.
 
   // ==========================================================================
   // Q1-Q4 — Droit à une pension de retraite complète (colonne gauche, p.1)
@@ -588,6 +588,15 @@ export const C1B_FIELDS: PdfFormField[] = [
 /// `denominationPensionRetraiteComplete`). Sans ça, l'ancien champ au libellé
 /// auto-généré ("undefined", "Liste DéRoulante49"…) resterait en doublon à
 /// côté de sa version enrichie.
+/// Champs d'une version antérieure du schéma dont le widget est désormais
+/// écrit par une RÈGLE serveur. L'overlay ne peut pas les repérer seul : leur
+/// `pdfFieldName` n'est plus couvert par aucun champ, donc le filtre `covered`
+/// les laisserait survivre en base et se battre avec la règle.
+const LEGACY_C1B_FIELD_IDS = new Set<string>([
+  // En-tête page 2 → règle `bind:Nom` (bindings/per-form/c1b.ts).
+  "nomPage2",
+]);
+
 export function applyC1BImprovements(fields: PdfFormField[]): PdfFormField[] {
   const newIds = new Set(C1B_FIELDS.map((f) => f.id));
 
@@ -600,6 +609,7 @@ export function applyC1BImprovements(fields: PdfFormField[]): PdfFormField[] {
   }
 
   const preserved = fields.filter((f) => {
+    if (LEGACY_C1B_FIELD_IDS.has(f.id)) return false;
     if (covered.has(f.pdfFieldName)) return false;
     if (newIds.has(f.id)) return false;
     return true;

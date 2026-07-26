@@ -554,13 +554,29 @@ export function countRequirements(
   let missing = 0;
 
   for (const f of fields) {
-    if (!f.required) continue;
     // Mêmes exclusions que `buildValidator` : ces champs sont remplis
     // programmatiquement (runner + ré-injection serveur), jamais saisis.
     if (isAutoField(f) || f.prefillFrom === "system.today" || f.type === "signature") continue;
     if (!isFieldVisible(f.visibleIf, payload)) continue;
-    total += 1;
-    if (!isFieldComplete(f, payload[f.id], lang)) missing += 1;
+
+    if (f.required) {
+      total += 1;
+      if (!isFieldComplete(f, payload[f.id], lang)) missing += 1;
+      continue;
+    }
+
+    // Champ FACULTATIF rempli mais MAL FORMÉ. `buildValidator` applique ses
+    // contrôles de format à TOUS les champs de l'étape, pas seulement aux
+    // requis (`fieldToZod(...).optional()` ne protège que `undefined`) : un
+    // téléphone facultatif mal saisi bloque donc « Continuer ». Sans ce
+    // décompte, l'étape restait cochée verte pendant que le bouton refusait
+    // d'avancer — le stepper et le bouton se contredisaient.
+    const value = payload[f.id];
+    const filled = typeof value === "string" && value.trim() !== "";
+    if (filled && !isFieldComplete(f, value, lang)) {
+      total += 1;
+      missing += 1;
+    }
   }
 
   const groups = new Map<string, PdfFormField[]>();

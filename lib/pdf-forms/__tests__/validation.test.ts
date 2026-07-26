@@ -456,3 +456,48 @@ describe("findFirstInvalidStep — saut de plusieurs étapes via le stepper", ()
     expect(Object.keys(result?.errors ?? {})).toEqual(["a"]);
   });
 });
+
+describe("countRequirements — champ facultatif mal formé", () => {
+  // `buildValidator` applique ses contrôles de FORMAT à tous les champs de
+  // l'étape, pas seulement aux requis : un téléphone facultatif mal saisi
+  // bloque « Continuer ». Sans ce décompte, l'étape restait cochée verte
+  // pendant que le bouton refusait d'avancer.
+  const fields = [
+    field({ id: "nom", type: "text", required: true }),
+    field({ id: "niss", type: "niss", required: false }),
+  ];
+
+  it("un facultatif VIDE ne compte pas", () => {
+    expect(countRequirements(fields, { nom: "Dupont" }, "fr")).toEqual({ total: 1, missing: 0 });
+  });
+
+  it("un facultatif rempli et VALIDE ne compte pas", () => {
+    expect(countRequirements(fields, { nom: "Dupont", niss: "85073003328" }, "fr")).toEqual({
+      total: 1,
+      missing: 0,
+    });
+  });
+
+  it("un facultatif rempli mais INVALIDE empêche la coche verte", () => {
+    expect(countRequirements(fields, { nom: "Dupont", niss: "850730" }, "fr")).toEqual({
+      total: 2,
+      missing: 1,
+    });
+  });
+
+  it("reste ignoré quand il est masqué par visibleIf", () => {
+    const conditionnels = [
+      field({ id: "mode", type: "text", required: true }),
+      field({
+        id: "niss",
+        type: "niss",
+        required: false,
+        visibleIf: { fieldId: "mode", op: "equals", value: "detaille" },
+      }),
+    ];
+    expect(countRequirements(conditionnels, { mode: "simple", niss: "850730" }, "fr")).toEqual({
+      total: 1,
+      missing: 0,
+    });
+  });
+});

@@ -420,13 +420,41 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
   // la reprise fine (Lot 3) : on persiste/résout un id, jamais un index (la
   // liste change via visibleIf).
   const stepIds = macroSteps ? macroSteps.map((s) => s.id) : steps.map((s) => s.id);
-  // Étape initiale : one-shot synchrone (pas d'effet → React-Compiler-safe). On
-  // résout l'id d'étape persisté vers son index courant (0 si absent/introuvable).
-  const [active, setActive] = useState(() => resolveStepIndexById(stepIds, initialStepId));
 
-  // Clamp dérivé (le nombre d'étapes peut diminuer via visibleIf).
+  // L'étape courante est mémorisée par son ID STABLE, jamais par son index
+  // (2026-07-26). Avec un index, une réponse qui faisait DISPARAÎTRE une étape
+  // laissait `active` sur une valeur périmée — seulement masquée par un clamp
+  // d'affichage. Une réponse ultérieure qui réintroduisait l'étape faisait
+  // alors BONDIR l'affichage d'un cran, sans aucune action de l'usager.
+  //
+  // Étape initiale : one-shot synchrone (pas d'effet → React-Compiler-safe).
+  // On mémorise l'id ET la position au moment de la navigation. L'id fait foi ;
+  // la position ne sert que de repli si l'étape disparaît, pour rester à la
+  // MÊME HAUTEUR dans la liste plutôt que de renvoyer l'usager au début.
+  const [activeStep, setActiveStep] = useState<{ id: string | undefined; index: number }>(() => {
+    const index = resolveStepIndexById(stepIds, initialStepId);
+    return { id: stepIds[index], index };
+  });
   const stepCount = macroSteps ? macroSteps.length : steps.length;
-  const activeIndex = Math.min(active, stepCount - 1);
+  const foundIndex = activeStep.id ? stepIds.indexOf(activeStep.id) : -1;
+  const activeIndex =
+    foundIndex >= 0 ? foundIndex : Math.max(0, Math.min(activeStep.index, stepCount - 1));
+
+  // `setActive` garde une signature par INDEX (une dizaine d'appelants) mais
+  // enregistre l'id. Lit `stepIds` dans une ref pour rester stable : plusieurs
+  // `useCallback` la capturent, et une identité changeante y figerait une liste
+  // d'étapes périmée.
+  const stepIdsRef = useRef(stepIds);
+  useEffect(() => {
+    stepIdsRef.current = stepIds;
+  });
+  const setActive = useCallback((index: number) => {
+    const ids = stepIdsRef.current;
+    if (ids.length === 0) return;
+    const clamped = Math.max(0, Math.min(index, ids.length - 1));
+    setActiveStep({ id: ids[clamped], index: clamped });
+  }, []);
+
   // Id STABLE de l'étape courante — persisté avec le brouillon (autosave).
   const activeStepId = stepIds[activeIndex];
   // Les réponses sont réellement persistées côté serveur si on est dans un
@@ -628,7 +656,7 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
       }
       setActive(nextIndex);
     },
-    [values, locale, verifiedStreets, form.fields]
+    [values, locale, verifiedStreets, form.fields, setActive]
   );
 
   async function submit() {
@@ -1007,6 +1035,7 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
         liveTriggers={liveTriggers}
         bundleRunId={bundleRunId}
         onStreetVerifiedChange={handleStreetVerified}
+        verifiedStreets={verifiedStreets}
         onFocusField={handleFocusField}
         activeFieldId={activeFieldId}
         contextTips={contextTips}
@@ -1091,7 +1120,7 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
           <div className="border-b border-[color:var(--glass-border)] px-3">
             <FormStepper
               steps={steps.map((s) => {
-                const meta = computeStepMeta(stepFieldsOf(s), values, locale, (c) => t("runnerStepRemaining", { count: c }));
+                const meta = computeStepMeta(stepFieldsOf(s), values, locale, (c) => t("runnerStepRemaining", { count: c }), verifiedStreets);
                 return { id: s.id, label: s.title, hasError: stepHasError(s), ...meta };
               })}
               activeIndex={activeIndex}
@@ -1509,15 +1538,31 @@ function computeStepMeta(
   fields: PublicField[],
   values: FormPayload,
   locale: Locale,
-  remainingLabel: (count: number) => string
+  remainingLabel: (count: number) => string,
+  verifiedStreets: ReadonlySet<string>
 ): { complete?: boolean; subLabel?: string } {
   const { total, missing } = countRequirements(
     fields as unknown as PdfFormField[],
     values,
     locale,
   );
-  if (total === 0) return {};
-  return { complete: missing === 0, subLabel: missing > 0 ? remainingLabel(missing) : undefined };
+  // `requireListMatch` (une rue tapée hors liste, sans échappatoire) bloque
+  // « Continuer » mais échappe à `countRequirements` : le champ est rempli ET
+  // de format valide, il n'a rien de « manquant ». L'étape s'affichait donc
+  // cochée verte, « 0 champ restant », pendant que le bouton refusait
+  // d'avancer avec « Choisis ta rue dans la liste ». Il vit hors de
+  // `validation.ts` (qui ne peut pas l'importer sans cycle) et dépend d'un
+  // état runtime — d'où ce complément ici, au plus près du stepper.
+  const listErrors = Object.keys(
+    findListMatchErrors(fields as unknown as PdfFormField[], values, verifiedStreets, locale)
+  ).length;
+
+  const blocking = missing + listErrors;
+  if (total + listErrors === 0) return {};
+  return {
+    complete: blocking === 0,
+    subLabel: blocking > 0 ? remainingLabel(blocking) : undefined,
+  };
 }
 
 /// Étape finale allégée : plus de liste détaillée des valeurs (ancien
@@ -1585,6 +1630,9 @@ interface MacroRunnerBodyProps {
   serverSaved: boolean;
   liveTriggers: PdfFormTrigger[];
   bundleRunId?: string;
+  /// Rues déjà validées via la liste — sert au décompte du stepper
+  /// (`requireListMatch` bloque « Continuer » sans rien rendre « manquant »).
+  verifiedStreets: ReadonlySet<string>;
   onStreetVerifiedChange?: (fieldId: string, verified: boolean) => void;
   onFocusField?: (id: string) => void;
   activeFieldId?: string;
@@ -1603,7 +1651,7 @@ interface MacroRunnerBodyProps {
 function MacroRunnerBody({
   form, macroSteps, activeIndex, setActive, attemptAdvance, locale, setLocale, values, errors,
   setValue, signerName, consent, setConsent, consentError, delivery, setDelivery, doccleRef,
-  setDoccleRef, submitting, submit, resetForm, lastSavedAt, serverSaved, liveTriggers, bundleRunId, onStreetVerifiedChange, onFocusField, activeFieldId, contextTips, rail, t,
+  setDoccleRef, submitting, submit, resetForm, lastSavedAt, serverSaved, liveTriggers, bundleRunId, onStreetVerifiedChange, verifiedStreets, onFocusField, activeFieldId, contextTips, rail, t,
 }: MacroRunnerBodyProps) {
   const current = macroSteps[activeIndex];
   const isLast = activeIndex === macroSteps.length - 1;
@@ -1701,7 +1749,7 @@ function MacroRunnerBody({
           <div className="border-b border-[color:var(--glass-border)] px-3">
             <FormStepper
               steps={macroSteps.map((s) => {
-                const meta = computeStepMeta(stepFieldsOf(s), values, locale, (c) => t("runnerStepRemaining", { count: c }));
+                const meta = computeStepMeta(stepFieldsOf(s), values, locale, (c) => t("runnerStepRemaining", { count: c }), verifiedStreets);
                 return { id: s.id, label: titleFor(s.id), description: descFor(s.id), hasError: stepHasError(s), ...meta };
               })}
               activeIndex={activeIndex}
@@ -1845,9 +1893,17 @@ function MacroRunnerBody({
                   </div>
                   <div className="flex flex-wrap items-center justify-end gap-3">
                     <div className="flex flex-1 items-center justify-end gap-2 sm:flex-none">
-                      <Button type="button" variant="outline" className="min-h-12 rounded-full" onClick={() => setActive(activeIndex - 1)}>
-                        <ChevronLeftIcon className="size-4" /> {t("previous")}
-                      </Button>
+                      {/* Garde `activeIndex > 0` (2026-07-26) : sur un
+                          formulaire à UNE SEULE macro-étape, la dernière étape
+                          est aussi la première — sans elle, « Précédent »
+                          appelait setActive(-1) et le rendu plantait sur
+                          `macroSteps[-1]`. Pas atteignable sur le C1 (5 étapes),
+                          mais c'est le piège du prochain formulaire. */}
+                      {activeIndex > 0 && (
+                        <Button type="button" variant="outline" className="min-h-12 rounded-full" onClick={() => setActive(activeIndex - 1)}>
+                          <ChevronLeftIcon className="size-4" /> {t("previous")}
+                        </Button>
+                      )}
                       <Button type="submit" disabled={submitting} className="min-h-12 rounded-full px-6">
                         {submitting ? <Loader2Icon className="size-4 animate-spin" /> : bundleRunId ? <CheckCircle2Icon className="size-4" /> : delivery === "doccle" ? <SendIcon className="size-4" /> : <DownloadIcon className="size-4" />}
                         {submitting ? t("runnerGenerating") : bundleRunId ? t("runnerSubmitValidate") : delivery === "doccle" ? t("runnerSubmitSignAndSend") : t("runnerSubmitSignAndGenerate")}

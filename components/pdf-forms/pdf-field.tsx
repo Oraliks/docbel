@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { CheckCircle2Icon } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -133,6 +134,10 @@ export function PdfField({
   derivedValue = null, relatedPostalCode, onSelectStreetSuggestion, onStreetVerifiedChange, parentValues,
   onFocusField,
 }: Props) {
+  // `locale` sert à choisir la traduction MÉTIER stockée en base (libellés du
+  // formulaire) ; `t` couvre le châssis de l'UI, qui vit dans les catalogues
+  // next-intl (fallback FR automatique pour les langues non traduites).
+  const t = useTranslations("public.dossier");
   const label = loc(field.label, locale);
   // Remonte le focus de ce champ au panneau d'aide (§10.4). `undefined` si le
   // parent ne câble pas la prop → `onFocus`/`onClick={undefined}` = no-op.
@@ -162,6 +167,22 @@ export function PdfField({
   const formatWarning = touched ? validateFieldWarning(field, value, locale) : null;
   const effError = error ?? formatError ?? undefined;
   const invalid = !!effError;
+  // Ancres des messages du champ. Sans `aria-describedby`, l'erreur reste un
+  // texte muet posé à côté du contrôle : au clic sur « Continuer », un
+  // utilisateur de lecteur d'écran entend le focus bouger mais jamais POURQUOI
+  // le formulaire bloque. Les ids ne sont référencés que lorsque le message
+  // correspondant est effectivement rendu (sinon la référence pend dans le vide).
+  const errorId = `${field.id}-error`;
+  const warningId = `${field.id}-warning`;
+  const describedBy = effError ? errorId : undefined;
+  // L'astérisque du libellé est purement visuelle : seul `aria-required` porte
+  // l'obligation jusqu'aux technologies d'assistance. On évite l'attribut HTML
+  // `required`, qui déclencherait la validation native du navigateur en plus
+  // de la validation maison (double message, dans la langue du navigateur).
+  const ariaRequired = field.required || undefined;
+  // Id du libellé, pour les contrôles NON labelables par `<label for>`
+  // (le radiogroup notamment) qui doivent passer par `aria-labelledby`.
+  const labelId = `${field.id}-label`;
   // Champ AUTO-REMPLI : dérivé (date de naissance ← NISS), verrouillé
   // (« Belgique »), commune résolue du code postal, ou date auto. L'utilisateur
   // ne le « touche » jamais et, pour un dérivé, la valeur affichée vient de
@@ -195,6 +216,7 @@ export function PdfField({
   const errorReport = (
     <FieldErrorReport
       error={effError}
+      messageId={errorId}
       fieldId={field.id}
       fieldType={field.type}
       rejectedValue={value}
@@ -238,6 +260,8 @@ export function PdfField({
               checked={value === true}
               onCheckedChange={(c) => !isReadOnly && onChange(c === true)}
               disabled={isReadOnly}
+              aria-required={ariaRequired}
+              aria-describedby={describedBy}
             />
             <FieldLabel
               htmlFor={field.id}
@@ -257,6 +281,8 @@ export function PdfField({
           checked={value === true}
           onCheckedChange={(c) => !isReadOnly && onChange(c === true)}
           disabled={isReadOnly}
+          aria-required={ariaRequired}
+          aria-describedby={describedBy}
         />
         <FieldLabel
           htmlFor={field.id}
@@ -279,13 +305,19 @@ export function PdfField({
     const isDerivedLocked = field.derivedFrom != null && derivedValue != null;
     const displayValue = isDerivedLocked ? derivedValue : ((value as string) ?? "");
     const derivedNote = isDerivedLocked && (
-      <FieldDescription>Champ rempli automatiquement — modifiable si besoin en corrigeant le champ source.</FieldDescription>
+      <FieldDescription>{t("fieldAutoFilledNote")}</FieldDescription>
     );
+    // Le libellé ne peut PAS être un `<label for>` ici : la cible est un
+    // `<div role="radiogroup">`, qui n'est pas un élément labelable — le
+    // navigateur ignorait donc l'association (clic sans effet, groupe sans nom
+    // accessible). On l'expose par `aria-labelledby` à la place. L'`id` du
+    // champ reste porté par le groupe : le runner s'en sert pour faire défiler
+    // jusqu'à la première erreur.
     if (rowLayout) {
       return (
         <div className="flex flex-col gap-1 px-4 py-3" data-invalid={invalid} onFocus={notifyFocus} onClick={notifyFocus}>
           <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
-            <FieldLabel htmlFor={field.id} className="min-w-0 flex-1">
+            <FieldLabel id={labelId} className="min-w-0 flex-1">
               <LabelWithTooltip label={label} labelShort={labelShort} help={help} required={field.required} />
             </FieldLabel>
             <YesNoSegmentedControl
@@ -297,6 +329,9 @@ export function PdfField({
             invalid={invalid}
             disabled={isDerivedLocked}
             variant={segmentedVariant}
+            aria-labelledby={labelId}
+            aria-describedby={describedBy}
+            required={field.required}
           />
           </div>
           {derivedNote}
@@ -306,7 +341,7 @@ export function PdfField({
     }
     return (
       <Field data-invalid={invalid} className="gap-1.5" onFocus={notifyFocus} onClick={notifyFocus}>
-        <FieldLabel htmlFor={field.id} className="text-[13px]">
+        <FieldLabel id={labelId} className="text-[13px]">
           <LabelWithTooltip label={label} labelShort={labelShort} help={help} required={field.required} />
         </FieldLabel>
         <YesNoSegmentedControl
@@ -318,6 +353,9 @@ export function PdfField({
           invalid={invalid}
           disabled={isDerivedLocked}
           variant={segmentedVariant}
+          aria-labelledby={labelId}
+          aria-describedby={describedBy}
+          required={field.required}
         />
         {derivedNote}
         {errorReport}
@@ -342,8 +380,14 @@ export function PdfField({
             n'a aucune raison d'être modal — sans verrou, plus de sauvegarde /
             restauration de scroll, donc plus de saut. */}
         <Select modal={false} value={(value as string) ?? ""} onValueChange={(v) => onChange(v)}>
-          <SelectTrigger id={field.id} className="w-full" aria-invalid={invalid}>
-            <SelectValue placeholder={placeholder || "Sélectionner…"} />
+          <SelectTrigger
+            id={field.id}
+            className="w-full"
+            aria-invalid={invalid}
+            aria-required={ariaRequired}
+            aria-describedby={describedBy}
+          >
+            <SelectValue placeholder={placeholder || t("fieldSelectPlaceholder")} />
           </SelectTrigger>
           <SelectContent>
             {!field.required && <SelectItem value="">—</SelectItem>}
@@ -372,6 +416,8 @@ export function PdfField({
           placeholder={placeholder}
           maxLength={field.maxLength}
           aria-invalid={invalid}
+          aria-required={ariaRequired}
+          aria-describedby={describedBy}
           onChange={(e) => onChange(e.target.value)}
         />
         {errorReport}
@@ -383,31 +429,50 @@ export function PdfField({
   if (field.type === "fullname") {
     const v: FullNameValue = isFullNameValue(value) ? value : {};
     const lastFirst = field.nameOrder === "last-first";
+    // Le champ est rendu par DEUX <Input> : le `htmlFor` du libellé principal
+    // ne pointait sur aucun d'eux (aucun ne portait `field.id`), le clic sur le
+    // libellé ne focalisait donc rien. On donne l'id « nu » à l'input affiché
+    // en PREMIER — il reste ainsi la cible du défilement vers l'erreur côté
+    // runner — et un id suffixé à l'autre.
+    const firstId = lastFirst ? `${field.id}-first` : field.id;
+    const lastId = lastFirst ? field.id : `${field.id}-last`;
     const firstInput = (
       <div className="flex flex-1 flex-col gap-1">
-        <span className="text-xs text-muted-foreground">Prénom</span>
+        <label htmlFor={firstId} className="text-xs text-muted-foreground">
+          {t("fieldFirstName")}
+        </label>
         <Input
+          id={firstId}
           value={v.first ?? ""}
           placeholder={placeholder}
           aria-invalid={invalid}
-          aria-label={`${label} — prénom`}
+          aria-required={ariaRequired}
+          aria-describedby={describedBy}
+          aria-label={t("fieldFullNameFirstAria", { label })}
           onChange={(e) => onChange({ ...v, first: e.target.value })}
         />
       </div>
     );
     const lastInput = (
       <div className="flex flex-1 flex-col gap-1">
-        <span className="text-xs text-muted-foreground">Nom</span>
+        <label htmlFor={lastId} className="text-xs text-muted-foreground">
+          {t("fieldLastName")}
+        </label>
         <Input
+          id={lastId}
           value={v.last ?? ""}
           aria-invalid={invalid}
-          aria-label={`${label} — nom`}
+          aria-required={ariaRequired}
+          aria-describedby={describedBy}
+          aria-label={t("fieldFullNameLastAria", { label })}
           onChange={(e) => onChange({ ...v, last: e.target.value })}
         />
       </div>
     );
     return (
       <Field data-invalid={invalid} className="gap-1.5" onFocus={notifyFocus} onClick={notifyFocus}>
+        {/* `field.id` désigne toujours l'input affiché en premier (cf. firstId
+            / lastId ci-dessus), quel que soit `nameOrder`. */}
         <FieldLabel htmlFor={field.id} className="text-[13px]">
           <LabelWithTooltip label={label} labelShort={labelShort} help={help} required={field.required} />
         </FieldLabel>
@@ -436,11 +501,13 @@ export function PdfField({
               id={field.id}
               value={(value as string) ?? ""}
               aria-invalid={invalid}
+              aria-required={ariaRequired}
+              aria-describedby={describedBy}
               onChange={(v) => onChange(v)}
             />
           </div>
           {showValid && (
-            <CheckCircle2Icon className="size-5 shrink-0 text-emerald-600 dark:text-emerald-400" aria-label="Valide" />
+            <CheckCircle2Icon className="size-5 shrink-0 text-emerald-600 dark:text-emerald-400" aria-label={t("fieldValidAria")} />
           )}
         </div>
         {errorReport}
@@ -472,12 +539,14 @@ export function PdfField({
               value={(value as string) ?? ""}
               placeholder={placeholder}
               aria-invalid={invalid}
+              aria-required={ariaRequired}
+              aria-describedby={describedBy}
               onChange={(v) => onChange(v)}
               onBlur={markTouched}
             />
           </div>
           {showValid && (
-            <CheckCircle2Icon className="size-5 shrink-0 text-emerald-600 dark:text-emerald-400" aria-label="Valide" />
+            <CheckCircle2Icon className="size-5 shrink-0 text-emerald-600 dark:text-emerald-400" aria-label={t("fieldValidAria")} />
           )}
         </div>
         {ibanCountry && <FieldDescription className={cn(rowLayout && "md:col-start-2")}>→ {ibanCountry}</FieldDescription>}
@@ -505,6 +574,10 @@ export function PdfField({
   // Calendrier moderne pour les dates saisies par l'utilisateur (les dates
   // AUTO — system.today — restent en input verrouillé). Cf. #7a.
   const useDatePicker = field.type === "date" && !locked;
+  // Seule branche qui rend aussi l'avertissement ambre : à défaut d'erreur
+  // bloquante, c'est LUI que le contrôle doit décrire, sinon un lecteur
+  // d'écran n'en a aucune trace.
+  const textDescribedBy = describedBy ?? (formatWarning ? warningId : undefined);
   return (
     <Field
       data-invalid={invalid}
@@ -526,6 +599,8 @@ export function PdfField({
             value={String(displayValue)}
             placeholder={placeholder}
             aria-invalid={invalid}
+            aria-required={ariaRequired}
+            aria-describedby={textDescribedBy}
             className="flex-1"
             postalCode={relatedPostalCode}
             onChange={(v) => onChange(v)}
@@ -539,6 +614,8 @@ export function PdfField({
             value={String(displayValue)}
             placeholder={placeholder}
             aria-invalid={invalid}
+            aria-required={ariaRequired}
+            aria-describedby={textDescribedBy}
             className="flex-1"
             onChange={(v) => onChange(v)}
             onBlur={markTouched}
@@ -549,6 +626,8 @@ export function PdfField({
             value={String(displayValue)}
             placeholder={placeholder}
             aria-invalid={invalid}
+            aria-required={ariaRequired}
+            aria-describedby={textDescribedBy}
             className="flex-1"
             postalCode={relatedPostalCode}
             onChange={(v) => onChange(v)}
@@ -576,6 +655,8 @@ export function PdfField({
             min={field.min}
             max={field.max}
             aria-invalid={invalid}
+            aria-required={ariaRequired}
+            aria-describedby={textDescribedBy}
             disabled={locked}
             readOnly={locked}
             onChange={(e) => onChange(e.target.value)}
@@ -584,17 +665,17 @@ export function PdfField({
           />
         )}
         {showValid && (
-          <CheckCircle2Icon className="size-5 shrink-0 text-emerald-600 dark:text-emerald-400" aria-label="Valide" />
+          <CheckCircle2Icon className="size-5 shrink-0 text-emerald-600 dark:text-emerald-400" aria-label={t("fieldValidAria")} />
         )}
       </div>
       {autoToday && !help && (
-        <FieldDescription className={cn(rowLayout && "md:col-start-2")}>Date de génération du document (automatique).</FieldDescription>
+        <FieldDescription className={cn(rowLayout && "md:col-start-2")}>{t("fieldAutoTodayNote")}</FieldDescription>
       )}
       {isDerivedLocked && (
-        <FieldDescription className={cn(rowLayout && "md:col-start-2")}>Champ rempli automatiquement — modifiable si besoin en corrigeant le champ source.</FieldDescription>
+        <FieldDescription className={cn(rowLayout && "md:col-start-2")}>{t("fieldAutoFilledNote")}</FieldDescription>
       )}
       {field.readOnly && !autoToday && !isDerivedLocked && !help && (
-        <FieldDescription className={cn(rowLayout && "md:col-start-2")}>Champ verrouillé pour ce dossier.</FieldDescription>
+        <FieldDescription className={cn(rowLayout && "md:col-start-2")}>{t("fieldLockedNote")}</FieldDescription>
       )}
       {field.type === "postal_be" && communeHint && (
         <FieldDescription className={cn(rowLayout && "md:col-start-2")}>→ {communeHint}</FieldDescription>
@@ -602,7 +683,7 @@ export function PdfField({
       {/* Avertissement non bloquant (ambre) — ex. NISS checksum douteux mais
           date cohérente (#4). L'erreur rouge bloquante reste dans errorReport. */}
       {formatWarning && !effError && (
-        <p className={cn("text-[13px] text-amber-700 dark:text-amber-300", rowLayout && "md:col-start-2")}>{formatWarning}</p>
+        <p id={warningId} className={cn("text-[13px] text-amber-700 dark:text-amber-300", rowLayout && "md:col-start-2")}>{formatWarning}</p>
       )}
       {effError && <div className={cn(rowLayout && "md:col-start-2")}>{errorReport}</div>}
     </Field>

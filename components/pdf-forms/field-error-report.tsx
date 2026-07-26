@@ -32,6 +32,11 @@ interface Props {
   formId?: string;
   formSlug?: string;
   locale?: string;
+  /// Id posé sur le message d'erreur lui-même (et PAS sur le lien
+  /// « Signaler »), pour que le contrôle fautif le référence via
+  /// `aria-describedby` : au focus, le lecteur d'écran énonce alors la raison
+  /// du blocage et pas seulement le nom du champ.
+  messageId?: string;
 }
 
 /// Remplace `<FieldError>` : affiche l'erreur + un petit lien « Signaler »
@@ -44,12 +49,17 @@ export function FieldErrorReport({
   formId,
   formSlug,
   locale,
+  messageId,
 }: Props) {
   if (!error) return null;
 
   return (
     <div className="flex flex-col gap-1">
-      <FieldError>{error}</FieldError>
+      {/* `role="alert"` est déjà porté par <FieldError> (components/ui/field) :
+          l'apparition du message est donc annoncée d'office. On n'ajoute ici
+          que l'ancre `id` du `aria-describedby` — un `aria-live` en plus
+          rétrograderait la politesse de la région. */}
+      <FieldError id={messageId}>{error}</FieldError>
       <ReportDialogTrigger
         fieldId={fieldId}
         fieldType={fieldType}

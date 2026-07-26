@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 import { PlusIcon, TrashIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -33,9 +34,16 @@ interface Props {
 /// allocations familiales auto-non si > 35 ans) est centralisée dans
 /// `applyAutoRules` ci-dessous — peut être étendue pour d'autres tableaux.
 export function ArrayField({ field, value, locale, onChange, formId, formSlug, parentValues }: Props) {
+  // `locale` = libellés MÉTIER stockés en base ; `t` = châssis d'UI (catalogues
+  // next-intl, fallback FR automatique pour les langues non traduites).
+  const t = useTranslations("public.dossier");
   const label = loc(field.label, locale);
   const help = loc(field.help, locale);
-  const addLabel = loc(field.addRowLabel, locale) || "Ajouter une ligne";
+  const addLabel = loc(field.addRowLabel, locale) || t("arrayAddRow");
+  // Le <FieldLabel> du tableau ne titre aucun contrôle unique : sans
+  // `aria-labelledby` sur le groupe, un lecteur d'écran annonce un « groupe »
+  // anonyme au lieu du nom du tableau (ex. « Personnes du ménage »).
+  const labelId = `${field.id}-label`;
 
   const itemFields = useMemo(
     () => (field.itemFields ?? []).slice().sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
@@ -77,8 +85,8 @@ export function ArrayField({ field, value, locale, onChange, formId, formSlug, p
   }
 
   return (
-    <Field>
-      <FieldLabel>
+    <Field aria-labelledby={labelId}>
+      <FieldLabel id={labelId}>
         {label}
         {field.required && <span className="text-destructive"> *</span>}
       </FieldLabel>
@@ -87,7 +95,7 @@ export function ArrayField({ field, value, locale, onChange, formId, formSlug, p
       <div className="flex flex-col gap-3">
         {rows.length === 0 ? (
           <div className="rounded-lg border border-dashed bg-muted/30 p-4 text-center text-sm text-muted-foreground">
-            Aucune ligne. Clique sur « {addLabel} » pour en ajouter une.
+            {t("arrayEmpty", { addLabel })}
           </div>
         ) : (
           rows.map((row, idx) => (
@@ -95,18 +103,22 @@ export function ArrayField({ field, value, locale, onChange, formId, formSlug, p
               <CardContent className="grid gap-3 py-4 sm:grid-cols-2 xl:grid-cols-3">
                 <div className="sm:col-span-2 flex items-baseline justify-between">
                   <span className="text-xs font-medium text-muted-foreground">
-                    Ligne {idx + 1}
+                    {t("arrayRowNumber", { index: idx + 1 })}
                   </span>
+                  {/* Toutes les lignes offrent un bouton « Supprimer »
+                      identique : sans `aria-label` numéroté, un lecteur
+                      d'écran les énumère sans pouvoir les distinguer. */}
                   <Button
                     type="button"
                     variant="ghost"
                     size="sm"
                     onClick={() => removeRow(idx)}
                     disabled={field.minRows ? rows.length <= field.minRows : false}
+                    aria-label={t("arrayRemoveRowAria", { index: idx + 1 })}
                     className="text-destructive hover:text-destructive"
                   >
                     <TrashIcon className="size-4" />
-                    Supprimer
+                    {t("arrayRemoveRow")}
                   </Button>
                 </div>
                 {itemFields.map((sub) => {
@@ -158,12 +170,8 @@ export function ArrayField({ field, value, locale, onChange, formId, formSlug, p
           role="status"
           className="mt-3 rounded-lg border border-amber-300/70 bg-amber-50 p-3 text-sm text-amber-950"
         >
-          <strong>Vérifie le lien avec cette personne.</strong>{" "}
-          Vous êtes deux dans le ménage (vous compris). Si cette personne est
-          réellement financièrement à votre charge, choisissez « FAC » plutôt
-          que « Aucun lien » : vous pourriez prétendre au statut de chef de
-          ménage. Un justificatif pourra être demandé par votre organisme de
-          paiement.
+          <strong>{t("arrayFacAdviceTitle")}</strong>{" "}
+          {t("arrayFacAdviceBody")}
         </div>
       )}
 

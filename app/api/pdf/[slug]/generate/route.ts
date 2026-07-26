@@ -250,13 +250,22 @@ export async function POST(
 
   let pdfBytes: Buffer;
   try {
-    pdfBytes = (
-      await fillForm(source, fields, validated, {
-        flatten: shouldFlattenGeneratedPdf(form.slug),
-        technicalSchema,
-        extraStamps,
-      })
-    ).bytes;
+    const filled = await fillForm(source, fields, validated, {
+      flatten: shouldFlattenGeneratedPdf(form.slug),
+      technicalSchema,
+      extraStamps,
+    });
+    pdfBytes = filled.bytes;
+    // Le remplissage est best-effort : il ne lève pas quand une valeur ne
+    // parvient pas jusqu'au papier. Sans cette trace, un widget renommé par
+    // l'ONEM ou un nom hors alphabet latin produirait une case blanche sur un
+    // document officiel, et personne ne l'apprendrait avant l'usager.
+    if (filled.diagnostics.length > 0) {
+      console.warn(
+        `[pdf-forms] ${form.slug} — ${filled.diagnostics.length} valeur(s) non écrite(s) :`,
+        filled.diagnostics
+      );
+    }
   } catch (err) {
     console.error("pdf-forms generate error:", err);
     await logSubmission(form.id, form.version, lang, validated, delivery, false, ip);

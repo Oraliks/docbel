@@ -86,10 +86,28 @@ function safeCheckbox(form: ReturnType<PDFDocument["getForm"]>, name: string): P
   }
 }
 
+/// Ce que la génération n'a PAS réussi à écrire.
+///
+/// Le remplissage est volontairement « best-effort » : un widget manquant ne
+/// doit jamais priver le citoyen de son document. Mais l'échec était jusqu'ici
+/// AVALÉ — `getField` qui lève, `catch {}` vide — et une case restait blanche
+/// sur un formulaire officiel sans que personne, ni serveur ni admin ni usager,
+/// ne puisse le savoir. Les échecs sont désormais collectés et remontés.
+export interface FillDiagnostic {
+  /// Champ du schéma concerné. Vide pour un stamp de règle serveur, qui cible
+  /// un widget sans passer par un champ.
+  fieldId: string;
+  widget: string;
+  kind: "widget-introuvable" | "stamp-refuse" | "caracteres-non-rendus";
+  detail?: string;
+}
+
 export interface FillResult {
   bytes: Buffer;
   /// true si la police Unicode a été embarquée.
   unicodeFont: boolean;
+  /// Vide = tout ce que le schéma prétendait écrire a été écrit.
+  diagnostics: FillDiagnostic[];
 }
 
 /// Convention pipe-séparée : `pdfFieldName` = "w1|w2|…|wN" pour un champ
@@ -291,7 +309,8 @@ function stampArrayField(
   unicodeFont: boolean,
   field: PdfFormField,
   rows: FieldValueRecord[],
-  payload: FormPayload
+  payload: FormPayload,
+  diags: FillDiagnostic[]
 ): void {
   const subFields = field.itemFields ?? [];
   if (subFields.length === 0) return;
@@ -319,6 +338,7 @@ function stampArrayField(
       try {
         pdfField = form.getField(widgetName);
       } catch {
+        diags.push({ fieldId: `${field.id}[${oneBased}].${sub.id}`, widget: widgetName, kind: "widget-introuvable" });
         continue;
       }
       try {
@@ -350,6 +370,7 @@ function stampArrayField(
     try {
       pdfField = form.getField(widgetName);
     } catch {
+      diags.push({ fieldId: `${field.id}.${sub.id}`, widget: widgetName, kind: "widget-introuvable" });
       continue;
     }
     try {
@@ -386,9 +407,13 @@ export async function fillForm(
   const doc = await PDFDocument.load(source, { ignoreEncryption: true });
   const form = doc.getForm();
 
+  const diags: FillDiagnostic[] = [];
+
   // Police : Unicode embarquée si dispo, sinon Helvetica standard.
   let unicodeFont = false;
   let font;
+  /// Caractères de `text` que la police embarquée ne sait PAS dessiner.
+  let missingGlyphs: (text: string) => string = () => "";
   const ttf = await loadUnicodeFont();
   if (ttf) {
     try {
@@ -396,11 +421,34 @@ export async function fillForm(
       doc.registerFontkit(fontkit);
       font = await doc.embedFont(ttf, { subset: true });
       unicodeFont = true;
+      // Sonde de couverture. Indispensable : quand un caractère manque,
+      // fontkit ne lève PAS — il le mappe sur le glyphe 0, dont le contour est
+      // vide dans cette police. Le texte est donc écrit en « rien », et après
+      // aplatissement l'apparence devient le seul contenu du champ : la case
+      // part BLANCHE à l'ONEM, sans exception ni avertissement, avec
+      // `unicodeFont === true` pour signaler que tout va bien.
+      // `DejaVuSans-Latin.ttf` couvre le latin étendu (Łukasz, Gökhan,
+      // Ștefan…) mais NI le cyrillique, NI le grec, NI l'arabe, NI le chinois,
+      // ni même le vietnamien « ễ ».
+      const probe = fontkit.create(ttf);
+      missingGlyphs = (text: string) =>
+        [...text].filter((c) => !probe.hasGlyphForCodePoint(c.codePointAt(0) ?? 0)).join("");
     } catch {
       font = await doc.embedFont(StandardFonts.Helvetica);
     }
   } else {
     font = await doc.embedFont(StandardFonts.Helvetica);
+  }
+
+  // Contrôle de rendabilité sur le payload entier, en amont du tamponnage :
+  // toute valeur imprimable en vient, donc une seule passe suffit à repérer ce
+  // que le document ne pourra pas montrer.
+  for (const [id, value] of Object.entries(payload)) {
+    if (typeof value !== "string" || !value) continue;
+    const missing = missingGlyphs(value);
+    if (missing) {
+      diags.push({ fieldId: id, widget: "", kind: "caracteres-non-rendus", detail: missing });
+    }
   }
 
   // Police oblique (repli) pour la ligne "nom" du bloc de signature.
@@ -444,7 +492,7 @@ export async function fillForm(
     if (field.type === "array") {
       const rows = payload[field.id];
       if (!isFieldValueRecordArray(rows)) continue;
-      stampArrayField(form, font, unicodeFont, field, rows, payload);
+      stampArrayField(form, font, unicodeFont, field, rows, payload, diags);
       continue;
     }
 
@@ -470,6 +518,9 @@ export async function fillForm(
     try {
       pdfField = form.getField(field.pdfFieldName);
     } catch {
+      // Cas typique : l'ONEM republie le formulaire en renommant un widget.
+      // Le schema pointe alors dans le vide et la case sort blanche.
+      diags.push({ fieldId: field.id, widget: field.pdfFieldName, kind: "widget-introuvable" });
       continue;
     }
 
@@ -536,8 +587,15 @@ export async function fillForm(
       }
 
       stampScalarWidget(pdfField, value, font, unicodeFont, field.type, field.autoSizeFont, field.options, field.stampMap);
-    } catch {
-      // champ readonly / incompatible — on ignore sans casser la génération
+    } catch (err) {
+      // Champ readonly / incompatible : on n'interrompt pas la generation,
+      // mais on ne fait plus semblant que la valeur est partie.
+      diags.push({
+        fieldId: field.id,
+        widget: field.pdfFieldName,
+        kind: "stamp-refuse",
+        detail: err instanceof Error ? err.message : String(err),
+      });
     }
   }
 
@@ -557,6 +615,7 @@ export async function fillForm(
         widget = form.getField(widgetName);
       } catch {
         console.warn(`[pdf-forms] extraStamp: widget introuvable "${widgetName}"`);
+        diags.push({ fieldId: "", widget: widgetName, kind: "widget-introuvable" });
         continue;
       }
       try {
@@ -591,6 +650,12 @@ export async function fillForm(
       } catch (err) {
         // Cas typique : `setText` au-delà du maxLength du widget → pdf-lib
         // throw. Sans warn on ne verrait qu'une case vide sans indice.
+        diags.push({
+          fieldId: "",
+          widget: widgetName,
+          kind: "stamp-refuse",
+          detail: err instanceof Error ? err.message : String(err),
+        });
         console.warn(
           `[pdf-forms] extraStamp: échec sur "${widgetName}" (` +
             (err instanceof Error ? err.message : String(err)) +
@@ -656,6 +721,15 @@ export async function fillForm(
     }
   }
 
+  if (diags.length > 0) {
+    // Une ligne par generation, pas une par champ : l'appelant (route
+    // /generate, regeneration zip/mail) a le slug et peut journaliser mieux.
+    console.warn(
+      `[pdf-forms] ${diags.length} valeur(s) non ecrite(s) : ` +
+        diags.map((d) => `${d.fieldId || d.widget} (${d.kind})`).join(", ")
+    );
+  }
+
   const out = await doc.save();
-  return { bytes: Buffer.from(out), unicodeFont };
+  return { bytes: Buffer.from(out), unicodeFont, diagnostics: diags };
 }

@@ -2961,6 +2961,8 @@
       "tabMapping": "Mapping AcroForm",
       "mappingTotal": "Widgets totaux",
       "mappingBound": "Liés",
+      "mappingHidden": "Masqués",
+      "mappingFilterHidden": "Masqués (jamais remplis)",
       "mappingOrphan": "Orphelins",
       "mappingConflict": "Conflits",
       "mappingSearchPlaceholder": "Rechercher un widget, un champ ou une règle…",

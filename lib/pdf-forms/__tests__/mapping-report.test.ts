@@ -22,7 +22,7 @@ describe("mapping-report — cas simples", () => {
     ];
     const technical: AcroFieldRaw[] = [tech("Nom")];
     const report = buildMappingReport(fields, technical);
-    expect(report.summary).toEqual({ total: 1, bound: 1, orphan: 0, conflict: 0 });
+    expect(report.summary).toEqual({ total: 1, bound: 1, hidden: 0, orphan: 0, conflict: 0 });
     expect(report.rows[0].claims).toHaveLength(1);
     expect(report.rows[0].claims[0].source).toBe("field");
     expect(report.rows[0].claims[0].fieldId).toBe("nom");
@@ -294,5 +294,52 @@ describe("mapping-report — C1 changement en conditions réelles", () => {
       // (peu importe la source).
       expect((row?.claims.length ?? 0) > 0).toBe(true);
     }
+  });
+});
+
+/// Champ minimal — le fichier n'en avait pas, chaque test construisait le sien.
+function champ(p: Partial<PdfFormField> & Pick<PdfFormField, "id">): PdfFormField {
+  return {
+    pdfFieldName: p.id,
+    type: "text",
+    required: false,
+    label: { fr: p.id },
+    ...p,
+  } as PdfFormField;
+}
+
+describe("statut « masqué » — revendiqué mais jamais écrit", () => {
+  it("un widget dont le seul champ est masqué n'est PAS compté couvert", () => {
+    // Le filler saute les champs `hidden` : la case part vierge sur le
+    // document officiel. Le rapport était le seul endroit où l'on pouvait s'en
+    // apercevoir, et il affirmait le contraire.
+    const fields = [champ({ id: "email", pdfFieldName: "Email", hidden: true })];
+    const report = buildMappingReport(fields, [tech("Email")]);
+    expect(report.rows[0].status).toBe("hidden");
+  });
+
+  it("deux champs texte sur la même case = conflit, plus « couvert »", () => {
+    // Le filler écrit le dernier, en silence, et l'autre valeur disparaît.
+    const fields = [
+      champ({ id: "cache", pdfFieldName: "Nom", hidden: true }),
+      champ({ id: "visible", pdfFieldName: "Nom" }),
+    ];
+    expect(buildMappingReport(fields, [tech("Nom")]).rows[0].status).toBe("conflict");
+  });
+
+  it("une règle serveur suffit à couvrir un widget dont le champ est masqué", () => {
+    const fields = [champ({ id: "cache", pdfFieldName: "Nom", hidden: true })];
+    const rules: MappingRule[] = [{ name: "r", stamp: [{ widget: "Nom", value: "X" }] }];
+    // La règle, elle, stampe vraiment : la case ne partira pas vierge.
+    expect(buildMappingReport(fields, [tech("Nom")], rules).rows[0].status).not.toBe("hidden");
+  });
+
+  it("le résumé compte les masqués à part des orphelins", () => {
+    const fields = [
+      champ({ id: "a", pdfFieldName: "A", hidden: true }),
+      champ({ id: "b", pdfFieldName: "B" }),
+    ];
+    const report = buildMappingReport(fields, [tech("A"), tech("B"), tech("C")]);
+    expect(report.summary).toEqual({ total: 3, bound: 1, hidden: 1, orphan: 1, conflict: 0 });
   });
 });

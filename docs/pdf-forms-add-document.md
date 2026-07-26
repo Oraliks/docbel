@@ -34,8 +34,10 @@ existante : `<SIGLE>_FR.pdf` (ex. `C109-36_Demande_FR.pdf`).
 cp ~/Downloads/nouveau-doc.pdf private/pdfs/C109-36_Demande_FR.pdf
 ```
 
-⚠ `private/pdfs/` est ignoré par git (cf. `.gitignore`) — le PDF n'entre
-pas dans le repo. Il doit être partagé hors-git avec les autres devs.
+✅ `private/pdfs/` est **versionné** (seul `private/uploads/` est ignoré, cf.
+`.gitignore`) : commite le PDF avec le reste. C'est ce qui permet au test
+`seeds-vs-pdf` de confronter les seeds au vrai fichier à chaque `pnpm test`,
+et au script `annotate-orphan-widgets.ts` de cartographier les widgets.
 
 ---
 

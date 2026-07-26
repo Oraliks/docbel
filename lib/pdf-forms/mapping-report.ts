@@ -30,6 +30,8 @@ export type WidgetClaimSource =
   | "rule";
 
 export interface WidgetClaim {
+  /// Le champ porteur est `hidden` : il ne sera jamais rendu NI stampe.
+  hidden?: boolean;
   source: WidgetClaimSource;
   /// ID côté schéma enrichi (PdfFormField.id) — vide pour les claims
   /// d'origine "rule" (elles n'ont pas de champ, elles ont un nom de règle).
@@ -44,7 +46,12 @@ export interface WidgetClaim {
   detail?: string;
 }
 
-export type WidgetStatus = "bound" | "orphan" | "conflict";
+/// `hidden` : un champ revendique bien ce widget, mais il est `hidden` — le
+/// filler le saute (cf. filler.ts), donc la case part VIERGE sur le document
+/// officiel. Distinct de `orphan` (aucune revendication) : le remede n'est pas
+/// le meme, et l'action « creer un champ pour chaque orphelin » de l'admin en
+/// creerait un SECOND par-dessus celui qui existe deja.
+export type WidgetStatus = "bound" | "hidden" | "orphan" | "conflict";
 
 export interface WidgetReportRow {
   pdfFieldName: string;
@@ -59,6 +66,8 @@ export interface WidgetReportRow {
 export interface MappingReportSummary {
   total: number;
   bound: number;
+  /// Revendiques uniquement par des champs masques → jamais ecrits.
+  hidden: number;
   orphan: number;
   conflict: number;
 }
@@ -111,6 +120,7 @@ function collectFieldClaims(
           for (let i = 0; i < widgets.length; i++) {
             addClaim(claimsByWidget, widgets[i], {
               source: "array-template",
+              hidden: f.hidden === true,
               fieldId: `${f.id}.${sub.id}`,
               fieldLabel: labelOf(sub),
               detail: `ligne ${i + 1}`,
@@ -128,6 +138,7 @@ function collectFieldClaims(
             if (!s) continue;
             addClaim(claimsByWidget, s, {
               source: "first-match",
+              hidden: f.hidden === true,
               fieldId: `${f.id}.${subId}`,
               fieldLabel: sub ? labelOf(sub) : undefined,
               detail: `${fm.where.fieldId}=${String(fm.where.value)}`,
@@ -148,6 +159,7 @@ function collectFieldClaims(
         const optValue = f.options?.[i]?.value;
         addClaim(claimsByWidget, s, {
           source: "pipe-option",
+          hidden: f.hidden === true,
           fieldId: f.id,
           fieldLabel: labelOf(f),
           detail: optValue ? `option ${optValue}` : `option ${i + 1}`,
@@ -156,6 +168,7 @@ function collectFieldClaims(
     } else {
       addClaim(claimsByWidget, f.pdfFieldName, {
         source: "field",
+        hidden: f.hidden === true,
         fieldId: f.id,
         fieldLabel: labelOf(f),
       });
@@ -204,13 +217,22 @@ function statusOf(
   claims: WidgetClaim[]
 ): WidgetStatus {
   if (claims.length === 0) return "orphan";
+  // Revendique UNIQUEMENT par des champs masques : le filler saute ces champs,
+  // la case part vierge. Le rapport le disait « couvert » — c'etait le seul
+  // endroit ou l'on pouvait s'en rendre compte, et il affirmait le contraire.
+  if (claims.every((c) => c.hidden === true)) return "hidden";
   // Conflit détecté seulement sur les widgets TEXTE dont 2+ sources
   // hétérogènes écrivent SANS coordination (ex. un champ direct + un
   // template de ligne = collision explicite). Pour un checkbox, plusieurs
   // pipes/first-match sur le même widget = comportement voulu.
   if (acroType === "text") {
-    const sources = new Set(claims.map((c) => c.source).filter((s) => TEXT_SOURCES.has(s)));
-    if (sources.size >= 2) return "conflict";
+    // On compte les REVENDICATIONS, pas les sources distinctes : deux champs
+    // visant la meme case texte ne formaient qu'une source (`field`) et
+    // passaient donc pour « couverts ». Le filler ecrit le dernier, en
+    // silence, et l'autre valeur disparait du document officiel.
+    const ecritures = claims.filter((c) => TEXT_SOURCES.has(c.source));
+    if (ecritures.length >= 2) return "conflict";
+    const sources = new Set(ecritures.map((c) => c.source));
     // Deux règles peuvent cibler le même widget légitimement (dernier
     // gagnant du resolveStamps) → pas de conflit. Une règle + un champ
     // texte scalaire = conflit potentiel (la règle "override" écrase
@@ -271,7 +293,7 @@ export function buildMappingReport(
 
   // Tri stable : conflits en premier, puis orphelins, puis liés — par
   // pdfFieldName au sein d'un même statut. Facilite le triage admin.
-  const order: Record<WidgetStatus, number> = { conflict: 0, orphan: 1, bound: 2 };
+  const order: Record<WidgetStatus, number> = { conflict: 0, orphan: 1, hidden: 2, bound: 3 };
   rows.sort((a, b) => {
     const s = order[a.status] - order[b.status];
     return s !== 0 ? s : a.pdfFieldName.localeCompare(b.pdfFieldName);
@@ -280,6 +302,7 @@ export function buildMappingReport(
   const summary: MappingReportSummary = {
     total: rows.length,
     bound: rows.filter((r) => r.status === "bound").length,
+    hidden: rows.filter((r) => r.status === "hidden").length,
     orphan: rows.filter((r) => r.status === "orphan").length,
     conflict: rows.filter((r) => r.status === "conflict").length,
   };

@@ -80,6 +80,24 @@ export function checkPublishable(
       }
     }
 
+    // Convention pipe : autant de segments que d'options, sinon le stamping
+    // ABANDONNE en silence. `stampPipeRadio` exige l'égalité stricte ; à
+    // défaut il rend la main, le repli scalaire cherche un widget nommé
+    // « a|b|c » qui n'existe pas, et l'exception est avalée. Résultat : aucune
+    // case cochée, aucun log, un document officiel qui part vierge sur cette
+    // rubrique. Aucun formulaire n'est en défaut aujourd'hui — ce contrôle est
+    // là pour que ça ne PUISSE pas arriver au prochain.
+    if (f.type === "radio" && f.pdfFieldName.includes("|") && f.options) {
+      const segments = f.pdfFieldName.split("|").length;
+      if (segments !== f.options.length) {
+        issues.push({
+          level: "error",
+          fieldId: f.id,
+          message: `Le champ « ${f.id} » déclare ${segments} case(s) PDF pour ${f.options.length} option(s) : rien ne serait coché. Utilise une entrée vide pour une option sans case.`,
+        });
+      }
+    }
+
     // regex valide une fois ancrée
     if (f.regex && !anchoredRegex(f.regex)) {
       issues.push({ level: "error", fieldId: f.id, message: `Regex invalide sur « ${f.id} ».` });
@@ -155,6 +173,23 @@ export function checkPublishable(
         });
       }
     }
+    // Widgets revendiqués UNIQUEMENT par des champs masqués : le filler saute
+    // les champs `hidden`, donc ces cases partent vierges sur le document
+    // officiel. Le rapport les comptait « couverts » — c'était le seul endroit
+    // où on pouvait le voir, et il affirmait le contraire. Avertissement et
+    // non erreur : masquer un champ est parfois délibéré (rubrique hors
+    // périmètre d'un dossier), mais l'admin doit le savoir.
+    const masques = report.rows.filter((r) => r.status === "hidden");
+    if (masques.length > 0) {
+      issues.push({
+        level: "warning",
+        message: `${masques.length} widget(s) ne seront jamais remplis : leur seul champ est masqué — ${masques
+          .slice(0, 5)
+          .map((r) => `« ${r.pdfFieldName} »`)
+          .join(", ")}${masques.length > 5 ? `, +${masques.length - 5}` : ""}.`,
+      });
+    }
+
     // Conflits explicites (widget cible par plusieurs sources heterogenes,
     // OU règle qui vise un widget absent du PDF) : toujours signalés, un
     // par un, pour que l'admin sache exactement quoi corriger.

@@ -563,8 +563,17 @@ export async function fillForm(
   if (flatten) {
     try {
       form.flatten();
-    } catch {
-      /* certains PDF refusent le flatten */
+    } catch (error) {
+      // Le flatten échoue surtout sur les widgets sans apparence normale — les
+      // PDF ONEM en comptent jusqu'à 11 par formulaire. L'échec était avalé en
+      // silence : on livrait alors un PDF NON APLATI, donc encore éditable,
+      // sans que personne ne le sache. Le document reste servi (mieux vaut un
+      // PDF rééditable qu'aucun PDF), mais la trace existe désormais.
+      console.warn(
+        `[pdf-forms] flatten impossible — le PDF servi reste éditable : ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
     }
   }
 

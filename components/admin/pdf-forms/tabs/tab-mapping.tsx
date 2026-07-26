@@ -161,9 +161,10 @@ export function TabMapping({ data }: { data: UseFormData }) {
     <div className="flex flex-col gap-4">
       {/* Compteurs */}
       <Card>
-        <CardContent className="grid grid-cols-2 gap-3 py-4 sm:grid-cols-4">
+        <CardContent className="grid grid-cols-2 gap-3 py-4 sm:grid-cols-5">
           <StatBlock label={t("mappingTotal")} value={s.total} tone="muted" />
           <StatBlock label={t("mappingBound")} value={s.bound} tone="success" />
+          <StatBlock label={t("mappingHidden")} value={s.hidden} tone="warning" />
           <StatBlock label={t("mappingOrphan")} value={s.orphan} tone="warning" />
           <StatBlock label={t("mappingConflict")} value={s.conflict} tone="danger" />
         </CardContent>
@@ -203,6 +204,7 @@ export function TabMapping({ data }: { data: UseFormData }) {
           <SelectContent>
             <SelectItem value="all">{t("mappingFilterAll")}</SelectItem>
             <SelectItem value="conflict">{t("mappingFilterConflict")}</SelectItem>
+            <SelectItem value="hidden">{t("mappingFilterHidden")}</SelectItem>
             <SelectItem value="orphan">{t("mappingFilterOrphan")}</SelectItem>
             <SelectItem value="bound">{t("mappingFilterBound")}</SelectItem>
           </SelectContent>
@@ -238,6 +240,11 @@ export function TabMapping({ data }: { data: UseFormData }) {
                   ? "bg-destructive/5"
                   : r.status === "orphan"
                   ? "bg-amber-500/5"
+                  // Masqué : revendiqué mais jamais écrit. Teinte plus douce
+                  // que l'orphelin — c'est souvent délibéré (rubrique hors
+                  // périmètre), mais ça doit rester visible.
+                  : r.status === "hidden"
+                  ? "bg-muted/40"
                   : "";
               const isSelectable = r.status === "orphan" && r.acroType !== "unknown";
               return (

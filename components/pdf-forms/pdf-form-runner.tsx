@@ -47,7 +47,6 @@ import { MotifSituationPicker } from "./motif-situation-picker";
 import { CompactAccordionSection } from "./compact-accordion-section";
 import { AutoSaveNotice } from "./auto-save-notice";
 import { ResetFormButton } from "./reset-form-button";
-import { MacroFinalSummary } from "./macro-final-summary";
 import { PaymentMethodPanel } from "./payment-method-panel";
 import { OptionCard } from "@/components/ui/option-card";
 
@@ -55,6 +54,47 @@ const LOCALE_NAMES: Record<Locale, string> = { fr: "FR", nl: "NL", de: "DE" };
 
 // Types de champ qui occupent toute la largeur dans la grille 2 colonnes.
 const FULL_WIDTH_TYPES = new Set(["textarea", "signature", "fullname", "checkbox", "radio", "array"]);
+
+/// Ancre de la case de consentement — sert au scroll d'erreur du submit.
+const CONSENT_FIELD_ID = "runner-consent";
+
+/// Case de consentement RGPD — même bloc dans les 3 rendus du runner.
+/// `invalid` (tentative d'envoi sans avoir coché) passe la ligne en rouge et
+/// la case en `aria-invalid` : même grammaire d'erreur que les champs requis
+/// du formulaire, au lieu d'un toast détaché de la case qu'il désigne
+/// (Oraliks 2026-07-26).
+function ConsentCheckbox({
+  checked,
+  onChange,
+  invalid,
+  label,
+  compact = false,
+}: {
+  checked: boolean;
+  onChange: (next: boolean) => void;
+  invalid: boolean;
+  label: string;
+  compact?: boolean;
+}) {
+  return (
+    <label
+      id={CONSENT_FIELD_ID}
+      className={[
+        "flex items-start",
+        compact ? "gap-2.5 text-sm" : "gap-3 text-base leading-relaxed",
+        invalid ? "text-destructive" : "text-muted-foreground",
+      ].join(" ")}
+    >
+      <Checkbox
+        checked={checked}
+        onCheckedChange={(c) => onChange(c === true)}
+        aria-invalid={invalid}
+        className="mt-0.5"
+      />
+      <span>{label}</span>
+    </label>
+  );
+}
 
 function withSuggestedBic(values: FormPayload, fields: PublicField[]): FormPayload {
   const ibanField = fields.find((field) => field.canonicalKey === "banque.iban");
@@ -167,6 +207,15 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
   );
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [consent, setConsent] = useState(false);
+  // Erreur « consentement non coché » (Oraliks 2026-07-26) : le toast seul
+  // n'était pas rattaché visuellement à la case — la ligne passe en rouge et
+  // la case en `aria-invalid`, comme n'importe quel champ requis. Levée au
+  // submit, retombe dès que la case est cochée.
+  const [consentError, setConsentError] = useState(false);
+  const updateConsent = useCallback((next: boolean) => {
+    setConsent(next);
+    if (next) setConsentError(false);
+  }, []);
   const [delivery, setDelivery] = useState<"download" | "doccle">(form.allowDownload ? "download" : "doccle");
   const [doccleRef, setDoccleRef] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -235,6 +284,7 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
     autoFilledBic.current.clear();
     setErrors({});
     setConsent(false);
+    setConsentError(false);
     setActive(0);
     toast.success(t("runnerResetDone"));
   }
@@ -480,7 +530,11 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
 
   async function submit() {
     if (!consent) {
+      setConsentError(true);
       toast.error(t("runnerConsentRequired"));
+      document
+        .getElementById(CONSENT_FIELD_ID)
+        ?.scrollIntoView({ behavior: "smooth", block: "center" });
       return;
     }
     // Signature numérique automatique : on auto-confirme tous les champs
@@ -631,7 +685,17 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
           const missing: Array<{ slug: string; title: string }> = Array.isArray(data.missing)
             ? data.missing
             : [];
-          setContinuation({ missing, allRequiredDone: data.allRequiredDone === true });
+          const allRequiredDone = data.allRequiredDone === true;
+          // Dossier complet : plus rien à remplir → on va DIRECTEMENT au
+          // dossier (Oraliks 2026-07-26). L'écran « Votre dossier est complet »
+          // n'hébergeait qu'un bouton « Voir mon dossier » : un clic de trop.
+          // La carte de continuation ne sert donc plus qu'au cas « il reste
+          // des documents ».
+          if (allRequiredDone || missing.length === 0) {
+            router.push(`/d/${bundleSlug}?bundleRun=${encodeURIComponent(bundleRunId)}`);
+            return;
+          }
+          setContinuation({ missing, allRequiredDone });
         } else {
           toast.success(t("runnerSavedSuccess"));
           if (bundleSlug)
@@ -732,9 +796,8 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
   // téléchargement ici — l'architecture verrouille le download par document
   // (garde 409) tant que le dossier n'est pas complet ; le téléchargement/mail
   // reste sur la feuille de route de fin de dossier (BundleRoadmap).
-  if (continuation) {
+  if (continuation && continuation.missing.length > 0) {
     const next = continuation.missing[0];
-    const complete = continuation.allRequiredDone || !next;
     const goNext = () => {
       if (!next || !bundleRunId || !bundleSlug) return;
       // Route en mode dossier : le catch-all /document conserve bundleRun &
@@ -755,51 +818,37 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
       <Card className="rounded-2xl border-0 bg-card shadow-sm">
         <CardContent className="flex flex-col items-center gap-4 py-10 text-center">
           <CheckCircle2Icon className="size-10 text-primary" />
-          {complete ? (
-            <>
-              <h2 className="glass-display text-[20px] font-semibold text-[color:var(--glass-ink)]">
-                {t("runnerContinuationComplete")}
-              </h2>
-              <Button className="rounded-full px-6" onClick={goDossier}>
-                {t("runnerContinuationViewDossier")}
-                <ChevronRightIcon className="size-4" />
-              </Button>
-            </>
-          ) : (
-            <>
-              <h2 className="glass-display text-[20px] font-semibold text-[color:var(--glass-ink)]">
-                {t("runnerContinuationReadyTitle", { title: form.title })}
-              </h2>
-              <p className="max-w-md text-sm text-muted-foreground">
-                {t("runnerContinuationSavedNote")}
-              </p>
-              <div className="w-full max-w-md rounded-2xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] p-4 text-left">
-                <p className="text-sm font-medium text-[color:var(--glass-ink)]">
-                  {t("runnerContinuationRemainingCount", { count: continuation.missing.length })}
-                </p>
-                <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-[color:var(--glass-ink)]">
-                  {continuation.missing.slice(0, 3).map((item) => (
-                    <li key={item.slug}>{item.title}</li>
-                  ))}
-                  {continuation.missing.length > 3 ? (
-                    <li className="text-[color:var(--glass-ink-soft)]">+{continuation.missing.length - 3}</li>
-                  ) : null}
-                </ul>
-                <p className="mt-2 text-[12px] text-[color:var(--glass-ink-soft)]">
-                  {t("runnerContinuationPrefillNote")}
-                </p>
-              </div>
-              <div className="flex flex-col items-center gap-2">
-                <Button className="rounded-full px-6" onClick={goNext}>
-                  {t("runnerContinuationCta", { title: next.title })}
-                  <ChevronRightIcon className="size-4" />
-                </Button>
-                <Button variant="ghost" size="sm" className="rounded-full" onClick={goDossier}>
-                  {t("runnerContinuationBack")}
-                </Button>
-              </div>
-            </>
-          )}
+          <h2 className="glass-display text-[20px] font-semibold text-[color:var(--glass-ink)]">
+            {t("runnerContinuationReadyTitle", { title: form.title })}
+          </h2>
+          <p className="max-w-md text-sm text-muted-foreground">
+            {t("runnerContinuationSavedNote")}
+          </p>
+          <div className="w-full max-w-md rounded-2xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] p-4 text-left">
+            <p className="text-sm font-medium text-[color:var(--glass-ink)]">
+              {t("runnerContinuationRemainingCount", { count: continuation.missing.length })}
+            </p>
+            <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-[color:var(--glass-ink)]">
+              {continuation.missing.slice(0, 3).map((item) => (
+                <li key={item.slug}>{item.title}</li>
+              ))}
+              {continuation.missing.length > 3 ? (
+                <li className="text-[color:var(--glass-ink-soft)]">+{continuation.missing.length - 3}</li>
+              ) : null}
+            </ul>
+            <p className="mt-2 text-[12px] text-[color:var(--glass-ink-soft)]">
+              {t("runnerContinuationPrefillNote")}
+            </p>
+          </div>
+          <div className="flex flex-col items-center gap-2">
+            <Button className="rounded-full px-6" onClick={goNext}>
+              {t("runnerContinuationCta", { title: next.title })}
+              <ChevronRightIcon className="size-4" />
+            </Button>
+            <Button variant="ghost" size="sm" className="rounded-full" onClick={goDossier}>
+              {t("runnerContinuationBack")}
+            </Button>
+          </div>
         </CardContent>
       </Card>
     );
@@ -819,7 +868,8 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
         setValue={setValue}
         signerName={signerName}
         consent={consent}
-        setConsent={setConsent}
+        setConsent={updateConsent}
+        consentError={consentError}
         delivery={delivery}
         setDelivery={setDelivery}
         doccleRef={doccleRef}
@@ -850,7 +900,8 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
         setValue={setValue}
         signerName={signerName}
         consent={consent}
-        setConsent={setConsent}
+        setConsent={updateConsent}
+        consentError={consentError}
         delivery={delivery}
         setDelivery={setDelivery}
         doccleRef={doccleRef}
@@ -1062,10 +1113,13 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
                       )}
                     </div>
                   )}
-                  <label className="flex items-start gap-2.5 text-sm text-muted-foreground">
-                    <Checkbox checked={consent} onCheckedChange={(c) => setConsent(c === true)} className="mt-0.5" />
-                    <span>{t("runnerConsentText")}</span>
-                  </label>
+                  <ConsentCheckbox
+                    compact
+                    checked={consent}
+                    onChange={updateConsent}
+                    invalid={consentError}
+                    label={t("runnerConsentText")}
+                  />
                   <div className="flex items-center justify-between gap-2">
                     <AutoSaveNotice lastSavedAt={lastSavedAt} isPartOfBundle={!!bundleRunId} serverSaved={serverSaved} />
                     <ResetFormButton onConfirm={resetForm} disabled={submitting} />
@@ -1418,6 +1472,7 @@ interface MacroRunnerBodyProps {
   signerName: string;
   consent: boolean;
   setConsent: (c: boolean) => void;
+  consentError: boolean;
   delivery: "download" | "doccle";
   setDelivery: (d: "download" | "doccle") => void;
   doccleRef: string;
@@ -1446,7 +1501,7 @@ interface MacroRunnerBodyProps {
 /// va dans un accordéon replié.
 function MacroRunnerBody({
   form, macroSteps, activeIndex, setActive, attemptAdvance, locale, setLocale, values, errors,
-  setValue, signerName, consent, setConsent, delivery, setDelivery, doccleRef,
+  setValue, signerName, consent, setConsent, consentError, delivery, setDelivery, doccleRef,
   setDoccleRef, submitting, submit, resetForm, lastSavedAt, serverSaved, liveTriggers, bundleRunId, onStreetVerifiedChange, onFocusField, activeFieldId, contextTips, rail, t,
 }: MacroRunnerBodyProps) {
   const current = macroSteps[activeIndex];
@@ -1636,16 +1691,6 @@ function MacroRunnerBody({
 
               {isLast ? (
                 <>
-                  {/* Récapitulatif final allégé (§10.6) : carte « champs
-                      critiques » + expander « Voir toutes mes réponses »
-                      (replié). Au-dessus du bloc livraison/consentement/
-                      signature, qui reste inchangé. */}
-                  <MacroFinalSummary
-                    fields={form.fields}
-                    values={values}
-                    locale={locale}
-                    liveTriggers={liveTriggers}
-                  />
                   <div className="flex flex-col gap-4 border-t border-[color:var(--glass-border)] pt-4">
                   {!bundleRunId && form.allowDownload && form.allowDoccle && (
                     <div className="flex flex-col gap-2">
@@ -1679,10 +1724,12 @@ function MacroRunnerBody({
                       )}
                     </div>
                   )}
-                  <label className="flex items-start gap-3 text-base leading-relaxed text-muted-foreground">
-                    <Checkbox checked={consent} onCheckedChange={(c) => setConsent(c === true)} className="mt-0.5" />
-                    <span>{t("runnerConsentText")}</span>
-                  </label>
+                  <ConsentCheckbox
+                    checked={consent}
+                    onChange={setConsent}
+                    invalid={consentError}
+                    label={t("runnerConsentText")}
+                  />
                   {liveTriggers.length > 0 && (
                     <p className="text-xs text-amber-700 dark:text-amber-300 mt-2">
                       {t("runnerLiveTriggerNotice", {
@@ -1748,6 +1795,7 @@ interface LegacyRunnerBodyProps {
   signerName: string;
   consent: boolean;
   setConsent: (c: boolean) => void;
+  consentError: boolean;
   delivery: "download" | "doccle";
   setDelivery: (d: "download" | "doccle") => void;
   doccleRef: string;
@@ -1778,6 +1826,7 @@ function LegacyRunnerBody({
   signerName,
   consent,
   setConsent,
+  consentError,
   delivery,
   setDelivery,
   doccleRef,
@@ -1946,10 +1995,13 @@ function LegacyRunnerBody({
                     )}
                   </div>
                 )}
-                <label className="flex items-start gap-2.5 text-sm text-muted-foreground">
-                  <Checkbox checked={consent} onCheckedChange={(c) => setConsent(c === true)} className="mt-0.5" />
-                  <span>{t("runnerConsentText")}</span>
-                </label>
+                <ConsentCheckbox
+                  compact
+                  checked={consent}
+                  onChange={setConsent}
+                  invalid={consentError}
+                  label={t("runnerConsentText")}
+                />
                 {liveTriggers.length > 0 && (
                   <p className="text-xs text-amber-700 dark:text-amber-300 mt-2">
                     {t("runnerLiveTriggerNotice", {

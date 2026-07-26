@@ -93,9 +93,15 @@ function buildRemarqueFragments(payload: FormPayload): string[] {
   if (payload.statutFamilial === "isole" && payload.habiteEnColocation === "oui") {
     parts.push("cohousing");
   }
+  // « en cours » et « pas encore reçu » disaient la même chose : les deux
+  // options ont fusionné en `en-cours` (Oraliks 2026-07-26). `pas-encore-recu`
+  // reste accepté pour les brouillons enregistrés avant la fusion.
+  // Les deux autres statuts (`en-main`, `deja-introduit`) cochent une case
+  // officielle du PDF et n'ont donc rien à dire en remarque.
   const jugement = payload.statutJugementPensionAlimentaire;
-  if (jugement === "en-cours") parts.push("jugement en cours");
-  else if (jugement === "pas-encore-recu") parts.push("je n'ai pas encore reçu mon jugement");
+  if (jugement === "en-cours" || jugement === "pas-encore-recu") {
+    parts.push("jugement en cours, pas encore en ma possession");
+  }
   // Remarques saisies par ligne de cohabitant (grille « Personnes avec qui je
   // cohabite ») : le sous-champ `remarque` n'a AUCUN widget PDF propre
   // (pdfFieldName vide, pas de template) — sans cette agrégation il tombe dans
@@ -259,8 +265,8 @@ export const C1_CHANGEMENT_RULES: MappingRule[] = [
   //
   // Le PDF a un widget texte « Remarques 1 » sur lequel on déverse une
   // synthèse des cas particuliers non capturables par les cases officielles
-  // (cohousing = isolé + colocation ; jugement en cours ; jugement pas
-  // encore reçu). Concaténation par « ; » comme dans le transform d'origine.
+  // (cohousing = isolé + colocation ; jugement pas encore en possession).
+  // Concaténation par « ; » comme dans le transform d'origine.
   {
     name: "remarque-fam",
     whenFn: (payload) => buildRemarqueFragments(payload).length > 0,

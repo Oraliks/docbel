@@ -202,7 +202,7 @@ describe("Rules C1 — remarque situation familiale", () => {
     expect(stamps.get("Remarques 1 Haut")).toBe("cohousing");
   });
 
-  it("jugement en-cours et pas-encore-recu concaténés avec « ; »", () => {
+  it("jugement pas encore en possession concaténé avec « ; »", () => {
     // Cas isolé : cohousing seul.
     const cohousingOnly = {
       ...baseline(),
@@ -213,13 +213,24 @@ describe("Rules C1 — remarque situation familiale", () => {
 
     // Cas jugement en cours seul.
     const enCours = { ...baseline(), statutJugementPensionAlimentaire: "en-cours" };
-    expect(resolveStamps(enCours, C1_CHANGEMENT_RULES).get("Remarques 1 Haut")).toBe("jugement en cours");
+    expect(resolveStamps(enCours, C1_CHANGEMENT_RULES).get("Remarques 1 Haut")).toBe(
+      "jugement en cours, pas encore en ma possession"
+    );
 
-    // Cas « pas encore reçu ».
+    // Valeur héritée d'avant la fusion des deux options (brouillons existants).
     const pasRecu = { ...baseline(), statutJugementPensionAlimentaire: "pas-encore-recu" };
     expect(resolveStamps(pasRecu, C1_CHANGEMENT_RULES).get("Remarques 1 Haut")).toBe(
-      "je n'ai pas encore reçu mon jugement"
+      "jugement en cours, pas encore en ma possession"
     );
+
+    // Les statuts qui cochent une case officielle ne produisent PAS de remarque.
+    for (const statut of ["en-main", "deja-introduit"]) {
+      const coche = { ...baseline(), statutJugementPensionAlimentaire: statut };
+      expect(
+        resolveStamps(coche, C1_CHANGEMENT_RULES).get("Remarques 1 Haut"),
+        statut
+      ).toBeUndefined();
+    }
 
     // Cas combiné cohousing + en-cours.
     const combo = {
@@ -229,7 +240,7 @@ describe("Rules C1 — remarque situation familiale", () => {
       statutJugementPensionAlimentaire: "en-cours",
     };
     expect(resolveStamps(combo, C1_CHANGEMENT_RULES).get("Remarques 1 Haut")).toBe(
-      "cohousing ; jugement en cours"
+      "cohousing ; jugement en cours, pas encore en ma possession"
     );
   });
 });

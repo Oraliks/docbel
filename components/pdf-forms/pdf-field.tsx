@@ -327,7 +327,16 @@ export function PdfField({
         <FieldLabel htmlFor={field.id} className="text-[13px]">
           <LabelWithTooltip label={label} labelShort={labelShort} help={help} required={field.required} />
         </FieldLabel>
-        <Select value={(value as string) ?? ""} onValueChange={(v) => onChange(v)}>
+        {/* `modal={false}` (Oraliks 2026-07-26) : en mode modal — le défaut de
+            Base UI — l'ouverture VERROUILLE le scroll du document (overflow
+            hidden sur <html>/<body>, position de scroll mémorisée) et la
+            fermeture la restaure par `html.scrollTop = valeurMémorisée`. Or
+            choisir une valeur peut raccourcir la page (un `visibleIf` masque
+            un champ) : la restauration est alors écrêtée au nouveau maximum
+            et la page « remonte » d'un coup. Un select de champ de formulaire
+            n'a aucune raison d'être modal — sans verrou, plus de sauvegarde /
+            restauration de scroll, donc plus de saut. */}
+        <Select modal={false} value={(value as string) ?? ""} onValueChange={(v) => onChange(v)}>
           <SelectTrigger id={field.id} className="w-full" aria-invalid={invalid}>
             <SelectValue placeholder={placeholder || "Sélectionner…"} />
           </SelectTrigger>

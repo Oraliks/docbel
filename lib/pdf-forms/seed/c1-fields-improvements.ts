@@ -550,44 +550,38 @@ export const C1_QUESTIONS: PdfFormField[] = [
     order: 101,
   },
   {
-    id: "pensionAlimentaireDejaDeclare",
-    pdfFieldName: "jai déjà introduit une copie|je joins une copie",
+    // Statut du jugement / acte notarié (Oraliks 2026-07-07, FUSIONNÉ le
+    // 2026-07-26). Une seule question couvre désormais les DEUX cases
+    // officielles du C1 — « je joins une copie » et « j'ai déjà introduit une
+    // copie » — plus le cas « pas encore en ma possession », absent du PDF.
+    // Avant, « déjà introduit » vivait dans un second champ
+    // (`pensionAlimentaireDejaDeclare`) qui n'apparaissait qu'après avoir
+    // répondu « oui, en main » : l'option officielle était donc invisible au
+    // moment du choix. Et « jugement en cours » / « pas encore reçu »
+    // disaient la même chose → fusionnés en une seule option.
+    id: "statutJugementPensionAlimentaire",
+    // Convention pipe : 1 widget PDF par option, dans l'ORDRE des options
+    // (cf. filler.ts#stampPipeRadio). La 3ᵉ entrée est volontairement VIDE —
+    // « pas encore reçu » ne coche rien et part en remarque via
+    // `buildRemarqueFragments`.
+    pdfFieldName: "je joins une copie|jai déjà introduit une copie|",
     type: "radio",
-    required: false,
-    label: { fr: "Le jugement / acte notarié a-t-il déjà été transmis dans un dossier précédent ?", nl: "", de: "" },
+    // Obligatoire (Oraliks 2026-07-26). `required` sur un champ `visibleIf`
+    // ne s'applique que lorsqu'il est visible → exigé uniquement quand une
+    // pension alimentaire est déclarée.
+    required: true,
+    label: { fr: "As-tu le jugement (ou l'acte notarié) en main ?", nl: "", de: "" },
     help: {
-      fr: "S'il s'agit du premier dossier, réponds « non » — le document doit être joint maintenant.",
+      fr: "« Déjà introduit » = tu l'as transmis à ton organisme de paiement lors d'un dossier précédent : inutile de le joindre à nouveau.",
       nl: "", de: "",
     },
-    options: YN_DECLARE,
-    // Ne se pose que si l'usager a bien un jugement en main (statutJugement =
-    // "en-main"). Pour "en-cours" ou "pas-encore-recu", il n'y a rien à
-    // transmettre — l'information est reportée automatiquement en remarque
-    // via `applyRemarqueSituationFamiliale`.
-    visibleIf: { fieldId: "statutJugementPensionAlimentaire", op: "equals", value: "en-main" },
-    section: SECTION_SITUATION_FAMILIALE,
-    order: 102,
-  },
-  {
-    // Nouveau (Oraliks 2026-07-07) : distingue « j'ai le jugement » /
-    // « jugement en cours » / « pas encore reçu ». Les deux derniers statuts
-    // n'exigent pas de document à joindre — ils sont reportés en remarque
-    // interne au submit (cf. applyRemarqueSituationFamiliale).
-    id: "statutJugementPensionAlimentaire",
-    pdfFieldName: "",
-    type: "radio",
-    required: false,
-    label: { fr: "As-tu le jugement en main ?", nl: "", de: "" },
     options: [
-      { value: "en-main", label: { fr: "Oui, j'ai le jugement (à joindre)", nl: "", de: "" } },
-      { value: "en-cours", label: { fr: "Le jugement est en cours", nl: "", de: "" } },
-      { value: "pas-encore-recu", label: { fr: "Je n'ai pas encore reçu mon jugement", nl: "", de: "" } },
+      { value: "en-main", label: { fr: "Oui, je joins une copie", nl: "", de: "" } },
+      { value: "deja-introduit", label: { fr: "Oui, et je l'ai déjà introduit précédemment", nl: "", de: "" } },
+      { value: "en-cours", label: { fr: "Non, le jugement est en cours / pas encore reçu", nl: "", de: "" } },
     ],
-    // Pas de defaultValue (Oraliks 2026-07-07) — sinon pensionAlimentaireDejaDeclare
-    // (visible si statutJugement === "en-main") apparaît DÈS que l'utilisateur
-    // coche pensionAlimentaire = oui, sans qu'il ait explicitement confirmé
-    // avoir le jugement. On force le choix explicite pour n'afficher la
-    // question « déjà déclaré ? » qu'après un « oui » assumé.
+    // Pas de defaultValue (Oraliks 2026-07-07) : on force un choix explicite
+    // plutôt que de cocher une case officielle à la place du citoyen.
     visibleIf: { fieldId: "pensionAlimentaire", op: "equals", value: "oui" },
     section: SECTION_SITUATION_FAMILIALE,
     order: 101.5,
@@ -1921,6 +1915,13 @@ const LEGACY_C1_WORKAROUND_FIELD_IDS = new Set<string>([
   "ibanPart3",
   "sepa_tranger_iban_bic",
   "titulaireCompteNomStamp",
+  // Fusionné dans `statutJugementPensionAlimentaire` (2026-07-26) : les deux
+  // cases officielles « je joins une copie » / « j'ai déjà introduit une
+  // copie » y sont désormais mappées par la convention pipe. Sans cette
+  // entrée, l'ancien champ resté en base survivrait à l'overlay (son
+  // pdfFieldName pipe complet n'est pas dans `coveredCheckboxNames`) et se
+  // battrait avec le nouveau pour les MÊMES widgets.
+  "pensionAlimentaireDejaDeclare",
 ]);
 
 /// Applique les améliorations du schéma C1 sur la liste de champs existante

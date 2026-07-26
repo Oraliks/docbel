@@ -23,7 +23,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { PdfField } from "./pdf-field";
-import { buildValidator, isFieldComplete, findFirstInvalidStep } from "@/lib/pdf-forms/validation";
+import { buildValidator, countRequirements, findFirstInvalidStep } from "@/lib/pdf-forms/validation";
 import { Locale, FieldValue, FormPayload, PdfFormField, PdfFormTrigger, loc, isFullNameValue } from "@/lib/pdf-forms/types";
 import type { PrefillMap } from "@/lib/pdf-forms/canonical/extract";
 import { todayISO } from "@/lib/pdf-forms/system-values";
@@ -1403,20 +1403,28 @@ function FieldsCluster({
   );
 }
 
-/// Métadonnées de complétion d'une étape pour le stepper : `complete` (tous
-/// les champs REQUIS remplis et valides) + `subLabel` (« N champs restants »).
-/// Une étape sans champ requis ne renvoie rien (ni coche, ni compteur).
+/// Métadonnées de complétion d'une étape pour le stepper : `complete` (toutes
+/// les exigences satisfaites) + `subLabel` (« N champs restants »). Une étape
+/// sans rien d'obligatoire ne renvoie rien (ni coche, ni compteur).
+///
+/// Le décompte est délégué à `countRequirements`, qui applique les MÊMES
+/// règles que le validateur du bouton « Continuer » (visibilité, groupes
+/// « au moins un parmi N », champs auto). Le filtre maison `f.required`
+/// utilisé auparavant ignorait `visibleIf` et `requiredGroup` : la coche verte
+/// apparaissait sur l'étape Motif dès la date remplie, sans motif coché.
 function computeStepMeta(
   fields: PublicField[],
   values: FormPayload,
   locale: Locale,
   remainingLabel: (count: number) => string
 ): { complete?: boolean; subLabel?: string } {
-  const required = fields.filter((f) => f.required);
-  if (required.length === 0) return {};
-  const filled = required.filter((f) => isFieldComplete(f, values[f.id], locale)).length;
-  const remaining = required.length - filled;
-  return { complete: remaining === 0, subLabel: remaining > 0 ? remainingLabel(remaining) : undefined };
+  const { total, missing } = countRequirements(
+    fields as unknown as PdfFormField[],
+    values,
+    locale,
+  );
+  if (total === 0) return {};
+  return { complete: missing === 0, subLabel: missing > 0 ? remainingLabel(missing) : undefined };
 }
 
 /// Étape finale allégée : plus de liste détaillée des valeurs (ancien

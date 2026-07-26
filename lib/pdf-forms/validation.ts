@@ -531,4 +531,57 @@ export function isFieldComplete(field: FieldLike, value: unknown, lang: Locale):
   return validateFieldFormat(field, v, lang) === null;
 }
 
+/// Exigences applicables à un lot de champs (une étape du stepper) et celles
+/// qui ne sont PAS satisfaites, avec EXACTEMENT les mêmes règles que
+/// `buildValidator` :
+///   • un champ `required` VISIBLE et non auto compte pour 1 ;
+///   • chaque `requiredGroup` VISIBLE compte pour 1 (« au moins un parmi N »),
+///     satisfait dès qu'un seul membre est rempli/coché.
+///
+/// Sert au stepper (coche verte + « N champs restants »). Compter les
+/// `required` à la main — ce que faisait le runner — ratait `visibleIf` ET
+/// `requiredGroup` : l'étape Motif du C1, dont le seul `required` est la date
+/// (les 5 chips forment un `requiredGroup`), s'affichait « complète » dès la
+/// date remplie, sans aucun motif coché (bug Oraliks 2026-07-26).
+///
+/// `total === 0` = l'étape n'a rien d'obligatoire → ni coche ni compteur.
+export function countRequirements(
+  fields: PdfFormField[],
+  payload: FormPayload,
+  lang: Locale = DEFAULT_LOCALE
+): { total: number; missing: number } {
+  let total = 0;
+  let missing = 0;
+
+  for (const f of fields) {
+    if (!f.required) continue;
+    // Mêmes exclusions que `buildValidator` : ces champs sont remplis
+    // programmatiquement (runner + ré-injection serveur), jamais saisis.
+    if (isAutoField(f) || f.prefillFrom === "system.today" || f.type === "signature") continue;
+    if (!isFieldVisible(f.visibleIf, payload)) continue;
+    total += 1;
+    if (!isFieldComplete(f, payload[f.id], lang)) missing += 1;
+  }
+
+  const groups = new Map<string, PdfFormField[]>();
+  for (const f of fields) {
+    if (!f.requiredGroup) continue;
+    if (!isFieldVisible(f.visibleIf, payload)) continue;
+    const list = groups.get(f.requiredGroup);
+    if (list) list.push(f);
+    else groups.set(f.requiredGroup, [f]);
+  }
+  for (const members of groups.values()) {
+    total += 1;
+    const anySet = members.some((f) => {
+      const v = payload[f.id];
+      if (f.type === "checkbox") return v === true;
+      return typeof v === "string" && v.trim() !== "";
+    });
+    if (!anySet) missing += 1;
+  }
+
+  return { total, missing };
+}
+
 export { anchoredRegex };

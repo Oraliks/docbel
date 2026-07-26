@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { buildValidator, isFieldVisible, anchoredRegex, validateFieldFormat, isFieldComplete, validateStepFields, findFirstInvalidStep } from "../validation";
+import { buildValidator, isFieldVisible, anchoredRegex, validateFieldFormat, isFieldComplete, countRequirements, validateStepFields, findFirstInvalidStep } from "../validation";
 import { PdfFormField } from "../types";
 
 function field(p: Partial<PdfFormField> & Pick<PdfFormField, "id" | "type">): PdfFormField {
@@ -315,6 +315,77 @@ describe("isFieldComplete — complétion d'un champ (pour le stepper)", () => {
     const f = field({ id: "n", type: "fullname" });
     expect(isFieldComplete(f, { first: "Jean", last: "Dupont" }, "fr")).toBe(true);
     expect(isFieldComplete(f, { first: "Jean", last: "" }, "fr")).toBe(false);
+  });
+});
+
+describe("countRequirements — coche verte + compteur du stepper", () => {
+  // Reproduction exacte de l'étape « Motif » du C1 : un seul champ `required`
+  // (la date) + 5 chips qui ne valent QUE par leur `requiredGroup`.
+  const motifStep = [
+    field({ id: "adresse", type: "checkbox", requiredGroup: "motif" }),
+    field({ id: "famille", type: "checkbox", requiredGroup: "motif" }),
+    field({ id: "compte", type: "checkbox", requiredGroup: "motif" }),
+    field({ id: "date", type: "date", required: true }),
+  ];
+
+  it("PAS complète quand la date est remplie mais aucun motif coché (bug de la coche verte)", () => {
+    expect(countRequirements(motifStep, { date: "2026-07-01" }, "fr")).toEqual({
+      total: 2,
+      missing: 1,
+    });
+  });
+
+  it("complète dès qu'UN motif est coché en plus de la date", () => {
+    expect(
+      countRequirements(motifStep, { date: "2026-07-01", famille: true }, "fr"),
+    ).toEqual({ total: 2, missing: 0 });
+  });
+
+  it("cocher puis décocher le motif refait tomber la complétion", () => {
+    expect(
+      countRequirements(motifStep, { date: "2026-07-01", famille: false }, "fr"),
+    ).toEqual({ total: 2, missing: 1 });
+  });
+
+  it("ignore un champ requis actuellement INVISIBLE (visibleIf non satisfait)", () => {
+    const fields = [
+      field({ id: "pension", type: "radio", required: true }),
+      field({
+        id: "jugement",
+        type: "radio",
+        required: true,
+        visibleIf: { fieldId: "pension", op: "equals", value: "oui" },
+      }),
+    ];
+    // « non » → la question du jugement n'existe pas : 1 seule exigence.
+    expect(countRequirements(fields, { pension: "non" }, "fr")).toEqual({ total: 1, missing: 0 });
+    // « oui » → elle apparaît et manque.
+    expect(countRequirements(fields, { pension: "oui" }, "fr")).toEqual({ total: 2, missing: 1 });
+  });
+
+  it("ignore les champs auto (signature, date du jour, autoAnswered)", () => {
+    const fields = [
+      field({ id: "sig", type: "signature", required: true }),
+      field({ id: "today", type: "date", required: true, prefillFrom: "system.today" }),
+      field({ id: "remarque", type: "textarea", required: true, autoAnswered: true }),
+    ];
+    expect(countRequirements(fields, {}, "fr")).toEqual({ total: 0, missing: 0 });
+  });
+
+  it("total = 0 quand l'étape n'a ni champ requis ni groupe (ni coche ni compteur)", () => {
+    expect(countRequirements([field({ id: "libre", type: "text" })], {}, "fr")).toEqual({
+      total: 0,
+      missing: 0,
+    });
+  });
+
+  it("un champ requis rempli mais INVALIDE reste manquant", () => {
+    const fields = [field({ id: "niss", type: "niss", required: true })];
+    expect(countRequirements(fields, { niss: "850730" }, "fr")).toEqual({ total: 1, missing: 1 });
+    expect(countRequirements(fields, { niss: "85073003328" }, "fr")).toEqual({
+      total: 1,
+      missing: 0,
+    });
   });
 });
 

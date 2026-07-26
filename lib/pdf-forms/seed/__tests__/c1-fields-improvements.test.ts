@@ -577,3 +577,53 @@ describe("applyC1Improvements — restrictMotifTo5Situations (Oraliks, 2026-07-0
     expect(C1_QUESTIONS.find((field) => field.id === "remarqueSituationFamiliale")?.pdfFieldName).toBe("");
   });
 });
+
+// Cases officielles qui n'étaient couvertes par AUCUN champ : leurs widgets
+// apparaissaient comme orphelins au rapport de mapping, et la question
+// correspondante n'était donc jamais posée au citoyen (2026-07-26).
+// `seeds-vs-pdf.test.ts` garantit en parallèle que ces pdfFieldName existent
+// bien dans C1_FR.pdf — ici on fixe la SÉMANTIQUE (quand la question apparaît).
+describe("C1 — cases auparavant orphelines", () => {
+  const byId = new Map(C1_QUESTIONS.map((f) => [f.id, f]));
+
+  it("séparé de fait + délégation de revenu : posé à l'isolé, comme la pension alimentaire", () => {
+    const f = byId.get("separeDeFaitDelegationRevenu");
+    expect(f?.type).toBe("checkbox");
+    expect(f?.visibleIf).toEqual({ fieldId: "statutFamilial", op: "equals", value: "isole" });
+    // Même condition d'affichage que la voie « pension alimentaire », dont
+    // c'est la troisième variante côté C1-Info (art. 221 du Code civil).
+    expect(f?.visibleIf).toEqual(byId.get("pensionAlimentaire")?.visibleIf);
+  });
+
+  it("réfugié / apatride : posés UNIQUEMENT au ressortissant hors EEE", () => {
+    for (const id of ["statutRefugie", "apatrideReconnu"]) {
+      const f = byId.get(id);
+      expect(f?.type, id).toBe("radio");
+      expect(f?.defaultValue, id).toBe("non");
+      expect(f?.visibleIf, id).toEqual({
+        fieldId: "nationaliteHorsEEE",
+        op: "equals",
+        value: "oui",
+      });
+    }
+    // L'ordre des options doit suivre celui des widgets du pipe : oui d'abord.
+    expect(byId.get("statutRefugie")?.pdfFieldName).toBe("oui  allez à la rubrique suivante|non_17");
+    expect(byId.get("apatrideReconnu")?.pdfFieldName).toBe("oui  allez à la rubrique suivante_2|non_18");
+    expect(byId.get("statutRefugie")?.options?.[0].value).toBe("oui");
+  });
+
+  it("raison de la limitation : ne se pose que sur un accès « limité »", () => {
+    const f = byId.get("raisonLimitationAccesMarche");
+    expect(f?.type).toBe("text");
+    expect(f?.visibleIf).toEqual({ fieldId: "accesMarcheTravail", op: "equals", value: "limite" });
+    // La valeur attendue doit exister dans les options du champ parent.
+    expect(byId.get("accesMarcheTravail")?.options?.map((o) => o.value)).toContain("limite");
+  });
+
+  it("mois de prise d'effet de la cotisation : même régime readOnly que ses deux lignes", () => {
+    const f = byId.get("cotisationSyndicaleMoisAnnee");
+    expect(f?.readOnly).toBe(true);
+    expect(f?.defaultValue).toBeUndefined();
+    expect(f?.section).toBe(byId.get("autoriseCotisationSyndicale")?.section);
+  });
+});

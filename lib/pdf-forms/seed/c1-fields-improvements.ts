@@ -550,6 +550,36 @@ export const C1_QUESTIONS: PdfFormField[] = [
     order: 101,
   },
   {
+    // Troisième voie d'accès au taux « charge de famille » quand on habite
+    // seul, à côté de la pension alimentaire (C1-Info) : « vous êtes séparé de
+    // fait et un jugement autorise votre conjoint à percevoir une partie de vos
+    // revenus en vertu d'une délégation de revenu (art. 221 du Code civil) ».
+    //
+    // C'est la case imprimée JUSTE SOUS la pension alimentaire, et elle
+    // n'existait nulle part dans le schéma : son widget était orphelin et le
+    // citoyen concerné n'avait aucun moyen de la déclarer (2026-07-26). Cas
+    // rare de l'aveu d'Oraliks — « jamais vu en plusieurs années » — mais il
+    // ouvre un droit, donc il ne se néglige pas.
+    id: "separeDeFaitDelegationRevenu",
+    pdfFieldName:
+      "je suis séparée de fait et mon conjoint perçoit une partie de mes revenus en exécution dune décision judiciaire 10",
+    type: "checkbox",
+    required: false,
+    label: {
+      fr: "Je suis séparé(e) de fait et un jugement autorise mon conjoint à percevoir une partie de mes revenus",
+      nl: "", de: "",
+    },
+    help: {
+      fr: "Délégation de revenu (art. 221 du Code civil). ⚠ Joindre une copie du jugement. Comme la pension alimentaire, cette situation peut ouvrir le taux « charge de famille » alors que tu habites seul.",
+      nl: "", de: "",
+    },
+    // Même condition que la pension alimentaire : la question ne se pose qu'à
+    // l'isolé (c'est une voie d'accès au taux « charge de famille »).
+    visibleIf: { fieldId: "statutFamilial", op: "equals", value: "isole" },
+    section: SECTION_SITUATION_FAMILIALE,
+    order: 101.8,
+  },
+  {
     // Statut du jugement / acte notarié (Oraliks 2026-07-07, FUSIONNÉ le
     // 2026-07-26). Une seule question couvre désormais les DEUX cases
     // officielles du C1 — « je joins une copie » et « j'ai déjà introduit une
@@ -1504,15 +1534,47 @@ export const C1_QUESTIONS: PdfFormField[] = [
     order: 701,
     stepPriority: "optional",
   },
+  {
+    // Le mois à partir duquel la retenue prend (ou cesse de prendre) effet —
+    // les DEUX lignes ci-dessus se terminent par « à partir du mois de chômage
+    // de », et le PDF n'a qu'une seule case pour les deux. Même régime que ces
+    // lignes : `readOnly`, vide par défaut (Oraliks 2026-07-26 : « on laisse
+    // vide par défaut et on ne coche pas la ligne non plus »). Sans ce champ,
+    // la case restait orpheline et rien ne disait à quoi elle servait.
+    id: "cotisationSyndicaleMoisAnnee",
+    pdfFieldName: "Mois + Année",
+    type: "text",
+    required: false,
+    label: { fr: "Mois et année de prise d'effet de la retenue", nl: "", de: "" },
+    help: {
+      fr: "Format MM/AAAA. Renseignée par l'organisme de paiement en même temps que la case ci-dessus — laisser vide ici.",
+      nl: "", de: "",
+    },
+    placeholder: { fr: "MM/AAAA", nl: "", de: "" },
+    readOnly: true,
+    section: SECTION_COTISATION,
+    order: 702,
+    stepPriority: "optional",
+  },
 
   // ====================================================================
   // SECTION — TRAVAILLEUR NON-EEE / SUISSE
   // ====================================================================
-  // NOTE Phase 7 : les widgets « non_17 » (réfugié) et « non_18 » (apatride)
-  // sont cochés par la règle serveur `hors-eee-non` dès que
-  // `nationaliteHorsEEE === "non"`. Les 2 champs workaround `statutRefugie`
-  // et `apatrideReconnu` (autoAnswered defaultValue="non") ont été supprimés
-  // du schéma.
+  // La rubrique du PDF pose TROIS questions successives (réfugié / apatride /
+  // hors EEE), chacune avec sa paire oui-non. Pour un citoyen EEE les trois
+  // réponses valent « non » : la règle serveur `hors-eee-non` les coche d'un
+  // geste dès que `nationaliteHorsEEE === "non"`, et les deux premières
+  // questions ne sont même pas posées à l'écran.
+  //
+  // Pour un ressortissant HORS EEE, en revanche, elles doivent être posées :
+  // sans elles, un réfugié reconnu voyait son formulaire partir avec « non »
+  // coché (2026-07-26, arbitrage Oraliks). Les widgets « oui » de ces deux
+  // lignes étaient orphelins — c'était le symptôme.
+  //
+  // Les checkbox tolèrent plusieurs sources sur un même widget (cf.
+  // mapping-report.ts#statusOf) : la règle et ces champs ne peuvent donc pas
+  // se déclarer en conflit, et ils ne cochent jamais en même temps (la règle
+  // ne se déclenche que sur « non », ces champs ne s'affichent que sur « oui »).
   // 2026-07-08 (Oraliks) : dérivé de `nationalit_3` (texte libre) via
   // `derivedFrom` — PAS `autoAnswered`, pour ne pas casser le `visibleIf` de
   // `accesMarcheTravail` (cf. field-derivations.ts#nationalite-hors-eee et le
@@ -1541,6 +1603,34 @@ export const C1_QUESTIONS: PdfFormField[] = [
     stepPriority: "optional",
   },
   {
+    // Widget « oui » : le libellé imprimé est « oui → allez à la rubrique
+    // suivante » (c'est le nom AcroForm, à reproduire au caractère près).
+    id: "statutRefugie",
+    pdfFieldName: "oui  allez à la rubrique suivante|non_17",
+    type: "radio",
+    required: false,
+    label: { fr: "Es-tu reconnu réfugié ?", nl: "", de: "" },
+    options: YN,
+    defaultValue: "non",
+    visibleIf: { fieldId: "nationaliteHorsEEE", op: "equals", value: "oui" },
+    section: SECTION_NON_EEE,
+    order: 800.5,
+    stepPriority: "optional",
+  },
+  {
+    id: "apatrideReconnu",
+    pdfFieldName: "oui  allez à la rubrique suivante_2|non_18",
+    type: "radio",
+    required: false,
+    label: { fr: "Es-tu apatride reconnu ?", nl: "", de: "" },
+    options: YN,
+    defaultValue: "non",
+    visibleIf: { fieldId: "nationaliteHorsEEE", op: "equals", value: "oui" },
+    section: SECTION_NON_EEE,
+    order: 800.6,
+    stepPriority: "optional",
+  },
+  {
     id: "accesMarcheTravail",
     pdfFieldName: "je dispose dun accès illimité au marché de lemploi|je dispose dun accès limité au marché de lemploi et jajoute une copie de mon document|Je ne dispose pas dun accès au marché de lemploi",
     type: "radio",
@@ -1558,6 +1648,25 @@ export const C1_QUESTIONS: PdfFormField[] = [
     visibleIf: { fieldId: "nationaliteHorsEEE", op: "equals", value: "oui" },
     section: SECTION_NON_EEE,
     order: 801,
+    stepPriority: "optional",
+  },
+  {
+    // « Limité » = le citoyen ne peut travailler que dans le cadre défini par
+    // la Région (un seul employeur, une durée, une rémunération…). La C1-Info
+    // impose alors d'indiquer le motif OU de joindre l'autorisation régionale.
+    // Sans ce champ, la ligne imprimée restait vide et le motif se perdait.
+    id: "raisonLimitationAccesMarche",
+    pdfFieldName: "Décrivez ciaprès la raison de la limitation ou ajoutez une copie de lautorisation",
+    type: "text",
+    required: false,
+    label: { fr: "Raison de la limitation d'accès au marché du travail", nl: "", de: "" },
+    help: {
+      fr: "La raison figure sur ton autorisation d'occupation régionale (études, employeur unique, durée limitée…). Tu peux aussi joindre une copie de l'autorisation plutôt que de la recopier ici.",
+      nl: "", de: "",
+    },
+    visibleIf: { fieldId: "accesMarcheTravail", op: "equals", value: "limite" },
+    section: SECTION_NON_EEE,
+    order: 801.5,
     stepPriority: "optional",
   },
 

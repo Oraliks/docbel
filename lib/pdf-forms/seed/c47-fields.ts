@@ -20,6 +20,7 @@
 // Version imprimée : 01.10.2020/833.10.047.
 
 import type { PdfFormField } from "../types";
+import { mergeEnrichedFields } from "./_merge";
 
 const SECTION_IDENTITE = "identite";
 const SECTION_ADRESSE = "adresse";
@@ -267,9 +268,5 @@ const LEGACY_C47_FIELD_IDS = new Set<string>([
 ]);
 
 export function applyC47Improvements(fields: PdfFormField[]): PdfFormField[] {
-  const newIds = new Set(C47_FIELDS.map((f) => f.id));
-  const preserved = fields.filter(
-    (f) => !newIds.has(f.id) && !LEGACY_C47_FIELD_IDS.has(f.id)
-  );
-  return [...preserved, ...C47_FIELDS];
+  return mergeEnrichedFields(fields, C47_FIELDS, LEGACY_C47_FIELD_IDS);
 }

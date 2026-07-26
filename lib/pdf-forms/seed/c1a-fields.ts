@@ -58,6 +58,7 @@
 // "consommé" par le toggle numéro d'entreprise de Q16).
 
 import type { PdfFormField } from "../types";
+import { mergeEnrichedFields } from "./_merge";
 
 const SECTION_IDENTITE = "identite";
 const SECTION_ADRESSE = "adresse";
@@ -1053,22 +1054,6 @@ export const C1A_FIELDS: PdfFormField[] = [
   },
 ];
 
-/// Set des `pdfFieldName` (radio pipe-séparés compris) couverts par les
-/// nouveaux champs. Sert à retirer les entrées auto-inférées (checkboxes
-/// individuels, champs génériques "1", "2"…) que le parser AcroForm avait
-/// produites avant l'enrichissement.
-function coveredPdfFieldNames(): Set<string> {
-  const set = new Set<string>();
-  for (const f of C1A_FIELDS) {
-    if (!f.pdfFieldName) continue;
-    for (const name of f.pdfFieldName.split("|")) {
-      const trimmed = name.trim();
-      if (trimmed) set.add(trimmed);
-    }
-  }
-  return set;
-}
-
 /// Applique le schéma enrichi sur une liste de champs bruts (typiquement
 /// issue de l'inférence automatique au moment de l'import). Idempotent :
 /// ré-exécutable sans dupliquer (compare les `id` ET les `pdfFieldName`
@@ -1085,15 +1070,5 @@ const LEGACY_C1A_FIELD_IDS = new Set<string>([
 ]);
 
 export function applyC1AImprovements(fields: PdfFormField[]): PdfFormField[] {
-  const covered = coveredPdfFieldNames();
-  const newIds = new Set(C1A_FIELDS.map((f) => f.id));
-
-  const preserved = fields.filter((f) => {
-    if (LEGACY_C1A_FIELD_IDS.has(f.id)) return false;
-    if (covered.has(f.pdfFieldName)) return false;
-    if (newIds.has(f.id)) return false;
-    return true;
-  });
-
-  return [...preserved, ...C1A_FIELDS];
+  return mergeEnrichedFields(fields, C1A_FIELDS, LEGACY_C1A_FIELD_IDS);
 }

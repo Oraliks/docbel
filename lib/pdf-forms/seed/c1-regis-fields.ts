@@ -9,6 +9,7 @@
 // (adresse), FN1-FN5 / FY1-FY5 (membres du ménage).
 
 import type { PdfFormField } from "../types";
+import { mergeEnrichedFields } from "./_merge";
 
 const SECTION_IDENTITE = "identite";
 const SECTION_GRILLE1 = "grille-differences";
@@ -237,7 +238,5 @@ export const C1_REGIS_FIELDS: PdfFormField[] = [
 /// issue de l'inférence automatique au moment de l'import). Idempotent :
 /// ré-exécutable sans dupliquer (compare les `id`).
 export function applyC1RegisImprovements(fields: PdfFormField[]): PdfFormField[] {
-  const newIds = new Set(C1_REGIS_FIELDS.map((f) => f.id));
-  const preserved = fields.filter((f) => !newIds.has(f.id));
-  return [...preserved, ...C1_REGIS_FIELDS];
+  return mergeEnrichedFields(fields, C1_REGIS_FIELDS);
 }

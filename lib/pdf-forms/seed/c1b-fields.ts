@@ -20,6 +20,7 @@
 // Référence : FORMULAIRE C1B, version imprimée 15.09.2023/830.10.003.
 
 import type { PdfFormField } from "../types";
+import { mergeEnrichedFields } from "./_merge";
 
 const SECTION_IDENTITE = "identite";
 const SECTION_REVENUS = "mes-revenus";
@@ -589,22 +590,5 @@ const LEGACY_C1B_FIELD_IDS = new Set<string>([
 ]);
 
 export function applyC1BImprovements(fields: PdfFormField[]): PdfFormField[] {
-  const newIds = new Set(C1B_FIELDS.map((f) => f.id));
-
-  const covered = new Set<string>();
-  for (const f of C1B_FIELDS) {
-    if (!f.pdfFieldName) continue;
-    for (const name of f.pdfFieldName.split("|")) {
-      if (name) covered.add(name.trim());
-    }
-  }
-
-  const preserved = fields.filter((f) => {
-    if (LEGACY_C1B_FIELD_IDS.has(f.id)) return false;
-    if (covered.has(f.pdfFieldName)) return false;
-    if (newIds.has(f.id)) return false;
-    return true;
-  });
-
-  return [...preserved, ...C1B_FIELDS];
+  return mergeEnrichedFields(fields, C1B_FIELDS, LEGACY_C1B_FIELD_IDS);
 }

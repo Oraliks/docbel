@@ -14,6 +14,7 @@
 // C1_TRIGGERS[0] (cohabitants[*].c1PartenaireStatus === "premiere-fois").
 
 import type { PdfFormField } from "../types";
+import { mergeEnrichedFields } from "./_merge";
 
 const SECTION_IDENTITE = "identite";
 const SECTION_PARTENAIRE = "partenaire";
@@ -283,19 +284,6 @@ export const C1_PARTENAIRE_FIELDS: PdfFormField[] = [
   },
 ];
 
-/// Set des `pdfFieldName` (côté oui ET côté non) couverts par les 6
-/// questions radio fusionnées. Sert à supprimer les anciens champs
-/// checkboxes individuels ("non", "oui", "non_2", "oui_2"…) que le parser
-/// AcroForm avait inférés séparément.
-function coveredCheckboxNames(): Set<string> {
-  const set = new Set<string>();
-  for (const f of C1_PARTENAIRE_FIELDS) {
-    if (!f.pdfFieldName.includes("|")) continue;
-    for (const name of f.pdfFieldName.split("|")) set.add(name.trim());
-  }
-  return set;
-}
-
 /// Applique le schéma enrichi sur une liste de champs bruts (typiquement
 /// issue de l'inférence automatique au moment de l'import).
 ///
@@ -308,14 +296,5 @@ function coveredCheckboxNames(): Set<string> {
 /// Idempotent : ré-exécutable sans dupliquer (compare les `id` et les
 /// `pdfFieldName` couverts).
 export function applyC1PartenaireImprovements(fields: PdfFormField[]): PdfFormField[] {
-  const covered = coveredCheckboxNames();
-  const newIds = new Set(C1_PARTENAIRE_FIELDS.map((f) => f.id));
-
-  const preserved = fields.filter((f) => {
-    if (covered.has(f.pdfFieldName)) return false;
-    if (newIds.has(f.id)) return false;
-    return true;
-  });
-
-  return [...preserved, ...C1_PARTENAIRE_FIELDS];
+  return mergeEnrichedFields(fields, C1_PARTENAIRE_FIELDS);
 }

@@ -30,6 +30,7 @@
 // restant ouverte.
 
 import type { PdfFormField } from "../types";
+import { mergeEnrichedFields } from "./_merge";
 
 const SECTION_IDENTITE = "identite";
 const SECTION_MANDAT = "mandat-culturel";
@@ -239,7 +240,5 @@ export const C46_FIELDS: PdfFormField[] = [
 /// issue de l'inférence automatique au moment de l'import). Idempotent :
 /// ré-exécutable sans dupliquer (compare les `id`).
 export function applyC46Improvements(fields: PdfFormField[]): PdfFormField[] {
-  const newIds = new Set(C46_FIELDS.map((f) => f.id));
-  const preserved = fields.filter((f) => !newIds.has(f.id));
-  return [...preserved, ...C46_FIELDS];
+  return mergeEnrichedFields(fields, C46_FIELDS);
 }

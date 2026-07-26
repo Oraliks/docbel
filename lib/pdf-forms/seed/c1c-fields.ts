@@ -18,6 +18,7 @@
 // Version imprimée : 06.11.2025 / FORMULAIRE C1C.
 
 import type { PdfFormField } from "../types";
+import { mergeEnrichedFields } from "./_merge";
 
 const SECTION_IDENTITE = "identite";
 const SECTION_ACTIVITES = "mes-activites";
@@ -445,19 +446,5 @@ export const C1C_FIELDS: PdfFormField[] = [
 /// par les nouveaux champs `radio` fusionnés (paires oui/non), en comparant
 /// leur `pdfFieldName` d'origine.
 export function applyC1CImprovements(fields: PdfFormField[]): PdfFormField[] {
-  const newIds = new Set(C1C_FIELDS.map((f) => f.id));
-
-  const covered = new Set<string>();
-  for (const f of C1C_FIELDS) {
-    if (!f.pdfFieldName.includes("|")) continue;
-    for (const name of f.pdfFieldName.split("|")) covered.add(name.trim());
-  }
-
-  const preserved = fields.filter((f) => {
-    if (covered.has(f.pdfFieldName)) return false;
-    if (newIds.has(f.id)) return false;
-    return true;
-  });
-
-  return [...preserved, ...C1C_FIELDS];
+  return mergeEnrichedFields(fields, C1C_FIELDS);
 }

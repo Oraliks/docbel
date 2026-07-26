@@ -23,7 +23,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { PdfField } from "./pdf-field";
-import { buildValidator, countRequirements, findFirstInvalidStep } from "@/lib/pdf-forms/validation";
+import { buildValidator, countRequirements, findFirstInvalidStep, isFieldVisible } from "@/lib/pdf-forms/validation";
 import { Locale, FieldValue, FormPayload, PdfFormField, PdfFormTrigger, loc, isFullNameValue } from "@/lib/pdf-forms/types";
 import type { PrefillMap } from "@/lib/pdf-forms/canonical/extract";
 import { todayISO } from "@/lib/pdf-forms/system-values";
@@ -57,6 +57,11 @@ const FULL_WIDTH_TYPES = new Set(["textarea", "signature", "fullname", "checkbox
 
 /// Ancre de la case de consentement — sert au scroll d'erreur du submit.
 const CONSENT_FIELD_ID = "runner-consent";
+
+/// Sauvegarde du brouillon : délai d'inactivité avant écriture, et délai
+/// MAXIMUM au-delà duquel on écrit même si la saisie continue.
+const DRAFT_DEBOUNCE_MS = 1500;
+const DRAFT_MAX_WAIT_MS = 10_000;
 
 /// Case de consentement RGPD — même bloc dans les 3 rendus du runner.
 /// `invalid` (tentative d'envoi sans avoir coché) passe la ligne en rouge et
@@ -96,17 +101,22 @@ function ConsentCheckbox({
   );
 }
 
+/// Aligne le BIC sur l'IBAN quand la table locale reconnaît la banque.
+///
+/// Le BIC déduit ÉCRASE une valeur existante (Oraliks 2026-07-26). Avant, un
+/// BIC non vide bloquait la déduction : un brouillon restauré avec un IBAN
+/// reconnu (BIC déduit « X ») et un BIC « Y » saisi à une session précédente
+/// affichait « X » VERROUILLÉ à l'écran — le panneau de paiement rend
+/// `detectedBic`, pas la valeur du state — pendant que le PDF recevait « Y ».
+/// Le citoyen signait donc un document différent de ce qu'il venait de relire.
+/// Puisque le champ est verrouillé dès qu'un BIC est déduit, la déduction est
+/// la valeur de référence : une seule source de vérité, le state.
 function withSuggestedBic(values: FormPayload, fields: PublicField[]): FormPayload {
   const ibanField = fields.find((field) => field.canonicalKey === "banque.iban");
   const bicField = fields.find((field) => field.canonicalKey === "banque.bic");
   const ibanValue = ibanField ? values[ibanField.id] : undefined;
   const currentBic = bicField ? values[bicField.id] : undefined;
-  if (
-    !ibanField ||
-    !bicField ||
-    (typeof currentBic === "string" && currentBic.trim() !== "") ||
-    typeof ibanValue !== "string"
-  ) {
+  if (!ibanField || !bicField || typeof ibanValue !== "string") {
     return values;
   }
 
@@ -230,6 +240,16 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
   >(null);
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Sauvegarde en attente : les valeurs vivent dans `valuesRef` (toujours à
+  // jour), on ne mémorise ici que le contexte de la dernière frappe.
+  const pendingSave = useRef<{ stepId: string | null; field: string } | null>(null);
+  const lastSaveStartedAt = useRef(0);
+  const valuesRef = useRef<FormPayload>(values);
+  const mounted = useRef(true);
+  // Champs déjà modifiés par l'utilisateur — le brouillon serveur, qui arrive
+  // de façon asynchrone au montage, ne doit JAMAIS les réécrire (cf. l'effet
+  // de chargement plus bas).
+  const touchedFields = useRef(new Set<string>());
   // Mémorise les BIC proposés afin de les effacer seulement quand l'IBAN est
   // remplacé par un compte non couvert (le BIC redevient alors saisissable).
   const autoFilledBic = useRef(new Map<string, string>());
@@ -263,6 +283,11 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
     });
   }, []);
 
+  // Miroir des valeurs pour les traitements HORS rendu (minuteur de sauvegarde,
+  // flush au démontage) : ils ne peuvent pas lire le state par fermeture sans
+  // se figer sur une version périmée.
+  useEffect(() => { valuesRef.current = values; }, [values]);
+
   useEffect(() => { onValuesChange?.(values); }, [values, onValuesChange]);
   useEffect(() => { onLocaleChange?.(locale); }, [locale, onLocaleChange]);
 
@@ -275,16 +300,18 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
     // `bundleRunId` (si présent) route la suppression vers le brouillon serveur
     // du dossier (draftPayloads[form]) ; sinon le corps `{}` cible le
     // PdfFormDraft autonome (connecté). Best-effort, silencieux si KO.
-    await fetch(`/api/pdf/${form.slug}/draft`, {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ bundleRunId }),
-    }).catch(() => {});
+    // `discardDraft` annule au passage la sauvegarde en attente : sans ça, un
+    // minuteur déjà armé réécrivait le brouillon juste après l'avoir effacé.
+    discardDraft();
     setValues(defaultValues(form, bundlePrefill));
     autoFilledBic.current.clear();
+    touchedFields.current.clear();
     setErrors({});
     setConsent(false);
     setConsentError(false);
+    // Sans ça, « dernier enregistrement à 14:32 » restait affiché alors que le
+    // brouillon venait d'être supprimé.
+    setLastSavedAt(null);
     setActive(0);
     toast.success(t("runnerResetDone"));
   }
@@ -306,13 +333,24 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
     // En contexte dossier, la vérité est BundleRun.draftPayloads, déjà
     // restaurée côté serveur (draftValues) — ne jamais fusionner par-dessus.
     if (bundleRunId) return;
-    let act = true;
-    fetch(`/api/pdf/${form.slug}/draft`)
+    const ctrl = new AbortController();
+    fetch(`/api/pdf/${form.slug}/draft`, { signal: ctrl.signal })
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => {
-        if (act && d?.draft && typeof d.draft === "object") {
+        if (d?.draft && typeof d.draft === "object") {
           setValues((prev) => {
-            const merged: FormPayload = { ...prev, ...(d.draft as FormPayload) };
+            // Le brouillon ne réécrit PAS un champ que l'utilisateur vient de
+            // remplir (Oraliks 2026-07-26). Sur réseau lent, la réponse arrive
+            // plusieurs centaines de ms après le montage : le merge naïf
+            // `{ ...prev, ...draft }` remplaçait la saisie en cours par la
+            // valeur d'un brouillon vieux de plusieurs jours, sous les doigts
+            // de l'usager et sans explication.
+            const restored = Object.fromEntries(
+              Object.entries(d.draft as FormPayload).filter(
+                ([id]) => !touchedFields.current.has(id),
+              ),
+            ) as FormPayload;
+            const merged: FormPayload = { ...prev, ...restored };
             // Filet de sécurité (Oraliks 2026-07-07) : les brouillons pré-mes-
             // fixes peuvent contenir des valeurs vides sur des champs auto
             // (`system.today` / signature) exclus du rendu utilisateur — ce
@@ -331,7 +369,7 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
         }
       })
       .catch(() => {});
-    return () => { act = false; };
+    return () => ctrl.abort();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form.slug]);
 
@@ -420,9 +458,86 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
     return m;
   }, [steps, macroSteps]);
 
+  /// Supprime le brouillon du BON périmètre après une soumission réussie.
+  ///
+  /// Le `bundleRunId` est indispensable (Oraliks 2026-07-26) : sans lui, la
+  /// route retombait sur le brouillon AUTONOME. Pour un citoyen anonyme en
+  /// dossier elle répondait 401 et `draftPayloads` n'était jamais purgé — le
+  /// brouillon périmé se restaurait par-dessus les réponses validées. Pour un
+  /// connecté, elle supprimait son brouillon autonome d'un tout autre parcours.
+  /// On annule aussi la sauvegarde en attente : sans ça, le minuteur en cours
+  /// pouvait recréer le brouillon juste après l'avoir effacé.
+  const discardDraft = useCallback(() => {
+    pendingSave.current = null;
+    if (saveTimer.current) {
+      clearTimeout(saveTimer.current);
+      saveTimer.current = null;
+    }
+    fetch(`/api/pdf/${form.slug}/draft`, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ bundleRunId }),
+    }).catch(() => {});
+  }, [form.slug, bundleRunId]);
+
+  /// Envoie MAINTENANT le brouillon en attente, s'il y en a un. Lit les valeurs
+  /// dans `valuesRef` (jamais dans un updater `setValues` — un updater React
+  /// doit rester pur ; l'ancien code y déclenchait le `fetch`, ce qui produisait
+  /// deux PUT par sauvegarde en StrictMode).
+  const flushDraft = useCallback(() => {
+    const pending = pendingSave.current;
+    if (!pending) return;
+    pendingSave.current = null;
+    if (saveTimer.current) {
+      clearTimeout(saveTimer.current);
+      saveTimer.current = null;
+    }
+    lastSaveStartedAt.current = Date.now();
+    fetch(`/api/pdf/${form.slug}/draft`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      // `bundleRunId` route vers le brouillon serveur du dossier (anonyme
+      // possible) ; `stepId`/`field` alimentent la reprise fine (Lot 3).
+      body: JSON.stringify({
+        payload: valuesRef.current,
+        stepId: pending.stepId,
+        field: pending.field,
+        bundleRunId,
+      }),
+      // `keepalive` : la requête survit à la fermeture de l'onglet, ce qui rend
+      // le flush sur `visibilitychange` réellement utile sur mobile.
+      keepalive: true,
+    })
+      // N'affiche « enregistré » QUE si le serveur a réellement persisté
+      // (corrige le faux « enregistré » sur un 401 anonyme autonome).
+      .then((res) => {
+        if (res.ok && mounted.current) setLastSavedAt(new Date());
+      })
+      .catch(() => {});
+  }, [form.slug, bundleRunId]);
+
+  // Filets de la sauvegarde auto : on n'attend jamais indéfiniment.
+  //   • onglet masqué / fermé → on écrit tout de suite ;
+  //   • démontage (navigation vers un autre document) → idem, et on annule le
+  //     minuteur en cours pour ne pas écrire après coup.
+  useEffect(() => {
+    const onVisibility = () => {
+      if (document.visibilityState === "hidden") flushDraft();
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibility);
+      flushDraft();
+      if (saveTimer.current) clearTimeout(saveTimer.current);
+    };
+  }, [flushDraft]);
+
+  useEffect(() => () => { mounted.current = false; }, []);
+
   const setValue = useCallback(
     (id: string, value: FieldValue) => {
       const field = form.fields.find((candidate) => candidate.id === id);
+      touchedFields.current.add(id);
       const bicField = field?.canonicalKey === "banque.iban"
         ? form.fields.find((candidate) => candidate.canonicalKey === "banque.bic")
         : undefined;
@@ -457,25 +572,20 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
         if (!prev[id] && (!bicField || !prev[bicField.id])) return prev;
         return { ...prev, [id]: "", ...(bicField ? { [bicField.id]: "" } : {}) };
       });
+      pendingSave.current = { stepId: activeStepId ?? null, field: id };
       if (saveTimer.current) clearTimeout(saveTimer.current);
-      saveTimer.current = setTimeout(() => {
-        setValues((cur) => {
-          fetch(`/api/pdf/${form.slug}/draft`, {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            // `bundleRunId` route vers le brouillon serveur du dossier (anonyme
-            // possible) ; `stepId`/`field` alimentent la reprise fine (Lot 3).
-            body: JSON.stringify({ payload: cur, stepId: activeStepId ?? null, field: id, bundleRunId }),
-          })
-            // N'affiche « enregistré » QUE si le serveur a réellement persisté
-            // (corrige le faux « enregistré » sur un 401 anonyme autonome).
-            .then((res) => { if (res.ok) setLastSavedAt(new Date()); })
-            .catch(() => {});
-          return cur;
-        });
-      }, 1500);
+      // Plafond de report (Oraliks 2026-07-26). Le debounce était « trailing »
+      // pur : chaque frappe repoussait la sauvegarde de 1,5 s, donc quelqu'un
+      // qui tape lentement mais SANS PAUSE de 1,5 s — clavier virtuel, public
+      // en difficulté — ne déclenchait jamais d'enregistrement. Au-delà de
+      // DRAFT_MAX_WAIT_MS depuis la dernière écriture, on écrit sans attendre.
+      if (Date.now() - lastSaveStartedAt.current >= DRAFT_MAX_WAIT_MS) {
+        flushDraft();
+        return;
+      }
+      saveTimer.current = setTimeout(flushDraft, DRAFT_DEBOUNCE_MS);
     },
-    [form.slug, form.fields, activeStepId, bundleRunId]
+    [form.fields, activeStepId, flushDraft]
   );
 
   // Bloque l'avancée vers une étape ULTÉRIEURE tant que les champs REQUIS
@@ -579,7 +689,22 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
     }
     // Validation avec la version signée (sinon les champs signature requis
     // seraient signalés comme manquants).
-    const validator = buildValidator(form.fields as unknown as PdfFormField[], locale);
+    // On ne valide (et on n'envoie) QUE les champs réellement visibles.
+    //
+    // Sans ce filtre, la validation portait aussi sur les champs masqués par
+    // `visibleIf` dont la valeur restait dans `values` : un IBAN étranger mal
+    // formé saisi puis masqué en changeant de mode de paiement bloquait
+    // l'envoi sur un champ que l'utilisateur ne pouvait NI atteindre (il
+    // n'appartient à aucune étape visible → `fieldStepIndex` undefined) NI
+    // faire défiler (aucun noeud DOM) — impasse totale, et le serveur rejouait
+    // la même validation. Purger les valeurs invisibles évite en prime
+    // d'imprimer sur le PDF officiel une réponse à une question non posée.
+    const visibleFields = form.fields.filter((f) => isFieldVisible(f.visibleIf, signedValues));
+    const visibleIds = new Set(visibleFields.map((f) => f.id));
+    for (const f of form.fields) {
+      if (!visibleIds.has(f.id)) delete signedValues[f.id];
+    }
+    const validator = buildValidator(visibleFields as unknown as PdfFormField[], locale);
     const res0 = validator.safeParse(signedValues);
     if (!res0.success) {
       const next: Record<string, string> = {};
@@ -634,16 +759,21 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
       return;
     }
     setErrors({});
-    if (delivery === "doccle" && !doccleRef.trim()) {
-      toast.error(t("runnerDoccleRecipientRequired"));
-      return;
-    }
-    setSubmitting(true);
     // Dans un dossier (bundleRunId présent) : "Valider" — sauvegarde le
     // payload, aucun PDF généré. Le téléchargement se fait plus tard, groupé,
     // depuis l'écran "Mes documents" du parcours (cf. bundle-roadmap.tsx),
     // une fois tous les documents requis (dont ceux déclenchés) complétés.
     const effectiveDelivery: "download" | "doccle" | "save" = bundleRunId ? "save" : delivery;
+    // Tester `effectiveDelivery`, PAS `delivery` : dans un dossier la livraison
+    // vaut toujours "save" et le champ destinataire Doccle n'est même pas rendu.
+    // Un formulaire `allowDownload: false` démarre pourtant sur delivery="doccle"
+    // → l'envoi échouait sur « destinataire requis » en désignant un champ
+    // invisible. Seconde impasse, du même genre que celle des champs masqués.
+    if (effectiveDelivery === "doccle" && !doccleRef.trim()) {
+      toast.error(t("runnerDoccleRecipientRequired"));
+      return;
+    }
+    setSubmitting(true);
     try {
       const res = await fetch(`/api/pdf/${form.slug}/generate`, {
         method: "POST",
@@ -664,7 +794,7 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
           toast.error(data.error || t("runnerGenerationFailed"));
           return;
         }
-        fetch(`/api/pdf/${form.slug}/draft`, { method: "DELETE" }).catch(() => {});
+        discardDraft();
         const newlyTriggered: Array<{ slug: string; title: string }> = data.newlyTriggered || [];
         if (newlyTriggered.length > 0) {
           // Un choix vient de matérialiser un document compagnon : on le
@@ -732,14 +862,14 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
         a.click();
         a.remove();
         URL.revokeObjectURL(url);
-        fetch(`/api/pdf/${form.slug}/draft`, { method: "DELETE" }).catch(() => {});
+        discardDraft();
         setDone({ mode: "download" });
         standaloneTriggerNotice();
         return;
       }
       const data = await res.json().catch(() => ({}));
       if (res.ok && data.delivery === "doccle") {
-        fetch(`/api/pdf/${form.slug}/draft`, { method: "DELETE" }).catch(() => {});
+        discardDraft();
         setDone({ mode: "doccle" });
         standaloneTriggerNotice();
         return;
@@ -1652,11 +1782,12 @@ function MacroRunnerBody({
                       renderField={(field) => (
                         <PdfField
                           field={field}
-                          value={
-                            field.canonicalKey === "banque.bic" && detectedBic
-                              ? detectedBic
-                              : values[field.id] ?? ""
-                          }
+                          // La valeur affichée vient TOUJOURS du state — jamais
+                          // de `detectedBic`, sinon l'écran peut montrer un BIC
+                          // pendant que le PDF en reçoit un autre. `setValue` et
+                          // `withSuggestedBic` maintiennent le state aligné sur
+                          // l'IBAN ; `detectedBic` ne sert plus qu'au verrou.
+                          value={values[field.id] ?? ""}
                           autoLocked={field.canonicalKey === "banque.bic" && !!detectedBic}
                           error={errors[field.id]}
                           locale={locale}

@@ -55,30 +55,60 @@ const FULL_WIDTH_TYPES = new Set(["textarea", "signature", "fullname", "checkbox
 /// Ancre de la case de consentement — sert au scroll d'erreur du submit.
 const CONSENT_FIELD_ID = "runner-consent";
 
+/// Ancre de l'en-tête d'étape : cible du focus et du défilement quand on
+/// change d'étape (le contenu principal change entièrement — WCAG 2.4.3).
+const STEP_ANCHOR_ID = "runner-step-anchor";
+
+/// Vrai si l'usager a demandé à réduire les animations. On lit LES DEUX
+/// signaux exigés par DESIGN_RULES : la préférence système et le réglage
+/// maison de la barre d'accessibilité.
+function prefersReducedMotion(): boolean {
+  if (typeof window === "undefined") return false;
+  return (
+    window.matchMedia?.("(prefers-reduced-motion: reduce)").matches === true ||
+    document.documentElement.dataset.docbelMotion === "reduced"
+  );
+}
+
+/// Amène un champ dans le champ visible. Centralisé pour que le respect des
+/// préférences de mouvement ne dépende pas de la vigilance de chaque appelant :
+/// les cinq défilements du runner étaient tous codés en dur en `smooth`.
+function scrollToField(id: string) {
+  document.getElementById(id)?.scrollIntoView({
+    behavior: prefersReducedMotion() ? "auto" : "smooth",
+    block: "center",
+  });
+}
+
 /// Sauvegarde du brouillon : délai d'inactivité avant écriture, et délai
 /// MAXIMUM au-delà duquel on écrit même si la saisie continue.
 const DRAFT_DEBOUNCE_MS = 1500;
 const DRAFT_MAX_WAIT_MS = 10_000;
 
-/// Case de consentement RGPD — même bloc dans les 3 rendus du runner.
-/// `invalid` (tentative d'envoi sans avoir coché) passe la ligne en rouge et
-/// la case en `aria-invalid` : même grammaire d'erreur que les champs requis
-/// du formulaire, au lieu d'un toast détaché de la case qu'il désigne
-/// (Oraliks 2026-07-26).
+/// Case de consentement RGPD — même bloc dans les deux rendus du runner.
+///
+/// En erreur (tentative d'envoi sans avoir coché) : ligne en rouge, case en
+/// `aria-invalid`, ET message explicite sous la case. Le rouge seul ne suffit
+/// pas — DESIGN_RULES l'interdit (« la couleur ne porte jamais seule le
+/// sens ») et un toast qui disparaît laisse l'usager sans indice.
 function ConsentCheckbox({
   checked,
   onChange,
   invalid,
   label,
+  errorMessage,
   compact = false,
 }: {
   checked: boolean;
   onChange: (next: boolean) => void;
   invalid: boolean;
   label: string;
+  errorMessage: string;
   compact?: boolean;
 }) {
+  const errorId = `${CONSENT_FIELD_ID}-error`;
   return (
+    <div className="flex flex-col gap-1.5">
     <label
       id={CONSENT_FIELD_ID}
       className={[
@@ -91,10 +121,17 @@ function ConsentCheckbox({
         checked={checked}
         onCheckedChange={(c) => onChange(c === true)}
         aria-invalid={invalid}
+        aria-describedby={invalid ? errorId : undefined}
         className="mt-0.5"
       />
       <span>{label}</span>
     </label>
+      {invalid && (
+        <p id={errorId} role="alert" className="pl-7 text-sm font-medium text-destructive">
+          {errorMessage}
+        </p>
+      )}
+    </div>
   );
 }
 
@@ -440,6 +477,25 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
   const activeIndex =
     foundIndex >= 0 ? foundIndex : Math.max(0, Math.min(activeStep.index, stepCount - 1));
 
+  // Changement d'étape : on remonte en tête de l'étape ET on y place le focus.
+  // Sans ça, après un « Continuer » en bas d'une longue étape, l'usager
+  // restait EN BAS de la nouvelle — au niveau du pied de page — et croyait
+  // n'avoir pas avancé ; et rien n'annonçait à un lecteur d'écran que tout le
+  // contenu principal venait de changer (WCAG 2.4.3). Le garde sur l'index
+  // évite de voler le focus au montage.
+  const previousStepIndex = useRef(activeIndex);
+  useEffect(() => {
+    if (previousStepIndex.current === activeIndex) return;
+    previousStepIndex.current = activeIndex;
+    const anchor = document.getElementById(STEP_ANCHOR_ID);
+    if (!anchor) return;
+    anchor.focus({ preventScroll: true });
+    anchor.scrollIntoView({
+      behavior: prefersReducedMotion() ? "auto" : "smooth",
+      block: "start",
+    });
+  }, [activeIndex]);
+
   // `setActive` garde une signature par INDEX (une dizaine d'appelants) mais
   // enregistre l'id. Lit `stepIds` dans une ref pour rester stable : plusieurs
   // `useCallback` la capturent, et une identité changeante y figerait une liste
@@ -633,7 +689,7 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
         setActive(startIndex + invalid.index);
         const firstInvalidFieldId = stepsFieldsList[invalid.index].find((f) => invalid.errors[f.id])?.id;
         if (firstInvalidFieldId) {
-          setTimeout(() => document.getElementById(firstInvalidFieldId)?.scrollIntoView({ behavior: "smooth", block: "center" }), 60);
+          setTimeout(() => scrollToField(firstInvalidFieldId), 60);
         }
         return;
       }
@@ -651,7 +707,7 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
         setErrors((prev) => ({ ...prev, ...listErrors }));
         const stepIdx = stepsFieldsList.findIndex((sf) => sf.some((f) => f.id === firstListId));
         if (stepIdx >= 0) setActive(startIndex + stepIdx);
-        setTimeout(() => document.getElementById(firstListId)?.scrollIntoView({ behavior: "smooth", block: "center" }), 60);
+        setTimeout(() => scrollToField(firstListId), 60);
         return;
       }
       setActive(nextIndex);
@@ -663,9 +719,7 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
     if (!consent) {
       setConsentError(true);
       toast.error(t("runnerConsentRequired"));
-      document
-        .getElementById(CONSENT_FIELD_ID)
-        ?.scrollIntoView({ behavior: "smooth", block: "center" });
+      scrollToField(CONSENT_FIELD_ID);
       return;
     }
     // Signature numérique automatique : on auto-confirme tous les champs
@@ -749,7 +803,7 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
       if (firstId) {
         const stepIdx = fieldStepIndex[firstId];
         if (stepIdx !== undefined) setActive(stepIdx);
-        setTimeout(() => document.getElementById(firstId)?.scrollIntoView({ behavior: "smooth", block: "center" }), 60);
+        setTimeout(() => scrollToField(firstId), 60);
       }
       // Toast enrichi : liste des libellés des 3 premiers champs invalides
       // (au-delà, on garde le message générique — évite un toast géant).
@@ -775,7 +829,7 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
       setErrors(listErrors);
       const stepIdx = fieldStepIndex[firstListId];
       if (stepIdx !== undefined) setActive(stepIdx);
-      setTimeout(() => document.getElementById(firstListId)?.scrollIntoView({ behavior: "smooth", block: "center" }), 60);
+      setTimeout(() => scrollToField(firstListId), 60);
       toast.error(listErrors[firstListId]);
       return;
     }
@@ -1117,7 +1171,16 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
         })()}
       >
         <Card className="overflow-hidden rounded-3xl border-0 bg-card shadow-sm">
-          <div className="border-b border-[color:var(--glass-border)] px-3">
+          {/* Ancre du changement d'étape : cible du focus et du défilement.
+              `tabIndex={-1}` la rend focalisable par programme sans l'ajouter
+              à l'ordre de tabulation. En y plaçant le focus, le lecteur
+              d'écran annonce l'en-tête (« Étape 3 sur 5 — Famille »), ce qui
+              signale le changement de contenu sans région live redondante. */}
+          <div
+            id={STEP_ANCHOR_ID}
+            tabIndex={-1}
+            className="border-b border-[color:var(--glass-border)] px-3 outline-none"
+          >
             <FormStepper
               steps={steps.map((s) => {
                 const meta = computeStepMeta(stepFieldsOf(s), values, locale, (c) => t("runnerStepRemaining", { count: c }), verifiedStreets);
@@ -1241,6 +1304,7 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
                     onChange={updateConsent}
                     invalid={consentError}
                     label={t("runnerConsentText")}
+                    errorMessage={t("runnerConsentRequired")}
                   />
                   <div className="flex items-center justify-between gap-2">
                     <AutoSaveNotice lastSavedAt={lastSavedAt} isPartOfBundle={!!bundleRunId} serverSaved={serverSaved} />
@@ -1396,7 +1460,7 @@ function FieldsCluster({
     <div className="flex flex-col gap-4">
       {chipFields.length > 0 && (
         <div className="flex flex-col gap-2">
-          <div className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-3">
+          <div className="grid gap-2.5 sm:grid-cols-2">
             {chipFields.map((f) => {
               if (f.type === "radio") {
                 return (f.options || []).map((o) => (
@@ -1478,7 +1542,7 @@ function FieldsCluster({
         </div>
       )}
       {standaloneOtherFields.length > 0 && (
-        <div className="grid grid-cols-1 gap-x-4 gap-y-3.5 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="grid grid-cols-1 gap-x-4 gap-y-3.5 sm:grid-cols-2">
           {standaloneOtherFields.map((f) => {
             const escapeField = escapeByParent.get(f.id);
             return (
@@ -1746,7 +1810,16 @@ function MacroRunnerBody({
         })()}
       >
         <Card className="overflow-hidden rounded-3xl border-0 bg-card shadow-sm">
-          <div className="border-b border-[color:var(--glass-border)] px-3">
+          {/* Ancre du changement d'étape : cible du focus et du défilement.
+              `tabIndex={-1}` la rend focalisable par programme sans l'ajouter
+              à l'ordre de tabulation. En y plaçant le focus, le lecteur
+              d'écran annonce l'en-tête (« Étape 3 sur 5 — Famille »), ce qui
+              signale le changement de contenu sans région live redondante. */}
+          <div
+            id={STEP_ANCHOR_ID}
+            tabIndex={-1}
+            className="border-b border-[color:var(--glass-border)] px-3 outline-none"
+          >
             <FormStepper
               steps={macroSteps.map((s) => {
                 const meta = computeStepMeta(stepFieldsOf(s), values, locale, (c) => t("runnerStepRemaining", { count: c }), verifiedStreets);
@@ -1879,6 +1952,7 @@ function MacroRunnerBody({
                     onChange={setConsent}
                     invalid={consentError}
                     label={t("runnerConsentText")}
+                    errorMessage={t("runnerConsentRequired")}
                   />
                   {liveTriggers.length > 0 && (
                     <p className="text-xs text-amber-700 dark:text-amber-300 mt-2">

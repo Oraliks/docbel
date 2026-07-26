@@ -81,6 +81,19 @@ const LEGACY_C1_WORKAROUND_FIELD_IDS = new Set<string>([
   // pdfFieldName pipe complet n'est pas dans `coveredCheckboxNames`) et se
   // battrait avec le nouveau pour les MÊMES widgets.
   "pensionAlimentaireDejaDeclare",
+  // Inféré à l'import sur le widget « NomTitulaireSipasOk » — la case « nom du
+  // titulaire SI le compte n'est pas à votre nom ». L'inférence l'a typé `iban`
+  // parce que l'infobulle ONEM de ce widget est trompeuse (/TU = « Le n° IBAN
+  // se trouve sur vos extraits de compte »), et ce libellé devenait la question
+  // posée au citoyen. Deux conséquences mesurées : une SECONDE question IBAN
+  // facultative à l'écran, et surtout l'IBAN écrit dans la case réservée au NOM
+  // du titulaire (« 68539007547034 » constaté sur le PDF généré).
+  //
+  // Le dédoublonnage habituel ne l'attrapait pas : il ne retire un inféré que si
+  // son widget est déjà couvert par un champ du seed, or `titulaireCompteNom`
+  // est purement UI (`pdfFieldName` vide) — le widget est stampé côté serveur
+  // par la règle `titulaire-autre`, qui reste la seule source légitime.
+  "nomtitulairesipasok",
 ]);
 
 export interface ApplyC1ImprovementsOptions {

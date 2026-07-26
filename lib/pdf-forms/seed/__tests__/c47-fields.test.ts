@@ -32,11 +32,17 @@ describe("C47_FIELDS", () => {
     expect(byId.get("dateDA")?.pdfFieldName).toBe("Date de DA");
     expect(byId.get("aujourd_hui")?.pdfFieldName).toBe("AUJOURD'HUI");
     expect(byId.get("signature")?.pdfFieldName).toBe("Signature");
+    // Apostrophes TYPOGRAPHIQUES (’) : ces deux attentes ont longtemps été
+    // écrites avec l'apostrophe ASCII (') — le test disait « copiés exactement
+    // depuis le dump » tout en comparant à une chaîne RETAPÉE à la main, donc
+    // il validait la faute au lieu de l'attraper. Les champs pointaient vers un
+    // widget inexistant et le C47 était impubliable. L'autorité, c'est le PDF :
+    // cf. `seeds-vs-pdf.test.ts`, qui compare les seeds au vrai fichier.
     expect(byId.get("jeuneTravailleurStageInsertion")?.pdfFieldName).toBe(
-      "Je suis un jeune travailleur en stage d'insertion professionnelle et j'invoque une inaptitude permanente au travail de 33 % au moins.\n(art. 36/3, § 2, AR 25.11.1991)"
+      "Je suis un jeune travailleur en stage d’insertion professionnelle et j’invoque une inaptitude permanente au travail de 33 % au moins.\n(art. 36/3, § 2, AR 25.11.1991)"
     );
     expect(byId.get("chomeurCompletIndemniseInaptitude")?.pdfFieldName).toBe(
-      "Je suis chômeur complet indemnisé et j'invoque une inaptitude permanente au travail de 33 % au moins.\n(art. 58, § 1er, et 58/3, § 4, AR 25.11.1991)"
+      "Je suis chômeur complet indemnisé et j’invoque une inaptitude permanente au travail de 33 % au moins.\n(art. 58, § 1er, et 58/3, § 4, AR 25.11.1991)"
     );
   });
 

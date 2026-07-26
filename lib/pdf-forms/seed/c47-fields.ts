@@ -144,8 +144,13 @@ export const C47_FIELDS: PdfFormField[] = [
   },
   {
     id: "jeuneTravailleurStageInsertion",
+    // ⚠ Apostrophes TYPOGRAPHIQUES (’, U+2019) : c'est ce que contient le nom
+    // du widget dans C47_FR.pdf. Avec l'apostrophe ASCII (') le champ pointait
+    // vers un widget inexistant → 2 erreurs bloquantes à la publication et 2
+    // cases jamais cochées. Ne jamais RETAPER un pdfFieldName : le copier
+    // depuis `pnpm tsx scripts/dump-pdf-widgets.ts C47_FR`.
     pdfFieldName:
-      "Je suis un jeune travailleur en stage d'insertion professionnelle et j'invoque une inaptitude permanente au travail de 33 % au moins.\n(art. 36/3, § 2, AR 25.11.1991)",
+      "Je suis un jeune travailleur en stage d’insertion professionnelle et j’invoque une inaptitude permanente au travail de 33 % au moins.\n(art. 36/3, § 2, AR 25.11.1991)",
     type: "checkbox",
     required: false,
     label: {
@@ -161,8 +166,9 @@ export const C47_FIELDS: PdfFormField[] = [
   },
   {
     id: "chomeurCompletIndemniseInaptitude",
+    // Idem : apostrophe typographique (’) exigée par le widget du PDF.
     pdfFieldName:
-      "Je suis chômeur complet indemnisé et j'invoque une inaptitude permanente au travail de 33 % au moins.\n(art. 58, § 1er, et 58/3, § 4, AR 25.11.1991)",
+      "Je suis chômeur complet indemnisé et j’invoque une inaptitude permanente au travail de 33 % au moins.\n(art. 58, § 1er, et 58/3, § 4, AR 25.11.1991)",
     type: "checkbox",
     required: false,
     label: {

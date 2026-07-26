@@ -142,10 +142,15 @@ export function PdfField({
   const placeholder = loc(field.placeholder, locale);
 
   // Hook appelé INCONDITIONNELLEMENT (règles des hooks — le composant a
-  // plusieurs retours anticipés selon field.type plus bas) ; sans effet pour
-  // tout type ≠ postal_be (la valeur n'est utilisée que dans le rendu
-  // générique, plus bas, et le hook lui-même ignore une valeur non-4-chiffres).
-  const communeHint = usePostalCommuneHint(typeof value === "string" ? value : "");
+  // plusieurs retours anticipés selon field.type plus bas), mais neutralisé
+  // hors `postal_be` en lui passant une chaîne vide. Le hook ne filtre que sur
+  // « 4 chiffres » : sans ce garde, TOUT champ valant 4 chiffres (un montant
+  // « 1500 », une année « 2024 », un numéro d'ordre) déclenchait un
+  // GET /api/postal-lookup — requêtes inutiles, et saisie du citoyen envoyée
+  // à une API qui n'a rien à voir avec le champ.
+  const communeHint = usePostalCommuneHint(
+    field.type === "postal_be" && typeof value === "string" ? value : "",
+  );
 
   // Validation en direct au blur : erreur de format immédiate + ✓ vert quand
   // le champ est rempli et valide. Une erreur serveur/soumission (`error`)

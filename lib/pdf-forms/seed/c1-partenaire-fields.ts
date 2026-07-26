@@ -21,8 +21,8 @@ const SECTION_AFFIRMATIONS = "affirmations";
 const SECTION_SIGNATURE = "signature";
 
 const YN = [
-  { value: "oui", label: { fr: "Oui", nl: "", de: "" } },
-  { value: "non", label: { fr: "Non", nl: "", de: "" } },
+  { value: "oui", label: { fr: "Oui" } },
+  { value: "non", label: { fr: "Non" } },
 ];
 
 /// Aide complète reprenant les 6 conditions cumulatives du texte imprimé
@@ -47,8 +47,8 @@ function ynQuestion(opts: {
     pdfFieldName: `${opts.pdfOui}|${opts.pdfNon}`,
     type: "radio",
     required: true,
-    label: { fr: opts.label, nl: "", de: "" },
-    help: opts.help ? { fr: opts.help, nl: "", de: "" } : undefined,
+    label: { fr: opts.label },
+    help: opts.help ? { fr: opts.help } : undefined,
     options: YN,
     section: SECTION_PARTENAIRE,
     order: opts.order,
@@ -64,12 +64,11 @@ export const C1_PARTENAIRE_FIELDS: PdfFormField[] = [
     pdfFieldName: "NISS Chômeur",
     type: "niss",
     required: true,
-    label: { fr: "Ton numéro NISS (registre national)", nl: "", de: "" },
+    label: { fr: "Ton numéro NISS (registre national)" },
     help: {
       fr: "11 chiffres au dos de ta carte d'identité (eID), au-dessus du code-barres.",
-      nl: "", de: "",
     },
-    placeholder: { fr: "00.00.00-000.00", nl: "", de: "" },
+    placeholder: { fr: "00.00.00-000.00" },
     prefillFrom: "profile.niss",
     // Chômeur = citoyen qui remplit ce formulaire (⇒ canonicalKey =
     // identity.niss). ATTENTION : les champs `niss_partenaire` et
@@ -99,7 +98,7 @@ export const C1_PARTENAIRE_FIELDS: PdfFormField[] = [
     type: "fullname",
     nameOrder: "last-first",
     required: true,
-    label: { fr: "Ton nom et prénom", nl: "", de: "" },
+    label: { fr: "Ton nom et prénom" },
     section: SECTION_IDENTITE,
     order: -99,
   },
@@ -108,10 +107,9 @@ export const C1_PARTENAIRE_FIELDS: PdfFormField[] = [
     pdfFieldName: "NISS Partenaire",
     type: "text",
     required: true,
-    label: { fr: "NISS ou date de naissance du partenaire", nl: "", de: "" },
+    label: { fr: "NISS ou date de naissance du partenaire" },
     help: {
       fr: "Indique le numéro NISS du partenaire. S'il n'en a pas encore (ex. personne récemment arrivée en Belgique), indique sa date de naissance à la place.",
-      nl: "", de: "",
     },
     section: SECTION_IDENTITE,
     order: -98,
@@ -121,8 +119,8 @@ export const C1_PARTENAIRE_FIELDS: PdfFormField[] = [
     pdfFieldName: "Nom partenaire",
     type: "text",
     required: true,
-    label: { fr: "Nom et prénom du partenaire", nl: "", de: "" },
-    help: { fr: PARTENAIRE_DEFINITION_HELP, nl: "", de: "" },
+    label: { fr: "Nom et prénom du partenaire" },
+    help: { fr: PARTENAIRE_DEFINITION_HELP },
     section: SECTION_IDENTITE,
     order: -97,
   },
@@ -131,10 +129,9 @@ export const C1_PARTENAIRE_FIELDS: PdfFormField[] = [
     pdfFieldName: "Date de DA",
     type: "date",
     required: false,
-    label: { fr: "Date de la demande d'allocations (ou de modification)", nl: "", de: "" },
+    label: { fr: "Date de la demande d'allocations (ou de modification)" },
     help: {
       fr: "Case réservée à l'organisme de paiement (cachet dateur) — tu peux généralement la laisser vide.",
-      nl: "", de: "",
     },
     prefillFrom: "system.today",
     section: SECTION_IDENTITE,
@@ -157,10 +154,9 @@ export const C1_PARTENAIRE_FIELDS: PdfFormField[] = [
     pdfFieldName: "métier",
     type: "text",
     required: false,
-    label: { fr: "Si oui, quelle activité professionnelle exerce-t-il/elle ?", nl: "", de: "" },
+    label: { fr: "Si oui, quelle activité professionnelle exerce-t-il/elle ?" },
     help: {
       fr: "Indique « salarié » et/ou « indépendant ». Si l'activité est exercée comme indépendant, ne remplis PAS le montant mensuel brut ci-dessous.",
-      nl: "", de: "",
     },
     visibleIf: { fieldId: "partenaireRevenuProfessionnel", op: "equals", value: "oui" },
     section: SECTION_PARTENAIRE,
@@ -171,10 +167,9 @@ export const C1_PARTENAIRE_FIELDS: PdfFormField[] = [
     pdfFieldName: "Montant mensuel brut",
     type: "text",
     required: false,
-    label: { fr: "Montant mensuel brut (si activité salariée)", nl: "", de: "" },
+    label: { fr: "Montant mensuel brut (si activité salariée)" },
     help: {
       fr: "Uniquement si l'activité est salariée. Laisse vide si le partenaire est indépendant.",
-      nl: "", de: "",
     },
     visibleIf: { fieldId: "partenaireRevenuProfessionnel", op: "equals", value: "oui" },
     section: SECTION_PARTENAIRE,
@@ -193,7 +188,7 @@ export const C1_PARTENAIRE_FIELDS: PdfFormField[] = [
     pdfFieldName: "Revenu de remplacement",
     type: "text",
     required: false,
-    label: { fr: "Si oui, nature du revenu de remplacement", nl: "", de: "" },
+    label: { fr: "Si oui, nature du revenu de remplacement" },
     // A VALIDER Oraliks : le texte imprimé ne précise pas d'exemples pour
     // cette rubrique (contrairement à la définition de "revenu de
     // remplacement" ailleurs dans le C1) — à confirmer si une liste
@@ -256,8 +251,8 @@ export const C1_PARTENAIRE_FIELDS: PdfFormField[] = [
     pdfFieldName: "Aujourd'hui",
     type: "date",
     required: true,
-    label: { fr: "Date de la déclaration", nl: "", de: "" },
-    help: { fr: "Pré-remplie automatiquement avec la date du jour.", nl: "", de: "" },
+    label: { fr: "Date de la déclaration" },
+    help: { fr: "Pré-remplie automatiquement avec la date du jour." },
     prefillFrom: "system.today",
     section: SECTION_AFFIRMATIONS,
     order: 900,
@@ -267,10 +262,9 @@ export const C1_PARTENAIRE_FIELDS: PdfFormField[] = [
     pdfFieldName: "Signature du chômeur",
     type: "signature",
     required: true,
-    label: { fr: "Ta signature", nl: "", de: "" },
+    label: { fr: "Ta signature" },
     help: {
       fr: "En signant, tu affirmes que cette déclaration est sincère et complète, et tu t'engages à signaler immédiatement à ton organisme de paiement tout changement de situation.",
-      nl: "", de: "",
     },
     section: SECTION_SIGNATURE,
     order: 1000,
@@ -280,10 +274,9 @@ export const C1_PARTENAIRE_FIELDS: PdfFormField[] = [
     pdfFieldName: "Signature du partenaire",
     type: "signature",
     required: true,
-    label: { fr: "Signature du partenaire", nl: "", de: "" },
+    label: { fr: "Signature du partenaire" },
     help: {
       fr: "Le partenaire doit signer aussi — cette déclaration l'engage lui/elle également.",
-      nl: "", de: "",
     },
     section: SECTION_SIGNATURE,
     order: 1001,

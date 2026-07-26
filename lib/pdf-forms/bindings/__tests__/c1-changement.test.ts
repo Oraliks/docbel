@@ -202,6 +202,47 @@ describe("Rules C1 — remarque situation familiale", () => {
     expect(stamps.get("Remarques 1 Haut")).toBe("cohousing");
   });
 
+  it("déborde sur la 2e ligne de la boîte quand la remarque est longue", () => {
+    // Le bloc « Remarques » du PDF est UNE boîte de deux widgets successifs.
+    // Une remarque courte n'occupe que la 1ʳᵉ ligne…
+    const court = { ...baseline(), statutJugementPensionAlimentaire: "en-cours" };
+    const stampsCourt = resolveStamps(court, C1_CHANGEMENT_RULES);
+    expect(stampsCourt.get("Remarques 1 Haut")).toBe("jugement en cours, pas encore en ma possession");
+    expect(stampsCourt.get("Remarques 2 Haut")).toBeUndefined();
+
+    // …et une remarque longue est répartie, sans perdre un seul mot.
+    const long = {
+      ...baseline(),
+      statutFamilial: "isole",
+      habiteEnColocation: "oui",
+      statutJugementPensionAlimentaire: "en-cours",
+      cohabitants: [{ prenom: "Jean", nom: "Dupont", remarque: "hébergé à titre gratuit depuis le 1er janvier" }],
+    };
+    const stamps = resolveStamps(long, C1_CHANGEMENT_RULES);
+    const l1 = stamps.get("Remarques 1 Haut") as string;
+    const l2 = stamps.get("Remarques 2 Haut") as string;
+    expect(l1).toBeTruthy();
+    expect(l2).toBeTruthy();
+    expect(l1.length).toBeLessThanOrEqual(88);
+    expect(`${l1} ${l2}`).toBe(
+      "cohousing ; jugement en cours, pas encore en ma possession ; Jean Dupont : hébergé à titre gratuit depuis le 1er janvier",
+    );
+  });
+
+  it("remarque libre à l'ONEM : stampée sur la boîte du bas, rien si vide", () => {
+    expect(resolveStamps(baseline(), C1_CHANGEMENT_RULES).get("Remarques 1_2 Bas")).toBeUndefined();
+    expect(
+      resolveStamps({ ...baseline(), remarqueLibreOnem: "   " }, C1_CHANGEMENT_RULES).get("Remarques 1_2 Bas"),
+    ).toBeUndefined();
+
+    const stamps = resolveStamps(
+      { ...baseline(), remarqueLibreOnem: "Application de l'article 60B" },
+      C1_CHANGEMENT_RULES,
+    );
+    expect(stamps.get("Remarques 1_2 Bas")).toBe("Application de l'article 60B");
+    expect(stamps.get("Remarques 2_2 Bas")).toBeUndefined();
+  });
+
   it("jugement pas encore en possession concaténé avec « ; »", () => {
     // Cas isolé : cohousing seul.
     const cohousingOnly = {

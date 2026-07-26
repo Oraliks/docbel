@@ -1126,6 +1126,28 @@ export const C1_QUESTIONS: PdfFormField[] = [
     stepPriority: "optional",
   },
   {
+    // La paire « 1ʳᵉ fois / déjà déclaré » imprimée en marge du mandat
+    // politique (et de lui SEUL — arbitrage Oraliks 2026-07-26, malgré sa
+    // position qui semble encadrer la ligne suivante). Ses deux widgets
+    // étaient orphelins : la question n'était jamais posée et les deux cases
+    // partaient vierges.
+    //
+    // ⚠ À la différence des trois activités voisines, ce « déjà déclaré » ne
+    // pilote AUCUN déclencheur : il n'existe pas de règle qui ajoute un C1A au
+    // dossier sur `mandatPolitique`, alors que l'aide du champ l'annonce
+    // (« → Joindre un FORMULAIRE C1A »). Écart signalé à Oraliks, pas comblé
+    // ici — ajouter un déclencheur changerait les documents du dossier.
+    ...dejaDeclare({
+      id: "mandatPolitiqueDejaDeclare",
+      parentId: "mandatPolitique",
+      helpText: "Réponds « oui » seulement si ce mandat a déjà été signalé à ton organisme de paiement lors d'un dossier précédent.",
+      section: SECTION_ACTIVITES,
+      order: 241,
+      pdfFieldName: "Oui_PremièreFoisC1ADéjàDéclaré|Oui_PremièreFoisC1A",
+    }),
+    stepPriority: "optional",
+  },
+  {
     id: "chapitreXIIArts",
     pdfFieldName: "oui_7|non_7",
     type: "radio",
@@ -1694,6 +1716,44 @@ export const C1_QUESTIONS: PdfFormField[] = [
     visibleIf: { fieldId: "congeSansSolde", op: "equals", value: "oui" },
     section: SECTION_DIVERS,
     order: 901,
+    stepPriority: "optional",
+  },
+  {
+    // La ligne imprimée est « oui, du … au … » : seule la borne de DÉBUT était
+    // branchée, la case de fin (`Date12_af_date`) restait orpheline et la
+    // période partait sans terme (2026-07-26).
+    id: "congeSansSoldeDateFin",
+    pdfFieldName: "Date12_af_date",
+    type: "date",
+    required: false,
+    label: { fr: "Jusqu'au", nl: "", de: "" },
+    help: { fr: "Laisse vide si la période n'a pas encore de date de fin connue.", nl: "", de: "" },
+    visibleIf: { fieldId: "congeSansSolde", op: "equals", value: "oui" },
+    section: SECTION_DIVERS,
+    order: 902,
+    stepPriority: "optional",
+  },
+  {
+    // Boîte de remarque libre en bas de la page 1 (deux lignes imprimées) :
+    // c'est là qu'on écrit ce qu'aucune case ne permet de dire, par exemple
+    // « Application de l'article 60B », pour que l'ONEM le reprenne dans sa
+    // décision. Ouverte au citoyen mais jamais obligatoire (Oraliks
+    // 2026-07-26) — en pratique c'est surtout l'expert qui l'accompagne qui
+    // l'utilisera.
+    //
+    // Pas de `pdfFieldName` : la répartition sur les DEUX lignes est faite par
+    // la règle serveur `remarque-libre` (cf. bindings/per-form/c1-changement).
+    id: "remarqueLibreOnem",
+    pdfFieldName: "",
+    type: "textarea",
+    required: false,
+    label: { fr: "Remarque à l'attention de l'ONEM", nl: "", de: "" },
+    help: {
+      fr: "Facultatif. À utiliser seulement s'il reste quelque chose d'important à signaler que le formulaire ne permet pas d'exprimer. Deux lignes disponibles sur le document.",
+      nl: "", de: "",
+    },
+    section: SECTION_DIVERS,
+    order: 950,
     stepPriority: "optional",
   },
   {

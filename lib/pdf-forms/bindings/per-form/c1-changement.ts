@@ -16,7 +16,7 @@ import {
   horsEeeTripleNon,
   dateHeaderFallback,
 } from "../macros";
-import { formatDateFR } from "../format";
+import { formatDateFR, wrapAcrossLines } from "../format";
 
 // ---------------------------------------------------------------------------
 // Widgets ciblés (constantes internes — lisibilité + refactor safe).
@@ -45,7 +45,19 @@ const W_IBAN_ETRANGER = "SEPA étranger IBAN  BIC";
 
 // Titulaire + remarque situation familiale.
 const W_TITULAIRE = "NomTitulaireSipasOk";
+
+// Les 4 widgets « Remarques » du PDF forment DEUX boîtes de deux lignes :
+//   • bloc situation familiale  : « Remarques 1 Haut » puis « Remarques 2 Haut »
+//   • bloc libre, bas de page 1 : « Remarques 1_2 Bas » puis « Remarques 2_2 Bas »
+// Seule la 1ʳᵉ ligne de la 1ʳᵉ boîte était utilisée ; les trois autres étaient
+// orphelines (2026-07-26). Budgets en caractères ≈ largeur du widget / 5,3 pt.
 const W_REMARQUE = "Remarques 1 Haut";
+const W_REMARQUE_L2 = "Remarques 2 Haut";
+const REMARQUE_FAM_BUDGET = [88, 96] as const;
+
+const W_REMARQUE_LIBRE = "Remarques 1_2 Bas";
+const W_REMARQUE_LIBRE_L2 = "Remarques 2_2 Bas";
+const REMARQUE_LIBRE_BUDGET = [90, 98] as const;
 
 // En-tête page 2, libellé imprimé « date DA / modification » (widget `DateDeDA`,
 // ex-`DateDeModification`). Reçoit la date du changement déclaré, IDENTIQUE à la
@@ -273,9 +285,37 @@ export const C1_CHANGEMENT_RULES: MappingRule[] = [
     stampFn: (payload) => {
       const parts = buildRemarqueFragments(payload);
       if (parts.length === 0) return [];
-      return [{ widget: W_REMARQUE, value: parts.join(" ; ") }];
+      // La boîte compte deux lignes : on déborde sur la seconde plutôt que de
+      // laisser la fin de la remarque hors du cadre.
+      const widgets = [W_REMARQUE, W_REMARQUE_L2];
+      return wrapAcrossLines(parts.join(" ; "), REMARQUE_FAM_BUDGET).map((value, i) => ({
+        widget: widgets[i],
+        value,
+      }));
     },
-    declaredWidgets: [W_REMARQUE],
+    declaredWidgets: [W_REMARQUE, W_REMARQUE_L2],
+  },
+
+  // -------- Remarque libre à l'attention de l'ONEM (bas de page 1) --------
+  //
+  // Champ facultatif saisi par le citoyen (ou par l'expert qui l'accompagne) :
+  // c'est là qu'on écrit ce qu'aucune case ne permet de dire, par exemple
+  // « Application de l'article 60B ». Le champ n'a pas de `pdfFieldName` — ce
+  // sont ces deux lignes qui le portent.
+  {
+    name: "remarque-libre",
+    whenFn: (payload) =>
+      typeof payload.remarqueLibreOnem === "string" && payload.remarqueLibreOnem.trim() !== "",
+    stampFn: (payload) => {
+      const raw = typeof payload.remarqueLibreOnem === "string" ? payload.remarqueLibreOnem.trim() : "";
+      if (!raw) return [];
+      const widgets = [W_REMARQUE_LIBRE, W_REMARQUE_LIBRE_L2];
+      return wrapAcrossLines(raw, REMARQUE_LIBRE_BUDGET).map((value, i) => ({
+        widget: widgets[i],
+        value,
+      }));
+    },
+    declaredWidgets: [W_REMARQUE_LIBRE, W_REMARQUE_LIBRE_L2],
   },
 
   // -------- Dates « à partir du » par ligne de motif (widgets scindés) --------

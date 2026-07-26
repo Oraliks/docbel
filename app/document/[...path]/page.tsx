@@ -366,11 +366,6 @@ export default async function PdfFormPage({
   const dossier = bundleSlug ? getDossier(bundleSlug) : null;
   const dossierTypes = dossier?.types;
 
-  // Filet de sécurité : "1" bascule tous les formulaires PDF vers l'ancien
-  // rendu (grille dense) sans redéploiement. Absent/tout autre valeur = nouveau
-  // rendu compact (défaut).
-  const legacyLayout = process.env.PDF_FORM_LEGACY_LAYOUT === "1";
-
   // Infos importantes contextuelles (panneau d'aide de gauche) : DB sur défauts,
   // résilient (jamais de throw). Passé jusqu'au ContextHelpPanel via le runner.
   const contextTips = await getFormContextTips(form.slug);
@@ -384,7 +379,6 @@ export default async function PdfFormPage({
         bundleSlug={bundleSlug}
         rail={rail}
         dossierTypes={dossierTypes}
-        legacyLayout={legacyLayout}
         contextTips={contextTips}
         initialStepId={initialStepId}
         draftValues={draftValues}

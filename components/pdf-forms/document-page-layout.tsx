@@ -22,7 +22,6 @@ interface Props {
   bundleRunId?: string;
   bundleSlug?: string;
   /// Filet de sécurité : si true, affiche l'ancien rendu dense du PDF.
-  legacyLayout?: boolean;
   /// Infos importantes contextuelles (panneau de gauche), servies par le serveur.
   contextTips?: TipEntry[];
   /// Reprise fine (Lot 3) : étape initiale (id stable) + réponses en cours à
@@ -38,7 +37,7 @@ interface Props {
 /// du reste du site (fond dégradé hérité de .glass-root, surfaces translucides)
 /// et le layout du mockup : header riche avec illustration décorative, pills
 /// meta, puis 2 colonnes (formulaire à gauche, résumé live à droite).
-export function DocumentPageLayout({ form, bundlePrefill, bundleRunId, bundleSlug, dossierTypes, legacyLayout, contextTips, initialStepId, draftValues, isAuthenticated, rail }: Props) {
+export function DocumentPageLayout({ form, bundlePrefill, bundleRunId, bundleSlug, dossierTypes, contextTips, initialStepId, draftValues, isAuthenticated, rail }: Props) {
   const t = useTranslations("public.dossier");
 
   // Abréviation pour l'illustration : "C32_Travailleur" → "C32".
@@ -113,7 +112,6 @@ export function DocumentPageLayout({ form, bundlePrefill, bundleRunId, bundleSlu
         bundlePrefill={bundlePrefill}
         bundleRunId={bundleRunId}
         bundleSlug={bundleSlug}
-        legacyLayout={legacyLayout}
         contextTips={contextTips}
         initialStepId={initialStepId}
         draftValues={draftValues}

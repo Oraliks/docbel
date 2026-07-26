@@ -27,11 +27,18 @@ import { isSignatureField } from "./auto-fields";
 import { isFieldVisible } from "./validation";
 import { formatDateFR } from "./bindings/format";
 
-/// Chemin d'une police TTF Unicode optionnelle. Si présente, elle est
-/// embarquée et utilisée pour réécrire les apparences des champs → support
-/// complet des caractères hors Latin-1 (ł, ğ, ž, ș…) dans les noms étrangers.
-/// Déposer p.ex. public/fonts/NotoSans-Regular.ttf.
-const UNICODE_FONT_PATH = join(process.cwd(), "public", "fonts", "NotoSans-Regular.ttf");
+/// Police TTF Unicode embarquée pour réécrire les apparences des champs texte.
+///
+/// SANS elle, pdf-lib retombe sur Helvetica/WinAnsi, qui ne sait pas encoder
+/// les caractères hors Latin-1 : `doc.save()` LÈVE, et la génération renvoie
+/// une 500 pour tout nom polonais, turc, tchèque ou roumain (Łukasz, Gökhan,
+/// Ștefan…). Le chemin pointait jusqu'au 2026-07-26 sur un fichier
+/// `NotoSans-Regular.ttf` jamais déposé dans le dépôt : le repli silencieux
+/// était donc TOUJOURS actif, et le bug latent pour tout citoyen concerné.
+///
+/// `DejaVuSans-Latin.ttf` est versionné et couvre le latin étendu (vérifié
+/// glyphe par glyphe : Ł, ğ, ș, ž, é, ç, €).
+const UNICODE_FONT_PATH = join(process.cwd(), "public", "fonts", "DejaVuSans-Latin.ttf");
 
 async function loadUnicodeFont(): Promise<Buffer | null> {
   try {

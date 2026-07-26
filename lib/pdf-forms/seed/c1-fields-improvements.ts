@@ -1132,11 +1132,9 @@ export const C1_QUESTIONS: PdfFormField[] = [
     // étaient orphelins : la question n'était jamais posée et les deux cases
     // partaient vierges.
     //
-    // ⚠ À la différence des trois activités voisines, ce « déjà déclaré » ne
-    // pilote AUCUN déclencheur : il n'existe pas de règle qui ajoute un C1A au
-    // dossier sur `mandatPolitique`, alors que l'aide du champ l'annonce
-    // (« → Joindre un FORMULAIRE C1A »). Écart signalé à Oraliks, pas comblé
-    // ici — ajouter un déclencheur changerait les documents du dossier.
+    // Pilote le déclencheur `mandatPolitique → c1a` (cf. C1_TRIGGERS) :
+    // répondre « oui, déjà déclaré » évite d'ajouter un C1A au dossier pour un
+    // mandat signalé lors d'une démarche précédente.
     ...dejaDeclare({
       id: "mandatPolitiqueDejaDeclare",
       parentId: "mandatPolitique",
@@ -1989,6 +1987,22 @@ export const C1_TRIGGERS: PdfFormTrigger[] = [
     unlessValue: "oui",
     requiresFormSlug: "c46",
     reason: { fr: "Mandat dans un organe consultatif culturel à déclarer", nl: "", de: "" },
+  },
+  {
+    // Mandat politique → C1A (arbitrage Oraliks 2026-07-26). L'aide du champ
+    // `mandatPolitique` annonçait « → Joindre un FORMULAIRE C1A » depuis le
+    // début, mais aucun déclencheur ne le faisait : le citoyen lisait la
+    // consigne et aucun document ne s'ajoutait à son dossier. Les trois autres
+    // activités de la même rubrique avaient bien le leur.
+    //
+    // Exception portée par l'aide du champ : conseiller communal ou membre du
+    // Conseil de l'action sociale → répondre « non » (pas de C1A).
+    whenFieldId: "mandatPolitique",
+    whenValue: "oui",
+    unlessFieldId: "mandatPolitiqueDejaDeclare",
+    unlessValue: "oui",
+    requiresFormSlug: "c1a",
+    reason: { fr: "Mandat politique à déclarer", nl: "", de: "" },
   },
   {
     whenFieldId: "tremplinIndependants",

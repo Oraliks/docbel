@@ -48,10 +48,12 @@ export const C47_FIELDS: PdfFormField[] = [
   // du C1, et deux règles serveur recomposent les lignes imprimées
   // (`bindings/per-form/c47.ts`). Même pattern que le C1A.
   //
-  // ⚠ Ordre d'assemblage : convention belge (« Rue de la Loi 16 »,
-  // « 1000 Bruxelles »), cohérente avec le C1 et le C1A. Les noms de widgets
-  // du C47 suggèrent l'inverse (« Commune et code postal ») et son libellé
-  // d'origine disait « Numéro et rue » — à confirmer sur le formulaire papier.
+  // Ordre d'assemblage : rue puis numéro, code postal puis commune (confirmé
+  // par Oraliks le 2026-07-26). Les noms de widgets du C47 disent l'inverse
+  // (« Commune et code postal ») et son libellé d'origine disait « Numéro et
+  // rue » : c'est SANS IMPORTANCE. Les formulaires ONEM alternent librement
+  // « nom, prénom » et « prénom, nom », idem pour l'adresse — ces libellés ne
+  // dictent pas l'ordre attendu dans la case.
   {
     id: "rue",
     pdfFieldName: "",

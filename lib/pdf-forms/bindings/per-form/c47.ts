@@ -7,10 +7,11 @@
 // Le nom n'a pas besoin de règle : `pr_nom_et_nom` est un champ `fullname` que
 // le filler assemble seul.
 //
-// ⚠ Ordre d'assemblage : convention belge (« Rue de la Loi 16 »,
-// « 1000 Bruxelles »), cohérente avec le C1 et le C1A. Les noms de widgets du
-// C47 suggèrent l'inverse (« Commune et code postal ») — à confirmer sur le
-// formulaire papier, l'inversion tient en un échange de deux ids.
+// Ordre d'assemblage : rue puis numéro, code postal puis commune (confirmé par
+// Oraliks le 2026-07-26), comme sur le C1 et le C1A. Le nom du widget dit
+// l'inverse (« Commune et code postal ») : c'est sans importance, les
+// formulaires ONEM alternent librement les deux formulations sans que ça
+// change ce qu'on écrit dans la case.
 //
 // ⚠ `pdfFieldName` = nom EXACT du widget. Les copier depuis
 // `pnpm tsx scripts/dump-pdf-widgets.ts C47_FR`, jamais les retaper : c'est

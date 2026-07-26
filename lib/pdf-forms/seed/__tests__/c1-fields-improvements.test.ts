@@ -59,6 +59,7 @@ describe("C1_QUESTIONS — activités et revenus saisis par le citoyen", () => {
   it("exige une réponse explicite aux suivis déjà déclaré / première fois", () => {
     for (const id of [
       "mandatArtistiqueDejaDeclare",
+      "mandatPolitiqueDejaDeclare",
       "tremplinIndependantsDejaDeclare",
       "activiteAccessoireDejaDeclare",
       "administrateurSocieteDejaDeclare",
@@ -625,5 +626,38 @@ describe("C1 — cases auparavant orphelines", () => {
     expect(f?.readOnly).toBe(true);
     expect(f?.defaultValue).toBeUndefined();
     expect(f?.section).toBe(byId.get("autoriseCotisationSyndicale")?.section);
+  });
+});
+
+describe("C1 — déclencheur du mandat politique", () => {
+  // L'aide du champ annonçait « → Joindre un FORMULAIRE C1A » depuis le début,
+  // mais aucune règle ne l'ajoutait au dossier : le citoyen lisait la consigne
+  // et rien ne se passait (comblé le 2026-07-26).
+  const trigger = C1_TRIGGERS.find((t) => t.whenFieldId === "mandatPolitique");
+
+  it("ajoute un C1A au dossier quand un mandat est déclaré", () => {
+    expect(trigger?.requiresFormSlug).toBe("c1a");
+    expect(trigger?.whenValue).toBe("oui");
+  });
+
+  it("ne l'ajoute PAS si le mandat a déjà été signalé précédemment", () => {
+    expect(trigger?.unlessFieldId).toBe("mandatPolitiqueDejaDeclare");
+    expect(trigger?.unlessValue).toBe("oui");
+  });
+
+  it("chaque activité de la rubrique a bien son déclencheur", () => {
+    for (const source of [
+      "mandatArtistique",
+      "mandatPolitique",
+      "tremplinIndependants",
+      "activiteAccessoireOuAide",
+      "administrateurSociete",
+      "independantAccessoireOuPrincipal",
+    ]) {
+      expect(
+        C1_TRIGGERS.some((t) => t.whenFieldId === source),
+        `${source} doit déclencher un document`,
+      ).toBe(true);
+    }
   });
 });

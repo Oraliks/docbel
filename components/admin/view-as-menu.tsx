@@ -217,6 +217,10 @@ export function ViewAsMenu({
               <DropdownMenuItem
                 key={`recent_${account.id}`}
                 disabled={pending !== null}
+                // En prod, impersonate() ouvre le dialog de raison (setReasonTarget).
+                // Fermer le menu démonterait ce dialog — même cause que « Visiteur
+                // anonyme » ci-dessous.
+                closeOnClick={false}
                 onClick={(e) => {
                   e.preventDefault()
                   void impersonate(account)
@@ -334,6 +338,10 @@ export function ViewAsMenu({
             <DropdownMenuItem
               key={account.id}
               disabled={pending !== null}
+              // En prod, impersonate() ouvre le dialog de raison (setReasonTarget).
+              // Fermer le menu démonterait ce dialog — même cause que « Visiteur
+              // anonyme ».
+              closeOnClick={false}
               onClick={(e) => {
                 e.preventDefault()
                 void impersonate(account)

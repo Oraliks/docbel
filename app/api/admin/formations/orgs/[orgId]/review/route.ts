@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { UserStatus } from "@prisma/client";
 import { requireAdminAuth } from "@/lib/auth-check";
 import { ensureWriteAllowed } from "@/lib/admin/readonly-guard";
 import { logActivity, type ActivityAction } from "@/lib/activity-logger";
@@ -116,6 +117,32 @@ export async function POST(
         create: { organizationId: org.id, updatedById: auth.user.id },
         update: {},
       });
+    }
+
+    // Validation/réactivation = les comptes de l'organisation doivent pouvoir se
+    // connecter. L'inscription self-service crée le propriétaire en `pending`
+    // (login bloqué par le hook better-auth) : sans ça, un organisme validé
+    // resterait enfermé dehors. On n'active QUE les comptes `pending` de rôle
+    // `organisme` rattachés à cette organisation (jamais un admin ou un compte
+    // désactivé manuellement).
+    if (action === "approve" || action === "reactivate") {
+      const memberIds = (
+        await prisma.formationOrgMember.findMany({
+          where: { organizationId: org.id },
+          select: { userId: true },
+        })
+      ).map((m) => m.userId);
+
+      if (memberIds.length > 0) {
+        await prisma.user.updateMany({
+          where: {
+            id: { in: memberIds },
+            role: "organisme",
+            status: UserStatus.pending,
+          },
+          data: { status: UserStatus.active, emailVerified: true, emailVerifiedAt: new Date() },
+        });
+      }
     }
 
     if (org.contactEmail) {

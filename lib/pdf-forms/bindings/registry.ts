@@ -7,12 +7,15 @@
 
 import type { MappingRule } from "./types";
 import { C1_CHANGEMENT_RULES } from "./per-form/c1-changement";
+import { C1A_RULES } from "./per-form/c1a";
 
 const RULES_BY_SLUG: Record<string, MappingRule[]> = {
   "c1-changement-situation": C1_CHANGEMENT_RULES,
-  // Phase 7 (compagnons) : c1a / c1b / c1c / c46 / c47 / c1-partenaire /
-  // c1-regis nécessitent chacun un dump AcroForm dédié (widget names
-  // exacts) — geste manuel non fait dans cette session.
+  c1a: C1A_RULES,
+  // Restent à brancher : c1b / c1c / c46 / c47 / c1-partenaire / c1-regis.
+  // Chacun demande un dump AcroForm dédié (noms de widgets EXACTS) — un slug
+  // sans entrée ici renvoie [] et se comporte comme avant, sans stamp
+  // additionnel : l'absence est sûre, elle n'est simplement pas complète.
 };
 
 /// Récupère les règles à appliquer pour un slug donné. Renvoie un tableau

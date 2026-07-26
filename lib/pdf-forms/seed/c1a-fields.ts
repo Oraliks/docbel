@@ -233,12 +233,22 @@ export const C1A_FIELDS: PdfFormField[] = [
   // IDENTITÉ DU DÉCLARANT (le chômeur qui remplit le formulaire)
   // ====================================================================
   {
+    // `fullname` plutôt que `text` (2026-07-26) : deux cases à l'écran
+    // (prénom / nom), une seule chaîne sur le PDF, assemblée par le filler
+    // dans l'ordre imposé par le libellé imprimé (« Nom et prénom »).
+    //
+    // C'est ce qui rend la reprise depuis le C1 AUTOMATIQUE : `extract.ts`
+    // remplit tout champ `fullname` à partir de `identity.prenom` +
+    // `identity.nom`, sans qu'il ait besoin de porter une clé canonique.
+    // Avant, le champ était un simple texte préremplí par `profile.lastName` :
+    // il recevait le NOM SEUL et paraissait rempli — le prénom disparaissait
+    // sans que rien ne le signale.
     id: "nomEtPrenom",
     pdfFieldName: "Nom et prénom",
-    type: "text",
+    type: "fullname",
+    nameOrder: "last-first",
     required: true,
     label: { fr: "Nom et prénom", nl: "", de: "" },
-    prefillFrom: "profile.lastName",
     section: SECTION_IDENTITE,
     order: -100,
   },
@@ -258,30 +268,57 @@ export const C1A_FIELDS: PdfFormField[] = [
     section: SECTION_IDENTITE,
     order: -99,
   },
-  // NOTE canonique : `nomEtPrenom` (nom+prénom combinés), `rue` (rue+numéro
-  // combinés) et `codePostalEtCommune` (postal+commune combinés) NE SONT
-  // PAS tagués canonicalKey — ces widgets fusionnent 2 valeurs en un seul
-  // champ texte, incompatible avec l'extraction canonique 1-clé/1-valeur.
-  // Le citoyen doit les ressaisir manuellement au-delà du NISS.
+  // ADRESSE — deux widgets du PDF fusionnent chacun DEUX informations
+  // (« rue + numéro », « code postal + commune »). On saisit donc les quatre
+  // valeurs séparément, chacune avec sa clé canonique, et deux règles serveur
+  // recomposent les widgets (`bindings/per-form/c1a.ts`). C'est le pattern
+  // déjà utilisé par le C1 pour son widget « CodePostal et Commune ».
+  //
+  // Sans cette séparation (état avant le 2026-07-26), un `prefillFrom` sur le
+  // champ fusionné ne pouvait ramener QU'UNE des deux valeurs : la rue sans le
+  // numéro, le code postal sans la commune. Le champ paraissait rempli et
+  // partait incomplet à l'ONEM.
   {
     id: "rue",
-    pdfFieldName: "Rue",
+    pdfFieldName: "",
     type: "text",
     required: true,
-    label: { fr: "Rue et numéro (ton adresse)", nl: "", de: "" },
+    label: { fr: "Rue", nl: "", de: "" },
     prefillFrom: "profile.street",
+    canonicalKey: "adresse.rue",
     section: SECTION_IDENTITE,
     order: -98,
   },
   {
-    id: "codePostalEtCommune",
-    pdfFieldName: "Code postal et commune",
+    id: "numero",
+    pdfFieldName: "",
+    type: "text",
+    required: true,
+    label: { fr: "Numéro", nl: "", de: "" },
+    canonicalKey: "adresse.numero",
+    section: SECTION_IDENTITE,
+    order: -97.5,
+  },
+  {
+    id: "codePostal",
+    pdfFieldName: "",
     type: "postal_be",
     required: true,
-    label: { fr: "Code postal et commune (ton adresse)", nl: "", de: "" },
+    label: { fr: "Code postal", nl: "", de: "" },
     prefillFrom: "profile.postalCode",
+    canonicalKey: "adresse.codePostal",
     section: SECTION_IDENTITE,
     order: -97,
+  },
+  {
+    id: "commune",
+    pdfFieldName: "",
+    type: "text",
+    required: true,
+    label: { fr: "Commune", nl: "", de: "" },
+    canonicalKey: "adresse.commune",
+    section: SECTION_IDENTITE,
+    order: -96.5,
   },
 
   // ====================================================================
@@ -1054,11 +1091,23 @@ function coveredPdfFieldNames(): Set<string> {
 /// issue de l'inférence automatique au moment de l'import). Idempotent :
 /// ré-exécutable sans dupliquer (compare les `id` ET les `pdfFieldName`
 /// désormais couverts).
+/// Champs d'une version antérieure du schéma qui n'existent plus et dont le
+/// widget est désormais écrit par une RÈGLE serveur. L'overlay ne peut pas les
+/// détecter tout seul : leur `pdfFieldName` n'est plus « couvert » par aucun
+/// champ, donc le filtre `covered` les laisserait survivre en base — ils se
+/// battraient alors avec la règle pour le même widget.
+const LEGACY_C1A_FIELD_IDS = new Set<string>([
+  // Scindé en `codePostal` + `commune` (2026-07-26) ; le widget fusionné
+  // « Code postal et commune » est recomposé par `bindings/per-form/c1a.ts`.
+  "codePostalEtCommune",
+]);
+
 export function applyC1AImprovements(fields: PdfFormField[]): PdfFormField[] {
   const covered = coveredPdfFieldNames();
   const newIds = new Set(C1A_FIELDS.map((f) => f.id));
 
   const preserved = fields.filter((f) => {
+    if (LEGACY_C1A_FIELD_IDS.has(f.id)) return false;
     if (covered.has(f.pdfFieldName)) return false;
     if (newIds.has(f.id)) return false;
     return true;

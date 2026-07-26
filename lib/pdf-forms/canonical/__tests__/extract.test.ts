@@ -4,6 +4,7 @@ import {
   extractCanonical,
   canonicalToPrefill,
   mergeCanonical,
+  mergePrefillSources,
   extractCanonicalFromMany,
 } from "../extract";
 import { C1_QUESTIONS } from "../../seed/c1-fields-improvements";
@@ -231,4 +232,51 @@ describe("Complétude des seeds compagnons (identity.niss min. requis)", () => {
       expect(hasIdentity).toBe(true);
     }
   );
+});
+
+describe("mergePrefillSources — quelle voie l'emporte", () => {
+  it("la clé canonique gagne : elle dit ce que la donnée EST", () => {
+    const bySharedFrom = { nom_complet: "Marie" }; // profile.firstName, grossier
+    const byCanonical = { nom_complet: { first: "Marie", last: "Dupont" } };
+    expect(mergePrefillSources(bySharedFrom, byCanonical).nom_complet).toEqual({
+      first: "Marie",
+      last: "Dupont",
+    });
+  });
+
+  it("conserve ce que seule la voie prefillFrom sait fournir", () => {
+    const merged = mergePrefillSources({ niss: "85073003328" }, { nom: "Dupont" });
+    expect(merged).toEqual({ niss: "85073003328", nom: "Dupont" });
+  });
+
+  it("sans effet quand les deux voies concordent (cas courant)", () => {
+    const merged = mergePrefillSources({ niss: "85073003328" }, { niss: "85073003328" });
+    expect(merged.niss).toBe("85073003328");
+  });
+});
+
+describe("C1A — l'en-tête hérite du C1", () => {
+  it("le nom composite se remplit sans clé canonique propre", () => {
+    const prefill = canonicalToPrefill(C1A_FIELDS, {
+      "identity.prenom": "Marie",
+      "identity.nom": "Dupont",
+    });
+    // `nomEtPrenom` est de type `fullname` : extract.ts le compose seul.
+    expect(prefill.nomEtPrenom).toEqual({ first: "Marie", last: "Dupont" });
+  });
+
+  it("les quatre valeurs d'adresse arrivent séparément, prêtes à être recomposées", () => {
+    const prefill = canonicalToPrefill(C1A_FIELDS, {
+      "adresse.rue": "Rue de la Loi",
+      "adresse.numero": "16",
+      "adresse.codePostal": "1000",
+      "adresse.commune": "Bruxelles",
+      "identity.niss": "85073003328",
+    });
+    expect(prefill.rue).toBe("Rue de la Loi");
+    expect(prefill.numero).toBe("16");
+    expect(prefill.codePostal).toBe("1000");
+    expect(prefill.commune).toBe("Bruxelles");
+    expect(prefill.niss).toBe("85073003328");
+  });
 });

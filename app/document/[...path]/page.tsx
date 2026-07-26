@@ -26,6 +26,7 @@ import {
   canonicalToPrefill,
   extractCanonical,
   mergeCanonical,
+  mergePrefillSources,
   type CanonicalMap,
   type PrefillMap,
 } from "@/lib/pdf-forms/canonical/extract";
@@ -297,11 +298,9 @@ export default async function PdfFormPage({
       validBundleRunId = bundleRun;
       const bySharedFrom = applySharedValuesToForm(form.fields, shared);
       const byCanonical = canonicalToPrefill(form.fields, canonical);
-      // `byCanonical` peut contenir des `FullNameValue` (composite prénom+nom
-      // pour un champ `type: "fullname"`), `bySharedFrom` uniquement des
-      // strings. Priorité `prefillFrom` (précision plus fine, contexte plus
-      // certain que la composition canonique) — donc bySharedFrom prime.
-      bundlePrefill = { ...byCanonical, ...bySharedFrom };
+      // Priorité à `canonicalKey` sur `prefillFrom` — cf. le pourquoi (et le
+      // bug qu'inversait l'ordre historique) sur `mergePrefillSources`.
+      bundlePrefill = mergePrefillSources(bySharedFrom, byCanonical);
       // L'assistant enrichi préremplit uniquement les champs de situation
       // familiale du C1. Le PDF officiel reste inchangé et chaque valeur est
       // modifiable dans le Form Runner.

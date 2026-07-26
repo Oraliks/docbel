@@ -148,6 +148,27 @@ export function extractCanonicalFromMany<F extends FieldLike>(
   return mergeCanonical(...pairs.map((p) => extractCanonical(p.fields, p.payload)));
 }
 
+/// Fusionne les DEUX voies de préremplissage inter-documents d'un dossier.
+///
+/// `bySharedFrom` vient de `prefillFrom` (d'OÙ la donnée vient : `profile.
+/// lastName`, `itsme.niss`…), `byCanonical` de `canonicalKey` (ce que la
+/// donnée EST : `identity.nom`, `adresse.rue`…). La clé sémantique est la
+/// plus précise des deux : c'est elle qui gagne.
+///
+/// L'ordre inverse — le comportement d'avant le 2026-07-26 — dégradait la
+/// donnée sur les champs composites : `byCanonical` fournit un
+/// `{ first, last }` complet pour un champ `fullname`, que `bySharedFrom`
+/// remplaçait par la chaîne « Marie » seule ; le runner la relisait comme un
+/// NOM. Le prénom du citoyen finissait dans la case « Nom », son nom
+/// disparaissait. Là où les deux voies concordent (le cas courant, ex. le
+/// NISS), l'ordre est sans effet.
+export function mergePrefillSources(
+  bySharedFrom: PrefillMap,
+  byCanonical: PrefillMap
+): PrefillMap {
+  return { ...bySharedFrom, ...byCanonical };
+}
+
 export type { PayloadLike };
 export type CanonicalMap = Partial<Record<CanonicalKey, string>>;
 

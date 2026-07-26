@@ -44,6 +44,36 @@ describe("macro : ibanForeignRouting", () => {
     expect(stamps.get("SEPA étranger")).toBe("FR76 3000 6000");
   });
 
+  // Le compte étranger du C1 est UN champ imprimé sur DEUX lignes : on remplit
+  // celle du haut, puis on déborde sur celle du bas quand l'IBAN est long.
+  describe("champ sur deux lignes", () => {
+    const twoLines = ibanForeignRouting({
+      sourceField: "iban",
+      widgets: ["IBAN", "SEPA étranger"],
+      maxCharsPerLine: [34, 40],
+    });
+
+    it("IBAN court → tout sur la 1ʳᵉ ligne, la 2ᵉ reste vierge", () => {
+      const stamps = resolveStamps({ iban: "FR76 3000 6000 0112" }, [twoLines]);
+      expect(stamps.get("IBAN")).toBe("FR76 3000 6000 0112");
+      expect(stamps.get("SEPA étranger")).toBeUndefined();
+    });
+
+    it("IBAN long saisi par groupes → déborde sur la 2ᵉ ligne, sans rien perdre", () => {
+      // 34 caractères (maximum SEPA) + espaces de groupement.
+      const iban = "MT84 MALT 0110 0001 2345 MTLC AST0 01S";
+      const stamps = resolveStamps({ iban }, [twoLines]);
+      const l1 = stamps.get("IBAN") as string;
+      const l2 = stamps.get("SEPA étranger") as string;
+      expect(l1.length).toBeLessThanOrEqual(34);
+      expect(`${l1} ${l2}`).toBe(iban);
+    });
+
+    it("IBAN belge → toujours aucun stamp (les 3 cases dédiées s'en chargent)", () => {
+      expect(resolveStamps({ iban: "BE68 5390 0754 7034" }, [twoLines]).size).toBe(0);
+    });
+  });
+
   it("IBAN BE → aucun stamp", () => {
     const stamps = resolveStamps({ iban: "BE68 5390 0754 7034" }, [rule]);
     expect(stamps.size).toBe(0);

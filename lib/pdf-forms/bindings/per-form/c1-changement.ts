@@ -39,9 +39,17 @@ const W_IBAN_PART1 = "undefined_11";
 const W_IBAN_PART2 = "undefined_12";
 const W_IBAN_PART3 = "undefined_13";
 
-// IBAN étranger (compte SEPA non-belge). Double espace INTENTIONNEL dans le
-// nom du widget (vérifié au dump — ne pas normaliser).
-const W_IBAN_ETRANGER = "SEPA étranger IBAN  BIC";
+// Compte SEPA non-belge : UN SEUL champ, imprimé sur DEUX lignes (Oraliks
+// 2026-07-26 : « c'est un seul champ mais avec deux lignes, au cas où le
+// compte est trop long »). On remplit la ligne du haut puis on déborde sur
+// celle du bas — avant, tout partait sur la ligne du BAS et celle du haut
+// restait vide, ce qui la faisait apparaître comme un widget orphelin.
+// Double espace INTENTIONNEL dans le nom du 2e widget (vérifié au dump — ne
+// jamais normaliser). Le BIC a son propre widget, à droite de la 2e ligne.
+const W_IBAN_ETRANGER_L1 = "IBAN";
+const W_IBAN_ETRANGER_L2 = "SEPA étranger IBAN  BIC";
+// Largeurs réelles : 223 pt puis 238 pt, soit ≈ 5,8 pt par caractère.
+const IBAN_ETRANGER_BUDGET = [34, 40] as const;
 
 // Titulaire + remarque situation familiale.
 const W_TITULAIRE = "NomTitulaireSipasOk";
@@ -249,7 +257,8 @@ export const C1_CHANGEMENT_RULES: MappingRule[] = [
   // pdfFieldName côté `iban` est vide.
   ibanForeignRouting({
     sourceField: "iban",
-    widget: W_IBAN_ETRANGER,
+    widgets: [W_IBAN_ETRANGER_L1, W_IBAN_ETRANGER_L2],
+    maxCharsPerLine: IBAN_ETRANGER_BUDGET,
   }),
 
   // -------- Titulaire du compte --------

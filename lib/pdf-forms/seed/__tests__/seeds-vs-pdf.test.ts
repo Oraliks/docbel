@@ -3,6 +3,7 @@ import { readFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import { parsePdf } from "../../acroform-parser";
 import { checkPublishable } from "../../publish-checks";
+import { buildMappingReport } from "../../mapping-report";
 import { getRulesForSlug } from "../../bindings/registry";
 import type { AcroFieldRaw, PdfFormField } from "../../types";
 
@@ -81,4 +82,44 @@ describe("seeds ↔ PDF réel — aucun champ ne pointe dans le vide", () => {
       ).toEqual([]);
     });
   }
+});
+
+/// Widgets du C1 que RIEN n'écrit — et c'est voulu. Chaque entrée a été
+/// arbitrée avec Oraliks le 2026-07-26 ; le reste des 179 widgets est couvert.
+///
+/// Ce test n'est pas là pour interdire l'évolution : il est là pour qu'une
+/// case cesse d'être remplie SANS QUE PERSONNE NE LE VOIE. Supprimer un champ
+/// rend son widget orphelin en silence — le PDF officiel part alors avec une
+/// case vide, et ni le filler (qui ignore un widget introuvable) ni la
+/// publication (qui tolère 25 % d'orphelins) ne le signalent.
+const C1_ORPHELINS_ASSUMES: Record<string, string> = {
+  // Branche « première demande d'allocations » : hors périmètre du dossier
+  // « changement de situation personnelle ». À brancher le jour où un dossier
+  // réutilise le C1 en mode demande.
+  DateAllocation: "première demande — hors périmètre de ce dossier",
+  "je demande des allocations à partir du": "première demande — hors périmètre de ce dossier",
+  // Colonne « lien de parenté » de la grille cohabitants : on y stampe un code
+  // court (FAC, enfant, époux…) qui tient sur la ligne 1. La ligne 2 reste
+  // libre — décision assumée, cf. le commentaire du sous-champ `lien`.
+  Personne1_LienParente_Ligne2: "2e ligne du lien de parenté — volontairement libre",
+  Personne2_LienParente_Ligne2: "2e ligne du lien de parenté — volontairement libre",
+  Personne3_LienParente_Ligne2: "2e ligne du lien de parenté — volontairement libre",
+  Personne4_LienParente_Ligne2: "2e ligne du lien de parenté — volontairement libre",
+  Personne5_LienParente_Ligne2: "2e ligne du lien de parenté — volontairement libre",
+};
+
+describe("C1 — couverture des widgets AcroForm", () => {
+  it("ne laisse orphelins QUE les widgets assumés", async ({ skip }) => {
+    const target = TARGETS[0];
+    const path = join(PDF_DIR, target.pdf);
+    if (!existsSync(path)) skip();
+
+    const parsed = await parsePdf(readFileSync(path));
+    const fields = target.improve([], { technicalSchema: parsed.fields });
+    const report = buildMappingReport(fields, parsed.fields, getRulesForSlug(target.slug));
+
+    const orphans = report.rows.filter((r) => r.status === "orphan").map((r) => r.pdfFieldName);
+    expect(orphans.sort()).toEqual(Object.keys(C1_ORPHELINS_ASSUMES).sort());
+    expect(report.summary.conflict, "aucun widget ne doit être revendiqué deux fois").toBe(0);
+  });
 });

@@ -134,14 +134,33 @@ describe("Rules C1 — transfert d'organisme de paiement (règle indépendante)"
 });
 
 describe("Rules C1 — IBAN étranger", () => {
-  it("route la valeur brute vers le widget SEPA sans splitter", () => {
+  // Le compte étranger est UN champ imprimé sur DEUX lignes (widgets « IBAN »
+  // puis « SEPA étranger IBAN  BIC »). On remplit celle du HAUT en premier ;
+  // avant le 2026-07-26 tout partait sur celle du bas et la première restait
+  // vide, ce qui la faisait remonter comme widget orphelin.
+  it("remplit la 1ʳᵉ ligne, sans jamais splitter en groupes façon IBAN belge", () => {
     const payload = { ...baseline(), iban: "FR76 3000 6000 0112 3456 7890 189" };
     const stamps = resolveStamps(payload, C1_CHANGEMENT_RULES);
 
-    expect(stamps.get("SEPA étranger IBAN  BIC")).toBe("FR76 3000 6000 0112 3456 7890 189");
+    expect(stamps.get("IBAN")).toBe("FR76 3000 6000 0112 3456 7890 189");
+    expect(stamps.get("SEPA étranger IBAN  BIC")).toBeUndefined();
     // Aucun split BE.
     expect(stamps.has("B E")).toBe(false);
     expect(stamps.has("undefined_11")).toBe(false);
+  });
+
+  it("déborde sur la 2ᵉ ligne quand l'IBAN est trop long pour la première", () => {
+    // Malte : 31 caractères + espaces de groupement = 38, au-delà des ~34
+    // que peut afficher la ligne du haut.
+    const iban = "MT84 MALT 0110 0001 2345 MTLC AST0 01S";
+    const stamps = resolveStamps({ ...baseline(), iban }, C1_CHANGEMENT_RULES);
+    const l1 = stamps.get("IBAN") as string;
+    const l2 = stamps.get("SEPA étranger IBAN  BIC") as string;
+
+    expect(l1).toBeTruthy();
+    expect(l2).toBeTruthy();
+    // Rien n'est perdu entre les deux lignes.
+    expect(`${l1} ${l2}`).toBe(iban);
   });
 
   it("IBAN belge de 15 chiffres (trop court) → aucun split", () => {

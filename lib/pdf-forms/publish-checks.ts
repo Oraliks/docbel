@@ -87,7 +87,18 @@ export function checkPublishable(
     // case cochée, aucun log, un document officiel qui part vierge sur cette
     // rubrique. Aucun formulaire n'est en défaut aujourd'hui — ce contrôle est
     // là pour que ça ne PUISSE pas arriver au prochain.
-    if (f.type === "radio" && f.pdfFieldName.includes("|") && f.options) {
+    // Volontairement PAS conditionné à `f.type === "radio"` : c'est justement
+    // en basculant un champ pipe vers `select` depuis l'admin qu'on désactivait
+    // toute la question. `stampPipeRadio` ne traite que les `radio` ; un pipe
+    // sur un autre type ne coche donc jamais rien, en silence.
+    if (f.pdfFieldName.includes("|") && f.options) {
+      if (f.type !== "radio") {
+        issues.push({
+          level: "error",
+          fieldId: f.id,
+          message: `Le champ « ${f.id} » utilise la convention pipe (plusieurs cases PDF) mais n'est pas de type radio : rien ne serait coché.`,
+        });
+      }
       const segments = f.pdfFieldName.split("|").length;
       if (segments !== f.options.length) {
         issues.push({
@@ -95,6 +106,60 @@ export function checkPublishable(
           fieldId: f.id,
           message: `Le champ « ${f.id} » déclare ${segments} case(s) PDF pour ${f.options.length} option(s) : rien ne serait coché. Utilise une entrée vide pour une option sans case.`,
         });
+      }
+    }
+
+    // Les ancres des champs `array` — jamais vérifiées jusqu'ici, alors qu'une
+    // seule faute de frappe y rend CINQ cases blanches (une par ligne de la
+    // grille cohabitants), publication acceptée et génération muette.
+    if (f.type === "array") {
+      const rows = typeof f.maxRows === "number" ? Math.max(1, f.maxRows) : 5;
+      for (const sub of f.itemFields ?? []) {
+        // Template positionnel : on contrôle chaque ligne, car rien ne garantit
+        // que le PDF numérote ses widgets sans trou.
+        if (sub.pdfFieldNameTemplate) {
+          const absents: string[] = [];
+          for (let i = 1; i <= rows; i++) {
+            const name = sub.pdfFieldNameTemplate.replace(/\{index\}/g, String(i));
+            for (const part of name.split("|").map((s) => s.trim()).filter(Boolean)) {
+              if (!techNames.has(part)) absents.push(part);
+            }
+          }
+          if (absents.length > 0) {
+            issues.push({
+              level: "error",
+              fieldId: `${f.id}.${sub.id}`,
+              message: `La colonne « ${sub.id} » de « ${f.id} » pointe vers ${absents.length} champ(s) PDF inexistant(s) (${absents.slice(0, 3).join(", ")}${absents.length > 3 ? "…" : ""}).`,
+            });
+          }
+        }
+        if (sub.pdfFieldName) {
+          const absents = sub.pdfFieldName
+            .split("|")
+            .map((s) => s.trim())
+            .filter((p) => p && !techNames.has(p));
+          if (absents.length > 0) {
+            issues.push({
+              level: "error",
+              fieldId: `${f.id}.${sub.id}`,
+              message: `La colonne « ${sub.id} » de « ${f.id} » pointe vers un champ PDF inexistant (${absents.join(", ")}).`,
+            });
+          }
+        }
+      }
+      // Widgets uniques alimentés par la première ligne satisfaisant `where`.
+      for (const [subId, widget] of Object.entries(f.firstMatchMapping?.fields ?? {})) {
+        const absents = String(widget)
+          .split("|")
+          .map((s) => s.trim())
+          .filter((p) => p && !techNames.has(p));
+        if (absents.length > 0) {
+          issues.push({
+            level: "error",
+            fieldId: `${f.id}.${subId}`,
+            message: `Le report de « ${subId} » (${f.id}) pointe vers un champ PDF inexistant (${absents.join(", ")}).`,
+          });
+        }
       }
     }
 

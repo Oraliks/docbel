@@ -9,6 +9,7 @@ import { computeItemStatuses, type BundleItem } from "@/components/docbel/bundle
 import { fillForm } from "@/lib/pdf-forms/filler";
 import { resolveStamps } from "@/lib/pdf-forms/bindings/engine";
 import { getRulesForSlug } from "@/lib/pdf-forms/bindings/registry";
+import { getCombWidgetsForSlug } from "@/lib/pdf-forms/bindings/comb-widgets";
 import { readSourcePdf } from "@/lib/pdf-forms/storage";
 import { renderFilename } from "@/lib/pdf-forms/filename";
 import { applyServerAutoFields } from "@/lib/pdf-forms/auto-fields";
@@ -95,6 +96,7 @@ async function regenerateItems(
       flatten: shouldFlattenGeneratedPdf(form.slug),
       technicalSchema,
       extraStamps,
+      combWidgets: getCombWidgetsForSlug(form.slug),
     });
     docs.push({ filename: renderFilename(form.slug, filled), bytes });
   }

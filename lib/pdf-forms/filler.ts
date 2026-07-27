@@ -26,6 +26,7 @@ import { resolveSignerName, buildSignatureBlock, signatureTimestamp } from "./si
 import { isSignatureField } from "./auto-fields";
 import { isFieldVisible } from "./validation";
 import { formatDateFR } from "./bindings/format";
+import type { CombWidgetSpec } from "./bindings/comb-widgets";
 
 /// Police TTF Unicode embarquée pour réécrire les apparences des champs texte.
 ///
@@ -521,6 +522,9 @@ export async function fillForm(
     /// `dernier gagnant par widget` (une seule valeur par entrée de Map).
     /// Une entrée boolean cible une PDFCheckBox, string un PDFTextField.
     extraStamps?: Map<string, string | boolean>;
+    /// Calage du peigne imprime, par nom de widget. Pour les widgets ecrits
+    /// par une REGLE serveur et non par un champ (cf. bindings/comb-widgets).
+    combWidgets?: Record<string, CombWidgetSpec>;
   } = {}
 ): Promise<FillResult> {
   const flatten = opts.flatten !== false;
@@ -778,80 +782,7 @@ export async function fillForm(
     }
   }
 
-  // Bindings serveur : `extraStamps` provient du registry par slug
-  // (`lib/pdf-forms/bindings/`) évalué par la route generate avant appel.
-  // Appliqué APRÈS la boucle fields → une règle qui cible le même widget
-  // qu'un champ schéma gagne. On logge (console.warn) les échecs par widget
-  // au lieu de les avaler silencieusement — les rules émettent souvent des
-  // stamps texte contraints par un maxLength (« B E » = 2, undefined_11 = 4)
-  // et une erreur silencieuse ferait apparaître une case blanche sans
-  // signal.
-  if (opts.extraStamps && opts.extraStamps.size > 0) {
-    for (const [widgetName, value] of opts.extraStamps) {
-      if (!widgetName) continue;
-      let widget;
-      try {
-        widget = form.getField(widgetName);
-      } catch {
-        console.warn(`[pdf-forms] extraStamp: widget introuvable "${widgetName}"`);
-        diags.push({ fieldId: "", widget: widgetName, kind: "widget-introuvable" });
-        continue;
-      }
-      try {
-        if (typeof value === "boolean") {
-          if (!(widget instanceof PDFCheckBox)) {
-            console.warn(
-              `[pdf-forms] extraStamp: widget "${widgetName}" attendu checkbox pour booléen`
-            );
-            continue;
-          }
-          if (value) widget.check();
-          else widget.uncheck();
-        } else {
-          if (!(widget instanceof PDFTextField)) {
-            console.warn(
-              `[pdf-forms] extraStamp: widget "${widgetName}" attendu texte pour string`
-            );
-            continue;
-          }
-          widget.setText(value);
-          const { font: wFont, fallback } = fonts.pick(value);
-          if (fallback) fonts.reapply.push({ field: widget, font: wFont });
-          try {
-            // Même ajustement que la boucle schéma : les règles serveur n'ont
-            // pas d'équivalent de `autoSizeFont`, et « NomPrenom » (121 pt) ne
-            // tient pas un nom composé à 10 pt (« Jean-Baptiste Vandenberghe »
-            // = 128 pt).
-            widget.setFontSize(fitFontSize(wFont, value, widget));
-          } catch {
-            /* certains widgets rejettent setFontSize — on garde la taille par défaut */
-          }
-          if (unicodeFont) widget.updateAppearances(wFont);
-        }
-      } catch (err) {
-        // Cas typique : `setText` au-delà du maxLength du widget → pdf-lib
-        // throw. Sans warn on ne verrait qu'une case vide sans indice.
-        diags.push({
-          fieldId: "",
-          widget: widgetName,
-          kind: "stamp-refuse",
-          detail: err instanceof Error ? err.message : String(err),
-        });
-        console.warn(
-          `[pdf-forms] extraStamp: échec sur "${widgetName}" (` +
-            (err instanceof Error ? err.message : String(err)) +
-            ")"
-        );
-      }
-    }
-  }
 
-  // Peigne POSITIONNEL : un caractere par barre du guide imprime.
-  //
-  // Le texte d'un widget est borne par son rectangle, alors que le guide du C1
-  // se poursuit au-dela — aucun espacement interne ne pouvait donc atteindre
-  // ses dernieres barres. On dessine ici directement dans le flux de la page,
-  // comme `drawAt`, ce qui affranchit de cette limite et survit au flatten.
   /// Dessine une valeur en peigne sur le widget nomme. Chaque ligne de grille a
   /// son propre rectangle, donc sa propre ordonnee : le calage se recalcule par
   /// widget, jamais une fois pour toutes.
@@ -893,6 +824,90 @@ export async function fillForm(
       x += comb.slotWidth;
     }
   };
+
+  // Bindings serveur : `extraStamps` provient du registry par slug
+  // (`lib/pdf-forms/bindings/`) évalué par la route generate avant appel.
+  // Appliqué APRÈS la boucle fields → une règle qui cible le même widget
+  // qu'un champ schéma gagne. On logge (console.warn) les échecs par widget
+  // au lieu de les avaler silencieusement — les rules émettent souvent des
+  // stamps texte contraints par un maxLength (« B E » = 2, undefined_11 = 4)
+  // et une erreur silencieuse ferait apparaître une case blanche sans
+  // signal.
+  if (opts.extraStamps && opts.extraStamps.size > 0) {
+    for (const [widgetName, value] of opts.extraStamps) {
+      if (!widgetName) continue;
+      let widget;
+      try {
+        widget = form.getField(widgetName);
+      } catch {
+        console.warn(`[pdf-forms] extraStamp: widget introuvable "${widgetName}"`);
+        diags.push({ fieldId: "", widget: widgetName, kind: "widget-introuvable" });
+        continue;
+      }
+      try {
+        if (typeof value === "boolean") {
+          if (!(widget instanceof PDFCheckBox)) {
+            console.warn(
+              `[pdf-forms] extraStamp: widget "${widgetName}" attendu checkbox pour booléen`
+            );
+            continue;
+          }
+          if (value) widget.check();
+          else widget.uncheck();
+        } else {
+          if (!(widget instanceof PDFTextField)) {
+            console.warn(
+              `[pdf-forms] extraStamp: widget "${widgetName}" attendu texte pour string`
+            );
+            continue;
+          }
+          // Widget pose sur un guide imprime : on dessine caractere par
+          // caractere hors du champ, et on le laisse vide pour ne pas
+          // imprimer la valeur deux fois.
+          const combSpec = opts.combWidgets?.[widgetName];
+          if (combSpec?.slotWidth) {
+            widget.setText("");
+            dessinerPeigne("", widgetName, value, combSpec, combSpec.fontSize ?? UNIFORM_TEXT_FONT_SIZE);
+            continue;
+          }
+          widget.setText(value);
+          const { font: wFont, fallback } = fonts.pick(value);
+          if (fallback) fonts.reapply.push({ field: widget, font: wFont });
+          try {
+            // Même ajustement que la boucle schéma : les règles serveur n'ont
+            // pas d'équivalent de `autoSizeFont`, et « NomPrenom » (121 pt) ne
+            // tient pas un nom composé à 10 pt (« Jean-Baptiste Vandenberghe »
+            // = 128 pt).
+            widget.setFontSize(fitFontSize(wFont, value, widget));
+          } catch {
+            /* certains widgets rejettent setFontSize — on garde la taille par défaut */
+          }
+          if (unicodeFont) widget.updateAppearances(wFont);
+        }
+      } catch (err) {
+        // Cas typique : `setText` au-delà du maxLength du widget → pdf-lib
+        // throw. Sans warn on ne verrait qu'une case vide sans indice.
+        diags.push({
+          fieldId: "",
+          widget: widgetName,
+          kind: "stamp-refuse",
+          detail: err instanceof Error ? err.message : String(err),
+        });
+        console.warn(
+          `[pdf-forms] extraStamp: échec sur "${widgetName}" (` +
+            (err instanceof Error ? err.message : String(err)) +
+            ")"
+        );
+      }
+    }
+  }
+
+  // Peigne POSITIONNEL : un caractere par barre du guide imprime.
+  //
+  // Le texte d'un widget est borne par son rectangle, alors que le guide du C1
+  // se poursuit au-dela — aucun espacement interne ne pouvait donc atteindre
+  // ses dernieres barres. On dessine ici directement dans le flux de la page,
+  // comme `drawAt`, ce qui affranchit de cette limite et survit au flatten.
 
   for (const field of fields) {
     if (field.hidden) continue;

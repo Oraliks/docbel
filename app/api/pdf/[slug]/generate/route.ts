@@ -7,6 +7,7 @@ import { readSourcePdf } from "@/lib/pdf-forms/storage";
 import { fillForm } from "@/lib/pdf-forms/filler";
 import { resolveStamps } from "@/lib/pdf-forms/bindings/engine";
 import { getRulesForSlug } from "@/lib/pdf-forms/bindings/registry";
+import { getCombWidgetsForSlug } from "@/lib/pdf-forms/bindings/comb-widgets";
 import { buildValidator, visiblePayload } from "@/lib/pdf-forms/validation";
 import { renderFilename } from "@/lib/pdf-forms/filename";
 import { sha256Hex, checkRateLimit, getClientIp } from "@/lib/pdf-forms/security";
@@ -254,6 +255,7 @@ export async function POST(
       flatten: shouldFlattenGeneratedPdf(form.slug),
       technicalSchema,
       extraStamps,
+      combWidgets: getCombWidgetsForSlug(form.slug),
     });
     pdfBytes = filled.bytes;
     // Le remplissage est best-effort : il ne lève pas quand une valeur ne

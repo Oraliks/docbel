@@ -5,6 +5,7 @@ import { readSourcePdf } from "@/lib/pdf-forms/storage";
 import { fillForm } from "@/lib/pdf-forms/filler";
 import { generateSeedPayload } from "@/lib/pdf-forms/seed-payload";
 import { getRulesForSlug } from "@/lib/pdf-forms/bindings/registry";
+import { getCombWidgetsForSlug } from "@/lib/pdf-forms/bindings/comb-widgets";
 import { resolveStamps } from "@/lib/pdf-forms/bindings/engine";
 import { PdfFormField, FormPayload, AcroFieldRaw } from "@/lib/pdf-forms/types";
 import { sanitizeFields } from "@/lib/pdf-forms/sanitize-fields";
@@ -55,6 +56,7 @@ export async function POST(
       flatten: shouldFlattenGeneratedPdf(form.slug),
       technicalSchema: form.technicalSchema as unknown as AcroFieldRaw[],
       extraStamps,
+      combWidgets: getCombWidgetsForSlug(form.slug),
     });
   } catch (err) {
     console.error("test-generate error:", err);

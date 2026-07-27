@@ -194,11 +194,15 @@ const TEXT_WIDGET_PADDING = 2;
 /// Ne s'applique pas aux widgets multilignes (le texte y est replié, pas
 /// tronqué : réduire la police n'aurait aucun sens) ni aux champs marqués
 /// `autoSizeFont`, qui délèguent l'ajustement au lecteur PDF.
-function fitFontSize(font: PDFFont, text: string, field: PDFTextField): number {
+function fitFontSize(
+  font: PDFFont,
+  text: string,
+  field: PDFTextField | PDFDropdown
+): number {
   if (!text) return UNIFORM_TEXT_FONT_SIZE;
   let usable = Infinity;
   try {
-    if (field.isMultiline()) return UNIFORM_TEXT_FONT_SIZE;
+    if (field instanceof PDFTextField && field.isMultiline()) return UNIFORM_TEXT_FONT_SIZE;
     // Un champ peut porter plusieurs widgets (même valeur répétée sur
     // plusieurs pages) : on vise le plus étroit, pour tenir partout.
     for (const w of field.acroField.getWidgets()) {
@@ -305,6 +309,15 @@ function stampScalarWidget(
         pdfField.select(s);
         const { font, fallback } = fonts.pick(s);
         if (fallback) fonts.reapply.push({ field: pdfField, font });
+        // Meme ajustement que les champs texte. Les listes deroulantes en
+        // avaient encore plus besoin : elles gardaient la taille du gabarit
+        // (12 pt sur la grille cohabitants), et « Employe » demandait 52 pt
+        // dans une colonne qui en offre 43.
+        try {
+          pdfField.setFontSize(fitFontSize(font, s, pdfField));
+        } catch {
+          /* certains widgets rejettent setFontSize */
+        }
         if (unicodeFont) pdfField.updateAppearances(font);
       } catch {
         /* dropdown readonly / incompatible — on ignore */

@@ -168,3 +168,28 @@ describe("filler — un booléen n'imprime jamais « true »", () => {
     expect(await textOf(bytes, AFFIRMATION)).toBe("");
   });
 });
+
+describe("filler — les listes déroulantes s'ajustent aussi", () => {
+  const c1 = realPdf("C1_FR.pdf");
+  const skip = c1 ? it : it.skip;
+
+  skip("réduit « Employé » qui ne tient pas dans la colonne d'activité", async () => {
+    // Les dropdowns gardaient la taille du gabarit (12 pt) sans le moindre
+    // ajustement : « Employé » demandait 52 pt dans une colonne de 43.
+    const fields: PdfFormField[] = [
+      {
+        id: "typeRevenu",
+        pdfFieldName: "Personne1_ActiviteProfessionnelle_Type",
+        type: "select",
+        required: false,
+        label: { fr: "Type de revenu" },
+        options: [{ value: "salarie-employe", label: { fr: "Employé" } }],
+      },
+    ];
+    const { bytes } = await fillForm(c1!, fields, { typeRevenu: "salarie-employe" }, { flatten: false });
+
+    const size = await fontSizeOf(bytes, "Personne1_ActiviteProfessionnelle_Type");
+    expect(size).toBeLessThan(12);
+    expect(size).toBeGreaterThan(0);
+  });
+});

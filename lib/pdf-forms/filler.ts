@@ -40,13 +40,35 @@ import { formatDateFR } from "./bindings/format";
 /// glyphe par glyphe : Ł, ğ, ș, ž, é, ç, €).
 const UNICODE_FONT_PATH = join(process.cwd(), "public", "fonts", "DejaVuSans-Latin.ttf");
 
-async function loadUnicodeFont(): Promise<Buffer | null> {
+/// Police de REPLI, utilisée uniquement pour les textes que la principale ne
+/// sait pas dessiner : grec, cyrillique, vietnamien.
+///
+/// Elle ne remplace pas `DejaVuSans-Latin.ttf` — elle le complète. Basculer
+/// tous les documents sur Noto changerait la typographie de chaque PDF déjà
+/// généré, alors que le seul problème à régler était les cases BLANCHES. Un
+/// dossier belge courant continue donc de sortir exactement comme avant.
+///
+/// Noto Sans 2.008, SIL Open Font License 1.1 (licence jointe :
+/// `public/fonts/OFL-NotoSans.txt`). Vérifié : sa couverture est un SUR-ensemble
+/// stricte de celle de la principale sur U+0020–U+2FFF, donc le repli ne peut
+/// jamais échouer là où la principale réussissait.
+///
+/// Ne couvre PAS l'arabe, l'hébreu ni le chinois — ces écritures demandent des
+/// fichiers Noto séparés, et les deux premières un rendu bidirectionnel que
+/// pdf-lib ne sait pas faire. Elles restent détectées et journalisées.
+const FALLBACK_FONT_PATH = join(process.cwd(), "public", "fonts", "NotoSans-Regular.ttf");
+
+async function loadFontFile(path: string): Promise<Buffer | null> {
   try {
-    if (existsSync(UNICODE_FONT_PATH)) return await readFile(UNICODE_FONT_PATH);
+    if (existsSync(path)) return await readFile(path);
   } catch {
     /* ignore */
   }
   return null;
+}
+
+async function loadUnicodeFont(): Promise<Buffer | null> {
+  return loadFontFile(UNICODE_FONT_PATH);
 }
 
 /// Police cursive (OFL Dancing Script) pour la signature manuscrite « façon
@@ -194,13 +216,29 @@ function fitFontSize(font: PDFFont, text: string, field: PDFTextField): number {
   return size;
 }
 
+/// Choix de police TEXTE PAR TEXTE.
+///
+/// pdf-lib n'a pas de chaîne de repli : une police par apparence, et un glyphe
+/// absent ne lève pas — il s'écrit en vide. On choisit donc explicitement, pour
+/// chaque valeur, la police capable de la dessiner.
+interface FontKit {
+  /// Principale si elle suffit, repli sinon. Ne renvoie jamais rien : quand
+  /// aucune des deux ne convient, elle rend la principale et le diagnostic
+  /// `caracteres-non-rendus` a déjà été émis au moment du pré-contrôle.
+  pick(text: string): { font: PDFFont; fallback: boolean };
+  /// Champs habillés avec le repli. Le passage global d'apparences en fin de
+  /// génération les réécrirait avec la principale — donc en blanc, ce qui est
+  /// exactement le bug qu'on corrige. On les ré-habille après lui.
+  reapply: Array<{ field: PDFTextField | PDFDropdown; font: PDFFont }>;
+}
+
 /// Stampe une valeur scalaire sur un widget AcroForm résolu, en dispatchant
 /// sur son type (texte / checkbox / dropdown / radio group). Centralise la
 /// logique pour la réutiliser depuis le stamping de lignes d'`array`.
 function stampScalarWidget(
   pdfField: unknown,
   value: FieldValue,
-  font: PDFFont,
+  fonts: FontKit,
   unicodeFont: boolean,
   fieldType?: string,
   autoSizeFont?: boolean,
@@ -233,6 +271,10 @@ function stampScalarWidget(
     // préfixe est étranger (FR, DE, …) → pas de strip.
     if (stampMap === undefined && fieldType === "iban") text = raw.replace(/^\s*[Bb][Ee]\s*/, "").trim();
     pdfField.setText(text);
+    // Le choix se fait sur le texte FINAL (date reformatee, libelle du
+    // stampMap, IBAN deshabille de son « BE »), pas sur la valeur brute.
+    const { font, fallback } = fonts.pick(text);
+    if (fallback) fonts.reapply.push({ field: pdfField, font });
     // Taille uniforme partout (cf. UNIFORM_TEXT_FONT_SIZE), réduite si le
     // texte ne tient pas dans la case (cf. fitFontSize), sauf `autoSizeFont`
     // (0 = auto-fit lecteur PDF, cf. PdfFormField.autoSizeFont).
@@ -261,6 +303,8 @@ function stampScalarWidget(
       try {
         if (!pdfField.getOptions().includes(s)) pdfField.addOptions([s]);
         pdfField.select(s);
+        const { font, fallback } = fonts.pick(s);
+        if (fallback) fonts.reapply.push({ field: pdfField, font });
         if (unicodeFont) pdfField.updateAppearances(font);
       } catch {
         /* dropdown readonly / incompatible — on ignore */
@@ -305,7 +349,7 @@ function isSubFieldVisible(
 
 function stampArrayField(
   form: PDFForm,
-  font: PDFFont,
+  fonts: FontKit,
   unicodeFont: boolean,
   field: PdfFormField,
   rows: FieldValueRecord[],
@@ -342,7 +386,7 @@ function stampArrayField(
         continue;
       }
       try {
-        stampScalarWidget(pdfField, subValue as FieldValue, font, unicodeFont, sub.type, sub.autoSizeFont, sub.options, sub.stampMap);
+        stampScalarWidget(pdfField, subValue as FieldValue, fonts, unicodeFont, sub.type, sub.autoSizeFont, sub.options, sub.stampMap);
       } catch {
         /* readonly / incompatible */
       }
@@ -374,7 +418,7 @@ function stampArrayField(
       continue;
     }
     try {
-      stampScalarWidget(pdfField, subValue as FieldValue, font, unicodeFont, sub.type, sub.autoSizeFont, sub.options, sub.stampMap);
+      stampScalarWidget(pdfField, subValue as FieldValue, fonts, unicodeFont, sub.type, sub.autoSizeFont, sub.options, sub.stampMap);
     } catch {
       /* readonly / incompatible */
     }
@@ -441,15 +485,67 @@ export async function fillForm(
   }
 
   // Contrôle de rendabilité sur le payload entier, en amont du tamponnage :
-  // toute valeur imprimable en vient, donc une seule passe suffit à repérer ce
-  // que le document ne pourra pas montrer.
+  // toute valeur imprimable en vient, donc une seule passe suffit à décider
+  // quelle police il faudra, et à repérer ce que le document ne pourra pas
+  // montrer. Les lignes de grille sont incluses — un cohabitant a un nom, lui
+  // aussi, et il peut être grec ou bulgare tout autant que le titulaire.
+  const textes: Array<[string, string]> = [];
   for (const [id, value] of Object.entries(payload)) {
-    if (typeof value !== "string" || !value) continue;
-    const missing = missingGlyphs(value);
-    if (missing) {
-      diags.push({ fieldId: id, widget: "", kind: "caracteres-non-rendus", detail: missing });
+    if (typeof value === "string") {
+      if (value) textes.push([id, value]);
+    } else if (isFieldValueRecordArray(value)) {
+      value.forEach((row, i) => {
+        for (const [k, v] of Object.entries(row)) {
+          if (typeof v === "string" && v) textes.push([`${id}[${i + 1}].${k}`, v]);
+        }
+      });
     }
   }
+
+  // Police de repli : chargée seulement si un texte en a besoin. `embedFont`
+  // ajoute la police au document même inutilisée — on ne la paie donc que
+  // quand elle sert vraiment.
+  const fallbackTtf = unicodeFont ? await loadFontFile(FALLBACK_FONT_PATH) : null;
+  let missingFallback: (text: string) => string = (t) => t;
+  if (fallbackTtf) {
+    try {
+      const probe = (await import("@pdf-lib/fontkit")).default.create(fallbackTtf);
+      missingFallback = (text: string) =>
+        [...text].filter((c) => !probe.hasGlyphForCodePoint(c.codePointAt(0) ?? 0)).join("");
+    } catch {
+      /* repli illisible : on garde le comportement sans repli */
+    }
+  }
+
+  const aBesoinDuRepli = new Set<string>();
+  for (const [id, texte] of textes) {
+    if (!missingGlyphs(texte)) continue;
+    const restant = missingFallback(texte);
+    if (!restant) {
+      aBesoinDuRepli.add(texte);
+      continue;
+    }
+    // Ni l'une ni l'autre : arabe, hébreu, chinois. La case sortira blanche —
+    // au moins la trace existe.
+    diags.push({ fieldId: id, widget: "", kind: "caracteres-non-rendus", detail: restant });
+  }
+
+  let fallbackFont: PDFFont | null = null;
+  if (fallbackTtf && aBesoinDuRepli.size > 0) {
+    try {
+      fallbackFont = await doc.embedFont(fallbackTtf, { subset: true });
+    } catch {
+      /* embarquement impossible : on retombe sur la principale, cases blanches */
+    }
+  }
+
+  const fonts: FontKit = {
+    pick: (text: string) =>
+      fallbackFont && aBesoinDuRepli.has(text)
+        ? { font: fallbackFont, fallback: true }
+        : { font, fallback: false },
+    reapply: [],
+  };
 
   // Police oblique (repli) pour la ligne "nom" du bloc de signature.
   const obliqueFont = await doc.embedFont(StandardFonts.HelveticaOblique);
@@ -492,7 +588,7 @@ export async function fillForm(
     if (field.type === "array") {
       const rows = payload[field.id];
       if (!isFieldValueRecordArray(rows)) continue;
-      stampArrayField(form, font, unicodeFont, field, rows, payload, diags);
+      stampArrayField(form, fonts, unicodeFont, field, rows, payload, diags);
       continue;
     }
 
@@ -550,17 +646,24 @@ export async function fillForm(
         const smallSize = Math.max(4.5, Math.min(6.5, bh / 5.5));
         const targetW = Math.max(10, bw - 2 * pad);
         const nameAreaH = Math.max(8, bh - smallSize - 2.5 * pad);
-        const widthAt1 = Math.max(0.01, cursiveFont.widthOfTextAtSize(block.name, 1));
-        const heightAt1 = Math.max(0.5, cursiveFont.heightAtSize(1));
+        // La signature porte le nom du citoyen : elle a le même problème de
+        // couverture que les champs texte. Dancing Script est une police
+        // d'affichage, plus étroite encore que la principale — si celle-ci ne
+        // sait déjà pas dessiner le nom, la cursive ne le saura pas non plus.
+        // On bascule alors sur la police choisie pour ce texte, quitte à perdre
+        // le rendu manuscrit : une signature lisible vaut mieux qu'une absente.
+        const nameFont = missingGlyphs(block.name) ? fonts.pick(block.name).font : cursiveFont;
+        const widthAt1 = Math.max(0.01, nameFont.widthOfTextAtSize(block.name, 1));
+        const heightAt1 = Math.max(0.5, nameFont.heightAtSize(1));
         let nameSize = Math.min(targetW / widthAt1, nameAreaH / heightAt1);
         nameSize = Math.max(9, Math.min(28, nameSize));
-        const nameW = cursiveFont.widthOfTextAtSize(block.name, nameSize);
+        const nameW = nameFont.widthOfTextAtSize(block.name, nameSize);
         const nameX = bx + pad + Math.max(0, (targetW - nameW) / 2);
         page.drawText(block.name, {
           x: nameX,
           y: by + smallSize + 1.5 * pad,
           size: nameSize,
-          font: cursiveFont,
+          font: nameFont,
           color: rgb(0.06, 0.08, 0.36),
         });
 
@@ -586,7 +689,7 @@ export async function fillForm(
         continue;
       }
 
-      stampScalarWidget(pdfField, value, font, unicodeFont, field.type, field.autoSizeFont, field.options, field.stampMap);
+      stampScalarWidget(pdfField, value, fonts, unicodeFont, field.type, field.autoSizeFont, field.options, field.stampMap);
     } catch (err) {
       // Champ readonly / incompatible : on n'interrompt pas la generation,
       // mais on ne fait plus semblant que la valeur est partie.
@@ -636,16 +739,18 @@ export async function fillForm(
             continue;
           }
           widget.setText(value);
+          const { font: wFont, fallback } = fonts.pick(value);
+          if (fallback) fonts.reapply.push({ field: widget, font: wFont });
           try {
             // Même ajustement que la boucle schéma : les règles serveur n'ont
             // pas d'équivalent de `autoSizeFont`, et « NomPrenom » (121 pt) ne
             // tient pas un nom composé à 10 pt (« Jean-Baptiste Vandenberghe »
             // = 128 pt).
-            widget.setFontSize(fitFontSize(font, value, widget));
+            widget.setFontSize(fitFontSize(wFont, value, widget));
           } catch {
             /* certains widgets rejettent setFontSize — on garde la taille par défaut */
           }
-          if (unicodeFont) widget.updateAppearances(font);
+          if (unicodeFont) widget.updateAppearances(wFont);
         }
       } catch (err) {
         // Cas typique : `setText` au-delà du maxLength du widget → pdf-lib
@@ -680,12 +785,13 @@ export async function fillForm(
     const { page: pageIdx, x, y, size, maxWidth } = field.drawAt;
     const pIdx = Math.max(0, Math.min(doc.getPageCount() - 1, pageIdx));
     const page = doc.getPage(pIdx);
+    const { font: drawFont } = fonts.pick(text);
     let fontSize = size ?? UNIFORM_TEXT_FONT_SIZE;
     if (maxWidth && maxWidth > 0) {
-      while (fontSize > 5 && font.widthOfTextAtSize(text, fontSize) > maxWidth) fontSize -= 0.5;
+      while (fontSize > 5 && drawFont.widthOfTextAtSize(text, fontSize) > maxWidth) fontSize -= 0.5;
     }
     try {
-      page.drawText(text, { x, y, size: fontSize, font, color: rgb(0, 0, 0) });
+      page.drawText(text, { x, y, size: fontSize, font: drawFont, color: rgb(0, 0, 0) });
     } catch (err) {
       console.warn(
         `[pdf-forms] drawAt: échec sur "${field.id}" (` +
@@ -701,6 +807,16 @@ export async function fillForm(
       form.updateFieldAppearances(font);
     } catch {
       /* best-effort */
+    }
+    // …puis ré-habille les champs rendus avec le repli : le passage global
+    // vient de les réécrire avec la principale, qui ne sait pas les dessiner.
+    // Sans cette reprise, le correctif serait annulé à la dernière ligne.
+    for (const { field, font: f } of fonts.reapply) {
+      try {
+        field.updateAppearances(f);
+      } catch {
+        /* best-effort */
+      }
     }
   }
 

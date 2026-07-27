@@ -43,15 +43,19 @@ describe("fillForm — diagnostics", () => {
     });
   });
 
-  skip("signale les caractères que la police embarquée ne sait pas dessiner", async () => {
+  skip("signale les caractères qu'AUCUNE police embarquée ne sait dessiner", async () => {
     // Le plus pernicieux : fontkit ne lève pas sur un glyphe absent, il le
-    // mappe sur le glyphe 0 — dont le contour est VIDE dans cette police. Le
-    // texte s'écrit « en rien », et après aplatissement la case part blanche
-    // avec `unicodeFont === true` pour dire que tout va bien.
+    // mappe sur le glyphe 0 — dont le contour est VIDE. Le texte s'écrit « en
+    // rien », et après aplatissement la case part blanche avec
+    // `unicodeFont === true` pour dire que tout va bien.
+    //
+    // Depuis l'ajout de Noto Sans en repli, le cyrillique et le grec sont
+    // rendus (cf. filler-font-fallback) — le diagnostic ne concerne plus que
+    // les écritures réellement non couvertes : arabe, hébreu, chinois.
     const { diagnostics, unicodeFont } = await fillForm(
       c1!,
       [champ("nom", "Nom")],
-      { nom: "Владимиров" },
+      { nom: "李伟" },
       { flatten: false }
     );
 
@@ -59,16 +63,16 @@ describe("fillForm — diagnostics", () => {
     const manquants = diagnostics.filter((d) => d.kind === "caracteres-non-rendus");
     expect(manquants).toHaveLength(1);
     expect(manquants[0].fieldId).toBe("nom");
-    expect(manquants[0].detail).toBe("Владимиров");
+    expect(manquants[0].detail).toBe("李伟");
   });
 
-  skip("laisse passer le latin étendu, qui est bien couvert", async () => {
+  skip("laisse passer ce qui est couvert, latin étendu comme cyrillique", async () => {
     // Contrôle négatif : sans lui, une sonde trop stricte signalerait tous les
     // noms belges accentués et le signal deviendrait inutile.
     const { diagnostics } = await fillForm(
       c1!,
       [champ("nom", "Nom"), champ("pr_nom", "Prenom")],
-      { nom: "Lemaître-Ștefănescu", pr_nom: "Łukasz Gökhan" },
+      { nom: "Lemaître-Ștefănescu", pr_nom: "Владимиров" },
       { flatten: false }
     );
     expect(diagnostics).toEqual([]);

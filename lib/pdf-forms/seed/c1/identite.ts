@@ -59,12 +59,16 @@ export const C1_IDENTITE: PdfFormField[] = [
     placeholder: { fr: "00.00.00-000.00" },
     prefillFrom: "profile.niss",
     canonicalKey: "identity.niss",
-    // Le widget AcroForm source impose /Helvetica 12 Tf sur une case d'à
-    // peine 11pt de haut, superposée à un guide imprimé en peigne
-    // ("__ __ __ __ __ __ / __ __ __ - __ __") — tout débordement y est très
-    // visible (Oraliks 2026-07-08). Auto-size plutôt que la taille uniforme
-    // du filler pour laisser le lecteur PDF réduire le texte à la case.
-    autoSizeFont: true,
+    // `autoSizeFont` RETIRÉ le 2026-07-27. Il compensait le /Helvetica 12 Tf
+    // impose par le widget source sur une case de 10,8 pt de haut, superposée
+    // à un guide imprimé en peigne où tout débordement se voit (Oraliks
+    // 2026-07-08) : on déléguait l'ajustement au lecteur PDF, qui rendait le
+    // NISS nettement plus petit que ses voisins de ligne.
+    //
+    // Le filler ne subit plus les 12 pt du gabarit : il pose 10 pt et réduit
+    // lui-même si le texte dépasse la case. Or « 85.06.12-345.67 » y occupe
+    // 83 pt sur les 142 disponibles — il tient largement, et à la même taille
+    // que le nom juste à côté.
     section: SECTION_IDENTITE,
     order: -98,
   },
@@ -84,10 +88,9 @@ export const C1_IDENTITE: PdfFormField[] = [
     // TANT QUE le NISS produit une date valide ; redevient éditable si le
     // NISS est vide/incomplet (jamais de champ requis inaccessible).
     derivedFrom: { fieldId: "niss", via: "niss-birth-date" },
-    // Même correctif que `niss` ci-dessus : widget source en /Helvetica 12 Tf
-    // fixe sur une case ~12pt de haut, superposée à un guide imprimé en
-    // peigne — auto-size pour éviter le débordement visible.
-    autoSizeFont: true,
+    // Retiré pour la même raison que `niss` — et sur la même ligne du
+    // formulaire, donc les deux doivent s'afficher à la même taille sous peine
+    // de paraître dépareillés. « 12/06/1985 » occupe 58 pt sur 95 disponibles.
     section: SECTION_IDENTITE,
     order: -97,
   },

@@ -19,8 +19,10 @@ export type CombWidgetSpec = NonNullable<PdfFormField["printAsComb"]> & {
 };
 
 /// Les quatre lignes « à partir du » du motif partagent le même guide imprimé,
-/// donc le même calage. Repris de la date de naissance de la page 1 (calage B
-/// validé par Oraliks) comme point de départ — à ajuster à l'œil.
+/// donc le même calage. Validé à l'œil par Oraliks le 2026-07-27, sur un PDF
+/// cochant adresse + situation de ménage + compte pour juger les trois lignes
+/// ensemble. Mêmes valeurs que la date de naissance de la page 1 : sans
+/// surprise, c'est le même guide imprimé.
 const C1_DATE_MOTIF: CombWidgetSpec = {
   groups: [2, 2, 4],
   slotWidth: 11,

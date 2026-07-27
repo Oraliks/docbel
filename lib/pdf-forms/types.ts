@@ -362,7 +362,17 @@ export interface PdfFormField {
   /// points et tirets sont DEJA dessines sur le formulaire officiel, les
   /// reimprimer les doublait, et les chiffres colles ne tombaient sur
   /// aucune barre.
-  printAsComb?: boolean;
+  /// Groupes du peigne et largeur des ecarts, en NOMBRE D'ESPACES.
+  /// `{ groups: [6, 3, 2] }` = « 8 5 0 6 1 2  3 4 5  6 7 », calque sur
+  /// « __ __ __ __ __ __ / __ __ __ - __ __ » : ecart simple entre chiffres
+  /// d'un meme groupe, double la ou le formulaire imprime « / » et « - ».
+  ///
+  /// L'unite est l'espace de la police (3,81 pt a 12 pt) : c'est la seule
+  /// disponible, DejaVuSans-Latin n'ayant ni espace fine ni espace chiffre.
+  /// Le reglage est donc granuleux — pour un alignement au dixieme de
+  /// millimetre il faudrait dessiner chaque caractere a une position
+  /// calculee, ce que ce mecanisme ne fait pas.
+  printAsComb?: { groups: number[]; gap?: number; groupGap?: number };
   /// Table de correspondance valeur interne → texte imprimé sur le PDF, pour un
   /// champ `select` mappé sur un widget TEXTE (pas un dropdown). Ex. le `lien`
   /// de parenté du C1 : `pere` → « Père », `enfant` → « Enfant », mais `FAC`/

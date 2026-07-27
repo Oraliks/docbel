@@ -258,6 +258,28 @@ function decimalesFR(raw: string): string {
   return /^-?\d+\.\d+$/.test(t) ? t.replace(".", ",") : raw;
 }
 
+/// Repartit les caracteres sur le guide imprime : separateurs retires,
+/// ecart simple a l'interieur d'un groupe, ecart double entre les groupes —
+/// la ou le formulaire dessine « / » et « - ». Les caracteres au-dela des
+/// groupes declares suivent l'ecart simple, pour ne jamais perdre de saisie.
+function texteEnPeigne(
+  raw: string,
+  opt: NonNullable<PdfFormField["printAsComb"]>
+): string {
+  const chars = raw.replace(/[^0-9A-Za-z]/g, "").split("");
+  const ecart = " ".repeat(Math.max(1, opt.gap ?? 1));
+  const ecartGroupe = " ".repeat(Math.max(1, opt.groupGap ?? 2));
+  const groupes: string[] = [];
+  let i = 0;
+  for (const taille of opt.groups) {
+    if (i >= chars.length) break;
+    groupes.push(chars.slice(i, i + taille).join(ecart));
+    i += taille;
+  }
+  if (i < chars.length) groupes.push(chars.slice(i).join(ecart));
+  return groupes.join(ecartGroupe);
+}
+
 /// Stampe une valeur scalaire sur un widget AcroForm résolu, en dispatchant
 /// sur son type (texte / checkbox / dropdown / radio group). Centralise la
 /// logique pour la réutiliser depuis le stamping de lignes d'`array`.
@@ -271,7 +293,7 @@ function stampScalarWidget(
   options?: FieldOption[],
   stampMap?: Record<string, string>,
   fontSize?: number,
-  printAsComb?: boolean
+  printAsComb?: PdfFormField["printAsComb"]
 ): void {
   if (pdfField instanceof PDFTextField) {
     // `stampMap` : correspondance valeur interne → libellé imprimé (ex. lien de
@@ -301,7 +323,7 @@ function stampScalarWidget(
     if (stampMap === undefined && fieldType === "number") text = decimalesFR(raw);
     // Peigne : le guide imprime porte deja ses separateurs, et les chiffres
     // colles ne tombaient sur aucune barre.
-    if (printAsComb) text = text.replace(/[^0-9A-Za-z]/g, "").split("").join(" ");
+    if (printAsComb) text = texteEnPeigne(text, printAsComb);
     pdfField.setText(text);
     // Le choix se fait sur le texte FINAL (date reformatee, libelle du
     // stampMap, IBAN deshabille de son « BE »), pas sur la valeur brute.

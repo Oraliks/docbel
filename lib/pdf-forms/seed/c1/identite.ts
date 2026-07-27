@@ -77,7 +77,7 @@ export const C1_IDENTITE: PdfFormField[] = [
     fontSize: 12,
     // Les points et tirets du NISS sont DEJA imprimes sur le peigne du
     // formulaire : les reimprimer les doublait (Oraliks 2026-07-27).
-    printAsComb: true,
+    printAsComb: { groups: [6, 3, 2] },
     section: SECTION_IDENTITE,
     order: -98,
   },

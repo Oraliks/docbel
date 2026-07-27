@@ -927,14 +927,18 @@ export async function fillForm(
     if (!comb?.slotWidth) continue;
     const brut = payload[field.id];
     if (typeof brut !== "string" || !brut.trim()) continue;
+    // Formatage FR AVANT le peigne, comme dans la branche grille : sans lui, la
+    // date ISO du state partait telle quelle et « 1985-06-12 » s'imprimait
+    // « 19 85 0612 » — l'annee d'abord, sur un guide jour/mois/annee.
+    const valeurChamp = field.type === "date" ? formatDateFR(brut) : brut;
     const tech = (opts.technicalSchema ?? []).find((t) => t.pdfFieldName === field.pdfFieldName);
     if (!tech?.rect) continue;
 
     const [bx, by] = tech.rect;
     const page = doc.getPage(Math.max(0, Math.min(doc.getPageCount() - 1, tech.page ?? 0)));
     const taille = field.fontSize ?? UNIFORM_TEXT_FONT_SIZE;
-    const { font: policeCaractere } = fonts.pick(brut);
-    const caracteres = brut.replace(/[^0-9A-Za-z]/g, "").split("");
+    const { font: policeCaractere } = fonts.pick(valeurChamp);
+    const caracteres = valeurChamp.replace(/[^0-9A-Za-z]/g, "").split("");
 
     // Bornes de groupe : apres combien de caracteres le guide marque une
     // rupture (« / » puis « - » sur le NISS).

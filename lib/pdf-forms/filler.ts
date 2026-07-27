@@ -270,7 +270,8 @@ function stampScalarWidget(
   autoSizeFont?: boolean,
   options?: FieldOption[],
   stampMap?: Record<string, string>,
-  fontSize?: number
+  fontSize?: number,
+  printAsComb?: boolean
 ): void {
   if (pdfField instanceof PDFTextField) {
     // `stampMap` : correspondance valeur interne → libellé imprimé (ex. lien de
@@ -298,6 +299,9 @@ function stampScalarWidget(
     // préfixe est étranger (FR, DE, …) → pas de strip.
     if (stampMap === undefined && fieldType === "iban") text = raw.replace(/^\s*[Bb][Ee]\s*/, "").trim();
     if (stampMap === undefined && fieldType === "number") text = decimalesFR(raw);
+    // Peigne : le guide imprime porte deja ses separateurs, et les chiffres
+    // colles ne tombaient sur aucune barre.
+    if (printAsComb) text = text.replace(/[^0-9A-Za-z]/g, "").split("").join(" ");
     pdfField.setText(text);
     // Le choix se fait sur le texte FINAL (date reformatee, libelle du
     // stampMap, IBAN deshabille de son « BE »), pas sur la valeur brute.
@@ -433,7 +437,7 @@ function stampArrayField(
         continue;
       }
       try {
-        stampScalarWidget(pdfField, subValue as FieldValue, fonts, unicodeFont, sub.type, sub.autoSizeFont, sub.options, sub.stampMap, sub.fontSize);
+        stampScalarWidget(pdfField, subValue as FieldValue, fonts, unicodeFont, sub.type, sub.autoSizeFont, sub.options, sub.stampMap, sub.fontSize, sub.printAsComb);
       } catch {
         /* readonly / incompatible */
       }
@@ -465,7 +469,7 @@ function stampArrayField(
       continue;
     }
     try {
-      stampScalarWidget(pdfField, subValue as FieldValue, fonts, unicodeFont, sub.type, sub.autoSizeFont, sub.options, sub.stampMap, sub.fontSize);
+      stampScalarWidget(pdfField, subValue as FieldValue, fonts, unicodeFont, sub.type, sub.autoSizeFont, sub.options, sub.stampMap, sub.fontSize, sub.printAsComb);
     } catch {
       /* readonly / incompatible */
     }
@@ -736,7 +740,7 @@ export async function fillForm(
         continue;
       }
 
-      stampScalarWidget(pdfField, value, fonts, unicodeFont, field.type, field.autoSizeFont, field.options, field.stampMap, field.fontSize);
+      stampScalarWidget(pdfField, value, fonts, unicodeFont, field.type, field.autoSizeFont, field.options, field.stampMap, field.fontSize, field.printAsComb);
     } catch (err) {
       // Champ readonly / incompatible : on n'interrompt pas la generation,
       // mais on ne fait plus semblant que la valeur est partie.

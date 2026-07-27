@@ -136,6 +136,50 @@ function ConsentCheckbox({
   );
 }
 
+/// Récapitulatif PERSISTANT des champs refusés à l'envoi.
+///
+/// Le toast dit combien, puis disparaît — et n'en nomme que trois. Quand les
+/// champs manquants sont répartis sur plusieurs étapes, l'usager n'a alors plus
+/// aucun moyen de savoir ce qu'il reste à corriger : le runner l'emmène sur le
+/// premier, et les suivants sont hors écran, dans des étapes déjà quittées.
+///
+/// Cette liste reste affichée jusqu'à la tentative suivante, et chaque entrée
+/// est un bouton qui ramène à son champ — c'est ce qui la rend utile plutôt que
+/// décorative. `role="alert"` la fait annoncer par les lecteurs d'écran
+/// (WCAG 3.3.1 : identifier l'erreur, pas seulement la signaler).
+function InvalidFieldsSummary({
+  fields,
+  title,
+  onJump,
+}: {
+  fields: Array<{ id: string; label: string }>;
+  title: string;
+  onJump: (id: string) => void;
+}) {
+  if (fields.length === 0) return null;
+  return (
+    <div
+      role="alert"
+      className="flex flex-col gap-2 rounded-xl border border-destructive/40 bg-destructive/5 p-3"
+    >
+      <p className="text-sm font-semibold text-destructive">{title}</p>
+      <ul className="flex flex-col gap-1">
+        {fields.map((f) => (
+          <li key={f.id}>
+            <button
+              type="button"
+              onClick={() => onJump(f.id)}
+              className="text-left text-sm text-destructive underline underline-offset-2 hover:no-underline"
+            >
+              {f.label}
+            </button>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 /// Aligne le BIC sur l'IBAN quand la table locale reconnaît la banque.
 ///
 /// Le BIC déduit ÉCRASE une valeur existante (Oraliks 2026-07-26). Avant, un
@@ -253,6 +297,9 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
   // la case en `aria-invalid`, comme n'importe quel champ requis. Levée au
   // submit, retombe dès que la case est cochée.
   const [consentError, setConsentError] = useState(false);
+  /// Champs refuses a la derniere tentative d'envoi, pour le recapitulatif
+  /// persistant (le toast ne survit pas et n'en nomme que trois).
+  const [invalidFields, setInvalidFields] = useState<Array<{ id: string; label: string }>>([]);
   const updateConsent = useCallback((next: boolean) => {
     setConsent(next);
     if (next) setConsentError(false);
@@ -723,7 +770,21 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
     [values, locale, verifiedStreets, form.fields, setActive]
   );
 
+  /// Ramene a un champ refuse : bascule sur son etape si besoin, puis defile.
+  /// Meme geste que celui applique au premier champ invalide apres un envoi —
+  /// sans quoi la liste ne serait qu'un constat.
+  const jumpToInvalidField = useCallback(
+    (id: string) => {
+      const stepIdx = fieldStepIndex[id];
+      if (stepIdx !== undefined) setActive(stepIdx);
+      setTimeout(() => scrollToField(id), 60);
+    },
+    [fieldStepIndex, setActive]
+  );
+
   async function submit() {
+    // Repart d'une ardoise propre : un recapitulatif perime est pire qu'aucun.
+    setInvalidFields([]);
     if (!consent) {
       setConsentError(true);
       toast.error(t("runnerConsentRequired"));
@@ -800,6 +861,12 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
         }
       }
       setErrors(next);
+      setInvalidFields(
+        invalidIds.map((id) => {
+          const f = form.fields.find((x) => x.id === id);
+          return { id, label: f ? loc(f.label, locale) : id };
+        })
+      );
       // Log console explicite : quand l'utilisateur ne voit pas où corriger
       // (champ dans une étape déjà validée, ou champ orphelin sans stepGroup),
       // on lui donne au moins la liste dans la devtools.
@@ -835,6 +902,12 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
     const firstListId = Object.keys(listErrors)[0];
     if (firstListId) {
       setErrors(listErrors);
+      setInvalidFields(
+        Object.keys(listErrors).map((id) => {
+          const f = form.fields.find((x) => x.id === id);
+          return { id, label: f ? loc(f.label, locale) : id };
+        })
+      );
       const stepIdx = fieldStepIndex[firstListId];
       if (stepIdx !== undefined) setActive(stepIdx);
       setTimeout(() => scrollToField(firstListId), 60);
@@ -1071,6 +1144,8 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
   if (macroSteps) {
     return (
       <MacroRunnerBody
+        invalidFields={invalidFields}
+        jumpToInvalidField={jumpToInvalidField}
         form={form}
         macroSteps={macroSteps}
         activeIndex={activeIndex}
@@ -1306,6 +1381,11 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
                       )}
                     </div>
                   )}
+                  <InvalidFieldsSummary
+                    fields={invalidFields}
+                    title={t("runnerSomeFieldsInvalid")}
+                    onJump={jumpToInvalidField}
+                  />
                   <ConsentCheckbox
                     compact
                     checked={consent}
@@ -1658,6 +1738,10 @@ function ConfirmationCard({ hasSignature, signerName }: { hasSignature: boolean;
 }
 
 interface MacroRunnerBodyProps {
+  /// Recapitulatif persistant des champs refuses au dernier envoi, et le
+  /// geste qui y ramene. Remontes depuis le parent : c'est lui qui valide.
+  invalidFields: Array<{ id: string; label: string }>;
+  jumpToInvalidField: (id: string) => void;
   form: PublicForm;
   macroSteps: MacroStep[];
   activeIndex: number;
@@ -1705,6 +1789,7 @@ function MacroRunnerBody({
   form, macroSteps, activeIndex, setActive, attemptAdvance, locale, setLocale, values, errors,
   setValue, signerName, consent, setConsent, consentError, delivery, setDelivery, doccleRef,
   setDoccleRef, submitting, submit, resetForm, lastSavedAt, serverSaved, liveTriggers, bundleRunId, onStreetVerifiedChange, verifiedStreets, onFocusField, activeFieldId, contextTips, rail, t,
+  invalidFields, jumpToInvalidField,
 }: MacroRunnerBodyProps) {
   const current = macroSteps[activeIndex];
   const isLast = activeIndex === macroSteps.length - 1;
@@ -1961,6 +2046,11 @@ function MacroRunnerBody({
                       )}
                     </div>
                   )}
+                  <InvalidFieldsSummary
+                    fields={invalidFields}
+                    title={t("runnerSomeFieldsInvalid")}
+                    onJump={jumpToInvalidField}
+                  />
                   <ConsentCheckbox
                     checked={consent}
                     onChange={setConsent}

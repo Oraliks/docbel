@@ -355,6 +355,14 @@ export interface PdfFormField {
   /// ailleurs, laisser le filler décider : c'est ce qui garantit l'homogénéité
   /// demandée par Oraliks (« tous les champs remplis avec le même caractère »).
   fontSize?: number;
+  /// Imprime la valeur en PEIGNE : separateurs retires, caracteres espaces.
+  ///
+  /// Pour les widgets poses sur un guide imprime en cases
+  /// (« __ __ __ __ __ __ / __ __ __ - __ __ » du NISS sur le C1) : les
+  /// points et tirets sont DEJA dessines sur le formulaire officiel, les
+  /// reimprimer les doublait, et les chiffres colles ne tombaient sur
+  /// aucune barre.
+  printAsComb?: boolean;
   /// Table de correspondance valeur interne → texte imprimé sur le PDF, pour un
   /// champ `select` mappé sur un widget TEXTE (pas un dropdown). Ex. le `lien`
   /// de parenté du C1 : `pere` → « Père », `enfant` → « Enfant », mais `FAC`/

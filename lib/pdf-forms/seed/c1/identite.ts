@@ -75,6 +75,9 @@ export const C1_IDENTITE: PdfFormField[] = [
     // 10 pt la saisie paraît rabougrie entre ses tirets (Oraliks 2026-07-27,
     // capture à l'appui). « 85.06.12-345.67 » y occupe alors 100 pt sur 142.
     fontSize: 12,
+    // Les points et tirets du NISS sont DEJA imprimes sur le peigne du
+    // formulaire : les reimprimer les doublait (Oraliks 2026-07-27).
+    printAsComb: true,
     section: SECTION_IDENTITE,
     order: -98,
   },

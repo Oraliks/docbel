@@ -236,6 +236,24 @@ interface FontKit {
   reapply: Array<{ field: PDFTextField | PDFDropdown; font: PDFFont }>;
 }
 
+/// Séparateur décimal belge : la virgule.
+///
+/// `String(2450.75)` produit « 2450.75 » — un point, convention anglo-saxonne,
+/// qui n'a rien à faire sur un formulaire officiel belge. L'aide du champ écrit
+/// d'ailleurs elle-même « 999999,99 € ».
+///
+/// Volontairement minimal : PAS de séparateur de milliers (ni le formulaire
+/// ONEM ni l'aide n'en mettent, et un point de milliers serait lu comme un
+/// décimal par un lecteur francophone), et PAS de complétion des décimales — un
+/// citoyen qui déclare « 1610 » doit voir « 1610 », pas « 1610,00 ».
+///
+/// Ne transforme QUE ce qui est un nombre décimal simple : tout le reste passe
+/// intact, pour qu'une valeur inattendue ne soit jamais réécrite à l'aveugle.
+function decimalesFR(raw: string): string {
+  const t = raw.trim();
+  return /^-?\d+\.\d+$/.test(t) ? t.replace(".", ",") : raw;
+}
+
 /// Stampe une valeur scalaire sur un widget AcroForm résolu, en dispatchant
 /// sur son type (texte / checkbox / dropdown / radio group). Centralise la
 /// logique pour la réutiliser depuis le stamping de lignes d'`array`.
@@ -274,6 +292,7 @@ function stampScalarWidget(
     // (Oraliks 2026-07-07). Sur le widget « SEPA étranger IBAN BIC » le
     // préfixe est étranger (FR, DE, …) → pas de strip.
     if (stampMap === undefined && fieldType === "iban") text = raw.replace(/^\s*[Bb][Ee]\s*/, "").trim();
+    if (stampMap === undefined && fieldType === "number") text = decimalesFR(raw);
     pdfField.setText(text);
     // Le choix se fait sur le texte FINAL (date reformatee, libelle du
     // stampMap, IBAN deshabille de son « BE »), pas sur la valeur brute.
@@ -805,6 +824,7 @@ export async function fillForm(
     if (raw === null || raw === undefined || raw === "" || raw === false) continue;
     let text = String(raw);
     if (field.type === "date") text = formatDateFR(text);
+    if (field.type === "number") text = decimalesFR(text);
     const { page: pageIdx, x, y, size, maxWidth } = field.drawAt;
     const pIdx = Math.max(0, Math.min(doc.getPageCount() - 1, pageIdx));
     const page = doc.getPage(pIdx);

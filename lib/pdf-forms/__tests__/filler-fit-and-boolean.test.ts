@@ -223,3 +223,44 @@ describe("filler — stampMap sur une liste déroulante", () => {
     expect(champ.getSelected()[0]).not.toContain("maladie-invalidité");
   });
 });
+
+describe("filler — séparateur décimal belge", () => {
+  const c1 = realPdf("C1_FR.pdf");
+  const skip = c1 ? it : it.skip;
+
+  function montant(id: string, widget: string): PdfFormField {
+    return { id, pdfFieldName: widget, type: "number", required: false, label: { fr: id } };
+  }
+
+  const W = "Personne1_ActiviteProfessionnelle_Montant";
+
+  skip("imprime la virgule, pas le point", async () => {
+    // `String(2450.75)` donne « 2450.75 » — convention anglo-saxonne, qui n'a
+    // rien à faire sur un formulaire officiel belge. L'aide du champ écrit
+    // elle-même « 999999,99 € ».
+    const { bytes } = await fillForm(c1!, [montant("m", W)], { m: 2450.75 }, { flatten: false });
+    expect(await textOf(bytes, W)).toBe("2450,75");
+  });
+
+  skip("ne complète pas les décimales d'un montant entier", async () => {
+    // Un citoyen qui déclare « 1610 » doit voir « 1610 » : on corrige un
+    // séparateur, on ne réécrit pas sa saisie.
+    const { bytes } = await fillForm(c1!, [montant("m", W)], { m: 1610 }, { flatten: false });
+    expect(await textOf(bytes, W)).toBe("1610");
+  });
+
+  skip("laisse intacte une valeur qui n'est pas un nombre simple", async () => {
+    // Garde-fou : une valeur inattendue ne doit jamais être réécrite à
+    // l'aveugle sur un document officiel.
+    const { bytes } = await fillForm(c1!, [montant("m", W)], { m: "1.234.567" }, { flatten: false });
+    expect(await textOf(bytes, W)).toBe("1.234.567");
+  });
+
+  skip("n'affecte pas les autres types (l'IBAN garde son traitement)", async () => {
+    const fields: PdfFormField[] = [
+      { id: "iban", pdfFieldName: "Nom", type: "iban", required: false, label: { fr: "IBAN" } },
+    ];
+    const { bytes } = await fillForm(c1!, fields, { iban: "BE68539007547034" }, { flatten: false });
+    expect(await textOf(bytes, "Nom")).toBe("68539007547034");
+  });
+});

@@ -356,18 +356,44 @@ describe("Rules C1 — en-tête « date DA / modification » page 2 (DateDeDA)",
     expect(stamps.get("DateDeDA")).toBe("15/06/2026");
   });
 
-  it("= la date de transfert quand c'est un changement d'organisme (pas de date modif)", () => {
+  it("garde la date de modification sur un transfert d'organisme PUR", () => {
+    // Le scénario qui a soulevé la question : aucun chip de modification, seul
+    // le transfert. L'en-tête porte la date de la demande/modification déclarée
+    // par le citoyen (Oraliks 2026-07-27), pas celle de la prise d'effet du
+    // transfert — les deux diffèrent légitimement, le transfert prenant effet le
+    // mois suivant.
     const payload = {
       ...baseline(),
+      modificationAdresse: false,
+      dateModificationEffective: "2026-08-03",
+      transfereOrganismePaiement: true,
+      dateChangementOrganisme: "2026-09-01",
+    };
+    const stamps = resolveStamps(payload, C1_CHANGEMENT_RULES);
+
+    expect(stamps.get("DateDeDA")).toBe("03/08/2026");
+    // La date de transfert garde sa propre ligne, et ne remonte jamais en tête.
+    expect(stamps.get("DateDeTransfert")).toBe("01/09/2026");
+    expect(stamps.get("DateDeDA")).not.toBe("01/09/2026");
+  });
+
+  it("ne remonte JAMAIS la date de transfert, même sans date de modification", () => {
+    // Cas des payloads déjà stockés, rejoués tels quels par regenerate-pdfs
+    // (zip, e-mail) : certains sont antérieurs au passage de
+    // `dateModificationEffective` en `required`. Le dernier recours est la date
+    // de demande — jamais celle du transfert.
+    const payload = {
+      ...baseline(),
+      dateDemande: "2026-05-20",
       dateModificationEffective: "",
       transfereOrganismePaiement: true,
       dateChangementOrganisme: "2026-08-01",
     };
     const stamps = resolveStamps(payload, C1_CHANGEMENT_RULES);
-    expect(stamps.get("DateDeDA")).toBe("01/08/2026");
+    expect(stamps.get("DateDeDA")).toBe("20/05/2026");
   });
 
-  it("retombe sur la date de demande si ni modif ni transfert", () => {
+  it("retombe sur la date de demande si aucune date de modification", () => {
     const payload = { ...baseline(), dateDemande: "2026-05-20", dateModificationEffective: "", dateChangementOrganisme: "" };
     const stamps = resolveStamps(payload, C1_CHANGEMENT_RULES);
     expect(stamps.get("DateDeDA")).toBe("20/05/2026");

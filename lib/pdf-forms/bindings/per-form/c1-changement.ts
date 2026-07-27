@@ -363,13 +363,28 @@ export const C1_CHANGEMENT_RULES: MappingRule[] = [
 
   // -------- En-tête « date DA / modification » page 2 (via macro) --------
   //
-  // Même date que le motif déclaré (Oraliks 2026-07-10 : « la date du motif =
-  // la date DA / modification en haut de la page 2 ») : date de modification si
-  // c'est un changement, date de transfert si c'est un changement d'organisme,
-  // sinon date de demande. Widget `DateDeDA` (ex-`DateDeModification`).
+  // L'en-tête porte la date de la DEMANDE / MODIFICATION, jamais la date de
+  // transfert (Oraliks 2026-07-27). Un transfert d'organisme pur garde donc en
+  // en-tête la date de changement déclarée par le citoyen, tandis que la date
+  // de prise d'effet du transfert reste sur sa propre ligne (`DateDeTransfert`,
+  // règle `date-transfert`) — les deux diffèrent légitimement, le transfert
+  // prenant effet le mois suivant.
+  //
+  // `dateChangementOrganisme` a donc été RETIRÉE des sources le 2026-07-27.
+  // Elle n'avait jamais gagné en pratique — `dateModificationEffective` est
+  // `required` et sans `visibleIf` dans ce dossier, donc toujours remplie — mais
+  // sa présence disait le contraire de la règle métier, et un futur changement
+  // de profil aurait suffi à faire remonter la date de transfert dans l'en-tête.
+  //
+  // `dateDemande` reste en dernier recours : les payloads déjà stockés sont
+  // rejoués tels quels par `regenerate-pdfs` (zip, e-mail, retéléchargement),
+  // sans repasser par la validation — certains sont antérieurs au passage de
+  // `dateModificationEffective` en `required`.
+  //
+  // Widget `DateDeDA` (ex-`DateDeModification`).
   dateHeaderFallback({
     widget: W_DATE_HEADER_P2,
-    sources: ["dateModificationEffective", "dateChangementOrganisme", "dateDemande"],
+    sources: ["dateModificationEffective", "dateDemande"],
     name: "date-header-p2",
   }),
 

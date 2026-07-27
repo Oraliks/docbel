@@ -69,6 +69,12 @@ export const C1_IDENTITE: PdfFormField[] = [
     // lui-même si le texte dépasse la case. Or « 85.06.12-345.67 » y occupe
     // 83 pt sur les 142 disponibles — il tient largement, et à la même taille
     // que le nom juste à côté.
+    //
+    // 12 pt, et non la taille uniforme : le peigne imprimé sous la case est
+    // dessiné pour cette taille (c'est celle qu'imposait le gabarit), et à
+    // 10 pt la saisie paraît rabougrie entre ses tirets (Oraliks 2026-07-27,
+    // capture à l'appui). « 85.06.12-345.67 » y occupe alors 100 pt sur 142.
+    fontSize: 12,
     section: SECTION_IDENTITE,
     order: -98,
   },
@@ -90,7 +96,8 @@ export const C1_IDENTITE: PdfFormField[] = [
     derivedFrom: { fieldId: "niss", via: "niss-birth-date" },
     // Retiré pour la même raison que `niss` — et sur la même ligne du
     // formulaire, donc les deux doivent s'afficher à la même taille sous peine
-    // de paraître dépareillés. « 12/06/1985 » occupe 58 pt sur 95 disponibles.
+    // de paraître dépareillés. « 12/06/1985 » occupe 69 pt sur 95 à 12 pt.
+    fontSize: 12,
     section: SECTION_IDENTITE,
     order: -97,
   },

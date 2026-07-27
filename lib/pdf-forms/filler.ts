@@ -197,12 +197,16 @@ const TEXT_WIDGET_PADDING = 2;
 function fitFontSize(
   font: PDFFont,
   text: string,
-  field: PDFTextField | PDFDropdown
+  field: PDFTextField | PDFDropdown,
+  /// Taille souhaitee avant reduction. Par defaut la taille uniforme ; un champ
+  /// peut imposer la sienne via `PdfFormField.fontSize` (cf. le peigne imprime
+  /// du NISS, dessine pour du 12 pt).
+  preferred: number = UNIFORM_TEXT_FONT_SIZE
 ): number {
-  if (!text) return UNIFORM_TEXT_FONT_SIZE;
+  if (!text) return preferred;
   let usable = Infinity;
   try {
-    if (field instanceof PDFTextField && field.isMultiline()) return UNIFORM_TEXT_FONT_SIZE;
+    if (field instanceof PDFTextField && field.isMultiline()) return preferred;
     // Un champ peut porter plusieurs widgets (même valeur répétée sur
     // plusieurs pages) : on vise le plus étroit, pour tenir partout.
     for (const w of field.acroField.getWidgets()) {
@@ -210,10 +214,10 @@ function fitFontSize(
       if (width > 0) usable = Math.min(usable, width - 2 * TEXT_WIDGET_PADDING);
     }
   } catch {
-    return UNIFORM_TEXT_FONT_SIZE;
+    return preferred;
   }
-  if (!Number.isFinite(usable) || usable <= 0) return UNIFORM_TEXT_FONT_SIZE;
-  let size = UNIFORM_TEXT_FONT_SIZE;
+  if (!Number.isFinite(usable) || usable <= 0) return preferred;
+  let size = preferred;
   while (size > MIN_TEXT_FONT_SIZE && font.widthOfTextAtSize(text, size) > usable) {
     size -= 0.5;
   }
@@ -265,7 +269,8 @@ function stampScalarWidget(
   fieldType?: string,
   autoSizeFont?: boolean,
   options?: FieldOption[],
-  stampMap?: Record<string, string>
+  stampMap?: Record<string, string>,
+  fontSize?: number
 ): void {
   if (pdfField instanceof PDFTextField) {
     // `stampMap` : correspondance valeur interne → libellé imprimé (ex. lien de
@@ -302,7 +307,7 @@ function stampScalarWidget(
     // texte ne tient pas dans la case (cf. fitFontSize), sauf `autoSizeFont`
     // (0 = auto-fit lecteur PDF, cf. PdfFormField.autoSizeFont).
     try {
-      pdfField.setFontSize(autoSizeFont ? 0 : fitFontSize(font, text, pdfField));
+      pdfField.setFontSize(autoSizeFont ? 0 : fitFontSize(font, text, pdfField, fontSize));
     } catch {
       /* certains widgets rejettent setFontSize — on garde la taille par défaut */
     }
@@ -428,7 +433,7 @@ function stampArrayField(
         continue;
       }
       try {
-        stampScalarWidget(pdfField, subValue as FieldValue, fonts, unicodeFont, sub.type, sub.autoSizeFont, sub.options, sub.stampMap);
+        stampScalarWidget(pdfField, subValue as FieldValue, fonts, unicodeFont, sub.type, sub.autoSizeFont, sub.options, sub.stampMap, sub.fontSize);
       } catch {
         /* readonly / incompatible */
       }
@@ -460,7 +465,7 @@ function stampArrayField(
       continue;
     }
     try {
-      stampScalarWidget(pdfField, subValue as FieldValue, fonts, unicodeFont, sub.type, sub.autoSizeFont, sub.options, sub.stampMap);
+      stampScalarWidget(pdfField, subValue as FieldValue, fonts, unicodeFont, sub.type, sub.autoSizeFont, sub.options, sub.stampMap, sub.fontSize);
     } catch {
       /* readonly / incompatible */
     }
@@ -731,7 +736,7 @@ export async function fillForm(
         continue;
       }
 
-      stampScalarWidget(pdfField, value, fonts, unicodeFont, field.type, field.autoSizeFont, field.options, field.stampMap);
+      stampScalarWidget(pdfField, value, fonts, unicodeFont, field.type, field.autoSizeFont, field.options, field.stampMap, field.fontSize);
     } catch (err) {
       // Champ readonly / incompatible : on n'interrompt pas la generation,
       // mais on ne fait plus semblant que la valeur est partie.

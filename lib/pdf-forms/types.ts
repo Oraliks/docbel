@@ -345,6 +345,16 @@ export interface PdfFormField {
   /// superposée à un guide en peigne imprimé — tout débordement y est très
   /// visible, contrairement aux champs texte libres sans grille imprimée).
   autoSizeFont?: boolean;
+  /// Taille de police imposée pour CE champ, à la place de la taille uniforme
+  /// du filler. Le texte est quand même réduit s'il ne tient pas dans la case.
+  ///
+  /// À réserver aux widgets superposés à un GUIDE IMPRIMÉ dont la taille n'est
+  /// pas négociable — le peigne du NISS et de la date de naissance du C1
+  /// (« __ __ __ __ __ __ / __ __ __ - __ __ ») est dessiné pour du 12 pt, et
+  /// la saisie y paraît rabougrie à la taille uniforme de 10 pt. Partout
+  /// ailleurs, laisser le filler décider : c'est ce qui garantit l'homogénéité
+  /// demandée par Oraliks (« tous les champs remplis avec le même caractère »).
+  fontSize?: number;
   /// Table de correspondance valeur interne → texte imprimé sur le PDF, pour un
   /// champ `select` mappé sur un widget TEXTE (pas un dropdown). Ex. le `lien`
   /// de parenté du C1 : `pere` → « Père », `enfant` → « Enfant », mais `FAC`/

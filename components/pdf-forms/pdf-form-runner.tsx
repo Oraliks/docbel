@@ -136,6 +136,16 @@ function ConsentCheckbox({
   );
 }
 
+/// Legende de l'asterisque.
+///
+/// `pdf-field.tsx` marque les champs requis d'un « * » rouge, et rien nulle
+/// part n'expliquait ce qu'il signifie. Un symbole non explicite laisse
+/// deviner — et la couleur seule ne porte jamais le sens (DESIGN_RULES).
+/// Placee AVANT les champs : une legende lue apres coup n'aide plus.
+function RequiredLegend({ label }: { label: string }) {
+  return <p className="text-xs text-muted-foreground">{label}</p>;
+}
+
 /// Récapitulatif PERSISTANT des champs refusés à l'envoi.
 ///
 /// Le toast dit combien, puis disparaît — et n'en nomme que trois. Quand les
@@ -1282,6 +1292,7 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
               }}
               className="flex flex-col gap-4"
             >
+              <RequiredLegend label={t("runnerRequiredLegend")} />
               {/* En-tête d'étape */}
               <div className="flex items-start justify-between gap-3">
                 <div className="flex flex-col gap-1">
@@ -1932,6 +1943,7 @@ function MacroRunnerBody({
               onSubmit={(e) => { e.preventDefault(); if (isLast) submit(); }}
               className="flex flex-col gap-4"
             >
+              <RequiredLegend label={t("runnerRequiredLegend")} />
               {current.sections.map((sec, i) => {
                 // Étape "Motif" à contrainte de groupe (ex. les 5 situations
                 // du C1 changement-situation) : rendu dédié tableau + panneau

@@ -1533,6 +1533,7 @@
       "runnerConsentRequired": "Lütfen verilerinizin işlenmesini kabul edin.",
       "runnerNameRequiredToSign": "Belgeyi imzalayabilmek için adınızı (ad + soyad) girin.",
       "runnerSomeFieldsInvalid": "Bazı alanlar geçersiz. Kırmızıyla işaretlenmiş bilgileri kontrol edin.",
+      "runnerRequiredLegend": "* Zorunlu alan",
       "runnerDoccleRecipientRequired": "Doccle (Belçika dijital belge kasası) alıcısını belirtin.",
       "runnerServerValidationFailed": "Sunucu tarafında doğrulama başarısız oldu. Lütfen tekrar deneyin.",
       "runnerGenerationFailed": "Belge oluşturma başarısız oldu.",

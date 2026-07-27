@@ -1533,6 +1533,7 @@
       "runnerConsentRequired": "Пожалуйста, дайте согласие на обработку ваших данных.",
       "runnerNameRequiredToSign": "Укажите ваше имя (имя + фамилия), чтобы подписать документ.",
       "runnerSomeFieldsInvalid": "Некоторые поля заполнены неверно. Проверьте поля, выделенные красным.",
+      "runnerRequiredLegend": "* Обязательное поле",
       "runnerDoccleRecipientRequired": "Укажите получателя в Doccle (бельгийское цифровое хранилище документов).",
       "runnerServerValidationFailed": "Проверка не прошла на стороне сервера. Попробуйте ещё раз.",
       "runnerGenerationFailed": "Не удалось сформировать документ.",

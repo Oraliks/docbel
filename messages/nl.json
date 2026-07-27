@@ -3813,6 +3813,7 @@
       "runnerConsentRequired": "Gelieve de verwerking van uw gegevens te aanvaarden.",
       "runnerNameRequiredToSign": "Vul uw naam in (voornaam + naam) om het document te kunnen ondertekenen.",
       "runnerSomeFieldsInvalid": "Sommige velden zijn ongeldig. Controleer de gegevens in het rood.",
+      "runnerRequiredLegend": "* Verplicht veld",
       "runnerDoccleRecipientRequired": "Vul de Doccle-ontvanger in.",
       "runnerServerValidationFailed": "De validatie is mislukt op de server. Probeer opnieuw.",
       "runnerGenerationFailed": "Het document kon niet worden gegenereerd.",

@@ -648,6 +648,7 @@
       "runnerConsentRequired": "Please accept the processing of your data.",
       "runnerNameRequiredToSign": "Enter your name (first + last) to sign the document.",
       "runnerSomeFieldsInvalid": "Some fields are invalid. Check the entries in red.",
+      "runnerRequiredLegend": "* Required field",
       "runnerDoccleRecipientRequired": "Enter the Doccle recipient.",
       "runnerServerValidationFailed": "Server-side validation failed. Please try again.",
       "runnerGenerationFailed": "Document generation failed.",

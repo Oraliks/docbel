@@ -5237,6 +5237,7 @@
       "runnerConsentRequired": "Veuillez accepter le traitement de vos données.",
       "runnerNameRequiredToSign": "Renseignez votre nom (prénom + nom) pour pouvoir signer le document.",
       "runnerSomeFieldsInvalid": "Certains champs sont invalides. Vérifiez les informations en rouge.",
+      "runnerRequiredLegend": "* Champ obligatoire",
       "runnerDoccleRecipientRequired": "Renseignez le destinataire Doccle.",
       "runnerServerValidationFailed": "La validation a échoué côté serveur. Réessayez.",
       "runnerGenerationFailed": "La génération du document a échoué.",

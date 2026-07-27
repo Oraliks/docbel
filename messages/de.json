@@ -1571,6 +1571,7 @@
       "runnerConsentRequired": "Bitte stimmen Sie der Verarbeitung Ihrer Daten zu.",
       "runnerNameRequiredToSign": "Geben Sie Ihren Namen (Vorname + Nachname) ein, um das Dokument unterzeichnen zu können.",
       "runnerSomeFieldsInvalid": "Einige Felder sind ungültig. Überprüfen Sie die rot markierten Angaben.",
+      "runnerRequiredLegend": "* Pflichtfeld",
       "runnerDoccleRecipientRequired": "Geben Sie den Doccle-Empfänger an (belgischer digitaler Dokumentensafe).",
       "runnerServerValidationFailed": "Die serverseitige Validierung ist fehlgeschlagen. Versuchen Sie es erneut.",
       "runnerGenerationFailed": "Die Erstellung des Dokuments ist fehlgeschlagen.",

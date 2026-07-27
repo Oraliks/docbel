@@ -1533,6 +1533,7 @@
       "runnerConsentRequired": "Ве молиме прифатете ја обработката на вашите податоци.",
       "runnerNameRequiredToSign": "Внесете го вашето ime (ime + презime) за да можете да го потпишете документот.",
       "runnerSomeFieldsInvalid": "Некои полиња се невалидни. Проверете ги информациите означени со црвено.",
+      "runnerRequiredLegend": "* Задолжително поле",
       "runnerDoccleRecipientRequired": "Внесете го примачот во Doccle (белгиски дигитален сеф за документи).",
       "runnerServerValidationFailed": "Валидацијата не успеа на страната на серверот. Обидете се повторно.",
       "runnerGenerationFailed": "Генерирањето на документот не успеа.",

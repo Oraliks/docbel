@@ -1533,6 +1533,7 @@
       "runnerConsentRequired": "يرجى الموافقة على معالجة بياناتك.",
       "runnerNameRequiredToSign": "أدخل اسمك (الاسم الأول + اللقب) لتتمكن من توقيع الوثيقة.",
       "runnerSomeFieldsInvalid": "بعض الحقول غير صالحة. تحقق من المعلومات المميزة باللون الأحمر.",
+      "runnerRequiredLegend": "* حقل إلزامي",
       "runnerDoccleRecipientRequired": "أدخل مستلم Doccle (خزنة الوثائق الرقمية البلجيكية).",
       "runnerServerValidationFailed": "فشل التحقق من جهة الخادم. يرجى المحاولة مجدداً.",
       "runnerGenerationFailed": "فشل إنشاء الوثيقة.",

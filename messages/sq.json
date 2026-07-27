@@ -1533,6 +1533,7 @@
       "runnerConsentRequired": "Ju lutemi pranoni përpunimin e të dhënave tuaja.",
       "runnerNameRequiredToSign": "Shkruani emrin tuaj (emri + mbiemri) për të mundur të nënshkruani dokumentin.",
       "runnerSomeFieldsInvalid": "Disa fusha janë të pavlefshme. Kontrolloni informacionet e shënuara me të kuq.",
+      "runnerRequiredLegend": "* Fushë e detyrueshme",
       "runnerDoccleRecipientRequired": "Shkruani destinatarin Doccle (kasafortë dixhitale belge për dokumente).",
       "runnerServerValidationFailed": "Validimi dështoi nga ana e serverit. Provoni përsëri.",
       "runnerGenerationFailed": "Gjenerimi i dokumentit dështoi.",

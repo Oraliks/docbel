@@ -1533,6 +1533,7 @@
       "runnerConsentRequired": "Si prega di accettare il trattamento dei propri dati.",
       "runnerNameRequiredToSign": "Inserite il vostro nome (nome + cognome) per poter firmare il documento.",
       "runnerSomeFieldsInvalid": "Alcuni campi non sono validi. Verificate le informazioni evidenziate in rosso.",
+      "runnerRequiredLegend": "* Campo obbligatorio",
       "runnerDoccleRecipientRequired": "Indicate il destinatario Doccle [archivio digitale belga per documenti].",
       "runnerServerValidationFailed": "La convalida non è riuscita sul lato server. Riprovate.",
       "runnerGenerationFailed": "La generazione del documento non è riuscita.",

@@ -363,6 +363,17 @@ export const C1_FAMILLE: PdfFormField[] = [
         label: { fr: "Date de naissance" },
         // Colonne « date de naissance » PAR LIGNE (widget par personne).
         pdfFieldNameTemplate: "Personne{index}_DateNaissance",
+        // Peigne JJ MM AAAA, comme la date de naissance de la page 1 : les
+        // barres obliques sont deja imprimees dans la grille. Calage a
+        // ajuster a l oeil — les colonnes de la grille sont plus etroites
+        // encore que la case de la page 1.
+        printAsComb: {
+          groups: [2, 2, 4],
+          slotWidth: 7,
+          groupExtra: 3,
+          startX: 1,
+          baselineY: 3,
+        },
         visibleIfParent: { fieldId: "habiteEnColocation", op: "notEquals", value: "oui" },
         order: 4,
       },

@@ -118,8 +118,10 @@ export const C1_IDENTITE: PdfFormField[] = [
     // et les groupes 2 / 2 / 4 (jour, mois, annee).
     printAsComb: {
       groups: [2, 2, 4],
-      slotWidth: 12.5,
-      groupExtra: 7,
+      // Variante B, validee par Oraliks : la case est plus etroite que celle
+      // du NISS (98,7 pt contre 146,5), son peigne est donc plus serre.
+      slotWidth: 11,
+      groupExtra: 5,
       startX: 2,
       baselineY: 3,
     },

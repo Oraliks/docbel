@@ -852,10 +852,79 @@ export async function fillForm(
   // se poursuit au-dela — aucun espacement interne ne pouvait donc atteindre
   // ses dernieres barres. On dessine ici directement dans le flux de la page,
   // comme `drawAt`, ce qui affranchit de cette limite et survit au flatten.
+  /// Dessine une valeur en peigne sur le widget nomme. Chaque ligne de grille a
+  /// son propre rectangle, donc sa propre ordonnee : le calage se recalcule par
+  /// widget, jamais une fois pour toutes.
+  const dessinerPeigne = (
+    fieldId: string,
+    widgetName: string,
+    valeur: string,
+    comb: NonNullable<PdfFormField["printAsComb"]>,
+    taillePolice: number
+  ): void => {
+    const tech = (opts.technicalSchema ?? []).find((t) => t.pdfFieldName === widgetName);
+    if (!tech?.rect || !comb.slotWidth) return;
+    const [bx, by] = tech.rect;
+    const page = doc.getPage(Math.max(0, Math.min(doc.getPageCount() - 1, tech.page ?? 0)));
+    const { font: policeCaractere } = fonts.pick(valeur);
+    const caracteres = valeur.replace(/[^0-9A-Za-z]/g, "").split("");
+
+    const ruptures = new Set<number>();
+    let cumul = 0;
+    for (const t of comb.groups) {
+      cumul += t;
+      ruptures.add(cumul);
+    }
+
+    let x = bx + (comb.startX ?? 0);
+    const y = by + (comb.baselineY ?? 3);
+    for (let i = 0; i < caracteres.length; i++) {
+      if (ruptures.has(i)) x += comb.groupExtra ?? 0;
+      try {
+        page.drawText(caracteres[i], { x, y, size: taillePolice, font: policeCaractere, color: rgb(0, 0, 0) });
+      } catch (err) {
+        diags.push({
+          fieldId,
+          widget: widgetName,
+          kind: "stamp-refuse",
+          detail: err instanceof Error ? err.message : String(err),
+        });
+      }
+      x += comb.slotWidth;
+    }
+  };
+
   for (const field of fields) {
-    const comb = field.printAsComb;
-    if (!comb?.slotWidth || field.hidden) continue;
+    if (field.hidden) continue;
     if (field.visibleIf && !isFieldVisible(field.visibleIf, payload)) continue;
+
+    // Grille : une valeur par ligne, chacune sur son propre widget.
+    if (field.type === "array") {
+      const rows = payload[field.id];
+      if (!isFieldValueRecordArray(rows)) continue;
+      const cap = typeof field.maxRows === "number" ? Math.max(0, field.maxRows) : rows.length;
+      rows.slice(0, cap).forEach((row, idx) => {
+        for (const sub of field.itemFields ?? []) {
+          const combSub = sub.printAsComb;
+          if (!combSub?.slotWidth || !sub.pdfFieldNameTemplate) continue;
+          if (!isSubFieldVisible(sub, row, payload)) continue;
+          const v = row[sub.id];
+          if (v === null || v === undefined || v === "") continue;
+          const texte = sub.type === "date" ? formatDateFR(String(v)) : String(v);
+          dessinerPeigne(
+            `${field.id}[${idx + 1}].${sub.id}`,
+            sub.pdfFieldNameTemplate.replace(/\{index\}/g, String(idx + 1)),
+            texte,
+            combSub,
+            sub.fontSize ?? UNIFORM_TEXT_FONT_SIZE
+          );
+        }
+      });
+      continue;
+    }
+
+    const comb = field.printAsComb;
+    if (!comb?.slotWidth) continue;
     const brut = payload[field.id];
     if (typeof brut !== "string" || !brut.trim()) continue;
     const tech = (opts.technicalSchema ?? []).find((t) => t.pdfFieldName === field.pdfFieldName);

@@ -395,6 +395,14 @@ export const C1_FAMILLE: PdfFormField[] = [
           { value: "independant", label: { fr: "Indépendant" } },
         ],
         defaultValue: "aucun",
+        // Seul « Indépendant » a besoin d'une version courte à l'impression
+        // (Oraliks 2026-07-27) : à 10 pt il demande 63 pt dans une colonne qui
+        // en offre 43, et l'ajustement automatique le descendait à 6,5 pt —
+        // lisible, mais deux fois plus petit que ses voisins. « Indép. » le
+        // ramène à taille pleine et rend la colonne homogène. Les trois autres
+        // valeurs tiennent déjà : elles ne sont donc pas dans la table et
+        // gardent le libellé de l'écran.
+        stampMap: { independant: "Indép." },
         // Colonne PAR LIGNE (dropdown « Personne{N}_ActiviteProfessionnelle_Type »).
         pdfFieldNameTemplate: "Personne{index}_ActiviteProfessionnelle_Type",
         visibleIfParent: { fieldId: "habiteEnColocation", op: "notEquals", value: "oui" },

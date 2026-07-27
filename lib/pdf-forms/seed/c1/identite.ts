@@ -113,6 +113,16 @@ export const C1_IDENTITE: PdfFormField[] = [
     // formulaire, donc les deux doivent s'afficher à la même taille sous peine
     // de paraître dépareillés. « 12/06/1985 » occupe 69 pt sur 95 à 12 pt.
     fontSize: 12,
+    // Meme peigne que le NISS juste au-dessus : « __ __ / __ __ / __ __ __ __ ».
+    // Les barres obliques sont deja imprimees, d'ou les separateurs retires
+    // et les groupes 2 / 2 / 4 (jour, mois, annee).
+    printAsComb: {
+      groups: [2, 2, 4],
+      slotWidth: 12.5,
+      groupExtra: 7,
+      startX: 2,
+      baselineY: 3,
+    },
     section: SECTION_IDENTITE,
     order: -97,
   },

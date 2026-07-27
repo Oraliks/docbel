@@ -323,7 +323,10 @@ function stampScalarWidget(
     if (stampMap === undefined && fieldType === "number") text = decimalesFR(raw);
     // Peigne : le guide imprime porte deja ses separateurs, et les chiffres
     // colles ne tombaient sur aucune barre.
-    if (printAsComb) text = texteEnPeigne(text, printAsComb);
+    // Mode positionnel : le dessin se fait plus bas, hors du widget. On vide
+    // le champ pour ne pas imprimer la valeur deux fois.
+    if (printAsComb?.slotWidth) text = "";
+    else if (printAsComb) text = texteEnPeigne(text, printAsComb);
     pdfField.setText(text);
     // Le choix se fait sur le texte FINAL (date reformatee, libelle du
     // stampMap, IBAN deshabille de son « BE »), pas sur la valeur brute.
@@ -840,6 +843,60 @@ export async function fillForm(
             ")"
         );
       }
+    }
+  }
+
+  // Peigne POSITIONNEL : un caractere par barre du guide imprime.
+  //
+  // Le texte d'un widget est borne par son rectangle, alors que le guide du C1
+  // se poursuit au-dela — aucun espacement interne ne pouvait donc atteindre
+  // ses dernieres barres. On dessine ici directement dans le flux de la page,
+  // comme `drawAt`, ce qui affranchit de cette limite et survit au flatten.
+  for (const field of fields) {
+    const comb = field.printAsComb;
+    if (!comb?.slotWidth || field.hidden) continue;
+    if (field.visibleIf && !isFieldVisible(field.visibleIf, payload)) continue;
+    const brut = payload[field.id];
+    if (typeof brut !== "string" || !brut.trim()) continue;
+    const tech = (opts.technicalSchema ?? []).find((t) => t.pdfFieldName === field.pdfFieldName);
+    if (!tech?.rect) continue;
+
+    const [bx, by] = tech.rect;
+    const page = doc.getPage(Math.max(0, Math.min(doc.getPageCount() - 1, tech.page ?? 0)));
+    const taille = field.fontSize ?? UNIFORM_TEXT_FONT_SIZE;
+    const { font: policeCaractere } = fonts.pick(brut);
+    const caracteres = brut.replace(/[^0-9A-Za-z]/g, "").split("");
+
+    // Bornes de groupe : apres combien de caracteres le guide marque une
+    // rupture (« / » puis « - » sur le NISS).
+    const ruptures = new Set<number>();
+    let cumul = 0;
+    for (const taille_groupe of comb.groups) {
+      cumul += taille_groupe;
+      ruptures.add(cumul);
+    }
+
+    let x = bx + (comb.startX ?? 0);
+    const y = by + (comb.baselineY ?? 3);
+    for (let i = 0; i < caracteres.length; i++) {
+      if (ruptures.has(i)) x += comb.groupExtra ?? 0;
+      try {
+        page.drawText(caracteres[i], {
+          x,
+          y,
+          size: taille,
+          font: policeCaractere,
+          color: rgb(0, 0, 0),
+        });
+      } catch (err) {
+        diags.push({
+          fieldId: field.id,
+          widget: field.pdfFieldName,
+          kind: "stamp-refuse",
+          detail: err instanceof Error ? err.message : String(err),
+        });
+      }
+      x += comb.slotWidth;
     }
   }
 

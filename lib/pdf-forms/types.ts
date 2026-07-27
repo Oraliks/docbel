@@ -372,7 +372,25 @@ export interface PdfFormField {
   /// Le reglage est donc granuleux — pour un alignement au dixieme de
   /// millimetre il faudrait dessiner chaque caractere a une position
   /// calculee, ce que ce mecanisme ne fait pas.
-  printAsComb?: { groups: number[]; gap?: number; groupGap?: number };
+  printAsComb?: {
+    groups: number[];
+    /// Mode ESPACES (par defaut) : ecarts exprimes en espaces de la police.
+    gap?: number;
+    groupGap?: number;
+    /// Mode POSITIONNEL : renseigner `slotWidth` l'active. Chaque caractere
+    /// est alors dessine a une abscisse calculee, hors du champ — donc sans
+    /// etre borne par son rectangle, contrairement au texte d'un widget. Le
+    /// guide imprime du C1 se poursuit au-dela de la case : c'est la seule
+    /// facon d'atteindre ses dernieres barres.
+    /// Pas entre deux barres, en points PDF.
+    slotWidth?: number;
+    /// Abscisse du 1er caractere, depuis le bord GAUCHE du widget.
+    startX?: number;
+    /// Ligne de base, depuis le bord BAS du widget.
+    baselineY?: number;
+    /// Avance supplementaire a chaque rupture de groupe (« / » et « - »).
+    groupExtra?: number;
+  };
   /// Table de correspondance valeur interne → texte imprimé sur le PDF, pour un
   /// champ `select` mappé sur un widget TEXTE (pas un dropdown). Ex. le `lien`
   /// de parenté du C1 : `pere` → « Père », `enfant` → « Enfant », mais `FAC`/

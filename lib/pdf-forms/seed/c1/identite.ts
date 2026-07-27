@@ -77,7 +77,11 @@ export const C1_IDENTITE: PdfFormField[] = [
     fontSize: 12,
     // Les points et tirets du NISS sont DEJA imprimes sur le peigne du
     // formulaire : les reimprimer les doublait (Oraliks 2026-07-27).
-    printAsComb: { groups: [6, 3, 2] },
+    // groupGap: 3 est le DERNIER cran qui tient. Mesure a 12 pt sur les
+    // 142,5 pt utiles de la case : 137,4 pt ici, 145,0 pt au cran suivant
+    // (la police serait alors reduite, donc les chiffres RAPETISSES).
+    // Elargir aussi les 6 premiers (gap: 2) demanderait 160,3 pt.
+    printAsComb: { groups: [6, 3, 2], groupGap: 3 },
     section: SECTION_IDENTITE,
     order: -98,
   },

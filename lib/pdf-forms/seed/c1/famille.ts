@@ -431,6 +431,19 @@ export const C1_FAMILLE: PdfFormField[] = [
           { value: "autre", label: { fr: "Autre" } },
         ],
         defaultValue: "aucun",
+        // Libellés COURTS à l'impression (Oraliks 2026-07-27). La colonne du
+        // PDF offre 46 pt : « Mutuelle (maladie-invalidité) » en demande 172,
+        // et même réduite au plancher de 5 pt elle en demanderait encore 72.
+        // Aucun ajustement de police ne pouvait sauver ce libellé — seul un
+        // texte plus court le peut. L'écran garde la version explicite, qui
+        // aide le citoyen à se reconnaître ; le papier reçoit le mot-clé.
+        stampMap: {
+          mutuelle: "Mutuelle",
+          cpas: "CPAS",
+          pension: "Pension",
+          chomage: "Chômage",
+          autre: "Autre",
+        },
         // Ne se pose que si aucun revenu professionnel : les deux axes sont
         // exclusifs à l'écran (Oraliks 2026-07-07 — « pas besoin de montrer
         // les deux pour gagner de la place »). L'axe pro reste prioritaire ;

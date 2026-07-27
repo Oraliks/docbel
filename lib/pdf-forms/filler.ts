@@ -296,8 +296,18 @@ function stampScalarWidget(
     // (value "salarie-employe") doit apparaître « Employé » sur le PDF, pas
     // « salarie-employe » (Oraliks 2026-07-10). On résout via `options` ; à
     // défaut on garde la valeur brute.
+    // `stampMap` a la priorité, comme sur un widget texte : il existe justement
+    // pour imprimer autre chose que le libellé de l'écran. Sans cette ligne, il
+    // était ignoré dès que le widget était une liste déroulante — un piège
+    // silencieux, puisque poser un stampMap semblait alors sans effet.
     const opt = options?.find((o) => o.value === String(value));
-    const s = opt ? (opt.label.fr || opt.label.nl || opt.label.de || String(value)) : String(value);
+    const court = stampMap?.[String(value)];
+    const s =
+      court !== undefined
+        ? court
+        : opt
+          ? opt.label.fr || opt.label.nl || opt.label.de || String(value)
+          : String(value);
     if (s !== "" && s !== "false") {
       // Certains dropdowns du template n'ont PAS d'options prédéfinies (ex.
       // grille cohabitants du C1 remaniée par Oraliks : « Personne1_Allocations

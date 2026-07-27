@@ -193,3 +193,33 @@ describe("filler — les listes déroulantes s'ajustent aussi", () => {
     expect(size).toBeGreaterThan(0);
   });
 });
+
+describe("filler — stampMap sur une liste déroulante", () => {
+  const c1 = realPdf("C1_FR.pdf");
+  const skip = c1 ? it : it.skip;
+
+  /// `stampMap` existe pour imprimer autre chose que le libellé de l'écran.
+  /// La branche dropdown l'ignorait : elle résolvait toujours via `options`.
+  /// Piège silencieux — poser un stampMap semblait simplement sans effet.
+  skip("imprime le libellé court, pas celui de l'écran", async () => {
+    const fields: PdfFormField[] = [
+      {
+        id: "revenuRemplacement",
+        pdfFieldName: "Personne1_RevenuRemplacement_Type",
+        type: "select",
+        required: false,
+        label: { fr: "Revenu de remplacement" },
+        options: [{ value: "mutuelle", label: { fr: "Mutuelle (maladie-invalidité)" } }],
+        stampMap: { mutuelle: "Mutuelle" },
+      },
+    ];
+    const { bytes } = await fillForm(c1!, fields, { revenuRemplacement: "mutuelle" }, { flatten: false });
+
+    const doc = await PDFDocument.load(bytes);
+    const champ = doc.getForm().getDropdown("Personne1_RevenuRemplacement_Type");
+    expect(champ.getSelected()).toEqual(["Mutuelle"]);
+    // Le libellé long ne tenait pas : 172 pt dans une colonne de 46, même au
+    // plancher de 5 pt il en fallait encore 72.
+    expect(champ.getSelected()[0]).not.toContain("maladie-invalidité");
+  });
+});

@@ -49,6 +49,26 @@ const PRESENTATION_BY_SLUG: Readonly<Record<string, FormPresentation>> = {
     },
     hideStepList: true,
   },
+  c1a: {
+    stepGroupOrder: ["identite", "aide-independant", "mandat", "activite", "final"],
+    stepGroupTitleKey: {
+      identite: "runnerGroupC1aIdentite",
+      "aide-independant": "runnerGroupC1aAide",
+      mandat: "runnerGroupC1aMandat",
+      activite: "runnerGroupC1aActivite",
+      final: "runnerGroupC1aFinal",
+    },
+    stepGroupDescriptionKey: {
+      identite: "runnerGroupC1aIdentiteDesc",
+      "aide-independant": "runnerGroupC1aAideDesc",
+      mandat: "runnerGroupC1aMandatDesc",
+      activite: "runnerGroupC1aActiviteDesc",
+      final: "runnerGroupC1aFinalDesc",
+    },
+    // Parcours en arbre : les étapes suivantes dépendent des réponses
+    // précédentes, la navigation libre n'aurait pas de sens.
+    hideStepList: true,
+  },
 };
 
 const AUCUNE: FormPresentation = {};

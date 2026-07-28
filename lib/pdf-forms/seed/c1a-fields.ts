@@ -1340,6 +1340,64 @@ function appliquerRoutage(fields: PdfFormField[]): PdfFormField[] {
   });
 }
 
+/// Macro-étape de chaque champ, dérivée de sa section. L'ordre des étapes est
+/// déclaré dans `form-presentation.ts`.
+const GROUPE_PAR_SECTION: Record<string, string> = {
+  [SECTION_IDENTITE]: "identite",
+  [SECTION_AIDE_INDEPENDANT]: "aide-independant",
+  [SECTION_ADRESSE]: "aide-independant",
+  [SECTION_EMPLOYEUR]: "activite",
+  [SECTION_ACTIVITES]: "activite",
+  [SECTION_REVENUS]: "activite",
+  [SECTION_AFFIRMATIONS]: "final",
+  [SECTION_ANNEXES]: "final",
+  [SECTION_SIGNATURE]: "final",
+};
+
+/// Champs dont la macro-étape ne se déduit pas de leur section : les questions
+/// de mandat vivent dans les sections « activités » et « revenus » mais forment
+/// leur propre étape — y compris `revenuAnnuelMandat2` (2e montant de Q11,
+/// ajouté après l'écriture du plan initial, absent de sa liste d'origine).
+/// `adresseActivite` et `adresseActiviteCodePostalCommune` (Q15, adresse de
+/// L'ACTIVITÉ accessoire) partagent SECTION_ADRESSE avec l'adresse de
+/// l'indépendant aidé de Q2 (qui, elle, appartient bien à l'étape
+/// « aide-independant » via GROUPE_PAR_SECTION) : la section seule ne peut pas
+/// les distinguer, d'où leur présence ici.
+const GROUPE_PAR_CHAMP: Record<string, string> = {
+  mandatPolitiqueOuJuge: "mandat",
+  mandatDescription: "mandat",
+  revenuAnnuelMandat: "mandat",
+  revenuAnnuelMandat2: "mandat",
+  aideIndependant: "aide-independant",
+  aideraPendantChomage: "aide-independant",
+  aidaitDejaIndependant: "aide-independant",
+  dateDebutAide: "aide-independant",
+  montantAidePeriodicite: "aide-independant",
+  montantAide: "aide-independant",
+  montantAideAnnuel: "aide-independant",
+  estChomeurTemporaire: "final",
+  independantTitrePrincipal: "final",
+  adresseActivite: "activite",
+  adresseActiviteCodePostalCommune: "activite",
+};
+
+function appliquerGroupes(fields: PdfFormField[]): PdfFormField[] {
+  return fields.map((f) => {
+    const groupe =
+      GROUPE_PAR_CHAMP[f.id] ??
+      (f.id.startsWith("q4") || f.id.startsWith("descriptionAide")
+        ? "aide-independant"
+        : f.id.startsWith("joursOccupe")
+          ? "final"
+          : f.section
+            ? GROUPE_PAR_SECTION[f.section]
+            : undefined);
+    return groupe ? { ...f, stepGroup: groupe } : f;
+  });
+}
+
 export function applyC1AImprovements(fields: PdfFormField[]): PdfFormField[] {
-  return appliquerRoutage(mergeEnrichedFields(fields, C1A_FIELDS, LEGACY_C1A_FIELD_IDS));
+  return appliquerGroupes(
+    appliquerRoutage(mergeEnrichedFields(fields, C1A_FIELDS, LEGACY_C1A_FIELD_IDS)),
+  );
 }

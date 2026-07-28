@@ -5,6 +5,8 @@ const LABELS: Record<string, Record<Locale, string>> = {
   identite: { fr: "Identité", nl: "Identiteit", de: "Identität" },
   adresse: { fr: "Adresse", nl: "Adres", de: "Adresse" },
   employeur: { fr: "Employeur", nl: "Werkgever", de: "Arbeitgeber" },
+  "aide-independant": { fr: "Aide à un indépendant", nl: "", de: "" },
+  "grille-differences": { fr: "Différences constatées", nl: "", de: "" },
   banque: { fr: "Coordonnées bancaires", nl: "Bankgegevens", de: "Bankverbindung" },
   demande: { fr: "Motifs d'introduction", nl: "Aanvraagredenen", de: "Antragsgründe" },
   "situation-familiale": { fr: "Situation familiale", nl: "Gezinssituatie", de: "Familienstand" },

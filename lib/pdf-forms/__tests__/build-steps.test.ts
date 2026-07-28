@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { buildSteps, buildMacroSteps } from "../build-steps";
 import { getFormPresentation } from "../form-presentation";
 import type { PublicField } from "../public-serializer";
+import { applyC1AImprovements } from "../seed/c1a-fields";
 
 const LABELS = { fallbackTitle: "Informations", fallbackSubtitle: "Complétez les champs" };
 
@@ -200,5 +201,31 @@ describe("buildMacroSteps — formulaire non enregistré", () => {
       field({ id: "a", section: "demande", stepGroup: "premier" }),
     ];
     expect(buildMacroSteps(fields, {})!.map((s) => s.id)).toEqual(["deuxieme", "premier"]);
+  });
+});
+
+describe("C1A — macro-étapes", () => {
+  it("quelqu'un qui ne déclare rien traverse cinq étapes", () => {
+    const fields = applyC1AImprovements([]).filter((f) => !f.hidden);
+    const steps = buildMacroSteps(
+      fields as unknown as PublicField[],
+      { aideIndependant: "non", mandatPolitiqueOuJuge: "non", autreActiviteAccessoire: "non" },
+      ["identite", "aide-independant", "mandat", "activite", "final"],
+    );
+    expect(steps?.map((s) => s.id)).toEqual([
+      "identite", "aide-independant", "mandat", "activite", "final",
+    ]);
+  });
+
+  it("l'étape « aide » se réduit à sa question d'entrée quand on répond non", () => {
+    const fields = applyC1AImprovements([]).filter((f) => !f.hidden);
+    const steps = buildMacroSteps(
+      fields as unknown as PublicField[],
+      { aideIndependant: "non", mandatPolitiqueOuJuge: "non", autreActiviteAccessoire: "non" },
+      ["identite", "aide-independant", "mandat", "activite", "final"],
+    );
+    const aide = steps?.find((s) => s.id === "aide-independant");
+    const ids = aide?.sections.flatMap((s) => s.fields.map((f) => f.id)) ?? [];
+    expect(ids).toEqual(["aideIndependant"]);
   });
 });

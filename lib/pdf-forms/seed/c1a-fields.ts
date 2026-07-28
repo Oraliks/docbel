@@ -70,6 +70,10 @@ const SECTION_REVENUS = "mes-revenus";
 const SECTION_AFFIRMATIONS = "affirmations";
 const SECTION_ANNEXES = "annexes";
 const SECTION_SIGNATURE = "signature";
+/// Réutilise la section partagée "divers" (section-labels.ts) pour le champ
+/// non rattaché avec certitude à une question (cf. A VALIDER Oraliks en fin
+/// de fichier).
+const SECTION_DIVERS_INCONNU = "divers";
 
 /// Section dédiée à la partie "aide à un indépendant" (Q1-Q11) — distincte
 /// de "mes-activites" (réutilisée pour Q12-Q23, qui décrit une activité
@@ -1173,6 +1177,23 @@ export const C1A_FIELDS: PdfFormField[] = [
     },
     section: SECTION_SIGNATURE,
     order: 201,
+  },
+
+  // ====================================================================
+  // CHAMPS NON RATTACHÉS AVEC CERTITUDE
+  // ====================================================================
+  {
+    // Troisième exemplaire d'un « toute l'année », isolé en bas de page 2
+    // (x=156, y=43), alors que les deux grilles horaires sont déjà câblées sur
+    // `toute lannée` (Q4) et `toute lannée_3` (Q18). Aucune donnée perdue.
+    id: "touteLanneeOrpheline",
+    pdfFieldName: "toute lannée_2",
+    type: "checkbox",
+    required: false,
+    label: { fr: "(case orpheline — voir A VALIDER)" },
+    hidden: true,
+    section: SECTION_DIVERS_INCONNU,
+    order: 902,
   },
 ];
 

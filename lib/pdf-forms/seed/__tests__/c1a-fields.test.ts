@@ -343,3 +343,23 @@ describe("C1A — grilles horaires", () => {
     }
   });
 });
+
+describe("C1A — curation", () => {
+  const fields = applyC1AImprovements([]);
+
+  it("masque la case orpheline « toute lannée_2 »", () => {
+    const f = fields.find((x) => x.pdfFieldName === "toute lannée_2");
+    expect(f?.hidden).toBe(true);
+  });
+
+  it("ne masque JAMAIS le nom et prénom", () => {
+    const f = fields.find((x) => x.id === "nomEtPrenom");
+    expect(f?.hidden, "le C1A partirait sans nom").not.toBe(true);
+  });
+
+  it("ne masque aucune ligne de texte libre des grilles horaires", () => {
+    const lignes = fields.filter((x) => /^(q4|q18)(periodesTexte|irregulierementTexte)/.test(x.id));
+    expect(lignes.length).toBeGreaterThan(10);
+    for (const l of lignes) expect(l.hidden, `${l.id} doit rester saisissable`).not.toBe(true);
+  });
+});

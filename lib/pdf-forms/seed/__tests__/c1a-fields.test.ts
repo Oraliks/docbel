@@ -90,11 +90,6 @@ describe("C1A_FIELDS", () => {
     expect(dups).toEqual([]);
   });
 
-  it("marque les champs non identifiés avec certitude comme hidden (Liste déroulante44)", () => {
-    const byId = new Map(C1A_FIELDS.map((f) => [f.id, f]));
-    expect(byId.get("listeDeroulante44")?.hidden).toBe(true);
-  });
-
   it("applyC1AImprovements() est idempotent (pas de doublon si ré-appliqué)", () => {
     const once = applyC1AImprovements([]);
     const twice = applyC1AImprovements(once);
@@ -169,4 +164,30 @@ describe("C1A — revenus imprimés (Q11, Q19)", () => {
   // le describe Q6/Q24 ci-dessous — vrai seulement une fois `montantAide`
   // lui-même passé en drawAt (Task 5). Avant cela, il porte encore
   // pdfFieldName "Montant" et cette assertion serait rouge à tort ici.
+});
+
+describe("C1A — Q6 (montant) et Q24 (annexes) imprimés", () => {
+  const fields = applyC1AImprovements([]);
+  const parCle = new Map(fields.map((f) => [f.id, f]));
+
+  it("Q6 distingue le montant mensuel du montant annuel", () => {
+    const periodicite = parCle.get("montantAidePeriodicite");
+    expect(periodicite?.type).toBe("radio");
+    expect(periodicite?.options?.map((o) => o.value)).toEqual(["mois", "an"]);
+  });
+
+  it("le nombre d'annexes s'imprime et reste facultatif", () => {
+    const annexes = parCle.get("nombreAnnexesJointes");
+    expect(annexes?.pdfFieldName).toBe("Liste déroulante44");
+    expect(annexes?.required, "Oraliks : facultatif").not.toBe(true);
+    expect(annexes?.hidden, "mais la case doit exister à l'écran").not.toBe(true);
+  });
+
+  it("plus aucun champ « non identifié » ne squatte la case des annexes", () => {
+    expect(fields.filter((f) => f.id === "listeDeroulante44")).toEqual([]);
+  });
+
+  it("aucun champ ne revendique le widget partagé « Montant »", () => {
+    expect(fields.filter((f) => f.pdfFieldName === "Montant").map((f) => f.id)).toEqual([]);
+  });
 });

@@ -68,10 +68,6 @@ const SECTION_REVENUS = "mes-revenus";
 const SECTION_AFFIRMATIONS = "affirmations";
 const SECTION_ANNEXES = "annexes";
 const SECTION_SIGNATURE = "signature";
-/// Réutilise la section partagée "divers" (section-labels.ts) pour le champ
-/// non rattaché avec certitude à une question (cf. A VALIDER Oraliks en fin
-/// de fichier).
-const SECTION_DIVERS_INCONNU = "divers";
 
 /// Section dédiée à la partie "aide à un indépendant" (Q1-Q11) — distincte
 /// de "mes-activites" (réutilisée pour Q12-Q23, qui décrit une activité
@@ -526,23 +522,52 @@ export const C1A_FIELDS: PdfFormField[] = [
   // Q6 — COMBIEN GAGNEZ-VOUS POUR VOTRE AIDE ?
   // ====================================================================
   {
-    id: "montantAide",
-    pdfFieldName: "Montant",
-    type: "text",
+    // Q6 attend un montant « par mois » OU « par an » sur une même ligne
+    // pointillée. Le widget `Montant` couvre cette ligne ET les deux montants
+    // de Q11 en page 2, avec une seule valeur partagée — donc inexploitable.
+    id: "montantAidePeriodicite",
+    pdfFieldName: "",
+    type: "radio",
     required: false,
-    label: { fr: "6. Combien gagnez-vous pour votre aide, ou à combien s'élève la valeur de votre aide ?" },
+    label: { fr: "6. Ce montant est :" },
+    options: [
+      { value: "mois", label: { fr: "Par mois" } },
+      { value: "an", label: { fr: "Par an" } },
+    ],
+    visibleIf: { fieldId: "aideraPendantChomage", op: "equals", value: "oui" },
+    section: SECTION_REVENUS,
+    order: 54.5,
+  },
+  {
+    id: "montantAide",
+    pdfFieldName: "",
+    // Moitié gauche de la ligne pointillée (y=315), au-dessus de « par mois ».
+    drawAt: { page: 0, x: 322, y: 311, size: 9, maxWidth: 110 },
+    type: "number",
+    required: false,
+    label: { fr: "Combien gagnes-tu pour ton aide ? (EUR)" },
     help: {
-      fr: "Indique le montant par mois (2 chiffres après la virgule) ou par an. → Joins une copie de la plus récente note de calcul de l'administration des contributions directes.",
+      fr: "Ou à combien s'élève la valeur de ton aide. Joins une copie de la plus récente note de calcul de l'administration des contributions directes.",
     },
-    placeholder: { fr: "Ex. 150,00 par mois" },
-    visibleIf: { fieldId: "aideIndependant", op: "equals", value: "oui" },
+    visibleIf: { fieldId: "montantAidePeriodicite", op: "equals", value: "mois" },
     section: SECTION_REVENUS,
     order: 55,
   },
-  // A VALIDER Oraliks : le texte imprimé montre 2 cases distinctes ("par
-  // mois EUR" et "par an EUR") mais un seul widget "Montant" est présent
-  // dans le dump AcroForm — à vérifier sur le PDF réel s'il manque
-  // effectivement une 2e case ou si une seule case sert aux deux usages.
+  {
+    id: "montantAideAnnuel",
+    pdfFieldName: "",
+    // Moitié droite de la même ligne, avant la légende « par an » (x=503).
+    drawAt: { page: 0, x: 440, y: 311, size: 9, maxWidth: 58 },
+    type: "number",
+    required: false,
+    label: { fr: "Combien gagnes-tu pour ton aide ? (EUR)" },
+    help: {
+      fr: "Ou à combien s'élève la valeur de ton aide. Joins une copie de la plus récente note de calcul de l'administration des contributions directes.",
+    },
+    visibleIf: { fieldId: "montantAidePeriodicite", op: "equals", value: "an" },
+    section: SECTION_REVENUS,
+    order: 55.5,
+  },
 
   // ====================================================================
   // Q7 — AIDIEZ-VOUS DÉJÀ CET INDÉPENDANT DANS LE PASSÉ ?
@@ -1061,12 +1086,20 @@ export const C1A_FIELDS: PdfFormField[] = [
   // mention imprimée sans case à cocher sur ce formulaire ; à confirmer sur
   // le PDF réel.
   {
+    // La case « Je joins …… annexe(s) » de Q24 a bien un widget :
+    // `Liste déroulante44`, à (350, 171), juste au-dessus de la ligne imprimée
+    // (y=179). Le schéma l'avait classée « champ non identifié » et masquée,
+    // et ce champ-ci restait virtuel — le nombre ne s'imprimait jamais.
+    //
+    // Facultatif (décision Oraliks), mais la case doit exister à l'écran.
     id: "nombreAnnexesJointes",
-    pdfFieldName: "",
+    pdfFieldName: "Liste déroulante44",
     type: "number",
     required: false,
     label: { fr: "Nombre d'annexes jointes" },
-    help: { fr: "« Je joins … annexe(s). »" },
+    help: {
+      fr: "Par exemple la copie de la plus récente note de calcul de l'administration des contributions directes, demandée aux questions 6, 11 et 19.",
+    },
     section: SECTION_ANNEXES,
     order: 190,
   },
@@ -1092,24 +1125,6 @@ export const C1A_FIELDS: PdfFormField[] = [
     },
     section: SECTION_SIGNATURE,
     order: 201,
-  },
-
-  // ====================================================================
-  // CHAMPS NON RATTACHÉS AVEC CERTITUDE
-  // ====================================================================
-  // A VALIDER Oraliks : "Liste déroulante44" (type select, sans options
-  // connues) n'a pas pu être associé à une question précise du texte
-  // imprimé — masqué en attendant clarification sur le PDF réel.
-  {
-    id: "listeDeroulante44",
-    pdfFieldName: "Liste déroulante44",
-    type: "select",
-    required: false,
-    label: { fr: "(champ non identifié — voir A VALIDER)" },
-    options: [],
-    hidden: true,
-    section: SECTION_DIVERS_INCONNU,
-    order: 900,
   },
 ];
 
@@ -1145,6 +1160,11 @@ const LEGACY_C1A_FIELD_IDS = new Set<string>([
   // un ancien champ `voir19Artefact` déjà en base survivrait au merge : ni
   // `newIds` ni `covered` (pdfFieldName) ne le voient plus.
   "voir19Artefact",
+  // Q24 (2026-07-28) : "Liste déroulante44" est désormais revendiqué par
+  // `nombreAnnexesJointes`. L'ancien `listeDeroulante44` (masqué à tort comme
+  // "champ non identifié") doit être purgé s'il est déjà en base, sinon il
+  // survivrait à côté du nouveau champ qui porte le même pdfFieldName.
+  "listeDeroulante44",
 ]);
 
 export function applyC1AImprovements(fields: PdfFormField[]): PdfFormField[] {

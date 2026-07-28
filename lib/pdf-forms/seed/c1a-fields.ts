@@ -596,42 +596,54 @@ export const C1A_FIELDS: PdfFormField[] = [
   // Q10/Q11 — MANDAT/FONCTION + REVENU ANNUEL NET IMPOSABLE
   // ====================================================================
   {
+    // Q10 et Q11 n'ont AUCUN widget AcroForm (vérifié : rien en page 2, colonne
+    // de gauche, entre y=690 et y=800). Écriture positionnelle sur les lignes
+    // imprimées : Q10 occupe trois lignes entre y=779 et y=743, Q11 deux lignes
+    // « EUR … EUR » à y=714 et y=702.
     id: "mandatDescription",
     pdfFieldName: "",
+    drawAt: { page: 1, x: 50, y: 766, size: 9, maxWidth: 236 },
     type: "text",
     required: false,
-    label: { fr: "10. Quel mandat ou quelle fonction exercez-vous ?" },
+    label: { fr: "10. Quel mandat ou quelle fonction ?" },
     help: {
-      fr: "Si tu exerces plus d'un mandat ou plus d'une fonction, mentionne-les tous.",
+      fr: "Si tu exerces plus d'un mandat ou as plus d'une fonction, mentionne-les tous.",
     },
     visibleIf: { fieldId: "mandatPolitiqueOuJuge", op: "equals", value: "oui" },
     section: SECTION_ACTIVITES,
     order: 59,
   },
-  // A VALIDER Oraliks : le widget texte "1_3" est ambigu entre Q10 (mandat/
-  // fonction, colonne gauche page 2) et la 1re ligne "pendant les périodes"
-  // de Q18 (colonne droite page 2, grille horaire). On l'a affecté à Q18
-  // ci-dessous (cohérent avec la suite "2_3","3_3","4_3" qui, elle, est sans
-  // ambiguïté) et laissé `mandatDescription` (Q10) virtuel plutôt que de
-  // risquer d'écraser la mauvaise question au remplissage — à trancher sur
-  // le PDF réel.
   {
+    // Q11 imprime deux lignes de montant, matérialisées par les 2ᵉ et 3ᵉ
+    // widgets du champ `Montant` — dont le 1ᵉʳ est le montant de Q6, en page 1.
+    // Une seule valeur pour les trois : écriture positionnelle obligatoire.
     id: "revenuAnnuelMandat",
     pdfFieldName: "",
+    drawAt: { page: 1, x: 69, y: 703, size: 9, maxWidth: 62 },
     type: "number",
     required: false,
-    label: { fr: "11. Quel est le revenu annuel net imposable de ce mandat ou de cette fonction ? (EUR)" },
+    label: { fr: "11. Revenu annuel net imposable de ce mandat (EUR)" },
     help: {
-      fr: "→ Joins une copie de la plus récente note de calcul de l'administration des contributions directes.",
+      fr: "Joins une copie de la plus récente note de calcul de l'administration des contributions directes.",
     },
     visibleIf: { fieldId: "mandatPolitiqueOuJuge", op: "equals", value: "oui" },
     section: SECTION_REVENUS,
     order: 60,
   },
-  // A VALIDER Oraliks : le texte imprimé montre 2 cases "EUR" (colonne
-  // gauche/droite) pour le revenu annuel net imposable du mandat (Q11), mais
-  // aucun widget PDF correspondant n'a été identifié dans le dump — champ
-  // laissé virtuel (pdfFieldName vide) en attendant clarification.
+  {
+    // A VALIDER Oraliks : la seconde ligne de Q11. Le formulaire prévoit deux
+    // montants sans préciser à l'impression ce qui les distingue — un second
+    // mandat, ou une seconde composante du même revenu.
+    id: "revenuAnnuelMandat2",
+    pdfFieldName: "",
+    drawAt: { page: 1, x: 69, y: 691, size: 9, maxWidth: 62 },
+    type: "number",
+    required: false,
+    label: { fr: "Second montant, si tu exerces plus d'un mandat (EUR)" },
+    visibleIf: { fieldId: "mandatPolitiqueOuJuge", op: "equals", value: "oui" },
+    section: SECTION_REVENUS,
+    order: 60.5,
+  },
 
   // ====================================================================
   // Q12 — EXERCEZ-VOUS UNE AUTRE ACTIVITÉ À TITRE ACCESSOIRE ?

@@ -156,4 +156,17 @@ describe("C1A — revenus imprimés (Q11, Q19)", () => {
     const revendications = fields.filter((f) => f.pdfFieldName?.includes("voir 19"));
     expect(revendications.map((f) => f.id)).toEqual([]);
   });
+
+  it("le mandat et son revenu (Q10, Q11) sont écrits aux coordonnées", () => {
+    for (const id of ["mandatDescription", "revenuAnnuelMandat", "revenuAnnuelMandat2"]) {
+      const f = parCle.get(id);
+      expect(f, `${id} doit exister`).toBeDefined();
+      expect(f?.drawAt, `${id} doit porter un drawAt`).toBeDefined();
+      expect(f?.drawAt?.page, `${id} est en page 2`).toBe(1);
+    }
+  });
+  // "aucun champ ne revendique le widget partagé « Montant »" : déplacé dans
+  // le describe Q6/Q24 ci-dessous — vrai seulement une fois `montantAide`
+  // lui-même passé en drawAt (Task 5). Avant cela, il porte encore
+  // pdfFieldName "Montant" et cette assertion serait rouge à tort ici.
 });

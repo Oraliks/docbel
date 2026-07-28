@@ -154,6 +154,18 @@ describe("C1A — revenus imprimés (Q11, Q19)", () => {
     expect(revendications.map((f) => f.id)).toEqual([]);
   });
 
+  it("« par mois » et « par heure » (même ligne imprimée) partagent la même condition", () => {
+    // Correctif Q19 : revenuNetSalarieParMois est l'ancre de Q19 dans l'arbre,
+    // sa condition écrite en dur est remplacée par celle de la branche (Q17 ET
+    // Q12). revenuNetSalarieParHeure, simple champ rattaché, gardait en plus
+    // son propre garde-fou activiteCommeSalarie=oui : un indépendant voyait
+    // « par mois » sans « par heure », deux cases de la même ligne imprimée.
+    expect(parCle.get("revenuNetSalarieParHeure")?.visibleIf).toEqual(
+      parCle.get("revenuNetSalarieParMois")?.visibleIf,
+    );
+    expect(parCle.get("revenuNetSalarieParHeure")?.visibleIf?.fieldId).not.toBe("activiteCommeSalarie");
+  });
+
   it("le mandat et son revenu (Q10, Q11) sont écrits aux coordonnées", () => {
     for (const id of ["mandatDescription", "revenuAnnuelMandat", "revenuAnnuelMandat2"]) {
       const f = parCle.get(id);

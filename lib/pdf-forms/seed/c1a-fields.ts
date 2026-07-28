@@ -948,6 +948,14 @@ export const C1A_FIELDS: PdfFormField[] = [
     order: 140,
   },
   {
+    // Pas de visibleIf propre (2026-07-28, correctif) : « par mois » et
+    // « par heure » sont la MÊME ligne imprimée. `revenuNetSalarieParMois` est
+    // l'ancre de Q19 dans l'arbre de routage — sa condition écrite ci-dessus
+    // sur ce champ-frère serait de toute façon remplacée par celle de la
+    // branche (Q17 ET Q12), donc sans garde-fou `activiteCommeSalarie`. Garder
+    // ce garde-fou UNIQUEMENT ici cassait la ligne en deux : un indépendant
+    // voyait « par mois » sans « par heure ». Cohérent avec la Task 13 : la
+    // grille reproduit le papier, où rien ne disparaît selon Q13.
     id: "revenuNetSalarieParHeure",
     pdfFieldName: "",
     drawAt: { page: 1, x: 487, y: 563, size: 9, maxWidth: 46 },
@@ -955,7 +963,6 @@ export const C1A_FIELDS: PdfFormField[] = [
     required: false,
     label: { fr: "Revenu net comme salarié — par heure (EUR)" },
     help: { fr: "Indique jusqu'à 4 chiffres après la virgule." },
-    visibleIf: { fieldId: "activiteCommeSalarie", op: "equals", value: "oui" },
     section: SECTION_REVENUS,
     order: 141,
   },

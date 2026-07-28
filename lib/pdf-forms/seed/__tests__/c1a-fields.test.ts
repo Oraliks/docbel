@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { C1A_FIELDS, applyC1AImprovements } from "../c1a-fields";
+import { compilerRoutage } from "../../routing";
+import { C1A_ROUTAGE, C1A_DEPART } from "../c1a-routing";
 
 describe("C1A_FIELDS", () => {
   it("couvre les questions clés avec la bonne section", () => {
@@ -189,5 +191,96 @@ describe("C1A — Q6 (montant) et Q24 (annexes) imprimés", () => {
 
   it("aucun champ ne revendique le widget partagé « Montant »", () => {
     expect(fields.filter((f) => f.pdfFieldName === "Montant").map((f) => f.id)).toEqual([]);
+  });
+});
+
+describe("C1A — arbre des renvois", () => {
+  const conditions = compilerRoutage(C1A_ROUTAGE, C1A_DEPART);
+  const fields = applyC1AImprovements([]);
+  const parCle = new Map(fields.map((f) => [f.id, f]));
+
+  it("Q9, Q12 et Q22 sont sur tous les chemins, donc sans condition", () => {
+    expect(conditions.mandatPolitiqueOuJuge).toBeUndefined();
+    expect(conditions.autreActiviteAccessoire).toBeUndefined();
+    expect(conditions.estChomeurTemporaire).toBeUndefined();
+  });
+
+  it("Q4 dépend de Q3 ET de Q1 — c'est le bug historique", () => {
+    expect(conditions.q4lundi).toEqual({
+      fieldId: "aideraPendantChomage",
+      op: "equals",
+      value: "oui",
+      and: [{ fieldId: "aideIndependant", op: "equals", value: "oui" }],
+    });
+  });
+
+  it("le schéma porte les conditions compilées", () => {
+    expect(parCle.get("q4lundi")?.visibleIf).toEqual(conditions.q4lundi);
+    expect(parCle.get("descriptionAide1")?.visibleIf).toEqual(conditions.descriptionAide1);
+    expect(parCle.get("mandatPolitiqueOuJuge")?.visibleIf).toBeUndefined();
+  });
+
+  it("une condition intra-question survit à l'arbre, complétée par la branche", () => {
+    // Q6 : les deux montants partagent le libellé et ne se distinguent que par
+    // la périodicité. Écraser leur condition les afficherait tous les deux.
+    expect(parCle.get("montantAide")?.visibleIf).toEqual({
+      fieldId: "montantAidePeriodicite",
+      op: "equals",
+      value: "mois",
+      and: [
+        { fieldId: "aideraPendantChomage", op: "equals", value: "oui" },
+        { fieldId: "aideIndependant", op: "equals", value: "oui" },
+      ],
+    });
+    expect(parCle.get("montantAideAnnuel")?.visibleIf?.value).toBe("an");
+
+    // Q16 : demander son numéro d'entreprise à qui vient de déclarer ne pas en
+    // avoir n'a pas de sens.
+    expect(parCle.get("numeroEntreprise")?.visibleIf).toEqual({
+      fieldId: "disposeNumeroEntreprise",
+      op: "equals",
+      value: "oui",
+      and: [{ fieldId: "autreActiviteAccessoire", op: "equals", value: "oui" }],
+    });
+  });
+
+  it("la fusion est idempotente sur une condition déjà juste", () => {
+    // `descriptionActivite1` porte déjà la condition compilée de sa question
+    // (Q16) : le dédoublonnage ne doit rien empiler.
+    expect(parCle.get("descriptionActivite1")?.visibleIf).toEqual({
+      fieldId: "autreActiviteAccessoire",
+      op: "equals",
+      value: "oui",
+    });
+  });
+
+  it("toute la grille horaire est rattachée à sa question d'entrée", () => {
+    // Sans ce rattachement, un créneau échappe à l'arbre : il ne tient que par
+    // sa condition interne « le jour est coché », et s'afficherait tout entier
+    // à qui a répondu « je n'aiderai pas cet indépendant ».
+    const clauses = (id: string) => {
+      const c = parCle.get(id)?.visibleIf;
+      return c ? [c, ...(c.and ?? [])].map((x) => `${x.fieldId}=${String(x.value)}`) : [];
+    };
+    expect(clauses("q4mardiEntre7h18h")).toEqual([
+      "q4mardi=true",
+      "aideraPendantChomage=oui",
+      "aideIndependant=oui",
+    ]);
+    expect(clauses("q4periodesTexte1")).toEqual([
+      "q4periode=periodes",
+      "aideraPendantChomage=oui",
+      "aideIndependant=oui",
+    ]);
+    expect(clauses("q18samedi")).toEqual([
+      "exerceraPendantChomage=oui",
+      "autreActiviteAccessoire=oui",
+    ]);
+  });
+
+  it("le second montant de Q11 suit le premier", () => {
+    expect(parCle.get("revenuAnnuelMandat2")?.visibleIf).toEqual(
+      parCle.get("revenuAnnuelMandat")?.visibleIf,
+    );
   });
 });

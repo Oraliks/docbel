@@ -57,8 +57,10 @@
 // widgets ne saute JAMAIS un numéro sans une raison identifiable (non_7 est
 // "consommé" par le toggle numéro d'entreprise de Q16).
 
-import type { PdfFormField } from "../types";
+import type { PdfFormField, VisibleIf } from "../types";
+import { compilerRoutage } from "../routing";
 import { mergeEnrichedFields } from "./_merge";
+import { C1A_DEPART, C1A_ROUTAGE } from "./c1a-routing";
 
 const SECTION_IDENTITE = "identite";
 const SECTION_ADRESSE = "adresse";
@@ -1181,6 +1183,138 @@ const LEGACY_C1A_FIELD_IDS = new Set<string>([
   "listeDeroulante44",
 ]);
 
+/// Champs qui suivent la même condition que la question qui les porte : les
+/// lignes d'une même rubrique du PDF s'affichent ou disparaissent ensemble.
+/// Clé = identifiant de la question dans `C1A_ROUTAGE`.
+const RATTACHEMENTS: Record<string, string[]> = {
+  independantNom: [
+    "independantNumeroEntreprise",
+    "independantAdresseRueNumero",
+    "independantAdresseCodePostalCommune",
+    "natureActiviteIndependant1",
+    "natureActiviteIndependant2",
+    "natureActiviteIndependant3",
+    "natureActiviteIndependant4",
+    "natureActiviteIndependant5",
+  ],
+  descriptionAide1: [
+    "descriptionAide2", "descriptionAide3", "descriptionAide4", "descriptionAide5",
+    "descriptionAide6", "descriptionAide7", "descriptionAide8", "descriptionAide9",
+  ],
+  montantAidePeriodicite: ["montantAide", "montantAideAnnuel"],
+  mandatDescription: [],
+  // Q11 imprime DEUX lignes de montant : la seconde suit la première, sinon
+  // elle serait le seul champ de sa rubrique à échapper à l'arbre.
+  revenuAnnuelMandat: ["revenuAnnuelMandat2"],
+  employeurNom: ["employeurAdresse"],
+  adresseActivite: ["adresseActiviteCodePostalCommune"],
+  formeActivite: [
+    "disposeNumeroEntreprise", "numeroEntreprise",
+    "descriptionActivite1", "descriptionActivite2", "descriptionActivite3",
+  ],
+  revenuNetSalarieParMois: ["revenuNetSalarieParHeure", "revenuNetIndependantParAn"],
+  joursOccupeLundi: [
+    "joursOccupeMardi", "joursOccupeMercredi", "joursOccupeJeudi",
+    "joursOccupeVendredi", "joursOccupeSamedi", "joursOccupeDimanche",
+  ],
+  affirmationSincerite: ["nombreAnnexesJointes"],
+};
+
+/// Rubriques dont TOUS les champs se reconnaissent à un préfixe d'identifiant :
+/// les deux grilles horaires, soixante champs à elles deux. Les énumérer à la
+/// main serait une liste à retomber en panne au premier créneau ajouté — et un
+/// créneau oublié ici est un créneau qui échappe à l'arbre. Les créneaux ne
+/// tiennent aujourd'hui que par leur condition interne (« le jour est coché »),
+/// qui n'a pas vocation à rester : la grille doit reproduire la disposition du
+/// papier, tout visible d'emblée.
+const RATTACHEMENTS_PAR_PREFIXE: Array<{ prefixe: string; question: string }> = [
+  { prefixe: "q4", question: "q4lundi" },
+  { prefixe: "q18", question: "q18lundi" },
+];
+
+/// Une condition, aplatie : la principale et ses `and` sur le même plan.
+type Clause = Pick<VisibleIf, "fieldId" | "op" | "value">;
+
+function aplatir(condition: VisibleIf): Clause[] {
+  return [
+    { fieldId: condition.fieldId, op: condition.op, value: condition.value },
+    ...(condition.and ?? []).map((a) => ({ fieldId: a.fieldId, op: a.op, value: a.value })),
+  ];
+}
+
+/// Première clause en tête, le reste en `and` — et pas de `and: []` parasite,
+/// qui ferait échouer toute comparaison structurelle avec une condition simple.
+function assembler(clauses: Clause[]): VisibleIf {
+  const [tete, ...reste] = clauses;
+  return { ...tete, ...(reste.length ? { and: reste } : {}) };
+}
+
+/// Empile la condition de branche SOUS la condition existante, sans la
+/// remplacer. Dédoublonnage sur la paire (champ, valeur) : une condition déjà
+/// juste reste identique à elle-même.
+function empiler(existante: VisibleIf | undefined, branche: VisibleIf): VisibleIf {
+  const cle = (c: Clause) => `${c.fieldId}=${JSON.stringify(c.value)}`;
+  const base = existante ? aplatir(existante) : [];
+  const deja = new Set(base.map(cle));
+  return assembler([...base, ...aplatir(branche).filter((c) => !deja.has(cle(c)))]);
+}
+
+/// Pose sur chaque champ la condition dérivée de l'arbre imprimé.
+///
+/// Deux populations, deux traitements :
+///   • un champ qui EST une question de l'arbre voit sa condition REMPLACÉE —
+///     c'est l'arbre qui fait foi, et les conditions écrites à la main sont
+///     précisément ce qu'on répare (Q4 à Q8 étaient accrochées à Q1 en oubliant
+///     Q3) ;
+///   • un champ rattaché à une question garde SA condition en tête et reçoit
+///     les clauses de branche en `and`. Écraser détruirait des conditions
+///     intra-question légitimes : les deux montants de Q6 ne se distinguent que
+///     par leur périodicité et s'afficheraient ensemble, sous le même libellé ;
+///     le numéro d'entreprise de Q16 serait demandé à qui vient de déclarer ne
+///     pas en avoir.
+///
+/// Une question posée sur tous les chemins (condition compilée `undefined`)
+/// n'ajoute rien : le champ garde ce qu'il porte.
+function appliquerRoutage(fields: PdfFormField[]): PdfFormField[] {
+  const conditions = compilerRoutage(C1A_ROUTAGE, C1A_DEPART);
+  const questions = new Set(Object.keys(C1A_ROUTAGE));
+
+  const porteuse = new Map<string, string>();
+  for (const [question, rattaches] of Object.entries(RATTACHEMENTS)) {
+    if (!questions.has(question)) {
+      throw new Error(`RATTACHEMENTS : « ${question} » n'est pas une question de C1A_ROUTAGE`);
+    }
+    for (const id of rattaches) porteuse.set(id, question);
+  }
+  for (const { question } of RATTACHEMENTS_PAR_PREFIXE) {
+    if (!questions.has(question)) {
+      throw new Error(`RATTACHEMENTS_PAR_PREFIXE : « ${question} » n'est pas une question de C1A_ROUTAGE`);
+    }
+  }
+
+  return fields.map((f) => {
+    if (questions.has(f.id)) {
+      const condition = conditions[f.id];
+      if (!condition) {
+        // Question posée sur tous les chemins : toujours visible.
+        const toujoursVisible = { ...f };
+        delete toujoursVisible.visibleIf;
+        return toujoursVisible;
+      }
+      return { ...f, visibleIf: assembler(aplatir(condition)) };
+    }
+
+    const question =
+      porteuse.get(f.id) ??
+      RATTACHEMENTS_PAR_PREFIXE.find((r) => f.id.startsWith(r.prefixe))?.question;
+    if (!question) return f;
+
+    const branche = conditions[question];
+    if (!branche) return f;
+    return { ...f, visibleIf: empiler(f.visibleIf, branche) };
+  });
+}
+
 export function applyC1AImprovements(fields: PdfFormField[]): PdfFormField[] {
-  return mergeEnrichedFields(fields, C1A_FIELDS, LEGACY_C1A_FIELD_IDS);
+  return appliquerRoutage(mergeEnrichedFields(fields, C1A_FIELDS, LEGACY_C1A_FIELD_IDS));
 }

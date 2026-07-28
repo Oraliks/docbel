@@ -90,10 +90,9 @@ describe("C1A_FIELDS", () => {
     expect(dups).toEqual([]);
   });
 
-  it("marque les champs non identifiés avec certitude comme hidden (Liste déroulante44, voir 19)", () => {
+  it("marque les champs non identifiés avec certitude comme hidden (Liste déroulante44)", () => {
     const byId = new Map(C1A_FIELDS.map((f) => [f.id, f]));
     expect(byId.get("listeDeroulante44")?.hidden).toBe(true);
-    expect(byId.get("voir19Artefact")?.hidden).toBe(true);
   });
 
   it("applyC1AImprovements() est idempotent (pas de doublon si ré-appliqué)", () => {
@@ -132,5 +131,29 @@ describe("C1A_FIELDS", () => {
     // comptabilité fragile).
     expect(C1A_FIELDS.length).toBeGreaterThan(120);
     expect(C1A_FIELDS.length).toBe(new Set(C1A_FIELDS.map((f) => f.id)).size);
+  });
+});
+
+describe("C1A — revenus imprimés (Q11, Q19)", () => {
+  const fields = applyC1AImprovements([]);
+  const parCle = new Map(fields.map((f) => [f.id, f]));
+
+  it("les trois revenus de Q19 sont écrits aux coordonnées, pas dans un widget partagé", () => {
+    for (const id of [
+      "revenuNetSalarieParMois",
+      "revenuNetSalarieParHeure",
+      "revenuNetIndependantParAn",
+    ]) {
+      const f = parCle.get(id);
+      expect(f, `${id} doit exister`).toBeDefined();
+      expect(f?.drawAt, `${id} doit porter un drawAt`).toBeDefined();
+      expect(f?.drawAt?.page, `${id} est en page 2`).toBe(1);
+      expect(f?.pdfFieldName, `${id} ne doit pointer vers aucun widget`).toBe("");
+    }
+  });
+
+  it("aucun champ ne revendique le widget partagé « voir 19 »", () => {
+    const revendications = fields.filter((f) => f.pdfFieldName?.includes("voir 19"));
+    expect(revendications.map((f) => f.id)).toEqual([]);
   });
 });

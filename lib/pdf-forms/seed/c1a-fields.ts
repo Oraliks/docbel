@@ -68,9 +68,9 @@ const SECTION_REVENUS = "mes-revenus";
 const SECTION_AFFIRMATIONS = "affirmations";
 const SECTION_ANNEXES = "annexes";
 const SECTION_SIGNATURE = "signature";
-/// Réutilise la section partagée "divers" (section-labels.ts) pour les 2
-/// champs non rattachés avec certitude à une question (cf. A VALIDER
-/// Oraliks en fin de fichier).
+/// Réutilise la section partagée "divers" (section-labels.ts) pour le champ
+/// non rattaché avec certitude à une question (cf. A VALIDER Oraliks en fin
+/// de fichier).
 const SECTION_DIVERS_INCONNU = "divers";
 
 /// Section dédiée à la partie "aide à un indépendant" (Q1-Q11) — distincte
@@ -865,13 +865,19 @@ export const C1A_FIELDS: PdfFormField[] = [
   // Q19 — QUEL EST LE REVENU NET DE VOTRE ACTIVITÉ ?
   // ====================================================================
   {
+    // Les trois cases de revenu de Q19 appartiennent au champ AcroForm
+    // « voir 19 », qui porte QUATRE widgets partageant une seule valeur — donc
+    // inutilisable pour trois montants distincts. Écriture positionnelle.
+    // Coordonnées mesurées : ligne « par mois : … EUR / par heure : … EUR »
+    // imprimée à y=567, ligne « par an : … » à y=497.
     id: "revenuNetSalarieParMois",
     pdfFieldName: "",
+    drawAt: { page: 1, x: 360, y: 563, size: 9, maxWidth: 62 },
     type: "number",
     required: false,
-    label: { fr: "19. Revenu net comme salarié — par mois (EUR)" },
+    label: { fr: "Revenu net comme salarié — par mois (EUR)" },
     help: {
-      fr: "= montant brut diminué des cotisations de sécurité sociale et du précompte professionnel retenus à la source par l'employeur (rémunération mensuelle normale, mais aussi pécule de vacances, 13e mois et avantages en nature éventuels). Jusqu'à 2 chiffres après la virgule.",
+      fr: "Montant brut diminué des cotisations de sécurité sociale et du précompte professionnel retenus à la source par l'employeur (rémunération mensuelle normale, mais aussi pécule de vacances, 13ᵉ mois et avantages en nature éventuels). Indique jusqu'à 2 chiffres après la virgule.",
     },
     visibleIf: { fieldId: "activiteCommeSalarie", op: "equals", value: "oui" },
     section: SECTION_REVENUS,
@@ -880,10 +886,11 @@ export const C1A_FIELDS: PdfFormField[] = [
   {
     id: "revenuNetSalarieParHeure",
     pdfFieldName: "",
+    drawAt: { page: 1, x: 487, y: 563, size: 9, maxWidth: 46 },
     type: "number",
     required: false,
     label: { fr: "Revenu net comme salarié — par heure (EUR)" },
-    help: { fr: "Jusqu'à 4 chiffres après la virgule." },
+    help: { fr: "Indique jusqu'à 4 chiffres après la virgule." },
     visibleIf: { fieldId: "activiteCommeSalarie", op: "equals", value: "oui" },
     section: SECTION_REVENUS,
     order: 141,
@@ -891,22 +898,17 @@ export const C1A_FIELDS: PdfFormField[] = [
   {
     id: "revenuNetIndependantParAn",
     pdfFieldName: "",
+    drawAt: { page: 1, x: 350, y: 493, size: 9, maxWidth: 185 },
     type: "number",
     required: false,
     label: { fr: "Revenu net comme indépendant — par an (EUR)" },
     help: {
-      fr: "= revenu imposable indiqué sur l'avertissement-extrait de rôle et la note de calcul (recettes diminuées des charges, dépenses et pertes professionnelles). → Joins une copie de la plus récente note de calcul de l'administration des contributions directes.",
+      fr: "Revenu imposable indiqué sur l'avertissement-extrait de rôle et la note de calcul (recettes diminuées des charges, dépenses et pertes professionnelles). Joins une copie de la plus récente note de calcul de l'administration des contributions directes.",
     },
     visibleIf: { fieldId: "autreActiviteAccessoire", op: "equals", value: "oui" },
     section: SECTION_REVENUS,
     order: 142,
   },
-  // A VALIDER Oraliks : aucun widget PDF identifiable dans le dump pour les
-  // 3 montants de Q19 (par mois / par heure / par an) — les 3 champs
-  // ci-dessus sont laissés virtuels (pdfFieldName vide). À vérifier sur le
-  // PDF réel : il est possible que ces cases existent mais que le nommage
-  // AcroForm les confonde avec un des champs génériques déjà rattachés à
-  // Q4/Q18 (auquel cas il faudra les redistribuer).
 
   // ====================================================================
   // Q20 — EXERCIEZ-VOUS DÉJÀ CETTE ACTIVITÉ DANS LE PASSÉ ?
@@ -1097,20 +1099,6 @@ export const C1A_FIELDS: PdfFormField[] = [
     section: SECTION_DIVERS_INCONNU,
     order: 900,
   },
-  // A VALIDER Oraliks : "voir 19" est un widget texte isolé — probablement
-  // un artefact de tooltip capturé comme champ à part entière plutôt qu'un
-  // vrai widget de saisie (le texte imprimé "voir 19" est un renvoi de
-  // lecture pour Q12, pas une question). Masqué par précaution.
-  {
-    id: "voir19Artefact",
-    pdfFieldName: "voir 19",
-    type: "text",
-    required: false,
-    label: { fr: "(renvoi de lecture — pas un vrai champ, voir A VALIDER)" },
-    hidden: true,
-    section: SECTION_DIVERS_INCONNU,
-    order: 901,
-  },
 ];
 
 /// Applique le schéma enrichi sur une liste de champs bruts (typiquement
@@ -1140,6 +1128,11 @@ const LEGACY_C1A_FIELD_IDS = new Set<string>([
   "adresseActiviteIndependanteLabel", // -> independantAdresseRueNumero (même widget)
   "independantAdresseRue", // -> independantAdresseCodePostalCommune (même widget)
   "adresseActiviteNumero", // -> adresseActiviteCodePostalCommune (widget aussi corrigé : undefined_2 -> rue_3)
+  // Q19 (2026-07-28) : les trois revenus passent en écriture positionnelle
+  // (drawAt), le widget "voir 19" reste non revendiqué. Sans cette entrée,
+  // un ancien champ `voir19Artefact` déjà en base survivrait au merge : ni
+  // `newIds` ni `covered` (pdfFieldName) ne le voient plus.
+  "voir19Artefact",
 ]);
 
 export function applyC1AImprovements(fields: PdfFormField[]): PdfFormField[] {

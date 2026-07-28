@@ -996,6 +996,31 @@ export const C1A_FIELDS: PdfFormField[] = [
   // Q22 — JOURS HABITUELLEMENT OCCUPÉ CHEZ L'EMPLOYEUR (CHÔMEUR TEMPORAIRE)
   // ====================================================================
   {
+    // Q22 imprime « À COMPLÉTER UNIQUEMENT SI VOUS ÊTES CHÔMEUR TEMPORAIRE »
+    // sans qu'aucune question n'établisse le statut : les sept cases
+    // s'affichaient à tout le monde. Cette question n'existe pas sur le papier
+    // (d'où l'absence de widget) — elle matérialise la consigne imprimée.
+    //
+    // La définition affichée est celle imprimée DEUX FOIS sur le formulaire,
+    // sous Q3 et sous Q17.
+    //
+    // `order` 159 et non 100 comme prévu au plan : la numérotation a été refaite
+    // en ordre de lecture, et 100 tombe désormais au milieu de la grille horaire
+    // de Q18 (73→102). 159 la place juste avant `joursOccupeLundi` (160).
+    id: "estChomeurTemporaire",
+    pdfFieldName: "",
+    type: "radio",
+    required: true,
+    label: { fr: "Es-tu chômeur temporaire ?" },
+    labelShort: { fr: "Chômeur temporaire ?" },
+    help: {
+      fr: "Tu es chômeur temporaire si tu es toujours au service de ton employeur mais que temporairement tu ne travailles pas, par exemple en raison d'un manque de travail ou d'intempéries.",
+    },
+    options: YN,
+    section: SECTION_ACTIVITES,
+    order: 159,
+  },
+  {
     id: "joursOccupeLundi",
     pdfFieldName: "lu",
     type: "checkbox",

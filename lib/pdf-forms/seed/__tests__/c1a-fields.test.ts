@@ -278,6 +278,28 @@ describe("C1A — arbre des renvois", () => {
     ]);
   });
 
+  it("Q22 est commandée par une question de chômage temporaire", () => {
+    const q = parCle.get("estChomeurTemporaire");
+    expect(q, "la question doit exister").toBeDefined();
+    expect(q?.pdfFieldName, "elle n'existe pas sur le papier").toBe("");
+    expect(q?.options?.map((o) => o.value)).toEqual(["oui", "non"]);
+
+    const lundi = parCle.get("joursOccupeLundi");
+    expect(lundi?.visibleIf).toEqual({
+      fieldId: "estChomeurTemporaire",
+      op: "equals",
+      value: "oui",
+    });
+  });
+
+  it("les sept jours de Q22 suivent la question d'entrée", () => {
+    for (const jour of ["Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"]) {
+      expect(parCle.get(`joursOccupe${jour}`)?.visibleIf, jour).toEqual(
+        parCle.get("joursOccupeLundi")?.visibleIf,
+      );
+    }
+  });
+
   it("le second montant de Q11 suit le premier", () => {
     expect(parCle.get("revenuAnnuelMandat2")?.visibleIf).toEqual(
       parCle.get("revenuAnnuelMandat")?.visibleIf,

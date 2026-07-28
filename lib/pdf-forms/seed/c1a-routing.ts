@@ -36,7 +36,7 @@ export const C1A_ROUTAGE: TableRoutage = {
   // Q11 → Q12
   revenuAnnuelMandat: { next: "autreActiviteAccessoire" },
   // Q12 → Q13 / Q22
-  autreActiviteAccessoire: { on: { oui: "activiteCommeSalarie", non: "joursOccupeLundi" } },
+  autreActiviteAccessoire: { on: { oui: "activiteCommeSalarie", non: "estChomeurTemporaire" } },
   // Q13 → Q14 / Q15
   activiteCommeSalarie: { on: { oui: "employeurNom", non: "adresseActivite" } },
   // Q14 → Q15
@@ -47,20 +47,19 @@ export const C1A_ROUTAGE: TableRoutage = {
   // option, contrairement à Q1 ou Q13.
   formeActivite: { next: "exerceraPendantChomage" },
   // Q17 → Q18 / Q22
-  exerceraPendantChomage: { on: { oui: "q18lundi", non: "joursOccupeLundi" } },
+  exerceraPendantChomage: { on: { oui: "q18lundi", non: "estChomeurTemporaire" } },
   // Q18 → Q19
   q18lundi: { next: "revenuNetSalarieParMois" },
   // Q19 → Q20
   revenuNetSalarieParMois: { next: "exerceDejaActivite" },
   // Q20 → Q21 / Q22
-  exerceDejaActivite: { on: { oui: "dateDebutActivite", non: "joursOccupeLundi" } },
+  exerceDejaActivite: { on: { oui: "dateDebutActivite", non: "estChomeurTemporaire" } },
   // Q21 → Q22
-  dateDebutActivite: { next: "joursOccupeLundi" },
-  // Q22 → Q23. La rubrique porte la consigne « À COMPLÉTER UNIQUEMENT SI VOUS
-  // ÊTES CHÔMEUR TEMPORAIRE », mais AUCUNE question imprimée n'établit ce
-  // statut : le renvoi « voir 22 » tombe donc directement sur la première case
-  // de la rubrique, et les sept jours restent posés à tout le monde. C'est ce
-  // que la tâche suivante corrige, en intercalant ici une question virtuelle.
+  dateDebutActivite: { next: "estChomeurTemporaire" },
+  // Q22 → Q23. Rubrique réservée aux chômeurs temporaires : la question
+  // d'entrée `estChomeurTemporaire` n'existe pas sur le papier, elle
+  // matérialise la consigne imprimée « À COMPLÉTER UNIQUEMENT SI… ».
+  estChomeurTemporaire: { on: { oui: "joursOccupeLundi", non: "independantTitrePrincipal" } },
   joursOccupeLundi: { next: "independantTitrePrincipal" },
   // Q23 et Q24 — terminales, « COMPLÉTEZ TOUJOURS CETTE RUBRIQUE ».
   independantTitrePrincipal: { next: "affirmationSincerite" },

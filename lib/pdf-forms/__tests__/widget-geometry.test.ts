@@ -38,8 +38,11 @@ const COLONNE_X = 300;
 /// Tolérance verticale, en points. Deux widgets d'une même ligne imprimée ne
 /// sont pas exactement à la même hauteur (une case à cocher est plus petite
 /// qu'une ligne de texte) : sans marge, une ligne « lundi ☐ ☐ ☐ » lèverait une
-/// fausse alerte.
-const TOLERANCE_Y = 12;
+/// fausse alerte. Autre cas : une case de signature est plus haute qu'une
+/// ligne de date, et l'ancre est le bas du rectangle : sur la ligne
+/// « date | signature » du C1A les deux rectangles sont distants de 13
+/// points alors qu'ils sont imprimés côte à côte.
+const TOLERANCE_Y = 16;
 
 interface Cible {
   slug: string;

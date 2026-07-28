@@ -112,6 +112,17 @@ function grilleHoraire(opts: {
   const jours = ["lundi", "mardi", "mercredi", "jeudi", "vendredi"] as const;
   const fields: PdfFormField[] = [];
 
+  // Numérotation DENSE. La grille est une seule rubrique du document : elle
+  // doit occuper un bloc d'`order` contigu, sinon les questions voisines
+  // s'intercalent entre ses lignes. Avec des sauts de 10, Q4 (base 10)
+  // s'étalait sur 10→93 et encastrait les neuf lignes de description de Q5
+  // (46→54) au milieu de la semaine — le citoyen voyait lundi à jeudi, la
+  // description, vendredi, puis samedi vingt champs plus loin.
+  //
+  // Le compteur suit l'ordre de poussée, qui est déjà celui du document.
+  let rang = 0;
+  const ordre = () => opts.order + rang++;
+
   jours.forEach((jour, i) => {
     fields.push({
       id: `${opts.idPrefix}${jour}`,
@@ -121,7 +132,7 @@ function grilleHoraire(opts: {
       label: { fr: jour.charAt(0).toUpperCase() + jour.slice(1) },
       visibleIf: { fieldId: opts.parentId, op: "equals", value: opts.parentValue },
       section: opts.section,
-      order: opts.order + i * 10,
+      order: ordre(),
     });
     fields.push({
       id: `${opts.idPrefix}${jour}Avant7h`,
@@ -131,7 +142,7 @@ function grilleHoraire(opts: {
       label: { fr: "Avant 7 h" },
       visibleIf: { fieldId: `${opts.idPrefix}${jour}`, op: "equals", value: true },
       section: opts.section,
-      order: opts.order + i * 10 + 1,
+      order: ordre(),
     });
     fields.push({
       id: `${opts.idPrefix}${jour}Entre7h18h`,
@@ -141,7 +152,7 @@ function grilleHoraire(opts: {
       label: { fr: "Entre 7 h et 18 h" },
       visibleIf: { fieldId: `${opts.idPrefix}${jour}`, op: "equals", value: true },
       section: opts.section,
-      order: opts.order + i * 10 + 2,
+      order: ordre(),
     });
     fields.push({
       id: `${opts.idPrefix}${jour}Apres18h`,
@@ -151,7 +162,7 @@ function grilleHoraire(opts: {
       label: { fr: "Après 18 h" },
       visibleIf: { fieldId: `${opts.idPrefix}${jour}`, op: "equals", value: true },
       section: opts.section,
-      order: opts.order + i * 10 + 3,
+      order: ordre(),
     });
   });
 
@@ -163,7 +174,7 @@ function grilleHoraire(opts: {
     label: { fr: "Samedi" },
     visibleIf: { fieldId: opts.parentId, op: "equals", value: opts.parentValue },
     section: opts.section,
-    order: opts.order + 60,
+    order: ordre(),
   });
   fields.push({
     id: `${opts.idPrefix}dimanche`,
@@ -173,7 +184,7 @@ function grilleHoraire(opts: {
     label: { fr: "Dimanche" },
     visibleIf: { fieldId: opts.parentId, op: "equals", value: opts.parentValue },
     section: opts.section,
-    order: opts.order + 61,
+    order: ordre(),
   });
 
   fields.push({
@@ -192,7 +203,7 @@ function grilleHoraire(opts: {
     ],
     visibleIf: { fieldId: opts.parentId, op: "equals", value: opts.parentValue },
     section: opts.section,
-    order: opts.order + 62,
+    order: ordre(),
   });
 
   opts.periodesTextFields.forEach((pdfFieldName, i) => {
@@ -204,7 +215,7 @@ function grilleHoraire(opts: {
       label: { fr: `Période ${i + 1}` },
       visibleIf: { fieldId: `${opts.idPrefix}periode`, op: "equals", value: "periodes" },
       section: opts.section,
-      order: opts.order + 63 + i,
+      order: ordre(),
     });
   });
 
@@ -217,7 +228,7 @@ function grilleHoraire(opts: {
       label: { fr: i === 0 ? "Précise à quel rythme" : `Précision ${i + 1}` },
       visibleIf: { fieldId: `${opts.idPrefix}periode`, op: "equals", value: "irregulier" },
       section: opts.section,
-      order: opts.order + 70 + i,
+      order: ordre(),
     });
   });
 
@@ -246,7 +257,7 @@ export const C1A_FIELDS: PdfFormField[] = [
     required: true,
     label: { fr: "Nom et prénom" },
     section: SECTION_IDENTITE,
-    order: -100,
+    order: -99,
   },
   {
     id: "niss",
@@ -261,7 +272,10 @@ export const C1A_FIELDS: PdfFormField[] = [
     prefillFrom: "profile.niss",
     canonicalKey: "identity.niss",
     section: SECTION_IDENTITE,
-    order: -99,
+    // -100 et non -99 : sur la page 1, la case NISS (y=573) est imprimée
+    // AU-DESSUS de la case Nom et prénom (y=534). L'ordre suit celui du
+    // document, où le NISS précède le nom.
+    order: -100,
   },
   // ADRESSE — deux widgets du PDF fusionnent chacun DEUX informations
   // (« rue + numéro », « code postal + commune »). On saisit donc les quatre

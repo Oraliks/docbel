@@ -87,6 +87,11 @@ const YN = [
 /// après 18h), puis samedi et dimanche (sans horaire), puis un choix parmi
 /// "toute l'année" / "pendant les périodes suivantes" (texte libre
 /// multi-lignes) / "irrégulièrement, à savoir" (texte libre).
+//
+// La grille reproduit celle du formulaire papier : les sept jours et leurs
+// créneaux sont visibles d'emblée, sans dévoilement progressif (décision
+// Oraliks 2026-07-28). Les créneaux gardent en revanche la condition de branche
+// posée par `appliquerRoutage` sur leur question d'entrée — Q3 ou Q17.
 function grilleHoraire(opts: {
   idPrefix: string;
   questionLabel: string;
@@ -142,7 +147,6 @@ function grilleHoraire(opts: {
       type: "checkbox",
       required: false,
       label: { fr: "Avant 7 h" },
-      visibleIf: { fieldId: `${opts.idPrefix}${jour}`, op: "equals", value: true },
       section: opts.section,
       order: ordre(),
     });
@@ -152,7 +156,6 @@ function grilleHoraire(opts: {
       type: "checkbox",
       required: false,
       label: { fr: "Entre 7 h et 18 h" },
-      visibleIf: { fieldId: `${opts.idPrefix}${jour}`, op: "equals", value: true },
       section: opts.section,
       order: ordre(),
     });
@@ -162,7 +165,6 @@ function grilleHoraire(opts: {
       type: "checkbox",
       required: false,
       label: { fr: "Après 18 h" },
-      visibleIf: { fieldId: `${opts.idPrefix}${jour}`, op: "equals", value: true },
       section: opts.section,
       order: ordre(),
     });

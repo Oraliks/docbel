@@ -255,15 +255,15 @@ describe("C1A — arbre des renvois", () => {
   });
 
   it("toute la grille horaire est rattachée à sa question d'entrée", () => {
-    // Sans ce rattachement, un créneau échappe à l'arbre : il ne tient que par
-    // sa condition interne « le jour est coché », et s'afficherait tout entier
-    // à qui a répondu « je n'aiderai pas cet indépendant ».
+    // Sans ce rattachement, un créneau échappe à l'arbre : depuis la Task 13,
+    // il n'a plus aucune condition propre (la grille reproduit le papier, tout
+    // visible d'emblée), et s'afficherait tout entier à qui a répondu
+    // « je n'aiderai pas cet indépendant ».
     const clauses = (id: string) => {
       const c = parCle.get(id)?.visibleIf;
       return c ? [c, ...(c.and ?? [])].map((x) => `${x.fieldId}=${String(x.value)}`) : [];
     };
     expect(clauses("q4mardiEntre7h18h")).toEqual([
-      "q4mardi=true",
       "aideraPendantChomage=oui",
       "aideIndependant=oui",
     ]);
@@ -325,6 +325,21 @@ describe("C1A — aides contextuelles", () => {
   it("les questions longues ont un libellé court pour mobile", () => {
     for (const id of ["mandatPolitiqueOuJuge", "autreActiviteAccessoire", "exerceraPendantChomage"]) {
       expect(parCle.get(id)?.labelShort?.fr, `${id} doit avoir un labelShort`).toBeTruthy();
+    }
+  });
+});
+
+describe("C1A — grilles horaires", () => {
+  const fields = applyC1AImprovements([]);
+
+  it("les créneaux sont visibles sans avoir à cocher le jour d'abord", () => {
+    const creneaux = fields.filter((f) => /^q(4|18)(lundi|mardi|mercredi|jeudi|vendredi)(Avant7h|Entre7h18h|Apres18h)$/.test(f.id));
+    expect(creneaux.length).toBe(30);
+    for (const c of creneaux) {
+      expect(
+        c.visibleIf?.fieldId,
+        `${c.id} ne doit pas dépendre de la case du jour`,
+      ).not.toMatch(/^q(4|18)(lundi|mardi|mercredi|jeudi|vendredi)$/);
     }
   });
 });

@@ -6,7 +6,10 @@
 // soient routables, mais `showOnOnboarding: false` pour ne pas polluer la
 // page d'accueil tant qu'ils n'ont pas été étoffés en admin.
 //
-// Le dossier CT (`chomage-temporaire`) existe déjà : on ne le touche jamais.
+// `chomage-temporaire` et `allocations-insertion` ont été supprimés le
+// 2026-07-28 (ils seront refaits sur la base du form runner du C1). Ils sont
+// donc redevenus des dossiers "à venir" comme les autres — ce script peut les
+// recréer en coquille si on le souhaite.
 //
 // Idempotent au niveau du slug — si le bundle existe déjà, on ne fait rien.
 //

@@ -52,6 +52,12 @@ type DossierJourneyIntroProps = {
   documents: JourneyDocument[];
   ctaLabel: string;
   ctaLabelKey?: string;
+  /// Hero compact (chemin en 4 jalons + repères de confiance) au lieu de la
+  /// mise en page historique. Était câblé en dur sur le slug
+  /// `allocations-insertion` jusqu'au 2026-07-28 ; ce dossier ayant été
+  /// supprimé pour être refait sur la base du form runner du C1, le choix de
+  /// mise en page devient un réglage explicite du appelant.
+  compactHero?: boolean;
 } & ComponentProps<typeof BundleRunner>;
 
 /** Icônes linéaires (lucide) des étapes. */
@@ -137,6 +143,7 @@ export function DossierJourneyIntro({
   documents,
   ctaLabel,
   ctaLabelKey,
+  compactHero = false,
   ...runnerProps
 }: DossierJourneyIntroProps) {
   const t = useTranslations("public.dossierContent");
@@ -181,8 +188,8 @@ export function DossierJourneyIntro({
 
       <AccessibilityToolbar />
 
-      {/* ══ Hero — compact pour allocations-insertion (maquette), sinon mise en page historique ══ */}
-      {runnerProps.bundle.slug === "allocations-insertion" ? (
+      {/* ══ Hero — compact si le dossier le demande, sinon mise en page historique ══ */}
+      {compactHero ? (
         <header className="flex flex-col gap-7 lg:flex-row lg:items-center lg:justify-between lg:gap-10">
           <div className="flex max-w-[520px] flex-col gap-4">
             <div>

@@ -4,7 +4,6 @@ import {
   orientationAnswersToC1Prefill,
   parseOrientationAnswers,
 } from "../orientation";
-import { allocationsInsertion } from "../allocations-insertion";
 import { chomageComplet } from "../chomage-complet";
 
 /** Encode comme le fait dossier-wizard.tsx (document.cookie). */
@@ -92,23 +91,10 @@ describe("orientationAnswersToC1Prefill", () => {
   });
 });
 
-describe("prefillFromOrientation — allocations-insertion", () => {
-  const prefill = allocationsInsertion.prefillFromOrientation!;
-
-  it("mappe « 25 ans ou plus » du wizard vers la tranche d'âge du dossier", () => {
-    expect(prefill({ situation: "jeune-etudes", subOption: "25-plus" })).toEqual({
-      age: "25-plus",
-    });
-  });
-
-  it("ne préremplit PAS l'âge depuis « moins-25 » (plus grossier que nos tranches)", () => {
-    expect(prefill({ situation: "jeune-etudes", subOption: "moins-25" })).toEqual({});
-  });
-
-  it("« je sors des études » n'a plus de préremplissage (question supprimée 2026-07)", () => {
-    expect(prefill({ situation: "perte-emploi", subOption: "sors-etudes" })).toEqual({});
-  });
-});
+// Le bloc « prefillFromOrientation — allocations-insertion » vivait ici
+// jusqu'au 2026-07-28 : le dossier a été supprimé pour être refait sur la base
+// du form runner du C1. Le parsing du cookie wizard ci-dessus couvre toujours
+// le cas d'une orientation qui pointe vers un dossier absent.
 
 describe("prefillFromOrientation — chomage-complet", () => {
   const prefill = chomageComplet.prefillFromOrientation!;

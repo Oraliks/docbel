@@ -48,6 +48,9 @@ public/uploads/*
 private/uploads/*
 !private/uploads/.gitkeep
 
+# Dumps de sauvegarde avant suppression (contiennent des payloads BundleRun)
+private/backups/
+
 # Temporary files
 tempzip/
 *.tmp

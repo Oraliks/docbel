@@ -25,8 +25,11 @@ import {
   UsersIcon,
 } from "lucide-react";
 
-/// Slug vérifié dans lib/dossiers/registry.ts (module chomage-temporaire).
-const DOSSIER_HREF = "/d/chomage-temporaire";
+/// Le dossier `chomage-temporaire` a été supprimé le 2026-07-28 (il sera refait
+/// sur la base du form runner du C1) : les deux CTA pointent vers le guichet des
+/// démarches, qui liste ce qui est réellement disponible, plutôt que vers une
+/// route /d/… morte.
+const DOSSIER_HREF = "/mes-demarches";
 
 // Mêmes gradients d'icônes que le reste de la landing employeur.
 type StepHue = "violet" | "blue" | "rose" | "green";

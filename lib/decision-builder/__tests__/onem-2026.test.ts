@@ -62,7 +62,7 @@ describe("ONEM 2026 — contenu DB", () => {
     expect(() => parseTreeContent(content)).not.toThrow();
   });
 
-  it("est PUBLIABLE avec seulement les 3 dossiers réels (a_creer/externe non bloquants)", () => {
+  it("est PUBLIABLE avec seulement les dossiers réels (a_creer/externe non bloquants)", () => {
     const active = new Set<string>(ONEM_2026_AVAILABLE_SLUGS);
     const report = validateDecisionTree(content, active);
     expect(report.errors).toEqual([]);
@@ -88,11 +88,11 @@ describe("ONEM 2026 — contenu DB", () => {
 });
 
 describe("ONEM 2026 — stubs", () => {
-  it("liste 15 dossiers stub à créer", () => {
-    expect(ONEM_2026_STUB_BUNDLES).toHaveLength(15);
+  it("liste 16 dossiers stub à créer", () => {
+    expect(ONEM_2026_STUB_BUNDLES).toHaveLength(16);
   });
 
-  it("aucun stub ne collisionne avec les 3 dossiers réels", () => {
+  it("aucun stub ne collisionne avec les dossiers réels", () => {
     const stubSlugs = new Set(ONEM_2026_STUB_BUNDLES.map((b) => b.slug));
     for (const real of ONEM_2026_AVAILABLE_SLUGS) {
       expect(stubSlugs.has(real)).toBe(false);

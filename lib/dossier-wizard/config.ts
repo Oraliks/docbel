@@ -130,10 +130,17 @@ export interface WizardSituation {
 
 // ── Résultats réutilisés (évite la duplication) ──────────────────────────────
 
+// `availability: "a_creer"` sur le CT et l'insertion depuis le 2026-07-28 :
+// les deux dossiers ont été supprimés pour être refaits sur la base du form
+// runner du C1. Le slug reste renseigné (il alimente la mesure de la demande
+// orpheline dans /admin/decision-builder), mais `derive-results.ts` ne rend le
+// bouton « Démarrer » que si `availability === "disponible"` — donc plus aucun
+// lien vers une route inexistante.
 const R_CT: WizardResult = {
   dossierSlug: "chomage-temporaire",
   dossierTitle: "Chômage temporaire",
   dossierTitleKey: "wizard.result.ct.title",
+  availability: "a_creer",
   rationale:
     "Votre contrat est suspendu pour un temps : vous pouvez toucher des allocations pendant cette période, puis reprendre votre travail.",
   rationaleKey: "wizard.result.ct.rationale",
@@ -163,6 +170,7 @@ const R_INSERTION: WizardResult = {
   dossierSlug: "allocations-insertion",
   dossierTitle: "Allocations d'insertion (jeunes)",
   dossierTitleKey: "wizard.result.insertion.title",
+  availability: "a_creer",
   rationale:
     "Vous sortez des études sans avoir (assez) travaillé : c'est la voie des allocations d'insertion, après un stage d'insertion de 156 jours.",
   rationaleKey: "wizard.result.insertion.rationale",
@@ -368,6 +376,7 @@ export const WIZARD_SITUATIONS: WizardSituation[] = [
                   dossierSlug: "allocations-insertion",
                   dossierTitle: "Allocations d'insertion — vérifier l'âge",
                   dossierTitleKey: "wizard.result.insertionVerifierAge.title",
+                  availability: "a_creer",
                   rationale:
                     "Au-delà de 25 ans, le droit aux allocations d'insertion n'est généralement plus ouvert (sauf exceptions). On vous oriente vers ce dossier pour vérifier votre situation précise.",
                   rationaleKey: "wizard.result.insertionVerifierAge.rationale",
@@ -493,6 +502,7 @@ export const WIZARD_SITUATIONS: WizardSituation[] = [
             dossierSlug: "chomage-temporaire",
             dossierTitle: "Chômage temporaire (force majeure médicale)",
             dossierTitleKey: "wizard.result.ctFmm.title",
+            availability: "a_creer",
             rationale:
               "Si votre incapacité de travail est temporaire, c'est la voie standard.",
             rationaleKey: "wizard.result.ctFmm.rationale",

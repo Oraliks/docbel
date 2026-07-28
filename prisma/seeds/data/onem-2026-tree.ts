@@ -96,9 +96,14 @@ interface WizardSituationV2 {
 
 // ── Slugs réellement disponibles en base (dossiers actifs) ───────────────────
 // Tout le reste est "a_creer" (stub) ou "orientation_externe".
+//
+// `chomage-temporaire` en est sorti le 2026-07-28 : le dossier a été supprimé
+// pour être refait sur la base du form runner du C1, et repasse donc "à créer"
+// (cf. ONEM_2026_STUB_BUNDLES). Les feuilles d'orientation qui le visaient
+// gardent leur contenu mais annoncent « bientôt » au lieu de proposer un
+// bouton Démarrer vers une route inexistante.
 export const ONEM_2026_AVAILABLE_SLUGS = [
   "chomage-complet",
-  "chomage-temporaire",
   "changement-situation-personnelle",
 ] as const;
 
@@ -121,7 +126,7 @@ const wizardSituationsOnem2026: WizardSituationV2[] = [
           result: {
             dossierSlug: "chomage-temporaire",
             dossierTitle: "Chômage temporaire",
-            availability: "disponible",
+            availability: "a_creer",
             rationale: "Votre contrat semble continuer, mais l’exécution du travail est suspendue temporairement. Le dossier à vérifier est donc le chômage temporaire.",
             nextStep: "Préparez une orientation vers le chômage temporaire et indiquez que l’utilisateur doit contacter son organisme de paiement le plus rapidement possible.",
             matchLevel: "recommande",
@@ -136,7 +141,7 @@ const wizardSituationsOnem2026: WizardSituationV2[] = [
           result: {
             dossierSlug: "chomage-temporaire",
             dossierTitle: "Chômage temporaire à vérifier",
-            availability: "disponible",
+            availability: "a_creer",
             rationale: "Ces situations peuvent relever du chômage temporaire lorsque le contrat n’est pas rompu. Le motif exact doit cependant être confirmé par l’employeur ou l’organisme de paiement.",
             nextStep: "Orienter vers la page chômage temporaire, avec un avertissement : l’employeur doit avoir déclaré correctement la situation.",
             matchLevel: "pertinent",
@@ -474,7 +479,7 @@ const wizardSituationsOnem2026: WizardSituationV2[] = [
           result: {
             dossierSlug: "chomage-temporaire",
             dossierTitle: "Chômage temporaire pendant un temps partiel",
-            availability: "disponible",
+            availability: "a_creer",
             rationale: "Même en temps partiel, une suspension temporaire du contrat par l’employeur peut relever du chômage temporaire.",
             nextStep: "Orienter vers chômage temporaire et prévoir des explications adaptées aux temps partiels.",
             matchLevel: "pertinent",
@@ -549,7 +554,7 @@ const wizardSituationsOnem2026: WizardSituationV2[] = [
           result: {
             dossierSlug: "chomage-temporaire",
             dossierTitle: "Chômage temporaire pour travailleur frontalier",
-            availability: "disponible",
+            availability: "a_creer",
             rationale: "Le chômage temporaire concerne aussi les travailleurs frontaliers lorsque leur contrat est temporairement suspendu. L’accès à l’eC3.2 peut demander une attention particulière.",
             nextStep: "Orienter vers chômage temporaire et prévoir une note spécifique pour l’accès numérique des frontaliers.",
             matchLevel: "pertinent",
@@ -874,7 +879,7 @@ const wizardSituationsOnem2026: WizardSituationV2[] = [
           result: {
             dossierSlug: "chomage-temporaire",
             dossierTitle: "Chômage temporaire à vérifier",
-            availability: "disponible",
+            availability: "a_creer",
             rationale: "Si l’entreprise ferme temporairement sans rupture du contrat, la situation peut relever du chômage temporaire plutôt que du chômage complet.",
             nextStep: "Orienter vers chômage temporaire et demander si l’employeur a annoncé une déclaration de chômage temporaire.",
             matchLevel: "a_verifier",
@@ -1087,6 +1092,7 @@ export function mapOnem2026ToWizardSituations(): WizardSituation[] {
 /// pour être édités plus tard dans l'admin. (slug → titre lisible.)
 export const ONEM_2026_STUB_BUNDLES: { slug: string; name: string }[] = [
   { slug: "allocations-insertion", name: "Allocations d’insertion (après études)" },
+  { slug: "chomage-temporaire", name: "Chômage temporaire" },
   { slug: "reforme-fin-droit-chomage", name: "Réforme 2026 — fin de droit / mesures transitoires" },
   { slug: "travail-temps-partiel-maintien-droits", name: "Travail à temps partiel avec maintien des droits" },
   { slug: "allocation-garantie-revenus", name: "Allocation de garantie de revenus (AGR)" },

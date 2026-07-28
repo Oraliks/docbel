@@ -8,19 +8,20 @@
 // l'enregistrer ici. Aucun impact sur les dossiers existants.
 
 import type { DossierDefinition } from "./types";
-import { chomageTemporaire } from "./chomage-temporaire";
 import { chomageComplet } from "./chomage-complet";
 import { chomageFrontalier } from "./chomage-frontalier";
 import { prepension } from "./prepension";
-import { allocationsInsertion } from "./allocations-insertion";
 import { changementSituationPersonnelle } from "./changement-situation-personnelle";
 
+// `allocations-insertion` et `chomage-temporaire` ont été retirés le 2026-07-28
+// (décision Oraliks) : ces deux dossiers avaient été construits avant que le
+// form runner du C1 ne serve de base. Ils seront refaits depuis zéro sur ce
+// modèle. Les PDF sources restent dans private/pdfs/ et l'orientation les
+// annonce en « à créer » — cf. ONEM_2026_STUB_BUNDLES.
 const REGISTRY: Record<string, DossierDefinition> = {
-  [chomageTemporaire.slug]: chomageTemporaire,
   [chomageComplet.slug]: chomageComplet,
   [chomageFrontalier.slug]: chomageFrontalier,
   [prepension.slug]: prepension,
-  [allocationsInsertion.slug]: allocationsInsertion,
   [changementSituationPersonnelle.slug]: changementSituationPersonnelle,
 };
 

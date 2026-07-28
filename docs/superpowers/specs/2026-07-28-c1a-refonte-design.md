@@ -109,15 +109,30 @@ la colonne « commune », imprimée sans widget.
 
 À traiter par `drawAt` :
 
+Trois champs AcroForm portent **plusieurs widgets partageant une seule valeur** :
+écrire dans l'un les remplit tous. Vérifié via `pypdf` (`/Kids`).
+
+| Champ | Enfants | Emplacements couverts |
+|---|---|---|
+| `voir 19` | 4 | une ligne de **Q18** + les trois revenus de **Q19** |
+| `Montant` | 3 | le montant de **Q6** (p1) + les deux montants de **Q11** (p2) |
+| `TVA` | 2 | le n° d'entreprise de **Q2** (p1) **et** celui de **Q16** (p2) |
+
+Le cas `TVA` est le plus grave : le n° d'entreprise saisi en Q16 s'imprime aussi
+dans la case de l'indépendant qu'on aide. Aucune réattribution ne le résout — les
+deux questions doivent passer en positionnel.
+
 | Question | Raison | Emplacement |
 |---|---|---|
-| Q19 — revenu par mois / par heure / par an | widget partagé à 4 enfants | p2 (358,559) · (485,561) · (348,490) |
-| Q11 — revenu annuel du mandat (2 montants) | **aucun widget** dans la zone | p2 lignes y=714 et y=702, colonne gauche |
+| Q19 — revenu par mois / par heure / par an | widget partagé (`voir 19`) | p2 (358,559) · (485,561) · (348,490) |
+| Q11 — deux montants du mandat | widget partagé (`Montant`) | p2 (67,707) · (67,695) |
+| Q6 — montant de l'aide | widget partagé (`Montant`) | p1 ligne y=315, partagée gauche/droite |
+| Q2 — n° d'entreprise de l'indépendant | widget partagé (`TVA`) | p1 (113,342) |
+| Q16 — n° d'entreprise de l'activité | widget partagé (`TVA`) | p2 (117,302) |
 | Q10 — quel mandat ou fonction | **aucun widget** dans la zone | p2 entre y=779 et y=743, colonne gauche |
-| Q16 — n° d'entreprise | cases-chiffres sans widget | p2 ligne y≈310, à partir de x≈126 |
 
-Vérifié : la zone Q10/Q11 (page 2, colonne gauche, y 690→800) ne contient
-**aucun widget AcroForm**.
+Vérifié : la zone de Q10 (page 2, colonne gauche, y 743→800) ne contient aucun
+widget. Celle de Q11, si — ce sont les 2ᵉ et 3ᵉ enfants de `Montant`.
 
 ### 3.4 Le test qui empêche la récidive
 
@@ -254,6 +269,11 @@ aujourd'hui, le C1 en a 14).
 
 Le nombre d'annexes reste **facultatif**, mais la case doit exister et être
 visible. L'affirmation sur l'honneur et la signature sont obligatoires.
+
+La case « Je joins …… annexe(s) » **a bien un widget** — `Liste déroulante44`, à
+(350, 171), juste au-dessus de la ligne imprimée. Le schéma l'avait classée
+« champ non identifié » et masquée, pendant que le champ de saisie restait
+virtuel : le nombre d'annexes ne s'imprimait jamais.
 
 ### 4.8 Le gabarit partagé — périmètre réel
 
@@ -398,16 +418,16 @@ de l'organisme de paiement.
 
 ## 9. Reste à établir à l'implémentation
 
-- Coordonnées `drawAt` exactes de Q10 (trois lignes) et Q11 (deux montants) —
-  la zone est vérifiée sans widget, les positions restent à mesurer ligne à ligne.
-- Répartition des deux montants de Q11 (« EUR … EUR » sur deux lignes) : deux
-  champs distincts ou un seul, à confirmer sur le formulaire imprimé.
-- Q6 imprime deux cases (« par mois » / « par an ») pour un seul champ
-  `montantAide` — à scinder, sur le modèle de Q19.
+- Coordonnées `drawAt` exactes des trois lignes de Q10 — la zone est vérifiée
+  sans widget, les positions restent à mesurer ligne à ligne.
+- Ce qui distingue les **deux montants de Q11** : deux widgets existent, donc
+  deux montants, mais le formulaire ne l'explicite pas à l'impression. Second
+  mandat, ou seconde composante du même revenu ?
+- Le **calage horizontal des deux montants de Q6** : la question n'a qu'une ligne
+  pointillée sous-titrée « par mois … par an ». Le partage gauche/droite retenu
+  est une lecture, à confirmer sur le PDF généré.
 - Le widget `1_3` est disputé entre Q10 et la première ligne « périodes » de
   Q18 ; il est actuellement attribué à Q18. À trancher une fois Q10 passée en
   `drawAt`.
 - `q4periodesTexte5` porte `pdfFieldName: "undefined"` — n'échappe au filtre
   junk que parce que celui-ci exige `undefined_\d+`. À réattribuer.
-- Les widgets `Montant` (3 enfants) et `TVA` (2 enfants) partagent leur valeur
-  entre plusieurs emplacements — vérifier que c'est voulu à l'impression.

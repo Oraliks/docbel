@@ -126,7 +126,12 @@ const ECARTS_ASSUMES: Record<string, string[]> = {
     "personne5Registre > personne5Explication",
   ],
   "c1-partenaire": [
-    "montant_mensuel_brut > partenaireRevenuRemplacement",
+    // `montant_mensuel_brut > partenaireRevenuRemplacement` figurait ici tant
+    // que la tolérance verticale valait 12 points. Les deux cases sont en
+    // réalité côte à côte sur une même ligne imprimée, à 13 points d'écart de
+    // rectangle : le passage de la tolérance à 16 les réconcilie. Le doute de
+    // fond sur ce widget reste consigné en commentaire dans le seed du
+    // c1-partenaire — ce n'est pas la géométrie qui peut le trancher.
     "partenaireAllocationsFamiliales > aujourd_hui",
     "partenaireRevenuProfessionnel > m_tier",
     "partenaireRevenuRemplacement > revenu_de_remplacement",

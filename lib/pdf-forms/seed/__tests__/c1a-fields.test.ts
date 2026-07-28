@@ -306,3 +306,25 @@ describe("C1A — arbre des renvois", () => {
     );
   });
 });
+
+describe("C1A — aides contextuelles", () => {
+  const fields = applyC1AImprovements([]);
+  const parCle = new Map(fields.map((f) => [f.id, f]));
+
+  it("Q9 rappelle les fonctions exemptées", () => {
+    const help = parCle.get("mandatPolitiqueOuJuge")?.help?.fr ?? "";
+    expect(help).toContain("conseiller communal");
+    expect(help).toContain("C.P.A.S.");
+  });
+
+  it("Q12 porte la consigne « répondez toujours oui si… »", () => {
+    const help = parCle.get("autreActiviteAccessoire")?.help?.fr ?? "";
+    expect(help).toContain("administrateur de société");
+  });
+
+  it("les questions longues ont un libellé court pour mobile", () => {
+    for (const id of ["mandatPolitiqueOuJuge", "autreActiviteAccessoire", "exerceraPendantChomage"]) {
+      expect(parCle.get(id)?.labelShort?.fr, `${id} doit avoir un labelShort`).toBeTruthy();
+    }
+  });
+});

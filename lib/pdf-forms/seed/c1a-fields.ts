@@ -344,8 +344,9 @@ export const C1A_FIELDS: PdfFormField[] = [
     label: {
       fr: "1. Aidez-vous un indépendant (par ex. dans son activité même, administration, comptabilité, permanence téléphonique…) ?",
     },
+    labelShort: { fr: "Aidez-vous un indépendant ?" },
     help: {
-      fr: "⚠ Si tu aides plus d'un indépendant, remplis un formulaire C1A séparé pour chaque indépendant.",
+      fr: "Par exemple dans son activité même, l'administration, la comptabilité, une permanence téléphonique… Si tu aides plus d'un indépendant, complète un formulaire C1A pour chacun.",
     },
     options: YN,
     section: SECTION_AIDE_INDEPENDANT,
@@ -474,8 +475,9 @@ export const C1A_FIELDS: PdfFormField[] = [
     type: "radio",
     required: false,
     label: { fr: "3. Aiderez-vous cet indépendant pendant votre chômage ?" },
+    labelShort: { fr: "Pendant votre chômage ?" },
     help: {
-      fr: "Réponds aussi « oui » si tu aides cet indépendant seulement durant des périodes de chômage temporaire (à partir du premier jour de chômage du mois concerné jusqu'à la fin du mois).",
+      fr: "Réponds également « oui » si, durant des périodes de chômage temporaire, tu aides cet indépendant (à partir du premier jour de chômage du mois concerné jusqu'à la fin du mois). Tu es chômeur temporaire si tu es toujours au service de ton employeur mais que temporairement tu ne travailles pas, par exemple en raison d'un manque de travail ou d'intempéries.",
     },
     options: YN,
     visibleIf: { fieldId: "aideIndependant", op: "equals", value: "oui" },
@@ -625,8 +627,9 @@ export const C1A_FIELDS: PdfFormField[] = [
     label: {
       fr: "9. Exercez-vous un mandat politique ou une fonction de juge ou de conseiller ?",
     },
+    labelShort: { fr: "Mandat politique ou fonction de juge ?" },
     help: {
-      fr: "Si tu es conseiller communal, conseiller provincial, membre d'un C.P.A.S., juge social, juge consulaire ou conseiller social, réponds « non » (ce cas ne demande pas de suite ici).",
+      fr: "Si tu es conseiller communal, conseiller provincial, membre d'un C.P.A.S., juge social, juge consulaire ou conseiller social, réponds « non ».",
     },
     options: YN,
     section: SECTION_ACTIVITES,
@@ -695,8 +698,9 @@ export const C1A_FIELDS: PdfFormField[] = [
     type: "radio",
     required: true,
     label: { fr: "12. Exercez-vous une autre activité à titre accessoire ?" },
+    labelShort: { fr: "Autre activité accessoire ?" },
     help: {
-      fr: "Réponds toujours « oui » si tu es inscrit comme indépendant à titre accessoire ou si tu es administrateur de société. Si tu exerces plusieurs activités accessoires, remplis un formulaire C1A pour chacune.",
+      fr: "Réponds toujours « oui » si tu es inscrit comme indépendant à titre accessoire ou si tu es administrateur de société. Complète un formulaire C1A pour chaque activité que tu exerces.",
     },
     options: YN,
     section: SECTION_ACTIVITES,
@@ -871,8 +875,9 @@ export const C1A_FIELDS: PdfFormField[] = [
     type: "radio",
     required: false,
     label: { fr: "17. Exercerez-vous cette activité pendant votre chômage ?" },
+    labelShort: { fr: "Pendant votre chômage ?" },
     help: {
-      fr: "Réponds aussi « oui » si tu exerces cette activité seulement pendant des périodes de chômage temporaire auprès de ton employeur (à partir du premier jour de chômage du mois concerné jusqu'à la fin du mois).",
+      fr: "Réponds également « oui » si tu exerceras cette activité pendant des périodes de chômage temporaire auprès de ton employeur (à partir du premier jour de chômage du mois concerné jusqu'à la fin du mois). Tu es chômeur temporaire si tu es toujours au service de ton employeur mais que temporairement tu ne travailles pas, par exemple en raison d'un manque de travail ou d'intempéries.",
     },
     options: YN,
     visibleIf: { fieldId: "autreActiviteAccessoire", op: "equals", value: "oui" },

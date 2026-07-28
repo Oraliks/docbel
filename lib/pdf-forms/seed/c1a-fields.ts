@@ -353,14 +353,30 @@ export const C1A_FIELDS: PdfFormField[] = [
     section: SECTION_AIDE_INDEPENDANT,
     order: 1,
   },
-  // Le PDF imprime un champ "numéro d'entreprise" à côté du nom (voir texte,
-  // ligne "numéro d'entreprise :"), mais aucun widget dédié ne lui correspond
-  // dans le dump AcroForm fourni.
-  // A VALIDER Oraliks : le numéro d'entreprise de l'indépendant aidé (Q2)
-  // n'a pas de widget PDF identifiable dans le dump — champ volontairement
-  // omis du côté "stampable" pour l'instant (pas de pdfFieldName connu).
   {
-    id: "adresseActiviteIndependanteLabel",
+    // Le n° d'entreprise de l'indépendant aidé n'avait aucun champ : la case
+    // (p1, y=342, sous son nom) est le premier widget de `TVA`, capté par Q16.
+    // `TVA` couvrant les DEUX cases avec une seule valeur, écriture
+    // positionnelle ici aussi — cf. le commentaire de `numeroEntreprise`.
+    id: "independantNumeroEntreprise",
+    pdfFieldName: "",
+    drawAt: { page: 0, x: 115, y: 338, size: 9, maxWidth: 134 },
+    type: "bce",
+    required: false,
+    label: { fr: "Numéro d'entreprise de l'indépendant que tu aides" },
+    help: {
+      fr: "Numéro à la Banque-Carrefour des Entreprises, au format 0123.456.789.",
+    },
+    visibleIf: { fieldId: "aideIndependant", op: "equals", value: "oui" },
+    section: SECTION_AIDE_INDEPENDANT,
+    order: 2,
+  },
+  {
+    // `Adresse de lactivité indépendante` est posé sur la ligne « rue numéro »
+    // (widget y=308, ligne y=315) : c'est une case de saisie, pas un libellé —
+    // d'où le renommage de l'identifiant. Ancien id : `adresseActiviteIndependanteLabel`
+    // (cf. LEGACY_C1A_FIELD_IDS, même widget).
+    id: "independantAdresseRueNumero",
     pdfFieldName: "Adresse de lactivité indépendante",
     type: "text",
     required: false,
@@ -368,17 +384,20 @@ export const C1A_FIELDS: PdfFormField[] = [
     help: { fr: "Rue et numéro où l'indépendant exerce son activité." },
     visibleIf: { fieldId: "aideIndependant", op: "equals", value: "oui" },
     section: SECTION_ADRESSE,
-    order: 2,
+    order: 3,
   },
   {
-    id: "independantAdresseRue",
+    // `rue_2` est la ligne SUIVANTE (y=284), celle du code postal et de la
+    // commune — pas une suite de la rue. Ancien id : `independantAdresseRue`
+    // (cf. LEGACY_C1A_FIELD_IDS, même widget).
+    id: "independantAdresseCodePostalCommune",
     pdfFieldName: "rue_2",
     type: "text",
     required: false,
-    label: { fr: "Rue et numéro (suite, si besoin)" },
+    label: { fr: "Code postal et commune de l'activité indépendante" },
     visibleIf: { fieldId: "aideIndependant", op: "equals", value: "oui" },
     section: SECTION_ADRESSE,
-    order: 3,
+    order: 4,
   },
   {
     id: "natureActiviteIndependant1",
@@ -391,7 +410,7 @@ export const C1A_FIELDS: PdfFormField[] = [
     },
     visibleIf: { fieldId: "aideIndependant", op: "equals", value: "oui" },
     section: SECTION_AIDE_INDEPENDANT,
-    order: 4,
+    order: 5,
   },
   {
     id: "natureActiviteIndependant2",
@@ -401,7 +420,7 @@ export const C1A_FIELDS: PdfFormField[] = [
     label: { fr: "Nature de l'activité de l'indépendant [2]" },
     visibleIf: { fieldId: "aideIndependant", op: "equals", value: "oui" },
     section: SECTION_AIDE_INDEPENDANT,
-    order: 5,
+    order: 6,
   },
   {
     id: "natureActiviteIndependant3",
@@ -411,7 +430,7 @@ export const C1A_FIELDS: PdfFormField[] = [
     label: { fr: "Nature de l'activité de l'indépendant [3]" },
     visibleIf: { fieldId: "aideIndependant", op: "equals", value: "oui" },
     section: SECTION_AIDE_INDEPENDANT,
-    order: 6,
+    order: 7,
   },
   {
     id: "natureActiviteIndependant4",
@@ -421,7 +440,7 @@ export const C1A_FIELDS: PdfFormField[] = [
     label: { fr: "Nature de l'activité de l'indépendant [4]" },
     visibleIf: { fieldId: "aideIndependant", op: "equals", value: "oui" },
     section: SECTION_AIDE_INDEPENDANT,
-    order: 7,
+    order: 8,
   },
   {
     id: "natureActiviteIndependant5",
@@ -431,7 +450,7 @@ export const C1A_FIELDS: PdfFormField[] = [
     label: { fr: "Nature de l'activité de l'indépendant [5]" },
     visibleIf: { fieldId: "aideIndependant", op: "equals", value: "oui" },
     section: SECTION_AIDE_INDEPENDANT,
-    order: 8,
+    order: 9,
   },
 
   // ====================================================================
@@ -449,7 +468,11 @@ export const C1A_FIELDS: PdfFormField[] = [
     options: YN,
     visibleIf: { fieldId: "aideIndependant", op: "equals", value: "oui" },
     section: SECTION_AIDE_INDEPENDANT,
-    order: 9,
+    // 9.5 et non 9 : le bloc Q2 ci-dessus a gagné un champ (independantNumeroEntreprise),
+    // ce qui pousse natureActiviteIndependant5 à order 9. Fractionnaire pour
+    // rester strictement après lui sans renuméroter toute la suite du fichier
+    // (même convention que `numero`/`commune` en tête de fichier).
+    order: 9.5,
   },
 
   // ====================================================================
@@ -646,8 +669,15 @@ export const C1A_FIELDS: PdfFormField[] = [
   // Q14 — DONNÉES CONCERNANT VOTRE EMPLOYEUR
   // ====================================================================
   {
+    // Le widget porte le nom du TITRE imprimé au-dessus de lui ("14. Données
+    // concernant votre employeur"), mais il est posé sur la 1ʳᵉ ligne de
+    // saisie — celle légendée « nom » juste en dessous (widget y=500, ligne
+    // imprimée y=507, légende y=498). C'est bien la case du NOM.
+    //
+    // Un commentaire antérieur le tenait pour un intitulé de zone et le
+    // laissait non référencé : la ligne du nom partait donc vide à l'ONEM.
     id: "employeurNom",
-    pdfFieldName: "Nom employeur",
+    pdfFieldName: "14 Données concernant votre employeur",
     type: "text",
     required: false,
     label: { fr: "14. Nom de votre employeur" },
@@ -655,14 +685,11 @@ export const C1A_FIELDS: PdfFormField[] = [
     section: SECTION_EMPLOYEUR,
     order: 63,
   },
-  // Le widget "14 Données concernant votre employeur" (ordre 62 du dump) est
-  // un intitulé de zone/groupe (juste avant le triplet oui/non Q12/Q13 et le
-  // vrai champ de saisie "Nom employeur", ordre 122, pré-tagué
-  // section:"identite" dans le dump) — pas un champ de saisie. Volontairement
-  // non référencé pour ne pas écraser le mauvais widget au remplissage.
   {
+    // Même décalage : le widget nommé « Nom employeur » est posé sur la 2ᵉ
+    // ligne, légendée « adresse » (widget y=477, ligne imprimée y=484).
     id: "employeurAdresse",
-    pdfFieldName: "rue_3",
+    pdfFieldName: "Nom employeur",
     type: "text",
     required: false,
     label: { fr: "Adresse de votre employeur" },
@@ -685,8 +712,13 @@ export const C1A_FIELDS: PdfFormField[] = [
     order: 65,
   },
   {
-    id: "adresseActiviteNumero",
-    pdfFieldName: "undefined_2",
+    // `rue_3` est la 2ᵉ ligne de Q15, légendée « code postal commune »
+    // (widget y=398, ligne imprimée y=405). Elle était affectée à l'adresse de
+    // l'employeur (Q14), et ce champ-ci écrivait dans `undefined_2`, qui est en
+    // réalité la 1ʳᵉ ligne de description d'activité de Q16. Ancien id :
+    // `adresseActiviteNumero` (cf. LEGACY_C1A_FIELD_IDS, widget aussi corrigé).
+    id: "adresseActiviteCodePostalCommune",
+    pdfFieldName: "rue_3",
     type: "text",
     required: false,
     label: { fr: "Code postal et commune (activité accessoire)" },
@@ -724,18 +756,31 @@ export const C1A_FIELDS: PdfFormField[] = [
     order: 68,
   },
   {
+    // Le champ `TVA` porte DEUX widgets : la case n° d'entreprise de Q2 (p1,
+    // y=342, celle de l'indépendant aidé) et celle de Q16 (p2, y=302, celle de
+    // l'activité). Ils partagent une seule valeur — écrire dans l'un remplit
+    // l'autre. Ce champ écrivait donc le n° de l'activité DANS LES DEUX cases,
+    // y compris celle de l'indépendant qu'on aide.
+    //
+    // Aucune réattribution ne peut résoudre ça : les deux questions passent en
+    // écriture positionnelle et `TVA` reste non revendiqué.
     id: "numeroEntreprise",
-    pdfFieldName: "TVA",
+    pdfFieldName: "",
+    drawAt: { page: 1, x: 119, y: 298, size: 9, maxWidth: 155 },
     type: "bce",
     required: false,
     label: { fr: "Numéro d'entreprise (BCE)" },
     visibleIf: { fieldId: "disposeNumeroEntreprise", op: "equals", value: "oui" },
-    section: SECTION_EMPLOYEUR,
+    section: SECTION_ACTIVITES,
     order: 69,
   },
   {
+    // « Je décris mon activité » compte TROIS lignes. La première est le widget
+    // `undefined_2` (y=287), posé sur la ligne qui prolonge le libellé ; les
+    // deux suivantes sont `Je décris mon activité 1` et `2`. Les descriptions
+    // étaient décalées d'un cran et la 1ʳᵉ ligne servait au code postal de Q15.
     id: "descriptionActivite1",
-    pdfFieldName: "Je décris mon activité 1",
+    pdfFieldName: "undefined_2",
     type: "text",
     required: false,
     label: { fr: "Je décris mon activité" },
@@ -745,13 +790,23 @@ export const C1A_FIELDS: PdfFormField[] = [
   },
   {
     id: "descriptionActivite2",
-    pdfFieldName: "Je décris mon activité 2",
+    pdfFieldName: "Je décris mon activité 1",
     type: "text",
     required: false,
     label: { fr: "Je décris mon activité (suite)" },
     visibleIf: { fieldId: "autreActiviteAccessoire", op: "equals", value: "oui" },
     section: SECTION_ACTIVITES,
     order: 71,
+  },
+  {
+    id: "descriptionActivite3",
+    pdfFieldName: "Je décris mon activité 2",
+    type: "text",
+    required: false,
+    label: { fr: "Je décris mon activité (fin)" },
+    visibleIf: { fieldId: "autreActiviteAccessoire", op: "equals", value: "oui" },
+    section: SECTION_ACTIVITES,
+    order: 72,
   },
 
   // ====================================================================
@@ -769,7 +824,11 @@ export const C1A_FIELDS: PdfFormField[] = [
     options: YN,
     visibleIf: { fieldId: "autreActiviteAccessoire", op: "equals", value: "oui" },
     section: SECTION_ACTIVITES,
-    order: 72,
+    // 72.5 et non 72 : le bloc Q16 ci-dessus a gagné un champ
+    // (descriptionActivite3), ce qui pousse sa dernière ligne à order 72.
+    // Fractionnaire pour rester strictement après elle sans renuméroter toute
+    // la grille horaire Q18 qui suit (base 73, cf. plus bas).
+    order: 72.5,
   },
 
   // ====================================================================
@@ -1073,6 +1132,14 @@ const LEGACY_C1A_FIELD_IDS = new Set<string>([
   // qui dit ici « rue ». Le citoyen se voyait donc poser une seconde question
   // « rue » qui attendait en réalité un code postal.
   "code_postal_et_commune",
+  // Réalignement géométrique de Q2/Q15 (2026-07-28) : trois champs renommés
+  // pour que l'id reflète enfin la vraie case (cf. commentaires sur les
+  // nouveaux champs). La couverture par pdfFieldName suffirait déjà à les
+  // écarter dans le cas nominal, mais les lister ici les écarte aussi si leur
+  // pdfFieldName stocké en base venait à différer (état antérieur imprévu).
+  "adresseActiviteIndependanteLabel", // -> independantAdresseRueNumero (même widget)
+  "independantAdresseRue", // -> independantAdresseCodePostalCommune (même widget)
+  "adresseActiviteNumero", // -> adresseActiviteCodePostalCommune (widget aussi corrigé : undefined_2 -> rue_3)
 ]);
 
 export function applyC1AImprovements(fields: PdfFormField[]): PdfFormField[] {

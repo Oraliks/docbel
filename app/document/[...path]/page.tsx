@@ -30,6 +30,7 @@ import {
   type CanonicalMap,
   type PrefillMap,
 } from "@/lib/pdf-forms/canonical/extract";
+import { applyDossierInheritance } from "@/lib/pdf-forms/dossier-inheritance";
 import { loadDossierState } from "@/lib/bundles/completion";
 import { buildDemarcheRailModel } from "@/lib/bundles/rail-model";
 import type { DemarcheRailData } from "@/components/docbel/demarche-rail";
@@ -374,6 +375,17 @@ export default async function PdfFormPage({
       ? { ...profilePrefill, ...bundlePrefill }
       : undefined;
 
+  // Champs hérités du dossier (identité et adresse d'un compagnon, reprises du
+  // C1) : on ne les pose pas une seconde fois à l'écran QUAND le dossier les a
+  // vraiment fournis. Décidé ici, jamais en base — hors dossier ce même
+  // formulaire garde son étape d'identité, faute de quoi le PDF officiel
+  // partirait sans nom (cf. `dossier-inheritance.ts`). `bundlePrefill` et non
+  // `mergedPrefill` : le profil, lui, ne suffit pas à masquer.
+  const runnerForm = {
+    ...form,
+    fields: applyDossierInheritance(form.fields, bundlePrefill, draftValues),
+  };
+
   // Si le PDF est ouvert dans le contexte d'un dossier codé, on alimente
   // l'illustration animée avec les "types" déclarés par le dossier (ex. les
   // 7 motifs de chômage temporaire). Sinon : illustration sans cycle.
@@ -387,7 +399,7 @@ export default async function PdfFormPage({
   return (
     <div className="flex w-full flex-col gap-4">
       <DocumentPageLayout
-        form={form}
+        form={runnerForm}
         bundlePrefill={mergedPrefill}
         bundleRunId={validBundleRunId}
         bundleSlug={bundleSlug}

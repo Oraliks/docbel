@@ -21,11 +21,12 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { PdfField } from "./pdf-field";
 import { buildValidator, countRequirements, findFirstInvalidStep, isFieldVisible } from "@/lib/pdf-forms/validation";
-import { Locale, FieldValue, FormPayload, PdfFormField, PdfFormTrigger, loc, isFullNameValue } from "@/lib/pdf-forms/types";
+import { Locale, FieldValue, FormPayload, PdfFormField, PdfFormTrigger, loc } from "@/lib/pdf-forms/types";
 import type { PrefillMap } from "@/lib/pdf-forms/canonical/extract";
 import { todayISO } from "@/lib/pdf-forms/system-values";
 import { resolveSignerName } from "@/lib/pdf-forms/signature";
 import { isAutoField, isCreationDateField, isSignatureField } from "@/lib/pdf-forms/auto-fields";
+import { buildInitialValues, withSuggestedBic } from "@/lib/pdf-forms/initial-values";
 import { FIELD_DERIVATIONS, applyFieldDerivations } from "@/lib/pdf-forms/field-derivations";
 import { resolveOnSelectSet } from "@/lib/pdf-forms/field-side-effects";
 import { findListMatchErrors } from "@/lib/pdf-forms/list-match";
@@ -196,60 +197,12 @@ function InvalidFieldsSummary({
   );
 }
 
-/// Aligne le BIC sur l'IBAN quand la table locale reconnaît la banque.
-///
-/// Le BIC déduit ÉCRASE une valeur existante (Oraliks 2026-07-26). Avant, un
-/// BIC non vide bloquait la déduction : un brouillon restauré avec un IBAN
-/// reconnu (BIC déduit « X ») et un BIC « Y » saisi à une session précédente
-/// affichait « X » VERROUILLÉ à l'écran — le panneau de paiement rend
-/// `detectedBic`, pas la valeur du state — pendant que le PDF recevait « Y ».
-/// Le citoyen signait donc un document différent de ce qu'il venait de relire.
-/// Puisque le champ est verrouillé dès qu'un BIC est déduit, la déduction est
-/// la valeur de référence : une seule source de vérité, le state.
-function withSuggestedBic(values: FormPayload, fields: PublicField[]): FormPayload {
-  const ibanField = fields.find((field) => field.canonicalKey === "banque.iban");
-  const bicField = fields.find((field) => field.canonicalKey === "banque.bic");
-  const ibanValue = ibanField ? values[ibanField.id] : undefined;
-  const currentBic = bicField ? values[bicField.id] : undefined;
-  if (!ibanField || !bicField || typeof ibanValue !== "string") {
-    return values;
-  }
-
-  const suggestedBic = bicFromForeignIban(ibanValue);
-  return suggestedBic && currentBic !== suggestedBic
-    ? { ...values, [bicField.id]: suggestedBic }
-    : values;
-}
-
+/// `withSuggestedBic` et l'état de départ du runner vivent désormais dans
+/// `lib/pdf-forms/initial-values.ts` : ils sont purs, et la page dossier a
+/// besoin de la MÊME fonction pour savoir quels champs hérités elle peut
+/// masquer sans risquer une case blanche (cf. `dossier-inheritance.ts`).
 function defaultValues(form: PublicForm, bundlePrefill?: PrefillMap): FormPayload {
-  const v: FormPayload = {};
-  for (const f of form.fields) {
-    const pv = bundlePrefill?.[f.id];
-    // Cas fullname : accepte un objet composite `{ first, last }` (produit
-    // par la voie canonical) OU une chaîne (fallback prefillFrom) qu'on
-    // dispatche naïvement en `last` (compat historique — les fullname
-    // prefill profil arrivaient déjà comme `lastName`).
-    if (f.type === "fullname" && pv !== undefined) {
-      if (isFullNameValue(pv)) {
-        v[f.id] = pv;
-      } else if (typeof pv === "string" && pv !== "") {
-        v[f.id] = { first: "", last: pv };
-      } else {
-        v[f.id] = { first: "", last: "" };
-      }
-    } else if (typeof pv === "string" && pv !== "") {
-      v[f.id] = pv;
-    } else if (Array.isArray(pv)) {
-      v[f.id] = pv as FieldValue;
-    } else if (isCreationDateField(f)) v[f.id] = todayISO();
-    else if (f.defaultValue !== undefined) v[f.id] = f.defaultValue as FieldValue;
-    else if (f.type === "checkbox") v[f.id] = false;
-    else if (f.type === "fullname") v[f.id] = { first: "", last: "" };
-    else if (isSignatureField(f)) v[f.id] = "";
-  }
-
-  // Un IBAN déjà prérempli (dossier/reprise) ne passe pas par `setValue`.
-  return withSuggestedBic(v, form.fields);
+  return buildInitialValues(form.fields, bundlePrefill);
 }
 
 type Step =

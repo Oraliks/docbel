@@ -36,6 +36,11 @@ export interface PublicField {
   stepPriority?: PdfFormField["stepPriority"];
   stepGroup?: PdfFormField["stepGroup"];
   autoAnswered?: PdfFormField["autoAnswered"];
+  /// Marqueur de schéma (pas une donnée du citoyen) : ce champ se reprend d'un
+  /// autre document du dossier. Sert à la page document, qui le convertit en
+  /// `autoAnswered` quand — et seulement quand — le dossier fournit vraiment
+  /// la valeur (cf. `dossier-inheritance.ts`).
+  inheritedFromDossier?: PdfFormField["inheritedFromDossier"];
   derivedFrom?: PdfFormField["derivedFrom"];
   onSelectSet?: PdfFormField["onSelectSet"];
   streetAutocomplete?: PdfFormField["streetAutocomplete"];
@@ -89,6 +94,7 @@ export function toPublicField(f: PdfFormField): PublicField {
     stepPriority: f.stepPriority,
     stepGroup: f.stepGroup,
     autoAnswered: f.autoAnswered,
+    inheritedFromDossier: f.inheritedFromDossier,
     derivedFrom: f.derivedFrom,
     onSelectSet: f.onSelectSet,
     streetAutocomplete: f.streetAutocomplete,

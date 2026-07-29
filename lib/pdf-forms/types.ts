@@ -264,6 +264,22 @@ export interface PdfFormField {
   /// reste réel et requis, mais l'utilisateur ne choisit plus parmi 4
   /// options — il choisit parmi les 5 chips concrets qui pilotent sa valeur.
   autoAnswered?: boolean;
+  /// Champ dont la valeur est DÉJÀ DONNÉE par un autre document du dossier
+  /// (identité et adresse d'un compagnon, reprises du C1 : « si elle change
+  /// sur le C1 elle changera sur le C1A aussi »). Le champ devient
+  /// `autoAnswered` — donc invisible — UNIQUEMENT quand le dossier fournit
+  /// réellement une valeur non vide ; sinon il reste posé normalement à
+  /// l'écran. La bascule est décidée à l'ouverture du formulaire, là où le
+  /// pré-remplissage est calculé (cf. `dossier-inheritance.ts`), et jamais
+  /// écrite en base : le schéma stocké garde le champ `required`, si bien
+  /// qu'une soumission sans identité est REFUSÉE côté serveur au lieu de
+  /// produire un document officiel anonyme.
+  ///
+  /// DISTINCT de `autoAnswered`, qui est inconditionnel : marquer directement
+  /// l'identité `autoAnswered` en base la masquerait AUSSI hors dossier —
+  /// or les compagnons ont chacun une URL publique (`/document/onem/c1a`) où
+  /// aucun C1 n'a été rempli, et la case partirait blanche.
+  inheritedFromDossier?: boolean;
   /// Champ dont la valeur se RECALCULE EN DIRECT à partir d'un autre champ du
   /// même formulaire (ex. date de naissance déduite du NISS). Contrairement à
   /// `autoAnswered`, le champ RESTE visible et normalement éditable — il ne se

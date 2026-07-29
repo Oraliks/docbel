@@ -522,17 +522,23 @@ export const C1A_FIELDS: PdfFormField[] = [
       pendantPeriodes: "pendant les périodes suivantes de lannée",
       irregulierement: "irrégulièrement à savoir",
     },
-    // 9 lignes de texte libre trouvées entre la grille Q4 et "Décrivez
-    // l'aide" (ordre 36-44 du dump : "1","2","3","4","undefined","1_2",
-    // "2_2","3_2","4_2"). Répartition entre "périodes" et "irrégulièrement"
-    // non déductible avec certitude du texte (le PDF ne numérote pas ces
-    // lignes différemment) — on répartit 5 lignes / 4 lignes dans l'ordre
-    // d'apparition.
-    // A VALIDER Oraliks : vérifier sur le PDF réel si la coupure entre les
-    // lignes "pendant les périodes" et "irrégulièrement" tombe bien après
-    // la 5e ligne ("undefined") plutôt qu'ailleurs.
-    periodesTextFields: ["1", "2", "3", "4", "undefined"],
-    irregulierementTextFields: ["1_2", "2_2", "3_2", "4_2"],
+    // Géométrie réelle mesurée sur private/pdfs/C1A_FR.pdf (page 1, colonne
+    // de droite, widgets bruts) :
+    //   y=633 case "pendant les périodes suivantes de l'année"
+    //   y=621 "1"   y=607 "2"   y=594 "3"   y=581 "4"        (4 lignes)
+    //   y=568 case "irrégulièrement à savoir"   y=568 "undefined" (x=432)
+    //   y=555 "1_2" y=542 "2_2" y=529 "3_2" y=516 "4_2"      (4 lignes)
+    // Le widget "undefined" est à la MÊME hauteur que la case
+    // "irrégulièrement" : c'est la fin de la ligne imprimée
+    // « irrégulièrement, à savoir : ...... », pas une 5e ligne de
+    // "périodes". L'ancienne répartition (5 lignes périodes / 4 lignes
+    // irrégulier) décalait donc tout le bloc "irrégulier" d'une ligne :
+    // qui cochait "irrégulièrement" et décrivait son rythme voyait la ligne
+    // imprimée partir blanche, et qui remplissait les 5 lignes "périodes"
+    // déclarait un rythme irrégulier jamais coché — une déclaration ONEM
+    // fausse dans les deux cas.
+    periodesTextFields: ["1", "2", "3", "4"],
+    irregulierementTextFields: ["undefined", "1_2", "2_2", "3_2", "4_2"],
   }),
 
   // ====================================================================
@@ -947,6 +953,17 @@ export const C1A_FIELDS: PdfFormField[] = [
     // `revenuAnnuelMandat`/`revenuAnnuelMandat2` (Montant, mêmes lignes
     // pointillées « EUR » de la page 2) : le texte s'imprime ainsi ~2 pt sous
     // les pointillés imprimés, pas au-dessus.
+    //
+    // Vérification du défaut du Commit 1 ci-dessus (décalage périodes /
+    // irrégulier d'une ligne sur Q4) : Q18 n'a PAS le même défaut. Géométrie
+    // mesurée (page 2, colonne de droite) : case "pendant les périodes..."
+    // à y=766, puis 1_3/2_3/3_3/4_3 à y=753/740/727/714 (4 lignes) ; case
+    // "irrégulièrement à savoir_2" à y=699 SEULE sur sa ligne — aucun widget
+    // texte n'y est superposé (contrairement au "undefined" de Q4 à côté de
+    // sa case) — puis 1_4/2_4/3_4 à y=686/673/660 (3 lignes) ; le widget
+    // suivant est "voir 19" (y=647), déjà rattaché à Q19 plus bas. Le PDF ne
+    // fournit donc ici aucune ligne partagée à réattribuer : la répartition
+    // 4 lignes périodes / 3 lignes irrégulier ci-dessous est déjà correcte.
     periodesTextFields: [
       { pdfFieldName: "", drawAt: { page: 1, x: 337, y: 749, size: 9, maxWidth: 218 } },
       "2_3", "3_3", "4_3",
@@ -1270,6 +1287,15 @@ const LEGACY_C1A_FIELD_IDS = new Set<string>([
   // "champ non identifié") doit être purgé s'il est déjà en base, sinon il
   // survivrait à côté du nouveau champ qui porte le même pdfFieldName.
   "listeDeroulante44",
+  // Q4 (2026-07-29) : correctif de la coupure périodes/irrégulier — le
+  // widget "undefined" appartient désormais à `q4irregulierementTexte1` (il
+  // reste couvert, donc la couverture par pdfFieldName suffirait déjà à
+  // écarter l'ancien id), mais `q4periodesTexte5` disparaît du seed
+  // (périodesTextFields n'a plus que 4 entrées) : listé ici par prudence,
+  // même raison que les trois entrées Q2/Q15 ci-dessus — sans cette entrée,
+  // un brouillon déjà en base garderait une 5e case "Période 5" fantôme,
+  // qui n'écrirait plus rien de cohérent nulle part.
+  "q4periodesTexte5",
 ]);
 
 /// Champs qui suivent la même condition que la question qui les porte : les

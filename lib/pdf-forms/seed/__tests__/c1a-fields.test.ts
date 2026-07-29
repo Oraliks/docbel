@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { C1A_FIELDS, applyC1AImprovements } from "../c1a-fields";
 import { compilerRoutage } from "../../routing";
 import { C1A_ROUTAGE, C1A_DEPART } from "../c1a-routing";
+import type { PdfFormField } from "../../types";
 
 describe("C1A_FIELDS", () => {
   it("couvre les questions clés avec la bonne section", () => {
@@ -409,5 +410,69 @@ describe("C1A — grille Q18, 1re ligne « pendant les périodes » (widget 1_3 
     expect(parCle.get("q18periodesTexte1")?.visibleIf).toEqual(
       parCle.get("q18periodesTexte2")?.visibleIf,
     );
+  });
+});
+
+describe("C1A — Commit 1 : coupure périodes / irrégulier de la grille horaire", () => {
+  // Géométrie mesurée sur private/pdfs/C1A_FR.pdf : le widget "undefined"
+  // (page 1, y=568) est sur la MÊME ligne que la case "irrégulièrement à
+  // savoir" (y=568) — pas une 5e ligne de "périodes". Retour Oraliks
+  // 2026-07-29 : qui cochait "irrégulièrement" voyait sa ligne imprimée
+  // partir blanche ; qui remplissait les 5 lignes "périodes" déclarait un
+  // rythme irrégulier jamais coché.
+  const fields = applyC1AImprovements([]);
+  const parCle = new Map(fields.map((f) => [f.id, f]));
+
+  it("Q4 : 4 lignes « périodes » (1 à 4), plus de 5e ligne fantôme", () => {
+    const ids = ["q4periodesTexte1", "q4periodesTexte2", "q4periodesTexte3", "q4periodesTexte4"];
+    for (const id of ids) expect(parCle.get(id), id).toBeDefined();
+    expect(parCle.has("q4periodesTexte5")).toBe(false);
+    expect(ids.map((id) => parCle.get(id)?.pdfFieldName)).toEqual(["1", "2", "3", "4"]);
+  });
+
+  it("Q4 : 5 lignes « irrégulièrement », la 1re est le widget « undefined » (fin de ligne imprimée)", () => {
+    const ids = [
+      "q4irregulierementTexte1", "q4irregulierementTexte2", "q4irregulierementTexte3",
+      "q4irregulierementTexte4", "q4irregulierementTexte5",
+    ];
+    for (const id of ids) expect(parCle.get(id), id).toBeDefined();
+    expect(ids.map((id) => parCle.get(id)?.pdfFieldName)).toEqual([
+      "undefined", "1_2", "2_2", "3_2", "4_2",
+    ]);
+    expect(parCle.get("q4irregulierementTexte1")?.label?.fr).toBe("Précise à quel rythme");
+  });
+
+  it("un ancien champ q4periodesTexte5 (widget « undefined ») déjà en base ne survit pas au merge", () => {
+    // Simule un schéma de brouillon persisté AVANT ce correctif : le widget
+    // "undefined" y était revendiqué par q4periodesTexte5.
+    const ancien: PdfFormField = {
+      id: "q4periodesTexte5",
+      pdfFieldName: "undefined",
+      type: "text",
+      required: false,
+      label: { fr: "Période 5" },
+    };
+    const merged = applyC1AImprovements([ancien]);
+    expect(merged.map((f) => f.id)).not.toContain("q4periodesTexte5");
+    // Le widget "undefined" n'est plus revendiqué qu'une fois, par le champ désormais correct.
+    const revendications = merged.filter((f) => f.pdfFieldName === "undefined");
+    expect(revendications.map((f) => f.id)).toEqual(["q4irregulierementTexte1"]);
+  });
+
+  it("Q18 : vérifié, ne présente PAS le même défaut (aucun widget partagé sur la ligne « irrégulier »)", () => {
+    // Géométrie mesurée (page 2) : case "irrégulièrement à savoir_2" à
+    // y=699, seule sur sa ligne — 1_4 suit à y=686, sans rien entre les
+    // deux. La répartition 4 lignes périodes / 3 lignes irrégulier est
+    // donc déjà correcte ; verrouillé ici pour ne pas régresser vers le
+    // défaut de Q4.
+    const periodes = ["q18periodesTexte1", "q18periodesTexte2", "q18periodesTexte3", "q18periodesTexte4"];
+    for (const id of periodes) expect(parCle.get(id), id).toBeDefined();
+    expect(parCle.has("q18periodesTexte5")).toBe(false);
+    expect(periodes.slice(1).map((id) => parCle.get(id)?.pdfFieldName)).toEqual(["2_3", "3_3", "4_3"]);
+
+    const irreguliers = ["q18irregulierementTexte1", "q18irregulierementTexte2", "q18irregulierementTexte3"];
+    for (const id of irreguliers) expect(parCle.get(id), id).toBeDefined();
+    expect(parCle.has("q18irregulierementTexte4")).toBe(false);
+    expect(irreguliers.map((id) => parCle.get(id)?.pdfFieldName)).toEqual(["1_4", "2_4", "3_4"]);
   });
 });

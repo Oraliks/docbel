@@ -1417,13 +1417,155 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
   );
 }
 
+/// Une LIGNE du tableau jour × créneau : la case "jour" (champ SANS `col`,
+/// cf. `scheduleGrid` dans types.ts) et les cases de créneau par identifiant
+/// de colonne. `dayField` est optionnel dans le TYPE mais toujours présent en
+/// pratique dans ce schéma (Q4/Q18/Q22 posent tous une case "jour" par ligne) ;
+/// le repli `rowKey` brut ci-dessous (ScheduleGridTable) couvre le cas où un
+/// futur document omettrait cette case, sans jamais planter le rendu.
+interface ScheduleGridRow {
+  key: string;
+  dayField?: PublicField;
+  cells: Map<string, PublicField>;
+}
+
+/// Reconstruit la structure ligne × colonne à partir de champs qui portent
+/// TOUS `scheduleGrid` (filtré par l'appelant, cf. `FieldsCluster`). Ordre des
+/// LIGNES = ordre de PREMIÈRE apparition parmi les champs — déjà l'ordre du
+/// document (cf. PDF_FORMS_RULES, "une rubrique = un bloc d'order contigu").
+/// Ordre des COLONNES = idem, sur les valeurs de `col` rencontrées ; une
+/// grille sans AUCUNE colonne (Q22 : sept jours sans créneau) retombe sur un
+/// tableau à une seule colonne "jour" — même composant, pas de branche à part.
+function buildScheduleGrid(fields: readonly PublicField[]) {
+  const rows = new Map<string, ScheduleGridRow>();
+  const rowOrder: string[] = [];
+  const colOrder: string[] = [];
+  const colSample = new Map<string, PublicField>();
+  for (const f of fields) {
+    const sg = f.scheduleGrid;
+    if (!sg) continue;
+    let row = rows.get(sg.row);
+    if (!row) {
+      row = { key: sg.row, cells: new Map() };
+      rows.set(sg.row, row);
+      rowOrder.push(sg.row);
+    }
+    if (sg.col === undefined) {
+      row.dayField = f;
+    } else {
+      row.cells.set(sg.col, f);
+      if (!colSample.has(sg.col)) {
+        colSample.set(sg.col, f);
+        colOrder.push(sg.col);
+      }
+    }
+  }
+  return { rowOrder, rows, colOrder, colSample };
+}
+
+/// Grille jour × créneau en vrai tableau (Q4/Q18 du C1A : lundi..dimanche ×
+/// avant 7 h / entre 7 h et 18 h / après 18 h ; Q22 : sept jours SANS créneau
+/// — même composant, `colOrder` vide, cf. `buildScheduleGrid`).
+///
+/// Sémantique `<table>` + `<th scope>` plutôt qu'une grille CSS + ARIA
+/// manuel : la case "jour" partage le `<th scope="row">` de sa ligne avec le
+/// nom du jour (association native par imbrication dans un `<label>`,
+/// `Checkbox` est un élément labelable — bouton), chaque case de créneau
+/// porte un `aria-label` complet ("Lundi — Avant 7 h", jamais la case nue).
+/// Les en-têtes de colonne reprennent le libellé du PREMIER champ qui porte
+/// ce `col` — jamais une chaîne inventée (cf. PDF_FORMS_RULES). Défile
+/// horizontalement DANS son propre conteneur sur mobile (`overflow-x-auto` +
+/// largeur minimale) plutôt que de tasser les libellés des jours en
+/// abréviations : plus sûr pour un formulaire officiel (aucun risque de
+/// confondre deux jours abrégés), au prix d'un défilement sur très petit
+/// écran — choix documenté dans le rapport de ce lot.
+function ScheduleGridTable({
+  fields,
+  values,
+  setValue,
+  locale,
+  onFocusField,
+}: {
+  fields: readonly PublicField[];
+  values: FormPayload;
+  setValue: (id: string, value: FieldValue) => void;
+  locale: Locale;
+  onFocusField?: (id: string) => void;
+}) {
+  const { rowOrder, rows, colOrder, colSample } = useMemo(() => buildScheduleGrid(fields), [fields]);
+  if (rowOrder.length === 0) return null;
+
+  const gridCheckbox = (field: PublicField, ariaLabel: string) => (
+    <Checkbox
+      id={field.id}
+      checked={values[field.id] === true}
+      onCheckedChange={(c) => setValue(field.id, c === true)}
+      onFocus={() => onFocusField?.(field.id)}
+      onClick={() => onFocusField?.(field.id)}
+      aria-label={ariaLabel}
+    />
+  );
+
+  return (
+    <div className="overflow-x-auto rounded-2xl border border-[color:var(--glass-border)]">
+      <table className="w-full min-w-[26rem] border-collapse text-sm">
+        {colOrder.length > 0 && (
+          <thead>
+            <tr>
+              <th scope="col" className="border-b border-[color:var(--glass-border)] p-2.5" />
+              {colOrder.map((col) => (
+                <th
+                  key={col}
+                  scope="col"
+                  className="border-b border-[color:var(--glass-border)] p-2.5 text-center text-xs font-medium text-[color:var(--glass-ink-soft)]"
+                >
+                  {loc(colSample.get(col)?.label, locale)}
+                </th>
+              ))}
+            </tr>
+          </thead>
+        )}
+        <tbody>
+          {rowOrder.map((rowKey) => {
+            const row = rows.get(rowKey);
+            const dayField = row?.dayField;
+            const dayLabel = dayField ? loc(dayField.label, locale) : rowKey;
+            return (
+              <tr key={rowKey} className="border-b border-[color:var(--glass-border)] last:border-b-0">
+                <th scope="row" className="p-2.5 text-left font-normal">
+                  {dayField ? (
+                    <label className="flex items-center gap-2.5">
+                      {gridCheckbox(dayField, dayLabel)}
+                      <span className="text-[color:var(--glass-ink)]">{dayLabel}</span>
+                    </label>
+                  ) : (
+                    <span className="text-[color:var(--glass-ink)]">{dayLabel}</span>
+                  )}
+                </th>
+                {colOrder.map((col) => {
+                  const cellField = row?.cells.get(col);
+                  return (
+                    <td key={col} className="p-2.5 text-center">
+                      {cellField ? gridCheckbox(cellField, `${dayLabel} — ${loc(cellField.label, locale)}`) : null}
+                    </td>
+                  );
+                })}
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 /// Regroupe les champs `renderAs: "chip"` en grille de OptionCard (au lieu
 /// d'appeler PdfField pour ceux-là) ; le reste des champs suit le rendu
 /// PdfField habituel. Single-select si le champ est "radio", multi-select
 /// (indépendant) si "checkbox" — chaque champ garde sa propre valeur, ce
 /// composant ne fait qu'aiguiller le rendu.
 function FieldsCluster({
-  fields,
+  fields: allFields,
   values,
   errors,
   locale,
@@ -1448,6 +1590,16 @@ function FieldsCluster({
   /// les champs portent leur libellé, comportement de tous les autres écrans.
   hideLabelForId?: string;
 }) {
+  // Grille jour × créneau (cf. `scheduleGrid`, types.ts) : détection PAR LA
+  // DONNÉE, comme les autres familles de rendu ci-dessous — un champ qui
+  // porte cette propriété (posée dans le seed, ex. les grilles horaires du
+  // C1A) sort du flux normal AVANT toute autre classification, et se rend en
+  // `<table>` (ScheduleGridTable) plutôt qu'en ligne PdfField. Aucun test sur
+  // `formSlug` : un futur document compose le même rendu en posant la
+  // propriété sur ses propres champs.
+  const scheduleGridFields = allFields.filter((f) => f.scheduleGrid);
+  const fields = scheduleGridFields.length > 0 ? allFields.filter((f) => !f.scheduleGrid) : allFields;
+
   // Trois familles de rendu : cartes de choix (chips), lignes binaires
   // compactes (oui/non + cases, empilées dans un conteneur à séparateurs),
   // et le reste en grille classique.
@@ -1559,6 +1711,15 @@ function FieldsCluster({
             </p>
           ))}
         </div>
+      )}
+      {scheduleGridFields.length > 0 && (
+        <ScheduleGridTable
+          fields={scheduleGridFields}
+          values={values}
+          setValue={setValue}
+          locale={locale}
+          onFocusField={onFocusField}
+        />
       )}
       {rowFields.length > 0 && (
         <div className="divide-y divide-[color:var(--glass-border)] rounded-2xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)]">

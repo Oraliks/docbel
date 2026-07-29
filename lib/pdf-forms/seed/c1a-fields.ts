@@ -166,6 +166,10 @@ function grilleHoraire(opts: {
       visibleIf: { fieldId: opts.parentId, op: "equals", value: opts.parentValue },
       section: opts.section,
       order: ordre(),
+      // Regroupement PRÉSENTATIONNEL en tableau (cf. types.ts) : ce champ est
+      // la case "jour" de sa ligne — rendue dans la cellule de tête avec son
+      // propre libellé (le nom du jour), pas une colonne de créneau.
+      scheduleGrid: { row: jour },
     });
     fields.push({
       id: `${opts.idPrefix}${jour}Avant7h`,
@@ -175,6 +179,7 @@ function grilleHoraire(opts: {
       label: { fr: "Avant 7 h" },
       section: opts.section,
       order: ordre(),
+      scheduleGrid: { row: jour, col: "avant7h" },
     });
     fields.push({
       id: `${opts.idPrefix}${jour}Entre7h18h`,
@@ -184,6 +189,7 @@ function grilleHoraire(opts: {
       label: { fr: "Entre 7 h et 18 h" },
       section: opts.section,
       order: ordre(),
+      scheduleGrid: { row: jour, col: "entre7h18h" },
     });
     fields.push({
       id: `${opts.idPrefix}${jour}Apres18h`,
@@ -193,6 +199,7 @@ function grilleHoraire(opts: {
       label: { fr: "Après 18 h" },
       section: opts.section,
       order: ordre(),
+      scheduleGrid: { row: jour, col: "apres18h" },
     });
   });
 
@@ -205,6 +212,9 @@ function grilleHoraire(opts: {
     visibleIf: { fieldId: opts.parentId, op: "equals", value: opts.parentValue },
     section: opts.section,
     order: ordre(),
+    // Pas de créneau pour le week-end : ligne avec la seule case "jour",
+    // cf. `scheduleGrid` — les colonnes de créneau restent vides pour elle.
+    scheduleGrid: { row: "samedi" },
   });
   fields.push({
     id: `${opts.idPrefix}dimanche`,
@@ -215,6 +225,7 @@ function grilleHoraire(opts: {
     visibleIf: { fieldId: opts.parentId, op: "equals", value: opts.parentValue },
     section: opts.section,
     order: ordre(),
+    scheduleGrid: { row: "dimanche" },
   });
 
   fields.push({
@@ -1223,6 +1234,11 @@ export const C1A_FIELDS: PdfFormField[] = [
     visibleIf: VISIBLE_SI_CHOMEUR_TEMPORAIRE,
     section: SECTION_ACTIVITES,
     order: 160,
+    // Sept jours SANS créneau : même tableau que Q4/Q18 (cf. `scheduleGrid`
+    // dans types.ts) mais où aucun champ ne porte jamais `col` — il se rend
+    // donc à une seule colonne "jour", plutôt qu'une rangée de cases séparée
+    // à maintenir en plus (un seul composant de rendu, cf. pdf-form-runner.tsx).
+    scheduleGrid: { row: "lundi" },
   },
   {
     id: "joursOccupeMardi",
@@ -1233,6 +1249,7 @@ export const C1A_FIELDS: PdfFormField[] = [
     visibleIf: VISIBLE_SI_CHOMEUR_TEMPORAIRE,
     section: SECTION_ACTIVITES,
     order: 161,
+    scheduleGrid: { row: "mardi" },
   },
   {
     id: "joursOccupeMercredi",
@@ -1243,6 +1260,7 @@ export const C1A_FIELDS: PdfFormField[] = [
     visibleIf: VISIBLE_SI_CHOMEUR_TEMPORAIRE,
     section: SECTION_ACTIVITES,
     order: 162,
+    scheduleGrid: { row: "mercredi" },
   },
   {
     id: "joursOccupeJeudi",
@@ -1253,6 +1271,7 @@ export const C1A_FIELDS: PdfFormField[] = [
     visibleIf: VISIBLE_SI_CHOMEUR_TEMPORAIRE,
     section: SECTION_ACTIVITES,
     order: 163,
+    scheduleGrid: { row: "jeudi" },
   },
   {
     id: "joursOccupeVendredi",
@@ -1263,6 +1282,7 @@ export const C1A_FIELDS: PdfFormField[] = [
     visibleIf: VISIBLE_SI_CHOMEUR_TEMPORAIRE,
     section: SECTION_ACTIVITES,
     order: 164,
+    scheduleGrid: { row: "vendredi" },
   },
   {
     id: "joursOccupeSamedi",
@@ -1273,6 +1293,7 @@ export const C1A_FIELDS: PdfFormField[] = [
     visibleIf: VISIBLE_SI_CHOMEUR_TEMPORAIRE,
     section: SECTION_ACTIVITES,
     order: 165,
+    scheduleGrid: { row: "samedi" },
   },
   {
     id: "joursOccupeDimanche",
@@ -1286,6 +1307,7 @@ export const C1A_FIELDS: PdfFormField[] = [
     visibleIf: VISIBLE_SI_CHOMEUR_TEMPORAIRE,
     section: SECTION_ACTIVITES,
     order: 166,
+    scheduleGrid: { row: "dimanche" },
   },
 
   // ====================================================================

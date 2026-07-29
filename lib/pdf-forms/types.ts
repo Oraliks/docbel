@@ -234,6 +234,21 @@ export interface PdfFormField {
   /// d'une (utile pour les valeurs longues, ex. nom de rue). Sans effet sur les
   /// types déjà pleine largeur (textarea, radio, array…).
   wide?: boolean;
+  /// Regroupement PRÉSENTATIONNEL en tableau jour × créneau (ex. les deux
+  /// grilles horaires du C1A, Q4/Q18, et la rangée de jours sans créneau du
+  /// Q22) — aucun effet sur la validation, le stockage ni le tamponnage PDF,
+  /// un simple repère de rendu pour le form runner. `row` réunit les champs
+  /// d'une même LIGNE du tableau (ex. "lundi") ; les lignes s'affichent dans
+  /// l'ordre de PREMIÈRE apparition parmi les champs (déjà celui du document,
+  /// cf. PDF_FORMS_RULES). `col` distingue les COLONNES d'une même ligne (ex.
+  /// "avant7h") — l'en-tête de colonne reprend le libellé du premier champ qui
+  /// la porte, jamais un texte inventé. Absent = la case "jour" de la ligne,
+  /// rendue dans sa cellule de tête avec le libellé DU CHAMP LUI-MÊME (ex.
+  /// samedi/dimanche, qui n'ont pas de créneau — ou les sept jours du Q22, qui
+  /// n'en ont aucun). Détection générique dans `FieldsCluster`
+  /// (pdf-form-runner.tsx) : n'importe quel document peut composer un tableau
+  /// en posant cette propriété sur ses champs, sans branche par slug.
+  scheduleGrid?: { row: string; col?: string };
   /// Champ `date` : refuse une date tombant un samedi ou un dimanche. Pour les
   /// dates d'introduction / d'effet d'un dossier (pas de traitement le week-end —
   /// le citoyen doit se renseigner auprès de son OP). Le calendrier désactive

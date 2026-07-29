@@ -494,13 +494,33 @@ export function buildValidator(fields: PdfFormField[], lang: Locale = DEFAULT_LO
   const shape: Record<string, ZodTypeAny> = {};
   for (const f of fields) {
     // Champs auto (signature, date du jour, autoAnswered) : jamais rendus
-    // comme controle interactif, remplis programmatiquement par le runner
-    // et re-injectes de maniere autoritaire cote serveur (route /generate).
-    // On les exclut totalement du schema Zod — cf. bug persistant Oraliks
-    // 2026-07-07 ou dateSignature="2026-07-05" (valide ISO, required=false)
-    // continuait a etre flag sur la path Zod sans explication, meme apres
-    // le skip conditionnel dans superRefine et required=false cote schema.
-    if (isAutoField(f)) continue;
+    // comme controle interactif, remplis programmatiquement par le runner.
+    // Aucun d'eux n'est VALIDE — cf. bug persistant Oraliks 2026-07-07 ou
+    // dateSignature="2026-07-05" (valide ISO, required=false) continuait a
+    // etre flag sur la path Zod sans explication, meme apres le skip
+    // conditionnel dans superRefine et required=false cote schema. Mais
+    // « ne pas valider » ne veut pas dire « detruire » : `z.object` STRIPPE
+    // toute cle absente du shape, donc omettre un champ ici efface sa valeur
+    // de `result.data` — ce que la route /generate passe au filler ET
+    // persiste dans `payloads[form.id]`.
+    if (isAutoField(f)) {
+      // `autoAnswered` porte une valeur METIER qui n'existe NULLE PART
+      // ailleurs (motif d'introduction du C1, remarque calculee au submit) :
+      // rien ne la reconstruit apres coup. On preserve donc la cle telle
+      // quelle, via `z.unknown()` : la valeur traverse intacte, et AUCUNE
+      // regle de format ne peut la rejeter. Choix deliberement permissif —
+      // le champ n'est pas a l'ecran, donc une erreur posee dessus serait
+      // une impasse : le citoyen n'aurait aucun controle a corriger.
+      // Cf. le contrat documente sur `PdfFormField.autoAnswered` (types.ts).
+      if (f.autoAnswered) shape[f.id] = z.unknown();
+      // Signature et date du jour, elles, sont re-injectees de maniere
+      // AUTORITAIRE apres la validation par `applyServerAutoFields` (cf.
+      // auto-fields.ts) : les preserver ici ne servirait a rien et laisserait
+      // une valeur choisie par le client court-circuiter cette autorite
+      // (le nom appose sur le bloc de signature, notamment). On continue
+      // donc de les exclure du schema.
+      continue;
+    }
     shape[f.id] = fieldToZod(f, lang).optional();
   }
 

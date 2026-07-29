@@ -56,10 +56,11 @@ export function isAutoField(f: AutoFieldShape): boolean {
 /// « confirmed ». Renvoie un NOUVEAU payload (ne mute pas l'entrée).
 ///
 /// À appeler sur l'objet FINAL passé au filler, PAS avant la validation Zod :
-/// `buildValidator` EXCLUT totalement ces champs de son schéma (cf.
-/// validation.ts), et un `z.object` strippe les clés inconnues — donc toute
-/// valeur injectée avant `safeParse` est effacée par `result.data`. Le bug
-/// observé (Oraliks 2026-07-11 : « toujours pas la date du document ni la
+/// `buildValidator` exclut ces deux catégories de son schéma (cf.
+/// validation.ts — les champs `autoAnswered`, eux, y sont désormais préservés
+/// via `z.unknown()`), et un `z.object` strippe les clés inconnues — donc
+/// toute valeur injectée avant `safeParse` est effacée par `result.data`. Le
+/// bug observé (Oraliks 2026-07-11 : « toujours pas la date du document ni la
 /// signature ») venait de là : la route /generate injectait AVANT de valider,
 /// et la régénération de dossier (lib/bundles/regenerate-pdfs.ts) ne réinjectait
 /// jamais — les deux chemins produisaient un PDF sans date ni signature.

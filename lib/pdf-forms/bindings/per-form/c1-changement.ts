@@ -180,11 +180,15 @@ export const C1_CHANGEMENT_RULES: MappingRule[] = [
   // ET un transfert dans la même déclaration. Chaque case ne dépend QUE de son
   // propre signal.
   //
-  // ⚠ Le signal n'est JAMAIS `motifIntroduction` : dans ce dossier il est
-  // `autoAnswered` → `buildValidator` l'EXCLUT du schéma Zod et `z.object` le
-  // STRIPPE du payload validé côté serveur (il vaut `undefined`). On lit donc
-  // les vrais checkboxes (non strippés). Chaque case est stampée explicitement
-  // (true/false) pour un rendu déterministe quel que soit l'état du template.
+  // ⚠ Le signal n'est JAMAIS `motifIntroduction` : on lit les vrais
+  // checkboxes cochés par le citoyen. Historiquement c'était une CONTRAINTE
+  // (`autoAnswered` → `buildValidator` l'excluait du schéma Zod, et `z.object`
+  // le strippait du payload validé : il valait `undefined` côté serveur) ;
+  // depuis le correctif de `buildValidator` la valeur survit, mais on garde
+  // les checkboxes comme source — c'est le geste réel du citoyen, alors que
+  // `motifIntroduction` n'est qu'un reflet calculé. Chaque case est stampée
+  // explicitement (true/false) pour un rendu déterministe quel que soit
+  // l'état du template.
   {
     name: "motif-modification",
     stampFn: (p) => [{ widget: W_MOTIF_MODIFICATION, value: hasModificationMotif(p) }],

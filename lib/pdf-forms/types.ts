@@ -254,9 +254,12 @@ export interface PdfFormField {
   /// Champ dont la valeur est fixée automatiquement (defaultValue au montage
   /// du formulaire, et/ou dérivée juste avant soumission — cf.
   /// lib/pdf-forms/c1-motif-transfer.ts) : jamais rendu comme contrôle
-  /// interactif dans les étapes (cf. `isAutoField`), mais reste sérialisé,
-  /// validé et soumis normalement — DISTINCT de `hidden`, qui exclut aussi
-  /// de la sérialisation publique et de la génération PDF. Utilisé pour
+  /// interactif dans les étapes (cf. `isAutoField`), mais reste sérialisé et
+  /// soumis normalement — sa valeur traverse `buildValidator` INTACTE
+  /// (préservée par `z.unknown()`), sans être soumise aux contrôles de format
+  /// ni à l'exigence « obligatoire » : le champ n'étant pas à l'écran, une
+  /// erreur posée dessus serait une impasse. DISTINCT de `hidden`, qui exclut
+  /// aussi de la sérialisation publique et de la génération PDF. Utilisé pour
   /// `motifIntroduction` sur le C1 "changement de situation" : le motif
   /// reste réel et requis, mais l'utilisateur ne choisit plus parmi 4
   /// options — il choisit parmi les 5 chips concrets qui pilotent sa valeur.

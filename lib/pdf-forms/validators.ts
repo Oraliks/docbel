@@ -104,29 +104,59 @@ export function isValidBelgianPostalCode(raw: string): boolean {
   return n >= 1000 && n <= 9999;
 }
 
-/// TVA / BCE belge (10 chiffres, premier 0 ou 1, checksum modulo 97).
-export function isValidBelgianTVA(raw: string): boolean {
+/// Raison d'invalidité d'un numéro BCE/TVA belge — sert à produire un message
+/// pédagogique qui distingue : mauvais NOMBRE de chiffres, chiffre INITIAL
+/// hors {0,1} (typiquement une faute de saisie sur le tout premier chiffre),
+/// ou somme de CONTRÔLE fausse (numéro bien formé mais qui n'existe pas — le
+/// cas le plus trompeur : l'utilisateur est persuadé d'avoir raison).
+export type BceInvalidReason = "length" | "leadingDigit" | "checksum";
+
+export interface BceDiagnosis {
+  ok: boolean;
+  /// Nombre de chiffres effectivement saisis (préfixe BE, espaces, points et
+  /// tirets ignorés).
+  digitCount: number;
+  /// Les 10 chiffres bruts (préfixe BE retiré), seulement quand digitCount === 10.
+  digits?: string;
+  reason?: BceInvalidReason;
+}
+
+/// Diagnostique un numéro BCE/TVA belge : nombre de chiffres (10, préfixe BE
+/// optionnel ignoré) → premier chiffre (0 ou 1 uniquement, cf. SPF Économie)
+/// → somme de contrôle modulo 97 (les 2 derniers chiffres valent
+/// 97 - (8 premiers chiffres mod 97)).
+///
+/// BCE et TVA partagent EXACTEMENT la même règle en Belgique (le numéro
+/// d'entreprise EST le numéro de TVA) : cette fonction est la SEULE source de
+/// vérité sur la règle — `isValidBelgianTVA`/`isValidBelgianBCE` (alias) et
+/// `normalizeBelgianTVA` ne font que l'interroger, ne pas redupliquer la regex.
+export function diagnoseBCE(raw: string): BceDiagnosis {
   const cleaned = raw.replace(/[\s.\-]/g, "").toUpperCase();
-  const match = cleaned.match(/^(BE)?([01]\d{9})$/);
-  if (!match) return false;
-  const digits = match[2];
+  const digits = cleaned.replace(/^BE/, "");
+  const digitCount = (digits.match(/[0-9]/g) || []).length;
+  if (!/^[0-9]{10}$/.test(digits)) {
+    return { ok: false, digitCount, reason: "length" };
+  }
+  if (digits[0] !== "0" && digits[0] !== "1") {
+    return { ok: false, digitCount, digits, reason: "leadingDigit" };
+  }
   const base = parseInt(digits.slice(0, 8), 10);
   const check = parseInt(digits.slice(8, 10), 10);
-  return 97 - (base % 97) === check;
+  const ok = 97 - (base % 97) === check;
+  return { ok, digitCount, digits, reason: ok ? undefined : "checksum" };
+}
+
+/// TVA / BCE belge (10 chiffres, premier 0 ou 1, checksum modulo 97).
+export function isValidBelgianTVA(raw: string): boolean {
+  return diagnoseBCE(raw).ok;
 }
 
 export const isValidBelgianBCE = isValidBelgianTVA;
 
 /// Normalise un numéro BCE/TVA en `BE + 10 chiffres`, retourne null si invalide.
 export function normalizeBelgianTVA(raw: string): string | null {
-  const cleaned = raw.replace(/[\s.\-]/g, "").toUpperCase();
-  const match = cleaned.match(/^(BE)?([01]\d{9})$/);
-  if (!match) return null;
-  const digits = match[2];
-  const base = parseInt(digits.slice(0, 8), 10);
-  const check = parseInt(digits.slice(8, 10), 10);
-  if (97 - (base % 97) !== check) return null;
-  return `BE${digits}`;
+  const d = diagnoseBCE(raw);
+  return d.ok && d.digits ? `BE${d.digits}` : null;
 }
 
 export function isValidBelgianPhone(raw: string): boolean {

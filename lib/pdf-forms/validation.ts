@@ -18,6 +18,7 @@ import {
   isValidBelgianPostalCode,
   isValidBelgianTVA,
   isValidBelgianBCE,
+  diagnoseBCE,
   isValidBelgianPhone,
   isValidEmail,
   isValidISODate,
@@ -147,6 +148,82 @@ export function nissErrorMessage(raw: string, lang: Locale): string {
   return NISS_MESSAGES.checksum[lang];
 }
 
+/// Forme commune des dictionnaires de messages BCE/TVA (une entrée par cause
+/// de rejet de `diagnoseBCE`, chacune traduite fr/nl/de).
+type BceMessageSet = {
+  length: Record<Locale, string>;
+  leadingDigit: Record<Locale, string>;
+  checksum: Record<Locale, string>;
+};
+
+// Messages BCE dynamiques : on distingue « pas le bon nombre de chiffres »,
+// « premier chiffre invalide » (0 ou 1 uniquement) et « erreur de frappe »
+// (checksum) — ce dernier cas est le PLUS TROMPEUR : le numéro est bien formé
+// mais ne correspond à aucune entreprise, alors que l'utilisateur est
+// persuadé d'avoir raison (cf. rapport Oraliks 2026-07-29 : 2189388879 refusé
+// avec un message qui ne parlait que de la longueur, alors que ce numéro
+// comporte bien 10 chiffres — le vrai problème est le premier chiffre).
+const BCE_MESSAGES: BceMessageSet = {
+  length: {
+    fr: "Le numéro d'entreprise (BCE) doit comporter 10 chiffres, mais vous en avez saisi {n}. Vous le trouvez sur un extrait de la Banque-Carrefour des Entreprises ou sur vos documents d'entreprise (par exemple 0123.456.789).",
+    nl: "Het ondernemingsnummer (KBO) moet 10 cijfers bevatten, maar u hebt er {n} ingevuld. U vindt het op een uittreksel van de Kruispuntbank van Ondernemingen of op uw bedrijfsdocumenten (bijvoorbeeld 0123.456.789).",
+    de: "Die Unternehmensnummer (ZDU) muss aus 10 Ziffern bestehen, aber Sie haben {n} eingegeben. Sie finden sie auf einem Auszug der Zentralen Datenbank der Unternehmen oder auf Ihren Unternehmensdokumenten (zum Beispiel 0123.456.789).",
+  },
+  leadingDigit: {
+    fr: "Le numéro d'entreprise (BCE) commence toujours par 0 ou 1, suivi de 9 chiffres (par exemple 0123.456.789). Vérifiez le premier chiffre : celui que vous avez saisi n'est pas correct.",
+    nl: "Het ondernemingsnummer (KBO) begint altijd met 0 of 1, gevolgd door 9 cijfers (bijvoorbeeld 0123.456.789). Controleer het eerste cijfer: het cijfer dat u hebt ingevuld klopt niet.",
+    de: "Die Unternehmensnummer (ZDU) beginnt immer mit 0 oder 1, gefolgt von 9 Ziffern (zum Beispiel 0123.456.789). Überprüfen Sie die erste Ziffer: Die von Ihnen eingegebene ist nicht korrekt.",
+  },
+  checksum: {
+    fr: "Ce numéro d'entreprise (BCE) est bien composé de 10 chiffres commençant par 0 ou 1, mais il ne correspond à aucune entreprise : il contient probablement une erreur de frappe. Vérifiez-le chiffre par chiffre sur vos documents d'entreprise.",
+    nl: "Dit ondernemingsnummer (KBO) bestaat wel uit 10 cijfers die met 0 of 1 beginnen, maar het komt met geen enkele onderneming overeen: waarschijnlijk zit er een typefout in. Controleer het cijfer voor cijfer op uw bedrijfsdocumenten.",
+    de: "Diese Unternehmensnummer (ZDU) besteht zwar aus 10 Ziffern, die mit 0 oder 1 beginnen, entspricht aber keinem Unternehmen: Sie enthält wahrscheinlich einen Tippfehler. Überprüfen Sie sie Ziffer für Ziffer auf Ihren Unternehmensdokumenten.",
+  },
+};
+
+// Idem pour `tva_be` : même règle, même diagnostic (`diagnoseBCE`), mais le
+// texte rappelle le préfixe BE attendu — c'est la spécificité du champ TVA
+// par rapport au champ BCE nu (cf. FALLBACK.tva_be existant).
+const TVA_MESSAGES: BceMessageSet = {
+  length: {
+    fr: "Le numéro de TVA doit commencer par BE suivi de 10 chiffres, mais vous en avez saisi {n}. Par exemple BE 0123.456.789.",
+    nl: "Het btw-nummer moet beginnen met BE gevolgd door 10 cijfers, maar u hebt er {n} ingevuld. Bijvoorbeeld BE 0123.456.789.",
+    de: "Die MwSt-Nummer muss mit BE beginnen, gefolgt von 10 Ziffern, aber Sie haben {n} eingegeben. Zum Beispiel BE 0123.456.789.",
+  },
+  leadingDigit: {
+    fr: "Après le préfixe BE, les 10 chiffres doivent commencer par 0 ou 1 (par exemple BE 0123.456.789). Vérifiez le premier chiffre après BE.",
+    nl: "Na het voorvoegsel BE moeten de 10 cijfers beginnen met 0 of 1 (bijvoorbeeld BE 0123.456.789). Controleer het eerste cijfer na BE.",
+    de: "Nach dem Präfix BE müssen die 10 Ziffern mit 0 oder 1 beginnen (zum Beispiel BE 0123.456.789). Überprüfen Sie die erste Ziffer nach BE.",
+  },
+  checksum: {
+    fr: "Ce numéro de TVA est bien au format BE suivi de 10 chiffres commençant par 0 ou 1, mais il ne correspond à aucune entreprise : il contient probablement une erreur de frappe. Vérifiez-le chiffre par chiffre.",
+    nl: "Dit btw-nummer heeft wel de vorm BE gevolgd door 10 cijfers die met 0 of 1 beginnen, maar het komt met geen enkele onderneming overeen: waarschijnlijk zit er een typefout in. Controleer het cijfer voor cijfer.",
+    de: "Diese MwSt-Nummer hat zwar das Format BE gefolgt von 10 Ziffern, die mit 0 oder 1 beginnen, entspricht aber keinem Unternehmen: Sie enthält wahrscheinlich einen Tippfehler. Überprüfen Sie sie Ziffer für Ziffer.",
+  },
+};
+
+/// Sélectionne le message adapté à la cause exacte du rejet (longueur /
+/// premier chiffre / frappe) dans un dictionnaire BCE ou TVA.
+function bceMessageFor(messages: BceMessageSet, raw: string, lang: Locale): string {
+  const d = diagnoseBCE(raw);
+  if (d.reason === "length") return messages.length[lang].replace("{n}", String(d.digitCount));
+  if (d.reason === "leadingDigit") return messages.leadingDigit[lang];
+  return messages.checksum[lang];
+}
+
+/// Construit le message BCE adapté à la cause exacte du rejet. Un `errorMsg`
+/// personnalisé côté admin reste prioritaire (appelant) — même schéma que
+/// `nissErrorMessage` ci-dessus.
+export function bceErrorMessage(raw: string, lang: Locale): string {
+  return bceMessageFor(BCE_MESSAGES, raw, lang);
+}
+
+/// Idem pour `tva_be` — même diagnostic (`diagnoseBCE`), texte qui rappelle
+/// le préfixe BE attendu.
+export function tvaErrorMessage(raw: string, lang: Locale): string {
+  return bceMessageFor(TVA_MESSAGES, raw, lang);
+}
+
 function errMsg(field: PdfFormField, lang: Locale, key: keyof typeof FALLBACK): string {
   return loc(field.errorMsg, lang) || FALLBACK[key][lang] || FALLBACK[key][DEFAULT_LOCALE];
 }
@@ -210,9 +287,16 @@ function fieldToZod(field: PdfFormField, lang: Locale): ZodTypeAny {
     case "postal_be":
       return z.string().refine((v) => empty(v) || isValidBelgianPostalCode(v), { message: errMsg(field, lang, "postal_be") });
     case "tva_be":
-      return z.string().refine((v) => empty(v) || isValidBelgianTVA(v), { message: errMsg(field, lang, "tva_be") });
+      // Message dynamique selon la cause exacte (longueur / 1er chiffre /
+      // frappe), sauf `errorMsg` admin prioritaire — même schéma que `niss`
+      // ci-dessus (cf. bceErrorMessage/tvaErrorMessage).
+      return z.string().refine((v) => empty(v) || isValidBelgianTVA(v), {
+        error: (issue) => loc(field.errorMsg, lang) || tvaErrorMessage(String(issue.input ?? ""), lang),
+      });
     case "bce":
-      return z.string().refine((v) => empty(v) || isValidBelgianBCE(v), { message: errMsg(field, lang, "bce") });
+      return z.string().refine((v) => empty(v) || isValidBelgianBCE(v), {
+        error: (issue) => loc(field.errorMsg, lang) || bceErrorMessage(String(issue.input ?? ""), lang),
+      });
     case "phone_be":
       return z.string().refine((v) => empty(v) || isValidBelgianPhone(v), { message: errMsg(field, lang, "phone_be") });
     case "email":
@@ -533,8 +617,8 @@ export function validateFieldFormat(field: FieldLike, value: unknown, lang: Loca
     case "email": return isValidEmail(v) ? null : (custom || FALLBACK.email[lang]);
     case "phone_be": return isValidBelgianPhone(v) ? null : (custom || FALLBACK.phone_be[lang]);
     case "postal_be": return isValidBelgianPostalCode(v) ? null : (custom || FALLBACK.postal_be[lang]);
-    case "tva_be": return isValidBelgianTVA(v) ? null : (custom || FALLBACK.tva_be[lang]);
-    case "bce": return isValidBelgianBCE(v) ? null : (custom || FALLBACK.bce[lang]);
+    case "tva_be": return isValidBelgianTVA(v) ? null : (custom || tvaErrorMessage(v, lang));
+    case "bce": return isValidBelgianBCE(v) ? null : (custom || bceErrorMessage(v, lang));
     default: return null;
   }
 }

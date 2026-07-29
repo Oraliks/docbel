@@ -240,12 +240,17 @@ function PdfFieldImpl({
     />
   );
 
-  // Tableau de lignes (cohabitants etc.) — composant dédié.
+  // Tableau de lignes (cohabitants etc.) — composant dédié. `effError` (pas le
+  // `error` brut) par cohérence avec toutes les autres branches ci-dessous :
+  // `array` n'a pas de validation de FORMAT au blur (validateFieldFormat ne le
+  // couvre pas), donc `effError` vaut ici toujours `error`, mais on réutilise
+  // la même variable plutôt que d'introduire une seconde source de vérité.
   if (field.type === "array") {
     return (
       <ArrayField
         field={field}
         value={value}
+        error={effError}
         locale={locale}
         onChange={onChange}
         formId={formId}

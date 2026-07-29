@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Field, FieldLabel, FieldDescription } from "@/components/ui/field";
 import { PdfField } from "./pdf-field";
+import { FieldErrorReport } from "./field-error-report";
 import { loc, type Locale, type FieldValue, type FieldValueRecord, type FormPayload, type ConditionOp, isFieldValueRecordArray } from "@/lib/pdf-forms/types";
 import type { PublicField } from "@/lib/pdf-forms/public-serializer";
 import { isFieldVisible } from "@/lib/pdf-forms/validation";
@@ -16,6 +17,13 @@ import { getC1IncomeGuidance, type C1BaremeThresholds, type C1IncomeRole } from 
 interface Props {
   field: PublicField;
   value: FieldValue;
+  /// Message d'erreur d'ÉTAPE (cf. PdfField.error) — jamais une validation de
+  /// sous-champ ligne par ligne (buildValidator ne les vérifie pas, cf.
+  /// lib/pdf-forms/validation.ts), toujours l'obligation du tableau lui-même :
+  /// « au moins une ligne réellement remplie » (isArrayFieldFilled). Absent
+  /// pour un champ `array` non `required` (ex. cohabitants) : ce contrat ne
+  /// change donc rien pour lui.
+  error?: string;
   locale: Locale;
   onChange: (value: FieldValue) => void;
   formId?: string;
@@ -37,7 +45,7 @@ interface Props {
 /// La règle d'auto-remplissage spécifique cohabitants (Indépendant → 999999.99,
 /// allocations familiales auto-non si > 35 ans) est centralisée dans
 /// `applyAutoRules` ci-dessous — peut être étendue pour d'autres tableaux.
-export function ArrayField({ field, value, locale, onChange, formId, formSlug, parentValues, hideLabel = false }: Props) {
+export function ArrayField({ field, value, error, locale, onChange, formId, formSlug, parentValues, hideLabel = false }: Props) {
   // `locale` = libellés MÉTIER stockés en base ; `t` = châssis d'UI (catalogues
   // next-intl, fallback FR automatique pour les langues non traduites).
   const t = useTranslations("public.dossier");
@@ -48,6 +56,13 @@ export function ArrayField({ field, value, locale, onChange, formId, formSlug, p
   // `aria-labelledby` sur le groupe, un lecteur d'écran annonce un « groupe »
   // anonyme au lieu du nom du tableau (ex. « Personnes du ménage »).
   const labelId = `${field.id}-label`;
+  // Même contrat que les autres champs (cf. pdf-field.tsx : errorId/describedBy/
+  // invalid) : l'id du message n'est référencé que quand il est effectivement
+  // rendu, et `field.id` lui-même sert d'ANCRE DOM — c'est ce que
+  // `scrollToField` (pdf-form-runner.tsx) cherche via `getElementById` pour
+  // amener le citoyen jusqu'ici après un « Continuer » refusé.
+  const errorId = `${field.id}-error`;
+  const invalid = !!error;
 
   const itemFields = useMemo(
     () => (field.itemFields ?? []).slice().sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
@@ -89,7 +104,14 @@ export function ArrayField({ field, value, locale, onChange, formId, formSlug, p
   }
 
   return (
-    <Field aria-labelledby={labelId}>
+    <Field
+      id={field.id}
+      data-invalid={invalid}
+      aria-labelledby={labelId}
+      aria-invalid={invalid || undefined}
+      aria-describedby={invalid ? errorId : undefined}
+      aria-required={field.required || undefined}
+    >
       <FieldLabel id={labelId} className={hideLabel ? "sr-only" : undefined}>
         {label}
         {field.required && <span className="text-destructive"> *</span>}
@@ -168,6 +190,23 @@ export function ArrayField({ field, value, locale, onChange, formId, formSlug, p
           ))
         )}
       </div>
+
+      {/* Erreur « au moins une ligne remplie » (champ requis, cf. Props.error
+          ci-dessus) — même composant que tous les autres types de champ
+          (FieldErrorReport : message + lien « Signaler »), pour ne jamais
+          afficher un second vocabulaire visuel d'erreur dans le même
+          formulaire. Se rend juste sous la liste de lignes, avant tout
+          conseil informatif (FAC) et le bouton d'ajout. */}
+      <FieldErrorReport
+        error={error}
+        messageId={errorId}
+        fieldId={field.id}
+        fieldType={field.type}
+        rejectedValue={value}
+        formId={formId}
+        formSlug={formSlug}
+        locale={locale}
+      />
 
       {cohabitationAdvice === "consider-fac" && (
         <div

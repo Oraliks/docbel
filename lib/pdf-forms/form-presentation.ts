@@ -11,7 +11,7 @@
 // d'entrée reste un comportement sûr — l'ordre retombe sur la première
 // apparition des groupes, les titres sur les libellés de section.
 
-import type { Locale } from "./types";
+import { loc, type Locale, type Localized } from "./types";
 import { sectionLabel } from "./section-labels";
 import { C1A_QUESTIONS, C1A_GROUPE_IDENTITE } from "./seed/c1a-routing";
 
@@ -123,6 +123,22 @@ export function stepAnchorField<T extends { id: string }>(
   fields: readonly T[]
 ): T | undefined {
   return fields.find((f) => f.id === groupId);
+}
+
+/// Libellé affiché d'un champ ANCRE (cf. `stepAnchorField`) : préfère la
+/// version COURTE quand le champ en porte une — les questions imprimées du
+/// PDF sont parfois interminables, et deviennent le titre du bandeau compact
+/// du stepper (une question par étape, cf. PDF_FORMS_RULES). Repli sur le
+/// libellé complet si `labelShort` est absent ou vide pour la locale
+/// courante ; `undefined` si le champ lui-même est absent (pas d'ancre) —
+/// même contrat que l'appel direct à `loc(anchor.label, locale)` qu'elle
+/// remplace chez l'appelant.
+export function stepAnchorLabel(
+  field: { label: Localized; labelShort?: Localized } | undefined,
+  locale: Locale
+): string | undefined {
+  if (!field) return undefined;
+  return loc(field.labelShort, locale) || loc(field.label, locale) || undefined;
 }
 
 /// Vrai si le titre de l'étape est le libellé de son champ ancre — auquel cas

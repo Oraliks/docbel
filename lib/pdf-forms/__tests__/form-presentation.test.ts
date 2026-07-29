@@ -4,6 +4,7 @@ import {
   stepGroupTitle,
   stepGroupDescription,
   stepAnchorField,
+  stepAnchorLabel,
   stepTitleReplacesFieldLabel,
 } from "../form-presentation";
 import { C1A_QUESTIONS } from "../seed/c1a-routing";
@@ -106,6 +107,27 @@ describe("form-presentation", () => {
       const champs = [{ id: "autre" }, { id: "aideIndependant" }];
       expect(stepAnchorField("aideIndependant", champs)?.id).toBe("aideIndependant");
       expect(stepAnchorField("groupe-sans-ancre", champs)).toBeUndefined();
+    });
+
+    it("le libelle de l'ancre prefere la version courte quand elle existe", () => {
+      expect(
+        stepAnchorLabel(
+          { label: { fr: "Un titre de question interminable, recopie mot pour mot du PDF officiel" }, labelShort: { fr: "Titre court" } },
+          "fr",
+        ),
+      ).toBe("Titre court");
+    });
+
+    it("cas de repli : pas de labelShort -> le libelle complet", () => {
+      expect(stepAnchorLabel({ label: { fr: "Un titre" } }, "fr")).toBe("Un titre");
+    });
+
+    it("cas de repli : labelShort vide pour la locale -> le libelle complet", () => {
+      expect(stepAnchorLabel({ label: { fr: "Un titre" }, labelShort: { nl: "Kort" } }, "fr")).toBe("Un titre");
+    });
+
+    it("aucune ancre -> undefined", () => {
+      expect(stepAnchorLabel(undefined, "fr")).toBeUndefined();
     });
 
     it("le libellé n'est retiré de l'écran que si la question est seule sur l'étape", () => {

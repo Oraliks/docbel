@@ -22,7 +22,12 @@ import {
   isFieldValueRecordArray,
 } from "./types";
 import { assembleFullName } from "./system-values";
-import { resolveSignerName, buildSignatureBlock, signatureTimestamp } from "./signature";
+import {
+  resolveSignerName,
+  signerNameFromSignatureField,
+  buildSignatureBlock,
+  signatureTimestamp,
+} from "./signature";
 import { isSignatureField } from "./auto-fields";
 import { isFieldVisible } from "./validation";
 import { formatDateFR } from "./bindings/format";
@@ -711,7 +716,10 @@ export async function fillForm(
         if (!tech?.rect) continue;
         if (pdfField instanceof PDFTextField) pdfField.setText("");
 
-        const signerName = resolveSignerName(fields, payload) || (typeof value === "string" ? value : "");
+        // Repli : certains schémas font TAPER son nom au citoyen dans le champ
+        // de signature lui-même. La sentinelle de confirmation, elle, n'est pas
+        // un nom (cf. `signerNameFromSignatureField`).
+        const signerName = resolveSignerName(fields, payload) || signerNameFromSignatureField(value);
         if (!signerName) continue;
         const block = buildSignatureBlock(signerName);
 

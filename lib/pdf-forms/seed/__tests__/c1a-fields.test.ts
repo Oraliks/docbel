@@ -375,3 +375,39 @@ describe("C1A — curation", () => {
     for (const l of lignes) expect(l.hidden, `${l.id} doit rester saisissable`).not.toBe(true);
   });
 });
+
+describe("C1A — grille Q18, 1re ligne « pendant les périodes » (widget 1_3 partagé)", () => {
+  // "1_3" porte TROIS widgets (vérifié via pypdf/`/Kids`) : la 1re ligne
+  // "pendant les périodes suivantes de l'année" de Q18 (p2), MAIS AUSSI les
+  // cases d'en-tête de la page 2 (nom, NISS). Un citoyen qui remplit cette
+  // ligne voyait son texte s'imprimer dans la case de son numéro de registre
+  // national — une déclaration officielle faussée. Même famille de défaut
+  // que `TVA`/`Montant`/`voir 19`, déjà réparés par écriture positionnelle.
+  const fields = applyC1AImprovements([]);
+  const parCle = new Map(fields.map((f) => [f.id, f]));
+
+  it("aucun champ ne revendique le widget partagé « 1_3 »", () => {
+    const revendications = fields.filter((f) =>
+      (f.pdfFieldName ?? "").split("|").map((s) => s.trim()).includes("1_3"),
+    );
+    expect(revendications.map((f) => f.id)).toEqual([]);
+  });
+
+  it("q18periodesTexte1 est écrit aux coordonnées de sa ligne, pas dans 1_3", () => {
+    const f = parCle.get("q18periodesTexte1");
+    expect(f, "q18periodesTexte1 doit exister").toBeDefined();
+    expect(f?.pdfFieldName, "ne doit pointer vers aucun widget").toBe("");
+    expect(f?.drawAt, "doit porter un drawAt").toBeDefined();
+    expect(f?.drawAt?.page, "1_3 est en page 2").toBe(1);
+    expect(f?.drawAt?.maxWidth ?? 0, "tient dans la largeur du rect (222 pt)").toBeLessThanOrEqual(222);
+  });
+
+  it("q18periodesTexte1 garde la même condition d'affichage que ses lignes sœurs", () => {
+    // Le passage en drawAt ne doit pas casser le rattachement à l'arbre :
+    // toujours conditionné par le choix "periodes" de la grille Q18, comme
+    // q18periodesTexte2/3/4 restées sur widget.
+    expect(parCle.get("q18periodesTexte1")?.visibleIf).toEqual(
+      parCle.get("q18periodesTexte2")?.visibleIf,
+    );
+  });
+});

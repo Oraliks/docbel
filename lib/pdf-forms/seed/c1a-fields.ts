@@ -115,8 +115,12 @@ function grilleHoraire(opts: {
     irregulierement: string;
   };
   // Champs texte libres pour "pendant les périodes" et "irrégulièrement".
-  // Fournis dans l'ordre d'apparition sur le PDF (pdfFieldName exacts).
-  periodesTextFields: string[];
+  // Fournis dans l'ordre d'apparition sur le PDF (pdfFieldName exacts). Un
+  // élément peut aussi être un objet `{ pdfFieldName: "", drawAt }` quand la
+  // case AcroForm ne peut pas être revendiquée (widget partagé avec une autre
+  // case du PDF) — cf. Q18 ci-dessous, seul appelant à en avoir besoin ; Q4
+  // continue de fournir de simples chaînes, la fabrique n'est pas dénaturée.
+  periodesTextFields: Array<string | { pdfFieldName: string; drawAt?: PdfFormField["drawAt"] }>;
   irregulierementTextFields: string[];
 }): PdfFormField[] {
   const { suffixes } = opts;
@@ -214,10 +218,13 @@ function grilleHoraire(opts: {
     order: ordre(),
   });
 
-  opts.periodesTextFields.forEach((pdfFieldName, i) => {
+  opts.periodesTextFields.forEach((entree, i) => {
+    const { pdfFieldName, drawAt } =
+      typeof entree === "string" ? { pdfFieldName: entree, drawAt: undefined } : entree;
     fields.push({
       id: `${opts.idPrefix}periodesTexte${i + 1}`,
       pdfFieldName,
+      ...(drawAt ? { drawAt } : {}),
       type: "text",
       required: false,
       label: { fr: `Période ${i + 1}` },
@@ -917,11 +924,33 @@ export const C1A_FIELDS: PdfFormField[] = [
     },
     // 6 lignes de texte libre identifiées après la grille Q18 (ordre 98-103 :
     // "2_3","3_3","4_3","1_4","2_4","3_4") + 1 ligne isolée en fin de dump
-    // ("1_3", ordre 130) que l'inférence automatique a rattachée à tort loin
-    // de sa vraie position — logiquement la 1re ligne de "pendant les
-    // périodes" de Q18 (numérotation [1] manquante dans le groupe 98-103,
-    // qui commence directement à [2]).
-    periodesTextFields: ["1_3", "2_3", "3_3", "4_3"],
+    // ("1_3", ordre 130), logiquement la 1re ligne de "pendant les périodes"
+    // de Q18 (numérotation [1] manquante dans le groupe 98-103, qui commence
+    // directement à [2]).
+    //
+    // "1_3" est en réalité un widget PARTAGÉ (confirmé via pypdf/`/Kids`,
+    // audit du 2026-07-29) : le même champ AcroForm couvre AUSSI les deux
+    // cases d'en-tête de la page 2 — nom et NISS (rects [293,799,560,809] et
+    // [109,799,265,812]). Écrire dans cette ligne imprimait donc le texte
+    // saisi ici dans la case du numéro de registre national du citoyen : une
+    // déclaration officielle faussée. Même famille de défaut que
+    // `TVA`/`Montant`/`voir 19` ci-dessus : écriture positionnelle, "1_3"
+    // reste non revendiqué par qui que ce soit (et les deux cases d'en-tête
+    // restent blanches comme aujourd'hui — les y écrire est une décision
+    // séparée, hors de ce correctif).
+    //
+    // Calage mesuré sur le rect réel du widget "1_3" ([335,753,557,764], soit
+    // 222 pt de large) selon la MÊME convention que les `drawAt` déjà en
+    // place sur cette page pour des lignes de même gabarit — vérifiée à
+    // l'identique (x = arrondi(rect.x0) + 2, y = arrondi(rect.y0) − 4) sur
+    // `independantNumeroEntreprise`/`numeroEntreprise` (TVA) et sur
+    // `revenuAnnuelMandat`/`revenuAnnuelMandat2` (Montant, mêmes lignes
+    // pointillées « EUR » de la page 2) : le texte s'imprime ainsi ~2 pt sous
+    // les pointillés imprimés, pas au-dessus.
+    periodesTextFields: [
+      { pdfFieldName: "", drawAt: { page: 1, x: 337, y: 749, size: 9, maxWidth: 218 } },
+      "2_3", "3_3", "4_3",
+    ],
     irregulierementTextFields: ["1_4", "2_4", "3_4"],
   }),
 

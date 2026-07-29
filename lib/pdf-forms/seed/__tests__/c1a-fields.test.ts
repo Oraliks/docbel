@@ -474,7 +474,7 @@ describe("C1A — Commit 1 : coupure périodes / irrégulier de la grille horair
     expect(ids.map((id) => parCle.get(id)?.pdfFieldName)).toEqual([
       "undefined", "1_2", "2_2", "3_2", "4_2",
     ]);
-    expect(parCle.get("q4irregulierementTexte1")?.label?.fr).toBe("Précise à quel rythme");
+    expect(parCle.get("q4irregulierementTexte1")?.label?.fr).toBe("Précisez à quel rythme");
   });
 
   it("un ancien champ q4periodesTexte5 (widget « undefined ») déjà en base ne survit pas au merge", () => {
@@ -857,5 +857,72 @@ describe("C1A — Commit 3 : les questions de l'arbre deviennent obligatoires", 
     ]) {
       expect(parCle.get(id)?.required, id).not.toBe(true);
     }
+  });
+});
+
+// -----------------------------------------------------------------------
+// Le C1A vouvoie : c'est la convention du site (tout le parcours citoyen est
+// en « vous ») ET la voix du PDF officiel lui-même (« Aiderez-vous cet
+// indépendant ? », « Vous êtes chômeur temporaire si vous êtes toujours au
+// service de votre employeur… »). Un lot de correction a remis en vouvoiement
+// des label/help qui avaient été tutoyés à tort (cf.
+// .superpowers/sdd/c1a-vouvoiement-report.md) : ce describe verrouille le
+// résultat contre toute régression.
+// -----------------------------------------------------------------------
+describe("C1A — voix du vouvoiement (pas de tutoiement résiduel)", () => {
+  const fields = applyC1AImprovements([]);
+
+  // \b « nu » de JS ne traite pas les lettres accentuées comme des lettres
+  // (\w est ASCII-only) : une frontière de mot apparaîtrait donc à tort entre
+  // un "u" et un "é" accentués (ex. un hypothétique "tué"). On définit ici la
+  // frontière nous-mêmes, lettres accentuées incluses, pour ne dépendre
+  // d'aucun cas particulier de ce genre.
+  const LETTRE = "A-Za-zÀ-ÖØ-öø-ÿ";
+  const TUTOIEMENT = new RegExp(`(?<![${LETTRE}])(tu|ton|ta|tes|toi)(?![${LETTRE}])`, "i");
+
+  function texteFr(loc?: { fr?: string }): string[] {
+    return loc?.fr ? [loc.fr] : [];
+  }
+
+  function collecterTextes(f: PdfFormField): string[] {
+    const textes = [
+      ...texteFr(f.label),
+      ...texteFr(f.labelShort),
+      ...texteFr(f.help),
+      ...texteFr(f.addRowLabel),
+      ...(f.options ?? []).flatMap((o) => texteFr(o.label)),
+    ];
+    for (const sf of f.itemFields ?? []) textes.push(...collecterTextes(sf));
+    return textes;
+  }
+
+  it("garde-fou du test lui-même : la regex ne réagit pas aux mots français qui contiennent « tu/ton/ta/tes/toi » sans être ces mots", () => {
+    // Cas réels du fichier (ou de la même famille) qui ne doivent JAMAIS
+    // déclencher : "toute"/"toutes" ne contient pas "tu" à une frontière de
+    // mot ("toutes" se lit t-o-u-t-e-s, le "tes" final colle au "u" qui le
+    // précède, donc aucune frontière ne s'y ouvre).
+    for (const motSain of [
+      "Toute l'année", "Pendant les périodes suivantes de l'année, mentionnez les toutes",
+      "statut", "situation", "actuellement", "habituellement", "vertu",
+      "gratuit", "ponctuel", "virtuel", "total", "capital", "entreprise",
+      "toujours", "cette", "entretien",
+    ]) {
+      expect(TUTOIEMENT.test(motSain), motSain).toBe(false);
+    }
+    for (const motTutoyant of [
+      "Tu dois compléter", "pour ton employeur", "sur ta carte", "tes revenus", "aide pour toi",
+    ]) {
+      expect(TUTOIEMENT.test(motTutoyant), motTutoyant).toBe(true);
+    }
+  });
+
+  it("aucun label/labelShort/help/addRowLabel/option français ne tutoie (Q1 à Q24, grilles horaires et listes incluses)", () => {
+    const fautifs: string[] = [];
+    for (const f of fields) {
+      for (const texte of collecterTextes(f)) {
+        if (TUTOIEMENT.test(texte)) fautifs.push(`${f.id} → "${texte}"`);
+      }
+    }
+    expect(fautifs).toEqual([]);
   });
 });

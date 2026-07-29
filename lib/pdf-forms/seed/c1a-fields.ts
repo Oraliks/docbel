@@ -231,7 +231,7 @@ function grilleHoraire(opts: {
     required: true,
     label: { fr: opts.questionLabel },
     help: {
-      fr: "Choisis la fréquence qui correspond le mieux : toute l'année, seulement certaines périodes (précise-les), ou de façon irrégulière (précise aussi).",
+      fr: "Choisissez la fréquence qui correspond le mieux : toute l'année, seulement certaines périodes (précisez-les), ou de façon irrégulière (précisez aussi).",
     },
     options: [
       { value: "toute-annee", label: { fr: "Toute l'année" } },
@@ -265,7 +265,7 @@ function grilleHoraire(opts: {
       pdfFieldName,
       type: "text",
       required: false,
-      label: { fr: i === 0 ? "Précise à quel rythme" : `Précision ${i + 1}` },
+      label: { fr: i === 0 ? "Précisez à quel rythme" : `Précision ${i + 1}` },
       visibleIf: { fieldId: `${opts.idPrefix}periode`, op: "equals", value: "irregulier" },
       section: opts.section,
       order: ordre(),
@@ -321,7 +321,7 @@ export const C1A_FIELDS: PdfFormField[] = [
     inheritedFromDossier: true,
     label: { fr: "Numéro NISS (registre national)" },
     help: {
-      fr: "11 chiffres au dos de ta carte d'identité (eID), au-dessus du code-barres. Le formulaire le rappelle : « voir coin supérieur droit de ta carte SIS ».",
+      fr: "11 chiffres au dos de votre carte d'identité (eID), au-dessus du code-barres. Le formulaire le rappelle : « voir coin supérieur droit de votre carte SIS ».",
     },
     placeholder: { fr: "00.00.00-000.00" },
     prefillFrom: "profile.niss",
@@ -403,7 +403,7 @@ export const C1A_FIELDS: PdfFormField[] = [
     },
     labelShort: { fr: "Aidez-vous un indépendant ?" },
     help: {
-      fr: "Par exemple dans son activité même, l'administration, la comptabilité, une permanence téléphonique… Si tu aides plus d'un indépendant, complète un formulaire C1A pour chacun.",
+      fr: "Par exemple dans son activité même, l'administration, la comptabilité, une permanence téléphonique… Si vous aidez plus d'un indépendant, complétez un formulaire C1A pour chaque indépendant.",
     },
     options: YN,
     section: SECTION_AIDE_INDEPENDANT,
@@ -420,7 +420,7 @@ export const C1A_FIELDS: PdfFormField[] = [
     pdfFieldName: "Nom",
     type: "text",
     required: true,
-    label: { fr: "2. Nom de l'indépendant que tu aides" },
+    label: { fr: "2. Nom de l'indépendant que vous aidez" },
     visibleIf: { fieldId: "aideIndependant", op: "equals", value: "oui" },
     section: SECTION_AIDE_INDEPENDANT,
     order: 1,
@@ -435,7 +435,7 @@ export const C1A_FIELDS: PdfFormField[] = [
     drawAt: { page: 0, x: 115, y: 338, size: 9, maxWidth: 134 },
     type: "bce",
     required: false,
-    label: { fr: "Numéro d'entreprise de l'indépendant que tu aides" },
+    label: { fr: "Numéro d'entreprise de l'indépendant que vous aidez" },
     help: {
       fr: "Numéro à la Banque-Carrefour des Entreprises, au format 0123.456.789.",
     },
@@ -494,7 +494,7 @@ export const C1A_FIELDS: PdfFormField[] = [
     required: true,
     label: { fr: "Nature de l'activité de l'indépendant" },
     help: {
-      fr: "Si l'indépendant exerce plusieurs activités, ajoute une ligne par activité.",
+      fr: "Si l'indépendant exerce plusieurs activités, ajoutez une ligne par activité.",
     },
     addRowLabel: { fr: "Ajouter une autre nature d'activité" },
     visibleIf: { fieldId: "aideIndependant", op: "equals", value: "oui" },
@@ -527,7 +527,7 @@ export const C1A_FIELDS: PdfFormField[] = [
     label: { fr: "3. Aiderez-vous cet indépendant pendant votre chômage ?" },
     labelShort: { fr: "Pendant votre chômage ?" },
     help: {
-      fr: "Réponds également « oui » si, durant des périodes de chômage temporaire, tu aides cet indépendant (à partir du premier jour de chômage du mois concerné jusqu'à la fin du mois). Tu es chômeur temporaire si tu es toujours au service de ton employeur mais que temporairement tu ne travailles pas, par exemple en raison d'un manque de travail ou d'intempéries.",
+      fr: "Répondez également « oui » si, durant des périodes de chômage temporaire, vous aidez cet indépendant (à partir du premier jour de chômage du mois concerné jusqu'à la fin du mois). Vous êtes chômeur temporaire si vous êtes toujours au service de votre employeur mais que temporairement vous ne travaillez pas, par exemple en raison d'un manque de travail ou d'intempéries.",
     },
     options: YN,
     visibleIf: { fieldId: "aideIndependant", op: "equals", value: "oui" },
@@ -613,6 +613,9 @@ export const C1A_FIELDS: PdfFormField[] = [
     type: "array",
     required: true,
     label: { fr: "5. Décrivez l'aide que vous apporterez" },
+    help: {
+      fr: "Si votre aide couvre plusieurs tâches, ajoutez une ligne par tâche.",
+    },
     addRowLabel: { fr: "Ajouter une autre ligne de description" },
     visibleIf: { fieldId: "aideIndependant", op: "equals", value: "oui" },
     section: SECTION_AIDE_INDEPENDANT,
@@ -663,9 +666,9 @@ export const C1A_FIELDS: PdfFormField[] = [
     drawAt: { page: 0, x: 322, y: 311, size: 9, maxWidth: 110 },
     type: "number",
     required: false,
-    label: { fr: "Combien gagnes-tu pour ton aide ? (EUR)" },
+    label: { fr: "Combien gagnez-vous pour votre aide ? (EUR)" },
     help: {
-      fr: "Ou à combien s'élève la valeur de ton aide. Joins une copie de la plus récente note de calcul de l'administration des contributions directes.",
+      fr: "Ou à combien s'élève la valeur de votre aide. Joignez une copie de la plus récente note de calcul de l'administration des contributions directes.",
     },
     visibleIf: { fieldId: "montantAidePeriodicite", op: "equals", value: "mois" },
     section: SECTION_REVENUS,
@@ -678,9 +681,9 @@ export const C1A_FIELDS: PdfFormField[] = [
     drawAt: { page: 0, x: 440, y: 311, size: 9, maxWidth: 58 },
     type: "number",
     required: false,
-    label: { fr: "Combien gagnes-tu pour ton aide ? (EUR)" },
+    label: { fr: "Combien gagnez-vous pour votre aide ? (EUR)" },
     help: {
-      fr: "Ou à combien s'élève la valeur de ton aide. Joins une copie de la plus récente note de calcul de l'administration des contributions directes.",
+      fr: "Ou à combien s'élève la valeur de votre aide. Joignez une copie de la plus récente note de calcul de l'administration des contributions directes.",
     },
     visibleIf: { fieldId: "montantAidePeriodicite", op: "equals", value: "an" },
     section: SECTION_REVENUS,
@@ -732,7 +735,7 @@ export const C1A_FIELDS: PdfFormField[] = [
     },
     labelShort: { fr: "Mandat politique ou fonction de juge ?" },
     help: {
-      fr: "Si tu es conseiller communal, conseiller provincial, membre d'un C.P.A.S., juge social, juge consulaire ou conseiller social, réponds « non ».",
+      fr: "Si vous êtes conseiller communal, conseiller provincial, membre d'un C.P.A.S., juge social, juge consulaire ou conseiller social, répondez « non ».",
     },
     options: YN,
     section: SECTION_ACTIVITES,
@@ -755,7 +758,7 @@ export const C1A_FIELDS: PdfFormField[] = [
     required: true,
     label: { fr: "10. Quel mandat ou quelle fonction ?" },
     help: {
-      fr: "Si tu exerces plus d'un mandat ou as plus d'une fonction, mentionne-les tous.",
+      fr: "Si vous exercez plus d'un mandat ou avez plus d'une fonction, mentionnez-les tous.",
     },
     visibleIf: { fieldId: "mandatPolitiqueOuJuge", op: "equals", value: "oui" },
     section: SECTION_ACTIVITES,
@@ -775,7 +778,7 @@ export const C1A_FIELDS: PdfFormField[] = [
     required: true,
     label: { fr: "11. Revenu annuel net imposable de ce mandat (EUR)" },
     help: {
-      fr: "Joins une copie de la plus récente note de calcul de l'administration des contributions directes.",
+      fr: "Joignez une copie de la plus récente note de calcul de l'administration des contributions directes.",
     },
     visibleIf: { fieldId: "mandatPolitiqueOuJuge", op: "equals", value: "oui" },
     section: SECTION_REVENUS,
@@ -790,7 +793,7 @@ export const C1A_FIELDS: PdfFormField[] = [
     drawAt: { page: 1, x: 69, y: 691, size: 9, maxWidth: 62 },
     type: "number",
     required: false,
-    label: { fr: "Second montant, si tu exerces plus d'un mandat (EUR)" },
+    label: { fr: "Second montant, si vous exercez plus d'un mandat (EUR)" },
     visibleIf: { fieldId: "mandatPolitiqueOuJuge", op: "equals", value: "oui" },
     section: SECTION_REVENUS,
     order: 60.5,
@@ -807,7 +810,7 @@ export const C1A_FIELDS: PdfFormField[] = [
     label: { fr: "12. Exercez-vous une autre activité à titre accessoire ?" },
     labelShort: { fr: "Autre activité accessoire ?" },
     help: {
-      fr: "Réponds toujours « oui » si tu es inscrit comme indépendant à titre accessoire ou si tu es administrateur de société. Complète un formulaire C1A pour chaque activité que tu exerces.",
+      fr: "Répondez toujours « oui » si vous êtes inscrit comme indépendant à titre accessoire ou si vous êtes administrateur de société. Complétez un formulaire C1A pour chaque activité que vous exercez.",
     },
     options: YN,
     section: SECTION_ACTIVITES,
@@ -993,7 +996,7 @@ export const C1A_FIELDS: PdfFormField[] = [
     label: { fr: "17. Exercerez-vous cette activité pendant votre chômage ?" },
     labelShort: { fr: "Pendant votre chômage ?" },
     help: {
-      fr: "Réponds également « oui » si tu exerceras cette activité pendant des périodes de chômage temporaire auprès de ton employeur (à partir du premier jour de chômage du mois concerné jusqu'à la fin du mois). Tu es chômeur temporaire si tu es toujours au service de ton employeur mais que temporairement tu ne travailles pas, par exemple en raison d'un manque de travail ou d'intempéries.",
+      fr: "Répondez également « oui » si vous exercerez cette activité pendant des périodes de chômage temporaire auprès de votre employeur (à partir du premier jour de chômage du mois concerné jusqu'à la fin du mois). Vous êtes chômeur temporaire si vous êtes toujours au service de votre employeur mais que temporairement vous ne travaillez pas, par exemple en raison d'un manque de travail ou d'intempéries.",
     },
     options: YN,
     visibleIf: { fieldId: "autreActiviteAccessoire", op: "equals", value: "oui" },
@@ -1098,7 +1101,7 @@ export const C1A_FIELDS: PdfFormField[] = [
     required: false,
     label: { fr: "Revenu net comme salarié — par mois (EUR)" },
     help: {
-      fr: "Montant brut diminué des cotisations de sécurité sociale et du précompte professionnel retenus à la source par l'employeur (rémunération mensuelle normale, mais aussi pécule de vacances, 13ᵉ mois et avantages en nature éventuels). Indique jusqu'à 2 chiffres après la virgule.",
+      fr: "Montant brut diminué des cotisations de sécurité sociale et du précompte professionnel retenus à la source par l'employeur (rémunération mensuelle normale, mais aussi pécule de vacances, 13ᵉ mois et avantages en nature éventuels). Indiquez jusqu'à 2 chiffres après la virgule.",
     },
     visibleIf: { fieldId: "activiteCommeSalarie", op: "equals", value: "oui" },
     section: SECTION_REVENUS,
@@ -1119,7 +1122,7 @@ export const C1A_FIELDS: PdfFormField[] = [
     type: "number",
     required: false,
     label: { fr: "Revenu net comme salarié — par heure (EUR)" },
-    help: { fr: "Indique jusqu'à 4 chiffres après la virgule." },
+    help: { fr: "Indiquez jusqu'à 4 chiffres après la virgule." },
     section: SECTION_REVENUS,
     order: 141,
   },
@@ -1131,7 +1134,7 @@ export const C1A_FIELDS: PdfFormField[] = [
     required: false,
     label: { fr: "Revenu net comme indépendant — par an (EUR)" },
     help: {
-      fr: "Revenu imposable indiqué sur l'avertissement-extrait de rôle et la note de calcul (recettes diminuées des charges, dépenses et pertes professionnelles). Joins une copie de la plus récente note de calcul de l'administration des contributions directes.",
+      fr: "Revenu imposable indiqué sur l'avertissement-extrait de rôle et la note de calcul (recettes diminuées des charges, dépenses et pertes professionnelles). Joignez une copie de la plus récente note de calcul de l'administration des contributions directes.",
     },
     visibleIf: { fieldId: "autreActiviteAccessoire", op: "equals", value: "oui" },
     section: SECTION_REVENUS,
@@ -1189,10 +1192,10 @@ export const C1A_FIELDS: PdfFormField[] = [
     pdfFieldName: "",
     type: "radio",
     required: true,
-    label: { fr: "Es-tu chômeur temporaire ?" },
+    label: { fr: "Êtes-vous chômeur temporaire ?" },
     labelShort: { fr: "Chômeur temporaire ?" },
     help: {
-      fr: "Tu es chômeur temporaire si tu es toujours au service de ton employeur mais que temporairement tu ne travailles pas, par exemple en raison d'un manque de travail ou d'intempéries.",
+      fr: "Vous êtes chômeur temporaire si vous êtes toujours au service de votre employeur mais que temporairement vous ne travaillez pas, par exemple en raison d'un manque de travail ou d'intempéries.",
     },
     options: YN,
     section: SECTION_ACTIVITES,
@@ -1278,7 +1281,7 @@ export const C1A_FIELDS: PdfFormField[] = [
     required: false,
     label: { fr: "Dimanche" },
     help: {
-      fr: "22. À compléter uniquement si tu es chômeur temporaire : coche les jours où tu es habituellement occupé chez ton employeur.",
+      fr: "22. À compléter uniquement si vous êtes chômeur temporaire : cochez les jours où vous êtes habituellement occupé chez votre employeur.",
     },
     visibleIf: VISIBLE_SI_CHOMEUR_TEMPORAIRE,
     section: SECTION_ACTIVITES,
@@ -1295,7 +1298,7 @@ export const C1A_FIELDS: PdfFormField[] = [
     required: true,
     label: { fr: "23. Je suis indépendant à titre principal :" },
     help: {
-      fr: "⚠ À compléter toujours. Si tu es indépendant à titre principal, tu n'as pas droit aux allocations de chômage.",
+      fr: "⚠ À compléter toujours. Si vous êtes indépendant à titre principal, vous n'avez pas droit aux allocations de chômage.",
     },
     options: [
       { value: "oui", label: { fr: "Oui, et je sais que je n'ai pas droit aux allocations" } },
@@ -1360,7 +1363,7 @@ export const C1A_FIELDS: PdfFormField[] = [
     required: true,
     label: { fr: "Signature électronique" },
     help: {
-      fr: "Signature « façon Adobe » : ton nom + prénom + horodatage seront appliqués à la position de la signature.",
+      fr: "Signature « façon Adobe » : votre nom + prénom + horodatage seront appliqués à la position de la signature.",
     },
     section: SECTION_SIGNATURE,
     order: 201,

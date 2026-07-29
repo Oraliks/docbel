@@ -135,7 +135,12 @@ function LabelWithTooltip({
         )}
         {required && <span className="text-destructive"> *</span>}
       </span>
-      {help && <InfoTooltip text={help} />}
+      {/* `srOnly` signale que ce libellé est DÉJÀ affiché ailleurs (titre
+          d'étape, cf. `stepTitleReplacesFieldLabel`) — l'appelant promeut
+          alors aussi `help` à cet autre endroit (description du stepper,
+          cf. MacroRunnerBody). Rendre l'icône ici la laisserait orpheline :
+          un ⓘ flottant sans texte pour l'ancrer visuellement. */}
+      {help && !srOnly && <InfoTooltip text={help} />}
     </span>
   );
 }
@@ -334,25 +339,41 @@ function PdfFieldImpl({
     // champ reste porté par le groupe : le runner s'en sert pour faire défiler
     // jusqu'à la première erreur.
     if (rowLayout) {
+      // Question SEULE sur son étape (`hideLabel`, cf. `stepTitleReplacesFieldLabel`) :
+      // le libellé passe en `sr-only` (déjà affiché comme titre d'étape) mais
+      // restait un `flex-1` NORMAL dans la rangée — une boîte invisible qui
+      // continuait à réclamer sa place, poussant le contrôle Oui/Non loin du
+      // bord et laissant une zone vide fantôme à gauche. `sr-only` sur le
+      // conteneur lui-même (position absolute) le sort du flux, et le
+      // contrôle peut alors s'aligner à droite sur desktop / pleine largeur
+      // sur mobile, comme un contrôle SEUL dans sa rangée.
+      const control = (
+        <YesNoSegmentedControl
+          id={field.id}
+          value={displayValue}
+          onChange={onChange}
+          options={opts}
+          locale={locale}
+          invalid={invalid}
+          disabled={isDerivedLocked}
+          variant={segmentedVariant}
+          aria-labelledby={labelId}
+          aria-describedby={describedBy}
+          required={field.required}
+        />
+      );
       return (
         <div className="flex flex-col gap-1 px-4 py-3" data-invalid={invalid} onFocus={notifyFocus} onClick={notifyFocus}>
-          <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
-            <FieldLabel id={labelId} className="min-w-0 flex-1">
+          <div
+            className={cn(
+              "flex flex-wrap items-center gap-x-4 gap-y-2",
+              hideLabel ? "justify-end" : "justify-between",
+            )}
+          >
+            <FieldLabel id={labelId} className={hideLabel ? "sr-only" : "min-w-0 flex-1"}>
               <LabelWithTooltip label={label} labelShort={labelShort} help={help} required={field.required} srOnly={hideLabel} />
             </FieldLabel>
-            <YesNoSegmentedControl
-              id={field.id}
-              value={displayValue}
-              onChange={onChange}
-            options={opts}
-            locale={locale}
-            invalid={invalid}
-            disabled={isDerivedLocked}
-            variant={segmentedVariant}
-            aria-labelledby={labelId}
-            aria-describedby={describedBy}
-            required={field.required}
-          />
+            {hideLabel ? <div className="w-full sm:w-auto">{control}</div> : control}
           </div>
           {derivedNote}
           {errorReport}

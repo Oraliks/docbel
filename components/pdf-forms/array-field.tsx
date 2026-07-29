@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { PlusIcon, TrashIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Field, FieldLabel, FieldDescription } from "@/components/ui/field";
 import { PdfField } from "./pdf-field";
 import { FieldErrorReport } from "./field-error-report";
@@ -116,7 +115,11 @@ export function ArrayField({ field, value, error, locale, onChange, formId, form
         {label}
         {field.required && <span className="text-destructive"> *</span>}
       </FieldLabel>
-      {help && <FieldDescription>{help}</FieldDescription>}
+      {/* `hideLabel` = ce tableau est SEUL sur son étape (cf.
+          `stepTitleReplacesFieldLabel`) : son libellé titre déjà l'étape et
+          son aide est promue description du stepper (MacroRunnerBody) — la
+          répéter ici doublerait le même texte à deux endroits de l'écran. */}
+      {help && !hideLabel && <FieldDescription>{help}</FieldDescription>}
 
       <div className="flex flex-col gap-3">
         {rows.length === 0 ? (
@@ -125,10 +128,16 @@ export function ArrayField({ field, value, error, locale, onChange, formId, form
           </div>
         ) : (
           rows.map((row, idx) => (
-            <Card key={idx}>
-              <CardContent className="grid gap-3 py-4 sm:grid-cols-2 xl:grid-cols-3">
-                <div className="sm:col-span-2 flex items-baseline justify-between">
-                  <span className="text-xs font-medium text-muted-foreground">
+            // Carte fine (pas le `Card` shadcn générique : celui-ci impose son
+            // propre padding/ombre) — mêmes tokens que les autres cadres du
+            // runner (cf. cartes de section dans pdf-form-runner.tsx).
+            <div
+              key={idx}
+              className="rounded-2xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] p-4"
+            >
+              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                <div className="sm:col-span-2 xl:col-span-3 flex items-baseline justify-between">
+                  <span className="text-xs font-medium text-[color:var(--glass-ink-soft)]">
                     {t("arrayRowNumber", { index: idx + 1 })}
                   </span>
                   {/* Toutes les lignes offrent un bouton « Supprimer »
@@ -141,7 +150,7 @@ export function ArrayField({ field, value, error, locale, onChange, formId, form
                     onClick={() => removeRow(idx)}
                     disabled={field.minRows ? rows.length <= field.minRows : false}
                     aria-label={t("arrayRemoveRowAria", { index: idx + 1 })}
-                    className="text-destructive hover:text-destructive"
+                    className="text-destructive hover:bg-destructive/10 hover:text-destructive"
                   >
                     <TrashIcon className="size-4" />
                     {t("arrayRemoveRow")}
@@ -185,8 +194,8 @@ export function ArrayField({ field, value, error, locale, onChange, formId, form
                     </div>
                   );
                 })}
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           ))
         )}
       </div>
@@ -218,12 +227,16 @@ export function ArrayField({ field, value, error, locale, onChange, formId, form
         </div>
       )}
 
+      {/* Pleine largeur, fond lilas / texte violet — une affordance
+          d'ajout, pas un bouton secondaire parmi d'autres. `variant="ghost"`
+          part d'un fond transparent : rien à écraser pour poser le lilas au
+          repos (un `outline`/`default` imposerait sa propre couleur de fond). */}
       <Button
         type="button"
-        variant="outline"
+        variant="ghost"
         onClick={addRow}
         disabled={field.maxRows ? rows.length >= field.maxRows : false}
-        className="self-start"
+        className="min-h-11 w-full justify-center gap-2 rounded-2xl bg-[color:var(--glass-pop-bg)] text-[color:var(--glass-accent-deep)] hover:bg-[color:var(--glass-pop-bg)] hover:opacity-90"
       >
         <PlusIcon className="size-4" />
         {addLabel}

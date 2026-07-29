@@ -101,7 +101,11 @@ export function FormStepper({ steps, activeIndex, onSelect, showNavigation = tru
           />
         </div>
         {(activeStep?.description || activeStep?.subLabel) && (
-          <p className="text-base leading-relaxed text-[color:var(--glass-ink-soft)]">
+          // `line-clamp-2` : la description peut venir de l'aide d'un champ
+          // (cf. MacroRunnerBody, question seule sur son étape) — un texte
+          // recopié du PDF officiel peut être long, et le bandeau compact n'a
+          // pas la hauteur d'une étape détaillée.
+          <p className="line-clamp-2 text-base leading-relaxed text-[color:var(--glass-ink-soft)]">
             {activeStep.description ?? activeStep.subLabel}
           </p>
         )}

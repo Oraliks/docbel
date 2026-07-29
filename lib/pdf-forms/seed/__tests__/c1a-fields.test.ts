@@ -576,3 +576,109 @@ describe("C1A — Commit 2 : nature de l'activité (Q2) et description de l'aide
     expect(parCle.get("descriptionAide1")?.stepGroup).toBe("aide-independant");
   });
 });
+
+describe("C1A — Commit 3 : les questions de l'arbre deviennent obligatoires", () => {
+  const fields = applyC1AImprovements([]);
+  const parCle = new Map(fields.map((f) => [f.id, f]));
+
+  // État attendu de `required` pour CHAQUE clé de C1A_ROUTAGE. Toute clé
+  // absente de cette table fait échouer le test ci-dessous (couverture
+  // exhaustive) — ajouter une nouvelle question à l'arbre oblige donc à
+  // trancher explicitement son caractère obligatoire ici.
+  const ATTENDU: Record<string, boolean> = {
+    aideIndependant: true, // Q1, départ de l'arbre — déjà obligatoire avant ce lot.
+    independantNom: true, // Q2 — donnée principale, chemin unique.
+    aideraPendantChomage: true, // Q3 — chemin unique, tranche Q4.
+    // Q4 : grille horaire — aucun jour précis n'est obligatoire (voir plus
+    // bas), la "donnée principale" exigible est q4periode.
+    q4lundi: false,
+    // Q5 : champ array (Commit 2) — required neutralisé par buildValidator
+    // pour ce type, et casserait le compteur du stepper. Décision documentée
+    // dans le seed et le describe Commit 2 ci-dessus.
+    descriptionAide1: false,
+    montantAidePeriodicite: true, // Q6 — choix mois/an, chemin unique.
+    aidaitDejaIndependant: true, // Q7 — chemin unique.
+    dateDebutAide: true, // Q8 — donnée principale, visible seulement si Q7=oui.
+    mandatPolitiqueOuJuge: true, // Q9 — déjà obligatoire avant ce lot.
+    mandatDescription: true, // Q10 — chemin unique.
+    revenuAnnuelMandat: true, // Q11 — chemin unique, 1er montant.
+    autreActiviteAccessoire: true, // Q12 — déjà obligatoire avant ce lot.
+    activiteCommeSalarie: true, // Q13 — chemin unique.
+    employeurNom: true, // Q14 — chemin unique, donnée principale.
+    adresseActivite: true, // Q15 — chemin unique (atteint quel que soit Q13).
+    formeActivite: true, // Q16 — chemin unique.
+    exerceraPendantChomage: true, // Q17 — chemin unique, tranche Q18.
+    q18lundi: false, // Q18 — même raison que q4lundi.
+    // Q19 : la condition compilée de cette clé n'inclut PAS
+    // `activiteCommeSalarie` (elle est atteinte via les deux branches de Q13,
+    // cf. test dédié plus bas) — la rendre required forcerait un indépendant
+    // pur à répondre une question de revenu salarié. Décision documentée.
+    revenuNetSalarieParMois: false,
+    exerceDejaActivite: true, // Q20 — chemin unique.
+    dateDebutActivite: true, // Q21 — donnée principale, visible seulement si Q20=oui.
+    estChomeurTemporaire: true, // Q22 (gate virtuelle) — déjà obligatoire avant ce lot.
+    // Q22 : grille de 7 cases jour — même raison que q4lundi/q18lundi, sans
+    // équivalent au radio "période" sur lequel reporter une exigence.
+    joursOccupeLundi: false,
+    independantTitrePrincipal: true, // Q23 — déjà obligatoire avant ce lot.
+    affirmationSincerite: true, // Q24 — déjà obligatoire avant ce lot.
+  };
+
+  it("couverture exhaustive : chaque clé de C1A_ROUTAGE a une décision explicite", () => {
+    expect(Object.keys(ATTENDU).sort()).toEqual(Object.keys(C1A_ROUTAGE).sort());
+  });
+
+  it("chaque clé de C1A_ROUTAGE porte le required attendu", () => {
+    for (const [id, attendu] of Object.entries(ATTENDU)) {
+      expect(parCle.get(id), `${id} doit exister`).toBeDefined();
+      expect(parCle.get(id)?.required, `${id}.required`).toBe(attendu);
+    }
+  });
+
+  it("aucun jour précis d'une grille horaire (Q4/Q18) n'est obligatoire, mais la fréquence l'est", () => {
+    const jours = ["lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi", "dimanche"];
+    for (const prefix of ["q4", "q18"]) {
+      for (const jour of jours) {
+        expect(parCle.get(`${prefix}${jour}`)?.required, `${prefix}${jour}`).toBe(false);
+      }
+      expect(parCle.get(`${prefix}periode`)?.required, `${prefix}periode`).toBe(true);
+    }
+  });
+
+  it("aucun jour de Q22 (chômeur temporaire) n'est obligatoire", () => {
+    for (const jour of ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"]) {
+      expect(parCle.get(`joursOccupe${jour}`)?.required, `joursOccupe${jour}`).toBe(false);
+    }
+  });
+
+  it("aucun requiredGroup n'est introduit sur le C1A (interdit par la charte du lot)", () => {
+    expect(fields.filter((f) => f.requiredGroup)).toEqual([]);
+  });
+
+  it("Q19 : la condition compilée de revenuNetSalarieParMois ne distingue pas salarié/indépendant — required resterait un piège", () => {
+    // Preuve du raisonnement qui justifie de NE PAS rendre ce champ requis :
+    // sa condition (posée par appliquerRoutage, qui écrase le visibleIf brut
+    // pour toute clé C1A_ROUTAGE) ne porte QUE sur exerceraPendantChomage et
+    // autreActiviteAccessoire, jamais sur activiteCommeSalarie. Si ce test
+    // casse un jour (la condition se met à discriminer), la décision
+    // required:false ci-dessus doit être réexaminée.
+    const conditions = compilerRoutage(C1A_ROUTAGE, C1A_DEPART);
+    const clauses = [conditions.revenuNetSalarieParMois, ...(conditions.revenuNetSalarieParMois?.and ?? [])]
+      .filter((c): c is NonNullable<typeof c> => !!c)
+      .map((c) => c.fieldId);
+    expect(clauses).not.toContain("activiteCommeSalarie");
+    expect(parCle.get("revenuNetSalarieParHeure")?.required).toBe(false);
+    expect(parCle.get("revenuNetIndependantParAn")?.required).toBe(false);
+  });
+
+  it("les rattachements secondaires restent facultatifs (2e ligne, 2e montant, adresse employeur)", () => {
+    for (const id of [
+      "revenuAnnuelMandat2", // 2e montant de Q11, cas d'un 2e mandat.
+      "employeurAdresse", // adresse de l'employeur, à côté du nom (requis).
+      "adresseActiviteCodePostalCommune", // 2e ligne d'adresse de Q15.
+      "montantAide", "montantAideAnnuel", // montant de Q6, la périodicité seule est requise.
+    ]) {
+      expect(parCle.get(id)?.required, id).not.toBe(true);
+    }
+  });
+});

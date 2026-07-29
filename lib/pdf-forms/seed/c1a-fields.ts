@@ -141,6 +141,15 @@ function grilleHoraire(opts: {
   jours.forEach((jour, i) => {
     fields.push({
       id: `${opts.idPrefix}${jour}`,
+      // `required` reste `false` (Commit 3, décision Oraliks) : aucun jour
+      // précis du calendrier n'a de raison objective d'être obligatoire — un
+      // citoyen peut légitimement n'aider/travailler que le mercredi. La
+      // « donnée principale » exigible de cette rubrique est posée sur
+      // `${idPrefix}periode` (toute l'année / périodes / irrégulier)
+      // ci-dessous, pas sur un jour précis. `requiredGroup` ("au moins un
+      // jour coché") est explicitement écarté : il bascule le rendu de la
+      // section entière sur `MotifSituationPicker`, qui remplacerait le
+      // calendrier par une liste de chips (cf. pdf-form-runner.tsx).
       pdfFieldName: suffixes[jour],
       type: "checkbox",
       required: false,
@@ -203,7 +212,14 @@ function grilleHoraire(opts: {
     id: `${opts.idPrefix}periode`,
     pdfFieldName: `${suffixes.touteLannee}|${suffixes.pendantPeriodes}|${suffixes.irregulierement}`,
     type: "radio",
-    required: false,
+    // Required (Commit 3) : c'est la « donnée principale » de la rubrique
+    // grille horaire, posée ICI plutôt que sur l'ancre C1A_ROUTAGE
+    // (`${idPrefix}lundi`) — cocher une case précise du calendrier (lundi,
+    // mardi…) n'a jamais de raison objective d'être obligatoire (un citoyen
+    // peut légitimement n'aider que le mercredi). La fréquence globale
+    // (toute l'année / périodes / irrégulier), elle, est bien LA question
+    // que Q4/Q18 posent sur le papier.
+    required: true,
     label: { fr: opts.questionLabel },
     help: {
       fr: "Choisis la fréquence qui correspond le mieux : toute l'année, seulement certaines périodes (précise-les), ou de façon irrégulière (précise aussi).",
@@ -370,10 +386,12 @@ export const C1A_FIELDS: PdfFormField[] = [
   // Q2 — DONNÉES DE L'INDÉPENDANT AIDÉ
   // ====================================================================
   {
+    // Required (Commit 3) : clé C1A_ROUTAGE, donnée principale de Q2 — chemin
+    // unique (aideIndependant=oui), pas de branche alternative à discriminer.
     id: "independantNom",
     pdfFieldName: "Nom",
     type: "text",
-    required: false,
+    required: true,
     label: { fr: "2. Nom de l'indépendant que tu aides" },
     visibleIf: { fieldId: "aideIndependant", op: "equals", value: "oui" },
     section: SECTION_AIDE_INDEPENDANT,
@@ -463,10 +481,12 @@ export const C1A_FIELDS: PdfFormField[] = [
   // Q3 — AIDERAS-TU CET INDÉPENDANT PENDANT TON CHÔMAGE ?
   // ====================================================================
   {
+    // Required (Commit 3) : clé C1A_ROUTAGE, chemin unique (aideIndependant=oui) —
+    // tranche si la grille horaire Q4 et la suite de la rubrique s'appliquent.
     id: "aideraPendantChomage",
     pdfFieldName: "oui_2|non_2",
     type: "radio",
-    required: false,
+    required: true,
     label: { fr: "3. Aiderez-vous cet indépendant pendant votre chômage ?" },
     labelShort: { fr: "Pendant votre chômage ?" },
     help: {
@@ -575,10 +595,15 @@ export const C1A_FIELDS: PdfFormField[] = [
     // Q6 attend un montant « par mois » OU « par an » sur une même ligne
     // pointillée. Le widget `Montant` couvre cette ligne ET les deux montants
     // de Q11 en page 2, avec une seule valeur partagée — donc inexploitable.
+    // Required (Commit 3) : clé C1A_ROUTAGE, chemin unique (aideraPendantChomage=oui)
+    // — le choix mois/an est LA question de Q6. Le montant lui-même
+    // (montantAide/montantAideAnnuel) reste facultatif : rattachement, pas
+    // une clé de l'arbre, et une aide peut être non chiffrée au moment de la
+    // déclaration.
     id: "montantAidePeriodicite",
     pdfFieldName: "",
     type: "radio",
-    required: false,
+    required: true,
     label: { fr: "6. Ce montant est :" },
     options: [
       { value: "mois", label: { fr: "Par mois" } },
@@ -623,10 +648,11 @@ export const C1A_FIELDS: PdfFormField[] = [
   // Q7 — AIDIEZ-VOUS DÉJÀ CET INDÉPENDANT DANS LE PASSÉ ?
   // ====================================================================
   {
+    // Required (Commit 3) : clé C1A_ROUTAGE, chemin unique (aideIndependant=oui).
     id: "aidaitDejaIndependant",
     pdfFieldName: "oui_3|non_3",
     type: "radio",
-    required: false,
+    required: true,
     label: { fr: "7. Aidiez-vous déjà cet indépendant dans le passé ?" },
     options: YN,
     visibleIf: { fieldId: "aideIndependant", op: "equals", value: "oui" },
@@ -638,10 +664,12 @@ export const C1A_FIELDS: PdfFormField[] = [
   // Q8 — À PARTIR DE QUELLE DATE ?
   // ====================================================================
   {
+    // Required (Commit 3) : clé C1A_ROUTAGE, donnée principale de Q8, visible
+    // seulement si Q7 (aidaitDejaIndependant) = oui.
     id: "dateDebutAide",
     pdfFieldName: "Date41_af_date",
     type: "date",
-    required: false,
+    required: true,
     label: { fr: "8. À partir de quelle date aidiez-vous déjà cet indépendant ?" },
     visibleIf: { fieldId: "aidaitDejaIndependant", op: "equals", value: "oui" },
     section: SECTION_AIDE_INDEPENDANT,
@@ -680,7 +708,8 @@ export const C1A_FIELDS: PdfFormField[] = [
     pdfFieldName: "",
     drawAt: { page: 1, x: 50, y: 766, size: 9, maxWidth: 236 },
     type: "text",
-    required: false,
+    // Required (Commit 3) : clé C1A_ROUTAGE, chemin unique (mandatPolitiqueOuJuge=oui).
+    required: true,
     label: { fr: "10. Quel mandat ou quelle fonction ?" },
     help: {
       fr: "Si tu exerces plus d'un mandat ou as plus d'une fonction, mentionne-les tous.",
@@ -697,7 +726,10 @@ export const C1A_FIELDS: PdfFormField[] = [
     pdfFieldName: "",
     drawAt: { page: 1, x: 69, y: 703, size: 9, maxWidth: 62 },
     type: "number",
-    required: false,
+    // Required (Commit 3) : clé C1A_ROUTAGE, chemin unique (mandatPolitiqueOuJuge=oui) —
+    // 1er montant de Q11. Le second (revenuAnnuelMandat2, cas d'un 2e mandat)
+    // reste facultatif : rattachement, pas une clé de l'arbre.
+    required: true,
     label: { fr: "11. Revenu annuel net imposable de ce mandat (EUR)" },
     help: {
       fr: "Joins une copie de la plus récente note de calcul de l'administration des contributions directes.",
@@ -743,10 +775,11 @@ export const C1A_FIELDS: PdfFormField[] = [
   // Q13 — EXERCEZ-VOUS CETTE ACTIVITÉ COMME SALARIÉ ?
   // ====================================================================
   {
+    // Required (Commit 3) : clé C1A_ROUTAGE, chemin unique (autreActiviteAccessoire=oui).
     id: "activiteCommeSalarie",
     pdfFieldName: "oui_6|non_6",
     type: "radio",
-    required: false,
+    required: true,
     label: { fr: "13. Exercez-vous cette activité comme salarié ?" },
     options: YN,
     visibleIf: { fieldId: "autreActiviteAccessoire", op: "equals", value: "oui" },
@@ -765,10 +798,13 @@ export const C1A_FIELDS: PdfFormField[] = [
     //
     // Un commentaire antérieur le tenait pour un intitulé de zone et le
     // laissait non référencé : la ligne du nom partait donc vide à l'ONEM.
+    // Required (Commit 3) : clé C1A_ROUTAGE, chemin unique (activiteCommeSalarie=oui),
+    // donnée principale de Q14. L'adresse employeur (employeurAdresse) reste
+    // facultative : rattachement, pas une clé de l'arbre.
     id: "employeurNom",
     pdfFieldName: "14 Données concernant votre employeur",
     type: "text",
-    required: false,
+    required: true,
     label: { fr: "14. Nom de votre employeur" },
     visibleIf: { fieldId: "activiteCommeSalarie", op: "equals", value: "oui" },
     section: SECTION_EMPLOYEUR,
@@ -791,10 +827,12 @@ export const C1A_FIELDS: PdfFormField[] = [
   // Q15 — À QUELLE ADRESSE EXERCEZ-VOUS CETTE ACTIVITÉ ?
   // ====================================================================
   {
+    // Required (Commit 3) : clé C1A_ROUTAGE, chemin unique (autreActiviteAccessoire=oui,
+    // atteint que Q13 réponde oui ou non), donnée principale de Q15.
     id: "adresseActivite",
     pdfFieldName: "A quelle adresse exercezvous cette activité",
     type: "text",
-    required: false,
+    required: true,
     label: { fr: "15. À quelle adresse exercez-vous cette activité ? — rue et numéro" },
     visibleIf: { fieldId: "autreActiviteAccessoire", op: "equals", value: "oui" },
     section: SECTION_ADRESSE,
@@ -820,10 +858,11 @@ export const C1A_FIELDS: PdfFormField[] = [
   // Q16 — J'EXERCE L'ACTIVITÉ COMME... + NUMÉRO D'ENTREPRISE
   // ====================================================================
   {
+    // Required (Commit 3) : clé C1A_ROUTAGE, chemin unique (autreActiviteAccessoire=oui).
     id: "formeActivite",
     pdfFieldName: "personne phys|mandataire administrateur ou gestionnaire",
     type: "radio",
-    required: false,
+    required: true,
     label: { fr: "16. J'exerce l'activité comme :" },
     options: [
       { value: "personne-physique", label: { fr: "Personne physique" } },
@@ -902,10 +941,12 @@ export const C1A_FIELDS: PdfFormField[] = [
   // Q17 — EXERCEREZ-VOUS CETTE ACTIVITÉ PENDANT VOTRE CHÔMAGE ?
   // ====================================================================
   {
+    // Required (Commit 3) : clé C1A_ROUTAGE, chemin unique (autreActiviteAccessoire=oui)
+    // — tranche si la grille horaire Q18 et Q19-Q21 s'appliquent.
     id: "exerceraPendantChomage",
     pdfFieldName: "oui_7|non_8",
     type: "radio",
-    required: false,
+    required: true,
     label: { fr: "17. Exercerez-vous cette activité pendant votre chômage ?" },
     labelShort: { fr: "Pendant votre chômage ?" },
     help: {
@@ -993,6 +1034,20 @@ export const C1A_FIELDS: PdfFormField[] = [
     // inutilisable pour trois montants distincts. Écriture positionnelle.
     // Coordonnées mesurées : ligne « par mois : … EUR / par heure : … EUR »
     // imprimée à y=567, ligne « par an : … » à y=497.
+    //
+    // `required` reste `false` (Commit 3, décision volontaire) bien que ce
+    // soit une clé C1A_ROUTAGE : sa condition compilée est
+    // "exerceraPendantChomage=oui AND autreActiviteAccessoire=oui" SEULE — la
+    // Task 13 (2026-07-28) a délibérément retiré le garde-fou
+    // `activiteCommeSalarie` pour garder « par mois »/« par heure » sur la
+    // même ligne imprimée. Résultat : ce champ (et ses frères parHeure/
+    // parAn) sont visibles pour TOUT citoyen ayant une activité accessoire
+    // pendant son chômage, salarié OU indépendant. Le rendre `required`
+    // forcerait donc un indépendant pur à renseigner un revenu « salarié »
+    // qui ne le concerne pas — une case remplie hors de propos plutôt que
+    // vide, le même risque qu'un remplissage au mauvais endroit. Le
+    // mécanisme qui poserait « au moins un des 3 montants » proprement
+    // (`requiredGroup`) est explicitement écarté pour le C1A (cf. plus haut).
     id: "revenuNetSalarieParMois",
     pdfFieldName: "",
     drawAt: { page: 1, x: 360, y: 563, size: 9, maxWidth: 62 },
@@ -1044,10 +1099,11 @@ export const C1A_FIELDS: PdfFormField[] = [
   // Q20 — EXERCIEZ-VOUS DÉJÀ CETTE ACTIVITÉ DANS LE PASSÉ ?
   // ====================================================================
   {
+    // Required (Commit 3) : clé C1A_ROUTAGE, chemin unique (autreActiviteAccessoire=oui).
     id: "exerceDejaActivite",
     pdfFieldName: "oui_8|non_9",
     type: "radio",
-    required: false,
+    required: true,
     label: { fr: "20. Exerciez-vous déjà cette activité dans le passé ?" },
     options: YN,
     visibleIf: { fieldId: "autreActiviteAccessoire", op: "equals", value: "oui" },
@@ -1059,10 +1115,12 @@ export const C1A_FIELDS: PdfFormField[] = [
   // Q21 — DEPUIS QUAND ?
   // ====================================================================
   {
+    // Required (Commit 3) : clé C1A_ROUTAGE, donnée principale de Q21, visible
+    // seulement si Q20 (exerceDejaActivite) = oui.
     id: "dateDebutActivite",
     pdfFieldName: "Date43_af_date",
     type: "date",
-    required: false,
+    required: true,
     label: { fr: "21. Depuis quand exercez-vous cette activité ?" },
     visibleIf: { fieldId: "exerceDejaActivite", op: "equals", value: "oui" },
     section: SECTION_ACTIVITES,
@@ -1098,6 +1156,12 @@ export const C1A_FIELDS: PdfFormField[] = [
     order: 159,
   },
   {
+    // `required` reste `false` (Commit 3, même décision que les grilles
+    // horaires Q4/Q18 ci-dessus) : aucun jour précis n'a de raison objective
+    // d'être obligatoire, et Q22 n'a pas d'équivalent au radio "période" (pas
+    // de résumé de fréquence à côté des 7 cases) sur lequel reporter une
+    // exigence. `requiredGroup` reste écarté pour la même raison qu'ailleurs
+    // sur ce formulaire.
     id: "joursOccupeLundi",
     pdfFieldName: "lu",
     type: "checkbox",

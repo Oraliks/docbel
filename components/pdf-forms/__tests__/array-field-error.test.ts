@@ -26,18 +26,21 @@ import type { PublicField } from "@/lib/pdf-forms/public-serializer";
 /// Rend un element sous un NextIntlClientProvider FR (catalogue reel de
 /// l'app, cf. import `messages` ci-dessus) — meme provider que le runtime.
 function renderFr(field: PublicField, value: unknown, error: string | undefined) {
+  // `children` passe par les props : la signature de NextIntlClientProvider
+  // exige la propriete dans l'objet, la forme variadique de createElement ne
+  // satisfait pas sa surcharge TS.
   return renderToStaticMarkup(
-    createElement(
-      NextIntlClientProvider,
-      { locale: "fr", messages },
-      createElement(ArrayField, {
+    createElement(NextIntlClientProvider, {
+      locale: "fr",
+      messages,
+      children: createElement(ArrayField, {
         field,
         value: value as never,
         error,
         locale: "fr",
         onChange: () => {},
       }),
-    ),
+    }),
   );
 }
 

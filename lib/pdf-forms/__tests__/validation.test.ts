@@ -501,3 +501,157 @@ describe("countRequirements — champ facultatif mal formé", () => {
     });
   });
 });
+
+// ---------------------------------------------------------------------------
+// Champ `array` requis (lignes répétables, ex. natureActiviteIndependant/
+// descriptionAide1 du C1A) : `required: true` doit exiger AU MOINS UNE ligne
+// réellement remplie — ni buildValidator (Zod) ni le compteur du stepper ne
+// savaient lire une valeur `array` avant ce correctif (cf. rapport
+// .superpowers/sdd/array-required-report.md).
+// ---------------------------------------------------------------------------
+
+describe("buildValidator — champ array requis (au moins une ligne remplie)", () => {
+  const itemFields: PdfFormField[] = [
+    { id: "nature", pdfFieldName: "", type: "text", required: true, label: { fr: "Nature" } },
+  ];
+  const arrayField = field({ id: "items", type: "array", required: true, itemFields });
+
+  it("tableau vide → invalide", () => {
+    const v = buildValidator([arrayField], "fr");
+    expect(v.safeParse({ items: [] }).success).toBe(false);
+  });
+
+  it("champ absent du payload (undefined) → invalide", () => {
+    const v = buildValidator([arrayField], "fr");
+    expect(v.safeParse({}).success).toBe(false);
+  });
+
+  it("une ligne vierge fraîchement ajoutée (aucun sous-champ rempli) → invalide", () => {
+    const v = buildValidator([arrayField], "fr");
+    expect(v.safeParse({ items: [{}] }).success).toBe(false);
+    expect(v.safeParse({ items: [{ nature: "" }] }).success).toBe(false);
+  });
+
+  it("une ligne réellement remplie → valide", () => {
+    const v = buildValidator([arrayField], "fr");
+    expect(v.safeParse({ items: [{ nature: "Plombier" }] }).success).toBe(true);
+  });
+
+  it("une ligne vierge suivie d'une ligne remplie → valide (une seule suffit)", () => {
+    const v = buildValidator([arrayField], "fr");
+    expect(v.safeParse({ items: [{}, { nature: "Plombier" }] }).success).toBe(true);
+  });
+
+  it("array requis mais invisible (visibleIf non satisfait) → n'invalide rien", () => {
+    const fields = [
+      field({ id: "toggle", type: "checkbox" }),
+      field({ ...arrayField, visibleIf: { fieldId: "toggle", op: "equals", value: true } }),
+    ];
+    const v = buildValidator(fields, "fr");
+    expect(v.safeParse({ toggle: false, items: [] }).success).toBe(true);
+  });
+});
+
+describe("isFieldComplete — champ array", () => {
+  const itemFields: PdfFormField[] = [
+    { id: "nature", pdfFieldName: "", type: "text", required: true, label: { fr: "Nature" } },
+  ];
+  const arrayField = field({ id: "items", type: "array", required: true, itemFields });
+
+  it("tableau vide = non complet", () => {
+    expect(isFieldComplete(arrayField, [], "fr")).toBe(false);
+  });
+
+  it("valeur absente (undefined) = non complet", () => {
+    expect(isFieldComplete(arrayField, undefined, "fr")).toBe(false);
+  });
+
+  it("une seule ligne vierge = non complet", () => {
+    expect(isFieldComplete(arrayField, [{}], "fr")).toBe(false);
+    expect(isFieldComplete(arrayField, [{ nature: "" }], "fr")).toBe(false);
+  });
+
+  it("une ligne remplie = complet", () => {
+    expect(isFieldComplete(arrayField, [{ nature: "Plombier" }], "fr")).toBe(true);
+  });
+
+  it("un montant à 0 compte comme une réponse (0 est une saisie valide, pas un vide)", () => {
+    const montantFields: PdfFormField[] = [
+      { id: "montant", pdfFieldName: "", type: "number", required: false, label: { fr: "Montant" } },
+    ];
+    const f = field({ id: "items", type: "array", required: true, itemFields: montantFields });
+    expect(isFieldComplete(f, [{ montant: 0 }], "fr")).toBe(true);
+  });
+
+  it("une checkbox cochée compte comme une réponse, non cochée non", () => {
+    const checkboxFields: PdfFormField[] = [
+      { id: "coche", pdfFieldName: "", type: "checkbox", required: false, label: { fr: "Coché" } },
+    ];
+    const f = field({ id: "items", type: "array", required: true, itemFields: checkboxFields });
+    expect(isFieldComplete(f, [{ coche: false }], "fr")).toBe(false);
+    expect(isFieldComplete(f, [{ coche: true }], "fr")).toBe(true);
+  });
+});
+
+describe("countRequirements — champ array requis (le compteur du stepper doit redescendre)", () => {
+  const itemFields: PdfFormField[] = [
+    { id: "nature", pdfFieldName: "", type: "text", required: true, label: { fr: "Nature" } },
+  ];
+  const fields = [field({ id: "items", type: "array", required: true, itemFields })];
+
+  it("tableau vide → 1 manquant", () => {
+    expect(countRequirements(fields, { items: [] }, "fr")).toEqual({ total: 1, missing: 1 });
+  });
+
+  it("une ligne vierge fraîchement ajoutée → toujours 1 manquant (pas un tableau non vide qui compterait)", () => {
+    expect(countRequirements(fields, { items: [{}] }, "fr")).toEqual({ total: 1, missing: 1 });
+  });
+
+  it("une ligne remplie → complet, le compteur redescend à 0 (pas bloqué « 1 restant » à vie)", () => {
+    expect(countRequirements(fields, { items: [{ nature: "Plombier" }] }, "fr")).toEqual({
+      total: 1,
+      missing: 0,
+    });
+  });
+
+  it("array requis mais actuellement invisible (visibleIf non satisfait) → ignoré (total 0)", () => {
+    const conditionnels = [
+      field({ id: "toggle", type: "checkbox" }),
+      field({
+        id: "items",
+        type: "array",
+        required: true,
+        itemFields,
+        visibleIf: { fieldId: "toggle", op: "equals", value: true },
+      }),
+    ];
+    expect(countRequirements(conditionnels, { toggle: false, items: [] }, "fr")).toEqual({
+      total: 0,
+      missing: 0,
+    });
+  });
+});
+
+describe("champ array NON requis (ex. cohabitants du C1) — comportement inchangé", () => {
+  // `cohabitants` (lib/pdf-forms/seed/c1/famille.ts) est `required: false` :
+  // ce lot ne doit RIEN changer pour lui. Épinglé ici en plus du test dédié
+  // lib/pdf-forms/seed/__tests__/c1-fields-improvements.test.ts.
+  const itemFields: PdfFormField[] = [
+    { id: "prenom", pdfFieldName: "", type: "text", required: true, label: { fr: "Prénom" } },
+  ];
+  const fields = [field({ id: "cohabitants", type: "array", required: false, itemFields })];
+
+  it("countRequirements : jamais compté, vide ou rempli (required=false)", () => {
+    expect(countRequirements(fields, { cohabitants: [] }, "fr")).toEqual({ total: 0, missing: 0 });
+    expect(countRequirements(fields, { cohabitants: [{ prenom: "Jean" }] }, "fr")).toEqual({
+      total: 0,
+      missing: 0,
+    });
+  });
+
+  it("buildValidator : un tableau vide reste accepté (non requis, comme avant ce lot)", () => {
+    const v = buildValidator(fields, "fr");
+    expect(v.safeParse({ cohabitants: [] }).success).toBe(true);
+    expect(v.safeParse({}).success).toBe(true);
+  });
+});

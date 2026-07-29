@@ -2,11 +2,13 @@ import { z, ZodTypeAny } from "zod";
 import {
   PdfFormField,
   FormPayload,
+  FieldValueRecord,
   Locale,
   VisibleIf,
   loc,
   DEFAULT_LOCALE,
   isFullNameValue,
+  isFieldValueRecordArray,
 } from "./types";
 import { isAutoField } from "./auto-fields";
 import {
@@ -321,14 +323,15 @@ function fieldToZod(field: PdfFormField, lang: Locale): ZodTypeAny {
     case "array":
       // Champ tableau (cohabitants…). Chaque ligne est un enregistrement de
       // sous-champs (validés séparément par le formulaire — pas de contrôle
-      // ligne-par-ligne dans buildValidator). Ici on accepte n'importe quel
-      // tableau ; le check "required" du superRefine est intentionnellement
-      // NEUTRE pour array (aucun cas array géré dans la boucle) — un tableau
-      // vide `[]` ne doit pas bloquer. Sans ce case, on tombait sur z.string()
-      // et un `[]` initial côté UI cassait la validation avec un message
-      // inutile sur le champ parent (Oraliks 2026-07-07 : « j'ai mis isolé
-      // sur le formulaire et j'ai pu aller au next step donc je comprend pas
-      // l'erreur » — l'erreur venait d'ici, pas de la visibilité).
+      // ligne-par-ligne dans buildValidator, ni ici). La FORME accepte donc
+      // n'importe quel tableau, vide compris — sans ce case, on tombait sur
+      // z.string() et un `[]` initial côté UI cassait la validation avec un
+      // message inutile sur le champ parent (Oraliks 2026-07-07 : « j'ai mis
+      // isolé sur le formulaire et j'ai pu aller au next step donc je
+      // comprend pas l'erreur » — l'erreur venait d'ici, pas de la
+      // visibilité). L'OBLIGATION (required), elle, EST vérifiée — mais plus
+      // bas, dans le superRefine (cf. isArrayFieldFilled) : « au moins une
+      // ligne réellement remplie », pas juste un tableau non vide.
       return z.array(z.any());
     case "text":
     case "textarea":
@@ -434,6 +437,49 @@ export function visiblePayload(fields: PdfFormField[], payload: FormPayload): Fo
   return out;
 }
 
+/// Vrai si la valeur d'un SOUS-CHAMP (une cellule d'une ligne de champ
+/// `array`) constitue une réponse réelle. Même définition d'« empty » que le
+/// check "required" scalaire de `buildValidator` ci-dessous, généralisée par
+/// type de sous-champ. Les sous-champs d'un `array` ne supportent pas
+/// eux-mêmes le type "array" (un seul niveau, cf. `PdfFormField.itemFields`),
+/// donc pas de récursion à prévoir ici.
+function isRowValueFilled(subField: PdfFormField | undefined, raw: unknown): boolean {
+  if (raw === null || raw === undefined) return false;
+  if (subField?.type === "checkbox") return raw === true;
+  if (subField?.type === "fullname") {
+    return isFullNameValue(raw) && !!(raw.first ?? "").trim() && !!(raw.last ?? "").trim();
+  }
+  if (typeof raw === "string") return raw.trim() !== "";
+  if (typeof raw === "number") return true; // 0 est une saisie valide (montant, etc.).
+  if (typeof raw === "boolean") return raw === true;
+  return false;
+}
+
+/// Vrai si une LIGNE d'un champ `array` porte au moins une réponse réelle.
+/// Sert à distinguer une ligne vierge — celle que `ArrayField.addRow` (cf.
+/// components/pdf-forms/array-field.tsx) crée au clic sur « + Ajouter », qui
+/// ne pose que les `defaultValue` déclarées et laisse le reste absent — d'une
+/// ligne où le citoyen a effectivement répondu. Sans `itemFields` (jamais le
+/// cas en pratique — filet défensif), on retombe sur un test générique de
+/// toutes les valeurs présentes dans la ligne.
+function isRowFilled(row: FieldValueRecord, itemFields: PdfFormField[] | undefined): boolean {
+  if (!itemFields || itemFields.length === 0) {
+    return Object.values(row).some((v) => isRowValueFilled(undefined, v));
+  }
+  return itemFields.some((sf) => isRowValueFilled(sf, row[sf.id]));
+}
+
+/// Vrai si un champ `array` porte au moins une ligne réellement remplie.
+/// `minRows` peut imposer des lignes présentes dès le départ : leur seule
+/// PRÉSENCE dans le tableau ne suffit pas (cf. isRowFilled) — `[]` et `[{}]`
+/// comptent tous les deux comme vides, `[{ nature: "Plombier" }]` comme
+/// rempli. Partagée par `buildValidator` (superRefine, blocage à l'envoi) ET
+/// `isFieldComplete` (compteur du stepper) pour que les deux appliquent
+/// EXACTEMENT la même règle.
+function isArrayFieldFilled(value: unknown, itemFields: PdfFormField[] | undefined): boolean {
+  return isFieldValueRecordArray(value) && value.some((row) => isRowFilled(row, itemFields));
+}
+
 /// Construit le validateur Zod d'un formulaire pour une locale donnée.
 /// Les champs requis ne sont vérifiés que s'ils sont visibles.
 export function buildValidator(fields: PdfFormField[], lang: Locale = DEFAULT_LOCALE) {
@@ -475,12 +521,18 @@ export function buildValidator(fields: PdfFormField[], lang: Locale = DEFAULT_LO
       const fullNameIncomplete =
         f.type === "fullname" &&
         (!isFullNameValue(v) || !(v.first ?? "").trim() || !(v.last ?? "").trim());
+      // Un champ `array` requis exige AU MOINS UNE ligne réellement remplie
+      // (cf. isArrayFieldFilled) : un tableau vide, ou qui ne contient que des
+      // lignes vierges (aucun sous-champ non vide — ex. une ligne tout juste
+      // ajoutée par le bouton « + Ajouter »), ne compte pas comme une réponse.
+      const arrayIncomplete = f.type === "array" && !isArrayFieldFilled(v, f.itemFields);
       const isEmpty =
         v === null ||
         v === undefined ||
         (typeof v === "string" && v.trim() === "") ||
         (f.type === "checkbox" && v === false) ||
-        fullNameIncomplete;
+        fullNameIncomplete ||
+        arrayIncomplete;
       if (isEmpty) {
         ctx.addIssue({ code: "custom", path: [f.id], message: errMsg(f, lang, "required") });
       }
@@ -570,6 +622,10 @@ type FieldLike = {
   nameOrder?: PdfFormField["nameOrder"];
   internationalIban?: PdfFormField["internationalIban"];
   noWeekend?: PdfFormField["noWeekend"];
+  /// Schéma des lignes d'un champ `array` — nécessaire à `isFieldComplete`
+  /// pour juger une ligne « remplie » sous-champ par sous-champ (cf.
+  /// isArrayFieldFilled). Absent (undefined) pour tous les autres types.
+  itemFields?: PdfFormField["itemFields"];
 };
 
 /// Vrai si la date ISO (YYYY-MM-DD) tombe un samedi ou un dimanche. Parse en
@@ -647,6 +703,10 @@ export function isFieldComplete(field: FieldLike, value: unknown, lang: Locale):
     return !!(value.first ?? "").trim() && !!(value.last ?? "").trim();
   }
   if (field.type === "signature") return typeof value === "string" && value.trim() !== "";
+  // Même définition que le check "required" de buildValidator (cf.
+  // isArrayFieldFilled) : au moins une ligne réellement remplie, pas
+  // seulement un tableau non vide (une ligne vierge ne compte pas).
+  if (field.type === "array") return isArrayFieldFilled(value, field.itemFields);
   const v = typeof value === "string" || typeof value === "number" ? String(value) : "";
   if (v.trim() === "") return false;
   return validateFieldFormat(field, v, lang) === null;

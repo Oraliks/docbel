@@ -463,7 +463,16 @@ export const C1A_FIELDS: PdfFormField[] = [
     id: "natureActiviteIndependant",
     pdfFieldName: "",
     type: "array",
-    required: false,
+    // `required: true` (2026-07-29, après levée de la limite array —
+    // commit 28debed : `isArrayFieldFilled` dans validation.ts exige
+    // désormais AU MOINS UNE ligne réellement remplie, appliqué à la fois
+    // par `buildValidator` — superRefine, blocage à l'envoi — et par
+    // `isFieldComplete`/`countRequirements` — compteur du stepper). Une
+    // ligne vierge fraîchement ajoutée ne compte pas. Protégé par le
+    // `visibleIf` ci-dessous (dérivé de l'arbre via le rattachement à
+    // `independantNom`, cf. RATTACHEMENTS plus bas) : répondre « non » à
+    // Q1 masque le champ, donc `buildValidator` ne le vérifie jamais.
+    required: true,
     label: { fr: "Nature de l'activité de l'indépendant" },
     help: {
       fr: "Si l'indépendant exerce plusieurs activités, ajoute une ligne par activité.",
@@ -565,19 +574,25 @@ export const C1A_FIELDS: PdfFormField[] = [
     // `appliquerRoutage` plus bas — même convention que
     // `revenuNetSalarieParMois`, ancre de Q19.
     //
-    // `required` reste `false` ici malgré la règle du Commit 3 (toutes les
-    // clés de C1A_ROUTAGE deviennent `required`) : `buildValidator` neutre
-    // délibérément `required` pour `type: "array"` (lib/pdf-forms/validation.ts,
-    // "un tableau vide ne doit pas bloquer"), et le compteur du stepper
-    // (`isFieldComplete`) ne sait pas non plus lire une valeur `array` — un
-    // champ array `required` afficherait donc l'étape bloquée sur
-    // « 1 restant » EN PERMANENCE, même rempli. Le poser à `true` serait
-    // cosmétique et trompeur sans toucher à validation.ts (hors périmètre :
-    // un autre agent y travaille). Signalé au rapport du lot.
+    // `required: true` (2026-07-29, ex-exception du Commit 3) : au moment du
+    // Commit 3, `buildValidator` neutralisait délibérément `required` pour
+    // `type: "array"` ("un tableau vide ne doit pas bloquer") et le compteur
+    // du stepper (`isFieldComplete`) ne savait pas non plus lire une valeur
+    // `array` — poser `required: true` aurait alors affiché l'étape bloquée
+    // sur « 1 restant » EN PERMANENCE, même rempli. Cette limite a été levée
+    // depuis (commit 28debed) : `isArrayFieldFilled` dans validation.ts fait
+    // désormais compter « au moins une ligne réellement remplie », appliqué
+    // identiquement par `buildValidator` (superRefine) et par
+    // `isFieldComplete`/`countRequirements` (stepper). Une ligne vierge
+    // fraîchement ajoutée ne compte pas. `descriptionAide1` est l'ANCRE
+    // C1A_ROUTAGE de Q5 : son `visibleIf` est REMPLACÉ (pas empilé) par
+    // `appliquerRoutage` avec la condition compilée de l'arbre — répondre
+    // « non » à Q1 (ou « non » à Q3) masque le champ, donc `buildValidator`
+    // ne le vérifie jamais dans ces branches.
     id: "descriptionAide1",
     pdfFieldName: "",
     type: "array",
-    required: false,
+    required: true,
     label: { fr: "5. Décrivez l'aide que vous apporterez" },
     addRowLabel: { fr: "Ajouter une autre ligne de description" },
     visibleIf: { fieldId: "aideIndependant", op: "equals", value: "oui" },

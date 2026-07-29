@@ -2,7 +2,8 @@ import { describe, expect, it } from "vitest";
 import { C1A_FIELDS, applyC1AImprovements } from "../c1a-fields";
 import { compilerRoutage } from "../../routing";
 import { C1A_ROUTAGE, C1A_DEPART } from "../c1a-routing";
-import type { PdfFormField } from "../../types";
+import { buildValidator, countRequirements } from "../../validation";
+import type { FormPayload, PdfFormField } from "../../types";
 
 describe("C1A_FIELDS", () => {
   it("couvre les questions clés avec la bonne section", () => {
@@ -518,7 +519,7 @@ describe("C1A — Commit 2 : nature de l'activité (Q2) et description de l'aide
   it("natureActiviteIndependant : une ligne, bouton + explicite, plafonné à 5 (le PDF n'a que 5 lignes)", () => {
     const f = parCle.get("natureActiviteIndependant");
     expect(f?.type).toBe("array");
-    expect(f?.required).toBe(false);
+    expect(f?.required).toBe(true);
     expect(f?.maxRows).toBe(5);
     expect(f?.addRowLabel?.fr).toBeTruthy();
     expect(f?.itemFields?.length).toBe(1);
@@ -535,12 +536,18 @@ describe("C1A — Commit 2 : nature de l'activité (Q2) et description de l'aide
     expect(f?.itemFields?.[0]?.pdfFieldNameTemplate).toBe("Décrivez laide que vous apporterez {index}");
   });
 
-  it("descriptionAide1 reste required=false : type array neutralisé par buildValidator/isFieldComplete", () => {
-    // required:true sur un champ array ne bloque pas l'avancée (buildValidator
-    // le neutralise volontairement) ET ferait afficher l'étape éternellement
-    // incomplète au stepper (isFieldComplete ne sait lire qu'une string/number).
-    // Décision documentée dans le seed ; pas de changement à validation.ts.
-    expect(parCle.get("descriptionAide1")?.required).toBe(false);
+  it("descriptionAide1 et natureActiviteIndependant sont required=true : la limite array a été levée (commit 28debed)", () => {
+    // Au Commit 3, `required:true` sur un champ array était neutralisé par
+    // buildValidator (un tableau vide passait toujours) ET faisait afficher
+    // l'étape éternellement incomplète au stepper (isFieldComplete ne savait
+    // lire qu'une string/number) — descriptionAide1 était donc resté
+    // required:false malgré son statut de clé C1A_ROUTAGE. Cette limite a
+    // été levée depuis (commit 28debed, confirmé en lisant isArrayFieldFilled
+    // dans lib/pdf-forms/validation.ts) : les deux champs sont désormais
+    // required:true. Le test précis « tableau vide bloque / ligne remplie
+    // passe » est dans le describe dédié plus bas.
+    expect(parCle.get("descriptionAide1")?.required).toBe(true);
+    expect(parCle.get("natureActiviteIndependant")?.required).toBe(true);
   });
 
   it("descriptionAide1 reste l'ancre C1A_ROUTAGE de Q5 malgré la conversion en array", () => {
@@ -589,6 +596,157 @@ describe("C1A — Commit 2 : nature de l'activité (Q2) et description de l'aide
   });
 });
 
+// ---------------------------------------------------------------------------
+// natureActiviteIndependant et descriptionAide1 passent required:true
+// maintenant que lib/pdf-forms/validation.ts sait exiger AU MOINS UNE ligne
+// réellement remplie sur un champ `array` (commit 28debed, confirmé en
+// commit 2862778 pour le typecheck) — ce que le Commit 3 ne pouvait pas
+// encore faire (cf. describe "Commit 2" ci-dessus et le rapport
+// .superpowers/sdd/c1a-retours-report.md, section "Doutes #4"). On vérifie
+// ici, avec les VRAIS champs du seed (visibleIf dérivé de l'arbre compris) et
+// non un champ array synthétique comme dans validation.test.ts :
+//   1. le tableau vide bloque l'envoi, une ligne réellement remplie passe ;
+//   2. la protection de branche tient : répondre « non » à la question qui
+//      gate le champ le rend invisible, donc jamais réclamé, même vide ;
+//   3. le compteur du stepper (countRequirements) redescend bien à 0 manquant
+//      dès la première ligne remplie — c'était le risque redouté (Commit 3
+//      l'évitait justement en gardant required:false).
+// ---------------------------------------------------------------------------
+describe("C1A — natureActiviteIndependant / descriptionAide1 : required:true sur un champ array (limite levée)", () => {
+  const fields = applyC1AImprovements([]);
+  const parCle = new Map(fields.map((f) => [f.id, f]));
+  const aideIndependant = parCle.get("aideIndependant")!;
+  const aideraPendantChomage = parCle.get("aideraPendantChomage")!;
+  const natureActiviteIndependant = parCle.get("natureActiviteIndependant")!;
+  const descriptionAide1 = parCle.get("descriptionAide1")!;
+
+  it("les deux champs sont bien required:true dans le seed final", () => {
+    expect(natureActiviteIndependant.required).toBe(true);
+    expect(descriptionAide1.required).toBe(true);
+  });
+
+  describe("natureActiviteIndependant (rattachée à Q2, visible dès Q1=oui)", () => {
+    // visibleIf après appliquerRoutage : { fieldId: "aideIndependant", op:
+    // "equals", value: "oui" } (empilée par-dessus l'écriture manuelle
+    // identique dans le seed — dédoublonnée, cf. `empiler`). Vérifié en dur
+    // ci-dessous plutôt que supposé.
+    const testFields = [aideIndependant, natureActiviteIndependant];
+
+    it("le visibleIf compilé ne porte que sur aideIndependant=oui", () => {
+      expect(natureActiviteIndependant.visibleIf).toEqual({
+        fieldId: "aideIndependant",
+        op: "equals",
+        value: "oui",
+      });
+    });
+
+    it("Q1=oui + tableau vide → bloque l'envoi", () => {
+      const v = buildValidator(testFields, "fr");
+      expect(v.safeParse({ aideIndependant: "oui", natureActiviteIndependant: [] }).success).toBe(false);
+    });
+
+    it("Q1=oui + une ligne vierge fraîchement ajoutée → bloque toujours l'envoi", () => {
+      const v = buildValidator(testFields, "fr");
+      expect(v.safeParse({ aideIndependant: "oui", natureActiviteIndependant: [{}] }).success).toBe(false);
+    });
+
+    it("Q1=oui + une ligne réellement remplie → laisse passer", () => {
+      const v = buildValidator(testFields, "fr");
+      expect(
+        v.safeParse({ aideIndependant: "oui", natureActiviteIndependant: [{ nature: "Plombier" }] }).success,
+      ).toBe(true);
+    });
+
+    it("Q1=non → le champ est masqué, jamais réclamé même vide (protection de branche)", () => {
+      const v = buildValidator(testFields, "fr");
+      expect(v.safeParse({ aideIndependant: "non", natureActiviteIndependant: [] }).success).toBe(true);
+    });
+
+    it("countRequirements redescend de 1 manquant à 0 dès la première ligne remplie", () => {
+      const vide: FormPayload = { aideIndependant: "oui", natureActiviteIndependant: [] };
+      const rempli: FormPayload = {
+        aideIndependant: "oui",
+        natureActiviteIndependant: [{ nature: "Plombier" }],
+      };
+      expect(countRequirements(testFields, vide, "fr")).toEqual({ total: 2, missing: 1 });
+      expect(countRequirements(testFields, rempli, "fr")).toEqual({ total: 2, missing: 0 });
+    });
+  });
+
+  describe("descriptionAide1 (ancre C1A_ROUTAGE de Q5, visible seulement si Q1=oui ET Q3=oui)", () => {
+    // descriptionAide1 EST une clé C1A_ROUTAGE : son visibleIf est REMPLACÉ
+    // (pas empilé) par la condition compilée par compilerRoutage — vérifié en
+    // dur ci-dessous (2 clauses : aideraPendantChomage=oui en tête, and
+    // aideIndependant=oui), pas supposé.
+    const testFields = [aideIndependant, aideraPendantChomage, descriptionAide1];
+
+    it("le visibleIf compilé exige aideIndependant=oui ET aideraPendantChomage=oui", () => {
+      const conditions = compilerRoutage(C1A_ROUTAGE, C1A_DEPART);
+      expect(descriptionAide1.visibleIf).toEqual(conditions.descriptionAide1);
+      expect(descriptionAide1.visibleIf).toEqual({
+        fieldId: "aideraPendantChomage",
+        op: "equals",
+        value: "oui",
+        and: [{ fieldId: "aideIndependant", op: "equals", value: "oui" }],
+      });
+    });
+
+    it("Q1=oui + Q3=oui + tableau vide → bloque l'envoi", () => {
+      const v = buildValidator(testFields, "fr");
+      expect(
+        v.safeParse({ aideIndependant: "oui", aideraPendantChomage: "oui", descriptionAide1: [] }).success,
+      ).toBe(false);
+    });
+
+    it("Q1=oui + Q3=oui + une ligne vierge fraîchement ajoutée → bloque toujours l'envoi", () => {
+      const v = buildValidator(testFields, "fr");
+      expect(
+        v.safeParse({ aideIndependant: "oui", aideraPendantChomage: "oui", descriptionAide1: [{}] }).success,
+      ).toBe(false);
+    });
+
+    it("Q1=oui + Q3=oui + une ligne réellement remplie → laisse passer", () => {
+      const v = buildValidator(testFields, "fr");
+      expect(
+        v.safeParse({
+          aideIndependant: "oui",
+          aideraPendantChomage: "oui",
+          descriptionAide1: [{ description: "Je conduis le camion de livraison" }],
+        }).success,
+      ).toBe(true);
+    });
+
+    it("Q1=non → le champ est masqué, jamais réclamé même vide (protection de branche)", () => {
+      const v = buildValidator(testFields, "fr");
+      expect(
+        v.safeParse({ aideIndependant: "non", aideraPendantChomage: "oui", descriptionAide1: [] }).success,
+      ).toBe(true);
+    });
+
+    it("Q1=oui mais Q3=non → le champ est masqué aussi (chemin Q3=non saute directement à Q9)", () => {
+      const v = buildValidator(testFields, "fr");
+      expect(
+        v.safeParse({ aideIndependant: "oui", aideraPendantChomage: "non", descriptionAide1: [] }).success,
+      ).toBe(true);
+    });
+
+    it("countRequirements redescend de 1 manquant à 0 dès la première ligne remplie", () => {
+      const vide: FormPayload = {
+        aideIndependant: "oui",
+        aideraPendantChomage: "oui",
+        descriptionAide1: [],
+      };
+      const rempli: FormPayload = {
+        aideIndependant: "oui",
+        aideraPendantChomage: "oui",
+        descriptionAide1: [{ description: "Je conduis le camion de livraison" }],
+      };
+      expect(countRequirements(testFields, vide, "fr")).toEqual({ total: 3, missing: 1 });
+      expect(countRequirements(testFields, rempli, "fr")).toEqual({ total: 3, missing: 0 });
+    });
+  });
+});
+
 describe("C1A — Commit 3 : les questions de l'arbre deviennent obligatoires", () => {
   const fields = applyC1AImprovements([]);
   const parCle = new Map(fields.map((f) => [f.id, f]));
@@ -606,10 +764,14 @@ describe("C1A — Commit 3 : les questions de l'arbre deviennent obligatoires", 
     // porte la question imprimée, et c'est elle qui ancre la rubrique depuis
     // le passage à « une question = une étape ».
     q4periode: true,
-    // Q5 : champ array (Commit 2) — required neutralisé par buildValidator
-    // pour ce type, et casserait le compteur du stepper. Décision documentée
-    // dans le seed et le describe Commit 2 ci-dessus.
-    descriptionAide1: false,
+    // Q5 : champ array (Commit 2) — resté required:false au Commit 3 car
+    // buildValidator neutralisait alors `required` pour ce type (et aurait
+    // cassé le compteur du stepper). Cette limite a été levée depuis (commit
+    // 28debed) : `isArrayFieldFilled` exige désormais au moins une ligne
+    // réellement remplie, appliqué identiquement par buildValidator et par
+    // isFieldComplete/countRequirements. Décision documentée dans le seed et
+    // le describe dédié ci-dessus/ci-dessous.
+    descriptionAide1: true,
     montantAidePeriodicite: true, // Q6 — choix mois/an, chemin unique.
     aidaitDejaIndependant: true, // Q7 — chemin unique.
     dateDebutAide: true, // Q8 — donnée principale, visible seulement si Q7=oui.

@@ -28,17 +28,38 @@ describe("C1A_FIELDS", () => {
     expect(byId.get("signature")?.type).toBe("signature");
   });
 
-  it("couvre les 5 lignes de nature d'activité de l'indépendant (Q2)", () => {
-    const ids = C1A_FIELDS.map((f) => f.id);
+  it("Q2 : nature de l'activité est un champ array de 5 lignes max (Commit 2)", () => {
+    const byId = new Map(C1A_FIELDS.map((f) => [f.id, f]));
+    const f = byId.get("natureActiviteIndependant");
+    expect(f, "natureActiviteIndependant doit exister").toBeDefined();
+    expect(f?.type).toBe("array");
+    expect(f?.maxRows).toBe(5);
+    expect(f?.addRowLabel?.fr).toBeTruthy();
+    expect(f?.itemFields?.map((sf) => sf.pdfFieldNameTemplate)).toEqual([
+      "mentionnez les toutes {index}",
+    ]);
+    // Les anciens ids à 5 lignes fixes ont disparu.
+    const ids = C1A_FIELDS.map((x) => x.id);
     for (let n = 1; n <= 5; n++) {
-      expect(ids).toContain(`natureActiviteIndependant${n}`);
+      expect(ids).not.toContain(`natureActiviteIndependant${n}`);
     }
   });
 
-  it("couvre les 9 lignes de description de l'aide (Q5)", () => {
-    const ids = C1A_FIELDS.map((f) => f.id);
-    for (let n = 1; n <= 9; n++) {
-      expect(ids).toContain(`descriptionAide${n}`);
+  it("Q5 : description de l'aide est un champ array de 9 lignes max (Commit 2)", () => {
+    const byId = new Map(C1A_FIELDS.map((f) => [f.id, f]));
+    const f = byId.get("descriptionAide1");
+    expect(f, "descriptionAide1 doit exister").toBeDefined();
+    expect(f?.type).toBe("array");
+    expect(f?.maxRows).toBe(9);
+    expect(f?.addRowLabel?.fr).toBeTruthy();
+    expect(f?.itemFields?.map((sf) => sf.pdfFieldNameTemplate)).toEqual([
+      "Décrivez laide que vous apporterez {index}",
+    ]);
+    // Les anciennes lignes 2 à 9 ont disparu (descriptionAide1 reste, seul,
+    // comme ancre C1A_ROUTAGE de Q5).
+    const ids = C1A_FIELDS.map((x) => x.id);
+    for (let n = 2; n <= 9; n++) {
+      expect(ids).not.toContain(`descriptionAide${n}`);
     }
   });
 
@@ -120,14 +141,18 @@ describe("C1A_FIELDS", () => {
   });
 
   it("le nombre total de champs générés correspond au compte attendu", () => {
-    // 61 champs "statiques" définis explicitement (identité, Q1-Q3, Q5-Q17 hors
-    // grilles, Q19-Q24, champs non identifiés) + 9 lignes descriptionAide
-    // générées dynamiquement (déjà comptées dans les 61) + 2 grilles horaires
-    // de 67 champs chacune (5 jours x 4 + samedi + dimanche + periode + 4
-    // texte periodes + 3 ou 4 texte irrégulier -> vérifié dynamiquement
-    // ci-dessous plutôt que recalculé à la main pour éviter une double
-    // comptabilité fragile).
-    expect(C1A_FIELDS.length).toBeGreaterThan(120);
+    // Champs "statiques" définis explicitement (identité, Q1-Q24 hors grilles)
+    // + 2 grilles horaires de 67 champs chacune (5 jours x 4 + samedi +
+    // dimanche + periode + lignes de texte périodes/irrégulier -> vérifié
+    // dynamiquement ci-dessous plutôt que recalculé à la main pour éviter une
+    // double comptabilité fragile).
+    //
+    // Depuis le Commit 2 (2026-07-29), natureActiviteIndependant1..5 et
+    // descriptionAide1..9 (14 champs top-level) sont consolidés en 2 champs
+    // `array` (natureActiviteIndependant, descriptionAide1) : leurs lignes
+    // vivent désormais dans `itemFields`, pas dans C1A_FIELDS — d'où un total
+    // top-level plus bas qu'avant (117 au moment d'écrire ce test).
+    expect(C1A_FIELDS.length).toBeGreaterThan(110);
     expect(C1A_FIELDS.length).toBe(new Set(C1A_FIELDS.map((f) => f.id)).size);
   });
 });
@@ -474,5 +499,80 @@ describe("C1A — Commit 1 : coupure périodes / irrégulier de la grille horair
     for (const id of irreguliers) expect(parCle.get(id), id).toBeDefined();
     expect(parCle.has("q18irregulierementTexte4")).toBe(false);
     expect(irreguliers.map((id) => parCle.get(id)?.pdfFieldName)).toEqual(["1_4", "2_4", "3_4"]);
+  });
+});
+
+describe("C1A — Commit 2 : nature de l'activité (Q2) et description de l'aide (Q5) en listes", () => {
+  const fields = applyC1AImprovements([]);
+  const parCle = new Map(fields.map((f) => [f.id, f]));
+
+  it("natureActiviteIndependant : une ligne, bouton + explicite, plafonné à 5 (le PDF n'a que 5 lignes)", () => {
+    const f = parCle.get("natureActiviteIndependant");
+    expect(f?.type).toBe("array");
+    expect(f?.required).toBe(false);
+    expect(f?.maxRows).toBe(5);
+    expect(f?.addRowLabel?.fr).toBeTruthy();
+    expect(f?.itemFields?.length).toBe(1);
+    expect(f?.itemFields?.[0]?.pdfFieldNameTemplate).toBe("mentionnez les toutes {index}");
+    expect(f?.itemFields?.[0]?.type).toBe("text");
+  });
+
+  it("descriptionAide1 : une ligne, bouton + explicite, plafonné à 9 (le PDF n'a que 9 lignes)", () => {
+    const f = parCle.get("descriptionAide1");
+    expect(f?.type).toBe("array");
+    expect(f?.maxRows).toBe(9);
+    expect(f?.addRowLabel?.fr).toBeTruthy();
+    expect(f?.itemFields?.length).toBe(1);
+    expect(f?.itemFields?.[0]?.pdfFieldNameTemplate).toBe("Décrivez laide que vous apporterez {index}");
+  });
+
+  it("descriptionAide1 reste required=false : type array neutralisé par buildValidator/isFieldComplete", () => {
+    // required:true sur un champ array ne bloque pas l'avancée (buildValidator
+    // le neutralise volontairement) ET ferait afficher l'étape éternellement
+    // incomplète au stepper (isFieldComplete ne sait lire qu'une string/number).
+    // Décision documentée dans le seed ; pas de changement à validation.ts.
+    expect(parCle.get("descriptionAide1")?.required).toBe(false);
+  });
+
+  it("descriptionAide1 reste l'ancre C1A_ROUTAGE de Q5 malgré la conversion en array", () => {
+    const conditions = compilerRoutage(C1A_ROUTAGE, C1A_DEPART);
+    expect(parCle.get("descriptionAide1")?.visibleIf).toEqual(conditions.descriptionAide1);
+  });
+
+  it("un brouillon déjà en base avec les 14 anciennes lignes individuelles ne survit pas au merge", () => {
+    // Simule un schéma persisté AVANT ce commit : 5 lignes natureActiviteIndependantN
+    // + 9 lignes descriptionAideN, chacune sur son propre widget.
+    const anciens: PdfFormField[] = [
+      ...[1, 2, 3, 4, 5].map((n) => ({
+        id: `natureActiviteIndependant${n}`,
+        pdfFieldName: `mentionnez les toutes ${n}`,
+        type: "text" as const,
+        required: false,
+        label: { fr: `Nature de l'activité de l'indépendant [${n}]` },
+      })),
+      ...[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => ({
+        id: `descriptionAide${n}`,
+        pdfFieldName: `Décrivez laide que vous apporterez ${n}`,
+        type: "text" as const,
+        required: n === 1,
+        label: { fr: `Description de l'aide [${n}]` },
+      })),
+    ];
+    const merged = applyC1AImprovements(anciens);
+    const ids = merged.map((f) => f.id);
+    for (let n = 1; n <= 5; n++) expect(ids).not.toContain(`natureActiviteIndependant${n}`);
+    for (let n = 2; n <= 9; n++) expect(ids).not.toContain(`descriptionAide${n}`);
+    // Chaque widget n'est plus revendiqué qu'une fois (par pdfFieldNameTemplate,
+    // invisible à ce filtre — donc PAR AUCUN champ top-level, ce qui est attendu).
+    for (const n of [1, 2, 3, 4, 5]) {
+      expect(merged.filter((f) => f.pdfFieldName === `mentionnez les toutes ${n}`)).toEqual([]);
+    }
+    expect(ids.filter((id) => id === "natureActiviteIndependant").length).toBe(1);
+    expect(ids.filter((id) => id === "descriptionAide1").length).toBe(1);
+  });
+
+  it("appliquerGroupes range toujours les deux champs dans l'étape aide-independant", () => {
+    expect(parCle.get("natureActiviteIndependant")?.stepGroup).toBe("aide-independant");
+    expect(parCle.get("descriptionAide1")?.stepGroup).toBe("aide-independant");
   });
 });

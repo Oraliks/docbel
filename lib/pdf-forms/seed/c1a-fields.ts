@@ -426,57 +426,37 @@ export const C1A_FIELDS: PdfFormField[] = [
     order: 4,
   },
   {
-    id: "natureActiviteIndependant1",
-    pdfFieldName: "mentionnez les toutes 1",
-    type: "text",
+    // Consolidé en UN champ répétable (Commit 2, retour Oraliks 2026-07-29 :
+    // « mets une seule nature, description, et ajoute un + explicite pour
+    // ajouter d'autres natures »). Les 5 lignes fixes affichées d'un coup
+    // étaient presque toujours vides à l'écran. Le PDF n'offre que 5 lignes
+    // imprimées ("mentionnez les toutes 1" à "5", cf. `pdfFieldNameTemplate`
+    // ci-dessous) : `maxRows` empêche d'en saisir une 6e qui ne
+    // s'imprimerait nulle part.
+    id: "natureActiviteIndependant",
+    pdfFieldName: "",
+    type: "array",
     required: false,
-    label: { fr: "Nature de l'activité de l'indépendant [1]" },
+    label: { fr: "Nature de l'activité de l'indépendant" },
     help: {
-      fr: "Si l'indépendant exerce plusieurs activités, mentionne-les toutes (une par ligne).",
+      fr: "Si l'indépendant exerce plusieurs activités, ajoute une ligne par activité.",
     },
+    addRowLabel: { fr: "Ajouter une autre nature d'activité" },
     visibleIf: { fieldId: "aideIndependant", op: "equals", value: "oui" },
     section: SECTION_AIDE_INDEPENDANT,
     order: 5,
-  },
-  {
-    id: "natureActiviteIndependant2",
-    pdfFieldName: "mentionnez les toutes 2",
-    type: "text",
-    required: false,
-    label: { fr: "Nature de l'activité de l'indépendant [2]" },
-    visibleIf: { fieldId: "aideIndependant", op: "equals", value: "oui" },
-    section: SECTION_AIDE_INDEPENDANT,
-    order: 6,
-  },
-  {
-    id: "natureActiviteIndependant3",
-    pdfFieldName: "mentionnez les toutes 3",
-    type: "text",
-    required: false,
-    label: { fr: "Nature de l'activité de l'indépendant [3]" },
-    visibleIf: { fieldId: "aideIndependant", op: "equals", value: "oui" },
-    section: SECTION_AIDE_INDEPENDANT,
-    order: 7,
-  },
-  {
-    id: "natureActiviteIndependant4",
-    pdfFieldName: "mentionnez les toutes 4",
-    type: "text",
-    required: false,
-    label: { fr: "Nature de l'activité de l'indépendant [4]" },
-    visibleIf: { fieldId: "aideIndependant", op: "equals", value: "oui" },
-    section: SECTION_AIDE_INDEPENDANT,
-    order: 8,
-  },
-  {
-    id: "natureActiviteIndependant5",
-    pdfFieldName: "mentionnez les toutes 5",
-    type: "text",
-    required: false,
-    label: { fr: "Nature de l'activité de l'indépendant [5]" },
-    visibleIf: { fieldId: "aideIndependant", op: "equals", value: "oui" },
-    section: SECTION_AIDE_INDEPENDANT,
-    order: 9,
+    maxRows: 5,
+    itemFields: [
+      {
+        id: "nature",
+        pdfFieldName: "",
+        type: "text",
+        required: true,
+        label: { fr: "Nature de l'activité" },
+        pdfFieldNameTemplate: "mentionnez les toutes {index}",
+        order: 1,
+      },
+    ],
   },
 
   // ====================================================================
@@ -495,10 +475,10 @@ export const C1A_FIELDS: PdfFormField[] = [
     options: YN,
     visibleIf: { fieldId: "aideIndependant", op: "equals", value: "oui" },
     section: SECTION_AIDE_INDEPENDANT,
-    // 9.5 et non 9 : le bloc Q2 ci-dessus a gagné un champ (independantNumeroEntreprise),
-    // ce qui pousse natureActiviteIndependant5 à order 9. Fractionnaire pour
-    // rester strictement après lui sans renuméroter toute la suite du fichier
-    // (même convention que `numero`/`commune` en tête de fichier).
+    // 9.5 : reste strictement entre le bloc Q2 (jusqu'à l'order 5, le champ
+    // array `natureActiviteIndependant` depuis le Commit 2) et la grille Q4
+    // (order 10). Fractionnaire pour ne pas renuméroter toute la suite du
+    // fichier (même convention que `numero`/`commune` en tête de fichier).
     order: 9.5,
   },
 
@@ -544,16 +524,49 @@ export const C1A_FIELDS: PdfFormField[] = [
   // ====================================================================
   // Q5 — DÉCRIVEZ L'AIDE QUE VOUS APPORTEREZ
   // ====================================================================
-  ...[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => ({
-    id: `descriptionAide${n}`,
-    pdfFieldName: `Décrivez laide que vous apporterez ${n}`,
-    type: "text" as const,
-    required: n === 1,
-    label: { fr: n === 1 ? "5. Décrivez l'aide que vous apporterez" : `Description de l'aide (suite) [${n}]` },
-    visibleIf: { fieldId: "aideIndependant", op: "equals" as const, value: "oui" },
+  {
+    // Consolidé en UN champ répétable (Commit 2, même retour Oraliks que Q2
+    // ci-dessus — traitement identique explicitement demandé). Neuf lignes
+    // vides affichées d'un coup devenaient huit champs presque toujours
+    // vides. `maxRows: 9` : le PDF n'offre que 9 lignes imprimées
+    // ("Décrivez laide que vous apporterez 1" à "9").
+    //
+    // id conservé à `descriptionAide1` : c'est l'ANCRE de Q5 dans
+    // C1A_ROUTAGE (cf. c1a-routing.ts), sa condition est remplacée par
+    // `appliquerRoutage` plus bas — même convention que
+    // `revenuNetSalarieParMois`, ancre de Q19.
+    //
+    // `required` reste `false` ici malgré la règle du Commit 3 (toutes les
+    // clés de C1A_ROUTAGE deviennent `required`) : `buildValidator` neutre
+    // délibérément `required` pour `type: "array"` (lib/pdf-forms/validation.ts,
+    // "un tableau vide ne doit pas bloquer"), et le compteur du stepper
+    // (`isFieldComplete`) ne sait pas non plus lire une valeur `array` — un
+    // champ array `required` afficherait donc l'étape bloquée sur
+    // « 1 restant » EN PERMANENCE, même rempli. Le poser à `true` serait
+    // cosmétique et trompeur sans toucher à validation.ts (hors périmètre :
+    // un autre agent y travaille). Signalé au rapport du lot.
+    id: "descriptionAide1",
+    pdfFieldName: "",
+    type: "array",
+    required: false,
+    label: { fr: "5. Décrivez l'aide que vous apporterez" },
+    addRowLabel: { fr: "Ajouter une autre ligne de description" },
+    visibleIf: { fieldId: "aideIndependant", op: "equals", value: "oui" },
     section: SECTION_AIDE_INDEPENDANT,
-    order: 45 + n,
-  })),
+    order: 46,
+    maxRows: 9,
+    itemFields: [
+      {
+        id: "description",
+        pdfFieldName: "",
+        type: "text",
+        required: true,
+        label: { fr: "Description de l'aide" },
+        pdfFieldNameTemplate: "Décrivez laide que vous apporterez {index}",
+        order: 1,
+      },
+    ],
+  },
 
   // ====================================================================
   // Q6 — COMBIEN GAGNEZ-VOUS POUR VOTRE AIDE ?
@@ -1296,6 +1309,29 @@ const LEGACY_C1A_FIELD_IDS = new Set<string>([
   // un brouillon déjà en base garderait une 5e case "Période 5" fantôme,
   // qui n'écrirait plus rien de cohérent nulle part.
   "q4periodesTexte5",
+  // Q2/Q5 (Commit 2, 2026-07-29) : natureActiviteIndependant1..5 et
+  // descriptionAide2..9 consolidés en deux champs `array`
+  // (natureActiviteIndependant, descriptionAide1). Ici la couverture par
+  // `pdfFieldName` NE SUFFIT PAS : les widgets "mentionnez les toutes N" et
+  // "Décrivez laide que vous apporterez N" ne sont plus référencés que via
+  // `pdfFieldNameTemplate` sur un sous-champ d'`itemFields`, invisible à
+  // `coveredWidgetNames` (qui ne lit que `field.pdfFieldName` au premier
+  // niveau). Sans ces entrées, un brouillon déjà en base garderait les 14
+  // anciens champs ligne-par-ligne À CÔTÉ du nouveau tableau — doublon
+  // silencieux, pas une case fantôme qui se voit tout de suite.
+  "natureActiviteIndependant1",
+  "natureActiviteIndependant2",
+  "natureActiviteIndependant3",
+  "natureActiviteIndependant4",
+  "natureActiviteIndependant5",
+  "descriptionAide2",
+  "descriptionAide3",
+  "descriptionAide4",
+  "descriptionAide5",
+  "descriptionAide6",
+  "descriptionAide7",
+  "descriptionAide8",
+  "descriptionAide9",
 ]);
 
 /// Champs qui suivent la même condition que la question qui les porte : les
@@ -1306,16 +1342,13 @@ const RATTACHEMENTS: Record<string, string[]> = {
     "independantNumeroEntreprise",
     "independantAdresseRueNumero",
     "independantAdresseCodePostalCommune",
-    "natureActiviteIndependant1",
-    "natureActiviteIndependant2",
-    "natureActiviteIndependant3",
-    "natureActiviteIndependant4",
-    "natureActiviteIndependant5",
+    // natureActiviteIndependant1..5 consolidés (Commit 2) en un seul champ
+    // `array` : plus besoin de les rattacher un par un.
+    "natureActiviteIndependant",
   ],
-  descriptionAide1: [
-    "descriptionAide2", "descriptionAide3", "descriptionAide4", "descriptionAide5",
-    "descriptionAide6", "descriptionAide7", "descriptionAide8", "descriptionAide9",
-  ],
+  // descriptionAide2..9 ont disparu (Commit 2) : consolidés dans le champ
+  // `array` descriptionAide1 ci-dessus, qui reste lui-même la clé
+  // C1A_ROUTAGE de Q5 — plus rien à rattacher séparément.
   montantAidePeriodicite: ["montantAide", "montantAideAnnuel"],
   mandatDescription: [],
   // Q11 imprime DEUX lignes de montant : la seconde suit la première, sinon

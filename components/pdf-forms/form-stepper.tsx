@@ -66,34 +66,45 @@ export function FormStepper({ steps, activeIndex, onSelect, showNavigation = tru
   // l'espace vertical prévu pour le stepper détaillé. Sur mobile, la consigne
   // et la progression repassent naturellement sur toute la largeur.
   if (!showNavigation) {
+    // Ligne unique compacte (C1/C1A) : puce + titre + coche + barre, la barre
+    // absorbant tout l'espace restant. Le titre peut être une question entière
+    // (granularité « une étape par question », cf. PDF_FORMS_RULES) : il porte
+    // donc son propre `flex-1`/`min-w-0` sous 640 px pour ne JAMAIS être éjecté
+    // sur sa propre rangée par l'algorithme de wrap (base flex nulle → tient
+    // toujours sur la 1ʳᵉ ligne avec la puce et l'icône), puis redevient
+    // `flex-initial` à partir de `sm:` pour ne pas voler la place que la barre
+    // doit « prendre en restante ». La barre, elle, est `w-full` sous 640 px :
+    // seul un item à 100 % est garanti de démarrer sa propre rangée, ce qui
+    // donne les deux rangées attendues à 375 px sans jamais déborder.
+    // Le séparateur fin sous la ligne existe déjà : `border-b` posé par le
+    // parent (pdf-form-runner.tsx) directement sous ce composant.
     return (
-      <div
-        className="flex flex-wrap items-center gap-x-4 gap-y-2 py-3 sm:flex-nowrap sm:gap-x-5"
-        data-docbel-readable
-      >
-        <span className="shrink-0 rounded-full bg-[color:var(--glass-pop-bg)] px-4 py-2 text-sm font-bold text-[color:var(--glass-accent-deep)]">
-          {t("runnerStepCounter", { current: activeIndex + 1, total })}
-        </span>
-        <h2 className="shrink-0 text-xl font-bold leading-tight text-[color:var(--glass-ink)]">
-          {activeStep?.label}
-        </h2>
+      <div className="flex flex-col gap-2 py-3" data-docbel-readable>
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 sm:flex-nowrap sm:gap-x-5">
+          <span className="shrink-0 rounded-full bg-[color:var(--glass-pop-bg)] px-4 py-2 text-sm font-bold text-[color:var(--glass-accent-deep)]">
+            {t("runnerStepCounter", { current: activeIndex + 1, total })}
+          </span>
+          <h2 className="min-w-0 flex-1 truncate text-xl font-bold leading-tight text-[color:var(--glass-ink)] sm:flex-initial">
+            {activeStep?.label}
+          </h2>
+          {activeStep?.hasError ? (
+            <AlertCircle className="shrink-0 text-destructive" aria-label={t("runnerStepErrorsAria")} />
+          ) : activeStep?.complete ? (
+            <CheckCircle2 className="shrink-0 text-[color:var(--success)]" aria-hidden />
+          ) : null}
+          <ProgressFeedback
+            label={t("runnerStepCounter", { current: activeIndex + 1, total })}
+            value={pct}
+            compact
+            labelMode="sr-only"
+            className="w-full min-w-24 sm:w-auto sm:flex-1"
+          />
+        </div>
         {(activeStep?.description || activeStep?.subLabel) && (
-          <p className="order-4 w-full text-base text-[color:var(--glass-ink-soft)] sm:order-none sm:min-w-0 sm:flex-1 sm:truncate">
+          <p className="text-base leading-relaxed text-[color:var(--glass-ink-soft)]">
             {activeStep.description ?? activeStep.subLabel}
           </p>
         )}
-        {activeStep?.hasError ? (
-          <AlertCircle className="shrink-0 text-destructive" aria-label={t("runnerStepErrorsAria")} />
-        ) : activeStep?.complete ? (
-          <CheckCircle2 className="shrink-0 text-[color:var(--success)]" aria-hidden />
-        ) : null}
-        <ProgressFeedback
-          label={t("runnerStepCounter", { current: activeIndex + 1, total })}
-          value={pct}
-          compact
-          labelMode="sr-only"
-          className="order-5 w-full shrink-0 sm:order-none sm:w-[34%] sm:min-w-48 sm:max-w-[34rem]"
-        />
       </div>
     );
   }

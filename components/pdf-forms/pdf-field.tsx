@@ -88,6 +88,12 @@ interface Props {
   /// avec `field.id` depuis `onFocus` (inputs) et `onClick` (contrôles boutons :
   /// cases, segmenté oui/non). Purement additif : absent = comportement inchangé.
   onFocusField?: (id: string) => void;
+  /// Le libellé de ce champ est DÉJÀ affiché juste au-dessus, comme titre de
+  /// l'étape (parcours « une question par écran », cf.
+  /// `stepTitleReplacesFieldLabel`). On le retire alors de l'ÉCRAN — jamais du
+  /// DOM : sans lui le contrôle n'aurait plus de nom accessible. L'infobulle
+  /// d'aide, elle, reste visible : c'est le texte officiel du formulaire.
+  hideLabel?: boolean;
 }
 
 /// Rend le label + une InfoTooltip si `help` est présent — remplace
@@ -105,23 +111,30 @@ function LabelWithTooltip({
   labelShort,
   help,
   required,
+  srOnly = false,
 }: {
   label: string;
   labelShort?: string;
   help: string;
   required?: boolean;
+  /// Libellé retiré de l'écran mais conservé dans le DOM (cf. `hideLabel`).
+  /// `contents` dans le cas normal : les deux variantes mobile/desktop restent
+  /// des enfants directs du conteneur flex, l'espacement ne bouge pas.
+  srOnly?: boolean;
 }) {
   return (
     <span className="flex items-center gap-1.5">
-      {labelShort && labelShort !== label ? (
-        <>
-          <span className="sm:hidden">{labelShort}</span>
-          <span className="hidden sm:inline">{label}</span>
-        </>
-      ) : (
-        label
-      )}
-      {required && <span className="text-destructive"> *</span>}
+      <span className={srOnly ? "sr-only" : "contents"}>
+        {labelShort && labelShort !== label ? (
+          <>
+            <span className="sm:hidden">{labelShort}</span>
+            <span className="hidden sm:inline">{label}</span>
+          </>
+        ) : (
+          label
+        )}
+        {required && <span className="text-destructive"> *</span>}
+      </span>
       {help && <InfoTooltip text={help} />}
     </span>
   );
@@ -133,6 +146,7 @@ function PdfFieldImpl({
   autoLocked = false,
   derivedValue = null, relatedPostalCode, onSelectStreetSuggestion, onStreetVerifiedChange, parentValues,
   onFocusField,
+  hideLabel = false,
 }: Props) {
   // `locale` sert à choisir la traduction MÉTIER stockée en base (libellés du
   // formulaire) ; `t` couvre le châssis de l'UI, qui vit dans les catalogues
@@ -237,6 +251,7 @@ function PdfFieldImpl({
         formId={formId}
         formSlug={formSlug}
         parentValues={parentValues}
+        hideLabel={hideLabel}
       />
     );
   }
@@ -267,7 +282,7 @@ function PdfFieldImpl({
               htmlFor={field.id}
               className={`min-w-0 flex-1 ${isReadOnly ? "font-normal text-muted-foreground" : "font-normal"}`}
             >
-              <LabelWithTooltip label={label} labelShort={labelShort} help={help} required={field.required} />
+              <LabelWithTooltip label={label} labelShort={labelShort} help={help} required={field.required} srOnly={hideLabel} />
             </FieldLabel>
           </div>
           {errorReport}
@@ -288,7 +303,7 @@ function PdfFieldImpl({
           htmlFor={field.id}
           className={isReadOnly ? "font-normal text-muted-foreground" : "font-normal"}
         >
-          <LabelWithTooltip label={label} labelShort={labelShort} help={help} required={field.required} />
+          <LabelWithTooltip label={label} labelShort={labelShort} help={help} required={field.required} srOnly={hideLabel} />
         </FieldLabel>
         {errorReport}
       </Field>
@@ -318,7 +333,7 @@ function PdfFieldImpl({
         <div className="flex flex-col gap-1 px-4 py-3" data-invalid={invalid} onFocus={notifyFocus} onClick={notifyFocus}>
           <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
             <FieldLabel id={labelId} className="min-w-0 flex-1">
-              <LabelWithTooltip label={label} labelShort={labelShort} help={help} required={field.required} />
+              <LabelWithTooltip label={label} labelShort={labelShort} help={help} required={field.required} srOnly={hideLabel} />
             </FieldLabel>
             <YesNoSegmentedControl
               id={field.id}
@@ -342,7 +357,7 @@ function PdfFieldImpl({
     return (
       <Field data-invalid={invalid} className="gap-1.5" onFocus={notifyFocus} onClick={notifyFocus}>
         <FieldLabel id={labelId} className="text-[13px]">
-          <LabelWithTooltip label={label} labelShort={labelShort} help={help} required={field.required} />
+          <LabelWithTooltip label={label} labelShort={labelShort} help={help} required={field.required} srOnly={hideLabel} />
         </FieldLabel>
         <YesNoSegmentedControl
           id={field.id}
@@ -368,7 +383,7 @@ function PdfFieldImpl({
     return (
       <Field data-invalid={invalid} className="gap-1.5" onFocus={notifyFocus} onClick={notifyFocus}>
         <FieldLabel htmlFor={field.id} className="text-[13px]">
-          <LabelWithTooltip label={label} labelShort={labelShort} help={help} required={field.required} />
+          <LabelWithTooltip label={label} labelShort={labelShort} help={help} required={field.required} srOnly={hideLabel} />
         </FieldLabel>
         {/* `modal={false}` (Oraliks 2026-07-26) : en mode modal — le défaut de
             Base UI — l'ouverture VERROUILLE le scroll du document (overflow
@@ -408,7 +423,7 @@ function PdfFieldImpl({
     return (
       <Field data-invalid={invalid} className="gap-1.5" onFocus={notifyFocus} onClick={notifyFocus}>
         <FieldLabel htmlFor={field.id} className="text-[13px]">
-          <LabelWithTooltip label={label} labelShort={labelShort} help={help} required={field.required} />
+          <LabelWithTooltip label={label} labelShort={labelShort} help={help} required={field.required} srOnly={hideLabel} />
         </FieldLabel>
         <Textarea
           id={field.id}
@@ -474,7 +489,7 @@ function PdfFieldImpl({
         {/* `field.id` désigne toujours l'input affiché en premier (cf. firstId
             / lastId ci-dessus), quel que soit `nameOrder`. */}
         <FieldLabel htmlFor={field.id} className="text-[13px]">
-          <LabelWithTooltip label={label} labelShort={labelShort} help={help} required={field.required} />
+          <LabelWithTooltip label={label} labelShort={labelShort} help={help} required={field.required} srOnly={hideLabel} />
         </FieldLabel>
         <div className="flex flex-col gap-2 sm:flex-row">
           {lastFirst ? lastInput : firstInput}
@@ -493,7 +508,7 @@ function PdfFieldImpl({
     return (
       <Field data-invalid={invalid} className="gap-1.5" onFocus={notifyFocus} onClick={notifyFocus}>
         <FieldLabel htmlFor={field.id} className="text-[13px]">
-          <LabelWithTooltip label={label} labelShort={labelShort} help={help} required={field.required} />
+          <LabelWithTooltip label={label} labelShort={labelShort} help={help} required={field.required} srOnly={hideLabel} />
         </FieldLabel>
         <div className="flex items-center gap-2" onBlur={markTouched}>
           <div className="flex-1">
@@ -530,7 +545,7 @@ function PdfFieldImpl({
         onClick={notifyFocus}
       >
         <FieldLabel htmlFor={field.id} className={cn(rowLayout && "md:col-start-1")}>
-          <LabelWithTooltip label={label} labelShort={labelShort} help={help} required={field.required} />
+          <LabelWithTooltip label={label} labelShort={labelShort} help={help} required={field.required} srOnly={hideLabel} />
         </FieldLabel>
         <div className={cn("flex items-center gap-2", rowLayout && "min-w-0 md:col-start-2")}>
           <div className="flex-1">
@@ -590,7 +605,7 @@ function PdfFieldImpl({
       onClick={notifyFocus}
     >
       <FieldLabel htmlFor={field.id} className={cn(rowLayout && "md:col-start-1")}>
-        <LabelWithTooltip label={label} labelShort={labelShort} help={help} required={field.required} />
+        <LabelWithTooltip label={label} labelShort={labelShort} help={help} required={field.required} srOnly={hideLabel} />
       </FieldLabel>
       <div className={cn("flex items-center gap-2", rowLayout && "min-w-0 md:col-start-2")}>
         {useStreetAutocomplete ? (

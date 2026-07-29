@@ -35,7 +35,13 @@ import type { PublicForm, PublicField } from "@/lib/pdf-forms/public-serializer"
 import { buildSteps, buildMacroSteps, type OptionalSection, type MacroStep } from "@/lib/pdf-forms/build-steps";
 import { resolveStepIndexById } from "@/lib/pdf-forms/resume-step";
 import { sectionLabel } from "@/lib/pdf-forms/section-labels";
-import { getFormPresentation, stepGroupTitle, stepGroupDescription } from "@/lib/pdf-forms/form-presentation";
+import {
+  getFormPresentation,
+  stepGroupTitle,
+  stepGroupDescription,
+  stepAnchorField,
+  stepTitleReplacesFieldLabel,
+} from "@/lib/pdf-forms/form-presentation";
 import { FormStepper } from "./form-stepper";
 import { FormShell } from "./form-shell";
 import { ContextHelpPanel } from "./context-help-panel";
@@ -1472,6 +1478,7 @@ function FieldsCluster({
   formSlug,
   onStreetVerifiedChange,
   onFocusField,
+  hideLabelForId,
 }: {
   fields: PublicField[];
   values: FormPayload;
@@ -1482,6 +1489,10 @@ function FieldsCluster({
   formSlug: string;
   onStreetVerifiedChange?: (fieldId: string, verified: boolean) => void;
   onFocusField?: (id: string) => void;
+  /// Champ dont le libellé est DÉJÀ affiché comme titre de l'étape : on ne le
+  /// répète pas à l'écran (cf. `stepTitleReplacesFieldLabel`). Absent = tous
+  /// les champs portent leur libellé, comportement de tous les autres écrans.
+  hideLabelForId?: string;
 }) {
   // Trois familles de rendu : cartes de choix (chips), lignes binaires
   // compactes (oui/non + cases, empilées dans un conteneur à séparateurs),
@@ -1612,6 +1623,7 @@ function FieldsCluster({
                   rowLayout
                   derivedValue={deriveValueFor(f)}
                   onFocusField={onFocusField}
+                  hideLabel={f.id === hideLabelForId}
                 />
                 {/* Suivi(s) déclenché(s) par ce Oui/Non : rendus juste sous la
                     ligne, en léger retrait, dans le même cadre. */}
@@ -1662,6 +1674,7 @@ function FieldsCluster({
                   onStreetVerifiedChange={(v) => onStreetVerifiedChange?.(f.id, v)}
                   parentValues={values}
                   onFocusField={onFocusField}
+                  hideLabel={f.id === hideLabelForId}
                 />
                 {/* Case échappatoire (« ma rue n'est pas dans la liste »)
                     rendue juste sous l'input auquel elle se rapporte. */}
@@ -1818,12 +1831,24 @@ function MacroRunnerBody({
     }
     return bicFromForeignIban(ibanValue);
   }, [form.fields, values]);
-  const titleFor = (id: string) => stepGroupTitle(presentation, id, locale, t);
+  const stepFieldsOf = (ms: MacroStep): PublicField[] => [...ms.sections.flatMap((sec) => sec.fields), ...ms.advanced];
+  // Une étape qui EST une question se titre avec cette question : son champ
+  // ancre porte l'identifiant du groupe (cf. `stepAnchorField`). Le repli
+  // (clé i18n, puis libellé de section) reste celui de tout autre formulaire.
+  const titleFor = (ms: MacroStep) => {
+    const anchor = stepAnchorField(ms.id, stepFieldsOf(ms));
+    return stepGroupTitle(presentation, ms.id, locale, t, anchor ? loc(anchor.label, locale) : undefined);
+  };
   const descFor = (id: string) => stepGroupDescription(presentation, id, t);
+  // Le libellé du champ ancre est déjà le titre de l'étape : on ne le répète
+  // pas à l'écran (il reste dans le DOM pour les lecteurs d'écran).
+  const currentFields = stepFieldsOf(current);
+  const hideLabelForId = stepTitleReplacesFieldLabel(presentation, current.id, currentFields.length)
+    ? stepAnchorField(current.id, currentFields)?.id
+    : undefined;
   const stepHasError = (ms: MacroStep) =>
     ms.sections.some((sec) => sec.fields.some((f) => errors[f.id])) ||
     ms.advanced.some((f) => errors[f.id]);
-  const stepFieldsOf = (ms: MacroStep): PublicField[] => [...ms.sections.flatMap((sec) => sec.fields), ...ms.advanced];
   // Reculer reste libre ; avancer est gaté sur la validité de TOUTES les
   // étapes survolées (cf. attemptAdvance).
   const handleStepSelect = (targetIndex: number) => {
@@ -1848,7 +1873,7 @@ function MacroRunnerBody({
         );
         return {
           id: s.id,
-          label: titleFor(s.id),
+          label: titleFor(s),
           description: descFor(s.id),
           hasError: stepHasError(s),
           ...meta,
@@ -1869,6 +1894,7 @@ function MacroRunnerBody({
       formSlug={form.slug}
       onStreetVerifiedChange={onStreetVerifiedChange}
       onFocusField={onFocusField}
+      hideLabelForId={hideLabelForId}
     />
   );
 

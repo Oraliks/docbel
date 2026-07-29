@@ -24,6 +24,10 @@ interface Props {
   /// pour évaluer `visibleIfParent` sur les sous-champs (ex. cohabitants qui
   /// se simplifient à prénom+nom en mode colocation).
   parentValues?: FormPayload;
+  /// Le libellé du tableau est déjà affiché comme titre de l'étape (cf.
+  /// `PdfField.hideLabel`). Retiré de l'écran, conservé dans le DOM : c'est lui
+  /// que `aria-labelledby` désigne pour nommer le groupe.
+  hideLabel?: boolean;
 }
 
 /// Rendu d'un champ `array` : une carte par ligne, ajout / suppression de
@@ -33,7 +37,7 @@ interface Props {
 /// La règle d'auto-remplissage spécifique cohabitants (Indépendant → 999999.99,
 /// allocations familiales auto-non si > 35 ans) est centralisée dans
 /// `applyAutoRules` ci-dessous — peut être étendue pour d'autres tableaux.
-export function ArrayField({ field, value, locale, onChange, formId, formSlug, parentValues }: Props) {
+export function ArrayField({ field, value, locale, onChange, formId, formSlug, parentValues, hideLabel = false }: Props) {
   // `locale` = libellés MÉTIER stockés en base ; `t` = châssis d'UI (catalogues
   // next-intl, fallback FR automatique pour les langues non traduites).
   const t = useTranslations("public.dossier");
@@ -86,7 +90,7 @@ export function ArrayField({ field, value, locale, onChange, formId, formSlug, p
 
   return (
     <Field aria-labelledby={labelId}>
-      <FieldLabel id={labelId}>
+      <FieldLabel id={labelId} className={hideLabel ? "sr-only" : undefined}>
         {label}
         {field.required && <span className="text-destructive"> *</span>}
       </FieldLabel>

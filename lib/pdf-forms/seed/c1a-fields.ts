@@ -85,6 +85,15 @@ const YN = [
   { value: "non", label: { fr: "Non" } },
 ];
 
+/// Condition des sept cases de Q22 (« à compléter uniquement si tu es chômeur
+/// temporaire »). Écrite une fois, posée sur chaque jour — cf. le commentaire
+/// détaillé sur `joursOccupeLundi`.
+const VISIBLE_SI_CHOMEUR_TEMPORAIRE: VisibleIf = {
+  fieldId: "estChomeurTemporaire",
+  op: "equals",
+  value: "oui",
+};
+
 /// Grille horaire répétée 2 fois sur le PDF (Q4 "quand aiderez-vous
 /// l'indépendant" et Q18 "quand exercerez-vous cette activité"). Structure
 /// identique : lundi à vendredi (chacun x avant 7h / entre 7h et 18h /
@@ -1162,11 +1171,19 @@ export const C1A_FIELDS: PdfFormField[] = [
     // de résumé de fréquence à côté des 7 cases) sur lequel reporter une
     // exigence. `requiredGroup` reste écarté pour la même raison qu'ailleurs
     // sur ce formulaire.
+    // `visibleIf` écrit en clair (2026-07-29) : les sept jours étaient jusqu'ici
+    // conditionnés par l'arbre, via un nœud `joursOccupeLundi` dont ils
+    // dépendaient. Ce nœud a disparu (une question = une étape : il aurait
+    // produit une étape intitulée « Lundi »), la rubrique entière est
+    // désormais rattachée à `estChomeurTemporaire`. La condition est donc
+    // portée ici — elle est directe, et `estChomeurTemporaire` est posée sur
+    // tous les chemins : aucune condition transitive à dériver.
     id: "joursOccupeLundi",
     pdfFieldName: "lu",
     type: "checkbox",
     required: false,
     label: { fr: "Lundi" },
+    visibleIf: VISIBLE_SI_CHOMEUR_TEMPORAIRE,
     section: SECTION_ACTIVITES,
     order: 160,
   },
@@ -1176,6 +1193,7 @@ export const C1A_FIELDS: PdfFormField[] = [
     type: "checkbox",
     required: false,
     label: { fr: "Mardi" },
+    visibleIf: VISIBLE_SI_CHOMEUR_TEMPORAIRE,
     section: SECTION_ACTIVITES,
     order: 161,
   },
@@ -1185,6 +1203,7 @@ export const C1A_FIELDS: PdfFormField[] = [
     type: "checkbox",
     required: false,
     label: { fr: "Mercredi" },
+    visibleIf: VISIBLE_SI_CHOMEUR_TEMPORAIRE,
     section: SECTION_ACTIVITES,
     order: 162,
   },
@@ -1194,6 +1213,7 @@ export const C1A_FIELDS: PdfFormField[] = [
     type: "checkbox",
     required: false,
     label: { fr: "Jeudi" },
+    visibleIf: VISIBLE_SI_CHOMEUR_TEMPORAIRE,
     section: SECTION_ACTIVITES,
     order: 163,
   },
@@ -1203,6 +1223,7 @@ export const C1A_FIELDS: PdfFormField[] = [
     type: "checkbox",
     required: false,
     label: { fr: "Vendredi" },
+    visibleIf: VISIBLE_SI_CHOMEUR_TEMPORAIRE,
     section: SECTION_ACTIVITES,
     order: 164,
   },
@@ -1212,6 +1233,7 @@ export const C1A_FIELDS: PdfFormField[] = [
     type: "checkbox",
     required: false,
     label: { fr: "Samedi" },
+    visibleIf: VISIBLE_SI_CHOMEUR_TEMPORAIRE,
     section: SECTION_ACTIVITES,
     order: 165,
   },
@@ -1224,6 +1246,7 @@ export const C1A_FIELDS: PdfFormField[] = [
     help: {
       fr: "22. À compléter uniquement si tu es chômeur temporaire : coche les jours où tu es habituellement occupé chez ton employeur.",
     },
+    visibleIf: VISIBLE_SI_CHOMEUR_TEMPORAIRE,
     section: SECTION_ACTIVITES,
     order: 166,
   },
@@ -1425,8 +1448,10 @@ const RATTACHEMENTS: Record<string, string[]> = {
     "descriptionActivite1", "descriptionActivite2", "descriptionActivite3",
   ],
   revenuNetSalarieParMois: ["revenuNetSalarieParHeure", "revenuNetIndependantParAn"],
-  joursOccupeLundi: [
-    "joursOccupeMardi", "joursOccupeMercredi", "joursOccupeJeudi",
+  // Q22 : les sept jours suivent la consigne « à compléter uniquement si tu es
+  // chômeur temporaire », qui est leur question (cf. c1a-routing.ts).
+  estChomeurTemporaire: [
+    "joursOccupeLundi", "joursOccupeMardi", "joursOccupeMercredi", "joursOccupeJeudi",
     "joursOccupeVendredi", "joursOccupeSamedi", "joursOccupeDimanche",
   ],
   affirmationSincerite: ["nombreAnnexesJointes"],
@@ -1440,8 +1465,8 @@ const RATTACHEMENTS: Record<string, string[]> = {
 /// qui n'a pas vocation à rester : la grille doit reproduire la disposition du
 /// papier, tout visible d'emblée.
 const RATTACHEMENTS_PAR_PREFIXE: Array<{ prefixe: string; question: string }> = [
-  { prefixe: "q4", question: "q4lundi" },
-  { prefixe: "q18", question: "q18lundi" },
+  { prefixe: "q4", question: "q4periode" },
+  { prefixe: "q18", question: "q18periode" },
 ];
 
 /// Une condition, aplatie : la principale et ses `and` sur le même plan.
@@ -1490,19 +1515,7 @@ function empiler(existante: VisibleIf | undefined, branche: VisibleIf): VisibleI
 function appliquerRoutage(fields: PdfFormField[]): PdfFormField[] {
   const conditions = compilerRoutage(C1A_ROUTAGE, C1A_DEPART);
   const questions = new Set(Object.keys(C1A_ROUTAGE));
-
-  const porteuse = new Map<string, string>();
-  for (const [question, rattaches] of Object.entries(RATTACHEMENTS)) {
-    if (!questions.has(question)) {
-      throw new Error(`RATTACHEMENTS : « ${question} » n'est pas une question de C1A_ROUTAGE`);
-    }
-    for (const id of rattaches) porteuse.set(id, question);
-  }
-  for (const { question } of RATTACHEMENTS_PAR_PREFIXE) {
-    if (!questions.has(question)) {
-      throw new Error(`RATTACHEMENTS_PAR_PREFIXE : « ${question} » n'est pas une question de C1A_ROUTAGE`);
-    }
-  }
+  const porteuse = questionParChamp(fields);
 
   return fields.map((f) => {
     if (questions.has(f.id)) {
@@ -1516,9 +1529,7 @@ function appliquerRoutage(fields: PdfFormField[]): PdfFormField[] {
       return { ...f, visibleIf: assembler(aplatir(condition)) };
     }
 
-    const question =
-      porteuse.get(f.id) ??
-      RATTACHEMENTS_PAR_PREFIXE.find((r) => f.id.startsWith(r.prefixe))?.question;
+    const question = porteuse.get(f.id);
     if (!question) return f;
 
     const branche = conditions[question];
@@ -1527,58 +1538,66 @@ function appliquerRoutage(fields: PdfFormField[]): PdfFormField[] {
   });
 }
 
-/// Macro-étape de chaque champ, dérivée de sa section. L'ordre des étapes est
-/// déclaré dans `form-presentation.ts`.
-const GROUPE_PAR_SECTION: Record<string, string> = {
-  [SECTION_IDENTITE]: "identite",
-  [SECTION_AIDE_INDEPENDANT]: "aide-independant",
-  [SECTION_ADRESSE]: "aide-independant",
-  [SECTION_EMPLOYEUR]: "activite",
-  [SECTION_ACTIVITES]: "activite",
-  [SECTION_REVENUS]: "activite",
-  [SECTION_AFFIRMATIONS]: "final",
-  [SECTION_ANNEXES]: "final",
-  [SECTION_SIGNATURE]: "final",
-};
+/// Question de l'arbre à laquelle appartient chaque champ : une question
+/// s'appartient à elle-même, les autres champs sont ceux de sa rubrique
+/// (`RATTACHEMENTS`, ou préfixe d'identifiant pour les rubriques à soixante
+/// champs). Un champ absent de la table n'appartient à aucune question.
+///
+/// Cette correspondance sert DEUX FOIS : à propager la condition de branche
+/// (ci-dessus) et à découper le parcours en étapes (ci-dessous). C'est
+/// délibéré — la question qui conditionne un champ est aussi celle qui doit
+/// l'afficher, et deux tables diraient un jour deux choses différentes.
+function questionParChamp(fields: PdfFormField[]): Map<string, string> {
+  const questions = new Set(Object.keys(C1A_ROUTAGE));
+  const porteuse = new Map<string, string>();
+  for (const [question, rattaches] of Object.entries(RATTACHEMENTS)) {
+    if (!questions.has(question)) {
+      throw new Error(`RATTACHEMENTS : « ${question} » n'est pas une question de C1A_ROUTAGE`);
+    }
+    for (const id of rattaches) porteuse.set(id, question);
+  }
+  for (const { question } of RATTACHEMENTS_PAR_PREFIXE) {
+    if (!questions.has(question)) {
+      throw new Error(`RATTACHEMENTS_PAR_PREFIXE : « ${question} » n'est pas une question de C1A_ROUTAGE`);
+    }
+  }
 
-/// Champs dont la macro-étape ne se déduit pas de leur section : les questions
-/// de mandat vivent dans les sections « activités » et « revenus » mais forment
-/// leur propre étape — y compris `revenuAnnuelMandat2` (2e montant de Q11,
-/// ajouté après l'écriture du plan initial, absent de sa liste d'origine).
-/// `adresseActivite` et `adresseActiviteCodePostalCommune` (Q15, adresse de
-/// L'ACTIVITÉ accessoire) partagent SECTION_ADRESSE avec l'adresse de
-/// l'indépendant aidé de Q2 (qui, elle, appartient bien à l'étape
-/// « aide-independant » via GROUPE_PAR_SECTION) : la section seule ne peut pas
-/// les distinguer, d'où leur présence ici.
-const GROUPE_PAR_CHAMP: Record<string, string> = {
-  mandatPolitiqueOuJuge: "mandat",
-  mandatDescription: "mandat",
-  revenuAnnuelMandat: "mandat",
-  revenuAnnuelMandat2: "mandat",
-  aideIndependant: "aide-independant",
-  aideraPendantChomage: "aide-independant",
-  aidaitDejaIndependant: "aide-independant",
-  dateDebutAide: "aide-independant",
-  montantAidePeriodicite: "aide-independant",
-  montantAide: "aide-independant",
-  montantAideAnnuel: "aide-independant",
-  estChomeurTemporaire: "final",
-  independantTitrePrincipal: "final",
-  adresseActivite: "activite",
-  adresseActiviteCodePostalCommune: "activite",
-};
+  const parChamp = new Map<string, string>();
+  for (const f of fields) {
+    if (questions.has(f.id)) {
+      parChamp.set(f.id, f.id);
+      continue;
+    }
+    const question =
+      porteuse.get(f.id) ??
+      RATTACHEMENTS_PAR_PREFIXE.find((r) => f.id.startsWith(r.prefixe))?.question;
+    if (question) parChamp.set(f.id, question);
+  }
+  return parChamp;
+}
 
+/// Étape de l'en-tête d'identité (nom, NISS, adresse). C'est la SEULE étape
+/// qui ne corresponde pas à une question numérotée : le bandeau d'identité du
+/// C1A n'a pas de numéro sur le papier et n'entre donc pas dans l'arbre de
+/// renvois. Son titre reste une clé i18n (cf. `form-presentation.ts`).
+const GROUPE_IDENTITE = "identite";
+
+/// Macro-étape de chaque champ : UNE QUESTION = UNE ÉTAPE.
+///
+/// Le découpage n'est pas une table de plus (les anciennes `GROUPE_PAR_SECTION`
+/// / `GROUPE_PAR_CHAMP` regroupaient tout le formulaire en cinq écrans, dont un
+/// de cinquante champs) : il réutilise la correspondance champ → question déjà
+/// établie par l'arbre de renvois. Une question sautée par l'arbre n'a plus
+/// aucun champ visible et `buildMacroSteps` ne produit alors pas d'étape — le
+/// repli du parcours est automatique.
+///
+/// L'ordre des étapes est celui du document (cf. `C1A_QUESTIONS`), consommé
+/// par `form-presentation.ts`.
 function appliquerGroupes(fields: PdfFormField[]): PdfFormField[] {
+  const parChamp = questionParChamp(fields);
   return fields.map((f) => {
     const groupe =
-      GROUPE_PAR_CHAMP[f.id] ??
-      (f.id.startsWith("q4") || f.id.startsWith("descriptionAide")
-        ? "aide-independant"
-        : f.id.startsWith("joursOccupe")
-          ? "final"
-          : f.section
-            ? GROUPE_PAR_SECTION[f.section]
-            : undefined);
+      parChamp.get(f.id) ?? (f.section === SECTION_IDENTITE ? GROUPE_IDENTITE : undefined);
     return groupe ? { ...f, stepGroup: groupe } : f;
   });
 }

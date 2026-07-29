@@ -244,7 +244,7 @@ describe("C1A — arbre des renvois", () => {
   });
 
   it("Q4 dépend de Q3 ET de Q1 — c'est le bug historique", () => {
-    expect(conditions.q4lundi).toEqual({
+    expect(conditions.q4periode).toEqual({
       fieldId: "aideraPendantChomage",
       op: "equals",
       value: "oui",
@@ -252,8 +252,17 @@ describe("C1A — arbre des renvois", () => {
     });
   });
 
+  it("déplacer l'ancre de Q4 sur `q4periode` ne change aucune condition", () => {
+    // L'ancre de la rubrique est passée de `q4lundi` à `q4periode` (2026-07-29,
+    // « une question = une étape » : une étape intitulée « Lundi » n'a pas de
+    // sens). Le jour du lundi reste conditionné exactement comme avant — il est
+    // désormais rattaché à la question au lieu de l'être.
+    expect(parCle.get("q4lundi")?.visibleIf).toEqual(conditions.q4periode);
+    expect(parCle.get("q18lundi")?.visibleIf).toEqual(conditions.q18periode);
+  });
+
   it("le schéma porte les conditions compilées", () => {
-    expect(parCle.get("q4lundi")?.visibleIf).toEqual(conditions.q4lundi);
+    expect(parCle.get("q4periode")?.visibleIf).toEqual(conditions.q4periode);
     expect(parCle.get("descriptionAide1")?.visibleIf).toEqual(conditions.descriptionAide1);
     expect(parCle.get("mandatPolitiqueOuJuge")?.visibleIf).toBeUndefined();
   });
@@ -571,9 +580,12 @@ describe("C1A — Commit 2 : nature de l'activité (Q2) et description de l'aide
     expect(ids.filter((id) => id === "descriptionAide1").length).toBe(1);
   });
 
-  it("appliquerGroupes range toujours les deux champs dans l'étape aide-independant", () => {
-    expect(parCle.get("natureActiviteIndependant")?.stepGroup).toBe("aide-independant");
-    expect(parCle.get("descriptionAide1")?.stepGroup).toBe("aide-independant");
+  it("appliquerGroupes range chaque champ dans l'étape de SA question", () => {
+    // Depuis « une question = une étape » (2026-07-29), l'étape n'est plus une
+    // rubrique fourre-tout : la nature de l'activité appartient à Q2, la
+    // description de l'aide est à elle seule Q5.
+    expect(parCle.get("natureActiviteIndependant")?.stepGroup).toBe("independantNom");
+    expect(parCle.get("descriptionAide1")?.stepGroup).toBe("descriptionAide1");
   });
 });
 
@@ -590,8 +602,10 @@ describe("C1A — Commit 3 : les questions de l'arbre deviennent obligatoires", 
     independantNom: true, // Q2 — donnée principale, chemin unique.
     aideraPendantChomage: true, // Q3 — chemin unique, tranche Q4.
     // Q4 : grille horaire — aucun jour précis n'est obligatoire (voir plus
-    // bas), la "donnée principale" exigible est q4periode.
-    q4lundi: false,
+    // bas), la "donnée principale" exigible est la fréquence : c'est elle qui
+    // porte la question imprimée, et c'est elle qui ancre la rubrique depuis
+    // le passage à « une question = une étape ».
+    q4periode: true,
     // Q5 : champ array (Commit 2) — required neutralisé par buildValidator
     // pour ce type, et casserait le compteur du stepper. Décision documentée
     // dans le seed et le describe Commit 2 ci-dessus.
@@ -608,7 +622,7 @@ describe("C1A — Commit 3 : les questions de l'arbre deviennent obligatoires", 
     adresseActivite: true, // Q15 — chemin unique (atteint quel que soit Q13).
     formeActivite: true, // Q16 — chemin unique.
     exerceraPendantChomage: true, // Q17 — chemin unique, tranche Q18.
-    q18lundi: false, // Q18 — même raison que q4lundi.
+    q18periode: true, // Q18 — même raison que q4periode.
     // Q19 : la condition compilée de cette clé n'inclut PAS
     // `activiteCommeSalarie` (elle est atteinte via les deux branches de Q13,
     // cf. test dédié plus bas) — la rendre required forcerait un indépendant
@@ -616,10 +630,11 @@ describe("C1A — Commit 3 : les questions de l'arbre deviennent obligatoires", 
     revenuNetSalarieParMois: false,
     exerceDejaActivite: true, // Q20 — chemin unique.
     dateDebutActivite: true, // Q21 — donnée principale, visible seulement si Q20=oui.
-    estChomeurTemporaire: true, // Q22 (gate virtuelle) — déjà obligatoire avant ce lot.
-    // Q22 : grille de 7 cases jour — même raison que q4lundi/q18lundi, sans
-    // équivalent au radio "période" sur lequel reporter une exigence.
-    joursOccupeLundi: false,
+    // Q22 (gate virtuelle) — déjà obligatoire avant ce lot. La rubrique n'a
+    // plus qu'un nœud : les sept cases jour lui sont rattachées, aucune n'est
+    // obligatoire (aucun équivalent au radio « période » sur lequel reporter
+    // une exigence).
+    estChomeurTemporaire: true,
     independantTitrePrincipal: true, // Q23 — déjà obligatoire avant ce lot.
     affirmationSincerite: true, // Q24 — déjà obligatoire avant ce lot.
   };

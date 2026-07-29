@@ -141,6 +141,15 @@ d'onglet + `og:site_name` + logo header).
 - Avertissement `db push` ajouté au README.
 - Audits/plans historiques déplacés sous `docs/`.
 
+### Formulaires PDF — issus de la refonte C1A (2026-07-29)
+
+| # | Prio | Cat. | Objectif | Fichiers probables | Risque | Validation | Statut |
+|---|------|------|----------|--------------------|--------|------------|--------|
+| 26 | P2 | Dette | Retirer les 2 regles de tamponnage du C1 devenues redondantes depuis le correctif `autoAnswered` (motif + remarque famille). Deux mecanismes ecrivent la meme case ; le PDF sort identique aujourd'hui. A faire **la prochaine fois qu'on ouvre le C1** | `lib/pdf-forms/bindings/per-form/c1-changement.ts` | Moyen (change ce qui s'imprime) | relecture d'un PDF C1 case par case | a faire |
+| 27 | P2 | Dette | Reparer les 2 champs du C1 masques par `hidden` alors qu'ils portent une donnee : leur case part **blanche** (`adresse_email_facultatif`, `num_ro_de_t_l_phone_facultatif`) | `lib/pdf-forms/seed/c1/identite.ts` | Faible | PDF C1 genere | a faire |
+| 28 | P2 | Dette | Appliquer `inheritedFromDossier` aux 6 autres compagnons (mecanisme pret, applique au seul C1A) — **un document a la fois** | `lib/pdf-forms/seed/c1b-fields.ts` etc. | Faible | PDF genere par document | a faire |
+| 29 | P2 | Dette | Realigner la geometrie des 6 compagnons non traites : leurs ecarts sont deja consignes en dette dans `ECARTS_ASSUMES` — un lot par document | `lib/pdf-forms/seed/*-fields.ts` | Moyen | `widget-geometry.test.ts` | a faire |
+
 ## Règles d'exécution
 - Un item à la fois, **3–5 fichiers max** par lot. Items P0/P1 RGPD/sécurité d'abord.
 - Tout item « migration / auth / cookies CMP complet / refonte » = **plan séparé**, jamais

@@ -18,6 +18,7 @@ next-intl 4 · Zod 4 · Tiptap 2 · pnpm 10. Détail + commandes :
 [`docs/context/STACK_AND_COMMANDS.md`](docs/context/STACK_AND_COMMANDS.md).
 
 ## Règles spécialisées (lire selon la tâche)
+- 📄 Formulaires PDF (seed / runner / filler / ONEM) → [`docs/context/PDF_FORMS_RULES.md`](docs/context/PDF_FORMS_RULES.md)
 - 🎨 UI front/admin → [`docs/context/DESIGN_RULES.md`](docs/context/DESIGN_RULES.md)
 - 🔐 Routes API / auth / sécurité → [`docs/context/API_SECURITY_RULES.md`](docs/context/API_SECURITY_RULES.md)
 - 🌍 Texte user-facing → [`docs/context/I18N_RULES.md`](docs/context/I18N_RULES.md)

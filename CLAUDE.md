@@ -14,6 +14,7 @@ calculateurs, page-builder, i18n. Next.js 16 / React 19 / Prisma 5 / better-auth
 - `docs/tasks/NEXT_ACTIONS.md` — les prochaines actions priorisées
 
 ## Lire seulement si la tâche le demande
+- Formulaires PDF (seed, runner, filler, ONEM) → `docs/context/PDF_FORMS_RULES.md`
 - Design / UI front ou admin → `docs/context/DESIGN_RULES.md`
 - Routes API / auth / sécurité → `docs/context/API_SECURITY_RULES.md`
 - Textes user-facing / traductions → `docs/context/I18N_RULES.md`

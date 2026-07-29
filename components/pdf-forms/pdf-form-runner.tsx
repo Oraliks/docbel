@@ -41,6 +41,7 @@ import {
   stepGroupTitle,
   stepGroupDescription,
   stepAnchorField,
+  stepAnchorLabel,
   stepTitleReplacesFieldLabel,
 } from "@/lib/pdf-forms/form-presentation";
 import { FormStepper } from "./form-stepper";
@@ -1609,8 +1610,15 @@ function FieldsCluster({
         <div className="grid grid-cols-1 gap-x-4 gap-y-3.5 sm:grid-cols-2">
           {standaloneOtherFields.map((f) => {
             const escapeField = escapeByParent.get(f.id);
+            // Grille à DEUX colonnes seulement (`sm:grid-cols-2`, jamais 3) :
+            // un `xl:col-span-3` ici visait une 3e colonne qui n'existe à
+            // aucun palier, laissant le champ "pleine largeur" se redimen-
+            // sionner sur une piste implicite au lieu de vraiment occuper
+            // toute la largeur. `sm:col-span-2` suffit à couvrir les deux
+            // colonnes existantes, à n'importe quelle largeur d'écran.
+            const spansFullWidth = FULL_WIDTH_TYPES.has(f.type) || f.wide;
             return (
-              <div key={f.id} className={FULL_WIDTH_TYPES.has(f.type) ? "sm:col-span-2 xl:col-span-3" : f.wide ? "sm:col-span-2 xl:col-span-2" : ""}>
+              <div key={f.id} className={spansFullWidth ? "sm:col-span-2" : ""}>
                 <PdfField
                   field={f}
                   value={values[f.id] ?? ""}
@@ -1788,9 +1796,12 @@ function MacroRunnerBody({
   // Une étape qui EST une question se titre avec cette question : son champ
   // ancre porte l'identifiant du groupe (cf. `stepAnchorField`). Le repli
   // (clé i18n, puis libellé de section) reste celui de tout autre formulaire.
+  // `stepAnchorLabel` préfère `labelShort` s'il existe : les questions
+  // recopiées mot pour mot du PDF sont parfois interminables une fois
+  // affichées seules en titre de bandeau compact.
   const titleFor = (ms: MacroStep) => {
     const anchor = stepAnchorField(ms.id, stepFieldsOf(ms));
-    return stepGroupTitle(presentation, ms.id, locale, t, anchor ? loc(anchor.label, locale) : undefined);
+    return stepGroupTitle(presentation, ms.id, locale, t, stepAnchorLabel(anchor, locale));
   };
   const descFor = (id: string) => stepGroupDescription(presentation, id, t);
   // Le libellé du champ ancre est déjà le titre de l'étape : on ne le répète
@@ -1824,10 +1835,20 @@ function MacroRunnerBody({
           (c) => t("runnerStepRemaining", { count: c }),
           verifiedStreets,
         );
+        // Étape mono-question (`stepTitleReplacesFieldLabel`) : l'aide de
+        // l'ancre — normalement une InfoTooltip à côté du champ — n'a plus où
+        // s'afficher puisque son libellé (donc son ⓘ, cf. LabelWithTooltip)
+        // est retiré de l'écran. Elle devient la description du stepper à la
+        // place, jamais les deux : sans ce repli, l'aide disparaîtrait
+        // purement et simplement pour ces étapes-là.
+        const anchor = stepAnchorField(s.id, stepFields);
+        const anchorHelp = stepTitleReplacesFieldLabel(presentation, s.id, stepFields)
+          ? loc(anchor?.help, locale) || undefined
+          : undefined;
         return {
           id: s.id,
           label: titleFor(s),
-          description: descFor(s.id),
+          description: descFor(s.id) ?? anchorHelp,
           hasError: stepHasError(s),
           ...meta,
         };
@@ -1981,12 +2002,16 @@ function MacroRunnerBody({
                     key={sec.key ?? `sec-${i}`}
                     className={
                       multiSection
-                        ? "flex flex-col gap-3 rounded-2xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] p-3.5 sm:p-4"
+                        ? "flex flex-col gap-3 rounded-2xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] p-4 sm:p-5"
                         : "flex flex-col gap-3"
                     }
                   >
                     {multiSection && sec.key && (
-                      <h3 className="text-base font-bold text-[color:var(--glass-ink-soft)]">
+                      // Gras FONCÉ (`--glass-ink`, pas `--glass-ink-soft`) : un
+                      // titre de carte est un repère de structure, pas une
+                      // note secondaire — l'atténuer le confondait avec le
+                      // reste des libellés de champs.
+                      <h3 className="text-base font-bold text-[color:var(--glass-ink)]">
                         {sectionLabel(sec.key, locale)}
                       </h3>
                     )}
@@ -2056,48 +2081,52 @@ function MacroRunnerBody({
                       })}
                     </p>
                   )}
-                  <div className="flex items-center justify-between gap-2">
+                  {/* Pied de rangée : mention d'auto-save à gauche, paire de
+                      boutons à droite, "Recommencer" juste SOUS cette paire —
+                      discret, aligné à droite. Jamais sur la même ligne que la
+                      mention, qui l'éloignerait du geste auquel il se rapporte. */}
+                  <div className="flex flex-wrap items-center justify-between gap-3">
                     <AutoSaveNotice lastSavedAt={lastSavedAt} isPartOfBundle={!!bundleRunId} serverSaved={serverSaved} />
-                    <ResetFormButton onConfirm={resetForm} disabled={submitting} />
-                  </div>
-                  <div className="flex flex-wrap items-center justify-end gap-3">
-                    <div className="flex flex-1 items-center justify-end gap-2 sm:flex-none">
-                      {/* Garde `activeIndex > 0` (2026-07-26) : sur un
-                          formulaire à UNE SEULE macro-étape, la dernière étape
-                          est aussi la première — sans elle, « Précédent »
-                          appelait setActive(-1) et le rendu plantait sur
-                          `macroSteps[-1]`. Pas atteignable sur le C1 (5 étapes),
-                          mais c'est le piège du prochain formulaire. */}
-                      {activeIndex > 0 && (
-                        <Button type="button" variant="outline" className="min-h-12 rounded-full" onClick={() => setActive(activeIndex - 1)}>
-                          <ChevronLeftIcon className="size-4" /> {t("previous")}
+                    <div className="flex flex-col items-end gap-2">
+                      <div className="flex items-center gap-2">
+                        {/* Garde `activeIndex > 0` (2026-07-26) : sur un
+                            formulaire à UNE SEULE macro-étape, la dernière étape
+                            est aussi la première — sans elle, « Précédent »
+                            appelait setActive(-1) et le rendu plantait sur
+                            `macroSteps[-1]`. Pas atteignable sur le C1 (5 étapes),
+                            mais c'est le piège du prochain formulaire. */}
+                        {activeIndex > 0 && (
+                          <Button type="button" variant="outline" className="min-h-12 rounded-full" onClick={() => setActive(activeIndex - 1)}>
+                            <ChevronLeftIcon className="size-4" /> {t("previous")}
+                          </Button>
+                        )}
+                        <Button type="submit" disabled={submitting} className="min-h-12 rounded-full px-6">
+                          {submitting ? <Loader2Icon className="size-4 animate-spin" /> : bundleRunId ? <CheckCircle2Icon className="size-4" /> : delivery === "doccle" ? <SendIcon className="size-4" /> : <DownloadIcon className="size-4" />}
+                          {submitting ? t("runnerGenerating") : bundleRunId ? t("runnerSubmitValidate") : delivery === "doccle" ? t("runnerSubmitSignAndSend") : t("runnerSubmitSignAndGenerate")}
                         </Button>
-                      )}
-                      <Button type="submit" disabled={submitting} className="min-h-12 rounded-full px-6">
-                        {submitting ? <Loader2Icon className="size-4 animate-spin" /> : bundleRunId ? <CheckCircle2Icon className="size-4" /> : delivery === "doccle" ? <SendIcon className="size-4" /> : <DownloadIcon className="size-4" />}
-                        {submitting ? t("runnerGenerating") : bundleRunId ? t("runnerSubmitValidate") : delivery === "doccle" ? t("runnerSubmitSignAndSend") : t("runnerSubmitSignAndGenerate")}
-                      </Button>
+                      </div>
+                      <ResetFormButton onConfirm={resetForm} disabled={submitting} />
                     </div>
                   </div>
                   </div>
                 </>
               ) : (
                 <div className="flex flex-col gap-3 border-t border-[color:var(--glass-border)] pt-4">
-                  <div className="flex flex-wrap items-center justify-end gap-3">
-                    <div className="flex items-center gap-2">
-                      {activeIndex > 0 && (
-                        <Button type="button" variant="outline" className="min-h-12 rounded-full" onClick={() => setActive(activeIndex - 1)}>
-                          <ChevronLeftIcon className="size-4" /> {t("previous")}
-                        </Button>
-                      )}
-                      <Button type="button" className="min-h-12 rounded-full px-6" onClick={() => attemptAdvance([stepFieldsOf(current)], activeIndex, activeIndex + 1)}>
-                        {t("continue")} <ChevronRightIcon className="size-4" />
-                      </Button>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between gap-2">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
                     <AutoSaveNotice lastSavedAt={lastSavedAt} isPartOfBundle={!!bundleRunId} serverSaved={serverSaved} />
-                    <ResetFormButton onConfirm={resetForm} disabled={submitting} />
+                    <div className="flex flex-col items-end gap-2">
+                      <div className="flex items-center gap-2">
+                        {activeIndex > 0 && (
+                          <Button type="button" variant="outline" className="min-h-12 rounded-full" onClick={() => setActive(activeIndex - 1)}>
+                            <ChevronLeftIcon className="size-4" /> {t("previous")}
+                          </Button>
+                        )}
+                        <Button type="button" className="min-h-12 rounded-full px-6" onClick={() => attemptAdvance([stepFieldsOf(current)], activeIndex, activeIndex + 1)}>
+                          {t("continue")} <ChevronRightIcon className="size-4" />
+                        </Button>
+                      </div>
+                      <ResetFormButton onConfirm={resetForm} disabled={submitting} />
+                    </div>
                   </div>
                 </div>
               )}

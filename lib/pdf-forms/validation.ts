@@ -443,7 +443,15 @@ export function visiblePayload(fields: PdfFormField[], payload: FormPayload): Fo
 /// type de sous-champ. Les sous-champs d'un `array` ne supportent pas
 /// eux-mêmes le type "array" (un seul niveau, cf. `PdfFormField.itemFields`),
 /// donc pas de récursion à prévoir ici.
-function isRowValueFilled(subField: PdfFormField | undefined, raw: unknown): boolean {
+/// Forme minimale d'un sous-champ de ligne `array`. Volontairement réduite à
+/// `id` + `type` : c'est tout ce que la règle « ligne remplie » a besoin de
+/// connaître, et c'est le plus grand dénominateur commun entre `PdfFormField`
+/// (côté serveur, porte `pdfFieldName`) et `PublicField` (côté client, ne le
+/// porte pas). Typer ça `PdfFormField[]` rendait `FieldLike` incompatible avec
+/// `PublicField` et cassait le typecheck de `components/pdf-forms/pdf-field.tsx`.
+type ItemFieldLike = { id: string; type: PdfFormField["type"] };
+
+function isRowValueFilled(subField: ItemFieldLike | undefined, raw: unknown): boolean {
   if (raw === null || raw === undefined) return false;
   if (subField?.type === "checkbox") return raw === true;
   if (subField?.type === "fullname") {
@@ -462,7 +470,7 @@ function isRowValueFilled(subField: PdfFormField | undefined, raw: unknown): boo
 /// ligne où le citoyen a effectivement répondu. Sans `itemFields` (jamais le
 /// cas en pratique — filet défensif), on retombe sur un test générique de
 /// toutes les valeurs présentes dans la ligne.
-function isRowFilled(row: FieldValueRecord, itemFields: PdfFormField[] | undefined): boolean {
+function isRowFilled(row: FieldValueRecord, itemFields: ItemFieldLike[] | undefined): boolean {
   if (!itemFields || itemFields.length === 0) {
     return Object.values(row).some((v) => isRowValueFilled(undefined, v));
   }
@@ -476,7 +484,7 @@ function isRowFilled(row: FieldValueRecord, itemFields: PdfFormField[] | undefin
 /// rempli. Partagée par `buildValidator` (superRefine, blocage à l'envoi) ET
 /// `isFieldComplete` (compteur du stepper) pour que les deux appliquent
 /// EXACTEMENT la même règle.
-function isArrayFieldFilled(value: unknown, itemFields: PdfFormField[] | undefined): boolean {
+function isArrayFieldFilled(value: unknown, itemFields: ItemFieldLike[] | undefined): boolean {
   return isFieldValueRecordArray(value) && value.some((row) => isRowFilled(row, itemFields));
 }
 
@@ -625,7 +633,7 @@ type FieldLike = {
   /// Schéma des lignes d'un champ `array` — nécessaire à `isFieldComplete`
   /// pour juger une ligne « remplie » sous-champ par sous-champ (cf.
   /// isArrayFieldFilled). Absent (undefined) pour tous les autres types.
-  itemFields?: PdfFormField["itemFields"];
+  itemFields?: ItemFieldLike[];
 };
 
 /// Vrai si la date ISO (YYYY-MM-DD) tombe un samedi ou un dimanche. Parse en

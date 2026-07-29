@@ -53,19 +53,29 @@ const PRESENTATION_BY_SLUG: Readonly<Record<string, FormPresentation>> = {
   c1a: {
     // UNE QUESTION = UNE ÉTAPE. L'ordre est celui du document, lu directement
     // dans l'arbre de renvois (`C1A_QUESTIONS`) : pas de seconde liste à tenir
-    // à jour, donc pas de liste qui se désynchronise. L'en-tête d'identité,
-    // seul bloc du formulaire sans numéro de question, ouvre le parcours.
+    // à jour, donc pas de liste qui se désynchronise.
     //
     // Les questions sautées par l'arbre n'ont aucun champ visible et ne
     // produisent donc aucune étape (cf. `buildMacroSteps`) : le parcours le
     // plus court se replie tout seul.
+    //
+    // L'ÉTAPE D'IDENTITÉ N'EST PLUS UNE ÉTAPE DU PARCOURS (Oraliks 2026-07-29).
+    // Dans un dossier, le C1 a déjà donné nom, NISS et adresse : les six champs
+    // portent `inheritedFromDossier` et deviennent `autoAnswered` à
+    // l'ouverture, si bien que `buildMacroSteps` ne voit plus aucun champ
+    // visible dans ce groupe et n'en fabrique aucune étape. Elle ne réapparaît
+    // que sur l'URL publique du C1A, où il n'y a aucun C1 dont hériter — d'où
+    // le groupe MAINTENU en tête de l'ordre : il ne coûte rien quand l'étape
+    // n'existe pas, et l'empêche de tomber en fin de parcours, après la
+    // signature, quand elle existe.
     stepGroupOrder: [C1A_GROUPE_IDENTITE, ...C1A_QUESTIONS],
-    // Une clé i18n par question ne serait pas tenable — et serait de toute
-    // façon un doublon du libellé imprimé. À défaut de clé, l'étape prend pour
-    // titre la question elle-même (cf. `stepGroupTitle`). Seule l'identité,
-    // qui n'est pas une question, garde sa clé.
-    stepGroupTitleKey: { [C1A_GROUPE_IDENTITE]: "runnerGroupC1aIdentite" },
-    stepGroupDescriptionKey: { [C1A_GROUPE_IDENTITE]: "runnerGroupC1aIdentiteDesc" },
+    // Aucune clé i18n. Une clé par question ne serait pas tenable — et serait
+    // de toute façon un doublon du libellé imprimé : à défaut de clé, l'étape
+    // prend pour titre la question elle-même (cf. `stepGroupTitle`).
+    // L'identité, elle, avait la sienne ; « Vos coordonnées, déjà reprises de
+    // votre C1 » est devenu faux exactement dans le seul cas où l'étape
+    // s'affiche encore — hors dossier, sans C1. Elle retombe donc sur le
+    // libellé de section, déjà traduit en trois langues.
     // Parcours en arbre : les étapes suivantes dépendent des réponses
     // précédentes, la navigation libre n'aurait pas de sens.
     hideStepList: true,
@@ -120,12 +130,21 @@ export function stepAnchorField<T extends { id: string }>(
 /// contrôle. On ne le masque que si l'ancre est SEULE sur l'étape : au milieu
 /// de champs voisins, il distingue une ligne des autres et le retirer
 /// laisserait une case sans nom à l'écran.
+///
+/// L'ABSENCE D'ANCRE compte autant que sa présence : sans champ ancre le titre
+/// vient du libellé de section (3ᵉ repli de `stepGroupTitle`) et ne redit donc
+/// rien du champ. C'est le cas de l'étape d'identité du C1A depuis qu'elle n'a
+/// plus de clé i18n — la déduire de la seule absence de clé masquerait le
+/// libellé du dernier champ manquant, laissant une case anonyme à l'écran.
 export function stepTitleReplacesFieldLabel(
   presentation: FormPresentation,
   groupId: string,
-  fieldCount: number
+  /// Champs VISIBLES de l'étape (l'ancre y est cherchée, cf. `stepAnchorField`).
+  fields: readonly { id: string }[]
 ): boolean {
-  return fieldCount === 1 && !presentation.stepGroupTitleKey?.[groupId];
+  if (fields.length !== 1) return false;
+  if (presentation.stepGroupTitleKey?.[groupId]) return false;
+  return stepAnchorField(groupId, fields) !== undefined;
 }
 
 /// Description d'une macro-étape. Absente par défaut : le stepper l'omet.

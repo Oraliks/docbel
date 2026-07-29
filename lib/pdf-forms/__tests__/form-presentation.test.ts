@@ -76,8 +76,13 @@ describe("form-presentation", () => {
       expect(c1a.stepGroupOrder?.at(-1)).toBe("affirmationSincerite"); // Q24
     });
 
-    it("ne déclare qu'une clé i18n : celle du bloc qui n'est pas une question", () => {
-      expect(Object.keys(c1a.stepGroupTitleKey ?? {})).toEqual(["identite"]);
+    it("ne déclare AUCUNE clé i18n d'étape", () => {
+      // L'identité était la seule à en porter une. Elle n'est plus une étape du
+      // parcours (héritée du C1 dans un dossier) et, sur l'URL publique où elle
+      // reparaît, « déjà reprises de votre C1 » serait un mensonge : elle
+      // retombe sur le libellé de section, déjà traduit.
+      expect(c1a.stepGroupTitleKey).toBeUndefined();
+      expect(c1a.stepGroupDescriptionKey).toBeUndefined();
     });
   });
 
@@ -85,21 +90,15 @@ describe("form-presentation", () => {
     const c1a = getFormPresentation("c1a");
     const question = "Aidez-vous un indépendant ?";
 
-    it("la clé i18n prime sur tout", () => {
-      expect(stepGroupTitle(c1a, "identite", "fr", traduire, question)).toBe(
-        "t:runnerGroupC1aIdentite",
-      );
-    });
-
     it("à défaut de clé, l'étape prend pour titre la question elle-même", () => {
       expect(stepGroupTitle(c1a, "aideIndependant", "fr", traduire, question)).toBe(question);
     });
 
     it("sans ancre ni clé, on retombe sur le libellé de section", () => {
       // Repli de dernier recours : mieux vaut « Identité » que `identite`.
-      expect(stepGroupTitle(c1a, "identite", "fr", (k) => k, undefined)).toBe(
-        "runnerGroupC1aIdentite",
-      );
+      // C'est désormais le cas de l'étape d'identité elle-même, qui n'a plus de
+      // clé et pas d'ancre (aucun champ ne s'appelle « identite »).
+      expect(stepGroupTitle(c1a, "identite", "fr", traduire, undefined)).toBe("Identité");
       expect(stepGroupTitle({}, "adresse", "fr", traduire)).toBe("Adresse");
     });
 
@@ -111,12 +110,18 @@ describe("form-presentation", () => {
 
     it("le libellé n'est retiré de l'écran que si la question est seule sur l'étape", () => {
       // Seule : le titre EST son libellé, l'afficher deux fois ferait doublon.
-      expect(stepTitleReplacesFieldLabel(c1a, "aideIndependant", 1)).toBe(true);
+      expect(stepTitleReplacesFieldLabel(c1a, "aideIndependant", [{ id: "aideIndependant" }])).toBe(
+        true,
+      );
       // Entourée d'autres champs : son libellé la distingue de ses voisines,
       // le retirer laisserait une case sans nom à l'écran.
-      expect(stepTitleReplacesFieldLabel(c1a, "independantNom", 5)).toBe(false);
-      // Étape titrée par clé i18n : le libellé du champ ne fait jamais doublon.
-      expect(stepTitleReplacesFieldLabel(c1a, "identite", 1)).toBe(false);
+      const q2 = [{ id: "independantNom" }, { id: "independantNumeroEntreprise" }];
+      expect(stepTitleReplacesFieldLabel(c1a, "independantNom", q2)).toBe(false);
+      // Étape SANS ancre (l'identité : aucun champ ne s'appelle « identite ») :
+      // son titre vient du libellé de section et ne redit rien du champ. Le
+      // masquer laisserait une case anonyme — ex. le seul « Numéro » que le
+      // dossier n'aurait pas transmis.
+      expect(stepTitleReplacesFieldLabel(c1a, "identite", [{ id: "numero" }])).toBe(false);
     });
   });
 });

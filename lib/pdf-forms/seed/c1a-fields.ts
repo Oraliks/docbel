@@ -279,6 +279,19 @@ export const C1A_FIELDS: PdfFormField[] = [
   // ====================================================================
   // IDENTITÉ DU DÉCLARANT (le chômeur qui remplit le formulaire)
   // ====================================================================
+  //
+  // Les six champs de ce bloc portent `inheritedFromDossier` : dans un dossier,
+  // le C1 les a DÉJÀ posés, et Oraliks (2026-07-29) ne veut pas qu'on les
+  // repose — « si elle change sur la C1 alors elle changera sur la C1A aussi ».
+  // Ils disparaissent alors du parcours, sans disparaître du PDF : la valeur
+  // héritée reste dans le payload et part sur le papier (cf.
+  // `dossier-inheritance.ts`, et la preuve bout en bout dans
+  // `__tests__/c1a-identite-heritee.test.ts`).
+  //
+  // Ils restent en revanche `required` et SANS `autoAnswered` en dur : le C1A a
+  // aussi une URL publique (`/document/onem/c1a`), où aucun C1 n'a été rempli.
+  // Là, l'étape d'identité s'affiche normalement — sans quoi la déclaration
+  // partirait à l'ONEM sans nom ni NISS.
   {
     // `fullname` plutôt que `text` (2026-07-26) : deux cases à l'écran
     // (prénom / nom), une seule chaîne sur le PDF, assemblée par le filler
@@ -295,6 +308,7 @@ export const C1A_FIELDS: PdfFormField[] = [
     type: "fullname",
     nameOrder: "last-first",
     required: true,
+    inheritedFromDossier: true,
     label: { fr: "Nom et prénom" },
     section: SECTION_IDENTITE,
     order: -99,
@@ -304,6 +318,7 @@ export const C1A_FIELDS: PdfFormField[] = [
     pdfFieldName: "NISS",
     type: "niss",
     required: true,
+    inheritedFromDossier: true,
     label: { fr: "Numéro NISS (registre national)" },
     help: {
       fr: "11 chiffres au dos de ta carte d'identité (eID), au-dessus du code-barres. Le formulaire le rappelle : « voir coin supérieur droit de ta carte SIS ».",
@@ -332,6 +347,7 @@ export const C1A_FIELDS: PdfFormField[] = [
     pdfFieldName: "",
     type: "text",
     required: true,
+    inheritedFromDossier: true,
     label: { fr: "Rue" },
     prefillFrom: "profile.street",
     canonicalKey: "adresse.rue",
@@ -343,6 +359,7 @@ export const C1A_FIELDS: PdfFormField[] = [
     pdfFieldName: "",
     type: "text",
     required: true,
+    inheritedFromDossier: true,
     label: { fr: "Numéro" },
     canonicalKey: "adresse.numero",
     section: SECTION_IDENTITE,
@@ -353,6 +370,7 @@ export const C1A_FIELDS: PdfFormField[] = [
     pdfFieldName: "",
     type: "postal_be",
     required: true,
+    inheritedFromDossier: true,
     label: { fr: "Code postal" },
     prefillFrom: "profile.postalCode",
     canonicalKey: "adresse.codePostal",
@@ -364,6 +382,7 @@ export const C1A_FIELDS: PdfFormField[] = [
     pdfFieldName: "",
     type: "text",
     required: true,
+    inheritedFromDossier: true,
     label: { fr: "Commune" },
     prefillFrom: "profile.city",
     canonicalKey: "adresse.commune",

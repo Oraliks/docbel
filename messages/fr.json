@@ -5228,8 +5228,6 @@
       "runnerGroupActivitesRevenusDesc": "Détails sur vos ressources.",
       "runnerGroupFamilleDesc": "Informations sur votre foyer.",
       "runnerGroupFinalDesc": "Dernières informations et envoi.",
-      "runnerGroupC1aIdentite": "Votre identité",
-      "runnerGroupC1aIdentiteDesc": "Vos coordonnées, déjà reprises de votre C1.",
       "runnerProgressBarLabel": "Avancement du formulaire",
       "runnerStepBadge": "{current} / {total} étapes",
       "runnerPaymentChoiceEditable": "Choix modifiable",

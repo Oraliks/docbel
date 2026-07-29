@@ -1796,7 +1796,7 @@ function MacroRunnerBody({
   // Le libellé du champ ancre est déjà le titre de l'étape : on ne le répète
   // pas à l'écran (il reste dans le DOM pour les lecteurs d'écran).
   const currentFields = stepFieldsOf(current);
-  const hideLabelForId = stepTitleReplacesFieldLabel(presentation, current.id, currentFields.length)
+  const hideLabelForId = stepTitleReplacesFieldLabel(presentation, current.id, currentFields)
     ? stepAnchorField(current.id, currentFields)?.id
     : undefined;
   const stepHasError = (ms: MacroStep) =>

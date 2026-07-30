@@ -778,9 +778,20 @@ export const C1A_FIELDS: PdfFormField[] = [
     // de gauche, entre y=690 et y=800). Écriture positionnelle sur les lignes
     // imprimées : Q10 occupe trois lignes entre y=779 et y=743, Q11 deux lignes
     // « EUR … EUR » à y=714 et y=702.
+    //
+    // Correctif mesure (audit placement 2026-07-30) : y=766 faisait chevaucher
+    // la valeur avec la 2e ligne du libelle imprime lui-meme ("plus d'une
+    // fonction, mentionnez les tous)", mesuree a y=770.14-779.14 sur le PDF
+    // reel via pdfplumber, chars DejaVuSans) -- un recouvrement mesure de
+    // 2.74 pt entre les deux boites de texte, confirme par relecture visuelle
+    // du PDF genere (la reponse s'imprimait collee sous la question, sans
+    // aucun espace). y=755 degage une marge mesuree des deux cotes : ~8.3 pt
+    // sous le bas du libelle (770.14) et ~9.8 pt au-dessus de "voir 11" (case
+    // imprimee vers y=734-743). Coordonnee X et maxWidth inchanges (mesures
+    // sans defaut : aucun chevauchement horizontal constate).
     id: "mandatDescription",
     pdfFieldName: "",
-    drawAt: { page: 1, x: 50, y: 766, size: 9, maxWidth: 236 },
+    drawAt: { page: 1, x: 50, y: 755, size: 9, maxWidth: 236 },
     type: "text",
     // Required (Commit 3) : clé C1A_ROUTAGE, chemin unique (mandatPolitiqueOuJuge=oui).
     required: true,

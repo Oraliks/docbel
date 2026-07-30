@@ -183,6 +183,61 @@ function stampPipeRadio(
   return true;
 }
 
+/// Hauteur de boîte que pdf-lib réserve au texte d'un champ, en fraction de la
+/// taille de police. MESURÉE, pas déduite d'une spec : un PDF a été généré puis
+/// relu (pdfplumber) sur deux cases de hauteurs différentes du C1C, et la
+/// position obtenue résout `(hauteur − k × taille) / 2` avec k ≈ 0,73 dans les
+/// deux cas (case 12,24 → décalage 2,52 ; case 10,20 → 1,40).
+const FRACTION_BOITE_TEXTE = 0.73;
+
+/// Abaissement d'une case pour que sa ligne de base tombe sur le BAS du
+/// rectangle — c'est-à-dire, dans ces formulaires, sur le guide imprimé
+/// (cf. `alignTextToGuide`). Dépend de la hauteur de la case : un abaissement
+/// forfaitaire descendait trop bas les cases courtes (la ligne « à une autre
+/// adresse », haute de 10,2 pt, tombait 1,8 pt SOUS son trait).
+function abaissementSurGuide(hauteur: number, taille: number): number {
+  return Math.max(0, (hauteur - FRACTION_BOITE_TEXTE * taille) / 2);
+}
+
+/// Noms des widgets à abaisser pour un champ donné (cf. `alignTextToGuide`).
+function widgetsAAbaisser(field: PdfFormField): string[] {
+  const consigne = field.alignTextToGuide;
+  if (!consigne) return [];
+  if (Array.isArray(consigne)) return consigne.filter(Boolean);
+  return [
+    ...(field.pdfFieldName ?? "").split("|").map((s) => s.trim()).filter(Boolean),
+    ...(field.lineTargets ?? []).map((c) => c.pdfFieldName ?? "").filter(Boolean),
+  ];
+}
+
+/// Descend le rectangle des widgets marqués `alignTextToGuide`. Silencieuse :
+/// un widget introuvable ou non-texte est simplement ignoré — c'est un réglage
+/// de présentation, jamais une raison de faire échouer une déclaration.
+function poserTexteSurGuide(form: PDFForm, fields: readonly PdfFormField[]): void {
+  /// Taille retenue par widget : celle du champ qui le revendique, à défaut la
+  /// taille uniforme. Une Map (et non un Set) pour ne pas abaisser deux fois un
+  /// widget cité par deux champs.
+  const tailleParWidget = new Map<string, number>();
+  for (const field of fields) {
+    if (field.hidden) continue;
+    for (const nom of widgetsAAbaisser(field)) {
+      tailleParWidget.set(nom, field.fontSize ?? UNIFORM_TEXT_FONT_SIZE);
+    }
+  }
+  for (const [nom, taille] of tailleParWidget) {
+    try {
+      const champ = form.getField(nom);
+      if (!(champ instanceof PDFTextField)) continue;
+      for (const widget of champ.acroField.getWidgets()) {
+        const r = widget.getRectangle();
+        widget.setRectangle({ ...r, y: r.y - abaissementSurGuide(r.height, taille) });
+      }
+    } catch {
+      /* widget absent du template : rien à abaisser */
+    }
+  }
+}
+
 /// Taille de police uniforme appliquée à TOUS les widgets texte du PDF
 /// généré (Oraliks 2026-07-07 : « j'aimerais que tous les champs remplis
 /// aient le même caractère de taille comme ça je change ou adapte c'est pour
@@ -292,6 +347,22 @@ function distribuerLignes(
           ligne = mot;
         } else {
           ligne = essai;
+        }
+        // Mot SEUL plus large que sa ligne : il n'y a pas d'espace où couper,
+        // et le laisser entier revenait à tout écraser sur une seule ligne —
+        // `fitFontSize` réduisait alors la police jusqu'à l'illisible pendant
+        // que les lignes suivantes du papier restaient vides (retour Oraliks,
+        // 2026-07-30 : une saisie d'un seul long mot tenait sur la 1re ligne
+        // en minuscule). On coupe donc au CARACTÈRE, en dernier recours.
+        while (mesurer(ligne) > largeurPour(lignes.length) && ligne.length > 1) {
+          let coupe = ligne.length - 1;
+          while (coupe > 1 && mesurer(ligne.slice(0, coupe)) > largeurPour(lignes.length)) {
+            coupe--;
+          }
+          const reste = ligne.slice(coupe);
+          ligne = ligne.slice(0, coupe);
+          clore();
+          ligne = reste;
         }
       }
     });
@@ -877,6 +948,14 @@ export async function fillForm(
       cursiveFont = obliqueFont;
     }
   }
+
+  // Pré-passe `alignTextToGuide` : ABAISSE le rectangle des widgets concernés
+  // AVANT tout tamponnage, pour que le texte tombe sur la ligne pointillée
+  // imprimée au lieu de flotter au-dessus (cf. `PdfFormField.alignTextToGuide`).
+  // Doit précéder les DEUX écritures — la boucle des champs ci-dessous et les
+  // `extraStamps` des règles serveur — d'où sa position ici : elle déplace la
+  // case, pas la valeur, et ne se soucie donc pas de qui l'écrira.
+  poserTexteSurGuide(form, fields);
 
   for (const field of fields) {
     // Champ marqué `hidden` par le schéma : jamais rendu à l'utilisateur ET

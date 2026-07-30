@@ -185,31 +185,65 @@ describe("C1C_FIELDS", () => {
   // -------------------------------------------------------------------------
   // Une question imprimée = un champ, quel que soit le nombre de lignes.
   // -------------------------------------------------------------------------
-  it("les zones de texte libre à N lignes sont UN textarea replié sur ses lignes physiques", () => {
+  it("une question imprimée = UN champ, replié sur ses lignes physiques", () => {
     const byId = new Map(C1C_FIELDS.map((f) => [f.id, f]));
-    const attendu: Record<string, string[]> = {
-      descriptionActivite1: [
-        "Je décris cidessous lactivité accessoire exercée 1",
-        "Je décris cidessous lactivité accessoire exercée 2",
-        "Je décris cidessous lactivité accessoire exercée 3",
-      ],
-      adresseActiviteLigne1: ["undefined", "undefined_2"],
-      descriptionActivitesAnterieures1: [
-        "Je décris précisément cidessous chaque activité exercée 1",
-        "Je décris précisément cidessous chaque activité exercée 2",
-      ],
-      annexes: [
-        "je communiquerai toute modification à mon organisme de paiement",
-        "Je joins en annexes 1",
-        "Je joins en annexes 2",
-      ],
+    // `type` attendu à l'écran. Les zones de RÉDACTION sont des textarea ;
+    // « Je joins en annexe(s) » est un simple input texte (Oraliks
+    // 2026-07-30, après vérification : on y liste des pièces, on n'y rédige
+    // pas). Le repli sur les lignes imprimées ne dépend pas du type.
+    const attendu: Record<string, { type: string; cibles: string[] }> = {
+      descriptionActivite1: {
+        type: "textarea",
+        cibles: [
+          "Je décris cidessous lactivité accessoire exercée 1",
+          "Je décris cidessous lactivité accessoire exercée 2",
+          "Je décris cidessous lactivité accessoire exercée 3",
+        ],
+      },
+      adresseActiviteLigne1: { type: "textarea", cibles: ["undefined", "undefined_2"] },
+      descriptionActivitesAnterieures1: {
+        type: "textarea",
+        cibles: [
+          "Je décris précisément cidessous chaque activité exercée 1",
+          "Je décris précisément cidessous chaque activité exercée 2",
+        ],
+      },
+      annexes: {
+        type: "text",
+        cibles: [
+          "je communiquerai toute modification à mon organisme de paiement",
+          "Je joins en annexes 1",
+          "Je joins en annexes 2",
+        ],
+      },
     };
-    for (const [id, cibles] of Object.entries(attendu)) {
+    for (const [id, { type, cibles }] of Object.entries(attendu)) {
       const f = byId.get(id);
-      expect(f?.type, `${id} doit être un textarea`).toBe("textarea");
+      expect(f?.type, `type de ${id}`).toBe(type);
       expect(f?.pdfFieldName, `${id} n'écrit que par ses lineTargets`).toBe("");
       expect(f?.lineTargets?.map((c) => c.pdfFieldName), `lignes de ${id}`).toEqual(cibles);
     }
+  });
+
+  it("les textes posés sur une ligne pointillée demandent l'abaissement sur le guide", () => {
+    const byId = new Map(C1C_FIELDS.map((f) => [f.id, f]));
+    for (const id of [
+      "descriptionActivite1",
+      "adresseActiviteLigne1",
+      "tiersPrecision",
+      "formeExerciceAutre",
+      "descriptionActivitesAnterieures1",
+      "annexes",
+    ]) {
+      expect(byId.get(id)?.alignTextToGuide, `${id} doit tomber sur les pointillés`).toBe(true);
+    }
+    // Le site internet est écrit par une RÈGLE serveur : son widget est nommé.
+    expect(byId.get("siteInternetUrl")?.alignTextToGuide).toEqual([
+      "Je dispose dun site internet pour mon activité",
+    ]);
+    // Les champs déjà POSITIONNELS placent leur ligne de base eux-mêmes.
+    expect(byId.get("nomEntreprise")?.alignTextToGuide).toBeUndefined();
+    expect(byId.get("numeroBcePersonnePhysique")?.alignTextToGuide).toBeUndefined();
   });
 
   it("les deux revenus sont formatés en montants (séparateur de milliers, deux décimales)", () => {

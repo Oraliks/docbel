@@ -71,7 +71,16 @@ export function ContextHelpPanel({
       className={
         embedded
           ? "flex flex-col gap-3.5"
-          : "flex flex-col gap-3.5 rounded-3xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface-strong)] p-4 lg:sticky lg:top-6"
+          : // `max-h` + `overflow-y-auto` sur la colonne collante : le contenu
+            // de ce panneau CHANGE À CHAQUE CLIC dans le formulaire (l'aide du
+            // champ focalisé, cf. `activeFieldId`). Sans plafond, sa hauteur
+            // pilotait celle du document : cliquer un champ dont l'aide est
+            // plus courte raccourcissait la page, le navigateur écrêtait la
+            // position de défilement et la vue « remontait comme sur un # »
+            // (retour Oraliks, signalé sur le C1, le C1A puis le C1C).
+            // Plafonné à la hauteur de l'écran, le panneau défile en interne
+            // et cesse de faire varier la hauteur de la page.
+            "flex flex-col gap-3.5 rounded-3xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface-strong)] p-4 lg:sticky lg:top-6 lg:max-h-[calc(100vh-3rem)] lg:overflow-y-auto"
       }
     >
       <p className="text-[11px] font-bold uppercase tracking-[0.08em] text-[color:var(--glass-ink-soft)]">

@@ -364,6 +364,25 @@ export interface PdfFormField {
   /// PDF est un détail de génération, invisible à l'écran). Absent = champ
   /// non concerné (comportement actuel, inchangé).
   lineTargets?: Array<{ pdfFieldName?: string; drawAt?: PdfFormField["drawAt"] }>;
+  /// Pose le texte SUR le guide imprimé (la ligne pointillée) au lieu de le
+  /// laisser centré dans la case AcroForm.
+  ///
+  /// Mesuré sur le C1C : dans ces formulaires, le BAS du rectangle d'un widget
+  /// texte coïncide exactement avec la ligne de base des pointillés imprimés
+  /// (écart < 0,1 pt sur les 9 widgets vérifiés). Or pdf-lib CENTRE le texte
+  /// dans la case : la valeur flotte donc ~3 pt au-dessus du trait — « t'es un
+  /// chwiya trop haut pour les textes sur les pointillés » (Oraliks,
+  /// 2026-07-30). Le filler abaisse le rectangle d'autant avant de tamponner.
+  ///
+  /// `true` = les widgets du champ (`pdfFieldName`, pipes compris, et les
+  /// `lineTargets`). Une LISTE de noms de widgets sert au cas où la valeur est
+  /// écrite par une règle serveur et non par ce mapping (le champ n'a alors
+  /// pas de `pdfFieldName` à réutiliser — cf. le site internet du C1C).
+  ///
+  /// Opt-in, et non un comportement global : la relation ci-dessus n'a été
+  /// VÉRIFIÉE que sur le C1C. Les sept autres formulaires l'adopteront après
+  /// relecture d'un PDF généré, un par un.
+  alignTextToGuide?: boolean | string[];
   /// Champ `iban` dont le compte n'est PAS forcément belge : utilise le
   /// validateur ISO 13616 générique (32 pays, cf. isValidInternationalIBAN)
   /// au lieu du validateur belge strict par défaut (BE + 14 chiffres).

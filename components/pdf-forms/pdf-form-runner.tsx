@@ -2123,7 +2123,17 @@ function MacroRunnerBody({
           <CardContent className="p-4 sm:p-5" data-docbel-readable>
             <form
               onSubmit={(e) => { e.preventDefault(); if (isLast) submit(); }}
-              className="flex flex-col gap-3.5"
+              // Hauteur PLANCHER : répondre à une question masque souvent un
+              // champ (`visibleIf`), ce qui raccourcit le document. Quand la
+              // page devient plus courte que `scrollTop + hauteur d'écran`, le
+              // navigateur écrête la position de défilement et la vue remonte
+              // d'un coup — le « comme si c'était un # » signalé sur le C1, le
+              // C1A puis le C1C. Avec « une question = une étape » le cas est
+              // permanent : les étapes sont courtes, donc la page est à peine
+              // plus haute que l'écran et le moindre repli la fait sauter.
+              // Le plancher absorbe ces variations sans figer les étapes
+              // longues, qui dépassent naturellement.
+              className="flex min-h-[60svh] flex-col gap-3.5"
             >
               <RequiredLegend label={t("runnerRequiredLegend")} />
               {current.sections.map((sec, i) => {

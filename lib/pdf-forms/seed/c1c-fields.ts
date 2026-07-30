@@ -171,6 +171,7 @@ export const C1C_FIELDS: PdfFormField[] = [
     // brouillons déjà en base ; les deux autres sont purgés par
     // LEGACY_C1C_FIELD_IDS.
     id: "descriptionActivite1",
+    alignTextToGuide: true,
     pdfFieldName: "",
     lineTargets: [
       "Je décris cidessous lactivité accessoire exercée 1",
@@ -207,6 +208,9 @@ export const C1C_FIELDS: PdfFormField[] = [
     // le filler garderait la dernière, en silence (cf. `mapping-report.ts`).
     id: "siteInternetUrl",
     pdfFieldName: "",
+    // Le widget est nommé EXPLICITEMENT : la valeur y est écrite par la règle
+    // serveur, ce champ n'a donc pas de `pdfFieldName` dont déduire la cible.
+    alignTextToGuide: ["Je dispose dun site internet pour mon activité"],
     type: "text",
     required: false,
     label: { fr: "Adresse du site internet" },
@@ -242,6 +246,7 @@ export const C1C_FIELDS: PdfFormField[] = [
     // La version précédente inventait un découpage « rue et numéro » / « code
     // postal et commune » qui ne figure nulle part sur le formulaire.
     id: "adresseActiviteLigne1",
+    alignTextToGuide: true,
     pdfFieldName: "",
     lineTargets: ["undefined", "undefined_2"].map((pdfFieldName) => ({ pdfFieldName })),
     type: "textarea",
@@ -300,6 +305,9 @@ export const C1C_FIELDS: PdfFormField[] = [
     // l'entreprise : » (boîte de police mesurée à 231,65 + 1,91 pt de
     // descendante Arial 9 pt), qui coïncide avec le bord bas du rectangle du
     // widget (233,5). Largeur du rectangle : 319,3 → 551,2.
+    // Pas d'`alignTextToGuide` : ce champ est déjà écrit en POSITIONNEL, et
+    // `drawAt.y` EST par convention la ligne de base — elle est calée sur le
+    // bas du rectangle du widget, c'est-à-dire sur les pointillés eux-mêmes.
     id: "nomEntreprise",
     pdfFieldName: "",
     drawAt: { page: 0, x: 319.3, y: 233.5, size: 9, maxWidth: 232 },
@@ -332,6 +340,7 @@ export const C1C_FIELDS: PdfFormField[] = [
     // y=193,6). Ce champ pointait auparavant sur le widget de la question
     // TIERS, et `numeroBce` pointait ici.
     id: "formeExerciceAutre",
+    alignTextToGuide: true,
     pdfFieldName: "fill_10",
     type: "text",
     required: false,
@@ -363,6 +372,7 @@ export const C1C_FIELDS: PdfFormField[] = [
     // TIERS, à la même ordonnée que `non_2` et `oui` (y=148,6). Cas d'école du
     // piège décrit dans PDF_FORMS_RULES.md.
     id: "tiersPrecision",
+    alignTextToGuide: true,
     pdfFieldName: "Je dispose des compétences professionnelles spécifiques pour exercer mon activité",
     type: "text",
     required: false,
@@ -445,6 +455,7 @@ export const C1C_FIELDS: PdfFormField[] = [
     // Deux lignes pointillées imprimées, une seule question — même traitement
     // que la description d'activité ci-dessus.
     id: "descriptionActivitesAnterieures1",
+    alignTextToGuide: true,
     pdfFieldName: "",
     lineTargets: [
       "Je décris précisément cidessous chaque activité exercée 1",
@@ -496,13 +507,19 @@ export const C1C_FIELDS: PdfFormField[] = [
     // confusion de la version précédente. Puis les deux lignes pleine largeur
     // `Je joins en annexes 1` (y=150,6) et `2` (y=132,6).
     id: "annexes",
+    alignTextToGuide: true,
     pdfFieldName: "",
     lineTargets: [
       "je communiquerai toute modification à mon organisme de paiement",
       "Je joins en annexes 1",
       "Je joins en annexes 2",
     ].map((pdfFieldName) => ({ pdfFieldName })),
-    type: "textarea",
+    // INPUT TEXTE, pas un textarea (Oraliks 2026-07-30, après vérification) :
+    // on y liste des pièces jointes, pas une rédaction. Les trois lignes
+    // imprimées restent des `lineTargets` — une liste un peu longue continue
+    // donc de se replier sur les lignes 2 et 3 du papier, mais l'écran ne
+    // propose plus une zone de rédaction pour ça.
+    type: "text",
     required: false,
     label: { fr: "Je joins en annexe(s)" },
     help: { fr: "Décrivez les documents que vous joignez à cette déclaration, s'il y en a." },

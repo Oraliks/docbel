@@ -33,6 +33,8 @@ import { applyC47Improvements } from "../seed/c47-fields";
 const PDF_DIR = join(process.cwd(), "private", "pdfs");
 
 /// Abscisse de séparation des colonnes, en points. A4 = 595 pt de large.
+/// Valeur par défaut ; un formulaire peut la redéfinir, ou déclarer qu'il n'a
+/// PAS deux colonnes (cf. `colonneX` sur `Cible`).
 const COLONNE_X = 300;
 
 /// Tolérance verticale, en points. Deux widgets d'une même ligne imprimée ne
@@ -48,6 +50,15 @@ interface Cible {
   slug: string;
   pdf: string;
   improve: (fields: PdfFormField[], ctx?: { technicalSchema: AcroFieldRaw[] }) => PdfFormField[];
+  /// Abscisse de séparation des colonnes. `null` = le formulaire n'a qu'UNE
+  /// colonne de saisie, l'ordre de lecture est donc purement vertical.
+  /// Absent = `COLONNE_X`.
+  ///
+  /// Ce n'est pas un assouplissement : appliquer un découpage en deux colonnes
+  /// à un document qui n'en a qu'une le coupe en plein milieu et invente des
+  /// écarts là où l'ordre déclaré est juste — pendant que les vrais décalages
+  /// verticaux, eux, passent inaperçus dans le bruit.
+  colonneX?: number | null;
 }
 
 const CIBLES: Cible[] = [
@@ -65,7 +76,17 @@ const CIBLES: Cible[] = [
   { slug: "c1-partenaire", pdf: "C1-Partenaire_FR.pdf", improve: applyC1PartenaireImprovements },
   { slug: "c1a", pdf: "C1A_FR.pdf", improve: applyC1AImprovements },
   { slug: "c1b", pdf: "C1B_FR.pdf", improve: applyC1BImprovements },
-  { slug: "c1c", pdf: "C1C_FR.pdf", improve: applyC1CImprovements },
+  {
+    slug: "c1c",
+    pdf: "C1C_FR.pdf",
+    improve: applyC1CImprovements,
+    // Le C1C n'a qu'une colonne de saisie : ses 36 widgets vivent tous entre
+    // x=211 et x=430, la marge de gauche (x=56 à 205) ne portant que du texte
+    // d'aide imprimé. Le seuil par défaut de 300 pt coupait donc cette unique
+    // colonne en deux et déclarait « écart » six paires dont l'ordre est juste
+    // (date de début vs description, ligne 1 vs ligne 2 d'une même adresse…).
+    colonneX: null,
+  },
   { slug: "c46", pdf: "C46_FR.pdf", improve: applyC46Improvements },
   { slug: "c47", pdf: "C47_FR.pdf", improve: applyC47Improvements },
 ];
@@ -137,14 +158,11 @@ const ECARTS_ASSUMES: Record<string, string[]> = {
     "partenaireRevenuRemplacement > revenu_de_remplacement",
   ],
   c1b: ["niss > nom"],
-  c1c: [
-    "adresseActiviteLigne1 > adresseActiviteLigne2",
-    "affirmationSincereEtComplete > annexes",
-    "dateDebutActivite > descriptionActivite1",
-    "nomEntreprise > formeExerciceAutre",
-    "revenuNetImposableAnnuel > activiteIndependanteAnterieure",
-    "siteInternetUrl > lieuExerciceActivite",
-  ],
+  // `c1c` : entrée VIDÉE le 2026-07-30 (réalignement du formulaire). Ses six
+  // écarts étaient tous des artefacts du découpage en deux colonnes appliqué à
+  // un document qui n'en a qu'une — cf. `colonneX: null` sur sa cible. Le
+  // mapping, lui, portait de vrais défauts, corrigés dans le seed.
+  // Ne rien réintroduire ici sans avoir relu le PDF généré.
   c46: ["niss > lorganismes_suivants", "nominations_suivantes_5 > date39_af_date"],
   c47: ["niss > t_l_phone"],
 };
@@ -157,26 +175,59 @@ interface Ancre {
   y: number;
 }
 
-/// Ancre géométrique d'un champ : la position de son widget. `null` si le champ
-/// n'a pas de widget exploitable (champ virtuel, `drawAt`, widget absent du
-/// PDF, ou masqué — un champ masqué n'est jamais stampé).
-function ancre(field: PdfFormField, widgets: Map<string, AcroFieldRaw>): Ancre | null {
+/// Ancre géométrique d'un champ : la position de sa PREMIÈRE case sur le
+/// papier. `null` si le champ n'a rien à écrire (champ virtuel, widget absent
+/// du PDF, ou masqué — un champ masqué n'est jamais stampé).
+///
+/// Trois sources, dans l'ordre où le filler les consulte :
+///   • `pdfFieldName` — le cas courant. En "a|b|c" (radio sur N cases
+///     distinctes) on s'ancre sur la première, les autres sont adjacentes.
+///   • `drawAt` — écriture positionnelle, pour les cases qu'aucun widget ne
+///     peut revendiquer (widget partagé entre plusieurs emplacements).
+///   • `lineTargets` — textarea replié sur N lignes pointillées : la 1re ligne
+///     donne la position du champ.
+/// Sans ces deux derniers replis, un formulaire perdait toute couverture
+/// géométrique dès qu'il passait en positionnel — soit précisément là où le
+/// risque de décalage est le plus élevé.
+function ancre(
+  field: PdfFormField,
+  widgets: Map<string, AcroFieldRaw>,
+  colonneX: number | null,
+): Ancre | null {
   if (field.hidden) return null;
-  if (!field.pdfFieldName) return null;
-  // Un `pdfFieldName` en "a|b|c" désigne N cases (radio sur N cases distinctes) :
-  // on s'ancre sur la première, les autres sont adjacentes.
-  const premier = field.pdfFieldName.split("|")[0];
-  if (!premier) return null;
-  const w = widgets.get(premier);
-  if (!w || w.page === undefined || !w.rect) return null;
-  const [x, y] = w.rect;
-  return {
+
+  const colonneDe = (x: number) => (colonneX === null ? 0 : x < colonneX ? 0 : 1);
+  const situer = (page: number, x: number, y: number): Ancre => ({
     id: field.id,
     order: field.order ?? 0,
-    page: w.page,
-    colonne: x < COLONNE_X ? 0 : 1,
+    page,
+    colonne: colonneDe(x),
     y,
+  });
+
+  const parWidget = (nom: string | undefined): Ancre | null => {
+    const premier = nom?.split("|")[0];
+    if (!premier) return null;
+    const w = widgets.get(premier);
+    if (!w || w.page === undefined || !w.rect) return null;
+    return situer(w.page, w.rect[0], w.rect[1]);
   };
+
+  const direct = parWidget(field.pdfFieldName);
+  if (direct) return direct;
+
+  if (field.drawAt) return situer(field.drawAt.page, field.drawAt.x, field.drawAt.y);
+
+  const premiereLigne = field.lineTargets?.[0];
+  if (premiereLigne) {
+    const parLigne = parWidget(premiereLigne.pdfFieldName);
+    if (parLigne) return parLigne;
+    if (premiereLigne.drawAt) {
+      return situer(premiereLigne.drawAt.page, premiereLigne.drawAt.x, premiereLigne.drawAt.y);
+    }
+  }
+
+  return null;
 }
 
 /// Vrai si `b` vient après `a` dans l'ordre de lecture du document.
@@ -198,8 +249,9 @@ describe("géométrie seed ↔ PDF — l'ordre déclaré suit l'ordre de lecture
       const widgets = new Map(parsed.fields.map((f) => [f.pdfFieldName, f]));
       const fields = cible.improve([], { technicalSchema: parsed.fields });
 
+      const colonneX = cible.colonneX === undefined ? COLONNE_X : cible.colonneX;
       const ancres = fields
-        .map((f) => ancre(f, widgets))
+        .map((f) => ancre(f, widgets, colonneX))
         .filter((a): a is Ancre => a !== null)
         .sort((a, b) => a.order - b.order);
 

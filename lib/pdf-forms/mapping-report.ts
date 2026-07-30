@@ -19,6 +19,11 @@ import type { MappingRule } from "./bindings/types";
 ///   - "array-template" : `pdfFieldNameTemplate` d'un sous-champ `array`,
 ///                        étendu 1..maxRows.
 ///   - "first-match"    : `firstMatchMapping.fields[subId]` d'un `array`.
+///   - "line-target"    : une des N lignes physiques sur lesquelles un
+///                        `textarea` est replié (`lineTargets`). Le champ
+///                        porteur a un `pdfFieldName` vide : sans cette
+///                        source, ses lignes passaient pour orphelines alors
+///                        qu'elles sont bel et bien écrites.
 ///   - "rule"           : `StampEntry.widget` d'une `MappingRule`
 ///                        déclarative (statique OU déclarée via
 ///                        `declaredWidgets` pour un `stampFn`).
@@ -27,6 +32,7 @@ export type WidgetClaimSource =
   | "pipe-option"
   | "array-template"
   | "first-match"
+  | "line-target"
   | "rule";
 
 export interface WidgetClaim {
@@ -147,6 +153,20 @@ function collectFieldClaims(
         }
       }
       continue;
+    }
+
+    // `textarea` replié sur N lignes pointillées : chaque ligne est écrite,
+    // même si le champ ne revendique aucun widget par son `pdfFieldName`.
+    for (let i = 0; i < (f.lineTargets?.length ?? 0); i++) {
+      const cible = f.lineTargets![i];
+      if (!cible.pdfFieldName) continue; // ligne dessinée en positionnel
+      addClaim(claimsByWidget, cible.pdfFieldName, {
+        source: "line-target",
+        hidden: f.hidden === true,
+        fieldId: f.id,
+        fieldLabel: labelOf(f),
+        detail: `ligne ${i + 1}`,
+      });
     }
 
     if (!f.pdfFieldName) continue;

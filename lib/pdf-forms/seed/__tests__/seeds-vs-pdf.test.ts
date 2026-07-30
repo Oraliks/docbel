@@ -108,6 +108,34 @@ const C1_ORPHELINS_ASSUMES: Record<string, string> = {
   Personne5_LienParente_Ligne2: "2e ligne du lien de parenté — volontairement libre",
 };
 
+/// Idem pour le C1C, réaligné le 2026-07-30. Un seul orphelin, et il est
+/// structurel : le champ AcroForm `Nom de lentreprise` porte TROIS widgets
+/// (`/Kids`) — la ligne du nom, le guide BCE « personne physique » et le guide
+/// BCE « de l'entreprise ». Trois emplacements, trois valeurs différentes, une
+/// seule valeur possible : le champ est inutilisable par son nom, et ses trois
+/// cases sont écrites en positionnel (`drawAt`), ce que le rapport ne compte
+/// pas comme une claim.
+const C1C_ORPHELINS_ASSUMES: Record<string, string> = {
+  "Nom de lentreprise":
+    "champ à 3 widgets — nom d'entreprise + 2 guides BCE, écrits en positionnel",
+};
+
+describe("C1C — couverture des widgets AcroForm", () => {
+  it("ne laisse orphelins QUE les widgets assumés", async ({ skip }) => {
+    const target = TARGETS.find((t) => t.slug === "c1c")!;
+    const path = join(PDF_DIR, target.pdf);
+    if (!existsSync(path)) skip();
+
+    const parsed = await parsePdf(readFileSync(path));
+    const fields = target.improve([], { technicalSchema: parsed.fields });
+    const report = buildMappingReport(fields, parsed.fields, getRulesForSlug(target.slug));
+
+    const orphans = report.rows.filter((r) => r.status === "orphan").map((r) => r.pdfFieldName);
+    expect(orphans.sort()).toEqual(Object.keys(C1C_ORPHELINS_ASSUMES).sort());
+    expect(report.summary.conflict, "aucun widget ne doit être revendiqué deux fois").toBe(0);
+  });
+});
+
 describe("C1 — couverture des widgets AcroForm", () => {
   it("ne laisse orphelins QUE les widgets assumés", async ({ skip }) => {
     const target = TARGETS[0];

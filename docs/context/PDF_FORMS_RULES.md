@@ -26,7 +26,7 @@ l'écran tant que le script de re-semis n'a pas tourné. C'est la cause n°1 de
 fractionnaires (`54.5`) survivent et servent à insérer un champ entre deux
 voisins.
 
-## Les AcroForms de l'ONEM : deux pièges structurels
+## Les AcroForms de l'ONEM : trois pièges structurels
 
 ### 1. Un widget porte le nom du texte imprimé AU-DESSUS de lui
 
@@ -37,9 +37,16 @@ qu'un `pdfFieldName` existe ne voient rien.
 
 Le garde-fou est `lib/pdf-forms/__tests__/widget-geometry.test.ts` : il compare
 l'ordre déclaré des champs à la position réelle de leur case (page, colonne,
-ordonnée). Il tourne sur **les 8 formulaires**. Les six documents non encore
-réalignés ont leurs écarts consignés en dette dans `ECARTS_ASSUMES` — les
-traiter, c'est vider leur entrée, jamais l'agrandir.
+ordonnée). Il tourne sur **les 8 formulaires**. Les cinq documents non encore
+réalignés (C1, Annexe Regis, C1-Partenaire, C1B, C46, C47) ont leurs écarts
+consignés en dette dans `ECARTS_ASSUMES` — les traiter, c'est vider leur
+entrée, jamais l'agrandir. Le C1A et le C1C ont la leur vide.
+
+Avant de croire un écart, vérifier le **découpage en colonnes** : le seuil par
+défaut (300 pt) suppose une mise en page à deux colonnes. Appliqué à un
+document qui n'en a qu'une — le C1C, dont les 36 widgets vivent tous entre
+x=211 et x=430 — il coupe l'unique colonne en son milieu et invente des écarts
+là où l'ordre déclaré est juste. D'où `colonneX: null` sur la cible.
 
 Corollaire : `order` doit suivre l'ordre de lecture du document. Une fabrique
 qui numérote par sauts (`base + i * 10`) finit par **avaler ses voisines** —
@@ -55,6 +62,24 @@ différentes. Quatre cas sur le seul C1A (`TVA`, `Montant`, `voir 19`, `1_3`).
 Vérifier avec `pypdf` (clé `/Kids`) avant de croire un audit de mapping. La
 sortie est l'**écriture positionnelle** : `pdfFieldName: ""` + `drawAt: { page,
 x, y, size, maxWidth }`, appliqué par `filler.ts`.
+
+### 3. Une paire de cases oui/non est appariée PAR POSITION
+
+`stampPipeRadio` (`filler.ts`) associe `options[i]` au i-ème segment de
+`pdfFieldName` — **jamais par le sens**. Des options rangées `[oui, non]` sur un
+widget `"non|oui"` cochent donc systématiquement l'inverse de la réponse. Le C1C
+avait trois questions dans cet état, dont « une partie de mon activité est
+exercée par des tiers », que le formulaire imprimé assortit d'un « votre demande
+ne peut pas être acceptée si… ».
+
+Rien ne le voyait : `publish-checks` compte les segments sans regarder leur
+ordre, la géométrie s'ancre sur le premier segment, et les tests figeaient la
+chaîne `pdfFieldName` sans jamais la confronter aux options.
+
+**Règle : ranger les options dans l'ordre des cases IMPRIMÉES**, qui est souvent
+« non » puis « oui » sur les formulaires ONEM. Un test d'alignement se pose en
+quelques lignes quand les widgets se nomment d'après la réponse qu'ils portent
+(`non_2`, `oui_3`, `oui www`) — cf. `c1c-fields.test.ts`.
 
 ## Visibilité : le tableau à connaître par cœur
 

@@ -796,8 +796,7 @@ interface PositionalStampSpec {
   printAsComb?: NonNullable<PdfFormField["printAsComb"]>;
 }
 
-/// Cibles connues, par clé sentinelle (convention `"<slug>:<id>"`). Seul le
-/// C1A en a besoin aujourd'hui.
+/// Cibles connues, par clé sentinelle (convention `"<slug>:<id>"`).
 ///
 /// Coordonnées MESURÉES sur `private/pdfs/C1A_FR.pdf` (pdfplumber, seuil
 /// strict sur les pixels — cf. rapport
@@ -822,6 +821,20 @@ const POSITIONAL_EXTRA_STAMPS: Record<string, PositionalStampSpec> = {
     // document (slotWidth/groupExtra identiques, même police/taille).
     printAsComb: { groups: [9, 2], slotWidth: 13.02, groupExtra: 6.06 },
   },
+
+  // C47 — les TROIS cases « votre demande ». Aucune n'est cochée par son champ
+  // AcroForm : celui de « jeune travailleur » porte deux widgets (la case de
+  // son propre cadre ET la case « art. 114 » de l'autre cadre), donc cocher
+  // l'un cochait les deux. Les trois croix sont dessinées ici, à la même
+  // taille et de la même façon, pour qu'elles se ressemblent sur le papier.
+  // Cf. `bindings/per-form/c47.ts` et le commentaire de `cadreDemande`.
+  //
+  // Coordonnées = rectangle du widget ❑ mesuré (pypdf), recentré pour un « X »
+  // Helvetica 8 pt (largeur 5,34, hauteur de capitale 5,74, dans une case de
+  // 6,7 × 6,7).
+  "c47:case-art114": { page: 0, x: 228.18, y: 395.08, size: 8 },
+  "c47:case-jeune-travailleur": { page: 0, x: 210.58, y: 275.38, size: 8 },
+  "c47:case-chomeur-indemnise": { page: 0, x: 210.78, y: 238.48, size: 8 },
 };
 
 /// Remplit un PDF AcroForm à partir du schéma enrichi et d'un payload validé.
@@ -1138,6 +1151,23 @@ export async function fillForm(
     placerPeigne(page, bx, by, 3, valeur, comb, taillePolice, policeCaractere, fieldId, widgetName, diags);
   };
 
+  /// Stamps positionnels en attente : ils sont dessinés APRÈS `form.flatten()`,
+  /// pas au fil de la boucle `extraStamps`.
+  ///
+  /// La raison est une propriété d'`flatten()` : pdf-lib recopie alors dans le
+  /// flux de la page l'apparence de CHAQUE widget, par-dessus tout ce qu'on y a
+  /// déjà dessiné. Or l'apparence « décochée » d'une case ONEM commence par
+  /// `1 g / 0 0 6.7 6.7 re / f` — un carré BLANC OPAQUE. Une croix posée dans
+  /// une case à cocher disparaissait donc à l'aplatissement, sans le moindre
+  /// signal : le PDF contenait bien le caractère (les sondes d'encre le
+  /// voyaient), il était simplement recouvert. C'est exactement le cas des trois
+  /// cases du C47, dont aucune n'est cochable par son champ AcroForm.
+  ///
+  /// Différer est sûr par construction : une clé de `POSITIONAL_EXTRA_STAMPS`
+  /// signifie « aucun widget ne revendique cet emplacement ». Rien de ce que
+  /// `flatten` recopie n'a donc à passer par-dessus.
+  const stampsPositionnelsDifferes: Array<() => void> = [];
+
   /// Dessine un stamp de `POSITIONAL_EXTRA_STAMPS` (aucun widget AcroForm
   /// cible). Même cœur de placement que la boucle `drawAt` du champ de
   /// schéma plus bas (peigne si `printAsComb`, sinon texte auto-réduit sur
@@ -1196,13 +1226,16 @@ export async function fillForm(
       if (!widgetName) continue;
 
       // Stamp POSITIONNEL (cf. POSITIONAL_EXTRA_STAMPS ci-dessus) : aucun
-      // widget AcroForm à résoudre, on dessine directement sur la page et on
-      // passe à la clé suivante — `form.getField` échouerait de toute façon
-      // sur une clé sentinelle.
+      // widget AcroForm à résoudre, on dessine directement sur la page — mais
+      // APRÈS l'aplatissement, d'où la mise en attente (cf.
+      // `stampsPositionnelsDifferes`). `form.getField` échouerait de toute
+      // façon sur une clé sentinelle, on passe donc à la clé suivante.
       const positional = POSITIONAL_EXTRA_STAMPS[widgetName];
       if (positional) {
         if (typeof value === "string" && value.trim() !== "") {
-          dessinerStampPositionnel(widgetName, value, positional);
+          stampsPositionnelsDifferes.push(() =>
+            dessinerStampPositionnel(widgetName, value, positional)
+          );
         }
         continue;
       }
@@ -1590,6 +1623,10 @@ export async function fillForm(
       );
     }
   }
+
+  // Stamps positionnels, maintenant que plus aucune apparence de widget ne
+  // viendra les recouvrir (cf. `stampsPositionnelsDifferes`).
+  for (const dessiner of stampsPositionnelsDifferes) dessiner();
 
   if (diags.length > 0) {
     // Une ligne par generation, pas une par champ : l'appelant (route

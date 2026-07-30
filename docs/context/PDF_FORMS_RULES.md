@@ -37,10 +37,10 @@ qu'un `pdfFieldName` existe ne voient rien.
 
 Le garde-fou est `lib/pdf-forms/__tests__/widget-geometry.test.ts` : il compare
 l'ordre déclaré des champs à la position réelle de leur case (page, colonne,
-ordonnée). Il tourne sur **les 8 formulaires**. Les cinq documents non encore
-réalignés (C1, Annexe Regis, C1-Partenaire, C1B, C46, C47) ont leurs écarts
+ordonnée). Il tourne sur **les 8 formulaires**. Les documents non encore
+réalignés (C1, Annexe Regis, C1-Partenaire, C1B, C46) ont leurs écarts
 consignés en dette dans `ECARTS_ASSUMES` — les traiter, c'est vider leur
-entrée, jamais l'agrandir. Le C1A et le C1C ont la leur vide.
+entrée, jamais l'agrandir. Le C1A, le C1C et le C47 ont la leur vide.
 
 Avant de croire un écart, vérifier le **découpage en colonnes** : le seuil par
 défaut (300 pt) suppose une mise en page à deux colonnes. Appliqué à un
@@ -62,6 +62,30 @@ différentes. Quatre cas sur le seul C1A (`TVA`, `Montant`, `voir 19`, `1_3`).
 Vérifier avec `pypdf` (clé `/Kids`) avant de croire un audit de mapping. La
 sortie est l'**écriture positionnelle** : `pdfFieldName: ""` + `drawAt: { page,
 x, y, size, maxWidth }`, appliqué par `filler.ts`.
+
+⚠ **Un audit de couverture ne voit pas ce piège.** Le C47 avait 0 orphelin, 0
+conflit — et son champ « jeune travailleur » portait deux widgets posés dans
+les deux cadres OPPOSÉS du formulaire : cocher l'un cochait « je demande la
+fixation du montant (art. 114) » dans l'autre cadre. Le nom hiérarchique
+n'aide pas : les points d'un libellé (« art. 36/3, § 2, AR 25.11.1991 »)
+découpent le champ en pseudo-niveaux, et seul le `/Kids` du nœud TERMINAL dit
+combien de cases il porte. Compter les widgets, pas les champs.
+
+### 2 bis. Cocher une case en positionnel : dessiner APRÈS `flatten`
+
+Une case à cocher n'a pas d'équivalent de `drawAt` (la boucle positionnelle
+dessine du texte : un booléen y sortirait « true »). La voie est une **clé
+sentinelle** dans `POSITIONAL_EXTRA_STAMPS` (`filler.ts`) + une règle serveur
+qui émet `"X"`, comme les trois cases du C47.
+
+Et il faut **différer le dessin après `form.flatten()`**. `flatten` recopie sur
+la page l'apparence de chaque widget, par-dessus tout ce qui y a déjà été
+dessiné ; or l'apparence « décochée » d'une case ONEM commence par
+`1 g / 0 0 6.7 6.7 re / f` — un **carré blanc opaque**. Une croix posée avant
+disparaît donc sans le moindre signal : le caractère est bien dans le PDF (les
+sondes d'encre, dont `verif-couverture-widgets.py`, le comptent « servi »), il
+est simplement recouvert. Seule la relecture visuelle l'attrape — et
+`c47-cases-demande.test.ts` désormais.
 
 ### 3. Une paire de cases oui/non est appariée PAR POSITION
 

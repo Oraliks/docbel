@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { C47_FIELDS, applyC47Improvements } from "../c47-fields";
+import {
+  C47_FIELDS,
+  C47_GROUPE_IDENTITE,
+  C47_QUESTIONS,
+  applyC47Improvements,
+} from "../c47-fields";
 
 describe("C47_FIELDS", () => {
   it("couvre l'identité, l'adresse, la demande et la signature", () => {
@@ -16,18 +21,83 @@ describe("C47_FIELDS", () => {
     expect(ids).toContain("niss");
     expect(ids).toContain("t_l_phone");
     expect(ids).toContain("email");
+    expect(ids).toContain("cadreDemande");
     expect(ids).toContain("dateDA");
-    expect(ids).toContain("jeuneTravailleurStageInsertion");
-    expect(ids).toContain("chomeurCompletIndemniseInaptitude");
     expect(ids).toContain("aujourd_hui");
     expect(ids).toContain("signature");
+    // Les deux cases à cocher séparées ont fusionné dans `cadreDemande`
+    // (2026-07-30) : leur champ AcroForm partagé cochait deux cadres à la fois.
+    expect(ids).not.toContain("jeuneTravailleurStageInsertion");
+    expect(ids).not.toContain("chomeurCompletIndemniseInaptitude");
   });
 
-  it("compte 13 champs — 11 widgets AcroForm + 2 sous-champs d'adresse", () => {
+  it("compte 12 champs — 9 widgets écrits par le schéma + 2 sous-champs d'adresse + le choix", () => {
     // « rue + numéro » et « code postal + commune » sont saisis séparément
-    // mais imprimés sur une seule ligne chacun : plus de champs que de
-    // widgets, l'écart étant comblé par les règles serveur.
-    expect(C47_FIELDS.length).toBe(13);
+    // mais imprimés sur une seule ligne chacun ; `cadreDemande` couvre à lui
+    // seul les trois cases à cocher, écrites en positionnel.
+    expect(C47_FIELDS.length).toBe(12);
+  });
+
+  it("les trois cases de « votre demande » sont UN choix unique, sans widget revendiqué", () => {
+    const choix = C47_FIELDS.find((f) => f.id === "cadreDemande");
+    expect(choix?.type).toBe("radio");
+    expect(choix?.required).toBe(true);
+    // Aucune case revendiquée : les trois croix sont dessinées par les règles
+    // serveur (clés sentinelles `c47:case-*`). Revendiquer en plus le champ
+    // AcroForm serait un conflit de mapping — et surtout, ce champ porte DEUX
+    // widgets dans deux cadres différents.
+    expect(choix?.pdfFieldName).toBe("");
+    expect(choix?.options?.map((o) => o.value)).toEqual([
+      "art114",
+      "jeune-travailleur",
+      "chomeur-indemnise",
+    ]);
+  });
+
+  it("la date de début n'est demandée que sur la branche art. 114", () => {
+    // Le second cadre du formulaire n'imprime aucune case de date : la
+    // demander là serait demander une valeur qui n'irait nulle part.
+    const date = C47_FIELDS.find((f) => f.id === "dateDA");
+    expect(date?.visibleIf).toEqual({
+      fieldId: "cadreDemande",
+      op: "equals",
+      value: "art114",
+    });
+  });
+
+  it("les trois guides imprimés en peigne reçoivent un chiffre par case", () => {
+    const byId = new Map(C47_FIELDS.map((f) => [f.id, f]));
+    // Sans peigne, « 85.07.14-231.05 » s'imprimerait par-dessus les « / » et
+    // « - » déjà dessinés sur le formulaire (défaut signalé sur le C1).
+    expect(byId.get("niss")?.printAsComb?.groups).toEqual([6, 3, 2]);
+    expect(byId.get("dateDA")?.printAsComb?.groups).toEqual([2, 2, 4]);
+    expect(byId.get("aujourd_hui")?.printAsComb?.groups).toEqual([2, 2, 4]);
+    for (const id of ["niss", "dateDA", "aujourd_hui"]) {
+      expect(byId.get(id)?.printAsComb?.slotWidth).toBeGreaterThan(0);
+    }
+  });
+
+  it("l'identité et l'adresse sont héritées du dossier, jamais redemandées", () => {
+    const herites = C47_FIELDS.filter((f) => f.inheritedFromDossier).map((f) => f.id);
+    expect(herites.sort()).toEqual(
+      ["codePostal", "commune", "email", "niss", "numero", "pr_nom_et_nom", "rue", "t_l_phone"].sort()
+    );
+  });
+
+  it("chaque champ porte un stepGroup connu de l'ordre des étapes", () => {
+    const groupes = new Set([C47_GROUPE_IDENTITE, ...C47_QUESTIONS]);
+    for (const f of applyC47Improvements([])) {
+      expect(f.stepGroup, `champ « ${f.id} » sans étape`).toBeTruthy();
+      expect(groupes, `champ « ${f.id} » dans un groupe hors ordre`).toContain(f.stepGroup);
+    }
+  });
+
+  it("chaque question a pour ancre un champ de même identifiant", () => {
+    // C'est cette égalité qui donne son titre à l'étape (cf.
+    // `stepAnchorField`) : une question sans champ ancre afficherait son
+    // identifiant brut à un citoyen.
+    const ids = new Set(C47_FIELDS.map((f) => f.id));
+    for (const q of C47_QUESTIONS) expect(ids, `question « ${q} »`).toContain(q);
   });
 
   it("les pdfFieldName sont copiés exactement depuis le dump AcroForm (casse, espaces, retours à la ligne)", () => {
@@ -43,18 +113,6 @@ describe("C47_FIELDS", () => {
     expect(byId.get("dateDA")?.pdfFieldName).toBe("Date de DA");
     expect(byId.get("aujourd_hui")?.pdfFieldName).toBe("AUJOURD'HUI");
     expect(byId.get("signature")?.pdfFieldName).toBe("Signature");
-    // Apostrophes TYPOGRAPHIQUES (’) : ces deux attentes ont longtemps été
-    // écrites avec l'apostrophe ASCII (') — le test disait « copiés exactement
-    // depuis le dump » tout en comparant à une chaîne RETAPÉE à la main, donc
-    // il validait la faute au lieu de l'attraper. Les champs pointaient vers un
-    // widget inexistant et le C47 était impubliable. L'autorité, c'est le PDF :
-    // cf. `seeds-vs-pdf.test.ts`, qui compare les seeds au vrai fichier.
-    expect(byId.get("jeuneTravailleurStageInsertion")?.pdfFieldName).toBe(
-      "Je suis un jeune travailleur en stage d’insertion professionnelle et j’invoque une inaptitude permanente au travail de 33 % au moins.\n(art. 36/3, § 2, AR 25.11.1991)"
-    );
-    expect(byId.get("chomeurCompletIndemniseInaptitude")?.pdfFieldName).toBe(
-      "Je suis chômeur complet indemnisé et j’invoque une inaptitude permanente au travail de 33 % au moins.\n(art. 58, § 1er, et 58/3, § 4, AR 25.11.1991)"
-    );
   });
 
   it("place les champs dans les bonnes sections", () => {
@@ -65,23 +123,10 @@ describe("C47_FIELDS", () => {
     expect(byId.get("numero")?.section).toBe("adresse");
     expect(byId.get("codePostal")?.section).toBe("adresse");
     expect(byId.get("commune")?.section).toBe("adresse");
+    expect(byId.get("cadreDemande")?.section).toBe("demande");
     expect(byId.get("dateDA")?.section).toBe("demande");
-    expect(byId.get("jeuneTravailleurStageInsertion")?.section).toBe("demande");
-    expect(byId.get("chomeurCompletIndemniseInaptitude")?.section).toBe("demande");
     expect(byId.get("aujourd_hui")?.section).toBe("signature");
     expect(byId.get("signature")?.section).toBe("signature");
-  });
-
-  it("les 2 cases de situation (jeune travailleur / chômeur indemnisé) restent des checkboxes distinctes, pas fusionnées", () => {
-    const byId = new Map(C47_FIELDS.map((f) => [f.id, f]));
-    expect(byId.get("jeuneTravailleurStageInsertion")?.type).toBe("checkbox");
-    expect(byId.get("chomeurCompletIndemniseInaptitude")?.type).toBe("checkbox");
-  });
-
-  it("l'aide des 2 cases de situation mentionne l'exclusivité mutuelle", () => {
-    const byId = new Map(C47_FIELDS.map((f) => [f.id, f]));
-    expect(byId.get("jeuneTravailleurStageInsertion")?.help?.fr).toMatch(/mutuellement exclusives/);
-    expect(byId.get("chomeurCompletIndemniseInaptitude")?.help?.fr).toMatch(/mutuellement exclusives/);
   });
 
   it("téléphone et email sont facultatifs", () => {
@@ -100,6 +145,33 @@ describe("C47_FIELDS", () => {
     expect(byId.get("dateDA")?.required).toBe(true);
     expect(byId.get("aujourd_hui")?.required).toBe(true);
     expect(byId.get("signature")?.required).toBe(true);
+  });
+
+  it("applyC47Improvements() purge les deux anciennes cases à cocher restées en base", () => {
+    // Sans ce filtre elles survivraient en base (le merge ne compare que les
+    // `id`) et se battraient avec la règle serveur pour la même case — celle
+    // de « jeune travailleur » cochant en prime la case « art. 114 » de
+    // l'autre cadre, puisque les deux widgets partagent un champ AcroForm.
+    const enBase = [
+      {
+        id: "jeuneTravailleurStageInsertion",
+        pdfFieldName: "Je suis un jeune travailleur…",
+        type: "checkbox" as const,
+        required: false,
+        label: { fr: "Ancienne case" },
+      },
+      {
+        id: "chomeurCompletIndemniseInaptitude",
+        pdfFieldName: "Je suis chômeur complet indemnisé…",
+        type: "checkbox" as const,
+        required: false,
+        label: { fr: "Ancienne case" },
+      },
+    ];
+    const ids = applyC47Improvements(enBase).map((f) => f.id);
+    expect(ids).not.toContain("jeuneTravailleurStageInsertion");
+    expect(ids).not.toContain("chomeurCompletIndemniseInaptitude");
+    expect(ids).toContain("cadreDemande");
   });
 
   it("applyC47Improvements() est idempotent (pas de doublon si ré-appliqué)", () => {

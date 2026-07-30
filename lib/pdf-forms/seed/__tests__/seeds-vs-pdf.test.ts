@@ -136,6 +136,38 @@ describe("C1C — couverture des widgets AcroForm", () => {
   });
 });
 
+/// Idem pour le C47, repris le 2026-07-30. Ses deux orphelins sont les deux
+/// champs à cocher de la rubrique « Votre demande ». Le premier est
+/// structurellement inutilisable — il porte DEUX widgets (`/Kids`) posés dans
+/// des cadres CONTRADICTOIRES du formulaire (« art. 114 » d'un côté, « jeune
+/// travailleur » de l'autre), et une valeur unique les cocherait ensemble. Le
+/// second est sain, mais il est dessiné de la même façon pour que les trois
+/// croix se ressemblent sur le papier. Les trois cases sont donc écrites en
+/// positionnel par `bindings/per-form/c47.ts`, ce que le rapport ne compte pas
+/// comme une claim.
+const C47_ORPHELINS_ASSUMES: Record<string, string> = {
+  "Je suis un jeune travailleur en stage d’insertion professionnelle et j’invoque une inaptitude permanente au travail de 33 % au moins.\n(art. 36/3, § 2, AR 25.11.1991)":
+    "champ à 2 widgets dans deux cadres opposés — les deux cases sont écrites en positionnel",
+  "Je suis chômeur complet indemnisé et j’invoque une inaptitude permanente au travail de 33 % au moins.\n(art. 58, § 1er, et 58/3, § 4, AR 25.11.1991)":
+    "case écrite en positionnel comme ses deux voisines, pour une croix identique",
+};
+
+describe("C47 — couverture des widgets AcroForm", () => {
+  it("ne laisse orphelins QUE les widgets assumés", async ({ skip }) => {
+    const target = TARGETS.find((t) => t.slug === "c47")!;
+    const path = join(PDF_DIR, target.pdf);
+    if (!existsSync(path)) skip();
+
+    const parsed = await parsePdf(readFileSync(path));
+    const fields = target.improve([], { technicalSchema: parsed.fields });
+    const report = buildMappingReport(fields, parsed.fields, getRulesForSlug(target.slug));
+
+    const orphans = report.rows.filter((r) => r.status === "orphan").map((r) => r.pdfFieldName);
+    expect(orphans.sort()).toEqual(Object.keys(C47_ORPHELINS_ASSUMES).sort());
+    expect(report.summary.conflict, "aucun widget ne doit être revendiqué deux fois").toBe(0);
+  });
+});
+
 describe("C1 — couverture des widgets AcroForm", () => {
   it("ne laisse orphelins QUE les widgets assumés", async ({ skip }) => {
     const target = TARGETS[0];

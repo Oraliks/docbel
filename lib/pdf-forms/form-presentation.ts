@@ -15,6 +15,7 @@ import { loc, type Locale, type Localized } from "./types";
 import { sectionLabel } from "./section-labels";
 import { C1A_QUESTIONS, C1A_GROUPE_IDENTITE } from "./seed/c1a-routing";
 import { C1C_QUESTIONS, C1C_GROUPE_IDENTITE } from "./seed/c1c-fields";
+import { C47_QUESTIONS, C47_GROUPE_IDENTITE } from "./seed/c47-fields";
 
 export interface FormPresentation {
   /// Ordre canonique des macro-étapes. Les groupes absents de cette liste
@@ -97,6 +98,17 @@ const PRESENTATION_BY_SLUG: Readonly<Record<string, FormPresentation>> = {
     // Aucune clé i18n : à défaut, l'étape prend pour titre la question de son
     // champ ancre — un texte déjà écrit mot pour mot sur le formulaire
     // officiel, qu'un catalogue de traductions ne ferait que recopier.
+    hideStepList: true,
+  },
+  c47: {
+    // MÊME GRAMMAIRE QUE LE C1A ET LE C1C. Le C47 tient en une page et n'a
+    // qu'une question — le parcours se réduit donc, dans un dossier, à « que
+    // demandez-vous ? » puis « signez ». L'en-tête d'identité reste EN TÊTE de
+    // l'ordre bien qu'il ne produise aucune étape quand le C1 l'a déjà donnée
+    // (cf. `inheritedFromDossier`) : il ne coûte rien quand l'étape n'existe
+    // pas, et l'empêche de tomber après la signature sur l'URL publique
+    // `/document/onem/c47`, où il n'y a aucun C1 dont hériter.
+    stepGroupOrder: [C47_GROUPE_IDENTITE, ...C47_QUESTIONS],
     hideStepList: true,
   },
 };

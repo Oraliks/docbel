@@ -88,7 +88,18 @@ const CIBLES: Cible[] = [
     colonneX: null,
   },
   { slug: "c46", pdf: "C46_FR.pdf", improve: applyC46Improvements },
-  { slug: "c47", pdf: "C47_FR.pdf", improve: applyC47Improvements },
+  {
+    slug: "c47",
+    pdf: "C47_FR.pdf",
+    improve: applyC47Improvements,
+    // Même situation que le C1C : une seule colonne de saisie. Les 11 widgets
+    // du C47 vivent entre x=210 (les cases à cocher) et x=423 (la signature),
+    // la marge de gauche ne portant que du texte d'aide imprimé. Le seuil par
+    // défaut de 300 pt coupait cette unique colonne entre le NISS (x=318) et le
+    // téléphone (x=285) et déclarait « écart » deux champs dont l'ordre est
+    // juste — le NISS est bien AU-DESSUS du téléphone sur le papier.
+    colonneX: null,
+  },
 ];
 
 /// Écarts connus et assumés, par slug : `"champA > champB"` signifie que le
@@ -164,7 +175,11 @@ const ECARTS_ASSUMES: Record<string, string[]> = {
   // mapping, lui, portait de vrais défauts, corrigés dans le seed.
   // Ne rien réintroduire ici sans avoir relu le PDF généré.
   c46: ["niss > lorganismes_suivants", "nominations_suivantes_5 > date39_af_date"],
-  c47: ["niss > t_l_phone"],
+  // `c47` : entrée VIDÉE le 2026-07-30 (reprise du formulaire). Son unique
+  // écart, `niss > t_l_phone`, était un artefact du découpage en deux colonnes
+  // appliqué à un document qui n'en a qu'une — cf. `colonneX: null` sur sa
+  // cible. Le mapping, lui, portait un vrai défaut (case « art. 114 »
+  // impossible à cocher), corrigé dans le seed.
 };
 
 interface Ancre {

@@ -76,6 +76,19 @@ l'« activité professionnelle » et celui du « revenu de remplacement ». Le d
 widgets. Deux cases partageant un état est souvent voulu (même affirmation
 imprimée deux fois). À confirmer d'un coup d'œil, sans a priori de défaut.
 
+> **Vérifié le 2026-07-30 : ce n'était PAS voulu, et c'était le défaut le plus
+> grave des quatre formulaires.** Les deux widgets du champ « Je suis un jeune
+> travailleur…(art. 36/3, § 2) » sont posés dans les DEUX cadres opposés du
+> C47 : sa propre case (y=274,9) **et** la case « Je demande que le montant de
+> mon allocation de chômage soit fixé » (art. 114, y=394,6) de l'autre cadre.
+> Cocher l'une cochait les deux — deux déclarations contradictoires sur un même
+> document — et la case art. 114, celle que vise le déclencheur du C1, était
+> impossible à cocher seule. Corrigé : les trois cases passent en écriture
+> positionnelle. Leçon pour les trois formulaires restants : **compter les
+> widgets (`/Kids` du nœud terminal), pas les champs** — les points d'un
+> libellé (« art. 36/3, § 2, AR 25.11.1991 ») découpent le nom en
+> pseudo-niveaux et masquent le vrai nœud.
+
 ### Le vrai gros morceau : le parcours
 
 **Les quatre formulaires sont à 0 champ groupé et 0 champ hérité.** Ils
@@ -113,9 +126,24 @@ sans lequel l'écran ne bouge pas.
 
 ## Ordre proposé
 
-1. **C47** (11 widgets) — le plus petit, aucun multi-widget à réparer, et sa
-   géométrie est déjà calée sur les pointillés. Sert de galop d'essai pour les
-   étapes 3 à 5 seules.
+1. ~~**C47** (11 widgets)~~ — **FAIT le 2026-07-30.** Les cinq étapes, dans
+   l'ordre. Ce que la reprise a réellement demandé, au-delà du plan :
+   - la case art. 114 rendue cochable (multi-widget, cf. encadré plus haut) —
+     les trois cases sont devenues **un choix unique** `cadreDemande`, le papier
+     n'en laissant cocher qu'une ;
+   - le dessin positionnel d'une croix doit être **différé après `flatten()`**,
+     sinon l'apparence « décochée » du widget (carré blanc opaque) la recouvre
+     sans aucun signal — corrigé dans `filler.ts`, valable pour tous les
+     documents ;
+   - **trois peignes imprimés** (NISS, date art. 114, date de signature) que le
+     C1C n'avait pas : sans `printAsComb`, les points et tirets de la valeur se
+     surimpriment à ceux du guide. ⚠ Le guide de la date art. 114 n'imprime que
+     **trois** cases pour l'année : le peigne est resserré, décision documentée
+     dans le seed ;
+   - `ECARTS_ASSUMES.c47` vidé (artefact du découpage en deux colonnes,
+     `colonneX: null` — même cause que le C1C).
+
+   Reste : **re-semis par Oraliks** (`pnpm tsx scripts/apply-c1-improvements.ts --yes`).
 2. **C1-Partenaire** (23) — un seul multi-widget, doute déjà documenté.
 3. **C46** (13) — trois dates « Moniteur Belge » à séparer ; peu de champs.
 4. **C1B** (51) — le plus gros, et le multi-widget à quatre cases. À faire en
@@ -129,7 +157,14 @@ voient pas.
 
 - **C1B, date d'en-tête (p0 y=696)** : à quoi correspond-elle exactement ? Les
   trois autres cases de `Date46_af_date` sont claires, celle-là non.
-- **C47, la case à deux widgets** : partage voulu ou défaut ?
+- ~~**C47, la case à deux widgets** : partage voulu ou défaut ?~~ **Défaut**,
+  tranché sur le papier (deux cadres opposés). Deux choix pris seul, à
+  contredire d'un mot s'ils sont faux :
+  - les trois cases sont **exclusives** — le papier oppose « si elle NE
+    s'inscrit PAS dans le cadre du contrôle de la disponibilité active » à
+    « si elle s'inscrit dans le cadre… » ;
+  - la **date n'est demandée que sur la branche art. 114**, seul cadre où le
+    formulaire imprime une case de date.
 - **C1-Partenaire** : les deux montants mensuels bruts sont-ils bien deux
   montants distincts (activité / revenu de remplacement) ?
 - **Annexe Regis** n'est pas dans ce plan (hors demande). Elle reste la plus

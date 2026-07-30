@@ -80,3 +80,6 @@ lib/agr/__tests__/fixtures/*.pdf
 
 # Logs du hook post-commit (mise à jour mémoire Claude)
 .claude/logs/
+
+# Graphe de connaissance graphify (17 Mo, regenerable : /graphify --update)
+graphify-out/

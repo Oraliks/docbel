@@ -17,14 +17,24 @@ import type { PdfFormField } from "../types";
 
 /// Noms de widgets couverts par le schéma enrichi. Gère la convention pipe
 /// (`"oui_2|non_2"`) : chaque segment compte comme couvert.
+///
+/// `lineTargets` compte AUSSI : un `textarea` unique replié sur les N lignes
+/// pointillées du papier (cf. `PdfFormField.lineTargets`) écrit bien dans ces
+/// widgets, même si son propre `pdfFieldName` est vide. Sans ça, un champ
+/// hérité de la base pointant sur l'une de ces lignes survivait au merge et se
+/// battait avec le textarea pour la même case.
 function coveredWidgetNames(enriched: readonly PdfFormField[]): Set<string> {
   const names = new Set<string>();
-  for (const field of enriched) {
-    if (!field.pdfFieldName) continue;
-    for (const part of field.pdfFieldName.split("|")) {
+  const add = (raw: string | undefined) => {
+    if (!raw) return;
+    for (const part of raw.split("|")) {
       const trimmed = part.trim();
       if (trimmed) names.add(trimmed);
     }
+  };
+  for (const field of enriched) {
+    add(field.pdfFieldName);
+    for (const cible of field.lineTargets ?? []) add(cible.pdfFieldName);
   }
   return names;
 }

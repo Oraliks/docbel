@@ -11,7 +11,8 @@ describe("C1C_FIELDS", () => {
     expect(ids).toContain("possedeSiteInternet");
     expect(ids).toContain("lieuExerciceActivite");
     expect(ids).toContain("formeExerciceActivite");
-    expect(ids).toContain("numeroBce");
+    expect(ids).toContain("numeroBcePersonnePhysique");
+    expect(ids).toContain("numeroBceEntreprise");
     expect(ids).toContain("activiteExerceeParTiers");
     expect(ids).toContain("competencesProfessionnellesSpecifiques");
   });
@@ -42,7 +43,7 @@ describe("C1C_FIELDS", () => {
     expect(byId.get("signature")?.section).toBe("signature");
   });
 
-  it("les pdfFieldName des champs fusionnés (radio oui/non) pointent vers les vrais noms de widgets du dump", () => {
+  it("les pdfFieldName des champs fusionnés (radio) pointent vers les vrais noms de widgets du dump", () => {
     const byId = new Map(C1C_FIELDS.map((f) => [f.id, f]));
     expect(byId.get("possedeSiteInternet")?.pdfFieldName).toBe("non|oui www");
     expect(byId.get("lieuExerciceActivite")?.pdfFieldName).toBe("à ladresse de mon domicile|à une autre adresse");
@@ -56,28 +57,162 @@ describe("C1C_FIELDS", () => {
     expect(byId.get("activiteIndependanteAnterieure")?.pdfFieldName).toBe("non_3|oui_3");
   });
 
-  it("les champs de précision (URL site, autre adresse, nom entreprise, description antérieure) sont masqués tant que la question parente n'a pas la bonne réponse", () => {
+  // -------------------------------------------------------------------------
+  // Le défaut qui motivait le réalignement du 2026-07-30.
+  // -------------------------------------------------------------------------
+  it("chaque option d'un radio pipe est alignée sur SA case PDF (options[i] ↔ split('|')[i])", () => {
+    // `stampPipeRadio` (filler.ts) apparie positionnellement. Trois radios du
+    // C1C avaient des options rangées « oui, non » sur des cases imprimées
+    // « non, oui » : répondre « oui » cochait « non » sur une déclaration
+    // officielle. Le nom du widget de ces paires EST la réponse qu'il porte
+    // (`non`, `oui_3`, `oui www`…) — c'est ce que ce test exploite.
+    const normalise = (s: string) =>
+      s
+        .normalize("NFD")
+        .replace(/[̀-ͯ]/g, "")
+        .toLowerCase();
+
+    const pipes = C1C_FIELDS.filter((f) => f.pdfFieldName?.includes("|"));
+    expect(pipes.length, "le C1C compte 6 radios sur cases séparées").toBe(6);
+
+    for (const f of pipes) {
+      const noms = f.pdfFieldName!.split("|").map((s) => s.trim());
+      expect(noms.length, `${f.id} : autant de cases que d'options`).toBe(f.options?.length);
+
+      noms.forEach((nom, i) => {
+        const valeur = f.options![i].value;
+        // Le nom du widget COMMENCE par la réponse qu'il coche quand il la
+        // nomme (« non_2 », « oui www », « non jai besoin dun tiers… »).
+        // Les widgets nommés autrement (« toggle_5 », « à ladresse de mon
+        // domicile ») ne portent aucune contradiction : rien à vérifier.
+        const n = normalise(nom);
+        const autre = f.options!.find((o) => o.value !== valeur)?.value;
+        if (autre && (n === autre || n.startsWith(`${autre}_`) || n.startsWith(`${autre} `))) {
+          throw new Error(
+            `${f.id} : l'option « ${valeur} » (position ${i}) coche la case « ${nom} » — inversion.`
+          );
+        }
+      });
+    }
+  });
+
+  it("les trois questions binaires suivent l'ordre imprimé des cases : non, puis oui", () => {
     const byId = new Map(C1C_FIELDS.map((f) => [f.id, f]));
-    expect(byId.get("siteInternetUrl")?.visibleIf).toEqual({
-      fieldId: "possedeSiteInternet",
-      op: "equals",
-      value: "oui",
-    });
-    expect(byId.get("adresseActiviteLigne1")?.visibleIf).toEqual({
-      fieldId: "lieuExerciceActivite",
-      op: "equals",
-      value: "autre",
-    });
-    expect(byId.get("nomEntreprise")?.visibleIf).toEqual({
+    for (const id of ["possedeSiteInternet", "activiteExerceeParTiers", "activiteIndependanteAnterieure"]) {
+      expect(byId.get(id)?.options?.map((o) => o.value), `options de ${id}`).toEqual(["non", "oui"]);
+    }
+  });
+
+  // -------------------------------------------------------------------------
+  // Champ AcroForm `Nom de lentreprise` = TROIS widgets pour une seule valeur.
+  // -------------------------------------------------------------------------
+  it("le nom d'entreprise et les deux n° BCE sont écrits positionnellement, jamais par le nom du widget partagé", () => {
+    const byId = new Map(C1C_FIELDS.map((f) => [f.id, f]));
+    for (const id of ["nomEntreprise", "numeroBcePersonnePhysique", "numeroBceEntreprise"]) {
+      const f = byId.get(id);
+      expect(f?.pdfFieldName, `${id} ne doit revendiquer aucun widget`).toBe("");
+      expect(f?.drawAt, `${id} doit être dessiné positionnellement`).toBeDefined();
+      expect(f?.drawAt?.page).toBe(0);
+    }
+    // Aucun champ ne revendique le champ AcroForm partagé.
+    expect(C1C_FIELDS.some((f) => f.pdfFieldName?.includes("Nom de lentreprise"))).toBe(false);
+    // Les deux guides BCE sont des peignes de dix cases groupées 4-3-3.
+    for (const id of ["numeroBcePersonnePhysique", "numeroBceEntreprise"]) {
+      expect(byId.get(id)?.printAsComb?.groups).toEqual([4, 3, 3]);
+      expect(byId.get(id)?.printAsComb?.slotWidth).toBeGreaterThan(0);
+    }
+    // Ordre de lecture du papier : BCE personne physique (y=265), nom de
+    // l'entreprise (y=233,5), BCE de l'entreprise (y=217).
+    expect(byId.get("numeroBcePersonnePhysique")!.drawAt!.y).toBeGreaterThan(
+      byId.get("nomEntreprise")!.drawAt!.y
+    );
+    expect(byId.get("nomEntreprise")!.drawAt!.y).toBeGreaterThan(
+      byId.get("numeroBceEntreprise")!.drawAt!.y
+    );
+  });
+
+  it("les champs BCE ne s'affichent que pour la forme d'exercice qui les imprime", () => {
+    const byId = new Map(C1C_FIELDS.map((f) => [f.id, f]));
+    expect(byId.get("numeroBcePersonnePhysique")?.visibleIf).toEqual({
       fieldId: "formeExerciceActivite",
       op: "equals",
-      value: "societe",
+      value: "personne-physique",
     });
-    expect(byId.get("descriptionActivitesAnterieures1")?.visibleIf).toEqual({
-      fieldId: "activiteIndependanteAnterieure",
+    for (const id of ["nomEntreprise", "numeroBceEntreprise"]) {
+      expect(byId.get(id)?.visibleIf).toEqual({
+        fieldId: "formeExerciceActivite",
+        op: "equals",
+        value: "societe",
+      });
+    }
+  });
+
+  // -------------------------------------------------------------------------
+  // Widgets dont le nom désigne le texte imprimé au-dessus, pas leur contenu.
+  // -------------------------------------------------------------------------
+  it("« Autre » vise fill_10, et la précision « tiers » vise le widget mal nommé de sa propre ligne", () => {
+    const byId = new Map(C1C_FIELDS.map((f) => [f.id, f]));
+    expect(byId.get("formeExerciceAutre")?.pdfFieldName).toBe("fill_10");
+    expect(byId.get("tiersPrecision")?.pdfFieldName).toBe(
+      "Je dispose des compétences professionnelles spécifiques pour exercer mon activité"
+    );
+    expect(byId.get("tiersPrecision")?.visibleIf).toEqual({
+      fieldId: "activiteExerceeParTiers",
       op: "equals",
       value: "oui",
     });
+    // La question « compétences » reste une paire de cases, pas ce widget texte.
+    expect(byId.get("competencesProfessionnellesSpecifiques")?.type).toBe("radio");
+  });
+
+  it("l'affirmation sur l'honneur est virtuelle : le papier n'imprime aucune case à cocher", () => {
+    const f = C1C_FIELDS.find((x) => x.id === "affirmationSincereEtComplete");
+    expect(f?.pdfFieldName).toBe("");
+    expect(f?.type).toBe("checkbox");
+    expect(f?.required).toBe(true);
+    // Le widget qui portait ce nom appartient aux annexes.
+    const annexes = C1C_FIELDS.find((x) => x.id === "annexes");
+    expect(annexes?.lineTargets?.[0]?.pdfFieldName).toBe(
+      "je communiquerai toute modification à mon organisme de paiement"
+    );
+  });
+
+  // -------------------------------------------------------------------------
+  // Une question imprimée = un champ, quel que soit le nombre de lignes.
+  // -------------------------------------------------------------------------
+  it("les zones de texte libre à N lignes sont UN textarea replié sur ses lignes physiques", () => {
+    const byId = new Map(C1C_FIELDS.map((f) => [f.id, f]));
+    const attendu: Record<string, string[]> = {
+      descriptionActivite1: [
+        "Je décris cidessous lactivité accessoire exercée 1",
+        "Je décris cidessous lactivité accessoire exercée 2",
+        "Je décris cidessous lactivité accessoire exercée 3",
+      ],
+      adresseActiviteLigne1: ["undefined", "undefined_2"],
+      descriptionActivitesAnterieures1: [
+        "Je décris précisément cidessous chaque activité exercée 1",
+        "Je décris précisément cidessous chaque activité exercée 2",
+      ],
+      annexes: [
+        "je communiquerai toute modification à mon organisme de paiement",
+        "Je joins en annexes 1",
+        "Je joins en annexes 2",
+      ],
+    };
+    for (const [id, cibles] of Object.entries(attendu)) {
+      const f = byId.get(id);
+      expect(f?.type, `${id} doit être un textarea`).toBe("textarea");
+      expect(f?.pdfFieldName, `${id} n'écrit que par ses lineTargets`).toBe("");
+      expect(f?.lineTargets?.map((c) => c.pdfFieldName), `lignes de ${id}`).toEqual(cibles);
+    }
+  });
+
+  it("les deux revenus sont formatés en montants (séparateur de milliers, deux décimales)", () => {
+    const byId = new Map(C1C_FIELDS.map((f) => [f.id, f]));
+    for (const id of ["revenuBrutAnnuel", "revenuNetImposableAnnuel"]) {
+      expect(byId.get(id)?.type).toBe("number");
+      expect(byId.get(id)?.numberFormat).toBe("money");
+    }
   });
 
   it("applyC1CImprovements() est idempotent (pas de doublon si ré-appliqué)", () => {
@@ -115,9 +250,32 @@ describe("C1C_FIELDS", () => {
     expect(ids).toContain("un_champ_non_touche");
   });
 
+  it("un schéma déjà en base issu de la version précédente ne laisse survivre aucun champ ligne-par-ligne", () => {
+    // Les widgets de ces champs sont désormais atteints par `lineTargets` ou
+    // par une écriture positionnelle : sans purge, ils se battraient avec les
+    // nouveaux champs pour la même case du PDF officiel.
+    const ancien = [
+      "descriptionActivite2",
+      "descriptionActivite3",
+      "adresseActiviteLigne2",
+      "descriptionActivitesAnterieures2",
+      "annexesSuite",
+      "numeroBce",
+    ].map((id) => ({
+      id,
+      pdfFieldName: "peu importe",
+      type: "text" as const,
+      required: false,
+      label: { fr: id },
+    }));
+    const ids = applyC1CImprovements(ancien).map((f) => f.id);
+    for (const id of ancien.map((f) => f.id)) expect(ids, `${id} doit être purgé`).not.toContain(id);
+    expect(ids.length).toBe(C1C_FIELDS.length);
+  });
+
   it("le nombre total de champs après application correspond au nombre de champs enrichis définis", () => {
     const fields = applyC1CImprovements([]);
     expect(fields.length).toBe(C1C_FIELDS.length);
-    expect(fields.length).toBe(27);
+    expect(fields.length).toBe(24);
   });
 });

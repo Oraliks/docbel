@@ -427,7 +427,7 @@ export const C1A_FIELDS: PdfFormField[] = [
     type: "radio",
     required: true,
     label: {
-      fr: "1. Aidez-vous un indépendant (par ex. dans son activité même, administration, comptabilité, permanence téléphonique…) ?",
+      fr: "Aidez-vous un indépendant (par ex. dans son activité même, administration, comptabilité, permanence téléphonique…) ?",
     },
     labelShort: { fr: "Aidez-vous un indépendant ?" },
     help: {
@@ -448,7 +448,7 @@ export const C1A_FIELDS: PdfFormField[] = [
     pdfFieldName: "Nom",
     type: "text",
     required: true,
-    label: { fr: "2. Nom de l'indépendant que vous aidez" },
+    label: { fr: "Nom de l'indépendant que vous aidez" },
     visibleIf: { fieldId: "aideIndependant", op: "equals", value: "oui" },
     section: SECTION_AIDE_INDEPENDANT,
     order: 1,
@@ -583,7 +583,7 @@ export const C1A_FIELDS: PdfFormField[] = [
     pdfFieldName: "oui_2|non_2",
     type: "radio",
     required: true,
-    label: { fr: "3. Aiderez-vous cet indépendant pendant votre chômage ?" },
+    label: { fr: "Aiderez-vous cet indépendant pendant votre chômage ?" },
     labelShort: { fr: "Pendant votre chômage ?" },
     help: {
       fr: "Répondez également « oui » si, durant des périodes de chômage temporaire, vous aidez cet indépendant (à partir du premier jour de chômage du mois concerné jusqu'à la fin du mois). Vous êtes chômeur temporaire si vous êtes toujours au service de votre employeur mais que temporairement vous ne travaillez pas, par exemple en raison d'un manque de travail ou d'intempéries.",
@@ -687,7 +687,7 @@ export const C1A_FIELDS: PdfFormField[] = [
     ].map((pdfFieldName) => ({ pdfFieldName })),
     type: "textarea",
     required: true,
-    label: { fr: "5. Décrivez l'aide que vous apporterez" },
+    label: { fr: "Décrivez l'aide que vous apporterez" },
     visibleIf: { fieldId: "aideIndependant", op: "equals", value: "oui" },
     section: SECTION_AIDE_INDEPENDANT,
     order: 46,
@@ -709,7 +709,7 @@ export const C1A_FIELDS: PdfFormField[] = [
     pdfFieldName: "",
     type: "radio",
     required: true,
-    label: { fr: "6. Ce montant est :" },
+    label: { fr: "Ce montant est :" },
     options: [
       { value: "mois", label: { fr: "Par mois" } },
       { value: "an", label: { fr: "Par an" } },
@@ -760,7 +760,7 @@ export const C1A_FIELDS: PdfFormField[] = [
     pdfFieldName: "oui_3|non_3",
     type: "radio",
     required: true,
-    label: { fr: "7. Aidiez-vous déjà cet indépendant dans le passé ?" },
+    label: { fr: "Aidiez-vous déjà cet indépendant dans le passé ?" },
     options: YN,
     visibleIf: { fieldId: "aideIndependant", op: "equals", value: "oui" },
     section: SECTION_AIDE_INDEPENDANT,
@@ -777,7 +777,7 @@ export const C1A_FIELDS: PdfFormField[] = [
     pdfFieldName: "Date41_af_date",
     type: "date",
     required: true,
-    label: { fr: "8. À partir de quelle date aidiez-vous déjà cet indépendant ?" },
+    label: { fr: "À partir de quelle date aidiez-vous déjà cet indépendant ?" },
     visibleIf: { fieldId: "aidaitDejaIndependant", op: "equals", value: "oui" },
     section: SECTION_AIDE_INDEPENDANT,
     order: 57,
@@ -792,7 +792,7 @@ export const C1A_FIELDS: PdfFormField[] = [
     type: "radio",
     required: true,
     label: {
-      fr: "9. Exercez-vous un mandat politique ou une fonction de juge ou de conseiller ?",
+      fr: "Exercez-vous un mandat politique ou une fonction de juge ou de conseiller ?",
     },
     labelShort: { fr: "Mandat politique ou fonction de juge ?" },
     help: {
@@ -828,7 +828,7 @@ export const C1A_FIELDS: PdfFormField[] = [
     type: "text",
     // Required (Commit 3) : clé C1A_ROUTAGE, chemin unique (mandatPolitiqueOuJuge=oui).
     required: true,
-    label: { fr: "10. Quel mandat ou quelle fonction ?" },
+    label: { fr: "Quel mandat ou quelle fonction ?" },
     help: {
       fr: "Si vous exercez plus d'un mandat ou avez plus d'une fonction, mentionnez-les tous.",
     },
@@ -849,7 +849,7 @@ export const C1A_FIELDS: PdfFormField[] = [
     // 1er montant de Q11. Le second (revenuAnnuelMandat2, cas d'un 2e mandat)
     // reste facultatif : rattachement, pas une clé de l'arbre.
     required: true,
-    label: { fr: "11. Revenu annuel net imposable de ce mandat (EUR)" },
+    label: { fr: "Revenu annuel net imposable de ce mandat (EUR)" },
     help: {
       fr: "Joignez une copie de la plus récente note de calcul de l'administration des contributions directes.",
     },
@@ -881,7 +881,7 @@ export const C1A_FIELDS: PdfFormField[] = [
     pdfFieldName: "oui_5|non_5",
     type: "radio",
     required: true,
-    label: { fr: "12. Exercez-vous une autre activité à titre accessoire ?" },
+    label: { fr: "Exercez-vous une autre activité à titre accessoire ?" },
     labelShort: { fr: "Autre activité accessoire ?" },
     help: {
       fr: "Répondez toujours « oui » si vous êtes inscrit comme indépendant à titre accessoire ou si vous êtes administrateur de société. Complétez un formulaire C1A pour chaque activité que vous exercez.",
@@ -900,7 +900,7 @@ export const C1A_FIELDS: PdfFormField[] = [
     pdfFieldName: "oui_6|non_6",
     type: "radio",
     required: true,
-    label: { fr: "13. Exercez-vous cette activité comme salarié ?" },
+    label: { fr: "Exercez-vous cette activité comme salarié ?" },
     options: YN,
     visibleIf: { fieldId: "autreActiviteAccessoire", op: "equals", value: "oui" },
     section: SECTION_ACTIVITES,
@@ -925,7 +925,7 @@ export const C1A_FIELDS: PdfFormField[] = [
     pdfFieldName: "14 Données concernant votre employeur",
     type: "text",
     required: true,
-    label: { fr: "14. Nom de votre employeur" },
+    label: { fr: "Nom de votre employeur" },
     visibleIf: { fieldId: "activiteCommeSalarie", op: "equals", value: "oui" },
     section: SECTION_EMPLOYEUR,
     order: 63,
@@ -953,7 +953,7 @@ export const C1A_FIELDS: PdfFormField[] = [
     pdfFieldName: "A quelle adresse exercezvous cette activité",
     type: "text",
     required: true,
-    label: { fr: "15. À quelle adresse exercez-vous cette activité ? — rue et numéro" },
+    label: { fr: "À quelle adresse exercez-vous cette activité ? — rue et numéro" },
     visibleIf: { fieldId: "autreActiviteAccessoire", op: "equals", value: "oui" },
     section: SECTION_ADRESSE,
     order: 65,
@@ -983,7 +983,7 @@ export const C1A_FIELDS: PdfFormField[] = [
     pdfFieldName: "personne phys|mandataire administrateur ou gestionnaire",
     type: "radio",
     required: true,
-    label: { fr: "16. J'exerce l'activité comme :" },
+    label: { fr: "J'exerce l'activité comme :" },
     options: [
       { value: "personne-physique", label: { fr: "Personne physique" } },
       { value: "mandataire", label: { fr: "Mandataire, administrateur ou gestionnaire" } },
@@ -1089,7 +1089,7 @@ export const C1A_FIELDS: PdfFormField[] = [
     pdfFieldName: "oui_7|non_8",
     type: "radio",
     required: true,
-    label: { fr: "17. Exercerez-vous cette activité pendant votre chômage ?" },
+    label: { fr: "Exercerez-vous cette activité pendant votre chômage ?" },
     labelShort: { fr: "Pendant votre chômage ?" },
     help: {
       fr: "Répondez également « oui » si vous exercerez cette activité pendant des périodes de chômage temporaire auprès de votre employeur (à partir du premier jour de chômage du mois concerné jusqu'à la fin du mois). Vous êtes chômeur temporaire si vous êtes toujours au service de votre employeur mais que temporairement vous ne travaillez pas, par exemple en raison d'un manque de travail ou d'intempéries.",
@@ -1250,7 +1250,7 @@ export const C1A_FIELDS: PdfFormField[] = [
     pdfFieldName: "oui_8|non_9",
     type: "radio",
     required: true,
-    label: { fr: "20. Exerciez-vous déjà cette activité dans le passé ?" },
+    label: { fr: "Exerciez-vous déjà cette activité dans le passé ?" },
     options: YN,
     visibleIf: { fieldId: "autreActiviteAccessoire", op: "equals", value: "oui" },
     section: SECTION_ACTIVITES,
@@ -1267,7 +1267,7 @@ export const C1A_FIELDS: PdfFormField[] = [
     pdfFieldName: "Date43_af_date",
     type: "date",
     required: true,
-    label: { fr: "21. Depuis quand exercez-vous cette activité ?" },
+    label: { fr: "Depuis quand exercez-vous cette activité ?" },
     visibleIf: { fieldId: "exerceDejaActivite", op: "equals", value: "oui" },
     section: SECTION_ACTIVITES,
     order: 151,
@@ -1391,7 +1391,7 @@ export const C1A_FIELDS: PdfFormField[] = [
     required: false,
     label: { fr: "Dimanche" },
     help: {
-      fr: "22. À compléter uniquement si vous êtes chômeur temporaire : cochez les jours où vous êtes habituellement occupé chez votre employeur.",
+      fr: "À compléter uniquement si vous êtes chômeur temporaire : cochez les jours où vous êtes habituellement occupé chez votre employeur.",
     },
     visibleIf: VISIBLE_SI_CHOMEUR_TEMPORAIRE,
     section: SECTION_ACTIVITES,
@@ -1407,7 +1407,7 @@ export const C1A_FIELDS: PdfFormField[] = [
     pdfFieldName: "oui et je sais que je nai pas droit aux allocations|non_10",
     type: "radio",
     required: true,
-    label: { fr: "23. Je suis indépendant à titre principal :" },
+    label: { fr: "Je suis indépendant à titre principal :" },
     help: {
       fr: "⚠ À compléter toujours. Si vous êtes indépendant à titre principal, vous n'avez pas droit aux allocations de chômage.",
     },
@@ -1428,7 +1428,7 @@ export const C1A_FIELDS: PdfFormField[] = [
     type: "checkbox",
     required: true,
     label: {
-      fr: "24. J'affirme sur l'honneur que la présente déclaration est sincère et complète et je m'engage à communiquer toute modification à mon organisme de paiement.",
+      fr: "J'affirme sur l'honneur que la présente déclaration est sincère et complète et je m'engage à communiquer toute modification à mon organisme de paiement.",
     },
     section: SECTION_AFFIRMATIONS,
     order: 180,

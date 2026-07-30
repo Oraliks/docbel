@@ -146,8 +146,20 @@ describe("C1A - geometrie des champs drawAt (verrouillage post-audit placement 2
     const page1Rects = rects.filter((r) => r.page === 1).sort((a, b) => b.y0 - a.y0);
     expect(page1Rects, "2 widgets Montant attendus en page 2").toHaveLength(2);
 
-    expect(m1.drawAt).toMatchObject({ page: 1, ...xyAttendus(page1Rects[0]) });
-    expect(m2.drawAt).toMatchObject({ page: 1, ...xyAttendus(page1Rects[1]) });
+    // Abscisse : toujours celle du widget, la formule commune s'applique.
+    expect(m1.drawAt?.page).toBe(1);
+    expect(m2.drawAt?.page).toBe(1);
+    expect(m1.drawAt?.x).toBe(xyAttendus(page1Rects[0]).x);
+    expect(m2.drawAt?.x).toBe(xyAttendus(page1Rects[1]).x);
+
+    // Ordonnée : RELEVÉE de 3 pt au-dessus de la formule commune (retour
+    // Oraliks 2026-07-30 sur un C1A généré — « Q11 fais monter l'écriture un
+    // petit peu » : les deux montants effleuraient la ligne pointillée au lieu
+    // de reposer dessus). Écart figé ici pour qu'un futur réalignement de la
+    // formule commune ne le supprime pas en silence.
+    const RELEVE_Q11 = 3;
+    expect(m1.drawAt?.y).toBe(xyAttendus(page1Rects[0]).y + RELEVE_Q11);
+    expect(m2.drawAt?.y).toBe(xyAttendus(page1Rects[1]).y + RELEVE_Q11);
   });
 
   it('la 1re ligne "periodes" de Q18 (lineTargets, dessin positionnel) se cale sur le widget partage "1_3"', async ({ skip }) => {
@@ -403,5 +415,85 @@ describe("C1A - peigne positionnel des n° BCE (Q2/Q16), un chiffre par case (20
 
     expect(appels.some((a) => a.y === q2.drawAt!.y && /^[0-9]$/.test(a.text))).toBe(false);
     expect(appels.some((a) => a.y === q16.drawAt!.y && /^[0-9]$/.test(a.text))).toBe(false);
+  });
+});
+
+/// Mise en forme des MONTANTS a l'impression (`numberFormat: "money"`).
+///
+/// Demande d'Oraliks (2026-07-30) sur relecture d'un C1A genere : un revenu
+/// annuel s'imprimait « 123094 », illisible sur la ligne du formulaire. Il doit
+/// s'imprimer « 123 094,00 ».
+///
+/// Le piege que ce fichier verrouille : la regle ne doit PAS deborder sur les
+/// nombres qui comptent des choses. Le C1A en a un — « Je joins ... annexe(s) »
+/// (Q24) — qui doit rester « 3 », jamais « 3,00 ». D'ou l'opt-in par champ
+/// plutot qu'une regle globale sur `type: "number"`.
+describe("C1A — mise en forme des montants", () => {
+  const C1A_PDF = join(process.cwd(), "private", "pdfs", "C1A_FR.pdf");
+
+  interface AppelDrawText {
+    text: string;
+    x: number;
+    y: number;
+  }
+
+  async function dessiner(payload: FormPayload): Promise<AppelDrawText[]> {
+    const source = readFileSync(C1A_PDF);
+    const parsed = await parsePdf(source);
+    const fields = applyC1AImprovements([]);
+    const appels: AppelDrawText[] = [];
+    const original = PDFPage.prototype.drawText;
+    const spy = vi
+      .spyOn(PDFPage.prototype, "drawText")
+      .mockImplementation(function (this: PDFPage, text: string, options?: PDFPageDrawTextOptions) {
+        appels.push({ text, x: options?.x ?? NaN, y: options?.y ?? NaN });
+        return original.call(this, text, options);
+      });
+    try {
+      await fillForm(source, fields, payload, { flatten: false, technicalSchema: parsed.fields });
+      return appels;
+    } finally {
+      spy.mockRestore();
+    }
+  }
+
+  it("les sept champs de montant du C1A sont marques money, le compteur d'annexes ne l'est pas", () => {
+    const fields = applyC1AImprovements([]);
+    for (const id of [
+      "montantAide",
+      "montantAideAnnuel",
+      "revenuAnnuelMandat",
+      "revenuAnnuelMandat2",
+      "revenuNetSalarieParMois",
+      "revenuNetSalarieParHeure",
+      "revenuNetIndependantParAn",
+    ]) {
+      expect(fieldById(fields, id).numberFormat, `${id} est un montant`).toBe("money");
+    }
+    expect(
+      fieldById(fields, "nombreAnnexesJointes").numberFormat,
+      "un nombre d'annexes n'est pas un montant"
+    ).toBeUndefined();
+  });
+
+  it("imprime un revenu annuel avec separateur de milliers et deux decimales", async ({ skip }) => {
+    if (!existsSync(C1A_PDF)) skip();
+    const appels = await dessiner({
+      aideIndependant: "non",
+      mandatPolitiqueOuJuge: "oui",
+      revenuAnnuelMandat: "123094",
+    });
+    expect(appels.map((a) => a.text)).toContain("123 094,00");
+    expect(appels.map((a) => a.text)).not.toContain("123094");
+  });
+
+  it("conserve les decimales au-dela de deux (revenu horaire, Q19)", async ({ skip }) => {
+    if (!existsSync(C1A_PDF)) skip();
+    const appels = await dessiner({
+      aideIndependant: "non",
+      mandatPolitiqueOuJuge: "oui",
+      revenuAnnuelMandat: "12.3456",
+    });
+    expect(appels.map((a) => a.text)).toContain("12,3456");
   });
 });

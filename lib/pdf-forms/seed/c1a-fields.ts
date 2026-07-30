@@ -724,6 +724,7 @@ export const C1A_FIELDS: PdfFormField[] = [
     // Moitié gauche de la ligne pointillée (y=315), au-dessus de « par mois ».
     drawAt: { page: 0, x: 322, y: 311, size: 9, maxWidth: 110 },
     type: "number",
+    numberFormat: "money",
     required: false,
     label: { fr: "Combien gagnez-vous pour votre aide ? (EUR)" },
     help: {
@@ -739,6 +740,7 @@ export const C1A_FIELDS: PdfFormField[] = [
     // Moitié droite de la même ligne, avant la légende « par an » (x=503).
     drawAt: { page: 0, x: 440, y: 311, size: 9, maxWidth: 58 },
     type: "number",
+    numberFormat: "money",
     required: false,
     label: { fr: "Combien gagnez-vous pour votre aide ? (EUR)" },
     help: {
@@ -840,8 +842,9 @@ export const C1A_FIELDS: PdfFormField[] = [
     // Une seule valeur pour les trois : écriture positionnelle obligatoire.
     id: "revenuAnnuelMandat",
     pdfFieldName: "",
-    drawAt: { page: 1, x: 69, y: 703, size: 9, maxWidth: 62 },
+    drawAt: { page: 1, x: 69, y: 706, size: 9, maxWidth: 62 },
     type: "number",
+    numberFormat: "money",
     // Required (Commit 3) : clé C1A_ROUTAGE, chemin unique (mandatPolitiqueOuJuge=oui) —
     // 1er montant de Q11. Le second (revenuAnnuelMandat2, cas d'un 2e mandat)
     // reste facultatif : rattachement, pas une clé de l'arbre.
@@ -860,8 +863,9 @@ export const C1A_FIELDS: PdfFormField[] = [
     // mandat, ou une seconde composante du même revenu.
     id: "revenuAnnuelMandat2",
     pdfFieldName: "",
-    drawAt: { page: 1, x: 69, y: 691, size: 9, maxWidth: 62 },
+    drawAt: { page: 1, x: 69, y: 694, size: 9, maxWidth: 62 },
     type: "number",
+    numberFormat: "money",
     required: false,
     label: { fr: "Second montant, si vous exercez plus d'un mandat (EUR)" },
     visibleIf: { fieldId: "mandatPolitiqueOuJuge", op: "equals", value: "oui" },
@@ -1191,6 +1195,7 @@ export const C1A_FIELDS: PdfFormField[] = [
     pdfFieldName: "",
     drawAt: { page: 1, x: 360, y: 563, size: 9, maxWidth: 62 },
     type: "number",
+    numberFormat: "money",
     required: false,
     label: { fr: "Revenu net comme salarié — par mois (EUR)" },
     help: {
@@ -1213,6 +1218,7 @@ export const C1A_FIELDS: PdfFormField[] = [
     pdfFieldName: "",
     drawAt: { page: 1, x: 487, y: 563, size: 9, maxWidth: 46 },
     type: "number",
+    numberFormat: "money",
     required: false,
     label: { fr: "Revenu net comme salarié — par heure (EUR)" },
     help: { fr: "Indiquez jusqu'à 4 chiffres après la virgule." },
@@ -1224,6 +1230,7 @@ export const C1A_FIELDS: PdfFormField[] = [
     pdfFieldName: "",
     drawAt: { page: 1, x: 350, y: 493, size: 9, maxWidth: 185 },
     type: "number",
+    numberFormat: "money",
     required: false,
     label: { fr: "Revenu net comme indépendant — par an (EUR)" },
     help: {

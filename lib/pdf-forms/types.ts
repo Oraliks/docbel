@@ -434,6 +434,17 @@ export interface PdfFormField {
   /// l'origine (bx, by) et le defaut de `baselineY` different : coin bas-
   /// gauche du rectangle widget (+3 par defaut) contre `drawAt.x`/`drawAt.y`,
   /// deja la ligne de base exacte par convention (+0 par defaut).
+  /// Mise en forme d'un champ `type: "number"` a l'impression.
+  ///
+  /// `"money"` : separateur de milliers et au moins deux decimales — « 12345 »
+  /// devient « 12 345,00 ». Reserve aux MONTANTS : les autres nombres du
+  /// document comptent des choses (« Je joins 3 annexe(s) ») et doivent rester
+  /// bruts. Les decimales au-dela de deux sont conservees, jamais tronquees —
+  /// le C1A accepte 4 chiffres apres la virgule pour un revenu horaire (Q19).
+  ///
+  /// Absent = comportement historique : seul le point decimal devient une
+  /// virgule (cf. `decimalesFR` dans filler.ts).
+  numberFormat?: "money";
   printAsComb?: {
     groups: number[];
     /// Mode ESPACES (par defaut) : ecarts exprimes en espaces de la police.

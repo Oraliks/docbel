@@ -344,6 +344,33 @@ function decimalesFR(raw: string): string {
   return /^-?\d+\.\d+$/.test(t) ? t.replace(".", ",") : raw;
 }
 
+/// Montant d'argent : separateur de milliers ET au moins deux decimales.
+///
+/// « 12345 » devient « 12 345,00 » (demande Oraliks 2026-07-30, sur relecture
+/// d'un C1A genere : un revenu annuel a cinq chiffres colles est illisible sur
+/// la ligne du formulaire).
+///
+/// Ne s'applique QU'AUX champs marques `numberFormat: "money"` : les autres
+/// nombres du document comptent des choses, pas des euros — « Je joins 3
+/// annexe(s) » ne doit pas devenir « Je joins 3,00 annexe(s) ».
+///
+/// Les decimales existantes sont CONSERVEES au-dela de deux : le C1A demande
+/// jusqu'a 4 chiffres apres la virgule pour un revenu horaire (« par heure »,
+/// Q19). On complete a deux, on ne tronque jamais.
+///
+/// Espace insecable fine EXCLUE au profit de l'espace ordinaire : la police
+/// embarquee ne garantit pas le glyphe, et un caractere non rendu vaudrait un
+/// montant tronque sur une declaration officielle.
+function montantFR(raw: string): string {
+  const t = raw.trim().replace(",", ".");
+  if (!/^-?\d+(\.\d+)?$/.test(t)) return raw;
+  const negatif = t.startsWith("-");
+  const [entier, decimales = ""] = t.replace("-", "").split(".");
+  const groupes = entier.replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+  const frac = decimales.length >= 2 ? decimales : decimales.padEnd(2, "0");
+  return `${negatif ? "-" : ""}${groupes},${frac}`;
+}
+
 /// Repartit les caracteres sur le guide imprime : separateurs retires,
 /// ecart simple a l'interieur d'un groupe, ecart double entre les groupes —
 /// la ou le formulaire dessine « / » et « - ». Les caracteres au-dela des
@@ -442,7 +469,8 @@ function stampScalarWidget(
   options?: FieldOption[],
   stampMap?: Record<string, string>,
   fontSize?: number,
-  printAsComb?: PdfFormField["printAsComb"]
+  printAsComb?: PdfFormField["printAsComb"],
+  numberFormat?: PdfFormField["numberFormat"]
 ): void {
   if (pdfField instanceof PDFTextField) {
     // `stampMap` : correspondance valeur interne → libellé imprimé (ex. lien de
@@ -469,7 +497,8 @@ function stampScalarWidget(
     // (Oraliks 2026-07-07). Sur le widget « SEPA étranger IBAN BIC » le
     // préfixe est étranger (FR, DE, …) → pas de strip.
     if (stampMap === undefined && fieldType === "iban") text = raw.replace(/^\s*[Bb][Ee]\s*/, "").trim();
-    if (stampMap === undefined && fieldType === "number") text = decimalesFR(raw);
+    if (stampMap === undefined && fieldType === "number")
+      text = numberFormat === "money" ? montantFR(raw) : decimalesFR(raw);
     // Peigne : le guide imprime porte deja ses separateurs, et les chiffres
     // colles ne tombaient sur aucune barre.
     // Mode positionnel : le dessin se fait plus bas, hors du widget. On vide
@@ -611,7 +640,7 @@ function stampArrayField(
         continue;
       }
       try {
-        stampScalarWidget(pdfField, subValue as FieldValue, fonts, unicodeFont, sub.type, sub.autoSizeFont, sub.options, sub.stampMap, sub.fontSize, sub.printAsComb);
+        stampScalarWidget(pdfField, subValue as FieldValue, fonts, unicodeFont, sub.type, sub.autoSizeFont, sub.options, sub.stampMap, sub.fontSize, sub.printAsComb, sub.numberFormat);
       } catch {
         /* readonly / incompatible */
       }
@@ -643,7 +672,7 @@ function stampArrayField(
       continue;
     }
     try {
-      stampScalarWidget(pdfField, subValue as FieldValue, fonts, unicodeFont, sub.type, sub.autoSizeFont, sub.options, sub.stampMap, sub.fontSize, sub.printAsComb);
+      stampScalarWidget(pdfField, subValue as FieldValue, fonts, unicodeFont, sub.type, sub.autoSizeFont, sub.options, sub.stampMap, sub.fontSize, sub.printAsComb, sub.numberFormat);
     } catch {
       /* readonly / incompatible */
     }
@@ -978,7 +1007,7 @@ export async function fillForm(
         continue;
       }
 
-      stampScalarWidget(pdfField, value, fonts, unicodeFont, field.type, field.autoSizeFont, field.options, field.stampMap, field.fontSize, field.printAsComb);
+      stampScalarWidget(pdfField, value, fonts, unicodeFont, field.type, field.autoSizeFont, field.options, field.stampMap, field.fontSize, field.printAsComb, field.numberFormat);
     } catch (err) {
       // Champ readonly / incompatible : on n'interrompt pas la generation,
       // mais on ne fait plus semblant que la valeur est partie.
@@ -1210,7 +1239,8 @@ export async function fillForm(
     if (raw === null || raw === undefined || raw === "" || raw === false) continue;
     let text = String(raw);
     if (field.type === "date") text = formatDateFR(text);
-    if (field.type === "number") text = decimalesFR(text);
+    if (field.type === "number")
+      text = field.numberFormat === "money" ? montantFR(text) : decimalesFR(text);
     const { page: pageIdx, x, y, size, maxWidth } = field.drawAt;
     const pIdx = Math.max(0, Math.min(doc.getPageCount() - 1, pageIdx));
     const page = doc.getPage(pIdx);

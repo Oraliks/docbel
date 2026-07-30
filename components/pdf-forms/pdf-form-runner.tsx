@@ -507,12 +507,19 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
   // Sans ça, après un « Continuer » en bas d'une longue étape, l'usager
   // restait EN BAS de la nouvelle — au niveau du pied de page — et croyait
   // n'avoir pas avancé ; et rien n'annonçait à un lecteur d'écran que tout le
-  // contenu principal venait de changer (WCAG 2.4.3). Le garde sur l'index
-  // évite de voler le focus au montage.
-  const previousStepIndex = useRef(activeIndex);
+  // contenu principal venait de changer (WCAG 2.4.3).
+  //
+  // Le déclencheur est un COMPTEUR DE NAVIGATION, pas `activeIndex`. Celui-ci
+  // est DÉRIVÉ de la liste d'étapes (cf. `foundIndex` ci-dessus), et cette
+  // liste se recalcule à chaque réponse : cocher une case qui révèle ou masque
+  // une étape située AVANT l'étape courante décale l'index sans que l'usager
+  // ait navigué. Adossé à `activeIndex`, l'effet prenait ce glissement pour un
+  // changement d'étape et renvoyait la page en haut à chaque clic — « on
+  // dirait que j'appuie sur un # » (retour Oraliks, 2026-07-30). Seuls les
+  // gestes de navigation passent par `setActive`, donc par ce compteur.
+  const [navigationTick, setNavigationTick] = useState(0);
   useEffect(() => {
-    if (previousStepIndex.current === activeIndex) return;
-    previousStepIndex.current = activeIndex;
+    if (navigationTick === 0) return; // montage : ne pas voler le focus
     const anchor = document.getElementById(STEP_ANCHOR_ID);
     if (!anchor) return;
     anchor.focus({ preventScroll: true });
@@ -520,7 +527,7 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
       behavior: prefersReducedMotion() ? "auto" : "smooth",
       block: "start",
     });
-  }, [activeIndex]);
+  }, [navigationTick]);
 
   // `setActive` garde une signature par INDEX (une dizaine d'appelants) mais
   // enregistre l'id. Lit `stepIds` dans une ref pour rester stable : plusieurs
@@ -535,6 +542,9 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
     if (ids.length === 0) return;
     const clamped = Math.max(0, Math.min(index, ids.length - 1));
     setActiveStep({ id: ids[clamped], index: clamped });
+    // Geste de navigation DÉLIBÉRÉ : c'est le seul chemin qui autorise le
+    // défilement vers l'en-tête (cf. `navigationTick`).
+    setNavigationTick((n) => n + 1);
   }, []);
 
   // Id STABLE de l'étape courante — persisté avec le brouillon (autosave).

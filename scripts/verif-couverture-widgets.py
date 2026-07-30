@@ -13,8 +13,10 @@ import pdfplumber
 from pypdf import PdfReader
 from pypdf.generic import IndirectObject
 
-BASE = "private/pdfs/C1C_FR.pdf"
+# Generique : n'importe quel formulaire ONEM.
+#   python scripts/verif-couverture-widgets.py <dossier-scenarios> [<pdf-vierge>]
 DOSSIER = sys.argv[1] if len(sys.argv) > 1 else os.path.join(os.environ["TEMP"], "c1c-scenarios")
+BASE = sys.argv[2] if len(sys.argv) > 2 else "private/pdfs/C1C_FR.pdf"
 
 
 def resoudre(o):

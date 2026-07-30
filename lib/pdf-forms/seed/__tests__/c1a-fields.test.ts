@@ -46,18 +46,18 @@ describe("C1A_FIELDS", () => {
     }
   });
 
-  it("Q5 : description de l'aide est un champ array de 9 lignes max (Commit 2)", () => {
+  it("Q5 : description de l'aide est un textarea réparti sur 9 lignes (2026-07-30, ex-array du Commit 2)", () => {
     const byId = new Map(C1A_FIELDS.map((f) => [f.id, f]));
     const f = byId.get("descriptionAide1");
     expect(f, "descriptionAide1 doit exister").toBeDefined();
-    expect(f?.type).toBe("array");
-    expect(f?.maxRows).toBe(9);
-    expect(f?.addRowLabel?.fr).toBeTruthy();
-    expect(f?.itemFields?.map((sf) => sf.pdfFieldNameTemplate)).toEqual([
-      "Décrivez laide que vous apporterez {index}",
-    ]);
-    // Les anciennes lignes 2 à 9 ont disparu (descriptionAide1 reste, seul,
-    // comme ancre C1A_ROUTAGE de Q5).
+    expect(f?.type).toBe("textarea");
+    expect(f?.pdfFieldName, "champ virtuel : la répartition vit dans lineTargets").toBe("");
+    expect(f?.lineTargets?.map((t) => t.pdfFieldName)).toEqual(
+      Array.from({ length: 9 }, (_, i) => `Décrivez laide que vous apporterez ${i + 1}`),
+    );
+    // Les anciennes lignes 2 à 9 (Commit 2) n'ont jamais été des ids
+    // top-level séparés (déjà consolidées dans l'array du Commit 2, puis
+    // dans ce textarea) : vérifié ici par non-régression.
     const ids = C1A_FIELDS.map((x) => x.id);
     for (let n = 2; n <= 9; n++) {
       expect(ids).not.toContain(`descriptionAide${n}`);
@@ -156,9 +156,16 @@ describe("C1A_FIELDS", () => {
     // Depuis le 2026-07-30, les grilles horaires Q4 (4+5 lignes de texte) et
     // Q18 (4+3) perdent 12 champs top-level de plus : chaque groupe
     // "Période 1..N" / "Précision 1..N" devient UN textarea, dont
-    // `lineTargets` porte les mêmes widgets/coordonnées — d'où un total
-    // encore plus bas qu'avant (105 au moment d'écrire ce test, 117 juste
-    // après le Commit 2).
+    // `lineTargets` porte les mêmes widgets/coordonnées (105 après ce
+    // premier mouvement, 117 juste après le Commit 2).
+    //
+    // Même jour (suite) : Q16 "Je décris mon activité" / "… (suite)" /
+    // "… (fin)" (3 champs) se consolide à son tour en UN textarea
+    // (descriptionActivite1 + lineTargets), -2 champs top-level ; Q5
+    // "Décrivez l'aide que vous apporterez" passe d'`array` à `textarea`
+    // SANS changer de nombre de champs top-level (déjà un seul champ avant
+    // et après, cf. describe "Q5 et Q16, un textarea unique par question").
+    // Total 103 au moment d'écrire ce test.
     expect(C1A_FIELDS.length).toBeGreaterThan(95);
     expect(C1A_FIELDS.length).toBe(new Set(C1A_FIELDS.map((f) => f.id)).size);
   });
@@ -300,7 +307,9 @@ describe("C1A — arbre des renvois", () => {
 
   it("la fusion est idempotente sur une condition déjà juste", () => {
     // `descriptionActivite1` porte déjà la condition compilée de sa question
-    // (Q16) : le dédoublonnage ne doit rien empiler.
+    // (Q16) : le dédoublonnage ne doit rien empiler. Depuis le 2026-07-30,
+    // c'est le textarea consolidé (lineTargets, ex-3 champs) qui porte cet
+    // id — la condition ne change pas.
     expect(parCle.get("descriptionActivite1")?.visibleIf).toEqual({
       fieldId: "autreActiviteAccessoire",
       op: "equals",
@@ -569,6 +578,109 @@ describe("C1A — Commit 1 puis 2026-07-30 : grilles horaires, un textarea par o
   });
 });
 
+describe("C1A — 2026-07-30 (suite) : Q5 et Q16, un textarea unique par question (lineTargets)", () => {
+  // Même retour Oraliks que les grilles horaires ci-dessus, appliqué à deux
+  // autres blocs qui numérotaient encore des lignes/pseudo-champs pour ce
+  // qui n'est qu'un paragraphe :
+  //   - Q5 « Décrivez l'aide que vous apporterez » : ex-champ `array` du
+  //     Commit 2 (bouton "+ Ajouter", lignes "Ligne 1"/"Ligne 2"...) ;
+  //   - Q16 « Je décris mon activité » : ex-3 champs distincts "…",
+  //     "… (suite)", "… (fin)".
+  // « Fais plutôt un input texte plus grand comme t'as fait aux autres,
+  // c'est plus propre » / « input texte plus grand au lieu de 3x "décris mon
+  // activité" ».
+  const fields = applyC1AImprovements([]);
+  const parCle = new Map(fields.map((f) => [f.id, f]));
+
+  it("Q5 : descriptionAide1 est un textarea réparti sur les 9 lignes imprimées, dans l'ordre", () => {
+    const f = parCle.get("descriptionAide1");
+    expect(f, "descriptionAide1 doit exister").toBeDefined();
+    expect(f?.type).toBe("textarea");
+    expect(f?.pdfFieldName, "champ virtuel : la répartition vit dans lineTargets").toBe("");
+    expect(f?.lineTargets?.map((t) => t.pdfFieldName)).toEqual(
+      Array.from({ length: 9 }, (_, i) => `Décrivez laide que vous apporterez ${i + 1}`),
+    );
+    expect(f?.required, "obligatoire, comme l'array qu'il remplace").toBe(true);
+    expect(f?.hidden, "doit rester saisissable").not.toBe(true);
+    // Plus de mécanique de liste : ni addRowLabel, ni itemFields, ni maxRows.
+    expect(f?.addRowLabel).toBeUndefined();
+    expect(f?.itemFields).toBeUndefined();
+    expect(f?.maxRows).toBeUndefined();
+  });
+
+  it("Q5 : descriptionAide1 reste l'ancre C1A_ROUTAGE malgré la conversion en textarea", () => {
+    const conditions = compilerRoutage(C1A_ROUTAGE, C1A_DEPART);
+    expect(parCle.get("descriptionAide1")?.visibleIf).toEqual(conditions.descriptionAide1);
+  });
+
+  it("Q16 : descriptionActivite1 est un textarea réparti sur les 3 lignes imprimées, dans l'ordre du document", () => {
+    const f = parCle.get("descriptionActivite1");
+    expect(f, "descriptionActivite1 doit exister").toBeDefined();
+    expect(f?.type).toBe("textarea");
+    expect(f?.pdfFieldName, "champ virtuel : la répartition vit dans lineTargets").toBe("");
+    // "undefined_2" est le nom réel (trompeur) du widget de la 1re ligne
+    // imprimée — vérifié sur le vrai PDF, page 2 : y=287.28, au-dessus de
+    // "Je décris mon activité 1" (y=274.32) et "…2" (y=261.24).
+    expect(f?.lineTargets?.map((t) => t.pdfFieldName)).toEqual([
+      "undefined_2",
+      "Je décris mon activité 1",
+      "Je décris mon activité 2",
+    ]);
+    expect(f?.label?.fr).toBe("Je décris mon activité");
+    expect(f?.hidden, "doit rester saisissable").not.toBe(true);
+  });
+
+  it("Q16 : les anciens id descriptionActivite2/3 ont disparu du seed", () => {
+    const ids = C1A_FIELDS.map((f) => f.id);
+    expect(ids).not.toContain("descriptionActivite2");
+    expect(ids).not.toContain("descriptionActivite3");
+  });
+
+  it("Q16 : descriptionActivite1 reste rattaché à la question formeActivite (stepGroup, condition dérivée)", () => {
+    expect(parCle.get("descriptionActivite1")?.stepGroup).toBe("formeActivite");
+  });
+
+  it("Q16 : un brouillon déjà en base avec les 3 anciens champs ne survit pas au merge (LEGACY_C1A_FIELD_IDS)", () => {
+    // Simule un schéma persisté AVANT ce lot : 3 champs distincts, chacun sur
+    // son propre widget.
+    const anciens: PdfFormField[] = [
+      {
+        id: "descriptionActivite1",
+        pdfFieldName: "undefined_2",
+        type: "text",
+        required: false,
+        label: { fr: "Je décris mon activité" },
+      },
+      {
+        id: "descriptionActivite2",
+        pdfFieldName: "Je décris mon activité 1",
+        type: "text",
+        required: false,
+        label: { fr: "Je décris mon activité (suite)" },
+      },
+      {
+        id: "descriptionActivite3",
+        pdfFieldName: "Je décris mon activité 2",
+        type: "text",
+        required: false,
+        label: { fr: "Je décris mon activité (fin)" },
+      },
+    ];
+    const merged = applyC1AImprovements(anciens);
+    const ids = merged.map((f) => f.id);
+    expect(ids).not.toContain("descriptionActivite2");
+    expect(ids).not.toContain("descriptionActivite3");
+    expect(ids.filter((id) => id === "descriptionActivite1").length).toBe(1);
+    // Les deux widgets "Je décris mon activité 1/2" ne sont plus revendiqués
+    // qu'à l'intérieur de lineTargets, invisible à coveredWidgetNames — seule
+    // l'entrée LEGACY garantit la purge (même limite que
+    // natureActiviteIndependant1..5).
+    expect(
+      merged.find((f) => f.id === "descriptionActivite1")?.lineTargets?.map((t) => t.pdfFieldName),
+    ).toEqual(["undefined_2", "Je décris mon activité 1", "Je décris mon activité 2"]);
+  });
+});
+
 describe("C1A — Commit 2 : nature de l'activité (Q2) et description de l'aide (Q5) en listes", () => {
   const fields = applyC1AImprovements([]);
   const parCle = new Map(fields.map((f) => [f.id, f]));
@@ -584,13 +696,19 @@ describe("C1A — Commit 2 : nature de l'activité (Q2) et description de l'aide
     expect(f?.itemFields?.[0]?.type).toBe("text");
   });
 
-  it("descriptionAide1 : une ligne, bouton + explicite, plafonné à 9 (le PDF n'a que 9 lignes)", () => {
+  it("descriptionAide1 : consolidé en textarea (2026-07-30), n'est plus un champ array — cf. describe dédié plus bas", () => {
+    // Ex-champ array (Commit 2, 9 lignes max) devenu un textarea unique dont
+    // lineTargets porte les 9 mêmes lignes imprimées — retour Oraliks après
+    // test, même mouvement que les grilles horaires Q4/Q18. Assertions
+    // complètes (lineTargets, ordre, absence de addRowLabel/itemFields/
+    // maxRows) dans le describe "Q5 et Q16, un textarea unique par question"
+    // plus bas ; on vérifie ici seulement que ce test-ci ne pointe plus vers
+    // la forme array, pour ne pas laisser deux describes se contredire.
     const f = parCle.get("descriptionAide1");
-    expect(f?.type).toBe("array");
-    expect(f?.maxRows).toBe(9);
-    expect(f?.addRowLabel?.fr).toBeTruthy();
-    expect(f?.itemFields?.length).toBe(1);
-    expect(f?.itemFields?.[0]?.pdfFieldNameTemplate).toBe("Décrivez laide que vous apporterez {index}");
+    expect(f?.type).toBe("textarea");
+    expect(f?.maxRows).toBeUndefined();
+    expect(f?.itemFields).toBeUndefined();
+    expect(f?.addRowLabel).toBeUndefined();
   });
 
   it("descriptionAide1 et natureActiviteIndependant sont required=true : la limite array a été levée (commit 28debed)", () => {
@@ -668,8 +786,14 @@ describe("C1A — Commit 2 : nature de l'activité (Q2) et description de l'aide
 //   3. le compteur du stepper (countRequirements) redescend bien à 0 manquant
 //      dès la première ligne remplie — c'était le risque redouté (Commit 3
 //      l'évitait justement en gardant required:false).
+//
+// Depuis le 2026-07-30, descriptionAide1 n'est plus un champ `array` (cf.
+// describe "Q5 et Q16, un textarea unique par question" plus haut) : le
+// point 1 ci-dessus se lit désormais « la chaîne vide bloque l'envoi, un
+// texte rempli passe » pour ce champ précis (nested describe dédié
+// ci-dessous). natureActiviteIndependant, lui, reste un `array` inchangé.
 // ---------------------------------------------------------------------------
-describe("C1A — natureActiviteIndependant / descriptionAide1 : required:true sur un champ array (limite levée)", () => {
+describe("C1A — natureActiviteIndependant (array) / descriptionAide1 (textarea) : required:true, limite levée puis conversion", () => {
   const fields = applyC1AImprovements([]);
   const parCle = new Map(fields.map((f) => [f.id, f]));
   const aideIndependant = parCle.get("aideIndependant")!;
@@ -735,6 +859,14 @@ describe("C1A — natureActiviteIndependant / descriptionAide1 : required:true s
     // (pas empilé) par la condition compilée par compilerRoutage — vérifié en
     // dur ci-dessous (2 clauses : aideraPendantChomage=oui en tête, and
     // aideIndependant=oui), pas supposé.
+    //
+    // Depuis le 2026-07-30, ce champ est un `textarea` (ex-`array` du
+    // Commit 2, cf. describe "Q5 et Q16, un textarea unique par question") :
+    // les payloads ci-dessous portent désormais une chaîne, plus un tableau
+    // de lignes — la validation passe par la règle `textarea` standard
+    // (chaîne non vide), plus `isArrayFieldFilled`. Le comportement observé
+    // ne change pas (obligatoire, protection de branche, compteur), seule la
+    // forme de la valeur change.
     const testFields = [aideIndependant, aideraPendantChomage, descriptionAide1];
 
     it("le visibleIf compilé exige aideIndependant=oui ET aideraPendantChomage=oui", () => {
@@ -748,27 +880,20 @@ describe("C1A — natureActiviteIndependant / descriptionAide1 : required:true s
       });
     });
 
-    it("Q1=oui + Q3=oui + tableau vide → bloque l'envoi", () => {
+    it("Q1=oui + Q3=oui + chaîne vide → bloque l'envoi", () => {
       const v = buildValidator(testFields, "fr");
       expect(
-        v.safeParse({ aideIndependant: "oui", aideraPendantChomage: "oui", descriptionAide1: [] }).success,
+        v.safeParse({ aideIndependant: "oui", aideraPendantChomage: "oui", descriptionAide1: "" }).success,
       ).toBe(false);
     });
 
-    it("Q1=oui + Q3=oui + une ligne vierge fraîchement ajoutée → bloque toujours l'envoi", () => {
-      const v = buildValidator(testFields, "fr");
-      expect(
-        v.safeParse({ aideIndependant: "oui", aideraPendantChomage: "oui", descriptionAide1: [{}] }).success,
-      ).toBe(false);
-    });
-
-    it("Q1=oui + Q3=oui + une ligne réellement remplie → laisse passer", () => {
+    it("Q1=oui + Q3=oui + texte rempli → laisse passer", () => {
       const v = buildValidator(testFields, "fr");
       expect(
         v.safeParse({
           aideIndependant: "oui",
           aideraPendantChomage: "oui",
-          descriptionAide1: [{ description: "Je conduis le camion de livraison" }],
+          descriptionAide1: "Je conduis le camion de livraison",
         }).success,
       ).toBe(true);
     });
@@ -776,27 +901,27 @@ describe("C1A — natureActiviteIndependant / descriptionAide1 : required:true s
     it("Q1=non → le champ est masqué, jamais réclamé même vide (protection de branche)", () => {
       const v = buildValidator(testFields, "fr");
       expect(
-        v.safeParse({ aideIndependant: "non", aideraPendantChomage: "oui", descriptionAide1: [] }).success,
+        v.safeParse({ aideIndependant: "non", aideraPendantChomage: "oui", descriptionAide1: "" }).success,
       ).toBe(true);
     });
 
     it("Q1=oui mais Q3=non → le champ est masqué aussi (chemin Q3=non saute directement à Q9)", () => {
       const v = buildValidator(testFields, "fr");
       expect(
-        v.safeParse({ aideIndependant: "oui", aideraPendantChomage: "non", descriptionAide1: [] }).success,
+        v.safeParse({ aideIndependant: "oui", aideraPendantChomage: "non", descriptionAide1: "" }).success,
       ).toBe(true);
     });
 
-    it("countRequirements redescend de 1 manquant à 0 dès la première ligne remplie", () => {
+    it("countRequirements redescend de 1 manquant à 0 dès que le texte est rempli", () => {
       const vide: FormPayload = {
         aideIndependant: "oui",
         aideraPendantChomage: "oui",
-        descriptionAide1: [],
+        descriptionAide1: "",
       };
       const rempli: FormPayload = {
         aideIndependant: "oui",
         aideraPendantChomage: "oui",
-        descriptionAide1: [{ description: "Je conduis le camion de livraison" }],
+        descriptionAide1: "Je conduis le camion de livraison",
       };
       expect(countRequirements(testFields, vide, "fr")).toEqual({ total: 3, missing: 1 });
       expect(countRequirements(testFields, rempli, "fr")).toEqual({ total: 3, missing: 0 });
@@ -827,7 +952,11 @@ describe("C1A — Commit 3 : les questions de l'arbre deviennent obligatoires", 
     // 28debed) : `isArrayFieldFilled` exige désormais au moins une ligne
     // réellement remplie, appliqué identiquement par buildValidator et par
     // isFieldComplete/countRequirements. Décision documentée dans le seed et
-    // le describe dédié ci-dessus/ci-dessous.
+    // le describe dédié ci-dessus/ci-dessous. Devenu un textarea le
+    // 2026-07-30 (cf. describe "Q5 et Q16, un textarea unique par
+    // question") : required reste true, la validation passe désormais par
+    // la règle textarea standard (chaîne non vide) au lieu
+    // d'isArrayFieldFilled.
     descriptionAide1: true,
     montantAidePeriodicite: true, // Q6 — choix mois/an, chemin unique.
     aidaitDejaIndependant: true, // Q7 — chemin unique.

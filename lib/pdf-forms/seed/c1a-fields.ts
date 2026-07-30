@@ -610,56 +610,56 @@ export const C1A_FIELDS: PdfFormField[] = [
   // Q5 — DÉCRIVEZ L'AIDE QUE VOUS APPORTEREZ
   // ====================================================================
   {
-    // Consolidé en UN champ répétable (Commit 2, même retour Oraliks que Q2
-    // ci-dessus — traitement identique explicitement demandé). Neuf lignes
-    // vides affichées d'un coup devenaient huit champs presque toujours
-    // vides. `maxRows: 9` : le PDF n'offre que 9 lignes imprimées
-    // ("Décrivez laide que vous apporterez 1" à "9").
+    // UN SEUL champ `textarea` (2026-07-30, retour Oraliks après test sur ce
+    // lot : « fais plutôt un input texte plus grand comme t'as fait aux
+    // autres, c'est plus propre » — le champ `array` du Commit 2 affichait
+    // encore une mécanique de liste ("Ligne 1", "Ligne 2"…, bouton
+    // "+ Ajouter") pour ce qui n'est qu'un paragraphe). Le citoyen écrit
+    // librement dans un seul textarea ; `lineTargets` porte les 9 lignes
+    // pointillées imprimées ("Décrivez laide que vous apporterez 1" à "9",
+    // vérifiées une à une sur le vrai PDF), dans l'ordre, et `filler.ts` y
+    // replie le texte par mots — même mécanisme que les grilles horaires
+    // Q4/Q18 ci-dessus (repli de taille sur la 9e cible en cas de
+    // débordement, jamais de perte silencieuse).
     //
     // id conservé à `descriptionAide1` : c'est l'ANCRE de Q5 dans
     // C1A_ROUTAGE (cf. c1a-routing.ts), sa condition est remplacée par
     // `appliquerRoutage` plus bas — même convention que
-    // `revenuNetSalarieParMois`, ancre de Q19.
+    // `revenuNetSalarieParMois`, ancre de Q19. La renommer casserait la
+    // table de routage (hors périmètre de ce lot).
     //
-    // `required: true` (2026-07-29, ex-exception du Commit 3) : au moment du
-    // Commit 3, `buildValidator` neutralisait délibérément `required` pour
-    // `type: "array"` ("un tableau vide ne doit pas bloquer") et le compteur
-    // du stepper (`isFieldComplete`) ne savait pas non plus lire une valeur
-    // `array` — poser `required: true` aurait alors affiché l'étape bloquée
-    // sur « 1 restant » EN PERMANENCE, même rempli. Cette limite a été levée
-    // depuis (commit 28debed) : `isArrayFieldFilled` dans validation.ts fait
-    // désormais compter « au moins une ligne réellement remplie », appliqué
-    // identiquement par `buildValidator` (superRefine) et par
-    // `isFieldComplete`/`countRequirements` (stepper). Une ligne vierge
-    // fraîchement ajoutée ne compte pas. `descriptionAide1` est l'ANCRE
-    // C1A_ROUTAGE de Q5 : son `visibleIf` est REMPLACÉ (pas empilé) par
-    // `appliquerRoutage` avec la condition compilée de l'arbre — répondre
-    // « non » à Q1 (ou « non » à Q3) masque le champ, donc `buildValidator`
-    // ne le vérifie jamais dans ces branches.
+    // `required: true` (hérité du Commit 3 puis de la levée de limite
+    // commit 28debed) : la validation passe désormais par la règle standard
+    // `textarea` (chaîne non vide) au lieu de `isArrayFieldFilled` ("au
+    // moins une ligne réellement remplie") — le comportement observable par
+    // le citoyen ne change pas (toujours obligatoire), seule la mécanique de
+    // validation change de famille avec le type du champ. `visibleIf` est de
+    // toute façon REMPLACÉ (pas empilé) par `appliquerRoutage` : répondre
+    // « non » à Q1 (ou « non » à Q3) masque le champ dans tous les cas.
+    //
+    // Plus de `help` : l'ancien texte ("ajoutez une ligne par tâche")
+    // décrivait le bouton "+ Ajouter" du champ array, disparu avec lui — ni
+    // le PDF ni ce lot n'en fournissent de remplacement, même parti pris que
+    // les deux textarea de grille horaire ci-dessus (aucun `help`).
     id: "descriptionAide1",
     pdfFieldName: "",
-    type: "array",
+    lineTargets: [
+      "Décrivez laide que vous apporterez 1",
+      "Décrivez laide que vous apporterez 2",
+      "Décrivez laide que vous apporterez 3",
+      "Décrivez laide que vous apporterez 4",
+      "Décrivez laide que vous apporterez 5",
+      "Décrivez laide que vous apporterez 6",
+      "Décrivez laide que vous apporterez 7",
+      "Décrivez laide que vous apporterez 8",
+      "Décrivez laide que vous apporterez 9",
+    ].map((pdfFieldName) => ({ pdfFieldName })),
+    type: "textarea",
     required: true,
     label: { fr: "5. Décrivez l'aide que vous apporterez" },
-    help: {
-      fr: "Si votre aide couvre plusieurs tâches, ajoutez une ligne par tâche.",
-    },
-    addRowLabel: { fr: "Ajouter une autre ligne de description" },
     visibleIf: { fieldId: "aideIndependant", op: "equals", value: "oui" },
     section: SECTION_AIDE_INDEPENDANT,
     order: 46,
-    maxRows: 9,
-    itemFields: [
-      {
-        id: "description",
-        pdfFieldName: "",
-        type: "text",
-        required: true,
-        label: { fr: "Description de l'aide" },
-        pdfFieldNameTemplate: "Décrivez laide que vous apporterez {index}",
-        order: 1,
-      },
-    ],
   },
 
   // ====================================================================
@@ -977,38 +977,41 @@ export const C1A_FIELDS: PdfFormField[] = [
     order: 69,
   },
   {
-    // « Je décris mon activité » compte TROIS lignes. La première est le widget
-    // `undefined_2` (y=287), posé sur la ligne qui prolonge le libellé ; les
-    // deux suivantes sont `Je décris mon activité 1` et `2`. Les descriptions
-    // étaient décalées d'un cran et la 1ʳᵉ ligne servait au code postal de Q15.
+    // « Je décris mon activité » occupe TROIS lignes pointillées imprimées.
+    // Vérifié sur le vrai PDF (private/pdfs/C1A_FR.pdf, page 2, colonne de
+    // gauche) : la 1re est le widget `undefined_2` (rect y=287.28, nom
+    // trompeur — ce n'est PAS un champ non résolu, juste le nom que porte ce
+    // widget dans le PDF), posé sur la ligne qui prolonge le libellé ; puis
+    // `Je décris mon activité 1` (y=274.32) et `Je décris mon activité 2`
+    // (y=261.24), dans cet ordre strictement décroissant. Les trois lignes
+    // partagent la même largeur utile (~236 pt).
+    //
+    // UN SEUL champ `textarea` (2026-07-30, retour Oraliks après test :
+    // « input texte plus grand au lieu de 3× "décris mon activité" ») — avant
+    // ce lot, trois champs distincts affichaient « Je décris mon activité »,
+    // « … (suite) », « … (fin) », des libellés inventés pour numéroter des
+    // lignes qui n'ont qu'une seule question imprimée derrière elles.
+    // `lineTargets` porte les trois widgets ci-dessus, dans l'ordre du
+    // document, et `filler.ts` y replie le texte par mots — même mécanisme
+    // que Q5 et les grilles horaires Q4/Q18 (repli de taille sur la 3e cible
+    // en cas de débordement, jamais de perte silencieuse).
+    //
+    // id conservé à `descriptionActivite1` (celui de l'ex-1re ligne) : il
+    // reste listé dans RATTACHEMENTS (question `formeActivite`, cf. plus
+    // bas), seul survivant du trio — `descriptionActivite2` et
+    // `descriptionActivite3` disparaissent, purgés via
+    // `LEGACY_C1A_FIELD_IDS` pour un brouillon déjà en base.
     id: "descriptionActivite1",
-    pdfFieldName: "undefined_2",
-    type: "text",
+    pdfFieldName: "",
+    lineTargets: ["undefined_2", "Je décris mon activité 1", "Je décris mon activité 2"].map(
+      (pdfFieldName) => ({ pdfFieldName }),
+    ),
+    type: "textarea",
     required: false,
     label: { fr: "Je décris mon activité" },
     visibleIf: { fieldId: "autreActiviteAccessoire", op: "equals", value: "oui" },
     section: SECTION_ACTIVITES,
     order: 70,
-  },
-  {
-    id: "descriptionActivite2",
-    pdfFieldName: "Je décris mon activité 1",
-    type: "text",
-    required: false,
-    label: { fr: "Je décris mon activité (suite)" },
-    visibleIf: { fieldId: "autreActiviteAccessoire", op: "equals", value: "oui" },
-    section: SECTION_ACTIVITES,
-    order: 71,
-  },
-  {
-    id: "descriptionActivite3",
-    pdfFieldName: "Je décris mon activité 2",
-    type: "text",
-    required: false,
-    label: { fr: "Je décris mon activité (fin)" },
-    visibleIf: { fieldId: "autreActiviteAccessoire", op: "equals", value: "oui" },
-    section: SECTION_ACTIVITES,
-    order: 72,
   },
 
   // ====================================================================
@@ -1029,10 +1032,11 @@ export const C1A_FIELDS: PdfFormField[] = [
     options: YN,
     visibleIf: { fieldId: "autreActiviteAccessoire", op: "equals", value: "oui" },
     section: SECTION_ACTIVITES,
-    // 72.5 et non 72 : le bloc Q16 ci-dessus a gagné un champ
-    // (descriptionActivite3), ce qui pousse sa dernière ligne à order 72.
-    // Fractionnaire pour rester strictement après elle sans renuméroter toute
-    // la grille horaire Q18 qui suit (base 73, cf. plus bas).
+    // 72.5 : reste strictement après le bloc Q16 ci-dessus (une seule ligne
+    // désormais, order 70, depuis sa consolidation en textarea le
+    // 2026-07-30) sans renuméroter toute la grille horaire Q18 qui suit
+    // (base 73, cf. plus bas). Valeur historique conservée telle quelle —
+    // aucune raison de la resserrer à 71 tant qu'elle reste entre les deux.
     order: 72.5,
   },
 
@@ -1523,6 +1527,23 @@ const LEGACY_C1A_FIELD_IDS = new Set<string>([
   "q18irregulierementTexte1",
   "q18irregulierementTexte2",
   "q18irregulierementTexte3",
+  // Q16 (2026-07-30) : "Je décris mon activité" / "… (suite)" / "… (fin)"
+  // (3 champs distincts) consolidés en UN SEUL textarea
+  // (`descriptionActivite1`, qui reste l'id de l'ex-1re ligne), dont
+  // `lineTargets` porte les 3 mêmes widgets. La couverture par
+  // `pdfFieldName` NE SUFFIT PAS : `Je décris mon activité 1`/`2` et
+  // `undefined_2` ne sont plus référencés qu'à l'intérieur de `lineTargets`,
+  // invisible à `coveredWidgetNames` — même limite que
+  // natureActiviteIndependant1..5/descriptionAide2..9 et les grilles
+  // horaires Q4/Q18 ci-dessus. Sans ces entrées, un brouillon déjà en base
+  // garderait descriptionActivite2 et descriptionActivite3 À CÔTÉ du champ
+  // consolidé.
+  //
+  // (Q5, `descriptionAide1`, subit la même conversion array -> textarea ce
+  // même jour, mais SANS entrée LEGACY nécessaire : son id ne change pas,
+  // rien ne disparaît au niveau des ids top-level.)
+  "descriptionActivite2",
+  "descriptionActivite3",
 ]);
 
 /// Champs qui suivent la même condition que la question qui les porte : les
@@ -1549,7 +1570,10 @@ const RATTACHEMENTS: Record<string, string[]> = {
   adresseActivite: ["adresseActiviteCodePostalCommune"],
   formeActivite: [
     "disposeNumeroEntreprise", "numeroEntreprise",
-    "descriptionActivite1", "descriptionActivite2", "descriptionActivite3",
+    // descriptionActivite2/3 ont disparu (2026-07-30) : consolidés dans
+    // descriptionActivite1 (désormais un textarea + lineTargets), seul
+    // survivant du trio dans ce rattachement.
+    "descriptionActivite1",
   ],
   revenuNetSalarieParMois: ["revenuNetSalarieParHeure", "revenuNetIndependantParAn"],
   // Q22 : les sept jours suivent la consigne « à compléter uniquement si tu es

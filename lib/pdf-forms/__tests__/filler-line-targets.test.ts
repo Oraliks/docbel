@@ -217,3 +217,164 @@ describe("fillForm — lineTargets (grilles horaires C1A, vrai PDF)", () => {
     expect(texteDe(acro, "undefined")).toBe("Variable");
   });
 });
+
+// Même mécanisme, deux autres blocs du C1A consolidés le même jour (Q5
+// "Décrivez l'aide que vous apporterez", ex-champ `array` du Commit 2 ;
+// Q16 "Je décris mon activité", ex-3 champs distincts "…"/"… (suite)"/
+// "… (fin)") — retour Oraliks après test : « fais plutôt un input texte
+// plus grand comme t'as fait aux autres, c'est plus propre » / « input
+// texte plus grand au lieu de 3x "décris mon activité" ». Mêmes preuves
+// bout en bout que ci-dessus, sur les cibles réelles du PDF officiel.
+describe("fillForm — lineTargets (Q5 et Q16 du C1A, vrai PDF)", () => {
+  it("Q5 (descriptionAide1) : une valeur longue se répartit sur les 9 lignes imprimées, dans l'ordre, sans perte ni chevauchement", async ({
+    skip,
+  }) => {
+    if (!existsSync(C1A_PDF)) skip();
+    const fields = await schema();
+    const source = readFileSync(C1A_PDF);
+    const parsed = await parsePdf(source);
+
+    // 90 mots courts : largement plus que ce que 9 lignes de ~236-240 pt
+    // utiles peuvent contenir à la taille uniforme — force le repli sur
+    // plusieurs cibles ET le débordement (fusion + réduction) sur la 9e.
+    const mots = Array.from({ length: 90 }, (_, i) => `tache${i}`);
+    const valeur = mots.join(" ");
+    const payload: FormPayload = {
+      aideIndependant: "oui",
+      aideraPendantChomage: "oui",
+      descriptionAide1: valeur,
+    };
+
+    const { bytes, diagnostics } = await fillForm(source, fields, payload, {
+      flatten: false,
+      technicalSchema: parsed.fields,
+    });
+    expect(diagnostics.filter((d) => d.fieldId === "descriptionAide1")).toEqual([]);
+
+    const acro = (await PDFDocument.load(bytes)).getForm();
+    const cibles = Array.from({ length: 9 }, (_, i) => `Décrivez laide que vous apporterez ${i + 1}`);
+    const lignes = cibles.map((w) => texteDe(acro, w));
+
+    // Aucun mot perdu, aucun dupliqué, ordre préservé : la concaténation des
+    // 9 lignes (chacune re-scindée par mots) reconstruit exactement la
+    // valeur d'origine.
+    expect(lignes.flatMap((l) => l.split(/\s+/).filter(Boolean))).toEqual(mots);
+
+    // La répartition a réellement eu lieu sur PLUSIEURS lignes.
+    expect(lignes[0].length, "la 1re ligne ne doit pas contenir tout le texte").toBeLessThan(valeur.length);
+    expect(lignes[1], "la 2e ligne doit être utilisée").not.toBe("");
+    expect(lignes[8], "la 9e ligne (débordement fondu) doit être utilisée").not.toBe("");
+  });
+
+  it("Q5 (descriptionAide1) : une valeur courte tient sur la 1re ligne ; les 8 suivantes restent vides", async ({
+    skip,
+  }) => {
+    if (!existsSync(C1A_PDF)) skip();
+    const fields = await schema();
+    const source = readFileSync(C1A_PDF);
+    const parsed = await parsePdf(source);
+
+    const payload: FormPayload = {
+      aideIndependant: "oui",
+      aideraPendantChomage: "oui",
+      descriptionAide1: "Je tiens la comptabilité",
+    };
+
+    const { bytes, diagnostics } = await fillForm(source, fields, payload, {
+      flatten: false,
+      technicalSchema: parsed.fields,
+    });
+    expect(diagnostics.filter((d) => d.fieldId === "descriptionAide1")).toEqual([]);
+
+    const acro = (await PDFDocument.load(bytes)).getForm();
+    expect(texteDe(acro, "Décrivez laide que vous apporterez 1")).toBe("Je tiens la comptabilité");
+    for (let n = 2; n <= 9; n++) {
+      expect(texteDe(acro, `Décrivez laide que vous apporterez ${n}`), `ligne ${n}`).toBe("");
+    }
+  });
+
+  it("Q16 (descriptionActivite1) : une valeur longue se répartit sur les 3 lignes imprimées, dans l'ordre (la 1re, « undefined_2 », est plus étroite)", async ({
+    skip,
+  }) => {
+    if (!existsSync(C1A_PDF)) skip();
+    const fields = await schema();
+    const source = readFileSync(C1A_PDF);
+    const parsed = await parsePdf(source);
+
+    // 40 mots courts : plus que ce que 3 lignes (dont la 1re, plus étroite,
+    // ~159 pt utiles contre ~236 pt pour les deux suivantes) peuvent
+    // contenir à la taille uniforme — force le repli sur les 3 cibles ET le
+    // débordement sur la 3e.
+    const mots = Array.from({ length: 40 }, (_, i) => `activite${i}`);
+    const valeur = mots.join(" ");
+    const payload: FormPayload = {
+      autreActiviteAccessoire: "oui",
+      descriptionActivite1: valeur,
+    };
+
+    const { bytes, diagnostics } = await fillForm(source, fields, payload, {
+      flatten: false,
+      technicalSchema: parsed.fields,
+    });
+    expect(diagnostics.filter((d) => d.fieldId === "descriptionActivite1")).toEqual([]);
+
+    const acro = (await PDFDocument.load(bytes)).getForm();
+    const lignes = ["undefined_2", "Je décris mon activité 1", "Je décris mon activité 2"].map((w) =>
+      texteDe(acro, w),
+    );
+
+    expect(lignes.flatMap((l) => l.split(/\s+/).filter(Boolean))).toEqual(mots);
+    expect(lignes[1], "la 2e ligne doit être utilisée").not.toBe("");
+    expect(lignes[2], "la 3e ligne (débordement fondu) doit être utilisée").not.toBe("");
+  });
+
+  it("Q16 (descriptionActivite1) : un saut de ligne explicite écrit chaque ligne sur son propre widget, dans l'ordre du document", async ({
+    skip,
+  }) => {
+    if (!existsSync(C1A_PDF)) skip();
+    const fields = await schema();
+    const source = readFileSync(C1A_PDF);
+    const parsed = await parsePdf(source);
+
+    const payload: FormPayload = {
+      autreActiviteAccessoire: "oui",
+      descriptionActivite1: "Premiere ligne\nDeuxieme ligne\nTroisieme ligne",
+    };
+
+    const { bytes, diagnostics } = await fillForm(source, fields, payload, {
+      flatten: false,
+      technicalSchema: parsed.fields,
+    });
+    expect(diagnostics.filter((d) => d.fieldId === "descriptionActivite1")).toEqual([]);
+
+    const acro = (await PDFDocument.load(bytes)).getForm();
+    // "undefined_2" est le nom réel (trompeur) du widget de la 1re ligne
+    // imprimée — vérifié sur le vrai PDF (page 2, y=287.28), au-dessus de
+    // "Je décris mon activité 1" (y=274.32) et "…2" (y=261.24).
+    expect(texteDe(acro, "undefined_2")).toBe("Premiere ligne");
+    expect(texteDe(acro, "Je décris mon activité 1")).toBe("Deuxieme ligne");
+    expect(texteDe(acro, "Je décris mon activité 2")).toBe("Troisieme ligne");
+  });
+
+  it("un champ visibleIf non satisfait n'écrit rien (Q16 masqué si autreActiviteAccessoire=non)", async ({ skip }) => {
+    if (!existsSync(C1A_PDF)) skip();
+    const fields = await schema();
+    const source = readFileSync(C1A_PDF);
+    const parsed = await parsePdf(source);
+
+    const payload: FormPayload = {
+      autreActiviteAccessoire: "non",
+      descriptionActivite1: "Ne doit pas apparaître",
+    };
+
+    const { bytes } = await fillForm(source, fields, payload, {
+      flatten: false,
+      technicalSchema: parsed.fields,
+    });
+
+    const acro = (await PDFDocument.load(bytes)).getForm();
+    expect(texteDe(acro, "undefined_2")).toBe("");
+    expect(texteDe(acro, "Je décris mon activité 1")).toBe("");
+    expect(texteDe(acro, "Je décris mon activité 2")).toBe("");
+  });
+});

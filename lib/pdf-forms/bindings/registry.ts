@@ -9,19 +9,25 @@ import type { MappingRule } from "./types";
 import { C1_CHANGEMENT_RULES } from "./per-form/c1-changement";
 import { C1A_RULES } from "./per-form/c1a";
 import { C1B_RULES } from "./per-form/c1b";
+import { C1C_RULES } from "./per-form/c1c";
 import { C47_RULES } from "./per-form/c47";
 
 const RULES_BY_SLUG: Record<string, MappingRule[]> = {
   "c1-changement-situation": C1_CHANGEMENT_RULES,
   c1a: C1A_RULES,
   c1b: C1B_RULES,
+  c1c: C1C_RULES,
   c47: C47_RULES,
-  // Les 8 formulaires sont branchés. Ceux qui n'ont pas d'entrée ici — c1c,
-  // c46, c1-regis, c1-partenaire — n'en ont pas BESOIN : aucun de leurs
-  // widgets ne fusionne plusieurs informations, et leurs champs « nom et
-  // prénom » sont de type `fullname`, que le filler assemble tout seul.
+  // Les 8 formulaires sont branchés. Ceux qui n'ont pas d'entrée ici — c46,
+  // c1-regis, c1-partenaire — n'en ont pas BESOIN : aucun de leurs widgets ne
+  // fusionne plusieurs informations, et leurs champs « nom et prénom » sont de
+  // type `fullname`, que le filler assemble tout seul.
   // Un slug absent renvoie [] : pas de stamp additionnel, comportement
   // strictement identique au mapping du schéma seul.
+  //
+  // Le c1c a rejoint la liste le 2026-07-30, pour une raison qui n'est pas la
+  // fusion de widgets : son unique règle déshabille l'adresse du site internet
+  // du « www » que le papier imprime déjà (cf. per-form/c1c.ts).
 };
 
 /// Récupère les règles à appliquer pour un slug donné. Renvoie un tableau

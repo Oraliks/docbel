@@ -14,6 +14,7 @@
 import { loc, type Locale, type Localized } from "./types";
 import { sectionLabel } from "./section-labels";
 import { C1A_QUESTIONS, C1A_GROUPE_IDENTITE } from "./seed/c1a-routing";
+import { C1C_QUESTIONS, C1C_GROUPE_IDENTITE } from "./seed/c1c-fields";
 
 export interface FormPresentation {
   /// Ordre canonique des macro-étapes. Les groupes absents de cette liste
@@ -78,6 +79,24 @@ const PRESENTATION_BY_SLUG: Readonly<Record<string, FormPresentation>> = {
     // libellé de section, déjà traduit en trois langues.
     // Parcours en arbre : les étapes suivantes dépendent des réponses
     // précédentes, la navigation libre n'aurait pas de sens.
+    hideStepList: true,
+  },
+  c1c: {
+    // MÊME GRAMMAIRE QUE LE C1A, et pour les mêmes raisons — une question par
+    // étape, aucune clé i18n, pas de liste d'étapes. Ce qui change : le C1C
+    // n'a pas d'arbre de renvois imprimé, sa liste de questions est donc
+    // écrite à la main dans le seed (`C1C_QUESTIONS`) plutôt que dérivée d'une
+    // `TableRoutage`. Côté écran, rien ne distingue les deux parcours.
+    //
+    // Le groupe d'identité reste EN TÊTE alors qu'il ne produit aucune étape
+    // dans un dossier (nom et NISS viennent du C1, cf. `inheritedFromDossier`
+    // sur ces deux champs) : il ne coûte rien quand l'étape n'existe pas, et
+    // l'empêche de tomber après la signature sur l'URL publique du C1C, où il
+    // n'y a aucun C1 dont hériter et où l'étape réapparaît donc.
+    stepGroupOrder: [C1C_GROUPE_IDENTITE, ...C1C_QUESTIONS],
+    // Aucune clé i18n : à défaut, l'étape prend pour titre la question de son
+    // champ ancre — un texte déjà écrit mot pour mot sur le formulaire
+    // officiel, qu'un catalogue de traductions ne ferait que recopier.
     hideStepList: true,
   },
 };

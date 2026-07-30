@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { C1C_FIELDS, applyC1CImprovements } from "../c1c-fields";
+import {
+  C1C_FIELDS,
+  C1C_GROUPE_IDENTITE,
+  C1C_QUESTIONS,
+  applyC1CImprovements,
+} from "../c1c-fields";
 
 describe("C1C_FIELDS", () => {
   it("couvre l'identité, la description d'activité, le lieu d'exercice et la forme d'exercice", () => {
@@ -277,5 +282,72 @@ describe("C1C_FIELDS", () => {
     const fields = applyC1CImprovements([]);
     expect(fields.length).toBe(C1C_FIELDS.length);
     expect(fields.length).toBe(24);
+  });
+});
+
+describe("C1C — parcours à l'écran (une question = une étape)", () => {
+  const groupes = () => new Map(applyC1CImprovements([]).map((f) => [f.id, f.stepGroup]));
+
+  it("chaque question porte son PROPRE identifiant comme groupe — c'est ce qui en fait l'ancre de son étape", () => {
+    const parChamp = groupes();
+    for (const question of C1C_QUESTIONS) {
+      expect(parChamp.get(question), `${question} doit ancrer son étape`).toBe(question);
+    }
+  });
+
+  it("aucun champ ne reste sans groupe : rien ne tombe dans « Autres informations »", () => {
+    const orphelins = applyC1CImprovements([])
+      .filter((f) => !f.stepGroup)
+      .map((f) => f.id);
+    expect(orphelins).toEqual([]);
+  });
+
+  it("les précisions conditionnelles restent sur l'étape de LEUR question", () => {
+    const parChamp = groupes();
+    expect(parChamp.get("siteInternetUrl")).toBe("possedeSiteInternet");
+    expect(parChamp.get("adresseActiviteLigne1")).toBe("lieuExerciceActivite");
+    expect(parChamp.get("nomEntreprise")).toBe("formeExerciceActivite");
+    expect(parChamp.get("numeroBcePersonnePhysique")).toBe("formeExerciceActivite");
+    expect(parChamp.get("numeroBceEntreprise")).toBe("formeExerciceActivite");
+    expect(parChamp.get("formeExerciceAutre")).toBe("formeExerciceActivite");
+    expect(parChamp.get("tiersPrecision")).toBe("activiteExerceeParTiers");
+    expect(parChamp.get("descriptionActivitesAnterieures1")).toBe("activiteIndependanteAnterieure");
+    // Le papier pose UNE question et ouvre deux lignes de revenus.
+    expect(parChamp.get("revenuNetImposableAnnuel")).toBe("revenuBrutAnnuel");
+    // Bas du formulaire d'un seul tenant : affirmation, annexes, date, signature.
+    expect(parChamp.get("annexes")).toBe("affirmationSincereEtComplete");
+    expect(parChamp.get("dateSignature")).toBe("affirmationSincereEtComplete");
+    expect(parChamp.get("signature")).toBe("affirmationSincereEtComplete");
+  });
+
+  it("l'identité forme son propre groupe d'en-tête, hors des questions", () => {
+    const parChamp = groupes();
+    expect(parChamp.get("pr_nom_et_nom")).toBe(C1C_GROUPE_IDENTITE);
+    expect(parChamp.get("niss")).toBe(C1C_GROUPE_IDENTITE);
+    expect(C1C_QUESTIONS).not.toContain(C1C_GROUPE_IDENTITE);
+  });
+
+  it("l'identité est héritée du dossier : dans un dossier, l'étape disparaît au lieu d'être redemandée", () => {
+    const byId = new Map(applyC1CImprovements([]).map((f) => [f.id, f]));
+    expect(byId.get("pr_nom_et_nom")?.inheritedFromDossier).toBe(true);
+    expect(byId.get("niss")?.inheritedFromDossier).toBe(true);
+    // `hidden`/`autoAnswered` posés EN DUR sont exclus : sur l'URL publique du
+    // C1C il n'y a aucun C1 dont hériter, et la déclaration partirait sans nom
+    // (cf. dossier-inheritance.ts).
+    expect(byId.get("pr_nom_et_nom")?.hidden).toBeFalsy();
+    expect(byId.get("pr_nom_et_nom")?.autoAnswered).toBeFalsy();
+    expect(byId.get("niss")?.autoAnswered).toBeFalsy();
+    // Et ils restent obligatoires dans le schéma STOCKÉ : une soumission sans
+    // identité est refusée côté serveur plutôt que produire un PDF anonyme.
+    expect(byId.get("pr_nom_et_nom")?.required).toBe(true);
+    expect(byId.get("niss")?.required).toBe(true);
+  });
+
+  it("l'ordre des questions est celui du document (contrôlé par les `order` du schéma)", () => {
+    const parOrdre = applyC1CImprovements([])
+      .filter((f) => C1C_QUESTIONS.includes(f.id))
+      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+      .map((f) => f.id);
+    expect(parOrdre).toEqual([...C1C_QUESTIONS]);
   });
 });

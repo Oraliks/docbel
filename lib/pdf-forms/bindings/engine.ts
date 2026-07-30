@@ -98,7 +98,7 @@ export function resolveStamps(
 // Helper de composition : `bind`
 // ---------------------------------------------------------------------------
 
-export type BindFormat = "date-fr" | "iban-strip-be";
+export type BindFormat = "date-fr" | "iban-strip-be" | "web-strip-www";
 
 /// Formate une valeur scalaire du payload vers la chaîne à stamper. `null`
 /// signifie « ne PAS émettre de stamp » (valeur vide ou incompatible) — le
@@ -119,6 +119,17 @@ function formatValue(value: FieldValue | undefined, format?: BindFormat): string
       return formatDateFR(trimmed);
     case "iban-strip-be":
       return trimmed.replace(/^\s*[Bb][Ee]\s*/, "").trim();
+    // Même situation que le « B E » des IBAN : le papier imprime déjà le
+    // début de l'adresse. Le C1C ouvre sa ligne par « ☐ oui: www …… » — sans
+    // strip, un citoyen qui tape `https://www.exemple.be` (ce que copie tout
+    // navigateur) produirait « www https://www.exemple.be ».
+    //
+    // Retire le schéma (`http://`, `https://`, n'importe lequel) PUIS le
+    // `www.` de tête. Le point est exigé : `wwwfoo.be` est un vrai domaine et
+    // garde son « www ». Strip PDF-only — la valeur en state garde ce que le
+    // citoyen a écrit, et reste donc corrigeable telle qu'il l'a connue.
+    case "web-strip-www":
+      return trimmed.replace(/^(?:[a-z][a-z0-9+.-]*:\/\/)?(?:www\.)?/i, "").trim();
     default:
       return trimmed;
   }

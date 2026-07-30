@@ -100,6 +100,13 @@ export const C1C_FIELDS: PdfFormField[] = [
     type: "fullname",
     required: true,
     label: { fr: "Prénom et nom" },
+    // Dans un dossier, le C1 a déjà donné le nom : `applyDossierInheritance`
+    // rend ce champ `autoAnswered` à l'ouverture, l'étape d'identité perd son
+    // dernier champ visible et disparaît (cf. `buildMacroSteps`). Sur l'URL
+    // publique `/document/onem/c1c`, où il n'y a aucun C1 dont hériter, le
+    // champ reste à l'écran et obligatoire — un `autoAnswered` posé en dur y
+    // produirait une déclaration officielle sans nom.
+    inheritedFromDossier: true,
     section: SECTION_IDENTITE,
     order: 0,
   },
@@ -122,6 +129,8 @@ export const C1C_FIELDS: PdfFormField[] = [
     placeholder: { fr: "00.00.00-000.00" },
     prefillFrom: "profile.niss",
     canonicalKey: "identity.niss",
+    // Hérité du C1 dans un dossier, comme le nom ci-dessus.
+    inheritedFromDossier: true,
     section: SECTION_IDENTITE,
     order: 1,
   },
@@ -188,12 +197,23 @@ export const C1C_FIELDS: PdfFormField[] = [
     order: 13,
   },
   {
+    // La case est écrite par une RÈGLE serveur, pas par ce mapping — d'où le
+    // `pdfFieldName` vide (cf. `bindings/per-form/c1c.ts`). Le papier imprime
+    // déjà « ☐ oui: www …… » : la règle retire le schéma et le `www.` de tête
+    // avant de stamper, sinon la ligne se lirait « www https://www.exemple.be ».
+    //
+    // Revendiquer la case ICI *en plus* de la règle serait une erreur de
+    // publication, et à juste titre : deux sources écriraient la même case et
+    // le filler garderait la dernière, en silence (cf. `mapping-report.ts`).
     id: "siteInternetUrl",
-    pdfFieldName: "Je dispose dun site internet pour mon activité",
+    pdfFieldName: "",
     type: "text",
     required: false,
     label: { fr: "Adresse du site internet" },
-    placeholder: { fr: "www.exemple.be" },
+    // Sans `www.` : c'est ce que le formulaire attend, et le placeholder est
+    // le seul endroit qui le montre avant la saisie. Une adresse collée avec
+    // son `https://www.` reste acceptée — elle est nettoyée au stamping.
+    placeholder: { fr: "exemple.be" },
     visibleIf: { fieldId: "possedeSiteInternet", op: "equals", value: "oui" },
     section: SECTION_ACTIVITES,
     order: 14,
@@ -543,6 +563,91 @@ const LEGACY_C1C_FIELD_IDS = new Set<string>([
   "numeroBce",
 ]);
 
+// ===========================================================================
+// PARCOURS À L'ÉCRAN — une question = une étape (patron du C1A)
+// ===========================================================================
+//
+// Le C1C n'a pas d'arbre de renvois imprimé (contrairement au C1A) : il n'y a
+// donc pas de `TableRoutage` d'où dériver les groupes. Le rattachement est
+// écrit à la main ci-dessous — c'est tenable pour un document de dix
+// questions, et ça reste la MÊME grammaire à l'arrivée (`stepGroup` posé sur
+// chaque champ, consommé par `buildMacroSteps`).
+//
+// Découpage par SECTION (le repli par défaut) donnait sept étapes dont une
+// « Mes activités » de douze champs : une page interminable, exactement ce que
+// PDF_FORMS_RULES déconseille. Une question par étape rend au contraire les
+// branches gratuites — `visibleIf` non satisfait ⟹ aucun champ visible ⟹
+// aucune étape (cf. `buildMacroSteps`).
+
+/// Étape de l'en-tête d'identité — la seule qui ne soit pas une question.
+/// Déclarée ici pour que ce fichier (qui la pose) et `form-presentation.ts`
+/// (qui la place en tête) désignent la même chose.
+export const C1C_GROUPE_IDENTITE = "identite";
+
+/// Les questions du document, DANS L'ORDRE IMPRIMÉ. Chacune devient une étape
+/// et porte l'identifiant du champ qui la pose : ce champ est alors l'ANCRE de
+/// son étape (cf. `stepAnchorField`), et c'est sa question qui titre l'étape —
+/// aucune clé i18n à écrire, aucun libellé à recopier.
+export const C1C_QUESTIONS: readonly string[] = [
+  "dateDebutActivite",
+  "descriptionActivite1",
+  "possedeSiteInternet",
+  "lieuExerciceActivite",
+  "formeExerciceActivite",
+  "activiteExerceeParTiers",
+  "competencesProfessionnellesSpecifiques",
+  "revenuBrutAnnuel",
+  "activiteIndependanteAnterieure",
+  "affirmationSincereEtComplete",
+];
+
+/// Champs RATTACHÉS à une question : précisions conditionnelles, second
+/// montant, annexes et signature. Ils suivent leur question d'étape et ne
+/// fabriquent pas d'étape à eux seuls.
+const RATTACHEMENTS: Readonly<Record<string, readonly string[]>> = {
+  possedeSiteInternet: ["siteInternetUrl"],
+  lieuExerciceActivite: ["adresseActiviteLigne1"],
+  formeExerciceActivite: [
+    "numeroBcePersonnePhysique",
+    "nomEntreprise",
+    "numeroBceEntreprise",
+    "formeExerciceAutre",
+  ],
+  activiteExerceeParTiers: ["tiersPrecision"],
+  // Le papier pose UNE question (« Les revenus … s'élèvent à : ») et ouvre
+  // deux lignes. Les deux montants restent donc sur la même étape.
+  revenuBrutAnnuel: ["revenuNetImposableAnnuel"],
+  activiteIndependanteAnterieure: ["descriptionActivitesAnterieures1"],
+  // Dernière étape : on affirme, on liste ses annexes, on date et on signe —
+  // le bas du formulaire papier, d'un seul tenant.
+  affirmationSincereEtComplete: ["annexes", "dateSignature", "signature"],
+};
+
+/// Question à laquelle appartient chaque champ, dérivée des deux tables
+/// ci-dessus. Une seule source : ajouter une question sans la rattacher la
+/// laisse simplement sans champs — jamais deux listes à tenir d'accord.
+function questionParChamp(): Map<string, string> {
+  const par = new Map<string, string>();
+  for (const question of C1C_QUESTIONS) par.set(question, question);
+  for (const [question, rattaches] of Object.entries(RATTACHEMENTS)) {
+    for (const id of rattaches) par.set(id, question);
+  }
+  return par;
+}
+
+/// Pose `stepGroup` sur chaque champ. Les champs d'identité tombent dans le
+/// groupe d'en-tête ; un champ inconnu des deux tables reste sans groupe et
+/// atterrit dans « Autres informations » de la dernière étape — repli visible,
+/// jamais une perte.
+function appliquerGroupes(fields: PdfFormField[]): PdfFormField[] {
+  const parChamp = questionParChamp();
+  return fields.map((f) => {
+    const groupe =
+      parChamp.get(f.id) ?? (f.section === SECTION_IDENTITE ? C1C_GROUPE_IDENTITE : undefined);
+    return groupe ? { ...f, stepGroup: groupe } : f;
+  });
+}
+
 /// Applique le schéma enrichi sur une liste de champs bruts (typiquement
 /// issue de l'inférence automatique au moment de l'import). Idempotent :
 /// ré-exécutable sans dupliquer (compare les `id`).
@@ -551,5 +656,5 @@ const LEGACY_C1C_FIELD_IDS = new Set<string>([
 /// par les nouveaux champs `radio` fusionnés (paires oui/non), en comparant
 /// leur `pdfFieldName` d'origine.
 export function applyC1CImprovements(fields: PdfFormField[]): PdfFormField[] {
-  return mergeEnrichedFields(fields, C1C_FIELDS, LEGACY_C1C_FIELD_IDS);
+  return appliquerGroupes(mergeEnrichedFields(fields, C1C_FIELDS, LEGACY_C1C_FIELD_IDS));
 }

@@ -151,9 +151,15 @@ describe("C1A_FIELDS", () => {
     // Depuis le Commit 2 (2026-07-29), natureActiviteIndependant1..5 et
     // descriptionAide1..9 (14 champs top-level) sont consolidés en 2 champs
     // `array` (natureActiviteIndependant, descriptionAide1) : leurs lignes
-    // vivent désormais dans `itemFields`, pas dans C1A_FIELDS — d'où un total
-    // top-level plus bas qu'avant (117 au moment d'écrire ce test).
-    expect(C1A_FIELDS.length).toBeGreaterThan(110);
+    // vivent désormais dans `itemFields`, pas dans C1A_FIELDS.
+    //
+    // Depuis le 2026-07-30, les grilles horaires Q4 (4+5 lignes de texte) et
+    // Q18 (4+3) perdent 12 champs top-level de plus : chaque groupe
+    // "Période 1..N" / "Précision 1..N" devient UN textarea, dont
+    // `lineTargets` porte les mêmes widgets/coordonnées — d'où un total
+    // encore plus bas qu'avant (105 au moment d'écrire ce test, 117 juste
+    // après le Commit 2).
+    expect(C1A_FIELDS.length).toBeGreaterThan(95);
     expect(C1A_FIELDS.length).toBe(new Set(C1A_FIELDS.map((f) => f.id)).size);
   });
 });
@@ -315,7 +321,7 @@ describe("C1A — arbre des renvois", () => {
       "aideraPendantChomage=oui",
       "aideIndependant=oui",
     ]);
-    expect(clauses("q4periodesTexte1")).toEqual([
+    expect(clauses("q4periodesTexte")).toEqual([
       "q4periode=periodes",
       "aideraPendantChomage=oui",
       "aideIndependant=oui",
@@ -405,9 +411,12 @@ describe("C1A — curation", () => {
     expect(f?.hidden, "le C1A partirait sans nom").not.toBe(true);
   });
 
-  it("ne masque aucune ligne de texte libre des grilles horaires", () => {
-    const lignes = fields.filter((x) => /^(q4|q18)(periodesTexte|irregulierementTexte)/.test(x.id));
-    expect(lignes.length).toBeGreaterThan(10);
+  it("ne masque aucun des deux textarea de texte libre des grilles horaires", () => {
+    // Un seul champ par option depuis le 2026-07-30 (cf. describe dédié plus
+    // bas) : q4/q18 × periodesTexte/irregulierementTexte = 4, plus plus de
+    // "Période 1..4"/"Précision 2..N" à vérifier séparément.
+    const lignes = fields.filter((x) => /^(q4|q18)(periodesTexte|irregulierementTexte)$/.test(x.id));
+    expect(lignes.length).toBe(4);
     for (const l of lignes) expect(l.hidden, `${l.id} doit rester saisissable`).not.toBe(true);
   });
 });
@@ -429,57 +438,75 @@ describe("C1A — grille Q18, 1re ligne « pendant les périodes » (widget 1_3 
     expect(revendications.map((f) => f.id)).toEqual([]);
   });
 
-  it("q18periodesTexte1 est écrit aux coordonnées de sa ligne, pas dans 1_3", () => {
-    const f = parCle.get("q18periodesTexte1");
-    expect(f, "q18periodesTexte1 doit exister").toBeDefined();
-    expect(f?.pdfFieldName, "ne doit pointer vers aucun widget").toBe("");
-    expect(f?.drawAt, "doit porter un drawAt").toBeDefined();
-    expect(f?.drawAt?.page, "1_3 est en page 2").toBe(1);
-    expect(f?.drawAt?.maxWidth ?? 0, "tient dans la largeur du rect (222 pt)").toBeLessThanOrEqual(222);
+  it("q18periodesTexte écrit sa 1re ligne aux coordonnées, pas dans 1_3", () => {
+    // Depuis le 2026-07-30, les 4 lignes "périodes" de Q18 ne sont plus 4
+    // champs distincts : ce sont les `lineTargets`, dans l'ordre, d'UN seul
+    // textarea. La 1re ligne reste en écriture positionnelle (widget partagé
+    // avec l'en-tête de page 2, cf. commentaire du describe).
+    const f = parCle.get("q18periodesTexte");
+    expect(f, "q18periodesTexte doit exister").toBeDefined();
+    expect(f?.type).toBe("textarea");
+    expect(f?.pdfFieldName, "champ virtuel : la répartition vit dans lineTargets").toBe("");
+    const premiere = f?.lineTargets?.[0];
+    expect(premiere?.pdfFieldName, "ne doit pointer vers aucun widget").toBeFalsy();
+    expect(premiere?.drawAt, "doit porter un drawAt").toBeDefined();
+    expect(premiere?.drawAt?.page, "1_3 est en page 2").toBe(1);
+    expect(premiere?.drawAt?.maxWidth ?? 0, "tient dans la largeur du rect (222 pt)").toBeLessThanOrEqual(222);
   });
 
-  it("q18periodesTexte1 garde la même condition d'affichage que ses lignes sœurs", () => {
-    // Le passage en drawAt ne doit pas casser le rattachement à l'arbre :
-    // toujours conditionné par le choix "periodes" de la grille Q18, comme
-    // q18periodesTexte2/3/4 restées sur widget.
-    expect(parCle.get("q18periodesTexte1")?.visibleIf).toEqual(
-      parCle.get("q18periodesTexte2")?.visibleIf,
-    );
+  it("q18periodesTexte porte la condition de sa question, complétée par la branche d'entrée de Q18", () => {
+    // Remplace l'ancienne comparaison "même condition que sa ligne sœur"
+    // (q18periodesTexte2 a disparu, consolidé dans ce même champ) : on
+    // vérifie directement la condition aplatie, comme pour q4periodesTexte
+    // dans le describe "arbre des renvois" ci-dessus.
+    const c = parCle.get("q18periodesTexte")?.visibleIf;
+    const clauses = c ? [c, ...(c.and ?? [])].map((x) => `${x.fieldId}=${String(x.value)}`) : [];
+    expect(clauses).toEqual([
+      "q18periode=periodes",
+      "exerceraPendantChomage=oui",
+      "autreActiviteAccessoire=oui",
+    ]);
   });
 });
 
-describe("C1A — Commit 1 : coupure périodes / irrégulier de la grille horaire", () => {
+describe("C1A — Commit 1 puis 2026-07-30 : grilles horaires, un textarea par option", () => {
   // Géométrie mesurée sur private/pdfs/C1A_FR.pdf : le widget "undefined"
   // (page 1, y=568) est sur la MÊME ligne que la case "irrégulièrement à
   // savoir" (y=568) — pas une 5e ligne de "périodes". Retour Oraliks
   // 2026-07-29 : qui cochait "irrégulièrement" voyait sa ligne imprimée
   // partir blanche ; qui remplissait les 5 lignes "périodes" déclarait un
   // rythme irrégulier jamais coché.
+  //
+  // 2026-07-30 : ces N lignes ne sont plus N champs "Période 1..4" /
+  // "Précision 2..N" — c'est UN textarea par option, dont `lineTargets`
+  // porte les mêmes widgets/coordonnées, dans le même ordre. Le citoyen
+  // écrit librement, `filler.ts` répartit son texte sur les lignes.
   const fields = applyC1AImprovements([]);
   const parCle = new Map(fields.map((f) => [f.id, f]));
 
-  it("Q4 : 4 lignes « périodes » (1 à 4), plus de 5e ligne fantôme", () => {
-    const ids = ["q4periodesTexte1", "q4periodesTexte2", "q4periodesTexte3", "q4periodesTexte4"];
-    for (const id of ids) expect(parCle.get(id), id).toBeDefined();
-    expect(parCle.has("q4periodesTexte5")).toBe(false);
-    expect(ids.map((id) => parCle.get(id)?.pdfFieldName)).toEqual(["1", "2", "3", "4"]);
+  it("Q4 : periodesTexte est un textarea réparti sur 4 lignes (1 à 4), plus de 5e ligne fantôme", () => {
+    const f = parCle.get("q4periodesTexte");
+    expect(f, "q4periodesTexte doit exister").toBeDefined();
+    expect(f?.type).toBe("textarea");
+    expect(f?.pdfFieldName, "champ virtuel : la répartition vit dans lineTargets").toBe("");
+    expect(f?.lineTargets?.map((t) => t.pdfFieldName)).toEqual(["1", "2", "3", "4"]);
   });
 
-  it("Q4 : 5 lignes « irrégulièrement », la 1re est le widget « undefined » (fin de ligne imprimée)", () => {
-    const ids = [
-      "q4irregulierementTexte1", "q4irregulierementTexte2", "q4irregulierementTexte3",
-      "q4irregulierementTexte4", "q4irregulierementTexte5",
-    ];
-    for (const id of ids) expect(parCle.get(id), id).toBeDefined();
-    expect(ids.map((id) => parCle.get(id)?.pdfFieldName)).toEqual([
+  it("Q4 : irregulierementTexte est un textarea réparti sur 5 lignes, la 1re est le widget « undefined » (fin de ligne imprimée)", () => {
+    const f = parCle.get("q4irregulierementTexte");
+    expect(f, "q4irregulierementTexte doit exister").toBeDefined();
+    expect(f?.type).toBe("textarea");
+    expect(f?.lineTargets?.map((t) => t.pdfFieldName)).toEqual([
       "undefined", "1_2", "2_2", "3_2", "4_2",
     ]);
-    expect(parCle.get("q4irregulierementTexte1")?.label?.fr).toBe("Précisez à quel rythme");
+    expect(f?.label?.fr).toBe("Précisez à quel rythme");
   });
 
   it("un ancien champ q4periodesTexte5 (widget « undefined ») déjà en base ne survit pas au merge", () => {
-    // Simule un schéma de brouillon persisté AVANT ce correctif : le widget
-    // "undefined" y était revendiqué par q4periodesTexte5.
+    // Simule un schéma de brouillon persisté AVANT le tout premier correctif
+    // (2026-07-29) : le widget "undefined" y était revendiqué par
+    // q4periodesTexte5 — jamais un id réel produit par ce seed, mais un état
+    // antérieur imprévu que `LEGACY_C1A_FIELD_IDS` doit purger explicitement.
     const ancien: PdfFormField = {
       id: "q4periodesTexte5",
       pdfFieldName: "undefined",
@@ -489,9 +516,42 @@ describe("C1A — Commit 1 : coupure périodes / irrégulier de la grille horair
     };
     const merged = applyC1AImprovements([ancien]);
     expect(merged.map((f) => f.id)).not.toContain("q4periodesTexte5");
-    // Le widget "undefined" n'est plus revendiqué qu'une fois, par le champ désormais correct.
-    const revendications = merged.filter((f) => f.pdfFieldName === "undefined");
-    expect(revendications.map((f) => f.id)).toEqual(["q4irregulierementTexte1"]);
+    // Le widget "undefined" n'est plus revendiqué en `pdfFieldName` de premier
+    // niveau par PERSONNE (coveredWidgetNames ne regarde pas dans
+    // lineTargets) : seule l'entrée LEGACY garantit la purge. Il reste bien
+    // couvert dans les lineTargets du nouveau champ.
+    expect(merged.filter((f) => f.pdfFieldName === "undefined")).toEqual([]);
+    expect(
+      merged.find((f) => f.id === "q4irregulierementTexte")?.lineTargets?.[0]?.pdfFieldName,
+    ).toBe("undefined");
+  });
+
+  it("tous les anciens champs numérotés (Q4/Q18) déjà en base ne survivent pas au merge", () => {
+    // Les 16 identifiants retirés par ce lot : sans leur entrée dans
+    // LEGACY_C1A_FIELD_IDS, ils survivraient à côté des deux nouveaux
+    // textarea, puisque leur pdfFieldName n'est désormais couvert qu'à
+    // l'intérieur de `lineTargets` (invisible à `coveredWidgetNames`, qui ne
+    // lit que `field.pdfFieldName` au premier niveau — même limite déjà
+    // documentée pour natureActiviteIndependant1..5). Widget volontairement
+    // fictif : la purge testée ici est celle par ID, pas par couverture.
+    const idsRetires = [
+      "q4periodesTexte1", "q4periodesTexte2", "q4periodesTexte3", "q4periodesTexte4",
+      "q4irregulierementTexte1", "q4irregulierementTexte2", "q4irregulierementTexte3",
+      "q4irregulierementTexte4", "q4irregulierementTexte5",
+      "q18periodesTexte1", "q18periodesTexte2", "q18periodesTexte3", "q18periodesTexte4",
+      "q18irregulierementTexte1", "q18irregulierementTexte2", "q18irregulierementTexte3",
+    ];
+    const anciens: PdfFormField[] = idsRetires.map((id) => ({
+      id,
+      pdfFieldName: "widget-fictif-jamais-dans-le-pdf",
+      type: "text",
+      required: false,
+      label: { fr: id },
+    }));
+    const merged = applyC1AImprovements(anciens);
+    for (const id of idsRetires) {
+      expect(merged.map((f) => f.id), id).not.toContain(id);
+    }
   });
 
   it("Q18 : vérifié, ne présente PAS le même défaut (aucun widget partagé sur la ligne « irrégulier »)", () => {
@@ -500,15 +560,12 @@ describe("C1A — Commit 1 : coupure périodes / irrégulier de la grille horair
     // deux. La répartition 4 lignes périodes / 3 lignes irrégulier est
     // donc déjà correcte ; verrouillé ici pour ne pas régresser vers le
     // défaut de Q4.
-    const periodes = ["q18periodesTexte1", "q18periodesTexte2", "q18periodesTexte3", "q18periodesTexte4"];
-    for (const id of periodes) expect(parCle.get(id), id).toBeDefined();
-    expect(parCle.has("q18periodesTexte5")).toBe(false);
-    expect(periodes.slice(1).map((id) => parCle.get(id)?.pdfFieldName)).toEqual(["2_3", "3_3", "4_3"]);
+    const periodes = parCle.get("q18periodesTexte");
+    expect(periodes?.lineTargets?.length).toBe(4);
+    expect(periodes?.lineTargets?.slice(1).map((t) => t.pdfFieldName)).toEqual(["2_3", "3_3", "4_3"]);
 
-    const irreguliers = ["q18irregulierementTexte1", "q18irregulierementTexte2", "q18irregulierementTexte3"];
-    for (const id of irreguliers) expect(parCle.get(id), id).toBeDefined();
-    expect(parCle.has("q18irregulierementTexte4")).toBe(false);
-    expect(irreguliers.map((id) => parCle.get(id)?.pdfFieldName)).toEqual(["1_4", "2_4", "3_4"]);
+    const irreguliers = parCle.get("q18irregulierementTexte");
+    expect(irreguliers?.lineTargets?.map((t) => t.pdfFieldName)).toEqual(["1_4", "2_4", "3_4"]);
   });
 });
 

@@ -98,8 +98,9 @@ const VISIBLE_SI_CHOMEUR_TEMPORAIRE: VisibleIf = {
 /// l'indépendant" et Q18 "quand exercerez-vous cette activité"). Structure
 /// identique : lundi à vendredi (chacun x avant 7h / entre 7h et 18h /
 /// après 18h), puis samedi et dimanche (sans horaire), puis un choix parmi
-/// "toute l'année" / "pendant les périodes suivantes" (texte libre
-/// multi-lignes) / "irrégulièrement, à savoir" (texte libre).
+/// "toute l'année" / "pendant les périodes suivantes" (UN textarea libre,
+/// réparti à la génération sur les lignes pointillées du PDF via
+/// `lineTargets` — cf. plus bas) / "irrégulièrement, à savoir" (idem).
 //
 // La grille reproduit celle du formulaire papier : les sept jours et leurs
 // créneaux sont visibles d'emblée, sans dévoilement progressif (décision
@@ -123,12 +124,15 @@ function grilleHoraire(opts: {
     pendantPeriodes: string;
     irregulierement: string;
   };
-  // Champs texte libres pour "pendant les périodes" et "irrégulièrement".
-  // Fournis dans l'ordre d'apparition sur le PDF (pdfFieldName exacts). Un
-  // élément peut aussi être un objet `{ pdfFieldName: "", drawAt }` quand la
-  // case AcroForm ne peut pas être revendiquée (widget partagé avec une autre
-  // case du PDF) — cf. Q18 ci-dessous, seul appelant à en avoir besoin ; Q4
-  // continue de fournir de simples chaînes, la fabrique n'est pas dénaturée.
+  // Lignes pointillées physiques du PDF pour "pendant les périodes" et pour
+  // "irrégulièrement", dans l'ordre d'apparition sur le document (pdfFieldName
+  // exacts). Un élément peut aussi être un objet `{ pdfFieldName: "", drawAt }`
+  // quand la case AcroForm ne peut pas être revendiquée (widget partagé avec
+  // une autre case du PDF) — cf. Q18 ci-dessous, seul appelant à en avoir
+  // besoin ; Q4 continue de fournir de simples chaînes, la fabrique n'est pas
+  // dénaturée. Ces listes deviennent le `lineTargets` d'UN SEUL champ
+  // `textarea` par option (cf. plus bas) : le citoyen écrit librement, et
+  // `filler.ts` répartit son texte sur ces cibles dans l'ordre donné ici.
   periodesTextFields: Array<string | { pdfFieldName: string; drawAt?: PdfFormField["drawAt"] }>;
   irregulierementTextFields: string[];
 }): PdfFormField[] {
@@ -254,33 +258,46 @@ function grilleHoraire(opts: {
     order: ordre(),
   });
 
-  opts.periodesTextFields.forEach((entree, i) => {
-    const { pdfFieldName, drawAt } =
-      typeof entree === "string" ? { pdfFieldName: entree, drawAt: undefined } : entree;
-    fields.push({
-      id: `${opts.idPrefix}periodesTexte${i + 1}`,
-      pdfFieldName,
-      ...(drawAt ? { drawAt } : {}),
-      type: "text",
-      required: false,
-      label: { fr: `Période ${i + 1}` },
-      visibleIf: { fieldId: `${opts.idPrefix}periode`, op: "equals", value: "periodes" },
-      section: opts.section,
-      order: ordre(),
-    });
+  // UN SEUL champ `textarea` par option (2026-07-30, retour Oraliks après
+  // test) — plus de "Période 1/2/3/4" ni de "Précision 2/3" : « c'est pas
+  // nécessaire, juste un input plus grand en mode texte suffit et à toi
+  // d'adapter pour que sur la C1 ça apparaisse correctement ». Le citoyen
+  // écrit librement ; `lineTargets` porte les lignes pointillées physiques
+  // ci-dessus, dans l'ordre du PDF, et `filler.ts` y replie le texte par mots
+  // (repli de taille sur la dernière cible en cas de débordement — jamais de
+  // perte silencieuse). `type: "textarea"` suffit à obtenir une zone plus
+  // grande qu'un `text` (cf. `components/ui/textarea.tsx` : hauteur mini +
+  // croissance automatique avec le contenu), sans nouvelle prop de schéma.
+  //
+  // Aucune de ces deux lignes n'a de libellé imprimé propre sur le PDF (la
+  // ligne pointillée prolonge simplement la phrase de l'option choisie
+  // ci-dessus) : les libellés ci-dessous sont des instructions neutres, pas
+  // une formulation recopiée du papier — "Précisez à quel rythme" reprend le
+  // texte déjà utilisé ici avant ce lot pour la 1re ligne "irrégulièrement".
+  fields.push({
+    id: `${opts.idPrefix}periodesTexte`,
+    pdfFieldName: "",
+    lineTargets: opts.periodesTextFields.map((entree) =>
+      typeof entree === "string" ? { pdfFieldName: entree } : entree,
+    ),
+    type: "textarea",
+    required: false,
+    label: { fr: "Précisez les périodes" },
+    visibleIf: { fieldId: `${opts.idPrefix}periode`, op: "equals", value: "periodes" },
+    section: opts.section,
+    order: ordre(),
   });
 
-  opts.irregulierementTextFields.forEach((pdfFieldName, i) => {
-    fields.push({
-      id: `${opts.idPrefix}irregulierementTexte${i + 1}`,
-      pdfFieldName,
-      type: "text",
-      required: false,
-      label: { fr: i === 0 ? "Précisez à quel rythme" : `Précision ${i + 1}` },
-      visibleIf: { fieldId: `${opts.idPrefix}periode`, op: "equals", value: "irregulier" },
-      section: opts.section,
-      order: ordre(),
-    });
+  fields.push({
+    id: `${opts.idPrefix}irregulierementTexte`,
+    pdfFieldName: "",
+    lineTargets: opts.irregulierementTextFields.map((pdfFieldName) => ({ pdfFieldName })),
+    type: "textarea",
+    required: false,
+    label: { fr: "Précisez à quel rythme" },
+    visibleIf: { fieldId: `${opts.idPrefix}periode`, op: "equals", value: "irregulier" },
+    section: opts.section,
+    order: ordre(),
   });
 
   return fields;
@@ -1447,13 +1464,13 @@ const LEGACY_C1A_FIELD_IDS = new Set<string>([
   // survivrait à côté du nouveau champ qui porte le même pdfFieldName.
   "listeDeroulante44",
   // Q4 (2026-07-29) : correctif de la coupure périodes/irrégulier — le
-  // widget "undefined" appartient désormais à `q4irregulierementTexte1` (il
-  // reste couvert, donc la couverture par pdfFieldName suffirait déjà à
-  // écarter l'ancien id), mais `q4periodesTexte5` disparaît du seed
-  // (périodesTextFields n'a plus que 4 entrées) : listé ici par prudence,
-  // même raison que les trois entrées Q2/Q15 ci-dessus — sans cette entrée,
-  // un brouillon déjà en base garderait une 5e case "Période 5" fantôme,
-  // qui n'écrirait plus rien de cohérent nulle part.
+  // widget "undefined" appartient désormais à la ligne 1 de
+  // `q4irregulierementTexte` (cf. entrée dédiée plus bas, 2026-07-30), mais
+  // `q4periodesTexte5` disparaît du seed (périodesTextFields n'a plus que 4
+  // entrées) : listé ici par prudence, même raison que les trois entrées
+  // Q2/Q15 ci-dessus — sans cette entrée, un brouillon déjà en base garderait
+  // une 5e case "Période 5" fantôme, qui n'écrirait plus rien de cohérent
+  // nulle part.
   "q4periodesTexte5",
   // Q2/Q5 (Commit 2, 2026-07-29) : natureActiviteIndependant1..5 et
   // descriptionAide2..9 consolidés en deux champs `array`
@@ -1478,6 +1495,34 @@ const LEGACY_C1A_FIELD_IDS = new Set<string>([
   "descriptionAide7",
   "descriptionAide8",
   "descriptionAide9",
+  // Grilles horaires Q4/Q18 (2026-07-30) : "Période 1..4" et "Précisez à quel
+  // rythme"/"Précision 2..N" consolidés en UN SEUL champ `textarea` par
+  // option (`periodesTexte`, `irregulierementTexte`), qui répartit sa valeur
+  // sur les mêmes widgets via `lineTargets` au lieu d'un champ par ligne. La
+  // couverture par `pdfFieldName` NE SUFFIT PAS ici : les widgets ("1", "2",
+  // "1_2"…) ne sont plus référencés qu'à l'intérieur de `lineTargets`,
+  // invisible à `coveredWidgetNames` (qui ne lit que `field.pdfFieldName` au
+  // premier niveau) — même limite que `natureActiviteIndependant1..5`
+  // ci-dessus. Sans ces entrées, un brouillon déjà en base garderait les 16
+  // anciens champs numérotés À CÔTÉ des deux nouveaux textarea.
+  // (`q4periodesTexte5` est déjà listé plus haut — jamais un id réel du seed,
+  // gardé par prudence depuis le correctif Q4 du 2026-07-29.)
+  "q4periodesTexte1",
+  "q4periodesTexte2",
+  "q4periodesTexte3",
+  "q4periodesTexte4",
+  "q4irregulierementTexte1",
+  "q4irregulierementTexte2",
+  "q4irregulierementTexte3",
+  "q4irregulierementTexte4",
+  "q4irregulierementTexte5",
+  "q18periodesTexte1",
+  "q18periodesTexte2",
+  "q18periodesTexte3",
+  "q18periodesTexte4",
+  "q18irregulierementTexte1",
+  "q18irregulierementTexte2",
+  "q18irregulierementTexte3",
 ]);
 
 /// Champs qui suivent la même condition que la question qui les porte : les

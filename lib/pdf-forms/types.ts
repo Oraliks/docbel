@@ -346,6 +346,24 @@ export interface PdfFormField {
   /// (optionnel) fait réduire la police pour tenir dans l'espace. Appliqué
   /// APRÈS le mapping widgets, indépendamment de `pdfFieldName`.
   drawAt?: { page: number; x: number; y: number; size?: number; maxWidth?: number };
+  /// Répartition d'un `textarea` sur PLUSIEURS lignes physiques du PDF, dans
+  /// l'ORDRE déclaré — pour les zones où le papier offre N lignes pointillées
+  /// distinctes (widgets numérotés, ou dessins positionnels) pour UNE seule
+  /// question en texte libre (ex. les grilles horaires du C1A : « pendant les
+  /// périodes suivantes… » ouvre 4 lignes, « irrégulièrement, à savoir » 5).
+  /// Le filler reçoit une seule valeur (le contenu du textarea) et la replie
+  /// par mots sur ces cibles, une ligne par cible ; un saut de ligne explicite
+  /// tapé par le citoyen force le passage à la cible suivante ; s'il reste du
+  /// texte au-delà de la dernière cible, elle absorbe le reste et sa police
+  /// est réduite pour tenir (cf. `filler.ts`, jamais de perte silencieuse).
+  /// Chaque entrée porte SOIT `pdfFieldName` (widget AcroForm existant), SOIT
+  /// `drawAt` (ligne imprimée sans widget) — jamais les deux à la fois.
+  ///
+  /// Serveur uniquement : PAS exposé dans `PublicField` (le client n'a besoin
+  /// que du `type: "textarea"` — la répartition sur les lignes physiques du
+  /// PDF est un détail de génération, invisible à l'écran). Absent = champ
+  /// non concerné (comportement actuel, inchangé).
+  lineTargets?: Array<{ pdfFieldName?: string; drawAt?: PdfFormField["drawAt"] }>;
   /// Champ `iban` dont le compte n'est PAS forcément belge : utilise le
   /// validateur ISO 13616 générique (32 pays, cf. isValidInternationalIBAN)
   /// au lieu du validateur belge strict par défaut (BE + 14 chiffres).

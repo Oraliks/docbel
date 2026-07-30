@@ -102,6 +102,18 @@ function isTruthy(v: unknown): boolean {
   return !!v;
 }
 
+/// `\n`/`\r` ne sont JAMAIS des glyphes dessinés : un widget multiligne les
+/// interprète comme un passage à la ligne (rendu natif pdf-lib), et
+/// `lineTargets` (plus bas) les consomme comme séparateurs avant tout dessin
+/// — la valeur qui atteint réellement `setText`/`drawText` n'en contient
+/// jamais. Les compter comme « caractère manquant » de la police (sonde de
+/// couverture ci-dessous) produirait un faux diagnostic
+/// `caracteres-non-rendus` sur toute valeur multi-lignes légitime, alors que
+/// rien n'est réellement perdu à l'écriture.
+function estRetourLigne(c: string): boolean {
+  return c === "\n" || c === "\r";
+}
+
 /// Récupère un widget checkbox par son nom. Renvoie null si introuvable ou
 /// si le widget existe mais n'est pas une PDFCheckBox (le caller décide quoi
 /// faire — souvent ignorer silencieusement).
@@ -228,6 +240,73 @@ function fitFontSize(
     size -= 0.5;
   }
   return size;
+}
+
+/// Réplique le texte d'un `textarea` unique sur une séquence ORDONNÉE de
+/// lignes physiques (`PdfFormField.lineTargets`), chacune avec sa largeur
+/// utile en points, à la taille de police PRÉVUE (`mesurer` la calcule — pas
+/// encore réduite : la réduction reste au dessin, cf. `fitFontSize`).
+///
+/// Repli par mots : une ligne accumule des mots tant qu'ils tiennent dans la
+/// largeur de sa cible ; un saut de ligne explicite (`\n`, saisi par le
+/// citoyen) clôt la ligne courante MÊME s'il restait de la place — la mise en
+/// forme volontaire du citoyen prime sur le remplissage optimal.
+///
+/// Le tableau renvoyé a TOUJOURS `largeurs.length` entrées, une par cible :
+/// `""` pour une cible inutilisée (reste vide sur le PDF, comme aujourd'hui).
+/// S'il reste des mots une fois la DERNIÈRE cible atteinte, ils sont fondus
+/// dans sa ligne (séparés d'un espace, `\n` compris — il ne peut plus se voir
+/// au-delà de la dernière ligne physique) plutôt que perdus : c'est à
+/// l'appelant de réduire la police de cette ligne pour la faire tenir (même
+/// logique que `fitFontSize` / le repli déjà en place sur `drawAt`).
+function distribuerLignes(
+  valeur: string,
+  largeurs: number[],
+  mesurer: (texte: string) => number
+): string[] {
+  const nombreCibles = largeurs.length;
+  if (nombreCibles <= 0) return [];
+  // Au-delà de la dernière cible connue, on continue de replier à SA largeur
+  // (faute de mieux) : les lignes en surplus sont de toute façon fondues en
+  // une seule ci-dessous, le point de coupure exact entre elles ne change pas
+  // le résultat final.
+  const largeurPour = (index: number) => largeurs[Math.min(index, nombreCibles - 1)];
+
+  const lignes: string[] = [];
+  let ligne = "";
+  const clore = () => {
+    lignes.push(ligne);
+    ligne = "";
+  };
+
+  valeur
+    .replace(/\r\n?/g, "\n")
+    .split("\n")
+    .forEach((paragraphe, i) => {
+      if (i > 0) clore(); // le \n précédent force une nouvelle cible
+      for (const mot of paragraphe.split(/\s+/).filter(Boolean)) {
+        const essai = ligne ? `${ligne} ${mot}` : mot;
+        if (ligne && mesurer(essai) > largeurPour(lignes.length)) {
+          clore();
+          ligne = mot;
+        } else {
+          ligne = essai;
+        }
+      }
+    });
+  clore();
+
+  if (lignes.length <= nombreCibles) {
+    const resultat = lignes.slice();
+    while (resultat.length < nombreCibles) resultat.push("");
+    return resultat;
+  }
+
+  // Débordement : la DERNIÈRE cible absorbe tout le reste, mots rejoints par
+  // un espace — jamais de ligne supplémentaire perdue en silence.
+  const resultat = lignes.slice(0, nombreCibles - 1);
+  resultat.push(lignes.slice(nombreCibles - 1).filter(Boolean).join(" "));
+  return resultat;
 }
 
 /// Choix de police TEXTE PAR TEXTE.
@@ -561,7 +640,9 @@ export async function fillForm(
       // ni même le vietnamien « ễ ».
       const probe = fontkit.create(ttf);
       missingGlyphs = (text: string) =>
-        [...text].filter((c) => !probe.hasGlyphForCodePoint(c.codePointAt(0) ?? 0)).join("");
+        [...text]
+          .filter((c) => !estRetourLigne(c) && !probe.hasGlyphForCodePoint(c.codePointAt(0) ?? 0))
+          .join("");
     } catch {
       font = await doc.embedFont(StandardFonts.Helvetica);
     }
@@ -596,7 +677,9 @@ export async function fillForm(
     try {
       const probe = (await import("@pdf-lib/fontkit")).default.create(fallbackTtf);
       missingFallback = (text: string) =>
-        [...text].filter((c) => !probe.hasGlyphForCodePoint(c.codePointAt(0) ?? 0)).join("");
+        [...text]
+          .filter((c) => !estRetourLigne(c) && !probe.hasGlyphForCodePoint(c.codePointAt(0) ?? 0))
+          .join("");
     } catch {
       /* repli illisible : on garde le comportement sans repli */
     }
@@ -1026,6 +1109,111 @@ export async function fillForm(
           ")"
       );
     }
+  }
+
+  // Répartition MULTI-LIGNES `lineTargets` : un `textarea` unique dont le
+  // texte est réparti sur plusieurs lignes PHYSIQUES du PDF (widgets ou
+  // dessins positionnels), dans l'ordre déclaré — ex. les grilles horaires du
+  // C1A, où « pendant les périodes suivantes » et « irrégulièrement, à
+  // savoir » ouvraient jusqu'ici plusieurs champs numérotés (Période 1, 2,
+  // 3…) au lieu d'un seul textarea libre. Ces champs n'ont pas de
+  // `pdfFieldName` propre (`""`), donc la boucle principale ci-dessus les a
+  // ignorés — indépendant du reste, comme le dessin positionnel `drawAt`.
+  for (const field of fields) {
+    if (!field.lineTargets || field.lineTargets.length === 0) continue;
+    if (field.hidden) continue;
+    if (field.visibleIf && !isFieldVisible(field.visibleIf, payload)) continue;
+    const raw = payload[field.id];
+    if (typeof raw !== "string" || !raw.trim()) continue;
+
+    const taillePreferee = field.fontSize ?? UNIFORM_TEXT_FONT_SIZE;
+    // Police choisie UNE FOIS sur le texte COMPLET, comme le pré-contrôle de
+    // rendabilité en tête de fonction (qui scanne `payload[field.id]` tel
+    // quel) : une ligne repliée est une SOUS-CHAINE, jamais présente telle
+    // quelle dans `aBesoinDuRepli` — la choisir ligne par ligne manquerait
+    // donc toujours le repli cyrillique/grec/vietnamien que le pré-contrôle a
+    // pourtant détecté sur la valeur d'origine.
+    const { font: texteFont, fallback: texteFallback } = fonts.pick(raw);
+
+    // Largeur utile de chaque cible, dans l'ordre — via `technicalSchema`
+    // pour un widget (rect PDF, marge intérieure retirée comme `fitFontSize`),
+    // via `maxWidth` pour un dessin positionnel. Inconnue → pas de repli pour
+    // cette cible (mieux vaut tout écrire, quitte à déborder, que deviner une
+    // largeur fausse et couper du texte à tort).
+    const largeurs = field.lineTargets.map((cible) => {
+      if (cible.pdfFieldName) {
+        const tech = (opts.technicalSchema ?? []).find((t) => t.pdfFieldName === cible.pdfFieldName);
+        const w = tech?.rect?.[2];
+        return w && w > 0 ? w - 2 * TEXT_WIDGET_PADDING : Number.POSITIVE_INFINITY;
+      }
+      return cible.drawAt?.maxWidth && cible.drawAt.maxWidth > 0
+        ? cible.drawAt.maxWidth
+        : Number.POSITIVE_INFINITY;
+    });
+
+    const lignes = distribuerLignes(raw, largeurs, (texte) => texteFont.widthOfTextAtSize(texte, taillePreferee));
+
+    field.lineTargets.forEach((cible, i) => {
+      const texte = lignes[i];
+      if (!texte) return;
+
+      if (cible.pdfFieldName) {
+        let widget;
+        try {
+          widget = form.getField(cible.pdfFieldName);
+        } catch {
+          diags.push({ fieldId: field.id, widget: cible.pdfFieldName, kind: "widget-introuvable" });
+          return;
+        }
+        if (!(widget instanceof PDFTextField)) {
+          diags.push({
+            fieldId: field.id,
+            widget: cible.pdfFieldName,
+            kind: "stamp-refuse",
+            detail: "lineTargets attend un widget texte",
+          });
+          return;
+        }
+        try {
+          widget.setText(texte);
+          if (texteFallback) fonts.reapply.push({ field: widget, font: texteFont });
+          // `fitFontSize` revérifie sur le rectangle RÉEL du widget : filet de
+          // sécurité si la largeur mesurée ci-dessus (technicalSchema) diverge
+          // légèrement, ou si un mot isolé dépasse à lui seul sa cible.
+          widget.setFontSize(fitFontSize(texteFont, texte, widget, taillePreferee));
+          if (unicodeFont) widget.updateAppearances(texteFont);
+        } catch (err) {
+          diags.push({
+            fieldId: field.id,
+            widget: cible.pdfFieldName,
+            kind: "stamp-refuse",
+            detail: err instanceof Error ? err.message : String(err),
+          });
+        }
+        return;
+      }
+
+      if (cible.drawAt) {
+        const pIdx = Math.max(0, Math.min(doc.getPageCount() - 1, cible.drawAt.page));
+        const page = doc.getPage(pIdx);
+        let taille = cible.drawAt.size ?? taillePreferee;
+        const maxWidth = cible.drawAt.maxWidth;
+        if (maxWidth && maxWidth > 0) {
+          while (taille > MIN_TEXT_FONT_SIZE && texteFont.widthOfTextAtSize(texte, taille) > maxWidth) {
+            taille -= 0.5;
+          }
+        }
+        try {
+          page.drawText(texte, { x: cible.drawAt.x, y: cible.drawAt.y, size: taille, font: texteFont, color: rgb(0, 0, 0) });
+        } catch (err) {
+          console.warn(
+            `[pdf-forms] lineTargets: échec sur "${field.id}" (` +
+              (err instanceof Error ? err.message : String(err)) +
+              ")"
+          );
+        }
+      }
+    });
   }
 
   // Réécrit les apparences globales avec la police Unicode avant flatten.

@@ -2,6 +2,7 @@ import {
   PDFDocument,
   PDFFont,
   PDFForm,
+  PDFPage,
   PDFTextField,
   PDFCheckBox,
   PDFDropdown,
@@ -363,6 +364,69 @@ function texteEnPeigne(
   }
   if (i < chars.length) groupes.push(chars.slice(i).join(ecart));
   return groupes.join(ecartGroupe);
+}
+
+/// Coeur du placement en peigne POSITIONNEL : avance de gauche a droite
+/// depuis un point de depart (bx, by), un caractere par case, en ajoutant
+/// `groupExtra` aux ruptures de groupe declarees.
+///
+/// Independant de la SOURCE de geometrie : appele avec le rectangle d'un
+/// widget AcroForm (cf. `dessinerPeigne` plus bas -- guide partage entre
+/// plusieurs cases imprimees, ex. TVA/Montant/voir 19/1_3 du C1A) ou avec les
+/// coordonnees `drawAt` d'un champ purement positionnel, sans widget du tout
+/// (cf. les n° BCE du C1A, Q2/Q16 : le guide en dix cases 4-3-3 existe bien
+/// sur le papier, mais aucun widget dedie ne le porte -- le seul champ
+/// AcroForm present, "TVA", partage sa valeur entre les deux pages et est
+/// donc inutilisable, cf. PDF_FORMS_RULES.md).
+///
+/// `baselineParDefaut` absorbe la difference entre les deux sources : le
+/// rectangle d'un widget donne le coin BAS-GAUCHE de sa case, d'ou +3 par
+/// defaut pour remonter a la ligne de base (cf. `dessinerPeigne`) ; des
+/// coordonnees `drawAt`, elles, SONT deja par convention la ligne de base
+/// exacte (comme partout ailleurs dans ce fichier), d'ou +0 dans ce cas.
+function placerPeigne(
+  page: PDFPage,
+  bx: number,
+  by: number,
+  baselineParDefaut: number,
+  valeur: string,
+  comb: NonNullable<PdfFormField["printAsComb"]>,
+  taillePolice: number,
+  policeCaractere: PDFFont,
+  fieldId: string,
+  widgetName: string,
+  diags: FillDiagnostic[]
+): void {
+  // Garde redondante avec celle des 3 appelants (widget introuvable / champ
+  // sans `slotWidth`) : ils verifient dans LEUR propre scope, ce qui ne
+  // narrowait pas `comb.slotWidth` ici une fois passe en parametre. Rend
+  // aussi la fonction sure par elle-meme si un futur appelant l'oublie.
+  if (!comb.slotWidth) return;
+  const caracteres = valeur.replace(/[^0-9A-Za-z]/g, "").split("");
+
+  const ruptures = new Set<number>();
+  let cumul = 0;
+  for (const taille of comb.groups) {
+    cumul += taille;
+    ruptures.add(cumul);
+  }
+
+  let x = bx + (comb.startX ?? 0);
+  const y = by + (comb.baselineY ?? baselineParDefaut);
+  for (let i = 0; i < caracteres.length; i++) {
+    if (ruptures.has(i)) x += comb.groupExtra ?? 0;
+    try {
+      page.drawText(caracteres[i], { x, y, size: taillePolice, font: policeCaractere, color: rgb(0, 0, 0) });
+    } catch (err) {
+      diags.push({
+        fieldId,
+        widget: widgetName,
+        kind: "stamp-refuse",
+        detail: err instanceof Error ? err.message : String(err),
+      });
+    }
+    x += comb.slotWidth;
+  }
 }
 
 /// Stampe une valeur scalaire sur un widget AcroForm résolu, en dispatchant
@@ -889,31 +953,7 @@ export async function fillForm(
     const [bx, by] = tech.rect;
     const page = doc.getPage(Math.max(0, Math.min(doc.getPageCount() - 1, tech.page ?? 0)));
     const { font: policeCaractere } = fonts.pick(valeur);
-    const caracteres = valeur.replace(/[^0-9A-Za-z]/g, "").split("");
-
-    const ruptures = new Set<number>();
-    let cumul = 0;
-    for (const t of comb.groups) {
-      cumul += t;
-      ruptures.add(cumul);
-    }
-
-    let x = bx + (comb.startX ?? 0);
-    const y = by + (comb.baselineY ?? 3);
-    for (let i = 0; i < caracteres.length; i++) {
-      if (ruptures.has(i)) x += comb.groupExtra ?? 0;
-      try {
-        page.drawText(caracteres[i], { x, y, size: taillePolice, font: policeCaractere, color: rgb(0, 0, 0) });
-      } catch (err) {
-        diags.push({
-          fieldId,
-          widget: widgetName,
-          kind: "stamp-refuse",
-          detail: err instanceof Error ? err.message : String(err),
-        });
-      }
-      x += comb.slotWidth;
-    }
+    placerPeigne(page, bx, by, 3, valeur, comb, taillePolice, policeCaractere, fieldId, widgetName, diags);
   };
 
   // Bindings serveur : `extraStamps` provient du registry par slug
@@ -1037,46 +1077,13 @@ export async function fillForm(
     // date ISO du state partait telle quelle et « 1985-06-12 » s'imprimait
     // « 19 85 0612 » — l'annee d'abord, sur un guide jour/mois/annee.
     const valeurChamp = field.type === "date" ? formatDateFR(brut) : brut;
-    const tech = (opts.technicalSchema ?? []).find((t) => t.pdfFieldName === field.pdfFieldName);
-    if (!tech?.rect) continue;
-
-    const [bx, by] = tech.rect;
-    const page = doc.getPage(Math.max(0, Math.min(doc.getPageCount() - 1, tech.page ?? 0)));
     const taille = field.fontSize ?? UNIFORM_TEXT_FONT_SIZE;
-    const { font: policeCaractere } = fonts.pick(valeurChamp);
-    const caracteres = valeurChamp.replace(/[^0-9A-Za-z]/g, "").split("");
-
-    // Bornes de groupe : apres combien de caracteres le guide marque une
-    // rupture (« / » puis « - » sur le NISS).
-    const ruptures = new Set<number>();
-    let cumul = 0;
-    for (const taille_groupe of comb.groups) {
-      cumul += taille_groupe;
-      ruptures.add(cumul);
-    }
-
-    let x = bx + (comb.startX ?? 0);
-    const y = by + (comb.baselineY ?? 3);
-    for (let i = 0; i < caracteres.length; i++) {
-      if (ruptures.has(i)) x += comb.groupExtra ?? 0;
-      try {
-        page.drawText(caracteres[i], {
-          x,
-          y,
-          size: taille,
-          font: policeCaractere,
-          color: rgb(0, 0, 0),
-        });
-      } catch (err) {
-        diags.push({
-          fieldId: field.id,
-          widget: field.pdfFieldName,
-          kind: "stamp-refuse",
-          detail: err instanceof Error ? err.message : String(err),
-        });
-      }
-      x += comb.slotWidth;
-    }
+    // Meme coeur de placement que la branche grille ci-dessus : `dessinerPeigne`
+    // resout le widget par nom (technicalSchema) et delegue a `placerPeigne` --
+    // plus de recherche de rectangle, de calcul de rupture ni de boucle de
+    // dessin dupliques ici (avant ce lot, ce bloc reimplementait la meme
+    // logique caractere par caractere que `dessinerPeigne` un peu plus haut).
+    dessinerPeigne(field.id, field.pdfFieldName, valeurChamp, comb, taille);
   }
 
   // Dessin POSITIONNEL `drawAt` : champs sans widget AcroForm dont la valeur
@@ -1096,6 +1103,27 @@ export async function fillForm(
     const pIdx = Math.max(0, Math.min(doc.getPageCount() - 1, pageIdx));
     const page = doc.getPage(pIdx);
     const { font: drawFont } = fonts.pick(text);
+
+    // Peigne SANS widget : un champ qui porte a la fois `drawAt` et
+    // `printAsComb` (ex. les n° BCE du C1A, Q2/Q16 -- le widget AcroForm
+    // "TVA" existe bien mais partage sa valeur entre les deux pages, donc
+    // inutilisable pour du texte case-par-case, cf. PDF_FORMS_RULES.md et le
+    // commentaire du seed sur ces deux champs). Meme coeur de placement que
+    // le peigne pilote par widget (`placerPeigne`, appele par `dessinerPeigne`
+    // plus haut) : seule la source de geometrie change -- `drawAt.x`/`y` au
+    // lieu du rectangle d'un widget. `baselineParDefaut` = 0 (pas 3, cf.
+    // `placerPeigne`) : `drawAt.y` EST deja la ligne de base exacte, comme
+    // pour tous les autres champs `drawAt` de cette boucle -- pas le coin bas
+    // d'une case a partir duquel remonter. `maxWidth` (reduction de police)
+    // ne s'applique pas ici : chaque caractere avance d'un pas fixe
+    // (`comb.slotWidth`), le texte ne peut pas "deborder" au sens ou l'entend
+    // la reduction ci-dessous.
+    const comb = field.printAsComb;
+    if (comb?.slotWidth) {
+      placerPeigne(page, x, y, 0, text, comb, size ?? UNIFORM_TEXT_FONT_SIZE, drawFont, field.id, field.pdfFieldName, diags);
+      continue;
+    }
+
     let fontSize = size ?? UNIFORM_TEXT_FONT_SIZE;
     if (maxWidth && maxWidth > 0) {
       while (fontSize > 5 && drawFont.widthOfTextAtSize(text, fontSize) > maxWidth) fontSize -= 0.5;

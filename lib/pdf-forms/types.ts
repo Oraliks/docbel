@@ -424,6 +424,16 @@ export interface PdfFormField {
   /// Le reglage est donc granuleux — pour un alignement au dixieme de
   /// millimetre il faudrait dessiner chaque caractere a une position
   /// calculee, ce que ce mecanisme ne fait pas.
+  ///
+  /// DEUX sources de geometrie possibles pour le mode POSITIONNEL
+  /// (`slotWidth` renseigne) : un widget AcroForm (via `pdfFieldName`), ou —
+  /// quand aucun widget ne peut porter la valeur (ex. n° BCE du C1A, Q2/Q16 :
+  /// le seul widget imprime, "TVA", est PARTAGE entre deux pages, cf.
+  /// PDF_FORMS_RULES.md) — les coordonnees `drawAt` du meme champ. `filler.ts`
+  /// (`placerPeigne`) factorise le coeur du placement pour les deux ; seule
+  /// l'origine (bx, by) et le defaut de `baselineY` different : coin bas-
+  /// gauche du rectangle widget (+3 par defaut) contre `drawAt.x`/`drawAt.y`,
+  /// deja la ligne de base exacte par convention (+0 par defaut).
   printAsComb?: {
     groups: number[];
     /// Mode ESPACES (par defaut) : ecarts exprimes en espaces de la police.
@@ -436,9 +446,13 @@ export interface PdfFormField {
     /// facon d'atteindre ses dernieres barres.
     /// Pas entre deux barres, en points PDF.
     slotWidth?: number;
-    /// Abscisse du 1er caractere, depuis le bord GAUCHE du widget.
+    /// Abscisse du 1er caractere. Depuis le bord GAUCHE du widget si le champ
+    /// a un `pdfFieldName` reel ; depuis `drawAt.x` sinon (0 = le 1er
+    /// caractere part exactement de `drawAt.x`, cf. `placerPeigne`).
     startX?: number;
-    /// Ligne de base, depuis le bord BAS du widget.
+    /// Ligne de base. Depuis le bord BAS du widget si le champ a un
+    /// `pdfFieldName` reel ; depuis `drawAt.y` sinon (0 = la ligne de base
+    /// est exactement `drawAt.y`, cf. `placerPeigne`).
     baselineY?: number;
     /// Avance supplementaire a chaque rupture de groupe (« / » et « - »).
     groupExtra?: number;

@@ -458,9 +458,40 @@ export const C1A_FIELDS: PdfFormField[] = [
     // (p1, y=342, sous son nom) est le premier widget de `TVA`, capté par Q16.
     // `TVA` couvrant les DEUX cases avec une seule valeur, écriture
     // positionnelle ici aussi — cf. le commentaire de `numeroEntreprise`.
+    //
+    // `printAsComb` (audit placement 2026-07-30, rapport
+    // .superpowers/sdd/bce-peigne-report.md) : le guide imprimé sous cette
+    // case n'est PAS un rectangle graphique mais dix glyphes du sous-jeu
+    // `SymbolMT` (mesurés pdfplumber sur private/pdfs/C1A_FR.pdf, mode
+    // `chars` — ce ne sont pas des `rects`/`lines`), groupés 4-3-3 comme le
+    // format BCE 0123.456.789. Avant ce lot, le numéro s'imprimait en texte
+    // plein compact, décalé par rapport aux dix cases. Abscisses mesurées des
+    // dix glyphes : 113.88 / 126.90 / 139.92 / 152.94 (groupe 1), 172.02 /
+    // 185.04 / 198.06 (groupe 2), 217.13 / 230.15 / 243.17 (groupe 3) — pas
+    // constant de 13.02 pt, écart supplémentaire de 6.06 pt aux deux ruptures
+    // de groupe (mesure identique aux deux ruptures, à 0.003 pt près).
+    // `drawAt.x` déplacé de 115 (ancien calage texte-plein, formule
+    // rect.x0+2) à 113.88 (abscisse RÉELLE de la 1re case) : les deux calages
+    // divergent légèrement car ils répondent à des questions différentes (où
+    // commencer un bloc de texte compact / où poser le 1er caractère d'un
+    // peigne).
+    //
+    // `drawAt.y` RELEVÉ de 338 à 343 (+5) : l'ancien 338 était correct pour du
+    // TEXTE PLEIN (aucun défaut vertical relevé par l'audit précédent, la
+    // ligne de base traversait juste la bande du guide sans que ça choque,
+    // faute de correspondance case-par-case à respecter). En mode peigne,
+    // chaque tiret SymbolMT mesure lui-même un bloc de 9 pt de haut
+    // (338.60-347.60 pour celui-ci) : à y=338, la ligne de base tombe SOUS ce
+    // bloc, et le tiret traverse le chiffre en son MILIEU au rendu (constaté
+    // à l'écran, PDF de test généré) — lisible mais peu soigné. Recalibré à
+    // l'œil (5 candidats rendus avec la police et le pipeline réels, de 338 à
+    // 345) contre l'esthétique du peigne NISS déjà validée par Oraliks
+    // (`seed/c1/identite.ts`, chiffre posé SUR son tiret, jamais traversé) :
+    // 343 pose chaque chiffre juste au-dessus de son tiret, comme le NISS.
     id: "independantNumeroEntreprise",
     pdfFieldName: "",
-    drawAt: { page: 0, x: 115, y: 338, size: 9, maxWidth: 134 },
+    drawAt: { page: 0, x: 113.88, y: 343, size: 9, maxWidth: 134 },
+    printAsComb: { groups: [4, 3, 3], slotWidth: 13.02, groupExtra: 6.06 },
     type: "bce",
     required: false,
     label: { fr: "Numéro d'entreprise de l'indépendant que vous aidez" },
@@ -977,9 +1008,28 @@ export const C1A_FIELDS: PdfFormField[] = [
     //
     // Aucune réattribution ne peut résoudre ça : les deux questions passent en
     // écriture positionnelle et `TVA` reste non revendiqué.
+    //
+    // `printAsComb` (audit placement 2026-07-30, rapport
+    // .superpowers/sdd/bce-peigne-report.md) : même guide imprimé que
+    // `independantNumeroEntreprise` ci-dessus (dix glyphes `SymbolMT`,
+    // groupes 4-3-3), mesuré séparément sur cette 2e occurrence (page 2) pour
+    // ne pas supposer une géométrie identique sans vérifier. Abscisses
+    // mesurées : 118.32 / 131.34 / 144.36 / 157.38 (groupe 1), 176.46 /
+    // 189.48 / 202.50 (groupe 2), 221.58 / 234.60 / 247.62 (groupe 3) — même
+    // pas (13.02 pt) et même écart de rupture (6.06 pt) qu'en page 1, à
+    // 0.003 pt près (confirme un même guide dupliqué par le gabarit source,
+    // pas une coïncidence de mesure). `drawAt.x` déplacé de 119 (ancien
+    // calage texte-plein) à 118.32 (abscisse RÉELLE de la 1re case).
+    //
+    // `drawAt.y` RELEVÉ de 298 à 303 (+5, même delta qu'`independantNumeroEntreprise`
+    // ci-dessus — même tiret SymbolMT, même taille, seule l'ordonnée absolue
+    // diffère d'une page à l'autre) : même raison que ci-dessus, confirmée
+    // séparément par rendu sur cette 2e occurrence (candidat 303 rendu et
+    // comparé à l'esthétique du peigne NISS avant de figer la valeur).
     id: "numeroEntreprise",
     pdfFieldName: "",
-    drawAt: { page: 1, x: 119, y: 298, size: 9, maxWidth: 155 },
+    drawAt: { page: 1, x: 118.32, y: 303, size: 9, maxWidth: 155 },
+    printAsComb: { groups: [4, 3, 3], slotWidth: 13.02, groupExtra: 6.06 },
     type: "bce",
     required: false,
     label: { fr: "Numéro d'entreprise (BCE)" },

@@ -20,12 +20,15 @@
 // Aucune connaissance metier requise pour relire ce fichier : c'est de la
 // geometrie, comme `widget-geometry.test.ts`.
 
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { readFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
-import { PDFDocument, PDFName } from "pdf-lib";
+import { PDFDocument, PDFName, PDFPage } from "pdf-lib";
+import type { PDFPageDrawTextOptions } from "pdf-lib";
 import { applyC1AImprovements } from "../seed/c1a-fields";
-import type { PdfFormField } from "../types";
+import { fillForm } from "../filler";
+import { parsePdf } from "../acroform-parser";
+import type { FormPayload, PdfFormField } from "../types";
 
 const C1A_PDF = join(process.cwd(), "private", "pdfs", "C1A_FR.pdf");
 
@@ -69,14 +72,21 @@ function fieldById(fields: PdfFormField[], id: string): PdfFormField {
 /// y = arrondi(rect.y0) - 4. Le texte s'imprime alors ~2 pt sous le
 /// pointille imprime, jamais au-dessus ni en chevauchement.
 ///
-/// Verifiee EXACTE (a l'unite pres) sur 5 des ~10 champs `drawAt` du
-/// document : les deux n° d'entreprise (Q2/Q16, widget "TVA"), les deux
-/// montants de Q11 (widget "Montant", 2e et 3e case), et la 1re ligne
-/// "periodes" de Q18 (widget "1_3"). Les cas restants (Q6, Q19) suivent une
-/// geometrie differente (legende imprimee a un endroit different) et sont
-/// verrouilles en valeur plus bas, avec leur propre justification mesuree --
-/// ne pas les "harmoniser" sur cette formule sans remesurer, cf. les
-/// commentaires dedies.
+/// Verifiee EXACTE (a l'unite pres) sur 3 des ~10 champs `drawAt` du
+/// document : les deux montants de Q11 (widget "Montant", 2e et 3e case), et
+/// la 1re ligne "periodes" de Q18 (widget "1_3"). Les cas restants (Q6, Q19)
+/// suivent une geometrie differente (legende imprimee a un endroit
+/// different) et sont verrouilles en valeur plus bas, avec leur propre
+/// justification mesuree -- ne pas les "harmoniser" sur cette formule sans
+/// remesurer, cf. les commentaires dedies.
+///
+/// Les deux n° d'entreprise (Q2/Q16, widget "TVA") suivaient AUSSI cette
+/// formule jusqu'au 2026-07-30 (texte plein) : depuis le lot "peigne BCE"
+/// (rapport .superpowers/sdd/bce-peigne-report.md), ils dessinent un peigne
+/// case-par-case cale sur le guide imprime lui-meme (glyphes `SymbolMT`), pas
+/// sur le widget TVA -- verrouilles par valeur dans le describe "peigne
+/// positionnel des n° BCE" plus bas, avec juste un garde-fou de proximite au
+/// widget TVA ci-dessous (pas la formule exacte).
 function xyAttendus(r: WidgetRect): { x: number; y: number } {
   return { x: Math.round(r.x0) + 2, y: Math.round(r.y0) - 4 };
 }
@@ -91,7 +101,9 @@ describe("C1A - geometrie des champs drawAt (verrouillage post-audit placement 2
     await expect(widgetRects(source, "voir 19")).resolves.toHaveLength(4);
   });
 
-  it("independantNumeroEntreprise (Q2) et numeroEntreprise (Q16) se calent sur les 2 widgets reels de TVA", async ({ skip }) => {
+  it("independantNumeroEntreprise (Q2) et numeroEntreprise (Q16) : mode PEIGNE depuis le 2026-07-30, x proche du widget TVA reel", async ({
+    skip,
+  }) => {
     if (!existsSync(C1A_PDF)) skip();
     const source = readFileSync(C1A_PDF);
     const rects = await widgetRects(source, "TVA");
@@ -104,8 +116,21 @@ describe("C1A - geometrie des champs drawAt (verrouillage post-audit placement 2
     expect(q2Widget, "widget TVA de la page 1 (Q2) introuvable").toBeDefined();
     expect(q16Widget, "widget TVA de la page 2 (Q16) introuvable").toBeDefined();
 
-    expect(q2.drawAt).toMatchObject({ page: 0, ...xyAttendus(q2Widget!) });
-    expect(q16.drawAt).toMatchObject({ page: 1, ...xyAttendus(q16Widget!) });
+    // Depuis le lot "peigne BCE" (2026-07-30, rapport bce-peigne-report.md),
+    // ces deux champs ne suivent PLUS la formule +2/-4 ci-dessus : ils portent
+    // `printAsComb` et leur `drawAt.x` vise directement la 1re case du guide
+    // en dix cases mesuree sur le PDF (pas le bord du widget TVA + 2, qui
+    // convenait au texte plein mais pas a un alignement case-par-case).
+    // Garde-fou large ici (0 a 3 pt a droite du widget) : suffisant pour
+    // detecter un widget TVA qui se deplacerait franchement (nouvelle version
+    // du gabarit ONEM) sans dupliquer la mesure exacte du guide, verrouillee
+    // par valeur dans le describe "peigne positionnel des n° BCE" plus bas.
+    expect(q2.drawAt?.page).toBe(0);
+    expect(q2.drawAt!.x).toBeGreaterThanOrEqual(q2Widget!.x0);
+    expect(q2.drawAt!.x).toBeLessThanOrEqual(q2Widget!.x0 + 3);
+    expect(q16.drawAt?.page).toBe(1);
+    expect(q16.drawAt!.x).toBeGreaterThanOrEqual(q16Widget!.x0);
+    expect(q16.drawAt!.x).toBeLessThanOrEqual(q16Widget!.x0 + 3);
   });
 
   it("revenuAnnuelMandat / revenuAnnuelMandat2 (Q11) se calent sur 2 des 3 widgets reels de Montant", async ({ skip }) => {
@@ -222,5 +247,161 @@ describe("C1A - geometrie des champs drawAt (verrouillage post-audit placement 2
     expect(xsAttendus, "X de revenuNetIndependantParAn doit correspondre a un widget reel de voir 19").toContain(
       parAn.drawAt!.x
     );
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Peigne positionnel des n° BCE (Q2/Q16) -- audit du 2026-07-30, rapport
+// .superpowers/sdd/bce-peigne-report.md.
+//
+// Contexte : les deux champs `independantNumeroEntreprise` (Q2) et
+// `numeroEntreprise` (Q16) s'imprimaient jusqu'ici en texte plein compact sur
+// un guide en dix cases (glyphes `SymbolMT`, groupes 4-3-3 -- format BCE
+// 0123.456.789), decale par rapport aux cases. `filler.ts` sait desormais
+// dessiner un `printAsComb` caractere par caractere pour un champ SANS widget
+// (a partir de `drawAt.x`/`y`), pas seulement pour un champ avec widget --
+// cf. `placerPeigne`, factorisee pour les deux sources de geometrie.
+// ---------------------------------------------------------------------------
+describe("C1A - peigne positionnel des n° BCE (Q2/Q16), un chiffre par case (2026-07-30)", () => {
+  // Rend visibles les deux champs BCE en ecriture positionnelle : Q2 derriere
+  // `aideIndependant=oui` : Q16 derriere `disposeNumeroEntreprise=oui`
+  // (elle-meme affichee seulement si `formeActivite=mandataire`), ET
+  // `autreActiviteAccessoire=oui` (fusionne dans le `visibleIf` compile de
+  // numeroEntreprise par `compilerRoutage`, cf. form-presentation.test.ts).
+  const PAYLOAD_BCE: FormPayload = {
+    aideIndependant: "oui",
+    independantNumeroEntreprise: "0822.975.615",
+    autreActiviteAccessoire: "oui",
+    formeActivite: "mandataire",
+    disposeNumeroEntreprise: "oui",
+    numeroEntreprise: "1234.567.891",
+  };
+
+  interface AppelDrawText {
+    text: string;
+    x: number;
+    y: number;
+  }
+
+  /// Espionne `PDFPage.prototype.drawText` (assignee sur le PROTOTYPE par
+  /// pdf-lib -- verifie dans node_modules/pdf-lib/cjs/api/PDFPage.js -- donc
+  /// interceptee quelle que soit l'instance de page) pendant un `fillForm`
+  /// REEL sur le PDF officiel, puis rend l'appel d'origine pour que le PDF
+  /// produit reste valide. C'est la seule facon d'observer depuis un test ce
+  /// que chaque caractere du peigne a reellement recu comme coordonnees :
+  /// pdf-lib n'expose aucune lecture de flux de contenu apres coup.
+  async function dessinerEtCapturer(
+    payload: FormPayload
+  ): Promise<{ appels: AppelDrawText[]; diagnostics: unknown[] }> {
+    const source = readFileSync(C1A_PDF);
+    const parsed = await parsePdf(source);
+    const fields = applyC1AImprovements([]);
+
+    const appels: AppelDrawText[] = [];
+    const original = PDFPage.prototype.drawText;
+    const spy = vi
+      .spyOn(PDFPage.prototype, "drawText")
+      .mockImplementation(function (this: PDFPage, text: string, options?: PDFPageDrawTextOptions) {
+        appels.push({ text, x: options?.x ?? NaN, y: options?.y ?? NaN });
+        return original.call(this, text, options);
+      });
+    try {
+      const { diagnostics } = await fillForm(source, fields, payload, {
+        flatten: false,
+        technicalSchema: parsed.fields,
+      });
+      return { appels, diagnostics };
+    } finally {
+      spy.mockRestore();
+    }
+  }
+
+  /// Verifie qu'UN chiffre par case a ete dessine, aux abscisses attendues
+  /// (pas constant `slotWidth`, plus `groupExtra` a chaque rupture de groupe),
+  /// et que le dernier chiffre reste sous le bord droit mesure du guide.
+  function verifierPeigne(
+    appels: AppelDrawText[],
+    field: PdfFormField,
+    valeurAttendue: string,
+    finGuideX1: number
+  ): void {
+    const comb = field.printAsComb;
+    expect(comb, `${field.id} doit porter printAsComb`).toBeDefined();
+    expect(field.drawAt, `${field.id} doit porter drawAt`).toBeDefined();
+
+    // La ligne de base (`y`) est propre a CE champ parmi tous les `drawAt` du
+    // C1A (verifie : aucune autre occurrence de 343 ni 303 dans le seed) --
+    // filtrer dessus isole sans ambiguite les chiffres de ce peigne.
+    const dessines = appels.filter((a) => a.y === field.drawAt!.y && /^[0-9]$/.test(a.text));
+    expect(dessines.map((d) => d.text).join(""), `chiffres dessines pour ${field.id}`).toBe(valeurAttendue);
+
+    const ruptures = new Set<number>();
+    let cumul = 0;
+    for (const taille of comb!.groups) {
+      cumul += taille;
+      ruptures.add(cumul);
+    }
+    let xAttendu = field.drawAt!.x;
+    dessines.forEach((d, i) => {
+      if (ruptures.has(i)) xAttendu += comb!.groupExtra ?? 0;
+      expect(d.x, `abscisse du chiffre n°${i} de ${field.id}`).toBeCloseTo(xAttendu, 2);
+      xAttendu += comb!.slotWidth!;
+    });
+
+    // Marge large (7 pt ; DejaVuSans mesure ~5.7 pt de large a 9 pt pour un
+    // chiffre, cf. rapport) : le dernier chiffre ne doit pas depasser le bord
+    // droit du guide, mesure separement sur le PDF officiel pour ce champ.
+    const dernier = dessines[dessines.length - 1];
+    expect(dernier.x + 7, `le dernier chiffre de ${field.id} deborderait du guide`).toBeLessThanOrEqual(finGuideX1);
+  }
+
+  it("independantNumeroEntreprise (Q2) : un chiffre par case, aux abscisses mesurees, sans deborder du guide", async ({
+    skip,
+  }) => {
+    if (!existsSync(C1A_PDF)) skip();
+    const { appels, diagnostics } = await dessinerEtCapturer(PAYLOAD_BCE);
+    expect(diagnostics).toEqual([]);
+    const fields = applyC1AImprovements([]);
+    const q2 = fieldById(fields, "independantNumeroEntreprise");
+
+    // Verrouillage des reglages MESURES (cf. rapport) : groupes 4-3-3 (format
+    // BCE 0123.456.789), pas 13.02 pt, ecart de rupture 6.06 pt -- identiques
+    // aux deux occurrences du guide (Q2/Q16), meme glyphe SymbolMT re-mesure
+    // separement sur chaque page.
+    expect(q2.printAsComb).toEqual({ groups: [4, 3, 3], slotWidth: 13.02, groupExtra: 6.06 });
+    expect(q2.drawAt).toMatchObject({ page: 0, x: 113.88, y: 343 });
+
+    // Derniere case du guide mesuree sur private/pdfs/C1A_FR.pdf (page 1) :
+    // le 10e glyphe SymbolMT va de x0=243.175 a x1=252.175.
+    verifierPeigne(appels, q2, "0822975615", 252.175);
+  });
+
+  it("numeroEntreprise (Q16) : meme garantie, mesuree separement sur la 2e occurrence du guide", async ({ skip }) => {
+    if (!existsSync(C1A_PDF)) skip();
+    const { appels, diagnostics } = await dessinerEtCapturer(PAYLOAD_BCE);
+    expect(diagnostics).toEqual([]);
+    const fields = applyC1AImprovements([]);
+    const q16 = fieldById(fields, "numeroEntreprise");
+
+    expect(q16.printAsComb).toEqual({ groups: [4, 3, 3], slotWidth: 13.02, groupExtra: 6.06 });
+    expect(q16.drawAt).toMatchObject({ page: 1, x: 118.32, y: 303 });
+
+    // Derniere case du guide mesuree sur private/pdfs/C1A_FR.pdf (page 2) :
+    // le 10e glyphe SymbolMT va de x0=247.618 a x1=256.618.
+    verifierPeigne(appels, q16, "1234567891", 256.618);
+  });
+
+  it("ne dessine aucun chiffre en peigne pour Q2/Q16 quand la question amont repond « non »", async ({ skip }) => {
+    if (!existsSync(C1A_PDF)) skip();
+    // `aideIndependant=non` masque Q2 (visibleIf) ; aucune valeur ni condition
+    // amont pour Q16 (disposeNumeroEntreprise absent du payload).
+    const { appels, diagnostics } = await dessinerEtCapturer({ aideIndependant: "non" });
+    expect(diagnostics).toEqual([]);
+    const fields = applyC1AImprovements([]);
+    const q2 = fieldById(fields, "independantNumeroEntreprise");
+    const q16 = fieldById(fields, "numeroEntreprise");
+
+    expect(appels.some((a) => a.y === q2.drawAt!.y && /^[0-9]$/.test(a.text))).toBe(false);
+    expect(appels.some((a) => a.y === q16.drawAt!.y && /^[0-9]$/.test(a.text))).toBe(false);
   });
 });

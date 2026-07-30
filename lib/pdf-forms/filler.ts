@@ -354,10 +354,30 @@ function distribuerLignes(
         // que les lignes suivantes du papier restaient vides (retour Oraliks,
         // 2026-07-30 : une saisie d'un seul long mot tenait sur la 1re ligne
         // en minuscule). On coupe donc au CARACTÈRE, en dernier recours.
-        while (mesurer(ligne) > largeurPour(lignes.length) && ligne.length > 1) {
-          let coupe = ligne.length - 1;
-          while (coupe > 1 && mesurer(ligne.slice(0, coupe)) > largeurPour(lignes.length)) {
-            coupe--;
+        //
+        // Garde-fou de COÛT : une ligne qui contient un espace a été bâtie mot
+        // à mot, chacun ajouté seulement s'il tenait — elle ne peut donc pas
+        // déborder, et il est inutile de la mesurer. Sans ce test, le repli
+        // mesurait la ligne entière à chaque mot, et l'appelant refait tout le
+        // repli pour chaque taille de police candidate : les deux tests
+        // `filler-*` sur vrais PDF partaient en timeout.
+        if (ligne.includes(" ")) continue;
+        while (ligne.length > 1 && mesurer(ligne) > largeurPour(lignes.length)) {
+          // Dichotomie sur le plus long préfixe qui tient — la descente
+          // caractère par caractère coûtait une mesure par caractère, et
+          // `widthOfTextAtSize` parcourt tout le texte à chaque appel.
+          const largeur = largeurPour(lignes.length);
+          let bas = 1;
+          let haut = ligne.length - 1;
+          let coupe = 1;
+          while (bas <= haut) {
+            const milieu = (bas + haut) >> 1;
+            if (mesurer(ligne.slice(0, milieu)) <= largeur) {
+              coupe = milieu;
+              bas = milieu + 1;
+            } else {
+              haut = milieu - 1;
+            }
           }
           const reste = ligne.slice(coupe);
           ligne = ligne.slice(0, coupe);
@@ -1400,7 +1420,68 @@ export async function fillForm(
         : Number.POSITIVE_INFINITY;
     });
 
-    const lignes = distribuerLignes(raw, largeurs, (texte) => texteFont.widthOfTextAtSize(texte, taillePreferee));
+    // UNE SEULE TAILLE POUR TOUT LE GROUPE (Oraliks 2026-07-30 : « la taille du
+    // texte c'est pas partout la même »). Elle était calculée LIGNE PAR LIGNE :
+    // les premières tenaient à la taille normale, la dernière absorbait le
+    // débordement et rétrécissait seule — trois lignes d'un même paragraphe
+    // s'affichaient dans deux corps différents.
+    //
+    // On cherche donc la plus grande taille à laquelle le texte tient DANS LE
+    // NOMBRE DE LIGNES DISPONIBLES, et on l'applique partout. Réduire la police
+    // fait tenir plus de caractères par ligne : la recherche converge, et le
+    // texte remplit les lignes du papier au lieu d'en écraser une seule.
+    const cibleCompte = field.lineTargets.length;
+
+    // Largeur MÉMORISÉE à une taille de référence, puis mise à l'échelle : la
+    // largeur d'un texte est proportionnelle au corps, et `widthOfTextAtSize`
+    // reparcourt toute la chaîne à chaque appel (coûteux sur une police TTF
+    // embarquée). Sans ce cache, essayer plusieurs tailles faisait expirer les
+    // tests de repli sur vrais PDF.
+    const TAILLE_REF = 100;
+    const largeurRef = new Map<string, number>();
+    const largeurA = (texte: string, taille: number) => {
+      let w = largeurRef.get(texte);
+      if (w === undefined) {
+        w = texteFont.widthOfTextAtSize(texte, TAILLE_REF);
+        largeurRef.set(texte, w);
+      }
+      return (w * taille) / TAILLE_REF;
+    };
+    const replier = (taille: number) =>
+      distribuerLignes(raw, largeurs, (texte) => largeurA(texte, taille));
+    /// Vrai si, à cette taille, une ligne dépasse encore la largeur qui lui est
+    /// offerte — c'est le cas de la dernière quand elle a absorbé le surplus.
+    const deborde = (lignes: string[], taille: number) =>
+      lignes.some((ligne, i) => {
+        const largeur = largeurs[Math.min(i, cibleCompte - 1)];
+        return Number.isFinite(largeur) && largeurA(ligne, taille) > largeur;
+      });
+
+    // Tailles candidates, de la plus grande à la plus petite. Réduire le corps
+    // ne peut que faire tenir DAVANTAGE de texte : la propriété est monotone,
+    // donc une dichotomie trouve la plus grande taille qui tient — en ~4 essais
+    // au lieu de onze.
+    const candidates: number[] = [];
+    for (let t = taillePreferee; t >= MIN_TEXT_FONT_SIZE; t -= 0.5) candidates.push(t);
+
+    let tailleGroupe = candidates[0] ?? taillePreferee;
+    let lignes = replier(tailleGroupe);
+    if (deborde(lignes, tailleGroupe)) {
+      let bas = 1;
+      let haut = candidates.length - 1;
+      let choisi = candidates.length - 1;
+      while (bas <= haut) {
+        const milieu = (bas + haut) >> 1;
+        if (!deborde(replier(candidates[milieu]), candidates[milieu])) {
+          choisi = milieu;
+          haut = milieu - 1;
+        } else {
+          bas = milieu + 1;
+        }
+      }
+      tailleGroupe = candidates[choisi];
+      lignes = replier(tailleGroupe);
+    }
 
     field.lineTargets.forEach((cible, i) => {
       const texte = lignes[i];
@@ -1426,10 +1507,15 @@ export async function fillForm(
         try {
           widget.setText(texte);
           if (texteFallback) fonts.reapply.push({ field: widget, font: texteFont });
-          // `fitFontSize` revérifie sur le rectangle RÉEL du widget : filet de
-          // sécurité si la largeur mesurée ci-dessus (technicalSchema) diverge
-          // légèrement, ou si un mot isolé dépasse à lui seul sa cible.
-          widget.setFontSize(fitFontSize(texteFont, texte, widget, taillePreferee));
+          // Taille du GROUPE, pas de la ligne : toutes les lignes d'un même
+          // paragraphe s'impriment dans le même corps. `fitFontSize` reste le
+          // filet de sécurité (rectangle RÉEL du widget, au cas où la largeur
+          // tirée du `technicalSchema` diverge) mais ne peut que RÉDUIRE — d'où
+          // le `min`, qui l'empêche de faire remonter une ligne au-dessus de la
+          // taille commune et de rouvrir l'écart qu'on vient de fermer.
+          widget.setFontSize(
+            Math.min(tailleGroupe, fitFontSize(texteFont, texte, widget, tailleGroupe))
+          );
           if (unicodeFont) widget.updateAppearances(texteFont);
         } catch (err) {
           diags.push({
@@ -1445,7 +1531,11 @@ export async function fillForm(
       if (cible.drawAt) {
         const pIdx = Math.max(0, Math.min(doc.getPageCount() - 1, cible.drawAt.page));
         const page = doc.getPage(pIdx);
-        let taille = cible.drawAt.size ?? taillePreferee;
+        // Idem côté positionnel : la taille du groupe fait foi. `drawAt.size`
+        // reste prioritaire quand la cible en impose une (calage sur un guide
+        // précis) ; sinon la boucle ne fait plus que garantir le non-débordement
+        // d'une cible plus étroite que les autres.
+        let taille = cible.drawAt.size ?? tailleGroupe;
         const maxWidth = cible.drawAt.maxWidth;
         if (maxWidth && maxWidth > 0) {
           while (taille > MIN_TEXT_FONT_SIZE && texteFont.widthOfTextAtSize(texte, taille) > maxWidth) {

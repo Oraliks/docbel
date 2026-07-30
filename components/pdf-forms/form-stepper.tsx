@@ -8,7 +8,10 @@ import { cn } from "@/lib/utils";
 
 export interface FormStepperItem {
   id: string;
-  label: string;
+  /// Absent pour une étape qui EST une question (C1A) : son libellé vit dans le
+  /// corps, sur le champ, et l'en-tête n'affiche que le compteur + la barre.
+  /// Présent pour une étape-groupe (C1 : « Identité »…).
+  label?: string;
   hasError: boolean;
   complete?: boolean;
   subLabel?: string;
@@ -84,9 +87,15 @@ export function FormStepper({ steps, activeIndex, onSelect, showNavigation = tru
           <span className="shrink-0 rounded-full bg-[color:var(--glass-pop-bg)] px-4 py-2 text-sm font-bold text-[color:var(--glass-accent-deep)]">
             {t("runnerStepCounter", { current: activeIndex + 1, total })}
           </span>
-          <h2 className="min-w-0 flex-1 truncate text-xl font-bold leading-tight text-[color:var(--glass-ink)] sm:flex-initial">
-            {activeStep?.label}
-          </h2>
+          {/* Titre présent seulement pour les étapes-groupes (C1 : « Motif »,
+              « Identité »…). Pour une étape qui EST une question (C1A), le
+              libellé n'apparaît PAS ici : il vit dans le corps, sur le champ
+              lui-même — l'en-tête reste une barre de progression compacte. */}
+          {activeStep?.label && (
+            <h2 className="min-w-0 flex-1 truncate text-xl font-bold leading-tight text-[color:var(--glass-ink)] sm:flex-initial">
+              {activeStep.label}
+            </h2>
+          )}
           {activeStep?.hasError ? (
             <AlertCircle className="shrink-0 text-destructive" aria-label={t("runnerStepErrorsAria")} />
           ) : activeStep?.complete ? (
@@ -97,7 +106,7 @@ export function FormStepper({ steps, activeIndex, onSelect, showNavigation = tru
             value={pct}
             compact
             labelMode="sr-only"
-            className="w-full min-w-24 sm:w-auto sm:flex-1"
+            className="w-full min-w-24 sm:flex-1"
           />
         </div>
         {(activeStep?.description || activeStep?.subLabel) && (

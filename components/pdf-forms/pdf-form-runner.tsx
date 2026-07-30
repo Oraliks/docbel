@@ -39,10 +39,11 @@ import { sectionLabel } from "@/lib/pdf-forms/section-labels";
 import {
   getFormPresentation,
   stepGroupTitle,
+  // stepTitleReplacesFieldLabel n'est plus consommé ici : la question s'affiche
+  // toujours dans le corps (cf. hideLabelForId figé à undefined).
   stepGroupDescription,
   stepAnchorField,
   stepAnchorLabel,
-  stepTitleReplacesFieldLabel,
 } from "@/lib/pdf-forms/form-presentation";
 import { FormStepper } from "./form-stepper";
 import { FormShell } from "./form-shell";
@@ -1232,7 +1233,7 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
           <div
             id={STEP_ANCHOR_ID}
             tabIndex={-1}
-            className="border-b border-[color:var(--glass-border)] px-3 outline-none"
+            className="border-b border-[color:var(--glass-ink-line)] px-3 outline-none"
           >
             <FormStepper
               steps={steps.map((s) => {
@@ -1507,17 +1508,17 @@ function ScheduleGridTable({
   );
 
   return (
-    <div className="overflow-x-auto rounded-2xl border border-[color:var(--glass-border)]">
+    <div className="overflow-x-auto rounded-2xl border border-[color:var(--glass-ink-line)]">
       <table className="w-full min-w-[26rem] border-collapse text-sm">
         {colOrder.length > 0 && (
           <thead>
             <tr>
-              <th scope="col" className="border-b border-[color:var(--glass-border)] p-2.5" />
+              <th scope="col" className="border-b border-[color:var(--glass-ink-line)] p-2" />
               {colOrder.map((col) => (
                 <th
                   key={col}
                   scope="col"
-                  className="border-b border-[color:var(--glass-border)] p-2.5 text-center text-xs font-medium text-[color:var(--glass-ink-soft)]"
+                  className="border-b border-l border-[color:var(--glass-ink-line)] p-2 text-center text-xs font-medium text-[color:var(--glass-ink-soft)]"
                 >
                   {loc(colSample.get(col)?.label, locale)}
                 </th>
@@ -1531,8 +1532,8 @@ function ScheduleGridTable({
             const dayField = row?.dayField;
             const dayLabel = dayField ? loc(dayField.label, locale) : rowKey;
             return (
-              <tr key={rowKey} className="border-b border-[color:var(--glass-border)] last:border-b-0">
-                <th scope="row" className="p-2.5 text-left font-normal">
+              <tr key={rowKey} className="border-b border-[color:var(--glass-ink-line)] last:border-b-0">
+                <th scope="row" className="p-2 text-left font-normal">
                   {dayField ? (
                     <label className="flex items-center gap-2.5">
                       {gridCheckbox(dayField, dayLabel)}
@@ -1545,7 +1546,7 @@ function ScheduleGridTable({
                 {colOrder.map((col) => {
                   const cellField = row?.cells.get(col);
                   return (
-                    <td key={col} className="p-2.5 text-center">
+                    <td key={col} className="border-l border-[color:var(--glass-ink-line)] p-2 text-center">
                       {cellField ? gridCheckbox(cellField, `${dayLabel} — ${loc(cellField.label, locale)}`) : null}
                     </td>
                   );
@@ -1965,12 +1966,11 @@ function MacroRunnerBody({
     return stepGroupTitle(presentation, ms.id, locale, t, stepAnchorLabel(anchor, locale));
   };
   const descFor = (id: string) => stepGroupDescription(presentation, id, t);
-  // Le libellé du champ ancre est déjà le titre de l'étape : on ne le répète
-  // pas à l'écran (il reste dans le DOM pour les lecteurs d'écran).
-  const currentFields = stepFieldsOf(current);
-  const hideLabelForId = stepTitleReplacesFieldLabel(presentation, current.id, currentFields)
-    ? stepAnchorField(current.id, currentFields)?.id
-    : undefined;
+  // La question vit dans le CORPS, sur son propre champ (décision Oraliks
+  // 2026-07-30) : on ne masque plus jamais le libellé du champ ancre. L'en-tête
+  // se réduit alors à la barre de progression pour ces étapes (cf. `titleFor`
+  // appliqué conditionnellement dans `stepperItems`).
+  const hideLabelForId: string | undefined = undefined;
   const stepHasError = (ms: MacroStep) =>
     ms.sections.some((sec) => sec.fields.some((f) => errors[f.id])) ||
     ms.advanced.some((f) => errors[f.id]);
@@ -1996,20 +1996,16 @@ function MacroRunnerBody({
           (c) => t("runnerStepRemaining", { count: c }),
           verifiedStreets,
         );
-        // Étape mono-question (`stepTitleReplacesFieldLabel`) : l'aide de
-        // l'ancre — normalement une InfoTooltip à côté du champ — n'a plus où
-        // s'afficher puisque son libellé (donc son ⓘ, cf. LabelWithTooltip)
-        // est retiré de l'écran. Elle devient la description du stepper à la
-        // place, jamais les deux : sans ce repli, l'aide disparaîtrait
-        // purement et simplement pour ces étapes-là.
+        // Une étape qui EST une question (elle a un champ ancre homonyme du
+        // groupe, cf. C1A) ne met PAS son libellé dans l'en-tête : il s'affiche
+        // dans le corps sur le champ lui-même, avec son aide en ⓘ. L'en-tête
+        // n'y garde que le compteur et la barre. Les étapes-GROUPES (C1 :
+        // « Identité »…) n'ont pas de champ ancre → elles gardent leur titre.
         const anchor = stepAnchorField(s.id, stepFields);
-        const anchorHelp = stepTitleReplacesFieldLabel(presentation, s.id, stepFields)
-          ? loc(anchor?.help, locale) || undefined
-          : undefined;
         return {
           id: s.id,
-          label: titleFor(s),
-          description: descFor(s.id) ?? anchorHelp,
+          label: anchor ? undefined : titleFor(s),
+          description: anchor ? undefined : descFor(s.id),
           hasError: stepHasError(s),
           ...meta,
         };
@@ -2089,7 +2085,7 @@ function MacroRunnerBody({
           <div
             id={STEP_ANCHOR_ID}
             tabIndex={-1}
-            className="border-b border-[color:var(--glass-border)] px-3 outline-none"
+            className="border-b border-[color:var(--glass-ink-line)] px-3 outline-none"
           >
             <FormStepper
               steps={stepperItems}
@@ -2099,10 +2095,10 @@ function MacroRunnerBody({
             />
           </div>
 
-          <CardContent className="p-5 sm:p-6" data-docbel-readable>
+          <CardContent className="p-4 sm:p-5" data-docbel-readable>
             <form
               onSubmit={(e) => { e.preventDefault(); if (isLast) submit(); }}
-              className="flex flex-col gap-4"
+              className="flex flex-col gap-3.5"
             >
               <RequiredLegend label={t("runnerRequiredLegend")} />
               {current.sections.map((sec, i) => {
@@ -2163,7 +2159,7 @@ function MacroRunnerBody({
                     key={sec.key ?? `sec-${i}`}
                     className={
                       multiSection
-                        ? "flex flex-col gap-3 rounded-2xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] p-4 sm:p-5"
+                        ? "flex flex-col gap-3 rounded-2xl border border-[color:var(--glass-ink-line)] bg-[color:var(--glass-surface)] p-3.5 sm:p-4"
                         : "flex flex-col gap-3"
                     }
                   >
@@ -2190,7 +2186,7 @@ function MacroRunnerBody({
 
               {isLast ? (
                 <>
-                  <div className="flex flex-col gap-4 border-t border-[color:var(--glass-border)] pt-4">
+                  <div className="flex flex-col gap-4 border-t border-[color:var(--glass-ink-line)] pt-4">
                   {!bundleRunId && form.allowDownload && form.allowDoccle && (
                     <div className="flex flex-col gap-2">
                       <span className="text-base font-bold text-muted-foreground">{t("runnerDeliveryModeLabel")}</span>
@@ -2272,7 +2268,7 @@ function MacroRunnerBody({
                   </div>
                 </>
               ) : (
-                <div className="flex flex-col gap-3 border-t border-[color:var(--glass-border)] pt-4">
+                <div className="flex flex-col gap-3 border-t border-[color:var(--glass-ink-line)] pt-4">
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <AutoSaveNotice lastSavedAt={lastSavedAt} isPartOfBundle={!!bundleRunId} serverSaved={serverSaved} />
                     <div className="flex flex-col items-end gap-2">

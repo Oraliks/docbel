@@ -650,6 +650,60 @@ function stampArrayField(
   }
 }
 
+/// Calage d'un stamp POSITIONNEL adressé par une règle serveur
+/// (`lib/pdf-forms/bindings/per-form/*`) via une clé SENTINELLE dans
+/// `extraStamps`, plutôt que par un widget AcroForm réel.
+///
+/// Nécessaire quand AUCUN widget exploitable n'existe pour l'emplacement
+/// imprimé — typiquement un widget PARTAGÉ entre plusieurs cases (ex. "1_3"
+/// du C1A : une case de Q18 ET les deux cases de rappel d'identité de
+/// l'en-tête page 2, cf. PDF_FORMS_RULES.md « un champ AcroForm peut porter
+/// PLUSIEURS widgets »). Stamper ce widget imprimerait la même valeur à TOUS
+/// ses emplacements — inutilisable dès que deux emplacements attendent des
+/// valeurs différentes.
+///
+/// `StampEntry.widget` (bindings/types.ts) reste un simple `string` — on
+/// n'étend PAS ce type pour un unique format de cible : une règle qui vise
+/// une clé présente ici dessine hors widget (cf. `dessinerStampPositionnel`
+/// plus bas) ; une règle qui vise un vrai nom AcroForm continue de passer par
+/// `form.getField` comme avant (comportement par défaut inchangé).
+interface PositionalStampSpec {
+  page: number;
+  x: number;
+  y: number;
+  size?: number;
+  maxWidth?: number;
+  printAsComb?: NonNullable<PdfFormField["printAsComb"]>;
+}
+
+/// Cibles connues, par clé sentinelle (convention `"<slug>:<id>"`). Seul le
+/// C1A en a besoin aujourd'hui.
+///
+/// Coordonnées MESURÉES sur `private/pdfs/C1A_FR.pdf` (pdfplumber, seuil
+/// strict sur les pixels — cf. rapport
+/// `.superpowers/sdd/signature-entete-p2-report.md`), jamais approchées à
+/// l'œil : ce sont des déclarations officielles. `y` calé sur le bord HAUT du
+/// guide imprimé mesuré (tick NISS : 800.06–800.48 ; pointillé Nom :
+/// 799.1–800.0),+ arrondi à l'entier le plus proche — même relation que
+/// celle vérifiée sur les n° BCE déjà en place (`drawAt.y` = guide arrondi).
+const POSITIONAL_EXTRA_STAMPS: Record<string, PositionalStampSpec> = {
+  // En-tête page 2 « Suite C1A | NISS … | Nom … » : rappel de l'identité déjà
+  // saisie en page 1 (champs `nomEtPrenom`/`niss`), rien n'est redemandé au
+  // citoyen. Cf. bindings/per-form/c1a.ts, règles "header-p2-nom"/"-niss".
+  "c1a:header-p2-nom": { page: 1, x: 295, y: 801, size: 9, maxWidth: 260 },
+  "c1a:header-p2-niss": {
+    page: 1,
+    x: 110.28,
+    y: 801,
+    size: 9,
+    maxWidth: 156,
+    // Guide en peigne (11 traits SymbolMT, groupés 9+2 — mesuré, pas le
+    // découpage 6-3-2 habituel du NISS) : même pas que les n° BCE du même
+    // document (slotWidth/groupExtra identiques, même police/taille).
+    printAsComb: { groups: [9, 2], slotWidth: 13.02, groupExtra: 6.06 },
+  },
+};
+
 /// Remplit un PDF AcroForm à partir du schéma enrichi et d'un payload validé.
 /// - Mappe chaque champ via `pdfFieldName` (ancre).
 /// - Embarque une police Unicode si disponible (fontkit requis).
@@ -956,6 +1010,51 @@ export async function fillForm(
     placerPeigne(page, bx, by, 3, valeur, comb, taillePolice, policeCaractere, fieldId, widgetName, diags);
   };
 
+  /// Dessine un stamp de `POSITIONAL_EXTRA_STAMPS` (aucun widget AcroForm
+  /// cible). Même cœur de placement que la boucle `drawAt` du champ de
+  /// schéma plus bas (peigne si `printAsComb`, sinon texte auto-réduit sur
+  /// `maxWidth`) — dédoublé ici car cette clé vient d'`extraStamps` (une
+  /// règle serveur), pas d'un `PdfFormField.drawAt`.
+  const dessinerStampPositionnel = (
+    widgetName: string,
+    valeur: string,
+    spec: PositionalStampSpec
+  ): void => {
+    const pageIdx = Math.max(0, Math.min(doc.getPageCount() - 1, spec.page));
+    const page = doc.getPage(pageIdx);
+    const { font: drawFont } = fonts.pick(valeur);
+    if (spec.printAsComb?.slotWidth) {
+      placerPeigne(
+        page,
+        spec.x,
+        spec.y,
+        0,
+        valeur,
+        spec.printAsComb,
+        spec.size ?? UNIFORM_TEXT_FONT_SIZE,
+        drawFont,
+        widgetName,
+        widgetName,
+        diags
+      );
+      return;
+    }
+    let fontSize = spec.size ?? UNIFORM_TEXT_FONT_SIZE;
+    if (spec.maxWidth && spec.maxWidth > 0) {
+      while (fontSize > 5 && drawFont.widthOfTextAtSize(valeur, fontSize) > spec.maxWidth) fontSize -= 0.5;
+    }
+    try {
+      page.drawText(valeur, { x: spec.x, y: spec.y, size: fontSize, font: drawFont, color: rgb(0, 0, 0) });
+    } catch (err) {
+      diags.push({
+        fieldId: "",
+        widget: widgetName,
+        kind: "stamp-refuse",
+        detail: err instanceof Error ? err.message : String(err),
+      });
+    }
+  };
+
   // Bindings serveur : `extraStamps` provient du registry par slug
   // (`lib/pdf-forms/bindings/`) évalué par la route generate avant appel.
   // Appliqué APRÈS la boucle fields → une règle qui cible le même widget
@@ -967,6 +1066,19 @@ export async function fillForm(
   if (opts.extraStamps && opts.extraStamps.size > 0) {
     for (const [widgetName, value] of opts.extraStamps) {
       if (!widgetName) continue;
+
+      // Stamp POSITIONNEL (cf. POSITIONAL_EXTRA_STAMPS ci-dessus) : aucun
+      // widget AcroForm à résoudre, on dessine directement sur la page et on
+      // passe à la clé suivante — `form.getField` échouerait de toute façon
+      // sur une clé sentinelle.
+      const positional = POSITIONAL_EXTRA_STAMPS[widgetName];
+      if (positional) {
+        if (typeof value === "string" && value.trim() !== "") {
+          dessinerStampPositionnel(widgetName, value, positional);
+        }
+        continue;
+      }
+
       let widget;
       try {
         widget = form.getField(widgetName);

@@ -26,7 +26,7 @@ import type { PrefillMap } from "@/lib/pdf-forms/canonical/extract";
 import { todayISO } from "@/lib/pdf-forms/system-values";
 import { resolveSignerName } from "@/lib/pdf-forms/signature";
 import { isAutoField, isCreationDateField, isSignatureField } from "@/lib/pdf-forms/auto-fields";
-import { buildInitialValues, withSuggestedBic } from "@/lib/pdf-forms/initial-values";
+import { buildInitialValues, withSuggestedBic, sanitizeStoredPayload } from "@/lib/pdf-forms/initial-values";
 import { FIELD_DERIVATIONS, applyFieldDerivations } from "@/lib/pdf-forms/field-derivations";
 import { resolveOnSelectSet } from "@/lib/pdf-forms/field-side-effects";
 import { findListMatchErrors } from "@/lib/pdf-forms/list-match";
@@ -248,11 +248,17 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
   const [locale, setLocale] = useState<Locale>(form.defaultLocale);
   // Valeurs initiales : défauts (+ prefill profil/inter-documents), PUIS le
   // brouillon en cours restauré par-dessus (plus haute précédence — la dernière
-  // frappe de l'utilisateur prime). Le merge direct dans le state préserve tous
-  // les types (booléens, listes), contrairement à la voie `bundlePrefill`.
+  // frappe de l'utilisateur prime). Le merge dans le state préserve tous les
+  // types (booléens, listes), contrairement à la voie `bundlePrefill` — mais
+  // `draftValues` reste un payload ENREGISTRÉ, jamais revalidé depuis : il peut
+  // dater d'un schéma où ce même champ avait un AUTRE type (ex. Q5 du C1A,
+  // passée d'`array` à `textarea` sans changer d'id, commit `1f36623`).
+  // `sanitizeStoredPayload` ignore alors la valeur au lieu de la rendre telle
+  // quelle (un tableau affiché dans un textarea devient littéralement
+  // "[object Object]" — `.toString()` implicite de React).
   const [values, setValues] = useState<FormPayload>(() => ({
     ...defaultValues(form, bundlePrefill),
-    ...(draftValues ?? {}),
+    ...sanitizeStoredPayload(form.fields, draftValues),
   }));
   // Triggers actifs en direct (avant même soumission) sur les valeurs
   // courantes, pour prévenir l'utilisateur qu'un compagnon sera ajouté au
@@ -314,7 +320,10 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
   // retour d'utilisateur sur une valeur saisie lors d'une session précédente.
   const [verifiedStreets, setVerifiedStreets] = useState<Set<string>>(() => {
     const init = new Set<string>();
-    const v0 = { ...defaultValues(form, bundlePrefill), ...(draftValues ?? {}) };
+    // Même base que l'état initial des valeurs ci-dessus (défauts + brouillon
+    // ASSAINI) : sans le même filtre, une valeur de mauvaise forme pourrait
+    // être lue ici avant de l'être là-bas et désynchroniser les deux départs.
+    const v0 = { ...defaultValues(form, bundlePrefill), ...sanitizeStoredPayload(form.fields, draftValues) };
     for (const f of form.fields) {
       if (!f.requireListMatch) continue;
       const val = v0[f.id];
@@ -394,8 +403,14 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
             // `{ ...prev, ...draft }` remplaçait la saisie en cours par la
             // valeur d'un brouillon vieux de plusieurs jours, sous les doigts
             // de l'usager et sans explication.
+            //
+            // `sanitizeStoredPayload` D'ABORD : ce brouillon peut avoir été
+            // enregistré sous un schéma antérieur, où ce champ avait un AUTRE
+            // type (même id, cf. commit 1f36623) — sans ce filtre, la valeur
+            // de mauvaise forme se serait affichée telle quelle à l'écran.
+            const cleaned = sanitizeStoredPayload(form.fields, d.draft as FormPayload);
             const restored = Object.fromEntries(
-              Object.entries(d.draft as FormPayload).filter(
+              Object.entries(cleaned).filter(
                 ([id]) => !touchedFields.current.has(id),
               ),
             ) as FormPayload;

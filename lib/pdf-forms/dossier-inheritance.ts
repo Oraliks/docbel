@@ -39,7 +39,7 @@
 import type { FormPayload } from "./types";
 import type { PublicField } from "./public-serializer";
 import type { PrefillMap } from "./canonical/extract";
-import { buildInitialValues } from "./initial-values";
+import { buildInitialValues, sanitizeStoredPayload } from "./initial-values";
 
 /// Une valeur est-elle exploitable, c'est-à-dire de quoi remplir la case du
 /// PDF sans que personne n'ait à la relire ?
@@ -93,9 +93,16 @@ export function applyDossierInheritance<F extends PublicField>(
 
   // Exactement l'état de départ du runner : défauts + pré-remplissage, puis le
   // brouillon par-dessus (cf. `PdfFormRunner`, `useState` initial).
+  //
+  // `sanitizeStoredPayload` (pas un simple `draftValues ?? {}`) : `draftValues`
+  // est un payload ENREGISTRÉ, potentiellement écrit sous un ancien schéma —
+  // sans ce filtre, une valeur de mauvaise forme (ex. un tableau hérité d'un
+  // champ devenu `textarea`) rendrait ce champ faussement « rempli » ici, et
+  // masquerait à tort un champ hérité que le citoyen ne peut plus corriger
+  // (cf. `lib/pdf-forms/initial-values.ts`).
   const initial: FormPayload = {
     ...buildInitialValues(fields, dossierPrefill),
-    ...(draftValues ?? {}),
+    ...sanitizeStoredPayload(fields, draftValues),
   };
 
   return fields.map((f) => {

@@ -8,7 +8,7 @@
 
 import { describe, it, expect } from "vitest";
 import { applyDossierInheritance, isUsableInheritedValue } from "../dossier-inheritance";
-import { buildInitialValues } from "../initial-values";
+import { buildInitialValues, sanitizeStoredPayload } from "../initial-values";
 import { buildMacroSteps } from "../build-steps";
 import type { PublicField } from "../public-serializer";
 import type { PrefillMap } from "../canonical/extract";
@@ -145,6 +145,39 @@ describe("applyDossierInheritance — le brouillon a le dernier mot", () => {
   it("un brouillon qui CORRIGE la valeur héritée laisse le champ masqué", () => {
     const out = applyDossierInheritance(CHAMPS, DOSSIER_COMPLET, { niss: "72020200290" });
     expect(auto(out)).toEqual(["nomEtPrenom", "niss", "rue"]);
+  });
+});
+
+describe("applyDossierInheritance — un brouillon a la mauvaise forme (ancien schéma)", () => {
+  // `draftValues` est un payload ENREGISTRÉ, jamais revalidé depuis : un champ
+  // peut avoir changé de `type` sans changer d'`id` (ex. Q5 du C1A, commit
+  // `1f36623`). Sans `sanitizeStoredPayload`, une valeur de mauvaise forme
+  // laissée dans `draftValues` serait pourtant un tableau NON VIDE — donc
+  // "usable" au sens `isUsableInheritedValue` (qui ne juge que le vide, pas la
+  // forme) — et masquerait le champ hérité (`autoAnswered: true`) sur la foi
+  // d'une valeur qui ne pourrait de toute façon jamais passer `buildValidator`
+  // (le niss attend une chaîne). Résultat AVANT le garde-fou : un champ requis
+  // invisible, bloqué sur une valeur que le citoyen ne peut plus corriger —
+  // pire que le simple "[object Object]" d'un champ resté à l'écran.
+  it("une valeur de brouillon mal formée n'empêche pas l'héritage de la BONNE valeur du dossier", () => {
+    const draftMalForme = {
+      // Ancien format (imaginons `niss` autrefois porté par un champ array) :
+      // un tableau non vide, que `isUsableInheritedValue` jugerait "usable"
+      // s'il n'était pas filtré en amont par la forme attendue (`niss` = texte).
+      niss: [{ oops: true }] as unknown as string,
+    };
+    const out = applyDossierInheritance(CHAMPS, DOSSIER_COMPLET, draftMalForme);
+    // Le champ reste correctement masqué : la valeur retenue est celle du
+    // dossier (un vrai NISS), jamais le tableau parasite du brouillon.
+    expect(auto(out)).toEqual(["nomEtPrenom", "niss", "rue"]);
+
+    // Reproduit EXACTEMENT la formule du runner (cf. `PdfFormRunner`, useState
+    // initial) : le brouillon parasite ne doit jamais survivre à la fusion.
+    const valeursRunner = {
+      ...buildInitialValues(out, DOSSIER_COMPLET),
+      ...sanitizeStoredPayload(out, draftMalForme),
+    };
+    expect(valeursRunner.niss).toBe("85073003328");
   });
 });
 

@@ -33,8 +33,22 @@ function labelText(f: AutoFieldShape): string {
 
 /// true si le champ doit être traité comme une signature (sera apposée
 /// automatiquement à la génération).
+///
+/// ⚠ Le repli par libellé est réservé aux champs qu'AUCUN marqueur explicite
+/// ne décrit déjà. Un champ déjà identifié comme date de création
+/// (`isCreationDateField`) ne peut PAS aussi être une signature — même si son
+/// propre libellé contient le mot « signature » ( « Date de signature » : la
+/// date à laquelle la signature est apposée, pas la signature elle-même).
+/// Sans ce garde, le C1A (et au moins 3 autres documents ONEM qui partagent
+/// ce libellé) faisait apposer le bloc « Signé numériquement par… » sur le
+/// widget de la DATE en plus du vrai widget de signature — deux blocs de
+/// signature imprimés, et la case date vide (Oraliks 2026-07-30). Même
+/// famille de piège que le garde posé sur `resolveSignerName` (cf.
+/// `declareSaSourceDeNom` dans signature.ts) : un marqueur explicite prime
+/// toujours sur une heuristique de libellé.
 export function isSignatureField(f: AutoFieldShape): boolean {
   if (f.type === "signature") return true;
+  if (isCreationDateField(f)) return false;
   return SIGNATURE_LABEL_RE.test(labelText(f));
 }
 

@@ -17,6 +17,29 @@ describe("isSignatureField", () => {
   it("ne déclenche pas sur un libellé non-signature", () => {
     expect(isSignatureField({ id: "remarks", type: "text", label: { fr: "Remarques" } })).toBe(false);
   });
+  it("ne déclenche PAS sur un champ date de création dont le libellé contient « signature » (bug C1A 2026-07-30 : « Date de signature »)", () => {
+    // Reproduit exactement le champ `dateSignature` du C1A (et de C1/C1B/C1C/
+    // C46) : le mot « signature » dans « Date de signature » satisfaisait à
+    // tort SIGNATURE_LABEL_RE, et le filler apposait le bloc « Signé
+    // numériquement par… » sur le widget de la DATE au lieu d'y écrire le
+    // jour — deux blocs de signature imprimés, la date jamais tamponnée.
+    expect(
+      isSignatureField({
+        id: "dateSignature",
+        type: "date",
+        label: { fr: "Date de signature" },
+        prefillFrom: "system.today",
+      }),
+    ).toBe(false);
+  });
+  it("ne déclenche pas non plus sans prefillFrom, sur le seul libellé « date de création/génération » + mot signature adjacent", () => {
+    // Un champ typé `date` dont le libellé décrit une date de création reste
+    // exclu même sans le marqueur `prefillFrom` explicite (repli purement par
+    // libellé, cas des schémas hérités).
+    expect(
+      isSignatureField({ id: "d", type: "date", label: { fr: "Date de création (signature)" } }),
+    ).toBe(false);
+  });
 });
 
 describe("isCreationDateField", () => {

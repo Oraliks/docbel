@@ -171,7 +171,33 @@ sans lequel l'écran ne bouge pas.
      serait illisible.
 
    Reste : **re-semis par Oraliks**.
-3. **C46** (13) — trois dates « Moniteur Belge » à séparer ; peu de champs.
+3. ~~**C46** (13)~~ — **FAIT le 2026-07-31.** Les trois dates « Moniteur
+   Belge » partageaient bien un champ (`Date39_af_date`), mais le vrai défaut
+   était plus large : **tout le mapping de la page 1 était décalé d'une ligne**,
+   le piège n°1 des AcroForms de l'ONEM (un widget porte le nom du texte
+   imprimé au-dessus de lui). Le widget « Moniteur Belge du » est en réalité la
+   2ᵉ ligne d'ORGANISME, « Moniteur Belge du_2 » la 3ᵉ, et `Date39_af_date` —
+   libellé « date de signature » et rangé en fin de formulaire — portait les
+   trois guides de date du HAUT de la page 1. Conséquences réelles : une date
+   écrite sur deux lignes de nom d'organisme, la date du jour dans les trois
+   guides « Moniteur belge », et la **vraie case de date de signature (page 2)
+   laissée blanche** parce qu'elle était marquée `hidden` comme « tampon de
+   réception ». Le doute consigné dans le seed (« 2 widgets pour 3 lignes ? »)
+   venait de là.
+
+   Aussi : les 5 lignes d'annexe fusionnées en un textarea replié, jusqu'à
+   3 mandats affichés progressivement, peignes du NISS et de la date de
+   signature, question inventée « publié au Moniteur ? » supprimée (elle
+   gouvernait les trois mandats d'un coup).
+
+   **Et un défaut de la couche PDF, commun aux quatre documents :** `pdf-lib`
+   refuse `setFontSize` sur un widget sans `/DA` propre, et l'échec était avalé.
+   Quatre widgets de la famille (un par document : C1, C1C, C46, C1-Partenaire)
+   s'imprimaient à une taille arbitraire — « Commission du travail des arts »
+   sortait en **5 pt** entre deux voisins en 10 pt. Réparé dans `filler.ts`
+   (`appliquerTaillePolice`), donc corrigé aussi sur le C1 et le C1C déjà livrés.
+
+   Reste : **re-semis par Oraliks**.
 4. **C1B** (51) — le plus gros, et le multi-widget à quatre cases. À faire en
    dernier, quand le geste est rodé.
 

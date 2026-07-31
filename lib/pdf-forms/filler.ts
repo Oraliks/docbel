@@ -298,6 +298,39 @@ function fitFontSize(
   return size;
 }
 
+/// Pose la taille de police d'un widget — en RÉPARANT au passage les widgets
+/// dépourvus de `/DA` propre.
+///
+/// `pdf-lib` refuse `setFontSize` sur un champ sans `/DA` (« No /DA (default
+/// appearance) entry found »), alors même que l'AcroForm en porte un GLOBAL
+/// (`/Helv 0 Tf 0 g` sur les quinze PDF de `private/pdfs/`) dont la spec dit
+/// qu'il s'hérite. L'échec était avalé : la taille uniforme n'était pas
+/// appliquée, et `updateAppearances` retombait sur l'auto-dimensionnement de
+/// pdf-lib. Résultat mesuré sur le C46 : « Commission du travail des arts »
+/// imprimé en **5 pt** entre deux voisins en 10 pt.
+///
+/// Quatre widgets de la famille sont dans ce cas, un par document : `métier`
+/// (C1-Partenaire), `lorganismes suivants` (C46), la ligne « compétences
+/// professionnelles » (C1C) et « Décrivez ci-après la raison de la
+/// limitation » (C1). Tous les quatre s'imprimaient à une taille arbitraire,
+/// contre la règle « même caractère partout » (Oraliks 2026-07-07).
+///
+/// La réparation recopie le `/DA` global, dont la police (`/Helv`) est bien
+/// présente dans le `/DR` de tous ces documents.
+function appliquerTaillePolice(field: PDFTextField | PDFDropdown, taille: number): void {
+  try {
+    field.setFontSize(taille);
+    return;
+  } catch {
+    // Seul cas connu : pas de `/DA` propre. On en pose un, puis on réessaie.
+  }
+  try {
+    field.acroField.setDefaultAppearance(`/Helv ${taille} Tf 0 g`);
+  } catch {
+    /* champ verrouillé ou structure inattendue — la taille du gabarit reste */
+  }
+}
+
 /// Réplique le texte d'un `textarea` unique sur une séquence ORDONNÉE de
 /// lignes physiques (`PdfFormField.lineTargets`), chacune avec sa largeur
 /// utile en points, à la taille de police PRÉVUE (`mesurer` la calcule — pas
@@ -604,11 +637,7 @@ function stampScalarWidget(
     // Taille uniforme partout (cf. UNIFORM_TEXT_FONT_SIZE), réduite si le
     // texte ne tient pas dans la case (cf. fitFontSize), sauf `autoSizeFont`
     // (0 = auto-fit lecteur PDF, cf. PdfFormField.autoSizeFont).
-    try {
-      pdfField.setFontSize(autoSizeFont ? 0 : fitFontSize(font, text, pdfField, fontSize));
-    } catch {
-      /* certains widgets rejettent setFontSize — on garde la taille par défaut */
-    }
+    appliquerTaillePolice(pdfField, autoSizeFont ? 0 : fitFontSize(font, text, pdfField, fontSize));
     if (unicodeFont) pdfField.updateAppearances(font);
   } else if (pdfField instanceof PDFCheckBox) {
     if (isTruthy(value)) pdfField.check();
@@ -1277,15 +1306,11 @@ export async function fillForm(
           widget.setText(value);
           const { font: wFont, fallback } = fonts.pick(value);
           if (fallback) fonts.reapply.push({ field: widget, font: wFont });
-          try {
-            // Même ajustement que la boucle schéma : les règles serveur n'ont
-            // pas d'équivalent de `autoSizeFont`, et « NomPrenom » (121 pt) ne
-            // tient pas un nom composé à 10 pt (« Jean-Baptiste Vandenberghe »
-            // = 128 pt).
-            widget.setFontSize(fitFontSize(wFont, value, widget));
-          } catch {
-            /* certains widgets rejettent setFontSize — on garde la taille par défaut */
-          }
+          // Même ajustement que la boucle schéma : les règles serveur n'ont
+          // pas d'équivalent de `autoSizeFont`, et « NomPrenom » (121 pt) ne
+          // tient pas un nom composé à 10 pt (« Jean-Baptiste Vandenberghe »
+          // = 128 pt).
+          appliquerTaillePolice(widget, fitFontSize(wFont, value, widget));
           if (unicodeFont) widget.updateAppearances(wFont);
         }
       } catch (err) {
@@ -1546,7 +1571,8 @@ export async function fillForm(
           // tirée du `technicalSchema` diverge) mais ne peut que RÉDUIRE — d'où
           // le `min`, qui l'empêche de faire remonter une ligne au-dessus de la
           // taille commune et de rouvrir l'écart qu'on vient de fermer.
-          widget.setFontSize(
+          appliquerTaillePolice(
+            widget,
             Math.min(tailleGroupe, fitFontSize(texteFont, texte, widget, tailleGroupe))
           );
           if (unicodeFont) widget.updateAppearances(texteFont);

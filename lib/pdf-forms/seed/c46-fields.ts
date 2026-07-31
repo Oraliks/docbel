@@ -6,28 +6,36 @@
 // `mandatArtistique` du C1 — cf. lib/pdf-forms/seed/c1-fields-improvements.ts,
 // trigger `requiresFormSlug: "c46"`).
 //
-// Mapping AcroForm vérifié sur le dump JSON fourni (13 widgets, 2 pages).
+// Mapping AcroForm : 13 widgets, 2 pages, `pnpm tsx scripts/dump-pdf-widgets.ts C46_FR`.
 // Référence métier : texte imprimé du FORMULAIRE C46 (Version 01.03.2026).
 //
-// Structure du texte officiel (page 1) :
-//   - Votre identité : Nom et prénom, NISS.
-//   - Votre déclaration : nom du/des organisme(s) ("l'organisme(s)
-//     suivant(s)"), avec pour chaque mandat déclaré soit une publication au
-//     Moniteur belge (date), soit — à défaut de publication — une copie des
-//     "nominations suivantes" jointe en annexe (jusqu'à 5 lignes).
-// Page 2 : rappel des règles (plafond annuel, obligations, feuille-info
-//   T41/T191), affirmation sur l'honneur (texte fixe, pas de case à cocher
-//   sur ce PDF), puis Date + Signature.
+// ===========================================================================
+// REMAPPÉ LE 2026-07-31 — le mapping d'origine était décalé d'une ligne
+// ===========================================================================
 //
-// A VALIDER Oraliks : le dump ne fournit que 2 widgets "Moniteur Belge du"
-// (moniteur_belge_du / moniteur_belge_du_2) alors que le texte imprimé montre
-// 3 lignes de mandat, chacune avec sa propre mention "Moniteur Belge du". Soit
-// le PDF officiel ne propose réellement que 2 dates de publication malgré 3
-// lignes de texte (3e ligne = mandat sans date saisissable ?), soit un widget
-// a été omis du dump — à vérifier sur le PDF source (private/pdfs/C46_FR.pdf)
-// avant mise en prod. On modélise ici 2 lignes de mandat "avec date Moniteur
-// belge" (cohérent avec les 2 widgets réels), la question de la 3e ligne
-// restant ouverte.
+// C'est le piège n°1 des AcroForms de l'ONEM (cf. PDF_FORMS_RULES.md) : un
+// widget porte le nom du texte imprimé AU-DESSUS de lui, pas celui de la donnée
+// qu'il reçoit. Mesuré sur le PDF, la page 1 se lit ainsi :
+//
+//   y=520,3  widget « lorganismes suivants »   → 1re ligne d'organisme
+//   y=491,7  widget « Date39_af_date » (kid 1) → « Moniteur Belge du __ __ / … » n°1
+//   y=467,9  widget « Moniteur Belge du »      → 2e ligne d'ORGANISME
+//   y=439,0  widget « Date39_af_date » (kid 2) → « Moniteur Belge du … » n°2
+//   y=415,4  widget « Moniteur Belge du_2 »    → 3e ligne d'ORGANISME
+//   y=386,8  widget « Date39_af_date » (kid 3) → « Moniteur Belge du … » n°3
+//
+// Le schéma précédent écrivait donc une DATE sur les deux dernières lignes
+// d'organisme, la date du jour dans les TROIS guides « Moniteur Belge du »
+// (un seul champ AcroForm à trois widgets — `date39_af_date` était de surcroît
+// libellé « Date de signature »), et laissait BLANCHE la vraie case de date de
+// signature de la page 2 (`AUJOURD'HUI`), qui était marquée `hidden` comme
+// « tampon de réception ». Le doute consigné en tête du fichier (« 2 widgets
+// Moniteur Belge pour 3 lignes ? ») venait de là : les trois dates existent
+// bien, groupées dans un seul champ.
+//
+// Sortie : les trois dates passent en ÉCRITURE POSITIONNELLE (un champ AcroForm
+// à plusieurs widgets partage une seule valeur), les trois lignes d'organisme
+// gardent leur widget, et la page 2 retrouve sa date.
 
 import type { PdfFormField } from "../types";
 import { mergeEnrichedFields } from "./_merge";
@@ -37,10 +45,80 @@ const SECTION_MANDAT = "mandat-culturel";
 const SECTION_ANNEXES = "annexes";
 const SECTION_SIGNATURE = "signature";
 
-const YN = [
-  { value: "oui", label: { fr: "Oui" } },
-  { value: "non", label: { fr: "Non" } },
-];
+/// « Une valeur est présente » — le seul moyen d'exprimer « non vide » avec les
+/// opérateurs de `visibleIf` (equals / notEquals / in / notIn / matchesRegex).
+const NON_VIDE = "\\S";
+
+// ===========================================================================
+// PEIGNES IMPRIMÉS
+// ===========================================================================
+//
+// Toutes les valeurs sont MESURÉES sur `private/pdfs/C46_FR.pdf` : abscisse de
+// chaque tiret à pdfplumber, position verticale de l'encre par rastérisation à
+// 800 dpi (la ligne de base ne se déduit PAS du jambage supposé de la police —
+// cf. PDF_FORMS_RULES.md, « peignes imprimés »).
+
+/// « Numéro registre national (NISS) __ __ __ __ __ __ / __ __ __ - __ __ »
+/// (page 1, y≈624,4). Onze cases groupées 6-3-2, pas de 12,68 pt.
+const NISS_COMB: NonNullable<PdfFormField["printAsComb"]> = {
+  groups: [6, 3, 2],
+  slotWidth: 12.68,
+  groupExtra: 5.26,
+  startX: 4.16,
+  baselineY: 1.05,
+};
+
+/// « Moniteur Belge du __ __ / __ __ / __ __ __ __ » — le MÊME guide, imprimé
+/// trois fois (Calibri 11 pt, huit cases, pas de 13,44). Seule l'ordonnée
+/// change, elle vit donc dans le `drawAt` de chaque champ.
+const MONITEUR_COMB: NonNullable<PdfFormField["printAsComb"]> = {
+  groups: [2, 2, 4],
+  slotWidth: 13.44,
+  groupExtra: 6.78,
+  startX: 2.45,
+};
+
+/// Abscisse commune des trois guides « Moniteur Belge du » (mesurée : le
+/// premier tiret des trois lignes est exactement au même x).
+const MONITEUR_X = 291.36;
+
+/// « Date: __ __ / __ __ / __ __ __ __ » de la page 2, à côté de la signature.
+const DATE_SIGNATURE_COMB: NonNullable<PdfFormField["printAsComb"]> = {
+  groups: [2, 2, 4],
+  slotWidth: 11.3,
+  groupExtra: 5.38,
+  startX: 2.41,
+  baselineY: 0.98,
+};
+
+/// Une ligne « (ma nomination en tant que membre a été publiée au Moniteur
+/// Belge du … *) ». Les trois sont identiques à l'ordonnée près.
+function dateMoniteur(opts: {
+  id: string;
+  rang: number;
+  y: number;
+  order: number;
+  visibleIf?: PdfFormField["visibleIf"];
+}): PdfFormField {
+  return {
+    id: opts.id,
+    // Aucun widget revendiqué : le champ AcroForm `Date39_af_date` porte les
+    // TROIS guides, une seule valeur les remplirait tous les trois.
+    pdfFieldName: "",
+    drawAt: { page: 0, x: MONITEUR_X, y: opts.y, size: 11 },
+    printAsComb: MONITEUR_COMB,
+    fontSize: 11,
+    type: "date",
+    required: false,
+    label: { fr: `Publiée au Moniteur belge du (mandat ${opts.rang})` },
+    help: {
+      fr: "À défaut de publication au Moniteur belge, laisse cette date vide et joins en annexe une copie de la nomination (plus bas).",
+    },
+    visibleIf: opts.visibleIf,
+    section: SECTION_MANDAT,
+    order: opts.order,
+  };
+}
 
 export const C46_FIELDS: PdfFormField[] = [
   // ====================================================================
@@ -52,14 +130,15 @@ export const C46_FIELDS: PdfFormField[] = [
     // PAS de `prefillFrom` (retiré le 2026-07-26) : un champ `fullname` porte
     // un `{ first, last }`, que `prefillFrom` ne sait pas transporter — il ne
     // connaît que des chaînes, et le runner relit une chaîne comme un NOM.
-    // Avec `profile.lastName`, le nom arrivait seul et le prénom se perdait.
     // Le type suffit : `canonicalToPrefill` (héritage depuis le dossier) et
     // `buildProfilePrefill` (profil du compte) remplissent tous deux ce type.
     type: "fullname",
+    alignTextToGuide: true,
     // Le libellé imprimé est « Nom et prénom » → on assemble dans cet ordre.
     nameOrder: "last-first",
     required: true,
     label: { fr: "Nom et prénom" },
+    inheritedFromDossier: true,
     section: SECTION_IDENTITE,
     order: -100,
   },
@@ -75,150 +154,136 @@ export const C46_FIELDS: PdfFormField[] = [
     placeholder: { fr: "00.00.00-000.00" },
     prefillFrom: "profile.niss",
     canonicalKey: "identity.niss",
+    inheritedFromDossier: true,
+    fontSize: 9,
+    printAsComb: NISS_COMB,
     section: SECTION_IDENTITE,
     order: -99,
   },
   // NOTE canonique : `nom_et_pr_nom` (type "fullname" = { first, last })
-  // combine deux clés canoniques (identity.nom + identity.prenom) → non
-  // tagué. Prefill via itsme.firstName / itsme.lastName reste actif.
+  // combine deux clés canoniques (identity.nom + identity.prenom) → non tagué.
 
   // ====================================================================
-  // SECTION — VOTRE DÉCLARATION (le/les mandat(s))
+  // SECTION — VOTRE DÉCLARATION : jusqu'à TROIS mandats
+  //
+  // Le papier imprime trois blocs identiques « ligne d'organisme + (ma
+  // nomination … a été publiée au Moniteur Belge du …) ». Les mandats 2 et 3
+  // n'apparaissent à l'écran qu'une fois le précédent renseigné : afficher six
+  // cases vides à quelqu'un qui n'a qu'un mandat est un défaut d'écran, pas une
+  // fidélité au papier.
   // ====================================================================
   {
-    id: "lorganismes_suivants",
+    id: "organisme1",
     pdfFieldName: "lorganismes suivants",
-    type: "textarea",
+    alignTextToGuide: true,
+    type: "text",
     required: true,
-    label: { fr: "Nom du/des organisme(s) concerné(s)" },
+    label: { fr: "Nom de l'organisme (mandat 1)" },
     help: {
-      fr: "Indique le nom de l'organisme (ou des organismes) auprès duquel/desquels tu exerces ce mandat rémunéré. Il doit s'agir d'un organe consultatif du secteur culturel ou de la Commission du travail des arts.",
+      fr: "Indique le nom de l'organisme auprès duquel tu exerces ce mandat rémunéré. Il doit s'agir d'un organe consultatif du secteur culturel ou de la Commission du travail des arts.",
     },
     section: SECTION_MANDAT,
     order: 1,
   },
+  dateMoniteur({ id: "moniteurBelgeDate1", rang: 1, y: 492.4, order: 2 }),
   {
-    id: "publicationMoniteurBelge",
-    pdfFieldName: "",
-    type: "radio",
-    required: true,
-    label: { fr: "Ta nomination en tant que membre a-t-elle été publiée au Moniteur belge ?" },
-    help: {
-      fr: "Si oui, indique la (les) date(s) de publication ci-dessous. Si non, tu dois joindre en annexe une copie des nominations.",
-    },
-    options: YN,
-    section: SECTION_MANDAT,
-    order: 2,
-  },
-  {
-    id: "moniteur_belge_du",
+    // ⚠ Le widget s'appelle « Moniteur Belge du » et c'est la 2e ligne
+    // d'ORGANISME — cf. l'en-tête du fichier. Ne pas « corriger » ce mapping
+    // sur la foi du nom.
+    id: "organisme2",
     pdfFieldName: "Moniteur Belge du",
-    type: "date",
+    alignTextToGuide: true,
+    type: "text",
     required: false,
-    label: { fr: "Publiée au Moniteur belge du (mandat 1)" },
-    visibleIf: { fieldId: "publicationMoniteurBelge", op: "equals", value: "oui" },
+    label: { fr: "Nom de l'organisme (mandat 2)" },
+    help: { fr: "À remplir uniquement si tu déclares un second mandat distinct." },
     section: SECTION_MANDAT,
     order: 3,
   },
-  {
-    id: "moniteur_belge_du_2",
-    pdfFieldName: "Moniteur Belge du_2",
-    type: "date",
-    required: false,
-    label: { fr: "Publiée au Moniteur belge du (mandat 2, si applicable)" },
-    help: { fr: "À remplir uniquement si tu déclares un second mandat distinct." },
-    visibleIf: { fieldId: "publicationMoniteurBelge", op: "equals", value: "oui" },
-    section: SECTION_MANDAT,
+  dateMoniteur({
+    id: "moniteurBelgeDate2",
+    rang: 2,
+    y: 439.95,
     order: 4,
+    visibleIf: { fieldId: "organisme2", op: "matchesRegex", value: NON_VIDE },
+  }),
+  {
+    // Idem : « Moniteur Belge du_2 » est la 3e ligne d'ORGANISME.
+    id: "organisme3",
+    pdfFieldName: "Moniteur Belge du_2",
+    alignTextToGuide: true,
+    type: "text",
+    required: false,
+    label: { fr: "Nom de l'organisme (mandat 3)" },
+    visibleIf: { fieldId: "organisme2", op: "matchesRegex", value: NON_VIDE },
+    section: SECTION_MANDAT,
+    order: 5,
   },
+  dateMoniteur({
+    id: "moniteurBelgeDate3",
+    rang: 3,
+    y: 387.6,
+    order: 6,
+    visibleIf: { fieldId: "organisme3", op: "matchesRegex", value: NON_VIDE },
+  }),
 
   // ====================================================================
   // SECTION — ANNEXES (à défaut de publication au Moniteur belge)
+  //
+  // Cinq lignes pointillées IDENTIQUES pour une seule question imprimée
+  // (« * A défaut de publication au Moniteur belge, je joins en annexe une
+  // copie des nominations suivantes : ») : un seul textarea, replié sur les
+  // cinq lignes physiques par `lineTargets` — même correction que la
+  // description d'activité du C1C. Cinq champs numérotés étaient un défaut
+  // d'écran, pas une fidélité au papier.
   // ====================================================================
   {
+    // `id` conservé (celui de l'ex-1re ligne) pour ne pas perdre les brouillons
+    // déjà en base ; les quatre autres sont purgés par LEGACY_C46_FIELD_IDS.
     id: "nominations_suivantes_1",
-    pdfFieldName: "nominations suivantes 1",
-    type: "text",
+    pdfFieldName: "",
+    alignTextToGuide: [
+      "nominations suivantes 1",
+      "nominations suivantes 2",
+      "nominations suivantes 3",
+      "nominations suivantes 4",
+      "nominations suivantes 5",
+    ],
+    lineTargets: [
+      "nominations suivantes 1",
+      "nominations suivantes 2",
+      "nominations suivantes 3",
+      "nominations suivantes 4",
+      "nominations suivantes 5",
+    ].map((pdfFieldName) => ({ pdfFieldName })),
+    type: "textarea",
     required: false,
-    label: { fr: "Copie de nomination jointe — ligne 1" },
+    label: { fr: "Nominations dont je joins une copie en annexe" },
     help: {
-      fr: "→ Joins une copie de ta nomination en annexe et précise ici de quel document il s'agit.",
+      fr: "À remplir seulement pour les mandats qui n'ont PAS été publiés au Moniteur belge : précise ici de quels documents il s'agit, et joins-en une copie.",
     },
-    visibleIf: { fieldId: "publicationMoniteurBelge", op: "equals", value: "non" },
     section: SECTION_ANNEXES,
     order: 100,
-  },
-  {
-    id: "nominations_suivantes_2",
-    pdfFieldName: "nominations suivantes 2",
-    type: "text",
-    required: false,
-    label: { fr: "Copie de nomination jointe — ligne 2" },
-    visibleIf: { fieldId: "publicationMoniteurBelge", op: "equals", value: "non" },
-    section: SECTION_ANNEXES,
-    order: 101,
-  },
-  {
-    id: "nominations_suivantes_3",
-    pdfFieldName: "nominations suivantes 3",
-    type: "text",
-    required: false,
-    label: { fr: "Copie de nomination jointe — ligne 3" },
-    visibleIf: { fieldId: "publicationMoniteurBelge", op: "equals", value: "non" },
-    section: SECTION_ANNEXES,
-    order: 102,
-  },
-  {
-    id: "nominations_suivantes_4",
-    pdfFieldName: "nominations suivantes 4",
-    type: "text",
-    required: false,
-    label: { fr: "Copie de nomination jointe — ligne 4" },
-    visibleIf: { fieldId: "publicationMoniteurBelge", op: "equals", value: "non" },
-    section: SECTION_ANNEXES,
-    order: 103,
-  },
-  {
-    id: "nominations_suivantes_5",
-    pdfFieldName: "nominations suivantes 5",
-    type: "text",
-    required: false,
-    label: { fr: "Copie de nomination jointe — ligne 5" },
-    visibleIf: { fieldId: "publicationMoniteurBelge", op: "equals", value: "non" },
-    section: SECTION_ANNEXES,
-    order: 104,
-  },
-
-  // ====================================================================
-  // SECTION — CASE ADMINISTRATIVE (page 1, tampon de réception)
-  // "date cachet" en haut de la page 1 : case remplie par le bureau du
-  // chômage / l'organisme de paiement à la réception, pas par le citoyen.
-  // Masquée — même traitement que les cases administratives du C1 ANNEXE
-  // REGIS (cf. c1-regis-fields.ts, regisRegistreIndisponible1/2).
-  // ====================================================================
-  {
-    id: "aujourd_hui",
-    pdfFieldName: "AUJOURD'HUI",
-    type: "text",
-    required: false,
-    label: { fr: "(cas administratif — tampon de réception)" },
-    hidden: true,
-    section: SECTION_ANNEXES,
-    order: 900,
   },
 
   // ====================================================================
   // SECTION — DATE + SIGNATURE (page 2)
-  // Texte imprimé : "Date: __ __ / __ __ / __ __ __ __   Signature"
+  // Texte imprimé : « Date: __ __ / __ __ / __ __ __ __   Signature »
   // ====================================================================
   {
-    id: "date39_af_date",
-    pdfFieldName: "Date39_af_date",
+    // C'EST la date de signature, et elle est sur la PAGE 2. Elle était
+    // `hidden` et décrite comme un « tampon de réception » de la page 1 : sa
+    // case partait blanche sur chaque C46 généré, pendant que la date du jour
+    // s'imprimait dans les trois guides « Moniteur Belge » de la page 1.
+    id: "aujourd_hui",
+    pdfFieldName: "AUJOURD'HUI",
     type: "date",
     required: true,
     label: { fr: "Date de signature" },
     help: { fr: "Pré-remplie automatiquement avec la date du jour." },
     prefillFrom: "system.today",
+    fontSize: 8,
+    printAsComb: DATE_SIGNATURE_COMB,
     section: SECTION_SIGNATURE,
     order: 1000,
   },
@@ -229,16 +294,85 @@ export const C46_FIELDS: PdfFormField[] = [
     required: true,
     label: { fr: "Signature électronique" },
     help: {
-      fr: "Signature « façon Adobe » : ton nom + prénom + horodatage seront appliqués à la position de la signature.",
+      fr: "En signant, tu affirmes sur l'honneur que ta déclaration est sincère et complète.",
     },
     section: SECTION_SIGNATURE,
     order: 1001,
   },
 ];
 
+/// Champs d'une version antérieure à purger de la base. Sans cette liste ils
+/// survivraient (le merge ne compare que les `id`) et continueraient d'écrire
+/// dans les mauvaises cases.
+const LEGACY_C46_FIELD_IDS = new Set<string>([
+  // Renommé `organisme1` : le libellé disait « organisme(s) », le champ n'en
+  // portait qu'un.
+  "lorganismes_suivants",
+  // Question INVENTÉE (elle n'est pas sur le papier) qui gouvernait les trois
+  // mandats d'un coup — impossible dès qu'un mandat est publié et un autre non.
+  // Remplacée par une visibilité mandat par mandat.
+  "publicationMoniteurBelge",
+  // Écrivaient une DATE sur les lignes d'organisme 2 et 3.
+  "moniteur_belge_du",
+  "moniteur_belge_du_2",
+  // Écrivait la date du jour dans les trois guides « Moniteur Belge » à la fois
+  // (champ AcroForm à trois widgets), sous le libellé « Date de signature ».
+  "date39_af_date",
+  // Repliés dans le textarea `nominations_suivantes_1` via `lineTargets`.
+  "nominations_suivantes_2",
+  "nominations_suivantes_3",
+  "nominations_suivantes_4",
+  "nominations_suivantes_5",
+]);
+
+// ===========================================================================
+// PARCOURS À L'ÉCRAN — une question = une étape (patron du C1A / C1C / C47)
+// ===========================================================================
+
+/// Étape de l'en-tête d'identité — la seule qui ne soit pas une question.
+export const C46_GROUPE_IDENTITE = "identite";
+
+/// Les questions du document, DANS L'ORDRE IMPRIMÉ. Chacune devient une étape
+/// et porte l'identifiant du champ qui la pose : ce champ est alors l'ANCRE de
+/// son étape (cf. `stepAnchorField`) et sa question titre l'étape.
+///
+/// `signature` ferme la liste sans jamais produire d'étape : la date et la
+/// signature sont posées par le serveur (`applyServerAutoFields`).
+export const C46_QUESTIONS: readonly string[] = [
+  "organisme1",
+  "organisme2",
+  "organisme3",
+  "nominations_suivantes_1",
+  "signature",
+];
+
+/// Champs RATTACHÉS à une question : la date de publication suit son mandat.
+const RATTACHEMENTS: Readonly<Record<string, readonly string[]>> = {
+  organisme1: ["moniteurBelgeDate1"],
+  organisme2: ["moniteurBelgeDate2"],
+  organisme3: ["moniteurBelgeDate3"],
+  signature: ["aujourd_hui"],
+};
+
+/// Pose `stepGroup` sur chaque champ. Les champs d'identité tombent dans le
+/// groupe d'en-tête ; un champ inconnu des deux tables reste sans groupe et
+/// atterrit dans « Autres informations » de la dernière étape.
+function appliquerGroupes(fields: PdfFormField[]): PdfFormField[] {
+  const parChamp = new Map<string, string>();
+  for (const question of C46_QUESTIONS) parChamp.set(question, question);
+  for (const [question, rattaches] of Object.entries(RATTACHEMENTS)) {
+    for (const id of rattaches) parChamp.set(id, question);
+  }
+  return fields.map((f) => {
+    const groupe =
+      parChamp.get(f.id) ?? (f.section === SECTION_IDENTITE ? C46_GROUPE_IDENTITE : undefined);
+    return groupe ? { ...f, stepGroup: groupe } : f;
+  });
+}
+
 /// Applique le schéma enrichi sur une liste de champs bruts (typiquement
 /// issue de l'inférence automatique au moment de l'import). Idempotent :
 /// ré-exécutable sans dupliquer (compare les `id`).
 export function applyC46Improvements(fields: PdfFormField[]): PdfFormField[] {
-  return mergeEnrichedFields(fields, C46_FIELDS);
+  return appliquerGroupes(mergeEnrichedFields(fields, C46_FIELDS, LEGACY_C46_FIELD_IDS));
 }

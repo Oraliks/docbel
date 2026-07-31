@@ -20,6 +20,7 @@ import {
   C1_PARTENAIRE_QUESTIONS,
   C1_PARTENAIRE_GROUPE_IDENTITE,
 } from "./seed/c1-partenaire-fields";
+import { C46_QUESTIONS, C46_GROUPE_IDENTITE } from "./seed/c46-fields";
 
 export interface FormPresentation {
   /// Ordre canonique des macro-étapes. Les groupes absents de cette liste
@@ -122,6 +123,13 @@ const PRESENTATION_BY_SLUG: Readonly<Record<string, FormPresentation>> = {
     // du PARTENAIRE, elle, ne s'hérite de rien : c'est un tiers), mais il ne
     // doit pas non plus tomber après la signature.
     stepGroupOrder: [C1_PARTENAIRE_GROUPE_IDENTITE, ...C1_PARTENAIRE_QUESTIONS],
+    hideStepList: true,
+  },
+  c46: {
+    // MÊME GRAMMAIRE. Un mandat par étape : les deux mandats supplémentaires
+    // n'apparaissent qu'une fois le précédent renseigné, donc le parcours le
+    // plus court (un seul mandat) tient en deux écrans.
+    stepGroupOrder: [C46_GROUPE_IDENTITE, ...C46_QUESTIONS],
     hideStepList: true,
   },
 };

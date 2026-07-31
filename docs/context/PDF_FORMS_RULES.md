@@ -38,10 +38,19 @@ qu'un `pdfFieldName` existe ne voient rien.
 Le garde-fou est `lib/pdf-forms/__tests__/widget-geometry.test.ts` : il compare
 l'ordre déclaré des champs à la position réelle de leur case (page, colonne,
 ordonnée). Il tourne sur **les 8 formulaires**. Les documents non encore
-réalignés (C1, Annexe Regis, C1B, C46) ont leurs écarts
+réalignés (C1, Annexe Regis, C1B) ont leurs écarts
 consignés en dette dans `ECARTS_ASSUMES` — les traiter, c'est vider leur
-entrée, jamais l'agrandir. Le C1A, le C1C, le C47 et le C1-Partenaire ont la
-leur vide.
+entrée, jamais l'agrandir. Le C1A, le C1C, le C47, le C1-Partenaire et le C46
+ont la leur vide.
+
+Le C46 est le cas d'école de ce décalage : ses widgets « Moniteur Belge du » et
+« Moniteur Belge du_2 » sont en réalité les 2ᵉ et 3ᵉ lignes d'**organisme**, et
+le champ nommé `Date39_af_date` — que son libellé disait « date de
+signature » — porte les trois guides de date du haut de la page 1. Le schéma
+écrivait donc une date sur des lignes de nom, la date du jour dans les trois
+guides à la fois, et laissait blanche la vraie case de signature de la page 2.
+**Une entrée d'`ECARTS_ASSUMES` n'est pas un détail d'ordre : c'est souvent le
+seul symptôme visible d'un mapping faux.**
 
 ⚠ Un découpage en colonnes mal réglé ne fait pas qu'inventer de faux écarts :
 il en **cache de vrais**. Sur le C1-Partenaire, la date d'en-tête (x=338,
@@ -160,6 +169,20 @@ Pour « ce champ vient du C1, mais le document peut aussi être rempli seul » �
 compagnons sont `published`/`active` avec un `publicPath` : ils sont tous
 atteignables hors dossier**, où rien n'est hérité. Un simple `autoAnswered` y
 produirait une déclaration officielle sans nom.
+
+## Taille de police : un widget sans `/DA` s'imprime à la mauvaise taille
+
+`pdf-lib` refuse `setFontSize` sur un champ dépourvu de `/DA` propre, alors que
+l'AcroForm en porte un GLOBAL dont la spec dit qu'il s'hérite. L'échec était
+avalé, et `updateAppearances` retombait sur l'auto-dimensionnement : sur le
+C46, « Commission du travail des arts » sortait en **5 pt** entre deux voisins
+en 10 pt, dans la même rubrique. Quatre widgets de la famille sont dans ce cas,
+un par document (C1, C1C, C46, C1-Partenaire).
+
+`appliquerTaillePolice` (`filler.ts`) pose le `/DA` manquant puis réessaie —
+rien à faire dans les seeds. Le repérage, si le cas se représente sur un
+nouveau document : chercher les champs `/FT /Tx` **sans `/DA` propre** (pypdf),
+pas les champs sans `/DA` hérité.
 
 ## Un seul signataire par formulaire
 

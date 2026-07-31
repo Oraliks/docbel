@@ -100,7 +100,16 @@ const CIBLES: Cible[] = [
     // (date de début vs description, ligne 1 vs ligne 2 d'une même adresse…).
     colonneX: null,
   },
-  { slug: "c46", pdf: "C46_FR.pdf", improve: applyC46Improvements },
+  {
+    slug: "c46",
+    pdf: "C46_FR.pdf",
+    improve: applyC46Improvements,
+    // Une seule colonne de saisie : les 13 widgets vivent entre x=216 et x=577,
+    // la marge de gauche ne portant que du texte d'aide imprimé. Le seuil de
+    // 300 pt coupait la colonne entre les lignes d'organisme (x=216) et les
+    // guides de date (x=291), inventant un écart à chaque bloc de mandat.
+    colonneX: null,
+  },
   {
     slug: "c47",
     pdf: "C47_FR.pdf",
@@ -182,7 +191,12 @@ const ECARTS_ASSUMES: Record<string, string[]> = {
   // un document qui n'en a qu'une — cf. `colonneX: null` sur sa cible. Le
   // mapping, lui, portait de vrais défauts, corrigés dans le seed.
   // Ne rien réintroduire ici sans avoir relu le PDF généré.
-  c46: ["niss > lorganismes_suivants", "nominations_suivantes_5 > date39_af_date"],
+  // `c46` : entrée VIDÉE le 2026-07-31 (remappage du formulaire). Son second
+  // écart, `nominations_suivantes_5 > date39_af_date`, n'était pas un décalage
+  // d'ordre mais le symptôme du VRAI défaut : `date39_af_date`, libellé « date
+  // de signature » et rangé en fin de formulaire, pointait en réalité sur les
+  // trois guides « Moniteur Belge du » du HAUT de la page 1. Cf. l'en-tête de
+  // `seed/c46-fields.ts`.
   // `c47` : entrée VIDÉE le 2026-07-30 (reprise du formulaire). Son unique
   // écart, `niss > t_l_phone`, était un artefact du découpage en deux colonnes
   // appliqué à un document qui n'en a qu'une — cf. `colonneX: null` sur sa

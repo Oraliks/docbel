@@ -198,8 +198,33 @@ sans lequel l'écran ne bouge pas.
    (`appliquerTaillePolice`), donc corrigé aussi sur le C1 et le C1C déjà livrés.
 
    Reste : **re-semis par Oraliks**.
-4. **C1B** (51) — le plus gros, et le multi-widget à quatre cases. À faire en
-   dernier, quand le geste est rodé.
+4. ~~**C1B** (51)~~ — **FAIT le 2026-07-31.** Le multi-widget à quatre cases
+   était bien là, mais il y en avait **deux autres** :
+   - `Date46_af_date` (4 cases) : Q4, le « à partir du » de la pension de survie
+     belge, et le **« du » / « au » d'une même période**. Trois des quatre
+     n'étaient même pas mappées — déclarées en champs VIRTUELS avec la mention
+     « aucun widget AcroForm dédié à cet endroit » : le citoyen les saisissait,
+     elles n'étaient **jamais imprimées** ;
+   - `Date50_af_date` (2 cases) : les deux bornes du congé sans solde, qui
+     sortaient identiques ;
+   - `NISS` (2 cases) : bénin (page 1 + rappel d'en-tête page 2), laissé tel
+     quel — c'est lui, et lui seul, qui garde l'entrée `ECARTS_ASSUMES.c1b`.
+
+   Et un **widget mal attribué** : `Liste déroulante49` est le « Je joins ……
+   annexe(s) : » de la page 2, pas le « au » du congé sans solde. Le schéma y
+   écrivait une date et laissait le compte d'annexes vide.
+
+   Aussi : dénomination de la pension (3 lignes) et « autre, à savoir »
+   (2 lignes) repliées en textarea, parcours de 18 questions, identité héritée
+   du dossier.
+
+   **Et un second défaut de la couche PDF :** quand `fitFontSize` touche son
+   plancher (5 pt), pdf-lib coupe le texte à la limite du rectangle — la valeur
+   est dans le PDF mais invisible. Le code promettait « jamais de perte
+   silencieuse » ; deux tests figeaient au contraire ce silence. Le filler émet
+   désormais un diagnostic `caracteres-non-rendus`.
+
+   Reste : **re-semis par Oraliks**.
 
 Un formulaire par session. Ne pas en enchaîner deux : la relecture case par case
 du PDF est ce qui prend le temps, et c'est elle qui attrape ce que les tests ne

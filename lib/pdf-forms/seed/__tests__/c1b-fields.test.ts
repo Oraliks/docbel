@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { C1B_FIELDS, applyC1BImprovements } from "../c1b-fields";
+import {
+  C1B_FIELDS,
+  C1B_GROUPE_IDENTITE,
+  C1B_QUESTIONS,
+  applyC1BImprovements,
+} from "../c1b-fields";
 
 describe("C1B_FIELDS", () => {
   it("couvre l'identité, les 15 questions numérotées et la signature", () => {
@@ -132,11 +137,72 @@ describe("C1B_FIELDS", () => {
     expect(new Set(simpleNames).size).toBe(simpleNames.length);
   });
 
-  it("le nombre de champs après application sur le dump brut correspond au schéma enrichi attendu (40 champs)", () => {
+  it("le nombre de champs après application sur le dump brut correspond au schéma enrichi attendu (37 champs)", () => {
     const improved = applyC1BImprovements([]);
     expect(improved.length).toBe(C1B_FIELDS.length);
     // 39 depuis le 2026-07-26 : `nomPage2` (doublon de l'en-tête page 2) a
     // quitté le schéma au profit de la règle serveur `bind:Nom`.
-    expect(improved.length).toBe(39);
+    // 37 depuis le 2026-07-31 : les lignes 2 et 3 de la dénomination et la
+    // 2e ligne de « autre, à savoir » sont repliées dans leur textarea
+    // (`lineTargets`), et le compte d'annexes est devenu un champ à part.
+    expect(improved.length).toBe(37);
+  });
+
+  it("les six dates partagées sont écrites en positionnel, à six endroits distincts", () => {
+    // `Date46_af_date` porte QUATRE widgets (Q4, Q7 « à partir du », et le
+    // « du »/« au » d'une même période), `Date50_af_date` en porte DEUX (les
+    // deux bornes du congé sans solde). Une seule valeur pour tous : les
+    // remplir par leur nom sortait la même date partout — et trois des six
+    // n'étaient même pas mappées, donc jamais imprimées.
+    const byId = new Map(C1B_FIELDS.map((f) => [f.id, f]));
+    const dates = [
+      "datePensionRetraiteComplete",
+      "dateEffetPensionSurvieBelge",
+      "cumulAnterieurDateDebut",
+      "cumulAnterieurDateFin",
+      "congeSansSoldeDateDebut",
+      "congeSansSoldeDateFin",
+    ].map((id) => byId.get(id)!);
+
+    for (const champ of dates) {
+      expect(champ, "champ de date manquant").toBeDefined();
+      expect(champ.pdfFieldName, `${champ.id} ne doit revendiquer aucun widget`).toBe("");
+      expect(champ.drawAt, `${champ.id} doit être écrit en positionnel`).toBeDefined();
+    }
+    // Six emplacements DISTINCTS : c'est tout l'enjeu. Le « du » et le « au »
+    // du congé sans solde sont sur la MÊME ligne imprimée, donc à la même
+    // ordonnée — l'abscisse fait partie de l'identité d'une case.
+    const places = dates.map((f) => `${f.drawAt!.page}:${f.drawAt!.x}:${f.drawAt!.y}`);
+    expect(new Set(places).size).toBe(6);
+
+    // Et plus personne ne revendique les deux champs AcroForm partagés.
+    for (const partage of ["Date46_af_date", "Date50_af_date"]) {
+      expect(
+        C1B_FIELDS.filter((f) => f.pdfFieldName === partage),
+        `${partage} ne doit plus être revendiqué par son nom`
+      ).toHaveLength(0);
+    }
+  });
+
+  it("le compte d'annexes vise le widget que la fin de période occupait à tort", () => {
+    const byId = new Map(C1B_FIELDS.map((f) => [f.id, f]));
+    // `Liste déroulante49` est posé sur « Je joins ...... annexe(s): »
+    // (page 2, y=469), pas sur le « au » du congé sans solde (y=584) où le
+    // schéma précédent écrivait une DATE.
+    expect(byId.get("nombreAnnexes")?.pdfFieldName).toBe("Liste déroulante49");
+    expect(byId.get("congeSansSoldeDateFin")?.pdfFieldName).toBe("");
+  });
+
+  it("chaque champ porte un stepGroup connu de l'ordre des étapes", () => {
+    const groupes = new Set([C1B_GROUPE_IDENTITE, ...C1B_QUESTIONS]);
+    for (const f of applyC1BImprovements([])) {
+      expect(f.stepGroup, `champ « ${f.id} » sans étape`).toBeTruthy();
+      expect(groupes, `champ « ${f.id} » dans un groupe hors ordre`).toContain(f.stepGroup);
+    }
+  });
+
+  it("chaque question a pour ancre un champ de même identifiant", () => {
+    const ids = new Set(C1B_FIELDS.map((f) => f.id));
+    for (const q of C1B_QUESTIONS) expect(ids, `question « ${q} »`).toContain(q);
   });
 });

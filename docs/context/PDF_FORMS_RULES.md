@@ -37,11 +37,14 @@ qu'un `pdfFieldName` existe ne voient rien.
 
 Le garde-fou est `lib/pdf-forms/__tests__/widget-geometry.test.ts` : il compare
 l'ordre déclaré des champs à la position réelle de leur case (page, colonne,
-ordonnée). Il tourne sur **les 8 formulaires**. Les documents non encore
-réalignés (C1, Annexe Regis, C1B) ont leurs écarts
-consignés en dette dans `ECARTS_ASSUMES` — les traiter, c'est vider leur
-entrée, jamais l'agrandir. Le C1A, le C1C, le C47, le C1-Partenaire et le C46
-ont la leur vide.
+ordonnée). Il tourne sur **les 8 formulaires**. Deux documents ne sont pas encore
+réalignés (C1, Annexe Regis) et gardent leurs écarts en dette dans
+`ECARTS_ASSUMES` — les traiter, c'est vider leur entrée, jamais l'agrandir. Le
+C1A, le C1C, le C47, le C1-Partenaire et le C46 ont la leur vide ; le C1B n'y
+garde qu'une ligne, et **ce n'est pas une dette de mapping** : son champ `NISS`
+porte deux widgets (page 1 + rappel d'en-tête page 2), et le parser ne retient
+qu'un rectangle par nom de champ — celui de la page 2. Le test croit donc que
+le NISS se lit après le nom.
 
 Le C46 est le cas d'école de ce décalage : ses widgets « Moniteur Belge du » et
 « Moniteur Belge du_2 » sont en réalité les 2ᵉ et 3ᵉ lignes d'**organisme**, et
@@ -169,6 +172,19 @@ Pour « ce champ vient du C1, mais le document peut aussi être rempli seul » �
 compagnons sont `published`/`active` avec un `publicPath` : ils sont tous
 atteignables hors dossier**, où rien n'est hérité. Un simple `autoAnswered` y
 produirait une déclaration officielle sans nom.
+
+## Texte coupé au plancher de réduction
+
+`fitFontSize` ne descend pas sous 5 pt. Au plancher, un texte trop long RESTE
+trop long, et pdf-lib le coupe en plein glyphe à la limite du rectangle : la
+valeur est bien dans le PDF (les sondes de champ la lisent), elle n'est
+simplement pas LISIBLE. Vu sur le C1B, où la description « autre, à savoir »
+d'une annexe s'arrêtait sur « 12 janvier 20 ».
+
+Le filler émet désormais un diagnostic `caracteres-non-rendus` dans ce cas
+(cf. `depasse`). **Deux tests figeaient au contraire ce silence** en attendant
+`diagnostics === []` sur des valeurs qu'ils décrivaient eux-mêmes comme
+débordantes : une promesse tenue par le commentaire, jamais par le code.
 
 ## Taille de police : un widget sans `/DA` s'imprime à la mauvaise taille
 

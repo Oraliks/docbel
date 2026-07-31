@@ -185,6 +185,14 @@ const ECARTS_ASSUMES: Record<string, string[]> = {
   // « Montant mensuel brut » est tranché (deux cases, deux valeurs : écriture
   // positionnelle), et le vrai décalage que le découpage MASQUAIT — la date
   // d'en-tête déclarée après l'identité — est corrigé dans le seed.
+  // `c1b` : le formulaire a été remappé le 2026-07-31 (ses six dates
+  // partagées sont passées en positionnel), mais cet écart-ci RESTE, et il
+  // n'est pas un défaut de mapping : le champ `NISS` porte DEUX widgets — la
+  // case d'identité de la page 1 et le rappel d'en-tête de la page 2 — ce qui
+  // est voulu (même valeur aux deux endroits, cf. le même cas sur le C1C). Le
+  // parser ne garde qu'un rectangle par NOM de champ, et c'est celui de la
+  // page 2 : le test croit donc que le NISS se lit après le nom. Rien à
+  // corriger dans le seed ; ce serait au parser d'exposer tous les widgets.
   c1b: ["niss > nom"],
   // `c1c` : entrée VIDÉE le 2026-07-30 (réalignement du formulaire). Ses six
   // écarts étaient tous des artefacts du découpage en deux colonnes appliqué à

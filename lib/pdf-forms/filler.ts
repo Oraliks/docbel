@@ -298,6 +298,30 @@ function fitFontSize(
   return size;
 }
 
+/// Le texte déborde-t-il encore de la case, à la taille retenue ? Vrai quand
+/// `fitFontSize` a touché son plancher sans réussir à le faire tenir : pdf-lib
+/// coupe alors le texte à la limite du rectangle, en plein glyphe.
+function depasse(
+  font: PDFFont,
+  text: string,
+  field: PDFTextField | PDFDropdown,
+  taille: number
+): boolean {
+  if (!text) return false;
+  try {
+    if (field instanceof PDFTextField && field.isMultiline()) return false;
+    let usable = Infinity;
+    for (const w of field.acroField.getWidgets()) {
+      const width = w.getRectangle().width;
+      if (width > 0) usable = Math.min(usable, width - 2 * TEXT_WIDGET_PADDING);
+    }
+    if (!Number.isFinite(usable) || usable <= 0) return false;
+    return font.widthOfTextAtSize(text, taille) > usable;
+  } catch {
+    return false;
+  }
+}
+
 /// Pose la taille de police d'un widget — en RÉPARANT au passage les widgets
 /// dépourvus de `/DA` propre.
 ///
@@ -1571,10 +1595,25 @@ export async function fillForm(
           // tirée du `technicalSchema` diverge) mais ne peut que RÉDUIRE — d'où
           // le `min`, qui l'empêche de faire remonter une ligne au-dessus de la
           // taille commune et de rouvrir l'écart qu'on vient de fermer.
-          appliquerTaillePolice(
-            widget,
-            Math.min(tailleGroupe, fitFontSize(texteFont, texte, widget, tailleGroupe))
+          const taillePosee = Math.min(
+            tailleGroupe,
+            fitFontSize(texteFont, texte, widget, tailleGroupe)
           );
+          appliquerTaillePolice(widget, taillePosee);
+          // `fitFontSize` ne descend pas sous MIN_TEXT_FONT_SIZE : au plancher,
+          // un texte trop long RESTE trop long, et pdf-lib le coupe en plein
+          // glyphe à la limite du rectangle. La valeur est bien dans le PDF,
+          // mais invisible — exactement la « perte silencieuse » que cette
+          // répartition promet d'éviter. Vu sur le C1B : la description
+          // « autre, à savoir » d'une annexe s'arrêtait sur « 12 janvier 20 ».
+          if (depasse(texteFont, texte, widget, taillePosee)) {
+            diags.push({
+              fieldId: field.id,
+              widget: cible.pdfFieldName,
+              kind: "caracteres-non-rendus",
+              detail: `texte trop long pour la case même à ${taillePosee} pt — la fin est coupée`,
+            });
+          }
           if (unicodeFont) widget.updateAppearances(texteFont);
         } catch (err) {
           diags.push({

@@ -33,6 +33,51 @@ const YN = [
   { value: "non", label: { fr: "Non" } },
 ];
 
+// ===========================================================================
+// LES QUATRE DATES DE `Date46_af_date` — un champ, quatre cases, une valeur
+// ===========================================================================
+//
+// Vérifié à pypdf (`/Kids`) puis sur le papier : le champ AcroForm
+// `Date46_af_date` porte QUATRE widgets, sur quatre questions différentes de la
+// page 1 :
+//
+//   y=696,6  Q4  « À partir de quelle date avez-vous droit à cette pension ? »
+//   y=447,9  Q7  « A partir du » (prise d'effet de la pension de survie belge)
+//   y=209,7  Q7  « oui, du »  (début de la période de cumul antérieur)
+//   y=194,4  Q7  « au »       (fin de la MÊME période)
+//
+// Une seule valeur pour quatre cases : remplir l'une remplissait les quatre —
+// le « du » et le « au » d'une même période sortaient identiques. Le seed
+// précédent ne mappait que la première et déclarait les trois autres en champs
+// VIRTUELS (`pdfFieldName: ""`, sans `drawAt`), avec la mention « aucun widget
+// AcroForm dédié n'apparaît à cet endroit dans le dump » : leurs valeurs
+// étaient donc saisies par le citoyen puis **jamais imprimées**. Les widgets
+// existent, ils étaient simplement groupés sous un seul nom.
+//
+// Sortie : écriture positionnelle des quatre cases (cf. PDF_FORMS_RULES.md).
+//
+// Les quatre guides sont le MÊME peigne imprimé (8 tirets SymbolMT, groupés
+// 2-2-4, pas de 12,0 pt, +5,04 aux barres obliques) — seules changent les
+// coordonnées. Mesuré à pdfplumber, position verticale de l'encre relevée par
+// rastérisation à 800 dpi.
+const DATE_COMB: NonNullable<PdfFormField["printAsComb"]> = {
+  groups: [2, 2, 4],
+  slotWidth: 12.0,
+  groupExtra: 5.04,
+};
+
+/// Une des quatre cases de `Date46_af_date`, en positionnel. `x` = abscisse du
+/// premier tiret + le centrage d'un chiffre de 9 pt dans une case de 9 pt ;
+/// `y` = ligne de base du guide.
+function dateEnPeigne(x: number, y: number): Pick<PdfFormField, "pdfFieldName" | "drawAt" | "printAsComb" | "fontSize"> {
+  return {
+    pdfFieldName: "",
+    drawAt: { page: 0, x, y, size: 9 },
+    printAsComb: DATE_COMB,
+    fontSize: 9,
+  };
+}
+
 export const C1B_FIELDS: PdfFormField[] = [
   // ==========================================================================
   // IDENTITÉ (bloc intercalé au milieu de la page 1 sur le PDF officiel,
@@ -51,6 +96,7 @@ export const C1B_FIELDS: PdfFormField[] = [
     placeholder: { fr: "00.00.00-000.00" },
     prefillFrom: "profile.niss",
     canonicalKey: "identity.niss",
+    inheritedFromDossier: true,
     section: SECTION_IDENTITE,
     order: -100,
   },
@@ -62,6 +108,7 @@ export const C1B_FIELDS: PdfFormField[] = [
     label: { fr: "Nom" },
     prefillFrom: "profile.lastName",
     canonicalKey: "identity.nom",
+    inheritedFromDossier: true,
     section: SECTION_IDENTITE,
     order: -99,
   },
@@ -73,6 +120,7 @@ export const C1B_FIELDS: PdfFormField[] = [
     label: { fr: "Prénom" },
     prefillFrom: "profile.firstName",
     canonicalKey: "identity.prenom",
+    inheritedFromDossier: true,
     section: SECTION_IDENTITE,
     order: -98,
   },
@@ -84,6 +132,7 @@ export const C1B_FIELDS: PdfFormField[] = [
     label: { fr: "Rue" },
     prefillFrom: "profile.street",
     canonicalKey: "adresse.rue",
+    inheritedFromDossier: true,
     section: SECTION_IDENTITE,
     order: -97,
   },
@@ -94,6 +143,7 @@ export const C1B_FIELDS: PdfFormField[] = [
     required: true,
     label: { fr: "Numéro" },
     canonicalKey: "adresse.numero",
+    inheritedFromDossier: true,
     section: SECTION_IDENTITE,
     order: -96,
   },
@@ -106,6 +156,7 @@ export const C1B_FIELDS: PdfFormField[] = [
     placeholder: { fr: "1000" },
     prefillFrom: "profile.postalCode",
     canonicalKey: "adresse.codePostal",
+    inheritedFromDossier: true,
     section: SECTION_IDENTITE,
     order: -95,
   },
@@ -120,6 +171,7 @@ export const C1B_FIELDS: PdfFormField[] = [
     // arrivait tout seul.
     prefillFrom: "profile.city",
     canonicalKey: "adresse.commune",
+    inheritedFromDossier: true,
     section: SECTION_IDENTITE,
     order: -94,
   },
@@ -163,9 +215,23 @@ export const C1B_FIELDS: PdfFormField[] = [
     order: 2,
   },
   {
+    // UN champ pour les TROIS lignes pointillées imprimées : le papier ne pose
+    // qu'une question (« Quelle est la dénomination exacte de la pension de
+    // retraite complète à laquelle vous avez droit ? »), les trois lignes ne
+    // numérotent que des lignes. Le doute d'origine (« 3 champs distincts ou
+    // 3 lignes de la même réponse ? ») est tranché par le papier : c'est bien
+    // une seule réponse. Même correction que la description d'activité du C1C.
+    //
+    // `id` conservé (celui de l'ex-1re ligne) pour ne pas perdre les brouillons
+    // déjà en base ; les deux autres sont purgés par LEGACY_C1B_FIELD_IDS.
     id: "denominationPensionRetraiteComplete",
-    pdfFieldName: "undefined",
-    type: "text",
+    pdfFieldName: "",
+    lineTargets: [
+      { pdfFieldName: "undefined" },
+      { pdfFieldName: "undefined_2" },
+      { pdfFieldName: "undefined_3" },
+    ],
+    type: "textarea",
     required: false,
     label: { fr: "Dénomination exacte de la pension de retraite complète" },
     help: {
@@ -175,35 +241,10 @@ export const C1B_FIELDS: PdfFormField[] = [
     section: SECTION_REVENUS,
     order: 3,
   },
-  // A VALIDER Oraliks : le texte imprimé prévoit 3 lignes de pointillés pour
-  // la dénomination (question 3), et le dump AcroForm expose bien 3 widgets
-  // texte génériques à cet endroit ("undefined", "undefined_2", "undefined_3").
-  // Je les traite comme 3 lignes de la MÊME réponse en texte libre (une
-  // dénomination peut être longue). Si en réalité ce sont 3 champs distincts
-  // avec un sens différent chacun, merci de préciser.
-  {
-    id: "denominationPensionRetraiteComplete2",
-    pdfFieldName: "undefined_2",
-    type: "text",
-    required: false,
-    label: { fr: "Dénomination exacte (suite, ligne 2)" },
-    visibleIf: { fieldId: "droitPensionRetraiteComplete", op: "equals", value: "oui" },
-    section: SECTION_REVENUS,
-    order: 4,
-  },
-  {
-    id: "denominationPensionRetraiteComplete3",
-    pdfFieldName: "undefined_3",
-    type: "text",
-    required: false,
-    label: { fr: "Dénomination exacte (suite, ligne 3)" },
-    visibleIf: { fieldId: "droitPensionRetraiteComplete", op: "equals", value: "oui" },
-    section: SECTION_REVENUS,
-    order: 5,
-  },
   {
     id: "datePensionRetraiteComplete",
-    pdfFieldName: "Date46_af_date",
+    // 1re des quatre cases de `Date46_af_date` (cf. le bloc en tête du fichier).
+    ...dateEnPeigne(323.12, 697.4),
     type: "date",
     required: false,
     label: { fr: "À partir de quelle date avez-vous droit à cette pension ?" },
@@ -250,16 +291,13 @@ export const C1B_FIELDS: PdfFormField[] = [
   // chômage + cumul antérieur avec maladie/invalidité/chômage/prépension
   // (visible seulement si Q6 = pension de survie belge).
   // ==========================================================================
-  // A VALIDER Oraliks : le texte imprimé de la question 7 affiche une date
-  // "A partir du" (jour/mois/année) juste sous le titre, mais aucun widget
-  // AcroForm dédié n'apparaît à cet endroit dans le dump (le bloc identité
-  // occupe la position juste après). Cette date pourrait ne pas avoir de
-  // champ de saisie sur ce PDF, ou avoir été fusionnée avec un autre widget.
-  // Champ ajouté ici en virtuel (sans pdfFieldName) pour ne pas perdre la
-  // donnée — à corriger dès que la position réelle est confirmée.
   {
+    // 2e case de `Date46_af_date` (y=447,9). Le doute d'origine (« aucun widget
+    // AcroForm dédié n'apparaît à cet endroit ») est levé : le widget existe,
+    // il était groupé sous le nom du premier. Sans ce `drawAt`, la date était
+    // saisie par le citoyen et jamais imprimée.
     id: "dateEffetPensionSurvieBelge",
-    pdfFieldName: "",
+    ...dateEnPeigne(348.57, 448.5),
     type: "date",
     required: false,
     label: { fr: "Pension de survie belge — à partir du" },
@@ -300,15 +338,12 @@ export const C1B_FIELDS: PdfFormField[] = [
     section: SECTION_REVENUS,
     order: 22,
   },
-  // A VALIDER Oraliks : le texte imprimé prévoit 2 dates ("du" ... "au" ...)
-  // pour préciser la période de cumul antérieur quand la réponse ci-dessus
-  // est "oui". Aucun widget AcroForm dédié n'a été identifié pour ces 2
-  // dates dans le dump (contrairement à la période de congé sans solde, plus
-  // bas, qui a bien 2 widgets). Champs ajoutés en virtuel pour ne pas perdre
-  // la donnée — à corriger dès que confirmé sur le PDF réel.
+  // Les 3e et 4e cases de `Date46_af_date` : le « du » et le « au » d'une MÊME
+  // période. C'est le cas le plus visible du défaut — avec un champ partagé,
+  // les deux bornes sortaient identiques ; en virtuel, aucune ne sortait.
   {
     id: "cumulAnterieurDateDebut",
-    pdfFieldName: "",
+    ...dateEnPeigne(385.65, 209.95),
     type: "date",
     required: false,
     label: { fr: "Période de cumul antérieur — du" },
@@ -318,7 +353,7 @@ export const C1B_FIELDS: PdfFormField[] = [
   },
   {
     id: "cumulAnterieurDateFin",
-    pdfFieldName: "",
+    ...dateEnPeigne(388.15, 194.95),
     type: "date",
     required: false,
     label: { fr: "Période de cumul antérieur — au" },
@@ -432,9 +467,19 @@ export const C1B_FIELDS: PdfFormField[] = [
     section: SECTION_DIVERS,
     order: 52,
   },
+  // SECOND champ AcroForm à widgets multiples : `Date50_af_date` porte les DEUX
+  // bornes de « Période de congé sans solde : du …… au …… » (page 2, y=585,8 et
+  // y=584,5, côte à côte sur la même ligne imprimée). Une seule valeur pour les
+  // deux : le début et la fin sortaient identiques. Écriture positionnelle,
+  // comme les quatre dates de `Date46_af_date`.
+  //
+  // Ici le guide imprimé est une ligne POINTILLÉE, pas un peigne : pas de
+  // `printAsComb`, la date s'écrit d'un bloc sur le trait (ligne de base
+  // mesurée à 585,09 pour les deux bornes).
   {
     id: "congeSansSoldeDateDebut",
-    pdfFieldName: "Date50_af_date",
+    pdfFieldName: "",
+    drawAt: { page: 1, x: 435, y: 585.09, size: 9, maxWidth: 56 },
     type: "date",
     required: false,
     label: { fr: "Période de congé sans solde — du" },
@@ -442,16 +487,10 @@ export const C1B_FIELDS: PdfFormField[] = [
     section: SECTION_DIVERS,
     order: 53,
   },
-  // A VALIDER Oraliks : le widget de fin de période ("au") est un dropdown
-  // AcroForm SANS options prédéfinies (/Opt vide) — comportement inhabituel
-  // pour une date. Je le traite comme un champ date classique côté citoyen
-  // (le filler PDF y écrira une valeur texte, ce qui fonctionne pour un
-  // dropdown éditable sans liste fermée). Merci de vérifier visuellement sur
-  // le PDF que ce widget affiche bien un champ de saisie de date et non une
-  // vraie liste déroulante avec des valeurs attendues.
   {
     id: "congeSansSoldeDateFin",
-    pdfFieldName: "Liste déroulante49",
+    pdfFieldName: "",
+    drawAt: { page: 1, x: 506.5, y: 585.09, size: 9, maxWidth: 52 },
     type: "date",
     required: false,
     label: { fr: "Période de congé sans solde — au" },
@@ -471,6 +510,25 @@ export const C1B_FIELDS: PdfFormField[] = [
   // modèle 74…") correspondent 1-pour-1 aux 4 annexes listées juste après
   // dans le texte, dans le même ordre.
   // ==========================================================================
+  {
+    // « Je joins .............. annexe(s): » — le widget `Liste déroulante49`
+    // est posé sur ce pointillé (page 2, y=469), et non sur le « au » de la
+    // période de congé sans solde comme le supposait le schéma précédent (qui y
+    // écrivait donc une DATE, et laissait le compte d'annexes vide).
+    //
+    // Le widget est un dropdown SANS options (`/Opt` vide) : le filler ajoute
+    // la valeur aux options avant de la sélectionner, ce qui rend un champ de
+    // saisie libre. Le doute consigné à ce sujet est levé — il ne s'agissait
+    // pas d'une liste fermée dont il aurait fallu deviner les valeurs.
+    id: "nombreAnnexes",
+    pdfFieldName: "Liste déroulante49",
+    type: "number",
+    required: false,
+    label: { fr: "Nombre d'annexes jointes" },
+    help: { fr: "Compte les documents que tu joins à ce formulaire." },
+    section: SECTION_ANNEXES,
+    order: 59,
+  },
   {
     id: "annexeDecisionsBelges",
     pdfFieldName: "déc",
@@ -517,24 +575,24 @@ export const C1B_FIELDS: PdfFormField[] = [
     order: 64,
   },
   {
+    // UN seul champ pour les DEUX lignes pointillées imprimées : le papier ne
+    // pose qu'une question (« autre, à savoir : »), les deux lignes ne
+    // numérotent que des lignes. Même correction que la description d'activité
+    // du C1C et les annexes du C46 — `filler.ts` replie le texte par mots sur
+    // les deux cibles et réduit la police sur la dernière en cas de
+    // débordement, jamais de perte silencieuse.
+    //
+    // `id` conservé (celui de l'ex-1re ligne) pour ne pas perdre les brouillons
+    // déjà en base ; la seconde est purgée par LEGACY_C1B_FIELD_IDS.
     id: "annexeAutreDescription",
-    pdfFieldName: "undefined_4",
-    type: "text",
+    pdfFieldName: "",
+    lineTargets: [{ pdfFieldName: "undefined_4" }, { pdfFieldName: "undefined_5" }],
+    type: "textarea",
     required: false,
     label: { fr: "Description du document joint" },
     visibleIf: { fieldId: "annexeAutre", op: "equals", value: true },
     section: SECTION_ANNEXES,
     order: 65,
-  },
-  {
-    id: "annexeAutreDescriptionSuite",
-    pdfFieldName: "undefined_5",
-    type: "text",
-    required: false,
-    label: { fr: "Description du document joint (suite)" },
-    visibleIf: { fieldId: "annexeAutre", op: "equals", value: true },
-    section: SECTION_ANNEXES,
-    order: 66,
   },
 
   // ==========================================================================
@@ -542,10 +600,10 @@ export const C1B_FIELDS: PdfFormField[] = [
   // ==========================================================================
   {
     id: "dateSignature",
-    // A VALIDER Oraliks : nom de widget AcroForm inhabituel ("AUJOURD'HUI")
-    // pour un champ de date de signature — à confirmer visuellement (position
-    // juste au-dessus du widget de signature sur le PDF, cohérent avec
-    // "date signature du travailleur" imprimé en fin de page 2).
+    // Le nom de widget « AUJOURD'HUI » surprend pour une date de signature,
+    // mais il est bon : le widget est en page 2 à (341, 299), juste au-dessus
+    // du « date signature du travailleur » imprimé (y=296,3) et à gauche du
+    // widget de signature. Vérifié sur le PDF, doute levé.
     pdfFieldName: "AUJOURD'HUI",
     type: "date",
     required: true,
@@ -593,8 +651,100 @@ const LEGACY_C1B_FIELD_IDS = new Set<string>([
   // `nom` du seed qui vise, lui, le widget « nom » de la PAGE 1 (y=499) : le
   // PDF distingue les deux par la casse.
   "nom_1",
+  // Seconde ligne de « autre, à savoir : », repliée dans le textarea
+  // `annexeAutreDescription` via `lineTargets` (2026-07-31).
+  "annexeAutreDescriptionSuite",
+  // Lignes 2 et 3 de la dénomination (question 3), repliées dans le textarea
+  // `denominationPensionRetraiteComplete` via `lineTargets` (2026-07-31).
+  "denominationPensionRetraiteComplete2",
+  "denominationPensionRetraiteComplete3",
 ]);
 
+// ===========================================================================
+// PARCOURS À L'ÉCRAN — une question = une étape (patron du C1A / C1C / C47)
+// ===========================================================================
+//
+// Le repli par défaut découpait par SECTION : cinq étapes, dont une
+// « Mes revenus » de vingt champs couvrant les questions 1 à 12 du papier. Une
+// question par étape rend les branches gratuites — `visibleIf` non satisfait ⟹
+// aucun champ visible ⟹ aucune étape — et le C1B est le formulaire de la
+// famille qui en compte le plus : un citoyen qui répond « non » partout ne voit
+// que huit écrans au lieu d'une page interminable.
+
+/// Étape de l'en-tête d'identité — la seule qui ne soit pas une question. Sur
+/// le papier elle est intercalée au milieu de la page 1 ; à l'écran elle passe
+/// en tête, et disparaît dans un dossier (cf. `inheritedFromDossier`).
+export const C1B_GROUPE_IDENTITE = "identite";
+
+/// Les questions du document, DANS L'ORDRE IMPRIMÉ (numérotation 1 → 15 du
+/// formulaire). Chacune devient une étape et porte l'identifiant du champ qui
+/// la pose : ce champ est alors l'ANCRE de son étape (cf. `stepAnchorField`) et
+/// sa question titre l'étape — aucune clé i18n à écrire.
+///
+/// La question 7 en fournit trois (date d'effet, cumul, cumul antérieur) : le
+/// papier les imprime sous un même numéro, mais ce sont trois questions
+/// distinctes, dont deux à réponse oui/non.
+export const C1B_QUESTIONS: readonly string[] = [
+  "droitPensionRetraiteComplete", // 1
+  "typePensionRetraiteComplete", // 2
+  "denominationPensionRetraiteComplete", // 3
+  "datePensionRetraiteComplete", // 4
+  "percoitPension", // 5
+  "typePensionPercue", // 6
+  "dateEffetPensionSurvieBelge", // 7a
+  "cumulPensionSurvieChomage", // 7b
+  "cumulAnterieurMaladieChomagePrepension", // 7c
+  "indemniteMaladieInvaliditeEtrangere", // 8
+  "montantIndemniteMaladieInvalidite", // 9
+  "indemniteAccidentTravailBelge", // 10
+  "natureIndemniteAccidentTravail", // 11
+  "indemniteAccidentTravailEtrangere", // 12
+  "congeSansSolde", // 13
+  "congeSansSoldeNomEmployeur", // 14
+  "nombreAnnexes", // 15
+  "signature",
+];
+
+/// Champs RATTACHÉS à une question : précisions, lignes de suite, bornes de
+/// période. Ils suivent leur question et ne fabriquent pas d'étape.
+const RATTACHEMENTS: Readonly<Record<string, readonly string[]>> = {
+  // « du » et « au » d'une même période : jamais sur deux écrans.
+  cumulAnterieurMaladieChomagePrepension: ["cumulAnterieurDateDebut", "cumulAnterieurDateFin"],
+  // Q14 : les données du congé sans solde tiennent d'un bloc.
+  congeSansSoldeNomEmployeur: [
+    "congeSansSoldeAdresseEmployeur",
+    "congeSansSoldeDateDebut",
+    "congeSansSoldeDateFin",
+  ],
+  // Q15 : le compte d'annexes et la liste de ce qu'on joint.
+  nombreAnnexes: [
+    "annexeDecisionsBelges",
+    "annexeDecisionsEtrangeres",
+    "annexeCopiesPaiement",
+    "annexeModele74",
+    "annexeAutre",
+    "annexeAutreDescription",
+  ],
+  signature: ["dateSignature"],
+};
+
+/// Pose `stepGroup` sur chaque champ. Les champs d'identité tombent dans le
+/// groupe d'en-tête ; un champ inconnu des deux tables reste sans groupe et
+/// atterrit dans « Autres informations » de la dernière étape — repli visible,
+/// jamais une perte.
+function appliquerGroupes(fields: PdfFormField[]): PdfFormField[] {
+  const parChamp = new Map<string, string>();
+  for (const question of C1B_QUESTIONS) parChamp.set(question, question);
+  for (const [question, rattaches] of Object.entries(RATTACHEMENTS)) {
+    for (const id of rattaches) parChamp.set(id, question);
+  }
+  return fields.map((f) => {
+    const groupe =
+      parChamp.get(f.id) ?? (f.section === SECTION_IDENTITE ? C1B_GROUPE_IDENTITE : undefined);
+    return groupe ? { ...f, stepGroup: groupe } : f;
+  });
+}
+
 export function applyC1BImprovements(fields: PdfFormField[]): PdfFormField[] {
-  return mergeEnrichedFields(fields, C1B_FIELDS, LEGACY_C1B_FIELD_IDS);
+  return appliquerGroupes(mergeEnrichedFields(fields, C1B_FIELDS, LEGACY_C1B_FIELD_IDS));
 }

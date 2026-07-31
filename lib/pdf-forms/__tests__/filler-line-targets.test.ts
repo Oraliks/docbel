@@ -55,7 +55,13 @@ describe("fillForm — lineTargets (grilles horaires C1A, vrai PDF)", () => {
       flatten: false,
       technicalSchema: parsed.fields,
     });
-    expect(diagnostics.filter((d) => d.fieldId === "q4periodesTexte")).toEqual([]);
+    // 60 mots ne TIENNENT pas visuellement sur quatre lignes, même au plancher
+    // de réduction (5 pt) : pdf-lib coupe la dernière à la limite du
+    // rectangle. Les mots sont bien tous dans le PDF (assertion plus bas), mais
+    // la fin n'est pas LISIBLE — et depuis le 2026-07-31 le filler le DIT au
+    // lieu de le taire (cf. `depasse` dans filler.ts).
+    const coupes = diagnostics.filter((d) => d.fieldId === "q4periodesTexte");
+    expect(coupes.map((d) => d.kind)).toEqual(["caracteres-non-rendus"]);
 
     const acro = (await PDFDocument.load(bytes)).getForm();
     const lignes = ["1", "2", "3", "4"].map((w) => texteDe(acro, w));
@@ -316,7 +322,14 @@ describe("fillForm — lineTargets (Q5 et Q16 du C1A, vrai PDF)", () => {
       flatten: false,
       technicalSchema: parsed.fields,
     });
-    expect(diagnostics.filter((d) => d.fieldId === "descriptionActivite1")).toEqual([]);
+    // 40 mots ne TIENNENT pas visuellement sur trois lignes courtes, même au
+    // plancher de réduction (5 pt) : pdf-lib coupe la dernière à la limite du
+    // rectangle. Les mots sont bien tous dans le PDF (assertion plus bas), mais
+    // la fin n'est pas LISIBLE — et depuis le 2026-07-31 le filler le DIT au
+    // lieu de le taire (cf. `depasse` dans filler.ts). Ce test figeait le
+    // silence ; il vérifie désormais le signal.
+    const coupes = diagnostics.filter((d) => d.fieldId === "descriptionActivite1");
+    expect(coupes.map((d) => d.kind)).toEqual(["caracteres-non-rendus"]);
 
     const acro = (await PDFDocument.load(bytes)).getForm();
     const lignes = ["undefined_2", "Je décris mon activité 1", "Je décris mon activité 2"].map((w) =>

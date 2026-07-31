@@ -21,6 +21,7 @@ import {
   C1_PARTENAIRE_GROUPE_IDENTITE,
 } from "./seed/c1-partenaire-fields";
 import { C46_QUESTIONS, C46_GROUPE_IDENTITE } from "./seed/c46-fields";
+import { C1B_QUESTIONS, C1B_GROUPE_IDENTITE } from "./seed/c1b-fields";
 
 export interface FormPresentation {
   /// Ordre canonique des macro-étapes. Les groupes absents de cette liste
@@ -130,6 +131,13 @@ const PRESENTATION_BY_SLUG: Readonly<Record<string, FormPresentation>> = {
     // n'apparaissent qu'une fois le précédent renseigné, donc le parcours le
     // plus court (un seul mandat) tient en deux écrans.
     stepGroupOrder: [C46_GROUPE_IDENTITE, ...C46_QUESTIONS],
+    hideStepList: true,
+  },
+  c1b: {
+    // MÊME GRAMMAIRE, sur le plus long des compagnons : quinze questions
+    // imprimées, dont la plupart ne s'affichent que sur leur branche. Le
+    // parcours le plus court (« non » partout) tient en huit écrans.
+    stepGroupOrder: [C1B_GROUPE_IDENTITE, ...C1B_QUESTIONS],
     hideStepList: true,
   },
 };

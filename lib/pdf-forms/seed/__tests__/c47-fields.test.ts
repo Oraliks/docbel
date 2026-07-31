@@ -80,8 +80,22 @@ describe("C47_FIELDS", () => {
   it("l'identité et l'adresse sont héritées du dossier, jamais redemandées", () => {
     const herites = C47_FIELDS.filter((f) => f.inheritedFromDossier).map((f) => f.id);
     expect(herites.sort()).toEqual(
-      ["codePostal", "commune", "email", "niss", "numero", "pr_nom_et_nom", "rue", "t_l_phone"].sort()
+      ["codePostal", "commune", "niss", "numero", "pr_nom_et_nom", "rue"].sort()
     );
+  });
+
+  it("le téléphone et l'e-mail ne sont jamais demandés, mais restent imprimables", () => {
+    // Muets à l'écran comme sur le C1 (Oraliks 2026-07-31) — le formulaire
+    // imprime lui-même qu'ils sont facultatifs.
+    const byId = new Map(C47_FIELDS.map((f) => [f.id, f]));
+    for (const id of ["t_l_phone", "email"]) {
+      expect(byId.get(id)?.autoAnswered, `${id} doit être muet`).toBe(true);
+      // …et surtout PAS `hidden`, qui les retirerait aussi du PDF : la case
+      // partirait blanche alors que la valeur est connue (c'est le défaut du
+      // C1, pas son modèle).
+      expect(byId.get(id)?.hidden, `${id} ne doit pas être masqué du PDF`).toBeUndefined();
+      expect(byId.get(id)?.pdfFieldName, `${id} garde sa case`).toBeTruthy();
+    }
   });
 
   it("chaque champ porte un stepGroup connu de l'ordre des étapes", () => {

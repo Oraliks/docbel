@@ -200,6 +200,17 @@ export const C47_FIELDS: PdfFormField[] = [
     section: SECTION_IDENTITE,
     order: 3,
   },
+  // TÉLÉPHONE ET E-MAIL — muets à l'écran, comme sur le C1 (Oraliks
+  // 2026-07-31). Le formulaire imprime lui-même « Les données "téléphone" et
+  // "e-mail" sont facultatives » : deux cases de plus à remplir pour rien.
+  //
+  // `autoAnswered`, et non `hidden` comme sur le C1. Les deux retirent le champ
+  // de l'écran ; `hidden` le retire EN PLUS du PDF, et la case part alors
+  // blanche même quand la valeur est connue — c'est le défaut relevé sur le C1
+  // dans PDF_FORMS_RULES.md, pas un modèle à recopier. Avec `autoAnswered`, la
+  // valeur venue du dossier ou du profil s'imprime, et le citoyen n'a rien à
+  // saisir. `inheritedFromDossier` devient inutile : le champ est masqué dans
+  // tous les cas, plus seulement quand le dossier le pourvoit.
   {
     id: "t_l_phone",
     pdfFieldName: "Téléphone",
@@ -210,7 +221,7 @@ export const C47_FIELDS: PdfFormField[] = [
     help: { fr: "Facultatif." },
     prefillFrom: "profile.phone",
     canonicalKey: "contact.telephone",
-    inheritedFromDossier: true,
+    autoAnswered: true,
     section: SECTION_IDENTITE,
     order: 4,
   },
@@ -224,7 +235,7 @@ export const C47_FIELDS: PdfFormField[] = [
     help: { fr: "Facultatif." },
     prefillFrom: "profile.email",
     canonicalKey: "contact.email",
-    inheritedFromDossier: true,
+    autoAnswered: true,
     section: SECTION_IDENTITE,
     order: 5,
   },

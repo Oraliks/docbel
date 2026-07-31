@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useRef, useEffect, useCallback } from "react";
+import { useMemo, useState, useRef, useEffect, useLayoutEffect, useCallback } from "react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -564,6 +564,73 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
 
   // Id STABLE de l'étape courante — persisté avec le brouillon (autosave).
   const activeStepId = stepIds[activeIndex];
+
+  // PLANCHER DE DÉFILEMENT — la page ne RÉTRÉCIT JAMAIS sous les pieds de
+  // l'usager tant qu'il reste sur la même étape.
+  //
+  // Quatrième signalement du même symptôme (Oraliks : C1, C1A, C1C, puis le
+  // 2026-07-31) : répondre à une question renvoie la vue en haut, « comme si
+  // c'était un # ». Ce n'est ni une ancre ni un bouton non typé. Répondre
+  // RACCOURCIT le document — un `visibleIf` masque un champ — et dès qu'il
+  // devient plus court que `scrollTop + hauteur d'écran`, le navigateur écrête
+  // la position de défilement : la vue saute.
+  //
+  // Deux garde-fous existaient déjà et ne suffisent pas :
+  //   • `min-h-[60svh]` sur le formulaire empêche l'étape d'être MINUSCULE,
+  //     pas de rétrécir : une étape de 120 svh qui retombe à 60 fait toujours
+  //     sauter la page ;
+  //   • il ne couvre que le formulaire, alors que la liste d'étapes et le
+  //     résumé d'erreurs, qui apparaissent et disparaissent aussi, sont
+  //     DEHORS.
+  //
+  // D'où une CALE en fin de page, dont la hauteur compense exactement ce que le
+  // document vient de perdre. Elle suit la plus grande hauteur atteinte sur
+  // l'étape courante et se relâche au changement d'étape — sinon une étape
+  // courte hériterait de la hauteur de la précédente. Invisible : elle n'ajoute
+  // de l'espace qu'en bas, jamais un trou au milieu du formulaire.
+  //
+  // Effet de MISE EN PAGE, et écriture directe du style : un état React
+  // repeindrait après le saut, donc trop tard.
+  //
+  // La cale est posée en fin de `document.body`, pas dans le JSX : le runner a
+  // quatre points de retour (confirmation, reprise, mode macro, mode
+  // classique), et c'est le DOCUMENT qui défile, pas un conteneur du runner.
+  const cale = useRef<HTMLDivElement | null>(null);
+  const plancherPage = useRef(0);
+
+  useLayoutEffect(() => {
+    const el = document.createElement("div");
+    el.setAttribute("aria-hidden", "true");
+    el.dataset.docbelScrollFloor = "";
+    el.style.height = "0px";
+    document.body.appendChild(el);
+    cale.current = el;
+    return () => {
+      el.remove();
+      cale.current = null;
+    };
+  }, []);
+
+  // Relâche le plancher au changement d'étape. Déclaré AVANT la mesure, donc
+  // exécuté avant elle dans le même commit (les effets de mise en page se
+  // déclenchent dans l'ordre de déclaration).
+  useLayoutEffect(() => {
+    plancherPage.current = 0;
+    if (cale.current) cale.current.style.height = "0px";
+  }, [activeStepId]);
+
+  // À chaque rendu, et seulement à la hausse.
+  useLayoutEffect(() => {
+    const el = cale.current;
+    if (!el) return;
+    const caleActuelle = el.offsetHeight;
+    // Hauteur du document SANS la cale : c'est elle qu'il faut comparer d'un
+    // rendu à l'autre, sinon la cale se mesurerait elle-même.
+    const naturelle = document.documentElement.scrollHeight - caleActuelle;
+    if (naturelle > plancherPage.current) plancherPage.current = naturelle;
+    const manque = Math.max(0, plancherPage.current - naturelle);
+    if (manque !== caleActuelle) el.style.height = `${manque}px`;
+  });
   // Les réponses sont réellement persistées côté serveur si on est dans un
   // dossier (brouillon serveur, même anonyme) OU connecté (PdfFormDraft).
   // Sinon (autonome anonyme) : rien n'est enregistré → message honnête.

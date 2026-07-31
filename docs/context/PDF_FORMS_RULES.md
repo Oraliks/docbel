@@ -268,6 +268,30 @@ Trois granularités possibles, du plus grossier au plus fin :
 Choisir selon la longueur : un macro-groupe qui dépasse la dizaine de champs
 donne une page interminable.
 
+## La page ne doit JAMAIS remonter quand on répond
+
+Symptôme signalé quatre fois (C1, C1A, C1C, puis le 2026-07-31) : cliquer dans
+le runner renvoie la vue en haut, « comme si c'était un # ». Ce n'est ni une
+ancre ni un bouton non typé. **Répondre RACCOURCIT le document** — un
+`visibleIf` masque un champ, un résumé d'erreurs disparaît — et dès qu'il
+devient plus court que `scrollTop + hauteur d'écran`, le navigateur écrête la
+position de défilement.
+
+Trois garde-fous, dans l'ordre où ils ont été posés :
+
+1. `Select modal={false}` — en mode modal, Base UI verrouille le défilement et
+   le restaure par `html.scrollTop = valeurMémorisée`, écrêté au nouveau maximum ;
+2. `navigationTick` — n'adosser un effet de défilement qu'à un compteur de
+   navigation DÉLIBÉRÉE, jamais à un index dérivé de la liste d'étapes ;
+3. **une CALE en fin de `document.body`** (`plancherPage`, pdf-form-runner.tsx),
+   dont la hauteur compense exactement ce que le document vient de perdre,
+   jusqu'au changement d'étape.
+
+Le `min-h-[60svh]` du formulaire ne suffisait pas : il empêche l'étape d'être
+minuscule, pas de RÉTRÉCIR, et il ne couvre pas ce qui vit hors du formulaire.
+Mesuré sur le C1A : à l'effacement du résumé d'erreurs, la page passait de 1188
+à 1067 px et la vue sautait de **121 px** ; avec la cale, 0.
+
 ## Obligation de réponse
 
 `buildValidator` **saute déjà les champs invisibles** : dès que les `visibleIf`

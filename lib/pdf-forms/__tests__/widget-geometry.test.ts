@@ -73,7 +73,20 @@ const CIBLES: Cible[] = [
       }),
   },
   { slug: "c1-regis", pdf: "Annexe_Regis_FR.pdf", improve: applyC1RegisImprovements },
-  { slug: "c1-partenaire", pdf: "C1-Partenaire_FR.pdf", improve: applyC1PartenaireImprovements },
+  {
+    slug: "c1-partenaire",
+    pdf: "C1-Partenaire_FR.pdf",
+    improve: applyC1PartenaireImprovements,
+    // Une seule colonne de saisie, comme le C1C et le C47 : le texte des six
+    // questions court sur toute la largeur et ses cases « non »/« oui » sont
+    // simplement rejetées à droite (x=480 et x=531) SUR LA MÊME LIGNE imprimée.
+    // Le seuil de 300 pt en faisait une « colonne de droite » et déclarait
+    // écart chaque retour à la ligne suivante — pendant qu'il MASQUAIT un vrai
+    // décalage : la date d'en-tête (x=338, y=743) était déclarée après
+    // l'identité (y=532) et passait pour « colonne suivante ». Cf. l'ordre
+    // -101 de `dateDA`.
+    colonneX: null,
+  },
   { slug: "c1a", pdf: "C1A_FR.pdf", improve: applyC1AImprovements },
   { slug: "c1b", pdf: "C1B_FR.pdf", improve: applyC1BImprovements },
   {
@@ -157,17 +170,12 @@ const ECARTS_ASSUMES: Record<string, string[]> = {
     "personne5Difference > personne5C1",
     "personne5Registre > personne5Explication",
   ],
-  "c1-partenaire": [
-    // `montant_mensuel_brut > partenaireRevenuRemplacement` figurait ici tant
-    // que la tolérance verticale valait 12 points. Les deux cases sont en
-    // réalité côte à côte sur une même ligne imprimée, à 13 points d'écart de
-    // rectangle : le passage de la tolérance à 16 les réconcilie. Le doute de
-    // fond sur ce widget reste consigné en commentaire dans le seed du
-    // c1-partenaire — ce n'est pas la géométrie qui peut le trancher.
-    "partenaireAllocationsFamiliales > aujourd_hui",
-    "partenaireRevenuProfessionnel > m_tier",
-    "partenaireRevenuRemplacement > revenu_de_remplacement",
-  ],
+  // `c1-partenaire` : entrée VIDÉE le 2026-07-31 (reprise du formulaire). Ses
+  // trois écarts étaient des artefacts du découpage en deux colonnes — cf.
+  // `colonneX: null` sur sa cible. Le doute de fond sur son widget partagé
+  // « Montant mensuel brut » est tranché (deux cases, deux valeurs : écriture
+  // positionnelle), et le vrai décalage que le découpage MASQUAIT — la date
+  // d'en-tête déclarée après l'identité — est corrigé dans le seed.
   c1b: ["niss > nom"],
   // `c1c` : entrée VIDÉE le 2026-07-30 (réalignement du formulaire). Ses six
   // écarts étaient tous des artefacts du découpage en deux colonnes appliqué à

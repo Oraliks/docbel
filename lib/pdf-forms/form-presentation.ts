@@ -16,6 +16,10 @@ import { sectionLabel } from "./section-labels";
 import { C1A_QUESTIONS, C1A_GROUPE_IDENTITE } from "./seed/c1a-routing";
 import { C1C_QUESTIONS, C1C_GROUPE_IDENTITE } from "./seed/c1c-fields";
 import { C47_QUESTIONS, C47_GROUPE_IDENTITE } from "./seed/c47-fields";
+import {
+  C1_PARTENAIRE_QUESTIONS,
+  C1_PARTENAIRE_GROUPE_IDENTITE,
+} from "./seed/c1-partenaire-fields";
 
 export interface FormPresentation {
   /// Ordre canonique des macro-étapes. Les groupes absents de cette liste
@@ -109,6 +113,15 @@ const PRESENTATION_BY_SLUG: Readonly<Record<string, FormPresentation>> = {
     // pas, et l'empêche de tomber après la signature sur l'URL publique
     // `/document/onem/c47`, où il n'y a aucun C1 dont hériter.
     stepGroupOrder: [C47_GROUPE_IDENTITE, ...C47_QUESTIONS],
+    hideStepList: true,
+  },
+  "c1-partenaire": {
+    // MÊME GRAMMAIRE. Le papier pose six questions oui/non à la suite : six
+    // étapes, dont deux ouvrent des précisions « si oui ». L'en-tête d'identité
+    // reste en tête de l'ordre — il ne disparaît pas dans un dossier (l'identité
+    // du PARTENAIRE, elle, ne s'hérite de rien : c'est un tiers), mais il ne
+    // doit pas non plus tomber après la signature.
+    stepGroupOrder: [C1_PARTENAIRE_GROUPE_IDENTITE, ...C1_PARTENAIRE_QUESTIONS],
     hideStepList: true,
   },
 };

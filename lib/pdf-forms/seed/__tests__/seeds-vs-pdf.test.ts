@@ -168,6 +168,32 @@ describe("C47 — couverture des widgets AcroForm", () => {
   });
 });
 
+/// Idem pour le C1-Partenaire, repris le 2026-07-31. Deux orphelins, pour deux
+/// raisons opposées : l'un ne PEUT pas être écrit par son nom, l'autre ne DOIT
+/// pas être écrit du tout.
+const C1_PARTENAIRE_ORPHELINS_ASSUMES: Record<string, string> = {
+  "Montant mensuel brut":
+    "champ à 2 widgets — montant du revenu professionnel ET du revenu de remplacement, écrits en positionnel",
+  "Signature du partenaire":
+    "le partenaire est un tiers : sa case se signe à la main sur le papier, jamais par l'application",
+};
+
+describe("C1-Partenaire — couverture des widgets AcroForm", () => {
+  it("ne laisse orphelins QUE les widgets assumés", async ({ skip }) => {
+    const target = TARGETS.find((t) => t.slug === "c1-partenaire")!;
+    const path = join(PDF_DIR, target.pdf);
+    if (!existsSync(path)) skip();
+
+    const parsed = await parsePdf(readFileSync(path));
+    const fields = target.improve([], { technicalSchema: parsed.fields });
+    const report = buildMappingReport(fields, parsed.fields, getRulesForSlug(target.slug));
+
+    const orphans = report.rows.filter((r) => r.status === "orphan").map((r) => r.pdfFieldName);
+    expect(orphans.sort()).toEqual(Object.keys(C1_PARTENAIRE_ORPHELINS_ASSUMES).sort());
+    expect(report.summary.conflict, "aucun widget ne doit être revendiqué deux fois").toBe(0);
+  });
+});
+
 describe("C1 — couverture des widgets AcroForm", () => {
   it("ne laisse orphelins QUE les widgets assumés", async ({ skip }) => {
     const target = TARGETS[0];

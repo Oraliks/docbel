@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { C1_PARTENAIRE_FIELDS, applyC1PartenaireImprovements } from "../c1-partenaire-fields";
+import {
+  C1_PARTENAIRE_FIELDS,
+  C1_PARTENAIRE_GROUPE_IDENTITE,
+  C1_PARTENAIRE_QUESTIONS,
+  applyC1PartenaireImprovements,
+} from "../c1-partenaire-fields";
 
 describe("C1_PARTENAIRE_FIELDS", () => {
   it("couvre l'identité du chômeur et du partenaire", () => {
@@ -69,12 +74,82 @@ describe("C1_PARTENAIRE_FIELDS", () => {
     });
   });
 
-  it("couvre la date et les 2 signatures (chômeur + partenaire)", () => {
+  it("couvre la date et la SEULE signature que l'application peut apposer", () => {
     const byId = new Map(C1_PARTENAIRE_FIELDS.map((f) => [f.id, f]));
     expect(byId.get("aujourd_hui")?.type).toBe("date");
     expect(byId.get("aujourd_hui")?.prefillFrom).toBe("system.today");
     expect(byId.get("signature_du_ch_meur")?.type).toBe("signature");
-    expect(byId.get("signature_du_partenaire")?.type).toBe("signature");
+  });
+
+  it("ne signe PAS à la place du partenaire", () => {
+    // `resolveSignerName` résout UN nom pour tout le formulaire — celui du
+    // déclarant — et le filler l'appose sur CHAQUE champ `signature`. Un second
+    // champ de ce type mettait donc le bloc « Signé numériquement par <le
+    // chômeur> » dans la case d'un TIERS, sur une déclaration qui l'engage.
+    // La case reste vide : le partenaire signe le papier à la main.
+    expect(C1_PARTENAIRE_FIELDS.map((f) => f.id)).not.toContain("signature_du_partenaire");
+    expect(C1_PARTENAIRE_FIELDS.filter((f) => f.type === "signature")).toHaveLength(1);
+    // …et le citoyen doit l'apprendre quelque part.
+    expect(
+      C1_PARTENAIRE_FIELDS.find((f) => f.id === "signature_du_ch_meur")?.help?.fr
+    ).toMatch(/signature du partenaire/i);
+  });
+
+  it("purge l'ancien champ de signature du partenaire resté en base", () => {
+    const enBase = [
+      {
+        id: "signature_du_partenaire",
+        pdfFieldName: "Signature du partenaire",
+        type: "signature" as const,
+        required: true,
+        label: { fr: "Signature du partenaire" },
+      },
+    ];
+    const ids = applyC1PartenaireImprovements(enBase).map((f) => f.id);
+    expect(ids).not.toContain("signature_du_partenaire");
+  });
+
+  it("les deux « montant mensuel brut » sont deux champs distincts, écrits en positionnel", () => {
+    // Le champ AcroForm « Montant mensuel brut » porte DEUX widgets posés sur
+    // deux lignes différentes (revenu professionnel y=406,5 / revenu de
+    // remplacement y=376,7). Le revendiquer par son nom imprimait la même
+    // valeur aux deux endroits.
+    const byId = new Map(C1_PARTENAIRE_FIELDS.map((f) => [f.id, f]));
+    const prof = byId.get("montant_mensuel_brut");
+    const rempl = byId.get("montantMensuelBrutRemplacement");
+    expect(prof?.pdfFieldName).toBe("");
+    expect(rempl?.pdfFieldName).toBe("");
+    expect(prof?.drawAt?.y).toBeCloseTo(405.83, 2);
+    expect(rempl?.drawAt?.y).toBeCloseTo(375.82, 2);
+    expect(rempl?.visibleIf).toEqual({
+      fieldId: "partenaireRevenuRemplacement",
+      op: "equals",
+      value: "oui",
+    });
+    // Aucun champ ne doit revendiquer le nom du widget partagé.
+    expect(
+      C1_PARTENAIRE_FIELDS.filter((f) => f.pdfFieldName === "Montant mensuel brut")
+    ).toHaveLength(0);
+  });
+
+  it("chaque champ porte un stepGroup connu de l'ordre des étapes", () => {
+    const groupes = new Set([C1_PARTENAIRE_GROUPE_IDENTITE, ...C1_PARTENAIRE_QUESTIONS]);
+    for (const f of applyC1PartenaireImprovements([])) {
+      expect(f.stepGroup, `champ « ${f.id} » sans étape`).toBeTruthy();
+      expect(groupes, `champ « ${f.id} » dans un groupe hors ordre`).toContain(f.stepGroup);
+    }
+  });
+
+  it("chaque question a pour ancre un champ de même identifiant", () => {
+    const ids = new Set(C1_PARTENAIRE_FIELDS.map((f) => f.id));
+    for (const q of C1_PARTENAIRE_QUESTIONS) expect(ids, `question « ${q} »`).toContain(q);
+  });
+
+  it("la date d'en-tête est déclarée AVANT l'identité (sa case est en haut de page)", () => {
+    const byId = new Map(C1_PARTENAIRE_FIELDS.map((f) => [f.id, f]));
+    // Le découpage en deux colonnes masquait ce décalage au test de géométrie ;
+    // il est désormais rouge si l'ordre repart en arrière (cf. `colonneX: null`).
+    expect(byId.get("dateDA")!.order!).toBeLessThan(byId.get("niss_ch_meur")!.order!);
   });
 
   it("applyC1PartenaireImprovements() est idempotent (pas de doublon si ré-appliqué)", () => {
@@ -139,10 +214,9 @@ describe("C1_PARTENAIRE_FIELDS", () => {
   it("le nombre total de champs correspond au schéma attendu (17 champs)", () => {
     // Dump brut = 23 widgets uniques. Une fois les 12 checkboxes oui/non
     // fusionnées en 6 radios (-6) : 6 (radios) + 5 (identité, dont dateDA) +
-    // 3 (détails revenu) + 3 (date signature+signatures) = 17.
-    // Aucun champ virtuel ajouté : le second "Montant mensuel brut" du
-    // revenu de remplacement reste en A VALIDER (cf. commentaire dans
-    // c1-partenaire-fields.ts) plutôt que d'être deviné.
+    // 4 (détails revenu, les DEUX montants compris) + 2 (date de signature +
+    // signature du chômeur) = 17. Le second montant est désormais un vrai
+    // champ ; la signature du partenaire n'en est plus un.
     expect(C1_PARTENAIRE_FIELDS.length).toBe(17);
   });
 });

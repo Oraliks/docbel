@@ -144,7 +144,33 @@ sans lequel l'écran ne bouge pas.
      `colonneX: null` — même cause que le C1C).
 
    Reste : **re-semis par Oraliks** (`pnpm tsx scripts/apply-c1-improvements.ts --yes`).
-2. **C1-Partenaire** (23) — un seul multi-widget, doute déjà documenté.
+2. ~~**C1-Partenaire** (23)~~ — **FAIT le 2026-07-31.** Le multi-widget était
+   bien un défaut : `Montant mensuel brut` porte deux cases (revenu
+   professionnel y=406,5 / revenu de remplacement y=376,7), un partenaire
+   déclarant 1 850 € de salaire et 1 200 € de mutuelle voyait « 1850,00 »
+   imprimé deux fois. Passé en écriture positionnelle, avec un second champ.
+   Ce que la relecture a trouvé EN PLUS, et qu'aucun test ne voyait :
+   - **la case « signature du partenaire » portait la signature du CHÔMEUR.**
+     `resolveSignerName` résout un seul nom par formulaire et le filler
+     l'appose sur chaque champ `type: "signature"` — deux champs, donc deux
+     blocs « Signé numériquement par … » au même nom, dont un dans la case d'un
+     TIERS que la déclaration engage. Le champ est supprimé : la case reste
+     vide, le partenaire signe le papier à la main, et l'aide de la signature
+     du chômeur le dit ;
+   - **la date d'en-tête (x=338, y=743) était déclarée après l'identité**
+     (y=532). Le découpage en deux colonnes la classait « colonne de droite » et
+     MASQUAIT le retour en arrière — un écart réel caché par le réglage qui en
+     inventait trois faux. `colonneX: null` + `order: -101` ;
+   - **deux peignes imprimés** : la date d'en-tête, et le NISS du chômeur — ce
+     dernier dessiné en glyphes SymbolMT U+F8E7, invisibles à une recherche de
+     « _ » ou « . ». ⚠ Le calage vertical d'un peigne ne se DÉDUIT pas du
+     jambage de la police : il se mesure (rastérisation d'un tiret à 800 dpi).
+     Deux essais faux avant le bon.
+   - le NISS du partenaire ne reçoit **pas** de peigne : sa case accepte « NISS
+     **ou date de naissance** », et une date répartie sur une grille 6-3-2
+     serait illisible.
+
+   Reste : **re-semis par Oraliks**.
 3. **C46** (13) — trois dates « Moniteur Belge » à séparer ; peu de champs.
 4. **C1B** (51) — le plus gros, et le multi-widget à quatre cases. À faire en
    dernier, quand le geste est rodé.
@@ -165,8 +191,15 @@ voient pas.
     « si elle s'inscrit dans le cadre… » ;
   - la **date n'est demandée que sur la branche art. 114**, seul cadre où le
     formulaire imprime une case de date.
-- **C1-Partenaire** : les deux montants mensuels bruts sont-ils bien deux
-  montants distincts (activité / revenu de remplacement) ?
+- ~~**C1-Partenaire** : les deux montants mensuels bruts sont-ils bien deux
+  montants distincts ?~~ **Oui**, le papier les imprime sur deux lignes
+  distinctes (« activité professionnelle exercée … Montant mensuel brut : … € »
+  puis « nature du revenu de remplacement … Montant mensuel brut : … »).
+  Deux décisions prises seul, à contredire d'un mot :
+  - la case « signature du partenaire » part **vide** (cf. ci-dessus) — si
+    l'ONEM refuse un exemplaire non signé des deux côtés, il faudra un vrai
+    second signataire, ce qui est un chantier produit, pas un réglage de seed ;
+  - le NISS du partenaire reste sans peigne à cause du « ou date de naissance ».
 - **Annexe Regis** n'est pas dans ce plan (hors demande). Elle reste la plus
   lourde en dette de géométrie : **14 écarts assumés**, contre 1 à 3 ici.
 

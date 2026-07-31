@@ -38,9 +38,16 @@ qu'un `pdfFieldName` existe ne voient rien.
 Le garde-fou est `lib/pdf-forms/__tests__/widget-geometry.test.ts` : il compare
 l'ordre déclaré des champs à la position réelle de leur case (page, colonne,
 ordonnée). Il tourne sur **les 8 formulaires**. Les documents non encore
-réalignés (C1, Annexe Regis, C1-Partenaire, C1B, C46) ont leurs écarts
+réalignés (C1, Annexe Regis, C1B, C46) ont leurs écarts
 consignés en dette dans `ECARTS_ASSUMES` — les traiter, c'est vider leur
-entrée, jamais l'agrandir. Le C1A, le C1C et le C47 ont la leur vide.
+entrée, jamais l'agrandir. Le C1A, le C1C, le C47 et le C1-Partenaire ont la
+leur vide.
+
+⚠ Un découpage en colonnes mal réglé ne fait pas qu'inventer de faux écarts :
+il en **cache de vrais**. Sur le C1-Partenaire, la date d'en-tête (x=338,
+y=743) était déclarée après l'identité (y=532) ; le seuil de 300 pt la classait
+« colonne suivante », donc « ordre normal ». Trois faux écarts consignés en
+dette, et le seul vrai invisible.
 
 Avant de croire un écart, vérifier le **découpage en colonnes** : le seuil par
 défaut (300 pt) suppose une mise en page à deux colonnes. Appliqué à un
@@ -105,6 +112,32 @@ chaîne `pdfFieldName` sans jamais la confronter aux options.
 quelques lignes quand les widgets se nomment d'après la réponse qu'ils portent
 (`non_2`, `oui_3`, `oui www`) — cf. `c1c-fields.test.ts`.
 
+## Peignes imprimés : mesurer le calage, ne jamais le déduire
+
+Dès qu'un guide est dessiné en cases (`__ __ / __ __`, ou onze tirets pour un
+NISS), y écrire la valeur d'un bloc superpose deux jeux de séparateurs.
+`printAsComb` répartit un caractère par case — mais son `baselineY` **se
+mesure**. Le déduire du jambage supposé de la police se trompe : sur le
+C1-Partenaire, le guide NISS est en glyphes SymbolMT U+F8E7 (invisibles à une
+recherche de « _ » ou de « . »), et deux valeurs calculées ont échoué avant la
+bonne — l'une laissait les chiffres flotter au-dessus du trait, l'autre le
+faisait passer en plein milieu. La mesure qui tranche tient en trois lignes :
+
+```python
+crop = page.crop((x0, haut, x0 + largeur, bas))          # un seul tiret
+im = crop.to_image(resolution=800).original.convert("L")  # puis chercher les
+                                                          # lignes de pixels sombres
+```
+
+Relation constatée sur les trois formulaires repris (C1C, C47, C1-Partenaire) :
+**le bas du rectangle du widget tombe sur le trait imprimé**. C'est un point de
+départ, pas une loi — le C47 avait +1,2 sur son NISS.
+
+Deux pièges de plus, vus sur le C47 : un guide peut être **faux** (trois cases
+pour une année de quatre chiffres — le peigne doit alors être resserré, et la
+décision écrite dans le seed), et un champ qui accepte **deux formats** (« NISS
+ou date de naissance ») ne doit pas recevoir de peigne du tout.
+
 ## Visibilité : le tableau à connaître par cœur
 
 | Mécanisme | À l'écran | Dans le PDF |
@@ -127,6 +160,23 @@ Pour « ce champ vient du C1, mais le document peut aussi être rempli seul » �
 compagnons sont `published`/`active` avec un `publicPath` : ils sont tous
 atteignables hors dossier**, où rien n'est hérité. Un simple `autoAnswered` y
 produirait une déclaration officielle sans nom.
+
+## Un seul signataire par formulaire
+
+`resolveSignerName` (`signature.ts`) résout **un** nom pour tout le document —
+celui du déclarant — et le filler appose le bloc « Signé numériquement par … »
+sur **chaque** champ `type: "signature"`. Deux champs de ce type produisent donc
+deux blocs identiques, au même nom.
+
+Sur le C1-Partenaire, cela mettait la signature du chômeur dans la case du
+PARTENAIRE — un tiers, sans compte, absent de l'écran, que la déclaration engage
+pourtant (« Le chômeur précité ET le partenaire déclarent… »). Le champ a été
+supprimé : la case reste vide et se signe à la main sur le papier, et l'aide de
+la signature du chômeur le dit au citoyen.
+
+**Règle : un formulaire = un champ `signature`.** Une case destinée à un autre
+signataire n'est pas un champ ; c'est un orphelin assumé, à consigner dans
+`seeds-vs-pdf.test.ts` et à expliquer à l'écran.
 
 ## Héritage entre documents
 

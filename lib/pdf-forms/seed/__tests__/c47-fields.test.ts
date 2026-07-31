@@ -54,6 +54,21 @@ describe("C47_FIELDS", () => {
     ]);
   });
 
+  it("le choix du cadre annonce le certificat médical à joindre", () => {
+    // Le PDF imprime « Document à joindre » sous les DEUX cadres : l'encart est
+    // donc posé sur la question, pas sur une réponse en particulier — il doit
+    // s'afficher quel que soit le cadre choisi. Il n'existe aucun widget pour
+    // cette pièce : sans cet encart, un citoyen qui remplit le C47 hors dossier
+    // n'apprenait nulle part qu'un certificat lui serait réclamé.
+    const choix = C47_FIELDS.find((f) => f.id === "cadreDemande");
+    expect(choix?.notice?.tone).toBe("info");
+    // Phrase RECOPIÉE du formulaire officiel (pdfplumber sur C47_FR.pdf), pas
+    // rédigée : ce document engage une déclaration, aucun texte n'y est inventé.
+    expect(choix?.notice?.text.fr).toBe(
+      "Document à joindre : certificat médical qui atteste de votre inaptitude permanente au travail (l'indication du taux d'inaptitude n'est pas obligatoire)."
+    );
+  });
+
   it("la date de début n'est demandée que sur la branche art. 114", () => {
     // Le second cadre du formulaire n'imprime aucune case de date : la
     // demander là serait demander une valeur qui n'irait nulle part.

@@ -313,6 +313,16 @@ export const C47_FIELDS: PdfFormField[] = [
     help: {
       fr: "Les deux dernières réponses ne valent que si votre demande s'inscrit dans le cadre du contrôle de la disponibilité active par le service régional de l'emploi compétent ; la première, si elle ne s'y inscrit pas. Une seule case est cochée sur le formulaire.",
     },
+    // Le formulaire imprime « Document à joindre » sous les deux cadres : la
+    // pièce est due QUEL QUE SOIT le cadre choisi, d'où un encart posé sur la
+    // question elle-même et non sur telle ou telle réponse. Les deux phrases
+    // sont recopiées du PDF (titre + sa phrase), rien n'est reformulé.
+    notice: {
+      text: {
+        fr: "Document à joindre : certificat médical qui atteste de votre inaptitude permanente au travail (l'indication du taux d'inaptitude n'est pas obligatoire).",
+      },
+      tone: "info",
+    },
     section: SECTION_DEMANDE,
     order: 100,
   },
@@ -339,10 +349,10 @@ export const C47_FIELDS: PdfFormField[] = [
   // ==========================================================================
   // Document à joindre (rappel imprimé sur le PDF — pas de widget dédié)
   // ==========================================================================
-  // « Certificat médical qui atteste de votre inaptitude permanente au travail
-  // (l'indication du taux d'inaptitude n'est pas obligatoire). » Aucun widget
-  // AcroForm ne lui correspond : rien à créer ici. Le rappel appartient à
-  // l'écran des pièces à joindre du dossier, pas au schéma de ce PDF.
+  // Aucun widget AcroForm ne correspond au certificat médical : il n'y a donc
+  // aucun champ à créer ici. Le rappel est devenu le `notice` de `cadreDemande`
+  // (Oraliks 2026-07-31) — un citoyen qui remplit ce formulaire hors dossier ne
+  // voyait nulle part qu'une pièce lui serait réclamée.
 
   // ==========================================================================
   // Signature

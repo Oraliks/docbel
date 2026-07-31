@@ -157,6 +157,27 @@ export interface FieldOption {
   label: Localized;
 }
 
+/// Encart d'information affiché sous un champ UNE FOIS QU'IL EST RENSEIGNÉ.
+///
+/// Sert aux conséquences d'une réponse que le citoyen ne peut pas deviner —
+/// typiquement une pièce à joindre. Sur le C47, choisir l'un des trois cadres
+/// de la demande engage à produire un certificat médical : le formulaire papier
+/// l'imprime sous « Document à joindre », mais l'écran, lui, ne le disait nulle
+/// part. Le dire AVANT le choix serait du bruit sur une page déjà dense ; le
+/// dire après, c'est une information qui arrive au moment où elle sert.
+///
+/// Le texte est du CONTENU (il vit dans le schéma en base, comme `label` et
+/// `help`), jamais une clé de traduction : les formulaires ONEM recopient leur
+/// PDF officiel et n'inventent aucun texte réglementaire.
+export interface FieldNotice {
+  text: Localized;
+  /// Couleur de l'encart. `info` (bleu) par défaut — une information utile ;
+  /// `success` (vert) pour une confirmation. Aucun ton d'alerte ici : un encart
+  /// qui BLOQUE ou qui met en garde n'est pas un `notice` mais une erreur ou un
+  /// avertissement de validation, et ceux-là ont déjà leur rendu.
+  tone?: "info" | "success";
+}
+
 /// Dérivations de champ disponibles (registre pur dans field-derivations.ts,
 /// sans dépendance lourde — safe à importer côté client). Union fermée :
 /// chaque nouvelle dérivation (ex. futur code postal → commune) s'y ajoute.
@@ -190,6 +211,12 @@ export interface PdfFormField {
   placeholder?: Localized;
   errorMsg?: Localized;
   options?: FieldOption[];
+  /// Encart affiché SOUS le champ, une fois qu'il est renseigné (cf.
+  /// `FieldNotice`). À distinguer de `help`, qui vit dans l'infobulle du
+  /// libellé et ne se lit que si on va la chercher : le `notice` est une
+  /// CONSÉQUENCE de la réponse — « maintenant que vous avez choisi ceci,
+  /// voilà ce qu'il vous faudra ».
+  notice?: FieldNotice;
 
   // Validation
   presetKey?: string;

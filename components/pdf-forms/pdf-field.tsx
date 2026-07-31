@@ -2,7 +2,7 @@
 
 import { memo, useState } from "react";
 import { useTranslations } from "next-intl";
-import { CheckCircle2Icon } from "lucide-react";
+import { CheckCircle2Icon, InfoIcon } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -145,7 +145,12 @@ function LabelWithTooltip({
   );
 }
 
-function PdfFieldImpl({
+/// Le champ NU, sans son encart : c'est le composant historique, renommé le
+/// 2026-07-31 pour que `PdfFieldImpl` puisse lui accoler un `notice` en un seul
+/// endroit. Il a une dizaine de retours anticipés selon `field.type` — poser
+/// l'encart dans chacun d'eux aurait été dix occasions de l'oublier, et un
+/// `notice` silencieusement ignoré sur les types non traités.
+function PdfFieldControl({
   field, value, error, locale, onChange, formId, formSlug, rowLayout = false,
   segmentedVariant = "connected",
   autoLocked = false,
@@ -728,6 +733,77 @@ function PdfFieldImpl({
       )}
       {effError && <div className={cn(rowLayout && "md:col-start-2")}>{errorReport}</div>}
     </Field>
+  );
+}
+
+/// Palette des encarts `notice`. Uniquement des TOKENS (`--glass-info-*`,
+/// `--glass-success-*`) : ils portent déjà leur variante sombre, là où un
+/// `bg-blue-50` en dur virerait au blanc sur fond mauve. Même grammaire que
+/// `Ec32InfoBox` — un seul vocabulaire d'encart sur tout le front.
+const NOTICE_TONES = {
+  info: {
+    wrap: "border-[color:var(--glass-info-border)] bg-[color:var(--glass-info-surface)] text-[color:var(--glass-info-ink)]",
+    Icon: InfoIcon,
+    iconCls: "text-[color:var(--glass-info)]",
+  },
+  success: {
+    wrap: "border-[color:var(--glass-success-border)] bg-[color:var(--glass-success-surface)] text-[color:var(--glass-success-ink)]",
+    Icon: CheckCircle2Icon,
+    iconCls: "text-[color:var(--glass-success)]",
+  },
+} as const;
+
+function FieldNoticeBox({ text, tone = "info" }: { text: string; tone?: "info" | "success" }) {
+  const { wrap, Icon, iconCls } = NOTICE_TONES[tone];
+  return (
+    // `role="status"` et non `role="alert"` : l'encart apparaît en RÉPONSE à
+    // une réponse du citoyen et ne signale aucun problème. En `alert`, un
+    // lecteur d'écran couperait la parole à la lecture en cours à chaque
+    // changement de valeur.
+    <div
+      role="status"
+      className={cn(
+        "flex items-start gap-2 rounded-xl border px-3 py-2.5 text-[13px] leading-snug",
+        wrap,
+      )}
+    >
+      <Icon aria-hidden className={cn("mt-px size-4 shrink-0", iconCls)} />
+      <span className="min-w-0">{text}</span>
+    </div>
+  );
+}
+
+/// Une réponse a-t-elle été donnée ? Sert au déclenchement du `notice` : il ne
+/// s'affiche qu'une fois le champ renseigné, jamais sur un champ vierge.
+///
+/// Une case décochée (`false`) compte comme SANS réponse — c'est l'état par
+/// défaut d'une case à cocher, pas un choix. Un `0` en revanche est une réponse.
+function isAnswered(value: FieldValue): boolean {
+  if (value === null || value === undefined) return false;
+  if (typeof value === "string") return value.trim() !== "";
+  if (typeof value === "boolean") return value;
+  if (typeof value === "number") return true;
+  if (Array.isArray(value)) return value.length > 0;
+  if (isFullNameValue(value)) return !!(value.first?.trim() || value.last?.trim());
+  return false;
+}
+
+/// Le champ, plus son encart `notice` quand il est répondu.
+///
+/// Les champs SANS `notice` — c'est-à-dire presque tous — traversent ce
+/// composant sans qu'aucune balise ne s'ajoute autour d'eux : le rendu
+/// historique reste identique au nœud près. Le conteneur n'apparaît que pour un
+/// champ qui déclare un encart, et il est alors présent que l'encart soit
+/// affiché ou non — sans quoi la structure du DOM changerait à chaque réponse.
+function PdfFieldImpl(props: Props) {
+  const notice = props.field.notice;
+  if (!notice) return <PdfFieldControl {...props} />;
+  const text = loc(notice.text, props.locale);
+  return (
+    <div className="flex flex-col gap-2.5">
+      <PdfFieldControl {...props} />
+      {!!text && isAnswered(props.value) && <FieldNoticeBox text={text} tone={notice.tone} />}
+    </div>
   );
 }
 

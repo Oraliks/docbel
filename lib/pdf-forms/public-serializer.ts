@@ -15,6 +15,8 @@ export interface PublicField {
   placeholder?: PdfFormField["placeholder"];
   errorMsg?: PdfFormField["errorMsg"];
   options?: PdfFormField["options"];
+  /// Encart affiché sous le champ une fois répondu (pièce à joindre, etc.).
+  notice?: PdfFormField["notice"];
   maxLength?: number;
   minLength?: number;
   min?: number;
@@ -76,6 +78,7 @@ export function toPublicField(f: PdfFormField): PublicField {
     placeholder: f.placeholder,
     errorMsg: f.errorMsg,
     options: f.options,
+    notice: f.notice,
     maxLength: f.maxLength,
     minLength: f.minLength,
     min: f.min,

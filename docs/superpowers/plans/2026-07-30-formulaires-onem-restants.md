@@ -5,6 +5,33 @@
 >
 > À lire avant : `docs/context/PDF_FORMS_RULES.md` (les pièges communs).
 
+## ✅ EXÉCUTÉ — les quatre formulaires sont livrés (2026-07-30 / 31)
+
+C47 · C1-Partenaire · C46 · C1B, dans l'ordre du plan. Détail sous chaque
+entrée d'« Ordre proposé ». **Il reste UNE action, et elle n'est pas
+automatisable ici : le re-semis.**
+
+```bash
+pnpm tsx scripts/apply-c1-improvements.ts --yes
+```
+
+Sans lui, l'écran ne bouge pas : le runner lit la base, pas le code.
+
+Ce que la relecture case par case a trouvé **en plus** du diagnostic initial —
+et qu'aucun test ne voyait :
+
+| Formulaire | Défaut trouvé à la relecture |
+|---|---|
+| C47 | la case « art. 114 » partageait son champ avec « jeune travailleur » : cocher l'une cochait les deux cadres opposés |
+| C1-Partenaire | la case « signature du partenaire » portait la signature du **chômeur** |
+| C46 | tout le mapping de la page 1 décalé d'une ligne ; la date de signature laissée blanche |
+| C1B | trois dates saisies par le citoyen et **jamais imprimées** |
+
+Trois défauts de la **couche PDF** ont été corrigés au passage, donc valables
+pour les huit documents : une croix positionnelle recouverte par l'aplatissement,
+un widget sans `/DA` imprimé à une taille arbitraire, et un texte coupé en
+silence au plancher de réduction. Cf. `docs/context/PDF_FORMS_RULES.md`.
+
 ## Ce qui est acquis et qu'il ne faut pas réinventer
 
 Trois formulaires sont passés. Ce qu'ils ont laissé derrière eux :

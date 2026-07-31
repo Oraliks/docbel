@@ -431,6 +431,20 @@ describe("applyC1Improvements — restrictMotifTo5Situations (Oraliks, 2026-07-0
     expect(groups.every((g) => g === "motifSituation")).toBe(true);
   });
 
+  it("actif : TOUT champ à requiredGroup est aussi renderAs=chip (c'est cette paire qui déclenche le picker)", () => {
+    // Le form-runner choisit `MotifSituationPicker` pour une section contenant
+    // un champ à la fois `requiredGroup` ET `renderAs: "chip"`. Il s'est
+    // longtemps contenté du premier marqueur, ce qui confisquait le rendu de
+    // toute section « au moins une réponse parmi N » — les annexes du C1B, par
+    // exemple. La détection s'est resserrée le 2026-07-31 ; ce test est la
+    // contrepartie côté C1 : qu'un champ perde `renderAs` et l'étape « Motif »
+    // retomberait silencieusement sur la grille de chips générique.
+    const result = applyC1Improvements([], { restrictMotifTo5Situations: true });
+    const avecGroupe = result.filter((q) => q.requiredGroup);
+    expect(avecGroupe.length).toBe(5);
+    for (const f of avecGroupe) expect(f.renderAs, `champ ${f.id}`).toBe("chip");
+  });
+
   it("actif : l'ancre (modificationAdresse, 1ʳᵉ des 5) porte un message d'erreur explicite", () => {
     const result = applyC1Improvements([], { restrictMotifTo5Situations: true });
     const anchor = result.find((q) => q.id === "modificationAdresse");

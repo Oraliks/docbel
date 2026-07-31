@@ -5,6 +5,7 @@ import {
   C1B_QUESTIONS,
   applyC1BImprovements,
 } from "../c1b-fields";
+import { countRequirements, validateStepFields } from "../../validation";
 
 describe("C1B_FIELDS", () => {
   it("couvre l'identité, les 15 questions numérotées et la signature", () => {
@@ -204,5 +205,98 @@ describe("C1B_FIELDS", () => {
   it("chaque question a pour ancre un champ de même identifiant", () => {
     const ids = new Set(C1B_FIELDS.map((f) => f.id));
     for (const q of C1B_QUESTIONS) expect(ids, `question « ${q} »`).toContain(q);
+  });
+});
+
+// ===========================================================================
+// Q15 — « COMPLETEZ TOUJOURS CETTE RUBRIQUE »
+// ===========================================================================
+//
+// Le titre imprimé n'admet aucun chemin qui saute la rubrique : on pouvait
+// pourtant signer un C1B sans déclarer la moindre annexe, alors que chaque
+// branche « oui » des quatorze questions précédentes en réclame une (décision
+// d'octroi, copie de paiement, modèle 74…). Ces tests font tourner le VRAI
+// validateur, pas une relecture du schéma : c'est lui qui bloque « Continuer »
+// côté écran et qui refuse la soumission côté serveur.
+describe("C1B Q15 — au moins une annexe", () => {
+  const CASES_ANNEXES = [
+    "annexeDecisionsBelges",
+    "annexeDecisionsEtrangeres",
+    "annexeCopiesPaiement",
+    "annexeModele74",
+    "annexeAutre",
+  ] as const;
+
+  /// Les champs de l'étape Q15, tels que `buildMacroSteps` les groupe.
+  const etapeQ15 = () =>
+    applyC1BImprovements([]).filter((f) => f.stepGroup === "nombreAnnexes");
+
+  it("les cinq cases partagent une même clé de groupe, et aucune n'est requise seule", () => {
+    const byId = new Map(C1B_FIELDS.map((f) => [f.id, f]));
+    const cles = CASES_ANNEXES.map((id) => byId.get(id)?.requiredGroup);
+    expect(new Set(cles).size, `clés trouvées : ${JSON.stringify(cles)}`).toBe(1);
+    expect(cles[0]).toBeTruthy();
+    // Rendre obligatoire une case plutôt que sa voisine n'aurait aucun sens :
+    // rien ne dit qu'un dossier comporte une décision belge PLUTÔT
+    // qu'étrangère. C'est le choix qui commande la rubrique qui est exigé.
+    for (const id of CASES_ANNEXES) expect(byId.get(id)?.required, id).toBe(false);
+  });
+
+  it("le validateur refuse l'étape tant qu'aucune case n'est cochée", () => {
+    const erreurs = validateStepFields(etapeQ15(), { nombreAnnexes: "1" }, "fr");
+    // L'erreur s'attache à la PREMIÈRE case du groupe (cf. `buildValidator`).
+    expect(erreurs.annexeDecisionsBelges).toBeTruthy();
+  });
+
+  it("une seule case cochée suffit — n'importe laquelle des cinq", () => {
+    for (const id of CASES_ANNEXES) {
+      const payload: Record<string, unknown> = { nombreAnnexes: "1", [id]: true };
+      // « autre » ouvre une ligne « à savoir : … » qu'il faut alors renseigner.
+      if (id === "annexeAutre") payload.annexeAutreDescription = "Attestation de la caisse";
+      const erreurs = validateStepFields(etapeQ15(), payload, "fr");
+      expect(erreurs, `case « ${id} »`).toEqual({});
+    }
+  });
+
+  it("« autre » sans dire quoi ne passe pas : le papier demande « à savoir : … »", () => {
+    const erreurs = validateStepFields(
+      etapeQ15(),
+      { nombreAnnexes: "1", annexeAutre: true },
+      "fr",
+    );
+    expect(erreurs.annexeAutreDescription).toBeTruthy();
+  });
+
+  it("le compte d'annexes est exigé, et ne peut pas valoir zéro", () => {
+    const coche = { annexeCopiesPaiement: true };
+    expect(validateStepFields(etapeQ15(), coche, "fr").nombreAnnexes).toBeTruthy();
+    expect(
+      validateStepFields(etapeQ15(), { ...coche, nombreAnnexes: "0" }, "fr").nombreAnnexes,
+    ).toBeTruthy();
+    expect(validateStepFields(etapeQ15(), { ...coche, nombreAnnexes: "2" }, "fr")).toEqual({});
+  });
+
+  it("l'étape se compte comme UNE exigence de groupe, pas cinq", () => {
+    // Le compteur du stepper doit dire la même chose que le bouton
+    // « Continuer », sinon l'étape s'affiche verte pendant qu'il refuse.
+    const avant = countRequirements(etapeQ15(), { nombreAnnexes: "1" }, "fr");
+    expect(avant.missing).toBe(1);
+    const apres = countRequirements(
+      etapeQ15(),
+      { nombreAnnexes: "1", annexeModele74: true },
+      "fr",
+    );
+    expect(apres.missing).toBe(0);
+  });
+
+  it("les cases ne sont PAS des chips : le rendu reste une liste, pas le tableau du C1", () => {
+    // Le form-runner bascule une section entière sur `MotifSituationPicker`
+    // quand elle contient un champ à la fois `requiredGroup` ET
+    // `renderAs: "chip"` — le moule des cinq situations du C1. Les annexes du
+    // C1B partagent la contrainte de validation, pas le rendu : sans ce test,
+    // un `renderAs: "chip"` ajouté ici transformerait la rubrique en tableau
+    // de situations sans qu'aucune autre vérification ne s'en aperçoive.
+    const byId = new Map(C1B_FIELDS.map((f) => [f.id, f]));
+    for (const id of CASES_ANNEXES) expect(byId.get(id)?.renderAs, id).toBeUndefined();
   });
 });

@@ -33,6 +33,21 @@ const YN = [
   { value: "non", label: { fr: "Non" } },
 ];
 
+/// Q15 — « COMPLETEZ TOUJOURS CETTE RUBRIQUE » : les cinq cases d'annexes
+/// partagent cette clé, ce qui les rend obligatoires ENSEMBLE — au moins une
+/// cochée (`requiredGroup`, cf. `buildValidator`). Aucune ne l'est
+/// individuellement : rien ne dit qu'un dossier comporte une décision belge
+/// PLUTÔT qu'étrangère, et la charte du projet interdit de rendre obligatoire
+/// une case plutôt que sa voisine — c'est le CHOIX qui commande la rubrique
+/// qui l'est.
+///
+/// Le titre imprimé ne laisse pas le choix : la rubrique se remplit quel que
+/// soit le chemin suivi dans les quatorze questions précédentes. Sans cette
+/// clé, on pouvait signer un C1B en déclarant zéro annexe, alors que chaque
+/// branche « oui » du formulaire réclame une pièce (décision d'octroi, copie
+/// de paiement, modèle 74…).
+const GROUPE_ANNEXES = "c1bAnnexes";
+
 // ===========================================================================
 // LES QUATRE DATES DE `Date46_af_date` — un champ, quatre cases, une valeur
 // ===========================================================================
@@ -523,7 +538,12 @@ export const C1B_FIELDS: PdfFormField[] = [
     id: "nombreAnnexes",
     pdfFieldName: "Liste déroulante49",
     type: "number",
-    required: false,
+    // Obligatoire, et au moins 1 : la rubrique impose de joindre quelque chose
+    // (cf. `GROUPE_ANNEXES`), donc « 0 annexe » se contredirait avec la case
+    // qu'on vient de cocher juste en dessous. Laisser le compte facultatif
+    // imprimait « Je joins ......... annexe(s) : ☒ copie(s) de paiement ».
+    required: true,
+    min: 1,
     label: { fr: "Nombre d'annexes jointes" },
     help: { fr: "Compte les documents que tu joins à ce formulaire." },
     section: SECTION_ANNEXES,
@@ -535,6 +555,15 @@ export const C1B_FIELDS: PdfFormField[] = [
     type: "checkbox",
     required: false,
     label: { fr: "Je joins : décision(s) d'octroi d'institutions belges" },
+    // ANCRE du groupe : `buildValidator` attache l'erreur au premier champ
+    // visible qui porte la clé, et c'est donc ce libellé-ci qui la reçoit. Le
+    // message par défaut (« Sélectionnez au moins une option ci-dessus ») dirait
+    // le contraire de ce qu'on voit : les cases sont EN DESSOUS, l'erreur étant
+    // rendue sous la première d'entre elles.
+    errorMsg: {
+      fr: "Cette rubrique est toujours à compléter : coche au moins un document joint ci-dessous.",
+    },
+    requiredGroup: GROUPE_ANNEXES,
     section: SECTION_ANNEXES,
     order: 60,
   },
@@ -544,6 +573,7 @@ export const C1B_FIELDS: PdfFormField[] = [
     type: "checkbox",
     required: false,
     label: { fr: "Je joins : décision(s) d'octroi d'institutions étrangères" },
+    requiredGroup: GROUPE_ANNEXES,
     section: SECTION_ANNEXES,
     order: 61,
   },
@@ -553,6 +583,7 @@ export const C1B_FIELDS: PdfFormField[] = [
     type: "checkbox",
     required: false,
     label: { fr: "Je joins : copie(s) de paiement" },
+    requiredGroup: GROUPE_ANNEXES,
     section: SECTION_ANNEXES,
     order: 62,
   },
@@ -562,6 +593,7 @@ export const C1B_FIELDS: PdfFormField[] = [
     type: "checkbox",
     required: false,
     label: { fr: "Je joins : une copie du modèle 74 ou 74bis PSS ou de la Déclaration Pension, activité professionnelle et revenu de remplacement du Service fédéral des Pensions" },
+    requiredGroup: GROUPE_ANNEXES,
     section: SECTION_ANNEXES,
     order: 63,
   },
@@ -571,6 +603,7 @@ export const C1B_FIELDS: PdfFormField[] = [
     type: "checkbox",
     required: false,
     label: { fr: "Je joins : autre document, à savoir…" },
+    requiredGroup: GROUPE_ANNEXES,
     section: SECTION_ANNEXES,
     order: 64,
   },
@@ -588,7 +621,12 @@ export const C1B_FIELDS: PdfFormField[] = [
     pdfFieldName: "",
     lineTargets: [{ pdfFieldName: "undefined_4" }, { pdfFieldName: "undefined_5" }],
     type: "textarea",
-    required: false,
+    // Obligatoire SUR CETTE BRANCHE seulement : `buildValidator` saute les
+    // champs invisibles, l'exigence ne pèse donc que si « autre » est coché.
+    // Le papier demande « autre, à savoir : … » — la case seule ne dit rien, et
+    // c'est la seule des cinq qui puisse satisfaire le groupe sans nommer
+    // aucune pièce.
+    required: true,
     label: { fr: "Description du document joint" },
     visibleIf: { fieldId: "annexeAutre", op: "equals", value: true },
     section: SECTION_ANNEXES,

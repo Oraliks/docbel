@@ -2207,10 +2207,21 @@ function MacroRunnerBody({
                 // Étape "Motif" à contrainte de groupe (ex. les 5 situations
                 // du C1 changement-situation) : rendu dédié tableau + panneau
                 // Détails (cf. mockup Oraliks, 2026-07-07), au lieu de la
-                // grille de chips générique. Détection par la présence d'un
-                // champ `requiredGroup` — pas un id de dossier en dur, ce
-                // rendu s'appliquerait à tout futur formulaire du même moule.
-                if (sec.fields.some((f) => f.requiredGroup)) {
+                // grille de chips générique. Détection par la donnée — pas un
+                // id de dossier en dur, ce rendu s'applique à tout formulaire
+                // du même moule.
+                //
+                // Le marqueur est la PAIRE `requiredGroup` + `renderAs: "chip"`
+                // (2026-07-31). Sur le seul `requiredGroup`, la détection
+                // confisquait toute section « au moins une réponse parmi N » au
+                // profit d'un rendu conçu pour les motifs du C1 : les cinq
+                // annexes du C1B, qui sont une liste de cases à cocher, seraient
+                // devenues un tableau de situations. `requiredGroup` redevient
+                // ce que son nom dit — une contrainte de VALIDATION — et le
+                // choix du rendu se lit dans `renderAs`, dont c'est le rôle.
+                // Les cinq champs du C1 portent bien les deux marqueurs (cf.
+                // `c1-fields-improvements.test.ts`) : rendu inchangé pour lui.
+                if (sec.fields.some((f) => f.requiredGroup && f.renderAs === "chip")) {
                   return (
                     <MotifSituationPicker
                       key={sec.key ?? `sec-${i}`}

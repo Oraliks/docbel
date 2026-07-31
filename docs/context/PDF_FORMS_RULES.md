@@ -299,13 +299,33 @@ sont corrects, poser `required: true` suffit à rendre l'exigence propre à la
 branche empruntée. Le blocage du bouton « Continuer » existe déjà côté runner
 (`attemptAdvance`). Rien à recoder.
 
-**Piège : ne jamais utiliser `requiredGroup` en dehors du C1.** Le runner
-détecte ce marqueur *par la donnée* et bascule la section entière sur un
-composant de rendu propre au C1 (`MotifSituationPicker`) — une grille horaire
-deviendrait une liste de chips.
-
 Cases à cocher : aucune raison qu'un lundi soit plus obligatoire qu'un mercredi.
 Rendre obligatoire le **choix** qui commande la rubrique, pas les cases.
+
+## « Au moins une réponse parmi N » — `requiredGroup`
+
+Poser la même clé `requiredGroup` sur plusieurs champs les rend obligatoires
+**ensemble** : au moins un rempli/coché, aucun individuellement. `buildValidator`
+et `countRequirements` le traitent déjà — rien à coder, et le compteur du
+stepper reste d'accord avec le bouton « Continuer ».
+
+C'est la réponse aux rubriques que le papier annonce comme incontournables
+(« COMPLETEZ TOUJOURS CETTE RUBRIQUE », Q15 du C1B) sans dire *laquelle* des
+cases cocher.
+
+L'erreur s'attache au **premier champ visible** du groupe : c'est son `errorMsg`
+qui s'affiche. Le message par défaut dit « ci-dessus » — faux dès que l'ancre
+est la première case de la liste ; en écrire un.
+
+Ce mémo a longtemps porté l'interdiction inverse (« jamais `requiredGroup` hors
+du C1 ») : le runner basculait toute section en contenant un sur
+`MotifSituationPicker`, le tableau de situations propre au C1. Depuis le
+2026-07-31 le déclencheur est la **paire** `requiredGroup` + `renderAs: "chip"`.
+`requiredGroup` ne dit donc plus que la validation, et le rendu se lit dans
+`renderAs`, dont c'est le rôle. Deux tests tiennent les deux bouts : les cinq
+champs du C1 portent bien les deux marqueurs
+(`c1-fields-improvements.test.ts`), les cinq annexes du C1B n'ont pas de
+`renderAs` (`c1b-fields.test.ts`).
 
 ## Listes répétables
 

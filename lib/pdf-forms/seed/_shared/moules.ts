@@ -149,7 +149,7 @@ export function dejaDeclare(opts: {
     // dans ce cas, le citoyen doit choisir explicitement entre « déjà
     // déclaré » et « première fois ». Ne jamais déduire ce choix à sa place.
     required: true,
-    label: { fr: "Avais-tu déjà déclaré cette situation à ton organisme de paiement ?" },
+    label: { fr: "Aviez-vous déjà déclaré cette situation à votre organisme de paiement ?" },
     help: { fr: opts.helpText },
     options: YN_DECLARE,
     visibleIf: { fieldId: opts.parentId, op: "equals", value: "oui" },

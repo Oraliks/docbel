@@ -187,7 +187,7 @@ export const C47_FIELDS: PdfFormField[] = [
     required: true,
     label: { fr: "Numéro NISS (registre national)" },
     help: {
-      fr: "11 chiffres au dos de ta carte d'identité (eID), au-dessus du code-barres.",
+      fr: "11 chiffres au dos de votre carte d'identité (eID), au-dessus du code-barres.",
     },
     placeholder: { fr: "00.00.00-000.00" },
     prefillFrom: "profile.niss",
@@ -378,7 +378,7 @@ export const C47_FIELDS: PdfFormField[] = [
     required: true,
     label: { fr: "Signature électronique" },
     help: {
-      fr: "En signant, tu affirmes sur l'honneur que ta déclaration est sincère et complète.",
+      fr: "En signant, vous affirmez sur l'honneur que votre déclaration est sincère et complète.",
     },
     section: SECTION_SIGNATURE,
     order: 201,

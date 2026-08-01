@@ -21,7 +21,7 @@ export const C1_PAIEMENT: PdfFormField[] = [
     pdfFieldName: "dun virement bancaire Ce compte est à mon nom|dun chèque circulaire envoyé à ladresse mentionnée à la rubrique  MON IDENTITÉ  voir p 1",
     type: "radio",
     required: true,
-    label: { fr: "Comment souhaites-tu recevoir tes allocations ?" },
+    label: { fr: "Comment souhaitez-vous recevoir vos allocations ?" },
     help: { fr: "Le virement bancaire est le mode standard. Le chèque circulaire est exceptionnel." },
     options: [
       { value: "virement", label: { fr: "Par virement bancaire" } },
@@ -137,7 +137,7 @@ export const C1_PAIEMENT: PdfFormField[] = [
     required: true,
     label: { fr: "BIC (code SWIFT de la banque)" },
     help: {
-      fr: "Obligatoire pour un IBAN étranger. Lorsqu'il est trouvé automatiquement, le BIC est ajouté et verrouillé. Sinon, retrouve-le sur tes extraits de compte (8 ou 11 caractères, ex. BNPAFRPP).",
+      fr: "Obligatoire pour un IBAN étranger. Lorsqu'il est trouvé automatiquement, le BIC est ajouté et verrouillé. Sinon, retrouvez-le sur vos extraits de compte (8 ou 11 caractères, ex. BNPAFRPP).",
     },
     placeholder: { fr: "BNPAFRPP" },
     // Format ISO 9362 (4 lettres banque + 2 lettres pays + 2 alphanumériques
@@ -179,7 +179,7 @@ export const C1_PAIEMENT: PdfFormField[] = [
     required: false,
     label: { fr: "J'autorise la retenue de la cotisation syndicale sur mes allocations" },
     help: {
-      fr: "Cette case est gérée directement par ton organisme de paiement — ne la coche pas ici.",
+      fr: "Cette case est gérée directement par votre organisme de paiement — ne la cochez pas ici.",
     },
     readOnly: true,
     section: SECTION_COTISATION,

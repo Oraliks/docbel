@@ -393,7 +393,7 @@ function applyRestrictedMotifProfile(questions: PdfFormField[]): PdfFormField[] 
           ...(q.id === "modificationAdresse"
             ? {
                 errorMsg: {
-                  fr: "Choisis au moins une situation parmi les 5 ci-dessus.",
+                  fr: "Choisissez au moins une situation parmi les 5 ci-dessus.",
                 },
               }
             : {}),
@@ -467,7 +467,7 @@ function applyRestrictedMotifProfile(questions: PdfFormField[]): PdfFormField[] 
           label: { ...q.label, fr: "Date de changement" },
           help: {
             ...q.help,
-            fr: "Date de la demande de changement. Une seule date pour l'adresse, la situation personnelle/du ménage et le compte bancaire. Si tes changements n'ont pas tous la même date d'effet, fais une déclaration séparée pour chaque date différente. Ne concerne pas la cotisation syndicale ni le permis de séjour (pas de date sur le formulaire officiel).",
+            fr: "Date de la demande de changement. Une seule date pour l'adresse, la situation personnelle/du ménage et le compte bancaire. Si vos changements n'ont pas tous la même date d'effet, faites une déclaration séparée pour chaque date différente. Ne concerne pas la cotisation syndicale ni le permis de séjour (pas de date sur le formulaire officiel).",
           },
         };
       }

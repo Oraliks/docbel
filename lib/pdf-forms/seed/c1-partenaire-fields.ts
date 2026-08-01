@@ -71,7 +71,7 @@ const NISS_COMB: NonNullable<PdfFormField["printAsComb"]> = {
 /// premier champ d'identité du partenaire pour que le citoyen la voie avant
 /// de remplir quoi que ce soit.
 const PARTENAIRE_DEFINITION_HELP =
-  "L'ONEM ne considère cette personne comme ton « partenaire à charge » que si TOUTES ces conditions sont remplies en même temps : (1) elle cohabite et forme un ménage de fait avec toi ; (2) elle n'est pas un membre de ta famille (pas un parent ou allié jusqu'au 3e degré inclus) ; (3) elle n'est pas un enfant encore à charge d'un parent qui doit une pension alimentaire ; (4) elle ne perçoit ni le revenu d'intégration, ni l'aide financière qui le remplace (aide du CPAS) ; (5) elle n'est pas déjà déclarée à charge d'un autre membre du ménage ; (6) elle n'est pas mariée et ne cohabite pas avec son/sa conjoint(e). Complète ce formulaire si ton partenaire (non marié) ne perçoit aucun revenu professionnel ni de remplacement — ou, pour une demande d'allocations d'insertion, s'il perçoit un revenu de remplacement.";
+  "L'ONEM ne considère cette personne comme votre « partenaire à charge » que si TOUTES ces conditions sont remplies en même temps : (1) elle cohabite et forme un ménage de fait avec vous ; (2) elle n'est pas un membre de votre famille (pas un parent ou allié jusqu'au 3e degré inclus) ; (3) elle n'est pas un enfant encore à charge d'un parent qui doit une pension alimentaire ; (4) elle ne perçoit ni le revenu d'intégration, ni l'aide financière qui le remplace (aide du CPAS) ; (5) elle n'est pas déjà déclarée à charge d'un autre membre du ménage ; (6) elle n'est pas mariée et ne cohabite pas avec son/sa conjoint(e). Complétez ce formulaire si votre partenaire (non marié) ne perçoit aucun revenu professionnel ni de remplacement — ou, pour une demande d'allocations d'insertion, s'il perçoit un revenu de remplacement.";
 
 /// Construit une question oui/non fusionnée (paire de checkboxes ONEM) avec
 /// ses éventuels champs de détail affichés seulement si la réponse est "oui".
@@ -115,7 +115,7 @@ export const C1_PARTENAIRE_FIELDS: PdfFormField[] = [
     required: false,
     label: { fr: "Date de la demande d'allocations (ou de modification)" },
     help: {
-      fr: "Case réservée à l'organisme de paiement (cachet dateur) — tu peux généralement la laisser vide.",
+      fr: "Case réservée à l'organisme de paiement (cachet dateur) — vous pouvez généralement la laisser vide.",
     },
     prefillFrom: "system.today",
     fontSize: 9,
@@ -132,9 +132,9 @@ export const C1_PARTENAIRE_FIELDS: PdfFormField[] = [
     pdfFieldName: "NISS Chômeur",
     type: "niss",
     required: true,
-    label: { fr: "Ton numéro NISS (registre national)" },
+    label: { fr: "Votre numéro NISS (registre national)" },
     help: {
-      fr: "11 chiffres au dos de ta carte d'identité (eID), au-dessus du code-barres.",
+      fr: "11 chiffres au dos de votre carte d'identité (eID), au-dessus du code-barres.",
     },
     placeholder: { fr: "00.00.00-000.00" },
     prefillFrom: "profile.niss",
@@ -176,7 +176,7 @@ export const C1_PARTENAIRE_FIELDS: PdfFormField[] = [
     type: "fullname",
     nameOrder: "last-first",
     required: true,
-    label: { fr: "Ton nom et prénom" },
+    label: { fr: "Votre nom et prénom" },
     inheritedFromDossier: true,
     section: SECTION_IDENTITE,
     order: -99,
@@ -195,7 +195,7 @@ export const C1_PARTENAIRE_FIELDS: PdfFormField[] = [
     required: true,
     label: { fr: "NISS ou date de naissance du partenaire" },
     help: {
-      fr: "Indique le numéro NISS du partenaire. S'il n'en a pas encore (ex. personne récemment arrivée en Belgique), indique sa date de naissance à la place.",
+      fr: "Indiquez le numéro NISS du partenaire. S'il n'en a pas encore (ex. personne récemment arrivée en Belgique), indiquez sa date de naissance à la place.",
     },
     section: SECTION_IDENTITE,
     order: -98,
@@ -231,7 +231,7 @@ export const C1_PARTENAIRE_FIELDS: PdfFormField[] = [
     required: false,
     label: { fr: "Si oui, quelle activité professionnelle exerce-t-il/elle ?" },
     help: {
-      fr: "Indique « salarié » et/ou « indépendant ». Si l'activité est exercée comme indépendant, ne remplis PAS le montant mensuel brut ci-dessous.",
+      fr: "Indiquez « salarié » et/ou « indépendant ». Si l'activité est exercée comme indépendant, ne remplissez PAS le montant mensuel brut ci-dessous.",
     },
     visibleIf: { fieldId: "partenaireRevenuProfessionnel", op: "equals", value: "oui" },
     section: SECTION_PARTENAIRE,
@@ -269,7 +269,7 @@ export const C1_PARTENAIRE_FIELDS: PdfFormField[] = [
     required: false,
     label: { fr: "Montant mensuel brut du revenu professionnel (si activité salariée)" },
     help: {
-      fr: "Uniquement si l'activité est salariée. Laisse vide si le partenaire est indépendant : la note (2) du formulaire dit expressément de ne pas indiquer le montant dans ce cas.",
+      fr: "Uniquement si l'activité est salariée. Laissez vide si le partenaire est indépendant : la note (2) du formulaire dit expressément de ne pas indiquer le montant dans ce cas.",
     },
     visibleIf: { fieldId: "partenaireRevenuProfessionnel", op: "equals", value: "oui" },
     section: SECTION_PARTENAIRE,
@@ -363,9 +363,9 @@ export const C1_PARTENAIRE_FIELDS: PdfFormField[] = [
     pdfFieldName: "Signature du chômeur",
     type: "signature",
     required: true,
-    label: { fr: "Ta signature" },
+    label: { fr: "Votre signature" },
     help: {
-      fr: "En signant, tu affirmes que cette déclaration est sincère et complète, et tu t'engages à signaler immédiatement à ton organisme de paiement tout changement de situation. ⚠ La case « signature du partenaire », à côté, reste volontairement VIDE : ton partenaire doit la signer à la main sur le document imprimé — c'est sa déclaration autant que la tienne.",
+      fr: "En signant, vous affirmez que cette déclaration est sincère et complète, et vous vous engagez à signaler immédiatement à votre organisme de paiement tout changement de situation. ⚠ La case « signature du partenaire », à côté, reste volontairement VIDE : votre partenaire doit la signer à la main sur le document imprimé — c'est sa déclaration autant que la vôtre.",
     },
     section: SECTION_SIGNATURE,
     order: 1000,

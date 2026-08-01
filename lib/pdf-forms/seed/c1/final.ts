@@ -52,10 +52,10 @@ export const C1_FINAL: PdfFormField[] = [
     type: "radio",
     required: true,
     label: {
-      fr: "Es-tu ressortissant d'un pays HORS EEE et HORS Suisse ?",
+      fr: "Êtes-vous ressortissant d'un pays HORS EEE et HORS Suisse ?",
     },
     help: {
-      fr: "Déduit automatiquement de ta nationalité (ci-dessus) dès qu'elle est renseignée. L'EEE = UE + Islande + Liechtenstein + Norvège : belge, français, néerlandais, etc. → « non » coché automatiquement.",
+      fr: "Déduit automatiquement de votre nationalité (ci-dessus) dès qu'elle est renseignée. L'EEE = UE + Islande + Liechtenstein + Norvège : belge, français, néerlandais, etc. → « non » coché automatiquement.",
     },
     options: YN,
     defaultValue: "non",
@@ -71,7 +71,7 @@ export const C1_FINAL: PdfFormField[] = [
     pdfFieldName: "oui  allez à la rubrique suivante|non_17",
     type: "radio",
     required: false,
-    label: { fr: "Es-tu reconnu réfugié ?" },
+    label: { fr: "Êtes-vous reconnu réfugié ?" },
     options: YN,
     defaultValue: "non",
     visibleIf: { fieldId: "nationaliteHorsEEE", op: "equals", value: "oui" },
@@ -84,7 +84,7 @@ export const C1_FINAL: PdfFormField[] = [
     pdfFieldName: "oui  allez à la rubrique suivante_2|non_18",
     type: "radio",
     required: false,
-    label: { fr: "Es-tu apatride reconnu ?" },
+    label: { fr: "Êtes-vous apatride reconnu ?" },
     options: YN,
     defaultValue: "non",
     visibleIf: { fieldId: "nationaliteHorsEEE", op: "equals", value: "oui" },
@@ -99,7 +99,7 @@ export const C1_FINAL: PdfFormField[] = [
     required: false,
     label: { fr: "Mention au verso de mon permis de séjour quant à l'accès au marché du travail" },
     help: {
-      fr: "« Illimité » : tu peux travailler pour tout employeur. « Limité » : restrictions précisées sur l'autorisation régionale. « Non » : aucun emploi possible (pas de droit aux allocations).",
+      fr: "« Illimité » : vous pouvez travailler pour tout employeur. « Limité » : restrictions précisées sur l'autorisation régionale. « Non » : aucun emploi possible (pas de droit aux allocations).",
     },
     options: [
       { value: "illimite", label: { fr: "Illimité" } },
@@ -122,7 +122,7 @@ export const C1_FINAL: PdfFormField[] = [
     required: false,
     label: { fr: "Raison de la limitation d'accès au marché du travail" },
     help: {
-      fr: "La raison figure sur ton autorisation d'occupation régionale (études, employeur unique, durée limitée…). Tu peux aussi joindre une copie de l'autorisation plutôt que de la recopier ici.",
+      fr: "La raison figure sur votre autorisation d'occupation régionale (études, employeur unique, durée limitée…). Vous pouvez aussi joindre une copie de l'autorisation plutôt que de la recopier ici.",
     },
     visibleIf: { fieldId: "accesMarcheTravail", op: "equals", value: "limite" },
     section: SECTION_NON_EEE,
@@ -156,7 +156,7 @@ export const C1_FINAL: PdfFormField[] = [
     type: "date",
     required: false,
     label: { fr: "Jusqu'au" },
-    help: { fr: "Laisse vide si la période n'a pas encore de date de fin connue." },
+    help: { fr: "Laissez vide si la période n'a pas encore de date de fin connue." },
     visibleIf: { fieldId: "congeSansSolde", op: "equals", value: "oui" },
     section: SECTION_DIVERS,
     order: 902,
@@ -195,7 +195,7 @@ export const C1_FINAL: PdfFormField[] = [
   dejaDeclare({
       id: "incapacite33DejaDeclare",
       parentId: "incapacite33",
-      helpText: "Si non, tu devras compléter le FORMULAIRE C47 — il sera ajouté à ton parcours.",
+      helpText: "Si non, vous devrez compléter le FORMULAIRE C47 — il sera ajouté à votre parcours.",
       section: SECTION_DIVERS,
       order: 911,
       stepPriority: "optional",
@@ -319,7 +319,7 @@ export const C1_FINAL: PdfFormField[] = [
     // quand le signerName resolution ratait au premier submit.
     required: false,
     label: { fr: "Signature électronique" },
-    help: { fr: "Signature « façon Adobe » : ton nom + prénom + horodatage seront appliqués à la position de la signature." },
+    help: { fr: "Signature « façon Adobe » : votre nom + prénom + horodatage seront appliqués à la position de la signature." },
     section: SECTION_SIGNATURE,
     order: 1201,
   },

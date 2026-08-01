@@ -112,7 +112,7 @@ function dateMoniteur(opts: {
     required: false,
     label: { fr: `Publiée au Moniteur belge du (mandat ${opts.rang})` },
     help: {
-      fr: "À défaut de publication au Moniteur belge, laisse cette date vide et joins en annexe une copie de la nomination (plus bas).",
+      fr: "À défaut de publication au Moniteur belge, laissez cette date vide et joignez en annexe une copie de la nomination (plus bas).",
     },
     visibleIf: opts.visibleIf,
     section: SECTION_MANDAT,
@@ -149,7 +149,7 @@ export const C46_FIELDS: PdfFormField[] = [
     required: true,
     label: { fr: "Numéro NISS (registre national)" },
     help: {
-      fr: "11 chiffres au dos de ta carte d'identité (eID), au-dessus du code-barres.",
+      fr: "11 chiffres au dos de votre carte d'identité (eID), au-dessus du code-barres.",
     },
     placeholder: { fr: "00.00.00-000.00" },
     prefillFrom: "profile.niss",
@@ -180,7 +180,7 @@ export const C46_FIELDS: PdfFormField[] = [
     required: true,
     label: { fr: "Nom de l'organisme (mandat 1)" },
     help: {
-      fr: "Indique le nom de l'organisme auprès duquel tu exerces ce mandat rémunéré. Il doit s'agir d'un organe consultatif du secteur culturel ou de la Commission du travail des arts.",
+      fr: "Indiquez le nom de l'organisme auprès duquel vous exercez ce mandat rémunéré. Il doit s'agir d'un organe consultatif du secteur culturel ou de la Commission du travail des arts.",
     },
     section: SECTION_MANDAT,
     order: 1,
@@ -196,7 +196,7 @@ export const C46_FIELDS: PdfFormField[] = [
     type: "text",
     required: false,
     label: { fr: "Nom de l'organisme (mandat 2)" },
-    help: { fr: "À remplir uniquement si tu déclares un second mandat distinct." },
+    help: { fr: "À remplir uniquement si vous déclarez un second mandat distinct." },
     section: SECTION_MANDAT,
     order: 3,
   },
@@ -260,7 +260,7 @@ export const C46_FIELDS: PdfFormField[] = [
     required: false,
     label: { fr: "Nominations dont je joins une copie en annexe" },
     help: {
-      fr: "À remplir seulement pour les mandats qui n'ont PAS été publiés au Moniteur belge : précise ici de quels documents il s'agit, et joins-en une copie.",
+      fr: "À remplir seulement pour les mandats qui n'ont PAS été publiés au Moniteur belge : précisez ici de quels documents il s'agit, et joignez-en une copie.",
     },
     section: SECTION_ANNEXES,
     order: 100,
@@ -294,7 +294,7 @@ export const C46_FIELDS: PdfFormField[] = [
     required: true,
     label: { fr: "Signature électronique" },
     help: {
-      fr: "En signant, tu affirmes sur l'honneur que ta déclaration est sincère et complète.",
+      fr: "En signant, vous affirmez sur l'honneur que votre déclaration est sincère et complète.",
     },
     section: SECTION_SIGNATURE,
     order: 1001,

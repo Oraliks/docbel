@@ -36,7 +36,7 @@ export const C1_ACTIVITES: PdfFormField[] = [
     id: "apprentissageAlternance",
     pdfFieldName: "oui_3|non_3",
     label: "Je suis un apprentissage ou une formation en alternance",
-    help: "⚠ Idem études — perte du droit sauf dispense. Si chômage temporaire pendant la formation, complète aussi la section « Situation familiale ».",
+    help: "⚠ Idem études — perte du droit sauf dispense. Si chômage temporaire pendant la formation, complétez aussi la section « Situation familiale ».",
     section: SECTION_ACTIVITES,
     order: 210,
   }),
@@ -73,7 +73,7 @@ export const C1_ACTIVITES: PdfFormField[] = [
   dejaDeclare({
       id: "mandatArtistiqueDejaDeclare",
       parentId: "mandatArtistique",
-      helpText: "Si non, tu devras compléter le FORMULAIRE C46 — il sera ajouté à ton parcours.",
+      helpText: "Si non, vous devrez compléter le FORMULAIRE C46 — il sera ajouté à votre parcours.",
       section: SECTION_ACTIVITES,
       order: 231,
       pdfFieldName: "Oui_PremièreFoisC45DéjàDéclaré|Oui_PremièreFoisC46",
@@ -83,7 +83,7 @@ export const C1_ACTIVITES: PdfFormField[] = [
     id: "mandatPolitique",
     pdfFieldName: "oui_6|non_6",
     label: "J'exerce un mandat politique",
-    help: "→ Joindre un FORMULAIRE C1A. Exception : si tu es conseiller communal ou membre du Conseil de l'action sociale, réponds « non » (pas de C1A à joindre).",
+    help: "→ Joindre un FORMULAIRE C1A. Exception : si vous êtes conseiller communal ou membre du Conseil de l'action sociale, répondez « non » (pas de C1A à joindre).",
     section: SECTION_ACTIVITES,
     order: 240,
   }),
@@ -100,7 +100,7 @@ export const C1_ACTIVITES: PdfFormField[] = [
     ...dejaDeclare({
       id: "mandatPolitiqueDejaDeclare",
       parentId: "mandatPolitique",
-      helpText: "Réponds « oui » seulement si ce mandat a déjà été signalé à ton organisme de paiement lors d'un dossier précédent.",
+      helpText: "Répondez « oui » seulement si ce mandat a déjà été signalé à votre organisme de paiement lors d'un dossier précédent.",
       section: SECTION_ACTIVITES,
       order: 241,
       pdfFieldName: "Oui_PremièreFoisC1ADéjàDéclaré|Oui_PremièreFoisC1A",
@@ -111,7 +111,7 @@ export const C1_ACTIVITES: PdfFormField[] = [
     id: "chapitreXIIArts",
     pdfFieldName: "oui_7|non_7",
     label: "Je bénéficie (ou souhaite bénéficier) du Chapitre XII sur la base de l'attestation du travail des arts",
-    help: "Demande des explications à ton organisme de paiement.",
+    help: "Demandez des explications à votre organisme de paiement.",
     section: SECTION_ACTIVITES,
     order: 250,
   }),
@@ -127,7 +127,7 @@ export const C1_ACTIVITES: PdfFormField[] = [
       id: "tremplinIndependantsDejaDeclare",
       parentId: "tremplinIndependants",
       helpText:
-        "Si non, tu devras compléter le FORMULAIRE C1C — il sera ajouté à ton parcours.",
+        "Si non, vous devrez compléter le FORMULAIRE C1C — il sera ajouté à votre parcours.",
       section: SECTION_ACTIVITES,
       order: 271,
       pdfFieldName: "Oui_PremièreFoisC1CDéjàDéclaré|Oui_PremièreFoisC1C",
@@ -144,7 +144,7 @@ export const C1_ACTIVITES: PdfFormField[] = [
   dejaDeclare({
       id: "activiteAccessoireDejaDeclare",
       parentId: "activiteAccessoireOuAide",
-      helpText: "Si non, tu devras compléter le FORMULAIRE C1A — il sera ajouté à ton parcours.",
+      helpText: "Si non, vous devrez compléter le FORMULAIRE C1A — il sera ajouté à votre parcours.",
       section: SECTION_ACTIVITES,
       order: 281,
       pdfFieldName: "Oui_PremièreFoisC1A2DejaDéclaré|Oui_PremièreFoisC1A2",
@@ -161,7 +161,7 @@ export const C1_ACTIVITES: PdfFormField[] = [
   dejaDeclare({
       id: "administrateurSocieteDejaDeclare",
       parentId: "administrateurSociete",
-      helpText: "Si non, tu devras compléter le FORMULAIRE C1A — il sera ajouté à ton parcours.",
+      helpText: "Si non, vous devrez compléter le FORMULAIRE C1A — il sera ajouté à votre parcours.",
       section: SECTION_ACTIVITES,
       order: 291,
       // Le PDF officiel mutualise une seule paire C1A pour les questions 9-11
@@ -183,7 +183,7 @@ export const C1_ACTIVITES: PdfFormField[] = [
       id: "independantAccessoireDejaDeclare",
       parentId: "independantAccessoireOuPrincipal",
       helpText:
-        "Pour une activité accessoire : si non déclarée, tu devras compléter le FORMULAIRE C1A.",
+        "Pour une activité accessoire : si non déclarée, vous devrez compléter le FORMULAIRE C1A.",
       section: SECTION_ACTIVITES,
       order: 501,
       pdfFieldName: "Oui_PremièreFoisC1A2DejaDéclaré|Oui_PremièreFoisC1A2",
@@ -195,7 +195,7 @@ export const C1_ACTIVITES: PdfFormField[] = [
     id: "pensionCategorieParticuliere",
     pdfFieldName: "oui_12|non_12",
     label: "J'appartiens à une catégorie professionnelle particulière (mineur, pilote, marin…) et j'ai droit à une pension complète",
-    help: "⚠ Si tu remplis les conditions d'âge et d'ancienneté pour la pension spécifique, pas de droit aux allocations.",
+    help: "⚠ Si vous remplissez les conditions d'âge et d'ancienneté pour la pension spécifique, pas de droit aux allocations.",
     section: SECTION_REVENUS,
     order: 510,
   }),
@@ -210,7 +210,7 @@ export const C1_ACTIVITES: PdfFormField[] = [
   dejaDeclare({
       id: "pensionRetraiteDejaDeclare",
       parentId: "pensionRetraiteSurvie",
-      helpText: "Si non, tu devras compléter le FORMULAIRE C1B — il sera ajouté à ton parcours.",
+      helpText: "Si non, vous devrez compléter le FORMULAIRE C1B — il sera ajouté à votre parcours.",
       section: SECTION_REVENUS,
       order: 521,
       pdfFieldName:
@@ -221,7 +221,7 @@ export const C1_ACTIVITES: PdfFormField[] = [
     id: "indemniteMaladieInvalidite",
     pdfFieldName: "oui_14|non_14",
     label: "Je perçois une indemnité de maladie ou d'invalidité",
-    help: "À déclarer. Demande des explications à ton organisme de paiement.",
+    help: "À déclarer. Demandez des explications à votre organisme de paiement.",
     section: SECTION_REVENUS,
     order: 530,
   }),

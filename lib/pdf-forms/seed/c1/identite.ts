@@ -54,7 +54,7 @@ export const C1_IDENTITE: PdfFormField[] = [
     required: true,
     label: { fr: "Numéro NISS (registre national)" },
     help: {
-      fr: "11 chiffres au dos de ta carte d'identité (eID), au-dessus du code-barres.",
+      fr: "11 chiffres au dos de votre carte d'identité (eID), au-dessus du code-barres.",
     },
     placeholder: { fr: "00.00.00-000.00" },
     prefillFrom: "profile.niss",
@@ -100,7 +100,7 @@ export const C1_IDENTITE: PdfFormField[] = [
     required: true,
     label: { fr: "Date de naissance" },
     help: {
-      fr: "Déduite automatiquement de ton NISS dès qu'il est complet et valide — sinon, renseigne-la toi-même.",
+      fr: "Déduite automatiquement de votre NISS dès qu'il est complet et valide — sinon, renseignez-la vous-même.",
     },
     prefillFrom: "itsme.birthDate",
     canonicalKey: "identity.dateNaissance",
@@ -135,7 +135,7 @@ export const C1_IDENTITE: PdfFormField[] = [
     required: true,
     label: { fr: "Nationalité" },
     help: {
-      fr: "Tape le début du nom de ton pays (ex. « maro » → Maroc). Si tu es hors EEE/Suisse, complète aussi la rubrique dédiée plus bas.",
+      fr: "Tapez le début du nom de votre pays (ex. « maro » → Maroc). Si vous êtes hors EEE/Suisse, complétez aussi la rubrique dédiée plus bas.",
     },
     // Recherche + drapeau (countrySelect, cf. lib/pdf-forms/world-countries.ts
     // — même mécanisme que le champ `pays`). La valeur stockée/stampée est le
@@ -175,7 +175,7 @@ export const C1_IDENTITE: PdfFormField[] = [
     required: true,
     label: { fr: "Rue" },
     help: {
-      fr: "Commence à taper puis CHOISIS ta rue dans la liste (noms officiels FR et NL). Si elle n'apparaît pas, coche « ma rue n'est pas dans la liste » juste en dessous.",
+      fr: "Commencez à taper puis CHOISISSEZ votre rue dans la liste (noms officiels FR et NL). Si elle n'apparaît pas, cochez « ma rue n'est pas dans la liste » juste en dessous.",
     },
     prefillFrom: "profile.street",
     streetAutocomplete: { postalFieldId: "code_postal" },
@@ -200,7 +200,7 @@ export const C1_IDENTITE: PdfFormField[] = [
     required: false,
     label: { fr: "Ma rue n'est pas dans la liste proposée" },
     help: {
-      fr: "Coche uniquement si ta rue n'apparaît pas dans les suggestions — tu pourras alors la saisir librement (vérifie bien l'orthographe).",
+      fr: "Cochez uniquement si votre rue n'apparaît pas dans les suggestions — vous pourrez alors la saisir librement (vérifiez bien l'orthographe).",
     },
     section: SECTION_IDENTITE,
     order: -88.5,
@@ -240,7 +240,7 @@ export const C1_IDENTITE: PdfFormField[] = [
     required: true,
     label: { fr: "Commune" },
     help: {
-      fr: "Remplie automatiquement à partir de ton code postal. Si le code couvre plusieurs communes, choisis la tienne ; pour une adresse à l'étranger, saisis-la à la main.",
+      fr: "Remplie automatiquement à partir de votre code postal. Si le code couvre plusieurs communes, choisissez la vôtre ; pour une adresse à l'étranger, saisissez-la à la main.",
     },
     communeFrom: { postalFieldId: "code_postal" },
     canonicalKey: "adresse.commune",
@@ -254,7 +254,7 @@ export const C1_IDENTITE: PdfFormField[] = [
     required: true,
     label: { fr: "Pays" },
     help: {
-      fr: "Rempli automatiquement à partir du code postal (belge à 4 chiffres → Belgique). Pour une adresse à l'étranger, tape le début du nom (ex. « maro » → Maroc).",
+      fr: "Rempli automatiquement à partir du code postal (belge à 4 chiffres → Belgique). Pour une adresse à l'étranger, tapez le début du nom (ex. « maro » → Maroc).",
     },
     // Dérivé du code postal : belge (4 chiffres) → « Belgique » et verrouillé ;
     // sinon éditable via recherche (countrySelect, ~195 pays + drapeau, cf.

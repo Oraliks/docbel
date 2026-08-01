@@ -27,7 +27,7 @@ export const C1_FAMILLE: PdfFormField[] = [
     type: "radio",
     required: true,
     label: { fr: "Ma situation familiale" },
-    help: { fr: "Choix unique : tu vis seul ou tu cohabites avec au moins une personne." },
+    help: { fr: "Choix unique : vous vivez seul ou vous cohabitez avec au moins une personne." },
     options: [
       { value: "isole", label: { fr: "Je vis seul (isolé)" } },
       { value: "cohabite", label: { fr: "Je cohabite avec au moins une personne" } },
@@ -74,7 +74,7 @@ export const C1_FAMILLE: PdfFormField[] = [
       fr: "Je suis séparé(e) de fait et un jugement autorise mon conjoint à percevoir une partie de mes revenus",
     },
     help: {
-      fr: "Délégation de revenu (art. 221 du Code civil). ⚠ Joindre une copie du jugement. Comme la pension alimentaire, cette situation peut ouvrir le taux « charge de famille » alors que tu habites seul.",
+      fr: "Délégation de revenu (art. 221 du Code civil). ⚠ Joindre une copie du jugement. Comme la pension alimentaire, cette situation peut ouvrir le taux « charge de famille » alors que vous habitez seul.",
     },
     // Même condition que la pension alimentaire : la question ne se pose qu'à
     // l'isolé (c'est une voie d'accès au taux « charge de famille »).
@@ -103,9 +103,9 @@ export const C1_FAMILLE: PdfFormField[] = [
     // ne s'applique que lorsqu'il est visible → exigé uniquement quand une
     // pension alimentaire est déclarée.
     required: true,
-    label: { fr: "As-tu le jugement (ou l'acte notarié) en main ?" },
+    label: { fr: "Avez-vous le jugement (ou l'acte notarié) en main ?" },
     help: {
-      fr: "« Déjà introduit » = tu l'as transmis à ton organisme de paiement lors d'un dossier précédent : inutile de le joindre à nouveau.",
+      fr: "« Déjà introduit » = vous l'avez transmis à votre organisme de paiement lors d'un dossier précédent : inutile de le joindre à nouveau.",
     },
     options: [
       { value: "en-main", label: { fr: "Oui, je joins une copie" } },
@@ -154,7 +154,7 @@ export const C1_FAMILLE: PdfFormField[] = [
     label: { fr: "Avec cette ou ces personnes, formez-vous un ménage commun ?" },
     labelShort: { fr: "Ménage commun ?" },
     help: {
-      fr: "Important : une COLOCATION (colocataires qui partagent un logement mais chacun gère sa vie, sans budget commun) n'est PAS une cohabitation au sens du chômage — tu es alors considéré comme ISOLÉ, et une Annexe REGIS est ajoutée pour le préciser. Ne choisis « Oui, ménage commun » que si vous partagez réellement, au moins en partie, les dépenses courantes (loyer, courses, factures).",
+      fr: "Important : une COLOCATION (colocataires qui partagent un logement mais chacun gère sa vie, sans budget commun) n'est PAS une cohabitation au sens du chômage — vous êtes alors considéré comme ISOLÉ, et une Annexe REGIS est ajoutée pour le préciser. Ne choisissez « Oui, ménage commun » que si vous partagez réellement, au moins en partie, les dépenses courantes (loyer, courses, factures).",
     },
     options: [
       { value: "menage-commun", label: { fr: "Oui — nous formons un ménage (dépenses partagées au moins en partie)" } },
@@ -176,10 +176,10 @@ export const C1_FAMILLE: PdfFormField[] = [
     pdfFieldName: "",
     type: "radio",
     required: false,
-    label: { fr: "Ta situation de cohabitation est ambiguë (registre national / réalité de ménage divergents) ?" },
+    label: { fr: "Votre situation de cohabitation est ambiguë (registre national / réalité de ménage divergents) ?" },
     labelShort: { fr: "Cohabitation ambiguë ?" },
     help: {
-      fr: "Exemples : domiciliation à une adresse mais résidence à une autre, hébergement temporaire chez un tiers, garde alternée d'enfant non encore enregistrée… → l'Annexe REGIS sera ajoutée à ton parcours pour préciser la composition réelle du ménage.",
+      fr: "Exemples : domiciliation à une adresse mais résidence à une autre, hébergement temporaire chez un tiers, garde alternée d'enfant non encore enregistrée… → l'Annexe REGIS sera ajoutée à votre parcours pour préciser la composition réelle du ménage.",
     },
     options: YN,
     defaultValue: "non",
@@ -194,7 +194,7 @@ export const C1_FAMILLE: PdfFormField[] = [
   dejaDeclare({
     id: "situationCohabitationAmbigueDejaDeclare",
     parentId: "situationCohabitationAmbigue",
-    helpText: "Si non, tu devras compléter l'ANNEXE REGIS — elle sera ajoutée à ton parcours.",
+    helpText: "Si non, vous devrez compléter l'ANNEXE REGIS — elle sera ajoutée à votre parcours.",
     section: SECTION_SITUATION_FAMILIALE,
     order: 105,
   }),
@@ -206,9 +206,9 @@ export const C1_FAMILLE: PdfFormField[] = [
     // `pensionAlimentaire` — `required` + `visibleIf` = exigé seulement pour
     // l'isolé, à qui seul la question est posée.
     required: true,
-    label: { fr: "Habites-tu en colocation ?" },
+    label: { fr: "Habitez-vous en colocation ?" },
     help: {
-      fr: "Colocation = tu partages un logement avec une ou plusieurs personnes SANS lien de parenté ni de couple (chacun sa vie, pas de ménage commun) — même si le registre national vous montre à la même adresse. Utile aussi si tu vis officiellement seul mais partages en pratique le logement (cohousing) — la remarque situation familiale sera annotée automatiquement. Cette précision permet d'ajouter automatiquement l'ANNEXE REGIS à ton parcours.",
+      fr: "Colocation = vous partagez un logement avec une ou plusieurs personnes SANS lien de parenté ni de couple (chacun sa vie, pas de ménage commun) — même si le registre national vous montre à la même adresse. Utile aussi si vous vivez officiellement seul mais partagez en pratique le logement (cohousing) — la remarque situation familiale sera annotée automatiquement. Cette précision permet d'ajouter automatiquement l'ANNEXE REGIS à votre parcours.",
     },
     options: YN,
     // Visible uniquement pour l'ISOLÉ (Oraliks 2026-07-09) : la colocation
@@ -255,7 +255,7 @@ export const C1_FAMILLE: PdfFormField[] = [
     required: false,
     label: { fr: "Personnes avec qui je cohabite" },
     help: {
-      fr: "Ajoute toutes les personnes qui font partie de ton ménage, même si elles sont domiciliées ailleurs. Une personne emprisonnée ou en institution psychiatrique compte toujours.",
+      fr: "Ajoutez toutes les personnes qui font partie de votre ménage, même si elles sont domiciliées ailleurs. Une personne emprisonnée ou en institution psychiatrique compte toujours.",
     },
     addRowLabel: { fr: "Ajouter un cohabitant" },
     // Ménage commun uniquement (Oraliks 2026-07-09) : une colocation rebascule
@@ -384,7 +384,7 @@ export const C1_FAMILLE: PdfFormField[] = [
         required: false,
         label: { fr: "Je perçois des allocations familiales pour cette personne" },
         help: {
-          fr: "Au-delà de 35 ans, la réponse est automatiquement « non ». Tu peux la rectifier si besoin.",
+          fr: "Au-delà de 35 ans, la réponse est automatiquement « non ». Vous pouvez la rectifier si besoin.",
         },
         options: YN,
         // Colonne PAR LIGNE (dropdown « Personne{N}_AllocationsFamiliales »,
@@ -503,7 +503,7 @@ export const C1_FAMILLE: PdfFormField[] = [
         required: false,
         label: { fr: "Déclaration C1-PARTENAIRE" },
         help: {
-          fr: "Auto-pré-sélectionné sur « 1ʳᵉ fois / modification » dès que le lien devient FAC — tu peux changer si la situation a déjà été déclarée.",
+          fr: "Auto-pré-sélectionné sur « 1ʳᵉ fois / modification » dès que le lien devient FAC — vous pouvez changer si la situation a déjà été déclarée.",
         },
         options: [
           {

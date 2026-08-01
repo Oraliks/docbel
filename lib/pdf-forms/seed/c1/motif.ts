@@ -23,7 +23,7 @@ export const C1_MOTIF: PdfFormField[] = [
     type: "date",
     required: true,
     label: { fr: "Je demande des allocations à partir du" },
-    help: { fr: "Date du premier jour pour lequel tu demandes des allocations." },
+    help: { fr: "Date du premier jour pour lequel vous demandez des allocations." },
     prefillFrom: "system.today",
     section: SECTION_DEMANDE,
     order: 1,
@@ -40,7 +40,7 @@ export const C1_MOTIF: PdfFormField[] = [
       fr: "… comme chômeur temporaire suivant une formation en alternance",
     },
     help: {
-      fr: "Cas rare — coche « non » sauf si tu suis une formation en alternance et que tu es en chômage temporaire pendant cette formation.",
+      fr: "Cas rare — cochez « non » sauf si vous suivez une formation en alternance et que vous êtes en chômage temporaire pendant cette formation.",
     },
     options: YN,
     section: SECTION_DEMANDE,
@@ -79,7 +79,7 @@ export const C1_MOTIF: PdfFormField[] = [
     required: true,
     label: { fr: "À partir du" },
     help: {
-      fr: "Le transfert prend effet le mois suivant, sous certaines conditions de délai qui dépendent de ton type d'allocation actuel. Ton nouvel organisme de paiement te confirmera la date exacte.",
+      fr: "Le transfert prend effet le mois suivant, sous certaines conditions de délai qui dépendent de votre type d'allocation actuel. Votre nouvel organisme de paiement vous confirmera la date exacte.",
     },
     visibleIf: { fieldId: "motifIntroduction", op: "equals", value: "changement-op" },
     section: SECTION_DEMANDE,
@@ -153,7 +153,7 @@ export const C1_MOTIF: PdfFormField[] = [
     required: false,
     label: { fr: "Date d'effet de la ou des modification(s) cochée(s) ci-dessus" },
     help: {
-      fr: "Une seule date pour l'adresse, la situation personnelle/du ménage et le compte bancaire. Si tes changements n'ont pas tous la même date d'effet, fais une déclaration séparée pour chaque date différente. Ne concerne pas la cotisation syndicale ni le permis de séjour (pas de date sur le formulaire officiel).",
+      fr: "Une seule date pour l'adresse, la situation personnelle/du ménage et le compte bancaire. Si vos changements n'ont pas tous la même date d'effet, faites une déclaration séparée pour chaque date différente. Ne concerne pas la cotisation syndicale ni le permis de séjour (pas de date sur le formulaire officiel).",
     },
     visibleIf: { fieldId: "motifIntroduction", op: "equals", value: "modification" },
     section: SECTION_DEMANDE,

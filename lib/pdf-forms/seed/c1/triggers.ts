@@ -47,7 +47,7 @@ export const C1_TRIGGERS: PdfFormTrigger[] = [
     whenFieldId: "habiteEnColocation",
     whenValue: "oui",
     requiresFormSlug: "c1-regis",
-    reason: { fr: "Ne remplis pas les détails du colocataire sur ce C1 : l'Annexe REGIS (code FN4) sera le prochain document à compléter." },
+    reason: { fr: "Ne remplissez pas les détails du colocataire sur ce C1 : l'Annexe REGIS (code FN4) sera le prochain document à compléter." },
   },
   {
     whenFieldId: "mandatArtistique",

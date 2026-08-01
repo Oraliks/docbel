@@ -30,7 +30,7 @@ const GRILLE1_REGISTRE_PREFIX =
   "INDICATION DANS LES REGISTRES indiquez la nationalité ladresse le nom et le prénom";
 
 const FN4_HELP =
-  "Si cette personne est une ou un colocataire (aucun lien de parenté) qui vit réellement à la même adresse mais avec qui tu ne partages pas la vie domestique/financière : indique le code FN4. Pour les autres cas, réfère-toi à la légende page 2 du formulaire officiel (codes FN1-FN5, FY1-FY5).";
+  "Si cette personne est une ou un colocataire (aucun lien de parenté) qui vit réellement à la même adresse mais avec qui vous ne partagez pas la vie domestique/financière : indiquez le code FN4. Pour les autres cas, référez-vous à la légende page 2 du formulaire officiel (codes FN1-FN5, FY1-FY5).";
 
 /// Une ligne de la Grille 1/Grille 2 hors "personne" (nationalité, adresse).
 function fixedRow(opts: {
@@ -72,7 +72,7 @@ function fixedRow(opts: {
       type: "text",
       required: false,
       label: { fr: `${opts.label} — indication dans les registres officiels` },
-      help: { fr: "Ce que dit ton registre national — vérifie sur ton eID." },
+      help: { fr: "Ce que dit votre registre national — vérifiez sur votre eID." },
       visibleIf: { fieldId: diffId, op: "equals", value: "oui" },
       section: SECTION_GRILLE1,
       order: opts.order + 2,
@@ -126,7 +126,7 @@ function personneRow(n: 1 | 2 | 3 | 4 | 5): PdfFormField[] {
       type: "text",
       required: false,
       label: { fr: `${label} — indication dans les registres officiels` },
-      help: { fr: "Ce que dit ton registre national pour cette personne — vérifie sur son eID ou demande-lui." },
+      help: { fr: "Ce que dit votre registre national pour cette personne — vérifiez sur son eID ou demandez-lui." },
       visibleIf: { fieldId: diffId, op: "equals", value: "oui" },
       section: SECTION_GRILLE1,
       order: order + 2,
@@ -202,7 +202,7 @@ export const C1_REGIS_FIELDS: PdfFormField[] = [
     type: "signature",
     required: true,
     label: { fr: "Signature électronique" },
-    help: { fr: "Signature « façon Adobe » : ton nom + prénom + horodatage seront appliqués à la position de la signature." },
+    help: { fr: "Signature « façon Adobe » : votre nom + prénom + horodatage seront appliqués à la position de la signature." },
     section: SECTION_SIGNATURE,
     order: 1000,
   },

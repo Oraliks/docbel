@@ -106,7 +106,7 @@ export const C1B_FIELDS: PdfFormField[] = [
     required: true,
     label: { fr: "Numéro NISS (registre national)" },
     help: {
-      fr: "11 chiffres au dos de ta carte d'identité (eID), au-dessus du code-barres.",
+      fr: "11 chiffres au dos de votre carte d'identité (eID), au-dessus du code-barres.",
     },
     placeholder: { fr: "00.00.00-000.00" },
     prefillFrom: "profile.niss",
@@ -288,7 +288,7 @@ export const C1B_FIELDS: PdfFormField[] = [
     required: false,
     label: { fr: "Je perçois…" },
     help: {
-      fr: "⚠ Pour une pension de retraite (belge ou étrangère) ou de survie étrangère, joins une copie de la décision d'octroi de la pension (décision provisoire ou définitive) et une copie du paiement le plus récent.",
+      fr: "⚠ Pour une pension de retraite (belge ou étrangère) ou de survie étrangère, joignez une copie de la décision d'octroi de la pension (décision provisoire ou définitive) et une copie du paiement le plus récent.",
     },
     options: [
       { value: "retraite-belge", label: { fr: "Une pension de retraite belge" } },
@@ -327,7 +327,7 @@ export const C1B_FIELDS: PdfFormField[] = [
     required: false,
     label: { fr: "Désirez-vous cumuler vos allocations de chômage avec votre pension de survie ?" },
     help: {
-      fr: "⚠ Si oui, joins : une copie de la décision d'octroi de la pension (décision provisoire ou définitive) ET une copie d'un modèle 74 ou 74bis PSS ou d'une Déclaration Pension, activité professionnelle et revenu de remplacement du Service fédéral des Pensions.",
+      fr: "⚠ Si oui, joignez : une copie de la décision d'octroi de la pension (décision provisoire ou définitive) ET une copie d'un modèle 74 ou 74bis PSS ou d'une Déclaration Pension, activité professionnelle et revenu de remplacement du Service fédéral des Pensions.",
     },
     options: [
       { value: "non", label: { fr: "Non" } },
@@ -398,7 +398,7 @@ export const C1B_FIELDS: PdfFormField[] = [
     required: false,
     label: { fr: "Montant mensuel net de votre indemnité (EUR)" },
     help: {
-      fr: "Net = montant brut diminué des cotisations de sécurité sociale et du précompte professionnel. → Joins une copie de la décision d'octroi de cette allocation ET une copie de paiement le plus récent.",
+      fr: "Net = montant brut diminué des cotisations de sécurité sociale et du précompte professionnel. → Joignez une copie de la décision d'octroi de cette allocation ET une copie de paiement le plus récent.",
     },
     visibleIf: { fieldId: "indemniteMaladieInvaliditeEtrangere", op: "equals", value: "oui" },
     section: SECTION_REVENUS,
@@ -426,7 +426,7 @@ export const C1B_FIELDS: PdfFormField[] = [
     required: false,
     label: { fr: "Cette indemnité est un dédommagement pour…" },
     help: {
-      fr: "→ Joins une attestation de l'organisme assureur mentionnant le degré d'incapacité permanente de travail et la date de consolidation.",
+      fr: "→ Joignez une attestation de l'organisme assureur mentionnant le degré d'incapacité permanente de travail et la date de consolidation.",
     },
     options: [
       { value: "totale-temporaire", label: { fr: "Incapacité temporaire totale de travail" } },
@@ -443,7 +443,7 @@ export const C1B_FIELDS: PdfFormField[] = [
     type: "radio",
     required: true,
     label: { fr: "Percevez-vous une indemnité d'accident du travail ou de maladie professionnelle à charge d'une institution étrangère ?" },
-    help: { fr: "→ Si oui, joins la décision d'octroi de cette allocation." },
+    help: { fr: "→ Si oui, joignez la décision d'octroi de cette allocation." },
     options: YN,
     section: SECTION_REVENUS,
     order: 42,
@@ -545,7 +545,7 @@ export const C1B_FIELDS: PdfFormField[] = [
     required: true,
     min: 1,
     label: { fr: "Nombre d'annexes jointes" },
-    help: { fr: "Compte les documents que tu joins à ce formulaire." },
+    help: { fr: "Comptez les documents que vous joignez à ce formulaire." },
     section: SECTION_ANNEXES,
     order: 59,
   },
@@ -561,7 +561,7 @@ export const C1B_FIELDS: PdfFormField[] = [
     // le contraire de ce qu'on voit : les cases sont EN DESSOUS, l'erreur étant
     // rendue sous la première d'entre elles.
     errorMsg: {
-      fr: "Cette rubrique est toujours à compléter : coche au moins un document joint ci-dessous.",
+      fr: "Cette rubrique est toujours à compléter : cochez au moins un document joint ci-dessous.",
     },
     requiredGroup: GROUPE_ANNEXES,
     section: SECTION_ANNEXES,
@@ -658,7 +658,7 @@ export const C1B_FIELDS: PdfFormField[] = [
     required: true,
     label: { fr: "Signature électronique" },
     help: {
-      fr: "Signature « façon Adobe » : ton nom + prénom + horodatage seront appliqués à la position de la signature.",
+      fr: "Signature « façon Adobe » : votre nom + prénom + horodatage seront appliqués à la position de la signature.",
     },
     section: SECTION_SIGNATURE,
     order: 68,

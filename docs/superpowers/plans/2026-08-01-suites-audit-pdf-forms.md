@@ -52,7 +52,7 @@ base, refactor du runner, e2e, conception de schéma).
 | 6 | S6 ♦ | Sync seed→DB traçable (révision + version) | Opus | fait (aa99caa), run CI vert |
 | 7 | S7 ♦ | Opposabilité : hash stable + diagnostics persistés + tuile admin | Opus | fait (974476e + 378a51a) — ⚠️ SQL additif à exécuter par Oraliks |
 | 8 | S8 | `ensureWriteAllowed` sur les routes admin PDF (balayage) | Sonnet | fait (561d9bc) — invariant testé, plus de balayage à refaire |
-| 9 | S9 | Nettoyage code mort (diag, presets, helpers bindings…) | Sonnet | à faire |
+| 9 | S9 | Nettoyage code mort (diag, presets, helpers bindings…) | Sonnet | fait (09e8d06) — −635 lignes ; QA écran /admin/pdf/[id] à faire |
 | 10 | S10 | « Vous » partout dans les seeds (aides uniquement) | Sonnet | à faire |
 | 11 | S11 ♦ | E2E Playwright : un parcours C47 complet → PDF | Opus | à faire |
 | 12 | S12 ♦ | Runner dégraissé (pied de soumission + hook autosave) | Opus | à faire |

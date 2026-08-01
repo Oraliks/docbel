@@ -50,7 +50,7 @@ base, refactor du runner, e2e, conception de schéma).
 | 4 | S4 | Correctifs divers : test-generate, nom de fichier, 2 messages « tu » | Sonnet | fait (52cccea + 26e9092 NL/DE), poussé |
 | 5 | S5 | Gel de l'édition admin des 8 slugs ONEM + bannière | Sonnet | fait (ebbc4e7), run CI vert — QA visuelle admin à faire par Oraliks |
 | 6 | S6 ♦ | Sync seed→DB traçable (révision + version) | Opus | fait (aa99caa), run CI vert |
-| 7 | S7 ♦ | Opposabilité : hash stable + diagnostics persistés + tuile admin | Opus | à faire |
+| 7 | S7 ♦ | Opposabilité : hash stable + diagnostics persistés + tuile admin | Opus | fait (974476e + 378a51a) — ⚠️ SQL additif à exécuter par Oraliks |
 | 8 | S8 | `ensureWriteAllowed` sur les routes admin PDF (balayage) | Sonnet | à faire |
 | 9 | S9 | Nettoyage code mort (diag, presets, helpers bindings…) | Sonnet | à faire |
 | 10 | S10 | « Vous » partout dans les seeds (aides uniquement) | Sonnet | à faire |

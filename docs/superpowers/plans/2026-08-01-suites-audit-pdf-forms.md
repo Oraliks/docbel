@@ -47,7 +47,7 @@ base, refactor du runner, e2e, conception de schéma).
 | 1 | S1 | RGPD : logs sans PII + anonymisation complète | Sonnet | fait (983b225) |
 | 2 | S2 | CI GitHub Actions (lint + tests) + timeout vitest | Sonnet | fait (cbabe61, run #2 vert) |
 | 3 | S3 | Cohérence dossier : orderBy, 404 run irrésoluble, event download | Sonnet | fait (ac228c3), push en attente |
-| 4 | S4 | Correctifs divers : test-generate, nom de fichier, 2 messages « tu » | Sonnet | à faire |
+| 4 | S4 | Correctifs divers : test-generate, nom de fichier, 2 messages « tu » | Sonnet | fait (52cccea), push en attente |
 | 5 | S5 | Gel de l'édition admin des 8 slugs ONEM + bannière | Sonnet | à faire |
 | 6 | S6 ♦ | Sync seed→DB traçable (révision + version) | Opus | à faire |
 | 7 | S7 ♦ | Opposabilité : hash stable + diagnostics persistés + tuile admin | Opus | à faire |

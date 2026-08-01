@@ -41,7 +41,11 @@ export async function POST(
 
   const payload = (body.payload as FormPayload) || generateSeedPayload(fields);
 
-  const source = await readSourcePdf(form.sourceStoragePath);
+  // Fallback `sourceFileName` (comme app/api/pdf/[slug]/generate/route.ts) :
+  // sans lui, un formulaire dont le fichier source a été déplacé/renommé
+  // depuis l'upload échouait à charger le PDF de test alors que le parcours
+  // citoyen, lui, le retrouvait.
+  const source = await readSourcePdf(form.sourceStoragePath, form.sourceFileName);
   if (!source) return apiError(500, "PDF source introuvable");
 
   let result;
@@ -58,6 +62,17 @@ export async function POST(
       extraStamps,
       combWidgets: getCombWidgetsForSlug(form.slug),
     });
+    // Traçage (comme generate/route.ts, S1) : le remplissage est best-effort
+    // et n'échoue pas quand une valeur ne parvient pas jusqu'au papier — sans
+    // cette trace, un widget cassé restait invisible même en aperçu admin.
+    // Projection sans `detail` : peut contenir des caractères saisis par un
+    // testeur (seed data ou payload custom envoyé au body).
+    if (result.diagnostics.length > 0) {
+      console.warn(
+        `[pdf-forms] test-generate ${form.slug} — ${result.diagnostics.length} valeur(s) non écrite(s) :`,
+        result.diagnostics.map(({ fieldId, widget, kind }) => ({ fieldId, widget, kind }))
+      );
+    }
   } catch (err) {
     console.error("test-generate error:", err);
     return apiError(500, "Échec de génération");

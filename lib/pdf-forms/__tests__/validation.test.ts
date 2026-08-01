@@ -2,6 +2,16 @@ import { describe, it, expect } from "vitest";
 import { buildValidator, isFieldVisible, anchoredRegex, validateFieldFormat, isFieldComplete, countRequirements, validateStepFields, findFirstInvalidStep } from "../validation";
 import { PdfFormField } from "../types";
 
+/// Prochain samedi (UTC) à partir d'aujourd'hui — dérivé plutôt que codé en
+/// dur, pour ne dépendre d'aucune date calendaire précise.
+function nextSaturdayISO(): string {
+  const d = new Date();
+  const day = d.getUTCDay();
+  const diff = (6 - day + 7) % 7 || 7;
+  d.setUTCDate(d.getUTCDate() + diff);
+  return d.toISOString().slice(0, 10);
+}
+
 function field(p: Partial<PdfFormField> & Pick<PdfFormField, "id" | "type">): PdfFormField {
   return { pdfFieldName: p.id, required: false, label: { fr: p.id }, ...p } as PdfFormField;
 }
@@ -224,6 +234,24 @@ describe("buildValidator", () => {
     }
   });
 
+  it("texte SANS maxLength déclaré : plafond anti-abus générique à 2000 caractères (S4)", () => {
+    const v = buildValidator([field({ id: "t", type: "textarea" })], "fr");
+    expect(v.safeParse({ t: "a".repeat(2000) }).success).toBe(true);
+    const res = v.safeParse({ t: "a".repeat(2001) });
+    expect(res.success).toBe(false);
+    if (!res.success) {
+      // Message générique (pas "max 2000 caractères") : ce filet vise l'abus,
+      // pas une contrainte métier normale.
+      expect(res.error.issues[0].message).toBe("Ce que vous avez saisi n'a pas le bon format.");
+    }
+  });
+
+  it("texte avec maxLength EXPLICITE au-delà de 2000 : garde SA propre borne (S4)", () => {
+    const v = buildValidator([field({ id: "t", type: "textarea", maxLength: 5000 })], "fr");
+    expect(v.safeParse({ t: "a".repeat(4000) }).success).toBe(true);
+    expect(v.safeParse({ t: "a".repeat(5001) }).success).toBe(false);
+  });
+
   it("nombre hors plage : messages clairs en français", () => {
     const v = buildValidator([field({ id: "n", type: "number", min: 18, max: 65 })], "fr");
     const tooLow = v.safeParse({ n: 10 });
@@ -232,6 +260,23 @@ describe("buildValidator", () => {
     const tooHigh = v.safeParse({ n: 99 });
     expect(tooHigh.success).toBe(false);
     if (!tooHigh.success) expect(tooHigh.error.issues[0].message).toMatch(/pas dépasser 65/);
+  });
+});
+
+describe("validateFieldFormat — vouvoiement FR (S4, 2026-08-01)", () => {
+  it("NISS avec date impossible : vouvoiement (message FR était en tutoiement)", () => {
+    const msg = validateFieldFormat({ type: "niss" }, "85153003328", "fr"); // mois 15 impossible
+    expect(msg).toMatch(/Avez-vous inversé/);
+    expect(msg).toMatch(/Recopiez-le/);
+    expect(msg).toMatch(/votre carte d'identité/);
+    expect(msg).not.toMatch(/\bAs-tu\b|\bRecopie-le\b|\bta carte\b/);
+  });
+
+  it("date refusée un week-end : vouvoiement (message FR était en tutoiement)", () => {
+    const msg = validateFieldFormat({ type: "date", noWeekend: true }, nextSaturdayISO(), "fr");
+    expect(msg).toMatch(/choisissez un jour de semaine/);
+    expect(msg).toMatch(/renseignez-vous auprès de votre organisme/);
+    expect(msg).not.toMatch(/\bchoisis\b|\brenseigne-toi\b|\bton organisme\b/);
   });
 });
 

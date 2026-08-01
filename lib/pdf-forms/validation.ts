@@ -117,6 +117,12 @@ function fmt(template: string, n: string | number, v?: string | number): string 
   return out;
 }
 
+/// Plafond anti-abus pour les champs text/textarea SANS `maxLength` propre
+/// (S4 de l'audit du 2026-08-01) — un champ avec une borne métier explicite
+/// garde la sienne, même au-delà. Sans ce filet, un champ "commentaire" libre
+/// acceptait une taille de payload arbitraire.
+const DEFAULT_TEXT_MAX_LENGTH = 2000;
+
 // Messages NISS dynamiques : on distingue « pas le bon nombre de chiffres »
 // d'une « erreur de frappe » (checksum), car l'action corrective diffère.
 const NISS_MESSAGES = {
@@ -126,7 +132,7 @@ const NISS_MESSAGES = {
     de: "Die NISS-Nummer muss 11 Ziffern enthalten, aber Sie haben {n} eingegeben. Sie finden sie auf der Rückseite Ihres Personalausweises (eID), über dem Strichcode.",
   },
   date: {
-    fr: "La date encodée dans ce NISS est impossible (mois ou jour hors limites). As-tu inversé l'ordre année / mois / jour ? Recopie-le exactement depuis ta carte d'identité (eID).",
+    fr: "La date encodée dans ce NISS est impossible (mois ou jour hors limites). Avez-vous inversé l'ordre année / mois / jour ? Recopiez-le exactement depuis votre carte d'identité (eID).",
     nl: "De datum in dit rijksregisternummer is onmogelijk (maand of dag buiten bereik). Heb je de volgorde jaar / maand / dag verwisseld? Neem het exact over van je identiteitskaart (eID).",
     de: "Das in dieser NISS-Nummer kodierte Datum ist unmöglich (Monat oder Tag außerhalb des Bereichs). Hast du die Reihenfolge Jahr / Monat / Tag vertauscht? Übernimm sie genau von deinem Personalausweis (eID).",
   },
@@ -350,6 +356,13 @@ function fieldToZod(field: PdfFormField, lang: Locale): ZodTypeAny {
         s = s.refine((v) => v.length <= n, {
           error: (issue) =>
             customMsg || fmt(LENGTH_MESSAGES.tooLong[lang], n, String(issue.input ?? "").length),
+        });
+      } else {
+        // Plafond anti-abus générique (S4) : message volontairement flou (pas
+        // "max 2000 caractères") — ce filet vise l'abus, pas une contrainte
+        // métier normale qu'un usager légitime pourrait atteindre.
+        s = s.refine((v) => v.length <= DEFAULT_TEXT_MAX_LENGTH, {
+          error: () => customMsg || FALLBACK.format[lang],
         });
       }
       if (field.regex) {
@@ -665,7 +678,7 @@ export function isWeekendISO(iso: string): boolean {
 }
 
 const WEEKEND_MESSAGE: Record<Locale, string> = {
-  fr: "Cette date tombe un week-end. Aucun dossier ne peut être introduit un samedi ou un dimanche — choisis un jour de semaine (renseigne-toi auprès de ton organisme de paiement pour une exception).",
+  fr: "Cette date tombe un week-end. Aucun dossier ne peut être introduit un samedi ou un dimanche — choisissez un jour de semaine (renseignez-vous auprès de votre organisme de paiement pour une exception).",
   nl: "Deze datum valt in het weekend. Een dossier kan niet worden ingediend op zaterdag of zondag — kies een weekdag (vraag je uitbetalingsinstelling om een uitzondering).",
   de: "Dieses Datum fällt auf ein Wochenende. Ein Antrag kann nicht an einem Samstag oder Sonntag eingereicht werden — wähle einen Wochentag (frage deine Zahlstelle nach einer Ausnahme).",
 };

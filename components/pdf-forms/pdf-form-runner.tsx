@@ -1076,7 +1076,11 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = `${form.slug}.pdf`;
+        // Nom serveur (renderFilename : slug + date, cf. Content-Disposition
+        // envoyé par generate/route.ts) — repli sur l'ancien nom si l'en-tête
+        // est absent ou mal formé.
+        const cd = res.headers.get("content-disposition") || "";
+        a.download = cd.match(/filename="([^"]+)"/)?.[1] || `${form.slug}.pdf`;
         document.body.appendChild(a);
         a.click();
         a.remove();

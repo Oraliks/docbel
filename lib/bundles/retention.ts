@@ -1,3 +1,5 @@
+import { Prisma } from "@prisma/client";
+
 /// Politique de rétention RGPD des BundleRun (migration 53).
 ///
 /// Trois états dans le cycle de vie d'un run :
@@ -44,3 +46,22 @@ export function retentionCutoffs(
     draftBefore: new Date(now.getTime() - draftDays * DAY_MS),
   };
 }
+
+/// Champs remis à zéro par l'étape 2 du cron `bundle-runs-purge` (anonymisation) —
+/// tout ce qui pourrait identifier ou réidentifier le dossier : payloads,
+/// réponses d'orientation, repères pseudonymes et brouillon en cours.
+/// `anonymizedAt` n'y figure pas (l'appelant l'horodate au moment de l'exécution).
+export const ANONYMIZATION_RESET_FIELDS = {
+  payloads: {},
+  eligibilityAnswers: {},
+  orientationAnswers: Prisma.DbNull,
+  completedTemplateIds: [],
+  resumeEmail: null,
+  sessionId: null,
+  resumeCode: null,
+  resumeCodeHash: null,
+  draftPayloads: Prisma.DbNull,
+  lastFormId: null,
+  lastStepId: null,
+  lastActiveField: null,
+};

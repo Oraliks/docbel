@@ -265,7 +265,7 @@ export async function POST(
     if (filled.diagnostics.length > 0) {
       console.warn(
         `[pdf-forms] ${form.slug} — ${filled.diagnostics.length} valeur(s) non écrite(s) :`,
-        filled.diagnostics
+        filled.diagnostics.map(({ fieldId, widget, kind }) => ({ fieldId, widget, kind }))
       );
     }
   } catch (err) {

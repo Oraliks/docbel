@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { cronAuthError } from "@/lib/booking/notify";
-import { retentionCutoffs } from "@/lib/bundles/retention";
+import { retentionCutoffs, ANONYMIZATION_RESET_FIELDS } from "@/lib/bundles/retention";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -37,17 +37,7 @@ async function run(req: NextRequest) {
   const anonymized = await prisma.bundleRun.updateMany({
     where: { updatedAt: { lt: anonymizeBefore }, anonymizedAt: null },
     data: {
-      payloads: {},
-      eligibilityAnswers: {},
-      completedTemplateIds: [],
-      resumeEmail: null,
-      sessionId: null,
-      resumeCode: null,
-      resumeCodeHash: null,
-      draftPayloads: Prisma.DbNull,
-      lastFormId: null,
-      lastStepId: null,
-      lastActiveField: null,
+      ...ANONYMIZATION_RESET_FIELDS,
       anonymizedAt: new Date(),
     },
   });

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdminAuth } from "@/lib/auth-check";
+import { ensureWriteAllowed } from "@/lib/admin/readonly-guard";
 import { applyAllC1Improvements } from "@/lib/pdf-forms/seed/apply-c1-improvements-core";
 
 const json = { "Content-Type": "application/json; charset=utf-8" };
@@ -28,6 +29,9 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   const auth = await requireAdminAuth();
   if (!auth.isAuthorized) return auth.error;
+
+  const writeBlock = await ensureWriteAllowed();
+  if (writeBlock) return writeBlock;
 
   const apply = new URL(req.url).searchParams.get("apply") === "1";
   const results = await applyAllC1Improvements(apply);

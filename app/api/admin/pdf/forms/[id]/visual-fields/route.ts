@@ -3,6 +3,7 @@ import type { Prisma } from "@prisma/client";
 import { PDFDocument } from "pdf-lib";
 import { prisma } from "@/lib/prisma";
 import { requireAdminAuth } from "@/lib/auth-check";
+import { ensureWriteAllowed } from "@/lib/admin/readonly-guard";
 import { readSourcePdf } from "@/lib/pdf-forms/storage";
 import { parseVisualFieldsDoc, serializeVisualFieldsDoc } from "@/lib/pdf-forms/visual/types";
 import {
@@ -77,6 +78,9 @@ export async function PUT(
 ) {
   const auth = await requireAdminAuth();
   if (!auth.isAuthorized) return auth.error;
+
+  const writeBlock = await ensureWriteAllowed();
+  if (writeBlock) return writeBlock;
 
   const { id } = await params;
   const form = await prisma.pdfForm.findUnique({

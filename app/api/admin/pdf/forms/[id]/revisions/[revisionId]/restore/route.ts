@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireAdminAuth } from "@/lib/auth-check";
+import { ensureWriteAllowed } from "@/lib/admin/readonly-guard";
 import { SEEDED_SLUGS } from "@/lib/pdf-forms/seed/apply-c1-improvements-core";
 import { SEED_MANAGED_LOCK_ERROR } from "@/lib/pdf-forms/seed-lock";
 
@@ -16,6 +17,9 @@ export async function POST(
 ) {
   const auth = await requireAdminAuth();
   if (!auth.isAuthorized) return auth.error;
+
+  const writeBlock = await ensureWriteAllowed();
+  if (writeBlock) return writeBlock;
 
   const { id, revisionId } = await params;
   const [form, revision] = await Promise.all([

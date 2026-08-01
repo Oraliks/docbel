@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdminAuth } from "@/lib/auth-check";
+import { ensureWriteAllowed } from "@/lib/admin/readonly-guard";
 import {
   C1_IMPROVEMENT_TARGETS,
   applyOneC1Improvement,
@@ -107,6 +108,9 @@ export async function POST(
 ) {
   const auth = await requireAdminAuth();
   if (!auth.isAuthorized) return auth.error;
+
+  const writeBlock = await ensureWriteAllowed();
+  if (writeBlock) return writeBlock;
 
   const { id } = await params;
   const form = await prisma.pdfForm.findUnique({ where: { id } });

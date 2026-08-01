@@ -4,6 +4,7 @@ import { readFile } from "node:fs/promises";
 import { basename, join } from "node:path";
 import { prisma } from "@/lib/prisma";
 import { requireAdminAuth } from "@/lib/auth-check";
+import { ensureWriteAllowed } from "@/lib/admin/readonly-guard";
 import { ingestPdf, MAX_PDF_BYTES, readPdfUpload, slugify } from "@/lib/pdf-forms/ingest";
 import { saveSourcePdf } from "@/lib/pdf-forms/storage";
 import { isLocale, Locale } from "@/lib/pdf-forms/types";
@@ -67,6 +68,9 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const auth = await requireAdminAuth();
   if (!auth.isAuthorized) return auth.error;
+
+  const writeBlock = await ensureWriteAllowed();
+  if (writeBlock) return writeBlock;
 
   let form: FormData;
   try {

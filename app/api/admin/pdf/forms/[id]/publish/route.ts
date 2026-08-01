@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdminAuth } from "@/lib/auth-check";
+import { ensureWriteAllowed } from "@/lib/admin/readonly-guard";
 import { checkPublishable, hasBlockingIssues } from "@/lib/pdf-forms/publish-checks";
 import { getRulesForSlug } from "@/lib/pdf-forms/bindings/registry";
 import { AcroFieldRaw, Locale, PdfFormField } from "@/lib/pdf-forms/types";
@@ -40,6 +41,9 @@ export async function POST(
 ) {
   const auth = await requireAdminAuth();
   if (!auth.isAuthorized) return auth.error;
+
+  const writeBlock = await ensureWriteAllowed();
+  if (writeBlock) return writeBlock;
 
   const { id } = await params;
   const form = await prisma.pdfForm.findUnique({ where: { id } });

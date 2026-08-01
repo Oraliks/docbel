@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireAdminAuth } from "@/lib/auth-check";
+import { ensureWriteAllowed } from "@/lib/admin/readonly-guard";
 import { readSourcePdf, saveSourcePdf } from "@/lib/pdf-forms/storage";
 import { slugify } from "@/lib/pdf-forms/ingest";
 
@@ -15,6 +16,9 @@ export async function POST(
 ) {
   const auth = await requireAdminAuth();
   if (!auth.isAuthorized) return auth.error;
+
+  const writeBlock = await ensureWriteAllowed();
+  if (writeBlock) return writeBlock;
 
   const { id } = await params;
   const src = await prisma.pdfForm.findUnique({ where: { id } });

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireAdminAuth } from "@/lib/auth-check";
+import { ensureWriteAllowed } from "@/lib/admin/readonly-guard";
 import { deleteSourcePdf } from "@/lib/pdf-forms/storage";
 import { AcroFieldRaw, isLocale, Locale, PdfFormField, PdfFormTrigger } from "@/lib/pdf-forms/types";
 import { sanitizeFields } from "@/lib/pdf-forms/sanitize-fields";
@@ -42,6 +43,9 @@ export async function PATCH(
 ) {
   const auth = await requireAdminAuth();
   if (!auth.isAuthorized) return auth.error;
+
+  const writeBlock = await ensureWriteAllowed();
+  if (writeBlock) return writeBlock;
 
   const { id } = await params;
   const existing = await prisma.pdfForm.findUnique({ where: { id } });
@@ -259,6 +263,9 @@ export async function DELETE(
 ) {
   const auth = await requireAdminAuth();
   if (!auth.isAuthorized) return auth.error;
+
+  const writeBlock = await ensureWriteAllowed();
+  if (writeBlock) return writeBlock;
 
   const { id } = await params;
   const url = new URL(req.url);

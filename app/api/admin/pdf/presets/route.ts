@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireAdminAuth } from "@/lib/auth-check";
+import { ensureWriteAllowed } from "@/lib/admin/readonly-guard";
 import { SEMANTIC_FIELD_TYPES } from "@/lib/pdf-forms/types";
 
 const json = { "Content-Type": "application/json; charset=utf-8" };
@@ -21,6 +22,9 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   const auth = await requireAdminAuth();
   if (!auth.isAuthorized) return auth.error;
+
+  const writeBlock = await ensureWriteAllowed();
+  if (writeBlock) return writeBlock;
 
   let body: Record<string, unknown>;
   try {

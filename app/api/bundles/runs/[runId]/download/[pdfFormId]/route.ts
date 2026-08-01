@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth";
 import { loadDossierState } from "@/lib/bundles/completion";
 import { regenerateOneDocument } from "@/lib/bundles/regenerate-pdfs";
 import { checkRateLimit, getClientIp } from "@/lib/pdf-forms/security";
+import { trackBundleEvent } from "@/lib/bundles/analytics";
 
 const json = { "Content-Type": "application/json; charset=utf-8" };
 
@@ -53,6 +54,15 @@ export async function GET(
   if (!result) {
     return NextResponse.json({ error: "Document introuvable" }, { status: 404, headers: json });
   }
+
+  // Étape finale du funnel « Parcours » : documents récupérés (téléchargement
+  // unitaire) — même événement que le zip et l'email (download-all/email),
+  // qui restait jusqu'ici absent de CETTE route, sous-comptant le funnel.
+  await trackBundleEvent("documents_downloaded", {
+    sessionId,
+    userId,
+    metadata: { bundleSlug: state.run.bundleSlug, via: "download-one" },
+  });
 
   // `result.doc.filename` provient de renderFilename → déjà normalisé
   // ([a-zA-Z0-9._-]), sûr pour l'en-tête Content-Disposition.

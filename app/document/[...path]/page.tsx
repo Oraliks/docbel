@@ -1,10 +1,10 @@
-import { notFound, permanentRedirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { headers, cookies } from "next/headers";
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { toPublicForm } from "@/lib/pdf-forms/public-serializer";
+import { toPublicForm, type PublicField } from "@/lib/pdf-forms/public-serializer";
 import { isDoccleConfigured } from "@/lib/pdf-forms/integrations/doccle";
 import { isItsmeConfigured } from "@/lib/pdf-forms/integrations/itsme";
 import { DocumentPageLayout } from "@/components/pdf-forms/document-page-layout";
@@ -13,25 +13,23 @@ import { DisabledFormView } from "./disabled-form-view";
 import { getDossier } from "@/lib/dossiers/registry";
 import { familyAnswersToC1Prefill } from "@/lib/dossiers/family-prefill";
 import { orientationAnswersToC1Prefill } from "@/lib/dossiers/orientation";
-import type { PdfFormField, FormPayload, FieldValue } from "@/lib/pdf-forms/types";
+import type { FormPayload, FieldValue } from "@/lib/pdf-forms/types";
 import { pickInitialStepId } from "@/lib/pdf-forms/resume-step";
 import { buildProfilePrefill } from "@/lib/pdf-forms/profile-prefill";
 import {
   applySharedValuesToForm,
-  extractSharedValues,
-  mergeSharedValues,
+  buildBundleSharedMaps,
   type SharedBundleValues,
 } from "@/lib/bundles/shared-values";
 import {
   canonicalToPrefill,
-  extractCanonical,
-  mergeCanonical,
   mergePrefillSources,
   type CanonicalMap,
   type PrefillMap,
 } from "@/lib/pdf-forms/canonical/extract";
 import { applyDossierInheritance } from "@/lib/pdf-forms/dossier-inheritance";
 import { loadDossierState } from "@/lib/bundles/completion";
+import { isBundleRunEditable } from "@/lib/bundles/run-lifecycle";
 import { buildDemarcheRailModel } from "@/lib/bundles/rail-model";
 import type { DemarcheRailData } from "@/components/docbel/demarche-rail";
 
@@ -55,10 +53,10 @@ type LoadFormResult =
 ///   • 2+ segments → interprétés comme `publicPath` (segments joints par "/").
 ///
 /// La forme SLUG applique une règle supplémentaire (Phase 3 du plan bindings) :
-/// si le PdfForm cible porte un `publicPath`, on redirige 308 vers l'URL
-/// publique canonique. Ainsi `/document/c1-changement-situation` renvoie
-/// `/document/onem/c1` de manière permanente et cohérente pour les liens
-/// déjà partagés + le SEO.
+/// si le PdfForm cible porte un `publicPath`, on redirige (307, temporaire —
+/// `publicPath` reste modifiable) vers l'URL publique canonique. Ainsi
+/// `/document/c1-changement-situation` renvoie `/document/onem/c1`, de façon
+/// cohérente pour les liens déjà partagés et le SEO.
 async function loadForm(
   path: readonly string[]
 ): Promise<
@@ -125,6 +123,7 @@ async function loadBundleSharedValues(
       bundle: {
         include: {
           items: {
+            orderBy: { order: "asc" },
             include: {
               pdfForm: { select: { id: true, fields: true } },
             },
@@ -133,7 +132,11 @@ async function loadBundleSharedValues(
       },
     },
   });
-  if (!run || run.status !== "in_progress") {
+  // `isBundleRunEditable` (au lieu de `run.status !== "in_progress"`) aligne
+  // sur `loadDossierState` : un run `completed` legacy (status="completed" ou
+  // completedAt posé) reste modifiable, donc garde son prefill cross-document,
+  // son brouillon et son rail — seuls abandon/anonymisation ferment l'accès.
+  if (!run || !isBundleRunEditable(run)) {
     return invalid;
   }
   // Propriété du run (même logique que app/api/documents/bundles/[id]/run/route.ts) :
@@ -149,25 +152,22 @@ async function loadBundleSharedValues(
   }
 
   const payloads = (run.payloads as Record<string, Record<string, unknown>>) || {};
-  // On collecte les valeurs partagées de tous les PDFs DÉJÀ complétés (qui ne
-  // sont PAS le courant — sinon on annule notre propre saisie en cours).
-  //
-  // Deux mécanismes complémentaires depuis Phase 2 du plan bindings :
-  //   • `extractSharedValues` par `prefillFrom` (mécanisme historique) :
-  //     couvre les champs pré-remplissables (`profile.niss`, `itsme.*`).
-  //   • `extractCanonical` par `canonicalKey` (nouveau) : couvre le
-  //     vocabulaire canonique explicite (`identity.nom`, `banque.iban`, …)
-  //     qui ne dépend pas de la source de prefill du champ.
-  const sharedMaps: SharedBundleValues[] = [];
-  const canonicalMaps: CanonicalMap[] = [];
-  for (const item of run.bundle.items) {
-    if (!item.pdfForm || item.pdfForm.id === currentFormId) continue;
-    const payload = payloads[item.pdfForm.id];
-    if (!payload) continue;
-    const fields = (item.pdfForm.fields as unknown as PdfFormField[]) || [];
-    sharedMaps.push(extractSharedValues(fields, payload));
-    canonicalMaps.push(extractCanonical(fields, payload));
-  }
+  // Valeurs partagées (prefillFrom + canonicalKey) de tous les PDFs DÉJÀ
+  // complétés du bundle, hors le document courant. `run.bundle.items` est
+  // trié par `order` croissant ci-dessus : en cas de doublon (même
+  // `canonicalKey`/`prefillFrom` dans deux documents), celui déclaré en
+  // premier dans le bundle gagne, de façon déterministe (S3, 2026-08-01) —
+  // avant ce tri, le gagnant dépendait de l'ordre de retour, non garanti, de
+  // la base.
+  const { shared, canonical } = buildBundleSharedMaps(
+    run.bundle.items.map((item) => ({
+      pdfForm: item.pdfForm
+        ? { id: item.pdfForm.id, fields: (item.pdfForm.fields as unknown as PublicField[]) || [] }
+        : null,
+    })),
+    currentFormId,
+    payloads
+  );
   // Réponses du formulaire courant à restaurer au montage du runner, à la PLUS
   // HAUTE précédence (priment sur profil + prefill inter-documents). Deux
   // sources, dans l'ordre :
@@ -186,8 +186,8 @@ async function loadBundleSharedValues(
     | undefined;
 
   return {
-    shared: mergeSharedValues(...sharedMaps),
-    canonical: mergeCanonical(...canonicalMaps),
+    shared,
+    canonical,
     runValid: true,
     lastFormId: run.lastFormId,
     lastStepId: run.lastStepId,
@@ -241,7 +241,10 @@ export default async function PdfFormPage({
     if (bundleRun) qs.set("bundleRun", bundleRun);
     if (bundleSlug) qs.set("bundleSlug", bundleSlug);
     const suffix = qs.toString();
-    permanentRedirect(`/document/${res.publicPath}${suffix ? `?${suffix}` : ""}`);
+    // 307 (temporaire) et non 308 (permanent, mis en cache à vie par les
+    // navigateurs) : un `publicPath` reste modifiable côté admin — un cache
+    // permanent y survivrait.
+    redirect(`/document/${res.publicPath}${suffix ? `?${suffix}` : ""}`);
   }
   if (res.kind === "disabled") {
     return (
@@ -286,6 +289,12 @@ export default async function PdfFormPage({
   // tous les types — cases à cocher, listes — que `PrefillMap` ne porte pas).
   let initialStepId: string | undefined;
   let draftValues: FormPayload | undefined;
+  // Slug effectif du dossier : celui de l'URL, ou — s'il en est absent alors
+  // qu'on a un `bundleRun` valide — celui du run chargé (dérivé plus bas).
+  // Sans cette dérivation, ouvrir un document via un lien qui ne porte que
+  // `bundleRun` (sans `bundleSlug`) affichait le formulaire silencieusement
+  // SANS rail ni fil d'Ariane dossier (S3, 2026-08-01).
+  let effectiveBundleSlug = bundleSlug;
   if (bundleRun) {
     const sessionId = (await cookies()).get("beldoc-bundle-session")?.value || null;
     const {
@@ -344,12 +353,18 @@ export default async function PdfFormPage({
 
     // Rail de démarche : état complet du dossier (items + déclenchés + verrou),
     // MÊME source que le 409 dossier_incomplete. Ownership re-vérifiée dedans.
-    if (runValid && bundleSlug) {
+    // Chargé dès que le run est valide — `bundleSlug` n'est plus une
+    // condition d'entrée : sert aussi à dériver le slug manquant de l'URL.
+    // Un `bundleSlug` d'URL qui ne correspond PAS au run chargé reste ignoré
+    // (garde anti-tampering inchangée : jamais de rail sur un mismatch).
+    if (runValid) {
       const dossierState = await loadDossierState(bundleRun, {
         userId: userId ?? null,
         sessionId,
       });
-      if (dossierState && dossierState.run.bundleSlug === bundleSlug) {
+      const slugToCheck = bundleSlug ?? dossierState?.run.bundleSlug;
+      if (dossierState && dossierState.run.bundleSlug === slugToCheck) {
+        effectiveBundleSlug = dossierState.run.bundleSlug;
         rail = {
           bundleName: dossierState.run.bundleName,
           bundleSlug: dossierState.run.bundleSlug,
@@ -389,7 +404,9 @@ export default async function PdfFormPage({
   // Si le PDF est ouvert dans le contexte d'un dossier codé, on alimente
   // l'illustration animée avec les "types" déclarés par le dossier (ex. les
   // 7 motifs de chômage temporaire). Sinon : illustration sans cycle.
-  const dossier = bundleSlug ? getDossier(bundleSlug) : null;
+  // `effectiveBundleSlug` (et non `bundleSlug` brut) : couvre aussi le cas
+  // où le slug n'était pas dans l'URL mais a été dérivé du run.
+  const dossier = effectiveBundleSlug ? getDossier(effectiveBundleSlug) : null;
   const dossierTypes = dossier?.types;
 
   // Infos importantes contextuelles (panneau d'aide de gauche) : DB sur défauts,
@@ -402,7 +419,7 @@ export default async function PdfFormPage({
         form={runnerForm}
         bundlePrefill={mergedPrefill}
         bundleRunId={validBundleRunId}
-        bundleSlug={bundleSlug}
+        bundleSlug={effectiveBundleSlug}
         rail={rail}
         dossierTypes={dossierTypes}
         contextTips={contextTips}

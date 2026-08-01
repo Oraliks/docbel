@@ -14,6 +14,7 @@
 
 import type { PrefillSource } from "@/lib/pdf-forms/types";
 import type { PublicField } from "@/lib/pdf-forms/public-serializer";
+import { extractCanonical, mergeCanonical, type CanonicalMap } from "@/lib/pdf-forms/canonical/extract";
 
 /// Map opaque : `prefillFrom` → valeur saisie (cross-document dans un bundle).
 export type SharedBundleValues = Partial<Record<PrefillSource, string>>;
@@ -46,6 +47,36 @@ export function mergeSharedValues(...maps: SharedBundleValues[]): SharedBundleVa
     }
   }
   return out;
+}
+
+/// Construit, à partir des documents DÉJÀ COMPLÉTÉS d'un bundle (hors le
+/// document courant), les valeurs partagées par `prefillFrom` ET par
+/// `canonicalKey` — les deux mécanismes de prefill cross-document (cf.
+/// extractSharedValues / extractCanonical). `items` DOIT déjà être trié par
+/// `order` croissant côté appelant (requête Prisma `orderBy: { order: "asc" }`,
+/// cf. `loadDossierState`) : `mergeSharedValues`/`mergeCanonical` font gagner
+/// la PREMIÈRE occurrence d'une clé, donc sans ce tri en amont, le document
+/// qui l'emporte en cas de doublon dépend de l'ordre de retour — non garanti
+/// — de la base plutôt que de la position déclarée du document dans le
+/// bundle (S3 de l'audit du 2026-08-01).
+export function buildBundleSharedMaps(
+  items: readonly { pdfForm: { id: string; fields: PublicField[] } | null }[],
+  currentFormId: string,
+  payloads: Record<string, Record<string, unknown> | undefined>
+): { shared: SharedBundleValues; canonical: CanonicalMap } {
+  const sharedMaps: SharedBundleValues[] = [];
+  const canonicalMaps: CanonicalMap[] = [];
+  for (const item of items) {
+    if (!item.pdfForm || item.pdfForm.id === currentFormId) continue;
+    const payload = payloads[item.pdfForm.id];
+    if (!payload) continue;
+    sharedMaps.push(extractSharedValues(item.pdfForm.fields, payload));
+    canonicalMaps.push(extractCanonical(item.pdfForm.fields, payload));
+  }
+  return {
+    shared: mergeSharedValues(...sharedMaps),
+    canonical: mergeCanonical(...canonicalMaps),
+  };
 }
 
 /// Construit un `FormPayload` partiel pour le PDF cible, en mappant les valeurs

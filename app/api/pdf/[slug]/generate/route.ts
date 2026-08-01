@@ -219,7 +219,14 @@ export async function POST(
   // dans N'IMPORTE quel formulaire du dossier — ne sont pas complétés.
   if (bundleRunId) {
     const state = await loadDossierState(bundleRunId, { userId: ownerUserId, sessionId: ownerSessionId });
-    if (state && !state.allRequiredDone) {
+    // `bundleRunId` fourni mais irrésoluble (étranger, clôturé, anonymisé…) :
+    // avant S3 ce cas continuait SANS verrou ni persistance, en silence,
+    // comme si `bundleRunId` n'avait jamais été fourni. Même message que le
+    // mode "save" (l.159) pour cette même situation.
+    if (!state) {
+      return NextResponse.json({ error: "Dossier introuvable" }, { status: 404, headers: json });
+    }
+    if (!state.allRequiredDone) {
       return NextResponse.json(
         { error: "dossier_incomplete", missing: state.missing },
         { status: 409, headers: json },

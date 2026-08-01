@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { seedVisiteurDeRetour } from "../helpers/visiteur";
 
 // E2E /mon-dossier : guichet à recherche UNIVERSELLE (refonte 2026-07-20).
 // Le guichet mène avec « Qu'est-ce qui vous arrive ? » + UNE seule barre de
@@ -8,36 +9,22 @@ import { test, expect } from "@playwright/test";
 // zéro résultat → secours IA « Décrivez votre situation avec vos mots ».
 // La barre propre au catalogue ET celle de l'assistant ont fusionné en une seule.
 // Nécessite le dev server (pnpm dev) + DB. Lancer : pnpm test:e2e tests/e2e/mon-dossier
-// ⚠ Sélecteurs alignés sur les valeurs i18n réelles (guichetTitle,
-// guichetBrowseAll, intentFallbackTitle) mais NON rejoués (workflow sans dev
-// server) — à confirmer au 1er `pnpm test:e2e`.
+//
+// ⚠ ROUGES depuis leur écriture. Le doute que portait ce cahier (« sélecteurs
+// non rejoués, à confirmer au 1er pnpm test:e2e ») est levé : rejoués pour la
+// première fois le 2026-08-01, les quatre tests échouent dès le `beforeEach` —
+// le titre « Qu'est-ce qui vous arrive » est introuvable sur /mon-dossier. Ce
+// n'est donc pas un bug du guichet mais une spec écrite à l'aveugle sur des
+// libellés qui ont bougé depuis. À reprendre en regardant la page (les
+// sélecteurs, pas la logique). Vérifié : l'échec est identique avant et après
+// l'extraction du helper `seedVisiteurDeRetour`.
 
 test.describe("/mon-dossier — guichet à recherche universelle", () => {
   test.beforeEach(async ({ page, context, baseURL }) => {
-    // État « visiteur de retour » : on neutralise les surcouches d'onboarding
-    // qui apparaissent en contexte navigateur NEUF et bloquent par
-    // intermittence les interactions (fill/click). Deux gardes :
-    //  - la modale « Choisissez votre langue » (WelcomeLocaleModal) est MODALE
-    //    (fond `inert`) et s'ouvre dans un useEffect → course qui rend fill/
-    //    click flaky ; on seed son drapeau localStorage pour qu'elle ne s'ouvre
-    //    pas (clé `beldoc.locale.chosen`) ;
-    //  - la bannière cookies (lue serveur + client) chevauche le bas de page ;
-    //    on pose une décision de consentement (cookie `docbel-consent`, v1)
-    //    pour qu'elle ne s'affiche pas.
-    await context.addCookies([
-      {
-        name: "docbel-consent",
-        value: encodeURIComponent(
-          JSON.stringify({ v: 1, analytics: false, ts: "1970-01-01T00:00:00.000Z" }),
-        ),
-        url: baseURL ?? "http://localhost:3000",
-      },
-    ]);
-    await page.addInitScript(() => {
-      try {
-        localStorage.setItem("beldoc.locale.chosen", "fr");
-      } catch {}
-    });
+    // État « visiteur de retour » : neutralise les surcouches d'onboarding qui
+    // avalent les clics en contexte navigateur neuf. Extrait en helper partagé
+    // avec l'E2E du Form Runner (cf. tests/e2e/helpers/visiteur.ts).
+    await seedVisiteurDeRetour(page, context, baseURL);
     await page.goto("/mon-dossier");
     await expect(
       page.getByRole("heading", { name: /Qu'est-ce qui vous arrive/i }),

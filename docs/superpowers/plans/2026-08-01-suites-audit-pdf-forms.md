@@ -54,8 +54,8 @@ base, refactor du runner, e2e, conception de schéma).
 | 8 | S8 | `ensureWriteAllowed` sur les routes admin PDF (balayage) | Sonnet | fait (561d9bc) — invariant testé, plus de balayage à refaire |
 | 9 | S9 | Nettoyage code mort (diag, presets, helpers bindings…) | Sonnet | fait (09e8d06) — −635 lignes ; QA écran /admin/pdf/[id] à faire |
 | 10 | S10 | « Vous » partout dans les seeds (aides uniquement) | Sonnet | fait (ed2b8b4) — ⚠️ RE-SEMIS à lancer par Oraliks, sinon rien ne change à l'écran |
-| 11 | S11 ♦ | E2E Playwright : un parcours C47 complet → PDF | Opus | à faire |
-| 12 | S12 ♦ | Runner dégraissé (pied de soumission + hook autosave) | Opus | à faire |
+| 11 | S11 ♦ | E2E Playwright : un parcours C47 complet → PDF | Opus | fait (a9f4bee) — 3 tests, rejoués 3× (9/9) ; S12 peut s'appuyer dessus |
+| 12 | S12 ♦ | Runner dégraissé (pied de soumission + hook autosave) | Opus | fait (92fefce + c5203c1) — 2 413 → 2 090 l. ; ⚠️ QA visuelle Oraliks |
 | 13 | S13 ♦ | Moules réellement partagés — 1er passage (C46 + C47) | Opus | à faire |
 | 14 | S14 ♦ | C1-Regis réaligné (= NEXT_ACTIONS #31 enrichi) | Opus | à faire |
 | 15 | S15 | Docs à jour + monitoring crons + perf mineures | Sonnet | à faire |

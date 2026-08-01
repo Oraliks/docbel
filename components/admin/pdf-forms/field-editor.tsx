@@ -17,10 +17,6 @@ import {
   PdfFormField, FieldOption, Locale, Localized, SEMANTIC_FIELD_TYPES, FIELD_TYPE_LABELS, PrefillSource, ConditionOp, NameOrder,
 } from "@/lib/pdf-forms/types";
 
-interface PresetOpt {
-  key: string;
-  label: string;
-}
 
 /// Sources de pré-remplissage groupées, pour qu'on identifie chaque source au
 /// premier coup d'œil dans le select admin. Les libellés sont résolus via i18n
@@ -89,13 +85,12 @@ const OP_LABEL_KEYS: Record<ConditionOp, string> = {
 interface Props {
   field: PdfFormField;
   locales: Locale[];
-  presets: PresetOpt[];
   allFields: PdfFormField[];
   onChange: (next: PdfFormField) => void;
   onRemove: () => void;
 }
 
-export function FieldEditor({ field, locales, presets, allFields, onChange, onRemove }: Props) {
+export function FieldEditor({ field, locales, allFields, onChange, onRemove }: Props) {
   const t = useTranslations("admin.pdf");
   const tk = (key: string) => t(key as Parameters<typeof t>[0]);
   const patch = (p: Partial<PdfFormField>) => onChange({ ...field, ...p });
@@ -187,18 +182,11 @@ export function FieldEditor({ field, locales, presets, allFields, onChange, onRe
 
           <Separator />
 
-          {/* Validation : preset + regex + contraintes de longueur / plage */}
-          <div className="grid gap-3 sm:grid-cols-3">
-            <div className="flex flex-col gap-1">
-              <Label className="text-xs text-muted-foreground">{t("presetLabel")}</Label>
-              <Select value={field.presetKey ?? ""} onValueChange={(v) => patch({ presetKey: v || undefined })}>
-                <SelectTrigger className="w-full"><SelectValue placeholder={t("noneOption")} /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="">{t("noneOption")}</SelectItem>
-                  {presets.map((p) => <SelectItem key={p.key} value={p.key}>{p.label}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
+          {/* Validation : regex + contraintes de longueur / plage.
+              Le sélecteur de preset a été retiré avec le module presets (S9) ;
+              `PdfFormField.presetKey` reste dans le type pour ne pas casser la
+              lecture des schémas qui en portent encore un en base. */}
+          <div className="grid gap-3 sm:grid-cols-2">
             <div className="flex flex-col gap-1">
               <Label className="text-xs text-muted-foreground">{t("regexLabel")}</Label>
               <Input value={field.regex ?? ""} placeholder="\d{4}" onChange={(e) => patch({ regex: e.target.value || undefined })} />

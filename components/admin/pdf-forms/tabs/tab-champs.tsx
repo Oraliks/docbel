@@ -13,7 +13,7 @@ import type { UseFormData } from "../use-form-data";
 /// l'onglet Visuel (la fusion d'AcroForm tiers est out-of-scope v1).
 export function TabChamps({ data }: { data: UseFormData }) {
   const t = useTranslations("admin.pdf");
-  const { form, presets, hasForeignAcroForm, setFields, load, loadIssues } = data;
+  const { form, hasForeignAcroForm, setFields, load, loadIssues } = data;
   if (!form) return null;
   // Formulaires ONEM semés (S5) : consultation conservée, édition verrouillée
   // (le serveur refuse de toute façon — cf. seed-lock.ts). `inert` bloque
@@ -45,7 +45,6 @@ export function TabChamps({ data }: { data: UseFormData }) {
                 key={field.id}
                 field={field}
                 locales={form.locales}
-                presets={presets}
                 allFields={form.fields}
                 onChange={(next) => setFields(form.fields.map((f, j) => (j === i ? next : f)))}
                 onRemove={() => setFields(form.fields.filter((_, j) => j !== i))}

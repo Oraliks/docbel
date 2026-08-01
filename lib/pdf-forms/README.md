@@ -53,6 +53,3 @@ Sans police : repli sur Helvetica. La police n'est pas versionnée.
 round-trip parse→fill sur un PDF AcroForm généré à la volée (pas de binaire
 versionné). `pnpm test`.
 
-## Seed des presets
-
-`pnpm dotenv -e .env.local -- tsx scripts/seed-pdf-presets.ts`

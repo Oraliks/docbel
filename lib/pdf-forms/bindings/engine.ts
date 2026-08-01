@@ -70,7 +70,7 @@ export function evaluateWhen(rule: MappingRule, payload: FormPayload): boolean {
 /// Applique les règles actives dans l'ordre. Convention `dernier gagnant par
 /// widget` : si deux règles ciblent le même widget, la 2ᵉ (la plus tardive
 /// dans le tableau) écrase la 1ʳᵉ. Ce contrat rend l'override propre :
-///   - `identityBindings(...)` en tête (stamp par défaut) puis
+///   - une règle générique en tête (stamp par défaut) puis
 ///   - une règle par-formulaire plus bas qui redéfinit le même widget quand
 ///     la sémantique du formulaire l'exige.
 /// La Map préserve l'ordre d'insertion → le filler peut logger les writes

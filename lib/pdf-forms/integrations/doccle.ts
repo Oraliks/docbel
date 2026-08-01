@@ -10,8 +10,20 @@
 //
 // Docs : https://www.doccle.be/  (API partenaire — accès sur demande)
 
+/// Doccle est-il proposable au citoyen ?
+///
+/// Renvoie `false` tant que `sendToDoccle` est un stub qui lève : sans ce
+/// garde, il suffisait de poser les deux variables d'environnement pour voir
+/// apparaître le choix « Envoyer via Doccle » à l'écran… et récolter un 502 au
+/// moment d'envoyer un document officiel. Couper ici plutôt que dans le runner
+/// ferme les DEUX portes d'un coup — l'affichage de l'option (page document) et
+/// la garde de la route de génération s'appuient tous deux sur cette fonction.
+///
+/// À rétablir en même temps que l'implémentation réelle : décommenter la ligne
+/// ci-dessous et retirer le `false`.
 export function isDoccleConfigured(): boolean {
-  return !!(process.env.DOCCLE_API_BASE_URL && process.env.DOCCLE_API_KEY);
+  return false;
+  // return !!(process.env.DOCCLE_API_BASE_URL && process.env.DOCCLE_API_KEY);
 }
 
 export interface DoccleRecipient {

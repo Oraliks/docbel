@@ -48,7 +48,6 @@ export interface EditorForm {
 export interface UseFormData {
   form: EditorForm | null;
   issues: PublishIssue[];
-  presets: { key: string; label: string }[];
   saving: boolean;
   busy: string | null;
   /// Un AcroForm « étranger » est présent dès qu'un champ technique du PDF
@@ -67,7 +66,6 @@ export interface UseFormData {
 
 export function useFormData(formId: string): UseFormData {
   const [form, setForm] = useState<EditorForm | null>(null);
-  const [presets, setPresets] = useState<{ key: string; label: string }[]>([]);
   const [issues, setIssues] = useState<PublishIssue[]>([]);
   const [saving, setSaving] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
@@ -89,14 +87,6 @@ export function useFormData(formId: string): UseFormData {
   useEffect(() => {
     load();
     loadIssues();
-    fetch("/api/admin/pdf/presets")
-      .then((r) => r.json())
-      .then((d) =>
-        setPresets(
-          Array.isArray(d) ? d.map((p: { key: string; label: string }) => ({ key: p.key, label: p.label })) : []
-        )
-      )
-      .catch(() => {});
   }, [load, loadIssues]);
 
   const setFields = useCallback((fields: PdfFormField[]) => setForm((f) => (f ? { ...f, fields } : f)), []);
@@ -228,7 +218,7 @@ export function useFormData(formId: string): UseFormData {
   }, [form]);
 
   return {
-    form, issues, presets, saving, busy, hasForeignAcroForm,
+    form, issues, saving, busy, hasForeignAcroForm,
     load, loadIssues, save, publish, unpublish, reparse, setFields, patchForm,
   };
 }

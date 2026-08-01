@@ -8724,6 +8724,8 @@
       "seedDiffSyncing": "Syncing…",
       "seedDiffSyncDone": "Sync OK. Reload the page.",
       "seedDiffSyncFail": "Sync failed.",
+      "seedManagedTitle": "Managed by code (seed)",
+      "seedManagedDescription": "This form's fields and triggers are driven by lib/pdf-forms/seed/ — changes are made there, then a re-seed applies them here. This tab stays read-only.",
       "tabPreview": "Live preview",
       "previewHelp": "PDF preview regenerated 500ms after each edit (schema or payload). Uncheck the box to disable auto-refresh.",
       "previewAutoRefresh": "Auto-refresh",

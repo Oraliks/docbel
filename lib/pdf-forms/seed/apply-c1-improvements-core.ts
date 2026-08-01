@@ -44,6 +44,12 @@ export const C1_IMPROVEMENT_TARGETS: C1ImprovementTarget[] = [
   { slug: "c47", improve: applyC47Improvements, triggers: [] },
 ];
 
+/// Slugs des 8 formulaires semés — source de vérité pour verrouiller leur
+/// édition admin côté schéma (S5 de l'audit du 2026-08-01). N'importer ce
+/// module que côté serveur : il tire les fonctions `improve` (lourdes) de
+/// chaque document en plus de Prisma.
+export const SEEDED_SLUGS = C1_IMPROVEMENT_TARGETS.map((t) => t.slug);
+
 export interface ApplyC1ImprovementResult {
   slug: string;
   status: "applied" | "previewed" | "not_found";

@@ -3009,6 +3009,8 @@
       "seedDiffSyncing": "Synchronisation…",
       "seedDiffSyncDone": "Synchronisation OK. Recharge la page pour voir les changements.",
       "seedDiffSyncFail": "Échec de la synchronisation.",
+      "seedManagedTitle": "Géré par le code (seed)",
+      "seedManagedDescription": "Les champs et les déclencheurs de ce formulaire sont pilotés par lib/pdf-forms/seed/ — les modifications s'y font, puis un re-semis les applique ici. Cet onglet reste en lecture seule.",
       "tabPreview": "Aperçu live",
       "previewHelp": "Aperçu PDF régénéré 500ms après chaque édition (schéma ou payload). Cochez la case pour désactiver l'auto-refresh.",
       "previewAutoRefresh": "Rafraîchir automatiquement",

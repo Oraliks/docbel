@@ -45,6 +45,10 @@ export function TabTriggers({ data }: { data: UseFormData }) {
   }, []);
 
   if (!form) return null;
+  // Formulaires ONEM semés (S5) : consultation conservée, édition
+  // verrouillée (le serveur refuse de toute façon — cf. seed-lock.ts).
+  // `inert` bloque aussi le focus clavier, pas seulement le clic.
+  const locked = form.seedManaged;
 
   const triggers = form.triggers;
 
@@ -99,7 +103,7 @@ export function TabTriggers({ data }: { data: UseFormData }) {
   const slugChoices = availableForms.filter((f) => f.slug !== form.slug);
 
   return (
-    <div className="flex max-w-3xl flex-col gap-4">
+    <div className={`flex max-w-3xl flex-col gap-4${locked ? " opacity-60" : ""}`} inert={locked}>
       <Card>
         <CardContent className="flex flex-col gap-2 py-4 text-sm text-muted-foreground">
           <div className="flex items-center gap-2 text-foreground">

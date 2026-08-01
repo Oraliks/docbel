@@ -39,6 +39,10 @@ export interface EditorForm {
   pageCount: number;
   technicalSchema?: AcroFieldRaw[];
   visualFields?: { version?: number; fields?: unknown[]; materializedNames?: string[] };
+  /// Vrai pour les 8 formulaires ONEM semés (S5, décision n°2) : le sync les
+  /// écrase de toute façon, l'admin ne peut plus éditer fields/triggers.
+  /// Calculé serveur (GET), jamais côté client.
+  seedManaged: boolean;
 }
 
 export interface UseFormData {

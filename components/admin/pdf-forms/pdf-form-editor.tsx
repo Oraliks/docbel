@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import {
   SaveIcon, UploadCloudIcon, HistoryIcon,
-  CheckCircle2Icon, Loader2Icon, ExternalLinkIcon,
+  CheckCircle2Icon, Loader2Icon, ExternalLinkIcon, LockIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -107,6 +107,19 @@ export function PdfFormEditor({ formId }: { formId: string }) {
           </Tooltip>
         )}
       </div>
+
+      {/* Bannière permanente pour les 8 formulaires ONEM semés (S5, décision
+          n°2) : édition des champs/déclencheurs verrouillée, le sync les
+          écrase de toute façon. */}
+      {form.seedManaged && (
+        <div className="mt-4 flex items-start gap-3 rounded-lg border bg-muted/50 px-4 py-3 text-sm">
+          <LockIcon className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+          <div className="flex flex-col gap-1">
+            <span className="font-medium">{t("seedManagedTitle")}</span>
+            <span className="text-xs text-muted-foreground">{t("seedManagedDescription")}</span>
+          </div>
+        </div>
+      )}
 
       {/* Banner "sync requis" si la DB derive du seed source. Se cache
           silencieusement quand tout est aligne ou quand le form n'a pas

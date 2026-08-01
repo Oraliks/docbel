@@ -3,10 +3,14 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireAdminAuth } from "@/lib/auth-check";
 import { deleteSourcePdf } from "@/lib/pdf-forms/storage";
-import { isLocale, Locale, PdfFormField } from "@/lib/pdf-forms/types";
+import { AcroFieldRaw, isLocale, Locale, PdfFormField, PdfFormTrigger } from "@/lib/pdf-forms/types";
 import { sanitizeFields } from "@/lib/pdf-forms/sanitize-fields";
 import { parseTriggers } from "@/lib/pdf-forms/triggers";
 import { isStaleWrite, STALE_WRITE_CODE } from "@/lib/pdf-forms/concurrency";
+import { SEEDED_SLUGS } from "@/lib/pdf-forms/seed/apply-c1-improvements-core";
+import { isSeedManagedEditAttempt, SEED_MANAGED_LOCK_ERROR } from "@/lib/pdf-forms/seed-lock";
+import { checkPublishable, hasBlockingIssues } from "@/lib/pdf-forms/publish-checks";
+import { getRulesForSlug } from "@/lib/pdf-forms/bindings/registry";
 
 const json = { "Content-Type": "application/json; charset=utf-8" };
 
@@ -21,7 +25,13 @@ export async function GET(
   const { id } = await params;
   const form = await prisma.pdfForm.findUnique({ where: { id } });
   if (!form) return NextResponse.json({ error: "Introuvable" }, { status: 404, headers: json });
-  return NextResponse.json(form, { headers: json });
+  // seedManaged (S5) : pilote la bannière + le verrouillage des onglets
+  // Champs/Déclencheurs côté admin (décision n°2, aucune édition des 8
+  // formulaires ONEM semés — le sync les écrase de toute façon).
+  return NextResponse.json(
+    { ...form, seedManaged: SEEDED_SLUGS.includes(form.slug) },
+    { headers: json }
+  );
 }
 
 /// PATCH — édite les métadonnées et/ou le schéma enrichi.
@@ -55,6 +65,25 @@ export async function PATCH(
     typeof body.expectedUpdatedAt === "string" ? body.expectedUpdatedAt : undefined;
   if (isStaleWrite(expectedUpdatedAt, existing.updatedAt.getTime())) {
     return staleWriteResponse(existing.updatedAt);
+  }
+
+  // Formulaires gérés par le seed (S5, décision n°2) : le sync écrase
+  // `fields`/`triggers` de toute façon (apply-c1-improvements-core.ts) —
+  // l'admin ne doit plus pouvoir les éditer ici. Les autres clés
+  // (Paramètres, Publication…) restent acceptées, y compris pour ces 8
+  // slugs. Comparaison APRÈS sanitisation (isSeedManagedEditAttempt) : un
+  // save qui renvoie fields/triggers inchangés — le cas normal du bouton
+  // « Enregistrer » — n'est pas bloqué.
+  if (
+    isSeedManagedEditAttempt({
+      seedManaged: SEEDED_SLUGS.includes(existing.slug),
+      existingFields: (existing.fields as unknown as PdfFormField[]) || [],
+      existingTriggers: (existing.triggers as unknown as PdfFormTrigger[]) || [],
+      bodyFields: body.fields,
+      bodyTriggers: body.triggers,
+    })
+  ) {
+    return NextResponse.json(SEED_MANAGED_LOCK_ERROR, { status: 409, headers: json });
   }
 
   const data: Prisma.PdfFormUpdateInput = {};
@@ -114,6 +143,33 @@ export async function PATCH(
       createRevision = true;
       data.fields = clean as unknown as Prisma.InputJsonValue;
       data.version = existing.version + 1;
+
+      // Formulaire PUBLIÉ dont les champs changent réellement : même
+      // vérification que la route publish, pour qu'un formulaire déjà en
+      // ligne ne puisse pas glisser vers un état invalide et être servi
+      // immédiatement (jusqu'ici `checkPublishable` n'était appelé qu'à la
+      // publication — S5). `force: true` reste un échappatoire assumé pour
+      // un hotfix. Les 8 slugs semés n'atteignent jamais ce point : la garde
+      // ci-dessus les a déjà arrêtés si leurs `fields` changeaient vraiment.
+      if (existing.status === "published" && body.force !== true) {
+        const issues = checkPublishable(
+          clean,
+          (existing.technicalSchema as unknown as AcroFieldRaw[]) || [],
+          (existing.locales as unknown as Locale[]) || ["fr"],
+          {
+            visualFieldsRaw: existing.visualFields,
+            visualFieldsMaterializedAt: existing.visualFieldsMaterializedAt,
+            updatedAt: existing.updatedAt,
+            bindingRules: getRulesForSlug(existing.slug),
+          }
+        );
+        if (hasBlockingIssues(issues)) {
+          return NextResponse.json(
+            { error: "Modification refusée : le formulaire publié deviendrait invalide.", issues },
+            { status: 422, headers: json }
+          );
+        }
+      }
     }
   }
 

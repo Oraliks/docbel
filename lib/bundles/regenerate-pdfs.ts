@@ -3,6 +3,7 @@
 // 7), mail (Task 8) et téléchargement individuel régénèrent à chaque appel, en
 // mémoire.
 
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { loadDossierState, type DossierState } from "@/lib/bundles/completion";
 import { computeItemStatuses, type BundleItem } from "@/components/docbel/bundle-runner/compute";
@@ -16,6 +17,8 @@ import { applyServerAutoFields } from "@/lib/pdf-forms/auto-fields";
 import { visiblePayload } from "@/lib/pdf-forms/validation";
 import { todayISO } from "@/lib/pdf-forms/system-values";
 import { shouldFlattenGeneratedPdf } from "@/lib/pdf-forms/flatten-policy";
+import { buildDiagnosticsSummary, stablePayloadHashOf } from "@/lib/pdf-forms/submission-log";
+import { sha256Hex } from "@/lib/pdf-forms/security";
 import type { PdfFormField, AcroFieldRaw, FormPayload } from "@/lib/pdf-forms/types";
 
 export interface RegeneratedDoc {
@@ -48,6 +51,7 @@ function completedEligibleItems(state: DossierState): BundleItem[] {
 async function regenerateItems(
   state: DossierState,
   items: BundleItem[],
+  ownership: { userId: string | null; sessionId: string | null },
 ): Promise<RegeneratedDoc[]> {
   const forms = await prisma.pdfForm.findMany({
     where: { id: { in: items.map((it) => it.pdfFormId as string) } },
@@ -58,11 +62,16 @@ async function regenerateItems(
       sourceFileName: true,
       fields: true,
       technicalSchema: true,
+      // Opposabilité (S7) : une régénération est une livraison comme une
+      // autre — elle mérite sa ligne de log, donc la version et la locale.
+      version: true,
+      defaultLocale: true,
     },
   });
   const formsById = new Map(forms.map((f) => [f.id, f]));
 
   const docs: RegeneratedDoc[] = [];
+  const logs: Prisma.PdfFormSubmissionLogCreateManyInput[] = [];
   for (const item of items) {
     const form = formsById.get(item.pdfFormId as string);
     if (!form) {
@@ -92,13 +101,44 @@ async function regenerateItems(
     // repartent du payload stocké, qui contient lui aussi les valeurs devenues
     // invisibles avant l'envoi.
     const extraStamps = resolveStamps(visiblePayload(fields, filled), getRulesForSlug(form.slug));
-    const { bytes } = await fillForm(source, fields, filled, {
+    const { bytes, diagnostics } = await fillForm(source, fields, filled, {
       flatten: shouldFlattenGeneratedPdf(form.slug),
       technicalSchema,
       extraStamps,
       combWidgets: getCombWidgetsForSlug(form.slug),
     });
     docs.push({ filename: renderFilename(form.slug, filled), bytes });
+    // Opposabilité (S7). Chaque régénération (zip, e-mail, téléchargement
+    // unitaire) produit un document officiel remis au citoyen : elle laisse
+    // donc la même trace qu'une génération directe. Écrit ICI et non dans les
+    // trois routes appelantes — une seule place, aucune ne peut l'oublier.
+    // `stablePayloadHash` vaudra celui de la génération d'origine : c'est
+    // précisément ce qui établit qu'on a re-servi LE MÊME document, malgré une
+    // date d'impression différente (décision n°5).
+    logs.push({
+      formId: form.id,
+      formVersion: form.version,
+      locale: form.defaultLocale,
+      payloadHash: sha256Hex(JSON.stringify(filled)),
+      stablePayloadHash: stablePayloadHashOf(filled, fields),
+      diagnosticsSummary: buildDiagnosticsSummary(diagnostics) as unknown as Prisma.InputJsonValue,
+      delivery: "regenerate",
+      success: true,
+      // Pas d'`ipHash` : la régénération est déclenchée par une route qui a
+      // déjà son propre rate-limit par IP, et faire descendre la requête
+      // jusqu'ici n'apporterait rien à l'opposabilité.
+      userId: ownership.userId,
+    });
+  }
+
+  // Best-effort, après coup : une écriture de log qui échoue ne doit jamais
+  // priver le citoyen de ses documents (même règle que `logSubmission`).
+  if (logs.length > 0) {
+    try {
+      await prisma.pdfFormSubmissionLog.createMany({ data: logs });
+    } catch (err) {
+      console.error("[regenerate-pdfs] log de régénération échoué (non bloquant) :", err);
+    }
   }
   return docs;
 }
@@ -113,7 +153,7 @@ export async function regenerateAllDocuments(
 ): Promise<{ state: DossierState; docs: RegeneratedDoc[] } | null> {
   const state = await loadDossierState(bundleRunId, ownership);
   if (!state || !state.allRequiredDone) return null;
-  const docs = await regenerateItems(state, completedEligibleItems(state));
+  const docs = await regenerateItems(state, completedEligibleItems(state), ownership);
   return { state, docs };
 }
 
@@ -131,7 +171,7 @@ export async function regenerateOneDocument(
   if (!state || !state.allRequiredDone) return null;
   const target = completedEligibleItems(state).find((it) => it.pdfFormId === pdfFormId);
   if (!target) return null;
-  const docs = await regenerateItems(state, [target]);
+  const docs = await regenerateItems(state, [target], ownership);
   if (docs.length === 0) return null;
   return { state, doc: docs[0] };
 }

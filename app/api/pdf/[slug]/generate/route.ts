@@ -15,6 +15,8 @@ import { sendToDoccle, isDoccleConfigured } from "@/lib/pdf-forms/integrations/d
 import { todayISO } from "@/lib/pdf-forms/system-values";
 import { applyServerAutoFields } from "@/lib/pdf-forms/auto-fields";
 import { shouldFlattenGeneratedPdf } from "@/lib/pdf-forms/flatten-policy";
+import { buildDiagnosticsSummary, stablePayloadHashOf } from "@/lib/pdf-forms/submission-log";
+import type { FillDiagnostic } from "@/lib/pdf-forms/filler";
 import { PdfFormField, FormPayload, Locale, isLocale } from "@/lib/pdf-forms/types";
 import { ensureWriteAllowed } from "@/lib/admin/readonly-guard";
 import { loadDossierState } from "@/lib/bundles/completion";
@@ -196,7 +198,9 @@ export async function POST(
         data: { completedAt: new Date() },
       });
     }
-    await logSubmission(form.id, form.version, lang, validated, "save", true, ip);
+    // Mode "save" : rien n'est imprimé, donc pas de complétude à attester —
+    // seul le hash de contenu part (il vaudra le même au téléchargement).
+    await logSubmission(form.id, form.version, lang, validated, "save", true, ip, fields);
     // `missing` (ordonné par `order`, cf. deriveMissingDocs) + `allRequiredDone`
     // alimentent l'écran de continuation in-line (§11.3) : le runner propose de
     // continuer avec `missing[0]` sans repasser par la liste des documents.
@@ -257,6 +261,9 @@ export async function POST(
   const extraStamps = resolveStamps(visiblePayload(fields, validated), getRulesForSlug(form.slug));
 
   let pdfBytes: Buffer;
+  // Hissé hors du `try` : le résumé de complétude part avec le log de
+  // livraison, écrit plus bas (opposabilité, S7).
+  let diagnostics: FillDiagnostic[] = [];
   try {
     const filled = await fillForm(source, fields, validated, {
       flatten: shouldFlattenGeneratedPdf(form.slug),
@@ -265,6 +272,7 @@ export async function POST(
       combWidgets: getCombWidgetsForSlug(form.slug),
     });
     pdfBytes = filled.bytes;
+    diagnostics = filled.diagnostics;
     // Le remplissage est best-effort : il ne lève pas quand une valeur ne
     // parvient pas jusqu'au papier. Sans cette trace, un widget renommé par
     // l'ONEM ou un nom hors alphabet latin produirait une case blanche sur un
@@ -277,7 +285,10 @@ export async function POST(
     }
   } catch (err) {
     console.error("pdf-forms generate error:", err);
-    await logSubmission(form.id, form.version, lang, validated, delivery, false, ip);
+    // Aucun diagnostic transmis : le PDF n'a pas été produit, sa complétude
+    // n'est donc pas évaluable — mieux vaut `null` qu'un `{ count: 0 }` qui
+    // affirmerait à tort qu'aucune case ne manquait.
+    await logSubmission(form.id, form.version, lang, validated, delivery, false, ip, fields);
     return NextResponse.json({ error: "Échec de génération" }, { status: 500, headers: json });
   }
 
@@ -354,17 +365,19 @@ export async function POST(
         title: form.title,
         issuer: form.issuer || undefined,
       });
-      await logSubmission(form.id, form.version, lang, validated, "doccle", true, ip);
+      await logSubmission(form.id, form.version, lang, validated, "doccle", true, ip, fields, diagnostics);
       return NextResponse.json({ ok: true, delivery: "doccle", documentId: res.documentId, status: res.status }, { headers: json });
     } catch (err) {
       console.error("Doccle send error:", err);
-      await logSubmission(form.id, form.version, lang, validated, "doccle", false, ip);
+      // Le PDF a bien été produit (les diagnostics valent), c'est l'ENVOI qui
+      // a échoué : on garde donc l'attestation de complétude du document.
+      await logSubmission(form.id, form.version, lang, validated, "doccle", false, ip, fields, diagnostics);
       return NextResponse.json({ error: "Échec de l'envoi via Doccle" }, { status: 502, headers: json });
     }
   }
 
   // Livraison download (stream, zéro stockage)
-  await logSubmission(form.id, form.version, lang, validated, "download", true, ip);
+  await logSubmission(form.id, form.version, lang, validated, "download", true, ip, fields, diagnostics);
   return new NextResponse(new Uint8Array(pdfBytes), {
     headers: {
       "Content-Type": "application/pdf",
@@ -381,7 +394,14 @@ async function logSubmission(
   payload: FormPayload,
   delivery: string,
   success: boolean,
-  ip: string
+  ip: string,
+  /// Schéma du formulaire — nécessaire au hash de contenu stable, qui doit
+  /// savoir quels champs sont « auto » pour les écarter.
+  fields: PdfFormField[],
+  /// Diagnostics du filler. `undefined` = la génération n'a pas eu lieu
+  /// (échec amont, mode "save") → complétude non évaluable, colonne laissée
+  /// à null plutôt que d'affirmer à tort `{ count: 0 }`.
+  diagnostics?: FillDiagnostic[]
 ) {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -391,6 +411,13 @@ async function logSubmission(
         formVersion,
         locale,
         payloadHash: sha256Hex(JSON.stringify(payload)),
+        // Opposabilité (S7) : empreinte du contenu métier, invariante à la
+        // date du jour que `payloadHash` embarque — deux téléchargements du
+        // même dossier à deux dates portent la même.
+        stablePayloadHash: stablePayloadHashOf(payload, fields),
+        diagnosticsSummary: diagnostics
+          ? (buildDiagnosticsSummary(diagnostics) as unknown as Prisma.InputJsonValue)
+          : Prisma.DbNull,
         delivery,
         success,
         ipHash: sha256Hex(ip),

@@ -217,6 +217,34 @@ la signature du chômeur le dit au citoyen.
 signataire n'est pas un champ ; c'est un orphelin assumé, à consigner dans
 `seeds-vs-pdf.test.ts` et à expliquer à l'écran.
 
+## Livraison : la date imprimée est celle du téléchargement
+
+Rien n'est stocké — ni le PDF rempli, ni le payload (décision n°1). Un document
+re-téléchargé est donc **régénéré**, et `applyServerAutoFields` y réinjecte la
+date du jour. Un dossier validé lundi puis retéléchargé jeudi sort daté de
+jeudi.
+
+**C'est voulu** (décision n°5) : le document atteste de la démarche, pas de
+l'instant où le citoyen a cliqué. Ne pas « corriger » ce comportement en
+figeant la date à la première validation — ce serait stocker une donnée de plus.
+
+L'opposabilité ne repose donc pas sur les octets du fichier, qui diffèrent d'un
+téléchargement à l'autre, mais sur deux colonnes non nominatives de
+`PdfFormSubmissionLog` (S7) :
+
+- `stablePayloadHash` — SHA256 de `stableDocumentKey` : champs auto et valeurs
+  vides écartés, clés triées. **Invariant à la date.** Deux livraisons du même
+  contenu métier portent la même empreinte, y compris à des semaines d'écart.
+  (`payloadHash`, lui, embarque la date : il ne prouve rien à ce sujet.)
+- `diagnosticsSummary` — `{ count, kinds }`, **jamais** `detail` (qui porte les
+  caractères saisis par le citoyen). `{ count: 0 }` affirme qu'aucune case n'est
+  restée blanche ; `null` = ligne antérieure à S7, complétude inconnue.
+
+Toute nouvelle voie de livraison doit écrire sa ligne de log avec ces deux
+colonnes, sans quoi le document qu'elle produit n'est plus opposable. Les
+régénérations (zip, e-mail, téléchargement unitaire) sont couvertes en un seul
+point, dans `regenerateItems` — ne pas dupliquer ce log dans les routes.
+
 ## Héritage entre documents
 
 Deux voies, fusionnées dans `app/document/[...path]/page.tsx` :

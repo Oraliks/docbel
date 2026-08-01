@@ -1992,8 +1992,22 @@ model PdfFormSubmissionLog {
   formVersion Int
   locale      String
   /// SHA256 du payload validé (intégrité / dédoublonnage), pas le payload.
+  /// ⚠ Inclut les champs auto (date du jour, signature) : deux générations du
+  /// MÊME contenu à deux dates donnent deux hashs différents. Pour comparer le
+  /// contenu métier, utiliser `stablePayloadHash`.
   payloadHash String
-  /// "download" | "doccle"
+  /// SHA256 de la clé de contenu STABLE (cf. lib/bundles/document-identity.ts) :
+  /// champs auto et valeurs vides exclus, clés triées. Invariant à la date de
+  /// téléchargement — c'est lui qui établit que deux générations portent le
+  /// même contenu métier (opposabilité sans stocker ni fichier ni payload).
+  /// Null = ligne écrite avant l'ajout de la colonne.
+  stablePayloadHash String?
+  /// Résumé NON nominatif du remplissage : { count, kinds: { <kind>: n } }.
+  /// Ne contient JAMAIS `detail` (qui porte des caractères saisis par le
+  /// citoyen). `{ count: 0 }` AFFIRME que la génération était complète ;
+  /// `null` = ligne écrite avant l'ajout de la colonne, complétude inconnue.
+  diagnosticsSummary Json?
+  /// "download" | "doccle" | "save" | "regenerate"
   delivery    String
   success     Boolean  @default(true)
   /// Hash de l'IP (non réversible) pour stats anti-abus.
@@ -2003,6 +2017,7 @@ model PdfFormSubmissionLog {
 
   @@index([formId])
   @@index([createdAt])
+  @@index([stablePayloadHash])
 }
 
 /// Brouillon de saisie (formulaires longs). Contient des données nominatives

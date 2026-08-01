@@ -152,6 +152,23 @@ d'onglet + `og:site_name` + logo header).
 | 30 | P2 | Dette | **C1B, C46, C47, C1-Partenaire** — plan ecrit et diagnostic deja fait : `docs/superpowers/plans/2026-07-30-formulaires-onem-restants.md`. **Un formulaire par session**, ordre C47 → C1-Partenaire → C46 → C1B. Le gros du travail est le PARCOURS (les 4 sont a 0 champ groupe et 0 champ herite), plus 3 champs multi-widgets qui ecrivent la meme valeur dans 2 a 4 cases distinctes | `lib/pdf-forms/seed/*-fields.ts`, `form-presentation.ts` | Moyen (ce qui s'imprime) | scenarios + `verif-couverture-widgets.py` a 100 % + relecture PDF | a faire |
 | 31 | P3 | Dette | Annexe Regis — hors du plan ci-dessus, et la plus lourde en dette : **14 ecarts** de geometrie assumes (contre 1 a 3 pour les autres) | `lib/pdf-forms/seed/c1-regis-fields.ts` | Moyen | `widget-geometry.test.ts` | a faire |
 
+### Suites de l'audit PDF-forms (2026-08-01)
+
+Audit complet du système de formulaires PDF réalisé le 2026-08-01 (rapport en
+conversation ; constats vérifiés fichier:ligne ; 2 246 tests verts, build OK,
+lint 129 erreurs pré-existantes). Décisions Oraliks intégrées : opposabilité
+par stats sans stockage de fichiers · admin en lecture seule sur les 8 ONEM ·
+code mort à retirer · date de téléchargement voulue · 100 % FR · vous partout.
+
+**Plan d'exécution en 15 sessions (1 session = 1 lot, modèle recommandé par
+lot)** → [2026-08-01-suites-audit-pdf-forms.md](../superpowers/plans/2026-08-01-suites-audit-pdf-forms.md).
+Ordre : S1 RGPD logs/anonymisation → S2 CI → S3 cohérence dossier → S4 correctifs
+divers → S5 gel admin ONEM → S6 sync traçable → S7 opposabilité+diagnostics →
+S8 ensureWriteAllowed → S9 code mort → S10 vouvoiement seeds → S11 e2e C47 →
+S12 runner dégraissé → puis S13 moules (C46+C47) / S14 C1-Regis (= item #31)
+au fil des reprises, S15 docs/monitoring quand on veut. S1–S12 sont
+indépendants des items #26–#30 ci-dessus.
+
 ## Règles d'exécution
 - Un item à la fois, **3–5 fichiers max** par lot. Items P0/P1 RGPD/sécurité d'abord.
 - Tout item « migration / auth / cookies CMP complet / refonte » = **plan séparé**, jamais

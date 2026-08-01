@@ -4,21 +4,10 @@ import { useMemo, useState, useRef, useEffect, useLayoutEffect, useCallback } fr
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import {
-  DownloadIcon,
-  SendIcon,
-  CheckCircle2Icon,
-  Loader2Icon,
-  InfoIcon,
-  ChevronLeftIcon,
-  ChevronRightIcon,
-} from "lucide-react";
+import { CheckCircle2Icon, InfoIcon, ChevronRightIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
 import { PdfField } from "./pdf-field";
 import { buildValidator, countRequirements, findFirstInvalidStep, isFieldVisible } from "@/lib/pdf-forms/validation";
 import { Locale, FieldValue, FormPayload, PdfFormField, PdfFormTrigger, loc } from "@/lib/pdf-forms/types";
@@ -52,9 +41,8 @@ import { DemarcheRail, type DemarcheRailData } from "@/components/docbel/demarch
 import type { TipEntry } from "@/lib/form-context-tips";
 import { MotifSituationPicker } from "./motif-situation-picker";
 import { CompactAccordionSection } from "./compact-accordion-section";
-import { AutoSaveNotice } from "./auto-save-notice";
-import { ResetFormButton } from "./reset-form-button";
 import { useDraftAutosave } from "./use-draft-autosave";
+import { StepFooter, SubmitFooter } from "./submit-footer";
 import { PaymentMethodPanel } from "./payment-method-panel";
 import { OptionCard } from "@/components/ui/option-card";
 
@@ -291,7 +279,7 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
   >(null);
   // Sauvegarde automatique du brouillon : minuteurs, plafond de report et
   // filets de fermeture d'onglet vivent dans `use-draft-autosave` (lot S12).
-  const { lastSavedAt, scheduleSave, flushDraft, discardDraft } = useDraftAutosave({
+  const { lastSavedAt, scheduleSave, discardDraft, resetSavedAt } = useDraftAutosave({
     slug: form.slug,
     bundleRunId,
     values,
@@ -363,7 +351,7 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
     setConsentError(false);
     // Sans ça, « dernier enregistrement à 14:32 » restait affiché alors que le
     // brouillon venait d'être supprimé.
-    setLastSavedAt(null);
+    resetSavedAt();
     setActive(0);
     toast.success(t("runnerResetDone"));
   }
@@ -1315,104 +1303,62 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
                 />
               )}
 
-              {/* Pied d'étape */}
+              {/* Pied d'étape — cf. components/pdf-forms/submit-footer.tsx */}
               {current.kind === "summary" ? (
-                <div className="flex flex-col gap-4">
-                  {!bundleRunId && form.allowDownload && form.allowDoccle && (
-                    <div className="flex flex-col gap-2">
-                      <span className="text-xs font-medium text-muted-foreground">{t("runnerDeliveryModeLabel")}</span>
-                      <div className="flex gap-1.5">
-                        <Button type="button" size="sm" variant={delivery === "download" ? "default" : "outline"} onClick={() => setDelivery("download")}>
-                          <DownloadIcon className="size-4" /> {t("runnerDeliveryDownload")}
-                        </Button>
-                        <Button type="button" size="sm" variant={delivery === "doccle" ? "default" : "outline"} onClick={() => setDelivery("doccle")}>
-                          <SendIcon className="size-4" /> {t("runnerDeliveryDoccle")}
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                  {!bundleRunId && delivery === "doccle" && (
-                    <div className="flex flex-col gap-1.5">
-                      <Label htmlFor="doccle-ref">{t("runnerDoccleRecipientLabel")}</Label>
-                      <Input id="doccle-ref" value={doccleRef} placeholder={t("runnerDoccleRecipientPlaceholder")} onChange={(e) => setDoccleRef(e.target.value)} />
-                    </div>
-                  )}
-                  <Separator />
-                  {form.fields.some(isSignatureField) && (
-                    <div className="rounded-lg border border-dashed bg-muted/30 p-3 text-sm">
-                      <div className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                        {t("runnerDigitalSignatureLabel")}
-                      </div>
-                      {signerName ? (
-                        <>
-                          <div className="mt-1 font-serif text-lg italic">{signerName}</div>
-                          <div className="mt-0.5 text-[11px] text-muted-foreground">
-                            {t("runnerDigitalSignatureAutoNote")}
-                          </div>
-                        </>
-                      ) : (
-                        <div className="mt-1 text-xs text-amber-700 dark:text-amber-300">
-                          {t("runnerDigitalSignatureNameRequired")}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                  <InvalidFieldsSummary
-                    fields={invalidFields}
-                    title={t("runnerSomeFieldsInvalid")}
-                    onJump={jumpToInvalidField}
-                  />
-                  <ConsentCheckbox
-                    compact
-                    checked={consent}
-                    onChange={updateConsent}
-                    invalid={consentError}
-                    label={t("runnerConsentText")}
-                    errorMessage={t("runnerConsentRequired")}
-                  />
-                  <div className="flex items-center justify-between gap-2">
-                    <AutoSaveNotice lastSavedAt={lastSavedAt} isPartOfBundle={!!bundleRunId} serverSaved={serverSaved} />
-                    <ResetFormButton onConfirm={resetForm} disabled={submitting} />
-                  </div>
-                  <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[color:var(--glass-border)] pt-4">
-                    <div className="flex flex-1 items-center justify-end gap-2 sm:flex-none">
-                      {activeIndex > 0 && (
-                        <Button type="button" variant="outline" className="rounded-full" onClick={() => setActive(activeIndex - 1)}>
-                          <ChevronLeftIcon className="size-4" /> {t("previous")}
-                        </Button>
-                      )}
-                      <Button type="submit" disabled={submitting} className="rounded-full px-6">
-                        {submitting ? <Loader2Icon className="size-4 animate-spin" /> : bundleRunId ? <CheckCircle2Icon className="size-4" /> : delivery === "doccle" ? <SendIcon className="size-4" /> : <DownloadIcon className="size-4" />}
-                        {submitting
-                          ? t("runnerGenerating")
-                          : bundleRunId
-                          ? t("runnerSubmitValidate")
-                          : delivery === "doccle"
-                          ? t("runnerSubmitSignAndSend")
-                          : t("runnerSubmitSignAndGenerate")}
-                      </Button>
-                    </div>
-                  </div>
-                </div>
+                <SubmitFooter
+                  variant="compact"
+                  t={t}
+                  bundleRunId={bundleRunId}
+                  allowDownload={form.allowDownload}
+                  allowDoccle={form.allowDoccle}
+                  delivery={delivery}
+                  setDelivery={setDelivery}
+                  doccleRef={doccleRef}
+                  setDoccleRef={setDoccleRef}
+                  hasSignature={form.fields.some(isSignatureField)}
+                  signerName={signerName}
+                  invalidFields={invalidFields}
+                  onJumpToInvalidField={jumpToInvalidField}
+                  consent={consent}
+                  onConsentChange={updateConsent}
+                  consentError={consentError}
+                  invalidSummary={
+                    <InvalidFieldsSummary
+                      fields={invalidFields}
+                      title={t("runnerSomeFieldsInvalid")}
+                      onJump={jumpToInvalidField}
+                    />
+                  }
+                  consentCheckbox={
+                    <ConsentCheckbox
+                      compact
+                      checked={consent}
+                      onChange={updateConsent}
+                      invalid={consentError}
+                      label={t("runnerConsentText")}
+                      errorMessage={t("runnerConsentRequired")}
+                    />
+                  }
+                  serverSaved={serverSaved}
+                  lastSavedAt={lastSavedAt}
+                  submitting={submitting}
+                  resetForm={resetForm}
+                  canGoPrevious={activeIndex > 0}
+                  onPrevious={() => setActive(activeIndex - 1)}
+                />
               ) : (
-                <div className="flex flex-col gap-3 border-t border-[color:var(--glass-border)] pt-4">
-                  <div className="flex flex-wrap items-center justify-end gap-3">
-                    <div className="flex items-center gap-2">
-                      {activeIndex > 0 && (
-                        <Button type="button" variant="outline" className="rounded-full" onClick={() => setActive(activeIndex - 1)}>
-                          <ChevronLeftIcon className="size-4" /> {t("previous")}
-                        </Button>
-                      )}
-                      <Button type="button" className="rounded-full px-6" onClick={() => attemptAdvance([stepFieldsOf(current)], activeIndex, activeIndex + 1)}>
-                        {t("continue")} <ChevronRightIcon className="size-4" />
-                      </Button>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between gap-2">
-                    <AutoSaveNotice lastSavedAt={lastSavedAt} isPartOfBundle={!!bundleRunId} serverSaved={serverSaved} />
-                    <ResetFormButton onConfirm={resetForm} disabled={submitting} />
-                  </div>
-                </div>
+                <StepFooter
+                  variant="compact"
+                  t={t}
+                  bundleRunId={bundleRunId}
+                  serverSaved={serverSaved}
+                  lastSavedAt={lastSavedAt}
+                  submitting={submitting}
+                  resetForm={resetForm}
+                  canGoPrevious={activeIndex > 0}
+                  onPrevious={() => setActive(activeIndex - 1)}
+                  onContinue={() => attemptAdvance([stepFieldsOf(current)], activeIndex, activeIndex + 1)}
+                />
               )}
             </form>
           </CardContent>
@@ -2210,107 +2156,60 @@ function MacroRunnerBody({
               )}
 
               {isLast ? (
-                <>
-                  <div className="flex flex-col gap-4 border-t border-[color:var(--glass-ink-line)] pt-4">
-                  {!bundleRunId && form.allowDownload && form.allowDoccle && (
-                    <div className="flex flex-col gap-2">
-                      <span className="text-base font-bold text-muted-foreground">{t("runnerDeliveryModeLabel")}</span>
-                      <div className="flex gap-1.5">
-                        <Button className="min-h-11" type="button" variant={delivery === "download" ? "default" : "outline"} onClick={() => setDelivery("download")}>
-                          <DownloadIcon className="size-4" /> {t("runnerDeliveryDownload")}
-                        </Button>
-                        <Button className="min-h-11" type="button" variant={delivery === "doccle" ? "default" : "outline"} onClick={() => setDelivery("doccle")}>
-                          <SendIcon className="size-4" /> {t("runnerDeliveryDoccle")}
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                  {!bundleRunId && delivery === "doccle" && (
-                    <div className="flex flex-col gap-1.5">
-                      <Label htmlFor="doccle-ref-macro">{t("runnerDoccleRecipientLabel")}</Label>
-                      <Input id="doccle-ref-macro" value={doccleRef} placeholder={t("runnerDoccleRecipientPlaceholder")} onChange={(e) => setDoccleRef(e.target.value)} />
-                    </div>
-                  )}
-                  {form.fields.some(isSignatureField) && (
-                    <div className="rounded-2xl border border-dashed bg-muted/30 p-4 text-base">
-                      <div className="font-bold text-muted-foreground">{t("runnerDigitalSignatureLabel")}</div>
-                      {signerName ? (
-                        <>
-                          <div className="mt-1 font-serif text-lg italic">{signerName}</div>
-                          <div className="mt-1 text-sm text-muted-foreground">{t("runnerDigitalSignatureAutoNote")}</div>
-                        </>
-                      ) : (
-                        <div className="mt-1 text-sm text-amber-700 dark:text-amber-300">{t("runnerDigitalSignatureNameRequired")}</div>
-                      )}
-                    </div>
-                  )}
-                  <InvalidFieldsSummary
-                    fields={invalidFields}
-                    title={t("runnerSomeFieldsInvalid")}
-                    onJump={jumpToInvalidField}
-                  />
-                  <ConsentCheckbox
-                    checked={consent}
-                    onChange={setConsent}
-                    invalid={consentError}
-                    label={t("runnerConsentText")}
-                    errorMessage={t("runnerConsentRequired")}
-                  />
-                  {liveTriggers.length > 0 && (
-                    <p className="text-xs text-amber-700 dark:text-amber-300 mt-2">
-                      {t("runnerLiveTriggerNotice", {
-                        titles: liveTriggers.map((tr) => tr.reason?.fr || tr.requiresFormSlug).join(", "),
-                      })}
-                    </p>
-                  )}
-                  {/* Pied de rangée : mention d'auto-save à gauche, paire de
-                      boutons à droite, "Recommencer" juste SOUS cette paire —
-                      discret, aligné à droite. Jamais sur la même ligne que la
-                      mention, qui l'éloignerait du geste auquel il se rapporte. */}
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <AutoSaveNotice lastSavedAt={lastSavedAt} isPartOfBundle={!!bundleRunId} serverSaved={serverSaved} />
-                    <div className="flex flex-col items-end gap-2">
-                      <div className="flex items-center gap-2">
-                        {/* Garde `activeIndex > 0` (2026-07-26) : sur un
-                            formulaire à UNE SEULE macro-étape, la dernière étape
-                            est aussi la première — sans elle, « Précédent »
-                            appelait setActive(-1) et le rendu plantait sur
-                            `macroSteps[-1]`. Pas atteignable sur le C1 (5 étapes),
-                            mais c'est le piège du prochain formulaire. */}
-                        {activeIndex > 0 && (
-                          <Button type="button" variant="outline" className="min-h-12 rounded-full" onClick={() => setActive(activeIndex - 1)}>
-                            <ChevronLeftIcon className="size-4" /> {t("previous")}
-                          </Button>
-                        )}
-                        <Button type="submit" disabled={submitting} className="min-h-12 rounded-full px-6">
-                          {submitting ? <Loader2Icon className="size-4 animate-spin" /> : bundleRunId ? <CheckCircle2Icon className="size-4" /> : delivery === "doccle" ? <SendIcon className="size-4" /> : <DownloadIcon className="size-4" />}
-                          {submitting ? t("runnerGenerating") : bundleRunId ? t("runnerSubmitValidate") : delivery === "doccle" ? t("runnerSubmitSignAndSend") : t("runnerSubmitSignAndGenerate")}
-                        </Button>
-                      </div>
-                      <ResetFormButton onConfirm={resetForm} disabled={submitting} />
-                    </div>
-                  </div>
-                  </div>
-                </>
+                <SubmitFooter
+                  variant="confortable"
+                  t={t}
+                  bundleRunId={bundleRunId}
+                  allowDownload={form.allowDownload}
+                  allowDoccle={form.allowDoccle}
+                  delivery={delivery}
+                  setDelivery={setDelivery}
+                  doccleRef={doccleRef}
+                  setDoccleRef={setDoccleRef}
+                  hasSignature={form.fields.some(isSignatureField)}
+                  signerName={signerName}
+                  invalidFields={invalidFields}
+                  onJumpToInvalidField={jumpToInvalidField}
+                  consent={consent}
+                  onConsentChange={setConsent}
+                  consentError={consentError}
+                  liveTriggers={liveTriggers}
+                  invalidSummary={
+                    <InvalidFieldsSummary
+                      fields={invalidFields}
+                      title={t("runnerSomeFieldsInvalid")}
+                      onJump={jumpToInvalidField}
+                    />
+                  }
+                  consentCheckbox={
+                    <ConsentCheckbox
+                      checked={consent}
+                      onChange={setConsent}
+                      invalid={consentError}
+                      label={t("runnerConsentText")}
+                      errorMessage={t("runnerConsentRequired")}
+                    />
+                  }
+                  serverSaved={serverSaved}
+                  lastSavedAt={lastSavedAt}
+                  submitting={submitting}
+                  resetForm={resetForm}
+                  canGoPrevious={activeIndex > 0}
+                  onPrevious={() => setActive(activeIndex - 1)}
+                />
               ) : (
-                <div className="flex flex-col gap-3 border-t border-[color:var(--glass-ink-line)] pt-4">
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <AutoSaveNotice lastSavedAt={lastSavedAt} isPartOfBundle={!!bundleRunId} serverSaved={serverSaved} />
-                    <div className="flex flex-col items-end gap-2">
-                      <div className="flex items-center gap-2">
-                        {activeIndex > 0 && (
-                          <Button type="button" variant="outline" className="min-h-12 rounded-full" onClick={() => setActive(activeIndex - 1)}>
-                            <ChevronLeftIcon className="size-4" /> {t("previous")}
-                          </Button>
-                        )}
-                        <Button type="button" className="min-h-12 rounded-full px-6" onClick={() => attemptAdvance([stepFieldsOf(current)], activeIndex, activeIndex + 1)}>
-                          {t("continue")} <ChevronRightIcon className="size-4" />
-                        </Button>
-                      </div>
-                      <ResetFormButton onConfirm={resetForm} disabled={submitting} />
-                    </div>
-                  </div>
-                </div>
+                <StepFooter
+                  variant="confortable"
+                  t={t}
+                  bundleRunId={bundleRunId}
+                  serverSaved={serverSaved}
+                  lastSavedAt={lastSavedAt}
+                  submitting={submitting}
+                  resetForm={resetForm}
+                  canGoPrevious={activeIndex > 0}
+                  onPrevious={() => setActive(activeIndex - 1)}
+                  onContinue={() => attemptAdvance([stepFieldsOf(current)], activeIndex, activeIndex + 1)}
+                />
               )}
             </form>
           </CardContent>

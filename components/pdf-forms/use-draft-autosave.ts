@@ -27,6 +27,12 @@ export interface DraftAutosave {
   flushDraft: () => void;
   /// Supprime le brouillon serveur et annule tout envoi en attente.
   discardDraft: () => void;
+  /// Oublie l'horodatage affiché. Volontairement SÉPARÉ de `discardDraft` :
+  /// après une soumission réussie on supprime bien le brouillon, mais
+  /// « enregistré à 14:32 » reste une information vraie. Seule la remise à zéro
+  /// du formulaire doit l'effacer — sinon la mention survivrait à un
+  /// « Recommencer » et parlerait d'un brouillon qui n'existe plus.
+  resetSavedAt: () => void;
 }
 
 export function useDraftAutosave(options: {
@@ -147,5 +153,7 @@ export function useDraftAutosave(options: {
     [flushDraft],
   );
 
-  return { lastSavedAt, scheduleSave, flushDraft, discardDraft };
+  const resetSavedAt = useCallback(() => setLastSavedAt(null), []);
+
+  return { lastSavedAt, scheduleSave, flushDraft, discardDraft, resetSavedAt };
 }

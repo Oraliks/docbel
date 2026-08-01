@@ -89,10 +89,12 @@ test.describe("/mon-dossier — assistant de choix de démarche", () => {
 
     await premier.click();
     // <Link> Next : l'App Router ne valide l'URL qu'APRÈS avoir récupéré le RSC
-    // de /d/[slug]. En dev (compilation à la demande) sur la Neon partagée, ça
-    // dépasse largement les 10 s par défaut d'un expect.
+    // de /d/[slug]. En dev, la route cible est elle aussi compilée à la demande
+    // au premier passage — mesuré entre 24 et 35 s selon la charge. 30 s
+    // tombaient donc pile sur la frontière, et le test échouait un coup sur
+    // trois sans que rien n'ait changé dans la page.
     await expect(page).toHaveURL(new RegExp(href!.replace(/\//g, "\\/")), {
-      timeout: 30_000,
+      timeout: 60_000,
     });
   });
 
@@ -103,6 +105,7 @@ test.describe("/mon-dossier — assistant de choix de démarche", () => {
     const reprise = page.locator('[href="/reprendre"]').first();
     await expect(reprise).toBeVisible();
     await reprise.click();
-    await expect(page).toHaveURL(/\/reprendre/, { timeout: 30_000 });
+    // Même compilation à la demande que ci-dessus.
+    await expect(page).toHaveURL(/\/reprendre/, { timeout: 60_000 });
   });
 });

@@ -12,9 +12,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Pas de `version:` ici : pnpm/action-setup lit déjà "packageManager"
+      # (pnpm@10.33.2) dans package.json. Spécifier les deux à la fois fait
+      # échouer l'action (versions jugées en conflit, même compatibles).
       - uses: pnpm/action-setup@v4
-        with:
-          version: 10
 
       - uses: actions/setup-node@v4
         with:

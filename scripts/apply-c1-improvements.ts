@@ -38,7 +38,27 @@ async function main() {
     console.log(`  Champs après     : ${r.fieldsAfter}`);
     console.log(`  Triggers avant   : ${r.triggersBefore}`);
     console.log(`  Triggers après   : ${r.triggersAfter}`);
-    if (APPLY) console.log(`  ✓ mis à jour`);
+    console.log(
+      `  Diff             : champs ${r.fieldsChanged ? "MODIFIÉS" : "identiques"}, déclencheurs ${r.triggersChanged ? "MODIFIÉS" : "identiques"}`,
+    );
+    if (r.status === "conflict") {
+      console.log(`  ⚠️  conflit : le formulaire a été modifié pendant le re-semis — RIEN écrit, relance.`);
+      continue;
+    }
+    if (r.status === "unchanged") {
+      console.log(`  = déjà à jour — aucune écriture`);
+      continue;
+    }
+    if (APPLY) {
+      console.log(`  ✓ mis à jour`);
+      // Traçabilité (S6) : sans révision affichée, on ne saurait pas où
+      // revenir en arrière si ce re-semis casse quelque chose.
+      if (r.revisionId) {
+        console.log(`  ↩ révision v${r.version} archivée (id=${r.revisionId}) → nouvelle version v${r.newVersion}`);
+      } else {
+        console.log(`  (déclencheurs seuls : pas de révision, version inchangée)`);
+      }
+    }
   }
   if (!APPLY) {
     console.log("\nDry-run terminé. Passe --yes pour appliquer.");

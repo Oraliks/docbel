@@ -1,22 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
-import { isDeepStrictEqual } from "node:util";
 import { prisma } from "@/lib/prisma";
 import { requireAdminAuth } from "@/lib/auth-check";
 import {
   C1_IMPROVEMENT_TARGETS,
   applyOneC1Improvement,
 } from "@/lib/pdf-forms/seed/apply-c1-improvements-core";
+// `sameSeedJson` vivait ici en copie locale ; il est désormais partagé avec le
+// core de re-semis (S6), qui décide sur EXACTEMENT la même comparaison ce
+// qu'il écrit. Deux définitions auraient pu diverger : le banner « Sync
+// requis » aurait alors annoncé une dérive qu'un re-semis jugeait inexistante.
+import { sameSeedJson } from "@/lib/pdf-forms/seed/sync-plan";
 import type { AcroFieldRaw, PdfFormField } from "@/lib/pdf-forms/types";
 
 const json = { "Content-Type": "application/json; charset=utf-8" };
-
-function sameJson(left: unknown, right: unknown): boolean {
-  // Prisma peut réordonner les clés d'un JSON et retire les propriétés
-  // `undefined`. Ces différences de sérialisation ne sont pas une dérive du
-  // seed : on compare donc leur forme JSON normalisée, clé par clé.
-  const normalize = (value: unknown): unknown => JSON.parse(JSON.stringify(value));
-  return isDeepStrictEqual(normalize(left), normalize(right));
-}
 
 /// GET — compare les champs DB avec la version idempotente produite par
 /// `improve()` du seed source. Sert au banner « Sync requis » côté admin
@@ -74,7 +70,7 @@ export async function GET(
       idsAdded.push(seedId);
       continue;
     }
-    if (!sameJson(dbField, seedField)) {
+    if (!sameSeedJson(dbField, seedField)) {
       idsModified.push(seedId);
     }
   }

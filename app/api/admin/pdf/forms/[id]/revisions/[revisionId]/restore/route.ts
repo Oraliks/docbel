@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireAdminAuth } from "@/lib/auth-check";
+import { SEEDED_SLUGS } from "@/lib/pdf-forms/seed/apply-c1-improvements-core";
+import { SEED_MANAGED_LOCK_ERROR } from "@/lib/pdf-forms/seed-lock";
 
 const json = { "Content-Type": "application/json; charset=utf-8" };
 
@@ -23,6 +25,17 @@ export async function POST(
   if (!form) return NextResponse.json({ error: "Formulaire introuvable" }, { status: 404, headers: json });
   if (!revision || revision.formId !== id) {
     return NextResponse.json({ error: "Révision introuvable" }, { status: 404, headers: json });
+  }
+
+  // Formulaires gérés par le seed : cette route écrit `fields` ET repasse le
+  // formulaire en `draft` — elle contournait donc le verrou de S5, qui ne vit
+  // que dans le PATCH, et pouvait DÉPUBLIER un document ONEM servi aux
+  // citoyens. Depuis S6 chaque re-semis y dépose une révision, donc le bouton
+  // « Restaurer » y est devenu banal : on le refuse explicitement. L'historique
+  // reste consultable — c'est précisément la traçabilité qu'apporte S6 ; pour
+  // revenir en arrière on corrige le seed et on relance le re-semis.
+  if (SEEDED_SLUGS.includes(form.slug)) {
+    return NextResponse.json(SEED_MANAGED_LOCK_ERROR, { status: 409, headers: json });
   }
 
   // Snapshot de l'état courant avant restauration.

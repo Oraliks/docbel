@@ -45,7 +45,7 @@ base, refactor du runner, e2e, conception de schéma).
 | Ordre | Lot | Objectif court | Modèle | Statut |
 |---|---|---|---|---|
 | 1 | S1 | RGPD : logs sans PII + anonymisation complète | Sonnet | fait (983b225) |
-| 2 | S2 | CI GitHub Actions (lint + tests) + timeout vitest | Sonnet | commité (2182d38), push en attente |
+| 2 | S2 | CI GitHub Actions (lint + tests) + timeout vitest | Sonnet | fait (cbabe61, run #2 vert) |
 | 3 | S3 | Cohérence dossier : orderBy, 404 run irrésoluble, event download | Sonnet | à faire |
 | 4 | S4 | Correctifs divers : test-generate, nom de fichier, 2 messages « tu » | Sonnet | à faire |
 | 5 | S5 | Gel de l'édition admin des 8 slugs ONEM + bannière | Sonnet | à faire |

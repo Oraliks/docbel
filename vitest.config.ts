@@ -23,5 +23,9 @@ export default defineConfig({
       "components/**/__tests__/**/*.test.ts",
     ],
     globals: true,
+    // Les tests sur vrais PDF (fillForm sur un document ~200 Ko) dépassent le
+    // défaut de 5s sous charge (CI, machine partagée) alors qu'ils sont verts
+    // isolément — cf. docs/superpowers/plans/2026-08-01-suites-audit-pdf-forms.md S2.
+    testTimeout: 15_000,
   },
 });

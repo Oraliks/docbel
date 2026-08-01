@@ -44,7 +44,7 @@ base, refactor du runner, e2e, conception de schéma).
 
 | Ordre | Lot | Objectif court | Modèle | Statut |
 |---|---|---|---|---|
-| 1 | S1 | RGPD : logs sans PII + anonymisation complète | Sonnet | à faire |
+| 1 | S1 | RGPD : logs sans PII + anonymisation complète | Sonnet | fait (983b225) |
 | 2 | S2 | CI GitHub Actions (lint + tests) + timeout vitest | Sonnet | à faire |
 | 3 | S3 | Cohérence dossier : orderBy, 404 run irrésoluble, event download | Sonnet | à faire |
 | 4 | S4 | Correctifs divers : test-generate, nom de fichier, 2 messages « tu » | Sonnet | à faire |

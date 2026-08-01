@@ -115,6 +115,109 @@ export function reportsByFieldType(rows: { fieldType: string }[]): FieldTypeCoun
     .sort((a, b) => b.count - a.count || a.fieldType.localeCompare(b.fieldType));
 }
 
+// ─────────────────────────────────────────────────────────────────
+// Complétude des générations (opposabilité, S7)
+// ─────────────────────────────────────────────────────────────────
+
+/** Une génération, réduite à ce qui sert au suivi de complétude. */
+export interface DiagnosticsRow {
+  /// Colonne `Json?` : `{ count, kinds }`, ou `null` pour une génération
+  /// antérieure à S7 / dont le PDF n'a pas été produit.
+  diagnosticsSummary: unknown;
+  form: { id: string; slug: string; title: string };
+}
+
+export interface DiagnosticsKindCount {
+  kind: string;
+  count: number;
+}
+
+export interface DiagnosticsFormCount {
+  /// Identifiant du PdfForm — le lien admin pointe vers son éditeur
+  /// (/admin/pdf/[id]), là où se diagnostique un widget manquant.
+  id: string;
+  slug: string;
+  title: string;
+  /// Générations à anomalie pour ce formulaire.
+  generations: number;
+  /// Total des anomalies cumulées.
+  anomalies: number;
+}
+
+export interface DiagnosticsBreakdown {
+  /// Générations dont la complétude a réellement été évaluée.
+  checked: number;
+  /// Parmi elles, celles où au moins une valeur n'a pas atteint le papier.
+  withAnomalies: number;
+  byKind: DiagnosticsKindCount[];
+  /// Formulaires concernés, du plus touché au moins touché.
+  byForm: DiagnosticsFormCount[];
+}
+
+/** Lit `count` sur un résumé de forme non garantie (colonne Json libre). */
+function readCount(summary: unknown): number | null {
+  if (typeof summary !== "object" || summary === null) return null;
+  const raw = (summary as { count?: unknown }).count;
+  return typeof raw === "number" && Number.isFinite(raw) ? raw : null;
+}
+
+/**
+ * Suivi de complétude des générations : combien ont été vérifiées, combien
+ * ont laissé une valeur au bord du chemin, de quel type et sur quels
+ * formulaires.
+ *
+ * Une ligne SANS résumé exploitable n'est comptée nulle part — ni vérifiée, ni
+ * en anomalie. Les confondre avec des générations saines ferait passer un parc
+ * non instrumenté (lignes antérieures à S7) pour un parc sans défaut.
+ *
+ * Tolérant à la forme : la colonne est du `Json` libre, une ligne écrite par
+ * une version future ou corrompue ne doit pas faire tomber la page admin.
+ */
+export function diagnosticsBreakdown(rows: DiagnosticsRow[]): DiagnosticsBreakdown {
+  let checked = 0;
+  let withAnomalies = 0;
+  const kindCounts = new Map<string, number>();
+  const formStats = new Map<string, DiagnosticsFormCount>();
+
+  for (const row of rows) {
+    const count = readCount(row.diagnosticsSummary);
+    if (count === null) continue;
+    checked += 1;
+    if (count <= 0) continue;
+    withAnomalies += 1;
+
+    const kinds = (row.diagnosticsSummary as { kinds?: unknown }).kinds;
+    if (typeof kinds === "object" && kinds !== null) {
+      for (const [kind, n] of Object.entries(kinds as Record<string, unknown>)) {
+        if (typeof n !== "number" || !Number.isFinite(n)) continue;
+        kindCounts.set(kind, (kindCounts.get(kind) ?? 0) + n);
+      }
+    }
+
+    const stat = formStats.get(row.form.slug) ?? {
+      id: row.form.id,
+      slug: row.form.slug,
+      title: row.form.title,
+      generations: 0,
+      anomalies: 0,
+    };
+    stat.generations += 1;
+    stat.anomalies += count;
+    formStats.set(row.form.slug, stat);
+  }
+
+  return {
+    checked,
+    withAnomalies,
+    byKind: Array.from(kindCounts.entries())
+      .map(([kind, count]) => ({ kind, count }))
+      .sort((a, b) => b.count - a.count || a.kind.localeCompare(b.kind)),
+    byForm: Array.from(formStats.values()).sort(
+      (a, b) => b.anomalies - a.anomalies || a.slug.localeCompare(b.slug),
+    ),
+  };
+}
+
 /** Agrégat de soumissions par locale. */
 export interface LocaleCount {
   locale: string;

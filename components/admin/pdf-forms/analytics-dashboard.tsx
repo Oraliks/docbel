@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, type ComponentType } from "react";
+import Link from "next/link";
 import { useTranslations } from "next-intl";
 import {
   Bar,
@@ -12,11 +13,12 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { Clock, FileCheck, Send, TriangleAlert } from "lucide-react";
+import { Clock, FileCheck, ScanLine, Send, TriangleAlert } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import type {
   DailySubmissionPoint,
+  DiagnosticsBreakdown,
   FieldTypeCount,
 } from "@/lib/pdf-forms/analytics";
 
@@ -40,6 +42,8 @@ export interface PdfAnalyticsViewModel {
   /// Graphes.
   dailySubmissions: DailySubmissionPoint[];
   reportsByFieldType: FieldTypeCount[];
+  /// Complétude des documents générés (opposabilité, S7).
+  diagnostics: DiagnosticsBreakdown;
 }
 
 interface Props {
@@ -210,6 +214,84 @@ export function PdfAnalyticsDashboard({ data }: Props) {
           icon={TriangleAlert}
           accent="rose"
         />
+      </div>
+
+      {/* Complétude des documents générés (opposabilité) ------------- */}
+      <div className="grid gap-4 lg:grid-cols-3">
+        <KpiCard
+          label={t("kpiIncompleteDocs", { days: data.windowDays })}
+          value={data.diagnostics.withAnomalies}
+          hint={
+            data.diagnostics.checked === 0
+              ? t("kpiDiagnosticsNoData")
+              : data.diagnostics.withAnomalies === 0
+                ? t("kpiDiagnosticsAllComplete", { checked: data.diagnostics.checked })
+                : t("kpiDiagnosticsHint", { checked: data.diagnostics.checked })
+          }
+          icon={ScanLine}
+          accent={data.diagnostics.withAnomalies > 0 ? "rose" : "emerald"}
+        />
+
+        <Card className="lg:col-span-2">
+          <CardContent className="flex flex-col gap-4">
+            <div>
+              <p className="text-sm font-semibold">{t("diagnosticsTitle")}</p>
+              <p className="text-xs text-muted-foreground">{t("diagnosticsSubtitle")}</p>
+            </div>
+            {data.diagnostics.withAnomalies === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                {data.diagnostics.checked === 0
+                  ? t("diagnosticsNoData")
+                  : t("diagnosticsAllComplete")}
+              </p>
+            ) : (
+              <div className="grid gap-6 sm:grid-cols-2">
+                {/* Par type d'anomalie */}
+                <div className="flex flex-col gap-2">
+                  <p className="text-xs font-medium text-muted-foreground">
+                    {t("diagnosticsByKind")}
+                  </p>
+                  <ul className="flex flex-col gap-1.5">
+                    {data.diagnostics.byKind.map((k) => (
+                      <li key={k.kind} className="flex items-baseline justify-between gap-3 text-sm">
+                        <span className="text-muted-foreground">{k.kind}</span>
+                        <span className="font-semibold tabular-nums">{k.count}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                {/* Par formulaire, avec lien direct vers son éditeur */}
+                <div className="flex flex-col gap-2">
+                  <p className="text-xs font-medium text-muted-foreground">
+                    {t("diagnosticsByForm")}
+                  </p>
+                  <ul className="flex flex-col gap-1.5">
+                    {data.diagnostics.byForm.map((f) => (
+                      <li key={f.slug} className="flex items-baseline justify-between gap-3 text-sm">
+                        {/* Onglet Mapping : c'est là qu'on voit quel widget
+                            n'a pas été écrit, donc le premier réflexe utile. */}
+                        <Link
+                          href={`/admin/pdf/${f.id}?tab=mapping`}
+                          className="truncate underline-offset-2 hover:underline"
+                          title={f.slug}
+                        >
+                          {f.title}
+                        </Link>
+                        <span className="shrink-0 font-semibold tabular-nums">
+                          {t("diagnosticsFormCount", {
+                            anomalies: f.anomalies,
+                            generations: f.generations,
+                          })}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
 
       {/* Graphiques ------------------------------------------------- */}

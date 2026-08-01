@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   bucketSubmissionsByDay,
   computeSuccessRate,
+  diagnosticsBreakdown,
   reportsByFieldType,
   submissionsByLocale,
   type SubmissionRow,
@@ -137,5 +138,72 @@ describe("submissionsByLocale", () => {
       { locale: "(inconnu)", count: 1 },
       { locale: "nl", count: 1 },
     ]);
+  });
+});
+
+describe("diagnosticsBreakdown", () => {
+  const form = (slug: string) => ({ id: `id-${slug}`, slug, title: slug.toUpperCase() });
+
+  it("distingue « vérifiée et complète » de « non évaluée »", () => {
+    // `null` = génération antérieure à S7, ou PDF jamais produit : elle ne
+    // compte NI comme vérifiée NI comme anomalie. Confondre les deux ferait
+    // passer un parc non instrumenté pour un parc sain.
+    const out = diagnosticsBreakdown([
+      { diagnosticsSummary: { count: 0, kinds: {} }, form: form("c1a") },
+      { diagnosticsSummary: null, form: form("c1a") },
+    ]);
+    expect(out.checked).toBe(1);
+    expect(out.withAnomalies).toBe(0);
+  });
+
+  it("compte les générations à anomalie et ventile par type", () => {
+    const out = diagnosticsBreakdown([
+      { diagnosticsSummary: { count: 2, kinds: { "widget-introuvable": 2 } }, form: form("c1a") },
+      { diagnosticsSummary: { count: 1, kinds: { "stamp-refuse": 1 } }, form: form("c47") },
+      { diagnosticsSummary: { count: 0, kinds: {} }, form: form("c47") },
+    ]);
+    expect(out.checked).toBe(3);
+    expect(out.withAnomalies).toBe(2);
+    expect(out.byKind).toEqual([
+      { kind: "widget-introuvable", count: 2 },
+      { kind: "stamp-refuse", count: 1 },
+    ]);
+  });
+
+  it("regroupe par formulaire, du plus touché au moins touché", () => {
+    const out = diagnosticsBreakdown([
+      { diagnosticsSummary: { count: 1, kinds: { "stamp-refuse": 1 } }, form: form("c47") },
+      { diagnosticsSummary: { count: 3, kinds: { "widget-introuvable": 3 } }, form: form("c1a") },
+      { diagnosticsSummary: { count: 2, kinds: { "widget-introuvable": 2 } }, form: form("c1a") },
+    ]);
+    // `id` et non `slug` pour le lien : l'admin qui constate des documents
+    // incomplets veut ouvrir le mapping du formulaire (/admin/pdf/[id]), pas
+    // sa page publique.
+    expect(out.byForm).toEqual([
+      { id: "id-c1a", slug: "c1a", title: "C1A", generations: 2, anomalies: 5 },
+      { id: "id-c47", slug: "c47", title: "C47", generations: 1, anomalies: 1 },
+    ]);
+  });
+
+  it("aucune ligne → tout à zéro, jamais de NaN", () => {
+    expect(diagnosticsBreakdown([])).toEqual({
+      checked: 0,
+      withAnomalies: 0,
+      byKind: [],
+      byForm: [],
+    });
+  });
+
+  it("encaisse un JSON de forme inattendue sans planter le dashboard", () => {
+    // La colonne est du Json libre : une ligne écrite par une version future
+    // (ou corrompue) ne doit pas faire tomber la page admin.
+    const out = diagnosticsBreakdown([
+      { diagnosticsSummary: "pas un objet", form: form("c1a") },
+      { diagnosticsSummary: { count: "deux" }, form: form("c1a") },
+      { diagnosticsSummary: { count: 1, kinds: null }, form: form("c1a") },
+    ]);
+    expect(out.checked).toBe(1);
+    expect(out.withAnomalies).toBe(1);
+    expect(out.byKind).toEqual([]);
   });
 });

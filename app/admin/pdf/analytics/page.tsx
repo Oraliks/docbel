@@ -1,10 +1,12 @@
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
+import { Prisma } from "@prisma/client";
 import { requireAdminAuth } from "@/lib/auth-check";
 import { prisma } from "@/lib/prisma";
 import {
   bucketSubmissionsByDay,
   computeSuccessRate,
+  diagnosticsBreakdown,
   reportsByFieldType,
 } from "@/lib/pdf-forms/analytics";
 import {
@@ -51,6 +53,7 @@ export default async function PdfAnalyticsPage() {
     draftsExpiringSoon,
     pendingReports,
     pendingReportRows,
+    diagnosticsRows,
   ] = await Promise.all([
     // KPI (a) : répartition des formulaires par statut (draft/published/archived).
     prisma.pdfForm.groupBy({
@@ -79,6 +82,34 @@ export default async function PdfAnalyticsPage() {
       where: { status: "pending" },
       select: { fieldType: true },
     }),
+    // Complétude des générations (opposabilité, S7) : requête séparée et non
+    // ajout au select ci-dessus — celui-ci est volontairement minimal (aucune
+    // jointure, aucune PII) et couvre 90 j, alors qu'ici on a besoin du
+    // formulaire et seulement de la fenêtre affichée. Les lignes sans résumé
+    // (générations antérieures à S7) sont écartées en base.
+    prisma.pdfFormSubmissionLog
+      .findMany({
+        where: {
+          createdAt: { gte: windowStart },
+          diagnosticsSummary: { not: Prisma.DbNull },
+        },
+        select: {
+          diagnosticsSummary: true,
+          form: { select: { id: true, slug: true, title: true } },
+        },
+      })
+      // Les deux colonnes d'opposabilité arrivent par SQL additif, appliqué à
+      // la main sur la base partagée (cf. add_submission_log_opposability.sql).
+      // Entre un déploiement et son exécution, cette requête porte sur une
+      // colonne inexistante : la tuile se met alors en « aucune donnée »
+      // plutôt que de faire tomber toute la page analytics. Tracé, pas avalé.
+      .catch((err) => {
+        console.warn(
+          "[admin/pdf/analytics] diagnostics indisponibles — le SQL additif a-t-il été appliqué ?",
+          err,
+        );
+        return [];
+      }),
   ]);
 
   // Répartition des statuts de formulaire.
@@ -113,6 +144,7 @@ export default async function PdfAnalyticsPage() {
       now
     ),
     reportsByFieldType: reportsByFieldType(pendingReportRows),
+    diagnostics: diagnosticsBreakdown(diagnosticsRows),
   };
 
   return (

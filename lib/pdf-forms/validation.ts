@@ -133,8 +133,8 @@ const NISS_MESSAGES = {
   },
   date: {
     fr: "La date encodée dans ce NISS est impossible (mois ou jour hors limites). Avez-vous inversé l'ordre année / mois / jour ? Recopiez-le exactement depuis votre carte d'identité (eID).",
-    nl: "De datum in dit rijksregisternummer is onmogelijk (maand of dag buiten bereik). Heb je de volgorde jaar / maand / dag verwisseld? Neem het exact over van je identiteitskaart (eID).",
-    de: "Das in dieser NISS-Nummer kodierte Datum ist unmöglich (Monat oder Tag außerhalb des Bereichs). Hast du die Reihenfolge Jahr / Monat / Tag vertauscht? Übernimm sie genau von deinem Personalausweis (eID).",
+    nl: "De datum in dit rijksregisternummer is onmogelijk (maand of dag buiten bereik). Hebt u de volgorde jaar / maand / dag verwisseld? Neem het exact over van uw identiteitskaart (eID).",
+    de: "Das in dieser NISS-Nummer kodierte Datum ist unmöglich (Monat oder Tag außerhalb des Bereichs). Haben Sie die Reihenfolge Jahr / Monat / Tag vertauscht? Übernehmen Sie sie genau von Ihrem Personalausweis (eID).",
   },
   checksum: {
     fr: "Ce numéro NISS contient probablement une erreur de frappe : les chiffres ne correspondent pas. Vérifiez-le chiffre par chiffre au dos de votre carte d'identité (eID).",
@@ -679,8 +679,8 @@ export function isWeekendISO(iso: string): boolean {
 
 const WEEKEND_MESSAGE: Record<Locale, string> = {
   fr: "Cette date tombe un week-end. Aucun dossier ne peut être introduit un samedi ou un dimanche — choisissez un jour de semaine (renseignez-vous auprès de votre organisme de paiement pour une exception).",
-  nl: "Deze datum valt in het weekend. Een dossier kan niet worden ingediend op zaterdag of zondag — kies een weekdag (vraag je uitbetalingsinstelling om een uitzondering).",
-  de: "Dieses Datum fällt auf ein Wochenende. Ein Antrag kann nicht an einem Samstag oder Sonntag eingereicht werden — wähle einen Wochentag (frage deine Zahlstelle nach einer Ausnahme).",
+  nl: "Deze datum valt in het weekend. Een dossier kan niet worden ingediend op zaterdag of zondag — kies een weekdag (vraag uw uitbetalingsinstelling om een uitzondering).",
+  de: "Dieses Datum fällt auf ein Wochenende. Ein Antrag kann nicht an einem Samstag oder Sonntag eingereicht werden — wählen Sie einen Wochentag (fragen Sie Ihre Zahlstelle nach einer Ausnahme).",
 };
 
 /// Types dont le format est vérifiable en direct (les autres — text, textarea,

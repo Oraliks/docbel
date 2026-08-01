@@ -280,6 +280,32 @@ describe("validateFieldFormat — vouvoiement FR (S4, 2026-08-01)", () => {
   });
 });
 
+describe("validateFieldFormat — vouvoiement NL/DE (suite S4, 2026-08-01)", () => {
+  it("NISS avec date impossible : formel en NL (u/uw) et DE (Sie/Ihrem)", () => {
+    const nl = validateFieldFormat({ type: "niss" }, "85153003328", "nl");
+    expect(nl).toMatch(/Hebt u/);
+    expect(nl).toMatch(/uw identiteitskaart/);
+    expect(nl).not.toMatch(/\bHeb je\b|\bje identiteitskaart\b/);
+
+    const de = validateFieldFormat({ type: "niss" }, "85153003328", "de");
+    expect(de).toMatch(/Haben Sie/);
+    expect(de).toMatch(/Übernehmen Sie/);
+    expect(de).toMatch(/Ihrem Personalausweis/);
+    expect(de).not.toMatch(/\bHast du\b|\bÜbernimm\b|\bdeinem\b/);
+  });
+
+  it("date refusée un week-end : formel en NL (uw) et DE (Sie/Ihre)", () => {
+    const nl = validateFieldFormat({ type: "date", noWeekend: true }, nextSaturdayISO(), "nl");
+    expect(nl).toMatch(/uw uitbetalingsinstelling/);
+    expect(nl).not.toMatch(/\bje uitbetalingsinstelling\b/);
+
+    const de = validateFieldFormat({ type: "date", noWeekend: true }, nextSaturdayISO(), "de");
+    expect(de).toMatch(/wählen Sie/);
+    expect(de).toMatch(/fragen Sie Ihre Zahlstelle/);
+    expect(de).not.toMatch(/\bwähle\b|\bfrage deine\b/);
+  });
+});
+
 describe("anchoredRegex", () => {
   it("ancre la regex (^...$) pour éviter les correspondances partielles", () => {
     const rx = anchoredRegex("\\d{4}");

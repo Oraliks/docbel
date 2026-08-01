@@ -54,6 +54,7 @@ import { MotifSituationPicker } from "./motif-situation-picker";
 import { CompactAccordionSection } from "./compact-accordion-section";
 import { AutoSaveNotice } from "./auto-save-notice";
 import { ResetFormButton } from "./reset-form-button";
+import { useDraftAutosave } from "./use-draft-autosave";
 import { PaymentMethodPanel } from "./payment-method-panel";
 import { OptionCard } from "@/components/ui/option-card";
 
@@ -89,11 +90,6 @@ function scrollToField(id: string) {
     block: "center",
   });
 }
-
-/// Sauvegarde du brouillon : délai d'inactivité avant écriture, et délai
-/// MAXIMUM au-delà duquel on écrit même si la saisie continue.
-const DRAFT_DEBOUNCE_MS = 1500;
-const DRAFT_MAX_WAIT_MS = 10_000;
 
 /// Case de consentement RGPD — même bloc dans les deux rendus du runner.
 ///
@@ -293,14 +289,13 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
   const [continuation, setContinuation] = useState<
     null | { missing: { slug: string; title: string }[]; allRequiredDone: boolean }
   >(null);
-  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
-  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  // Sauvegarde en attente : les valeurs vivent dans `valuesRef` (toujours à
-  // jour), on ne mémorise ici que le contexte de la dernière frappe.
-  const pendingSave = useRef<{ stepId: string | null; field: string } | null>(null);
-  const lastSaveStartedAt = useRef(0);
-  const valuesRef = useRef<FormPayload>(values);
-  const mounted = useRef(true);
+  // Sauvegarde automatique du brouillon : minuteurs, plafond de report et
+  // filets de fermeture d'onglet vivent dans `use-draft-autosave` (lot S12).
+  const { lastSavedAt, scheduleSave, flushDraft, discardDraft } = useDraftAutosave({
+    slug: form.slug,
+    bundleRunId,
+    values,
+  });
   // Champs déjà modifiés par l'utilisateur — le brouillon serveur, qui arrive
   // de façon asynchrone au montage, ne doit JAMAIS les réécrire (cf. l'effet
   // de chargement plus bas).
@@ -344,7 +339,6 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
   // Miroir des valeurs pour les traitements HORS rendu (minuteur de sauvegarde,
   // flush au démontage) : ils ne peuvent pas lire le state par fermeture sans
   // se figer sur une version périmée.
-  useEffect(() => { valuesRef.current = values; }, [values]);
 
   useEffect(() => { onValuesChange?.(values); }, [values, onValuesChange]);
   useEffect(() => { onLocaleChange?.(locale); }, [locale, onLocaleChange]);
@@ -653,81 +647,6 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
     return m;
   }, [steps, macroSteps]);
 
-  /// Supprime le brouillon du BON périmètre après une soumission réussie.
-  ///
-  /// Le `bundleRunId` est indispensable (Oraliks 2026-07-26) : sans lui, la
-  /// route retombait sur le brouillon AUTONOME. Pour un citoyen anonyme en
-  /// dossier elle répondait 401 et `draftPayloads` n'était jamais purgé — le
-  /// brouillon périmé se restaurait par-dessus les réponses validées. Pour un
-  /// connecté, elle supprimait son brouillon autonome d'un tout autre parcours.
-  /// On annule aussi la sauvegarde en attente : sans ça, le minuteur en cours
-  /// pouvait recréer le brouillon juste après l'avoir effacé.
-  const discardDraft = useCallback(() => {
-    pendingSave.current = null;
-    if (saveTimer.current) {
-      clearTimeout(saveTimer.current);
-      saveTimer.current = null;
-    }
-    fetch(`/api/pdf/${form.slug}/draft`, {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ bundleRunId }),
-    }).catch(() => {});
-  }, [form.slug, bundleRunId]);
-
-  /// Envoie MAINTENANT le brouillon en attente, s'il y en a un. Lit les valeurs
-  /// dans `valuesRef` (jamais dans un updater `setValues` — un updater React
-  /// doit rester pur ; l'ancien code y déclenchait le `fetch`, ce qui produisait
-  /// deux PUT par sauvegarde en StrictMode).
-  const flushDraft = useCallback(() => {
-    const pending = pendingSave.current;
-    if (!pending) return;
-    pendingSave.current = null;
-    if (saveTimer.current) {
-      clearTimeout(saveTimer.current);
-      saveTimer.current = null;
-    }
-    lastSaveStartedAt.current = Date.now();
-    fetch(`/api/pdf/${form.slug}/draft`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      // `bundleRunId` route vers le brouillon serveur du dossier (anonyme
-      // possible) ; `stepId`/`field` alimentent la reprise fine (Lot 3).
-      body: JSON.stringify({
-        payload: valuesRef.current,
-        stepId: pending.stepId,
-        field: pending.field,
-        bundleRunId,
-      }),
-      // `keepalive` : la requête survit à la fermeture de l'onglet, ce qui rend
-      // le flush sur `visibilitychange` réellement utile sur mobile.
-      keepalive: true,
-    })
-      // N'affiche « enregistré » QUE si le serveur a réellement persisté
-      // (corrige le faux « enregistré » sur un 401 anonyme autonome).
-      .then((res) => {
-        if (res.ok && mounted.current) setLastSavedAt(new Date());
-      })
-      .catch(() => {});
-  }, [form.slug, bundleRunId]);
-
-  // Filets de la sauvegarde auto : on n'attend jamais indéfiniment.
-  //   • onglet masqué / fermé → on écrit tout de suite ;
-  //   • démontage (navigation vers un autre document) → idem, et on annule le
-  //     minuteur en cours pour ne pas écrire après coup.
-  useEffect(() => {
-    const onVisibility = () => {
-      if (document.visibilityState === "hidden") flushDraft();
-    };
-    document.addEventListener("visibilitychange", onVisibility);
-    return () => {
-      document.removeEventListener("visibilitychange", onVisibility);
-      flushDraft();
-      if (saveTimer.current) clearTimeout(saveTimer.current);
-    };
-  }, [flushDraft]);
-
-  useEffect(() => () => { mounted.current = false; }, []);
 
   const setValue = useCallback(
     (id: string, value: FieldValue) => {
@@ -767,20 +686,9 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
         if (!prev[id] && (!bicField || !prev[bicField.id])) return prev;
         return { ...prev, [id]: "", ...(bicField ? { [bicField.id]: "" } : {}) };
       });
-      pendingSave.current = { stepId: activeStepId ?? null, field: id };
-      if (saveTimer.current) clearTimeout(saveTimer.current);
-      // Plafond de report (Oraliks 2026-07-26). Le debounce était « trailing »
-      // pur : chaque frappe repoussait la sauvegarde de 1,5 s, donc quelqu'un
-      // qui tape lentement mais SANS PAUSE de 1,5 s — clavier virtuel, public
-      // en difficulté — ne déclenchait jamais d'enregistrement. Au-delà de
-      // DRAFT_MAX_WAIT_MS depuis la dernière écriture, on écrit sans attendre.
-      if (Date.now() - lastSaveStartedAt.current >= DRAFT_MAX_WAIT_MS) {
-        flushDraft();
-        return;
-      }
-      saveTimer.current = setTimeout(flushDraft, DRAFT_DEBOUNCE_MS);
+      scheduleSave(activeStepId ?? null, id);
     },
-    [form.fields, activeStepId, flushDraft]
+    [form.fields, activeStepId, scheduleSave]
   );
 
   // Bloque l'avancée vers une étape ULTÉRIEURE tant que les champs REQUIS

@@ -70,6 +70,13 @@ async function choisirCadre(page: Page, libelle: RegExp) {
 }
 
 test.describe("C47 — parcours citoyen complet jusqu'au PDF", () => {
+  // Au-dessus des 60 s du config : sur un dev server qui vient d'être lancé, le
+  // PREMIER passage compile la route à la demande et fait dépasser le premier
+  // test (mesuré : ~70 s, contre ~8 s une fois le serveur chaud). Coût
+  // d'environnement rendu explicite plutôt que masqué par un retry, qui
+  // rendrait la suite trompeuse.
+  test.describe.configure({ timeout: 150_000 });
+
   test.beforeEach(async ({ page, context, baseURL }) => {
     await seedVisiteurDeRetour(page, context, baseURL);
     await page.goto(C47_URL);

@@ -122,19 +122,22 @@ export function DocumentPageLayout({ form, bundlePrefill, bundleRunId, bundleSlu
   );
 }
 
-// Libellés cyclés par défaut : les types de chômage temporaire du dossier
-// actif. Exposés en prop pour rester génériques (futurs dossiers) et seront
-// à terme pilotés par la config du dossier plutôt que codés en dur. Les
-// chaînes ici sont des CLÉS i18n résolues côté composant via `t(key)`.
-const DEFAULT_CYCLING_LABEL_KEYS = [
-  "docPageCyclingEconomic",
-  "docPageCyclingSocialAction",
-  "docPageCyclingAnnualLeave",
-  "docPageCyclingCompensatoryRest",
-  "docPageCyclingBadWeather",
-  "docPageCyclingTechnicalAccident",
-  "docPageCyclingForceMajeure",
-] as const;
+// PLUS DE LISTE PAR DÉFAUT (2026-08-02, relecture d'écran). Le composant
+// repliait sur les sept motifs de CHÔMAGE TEMPORAIRE — « Économique »,
+// « Vacances annuelles », « Intempéries », « Force majeure »… — dès qu'un
+// document était ouvert hors dossier, c'est-à-dire sur l'URL publique de
+// chacun des huit. Un citoyen venu remplir l'Annexe REGIS, qui parle de
+// composition de ménage, voyait donc défiler « Vacances annuelles » sous le
+// titre : au mieux du bruit, au pire un doute sur le fait d'être au bon
+// endroit.
+//
+// Ces libellés n'ont de sens que rapportés au dossier qui les porte : ils
+// viennent désormais UNIQUEMENT de lui (`dossierTypes`). Hors dossier,
+// l'illustration garde son abréviation et la ligne reste vide — le conteneur
+// est de hauteur fixe, il n'y a donc aucun décalage de mise en page.
+//
+// Les clés `docPageCycling*` restent dans `messages/*.json` : elles
+// redeviendront utiles le jour où la config d'un dossier les désignera.
 
 // Cadence : on commence rapide (~3,5 s) pour attirer l'œil, puis on ralentit
 // à 5 s après quelques transitions "pour pas que ça charge trop le site".
@@ -149,16 +152,9 @@ function DocIllustration({
   abbrev: string;
   cyclingLabels?: string[];
 }) {
-  const t = useTranslations("public.dossier");
-  // Libellés effectifs : ceux passés en prop (issus du dossier — DB, on ne
-  // les traduit pas) sinon ceux par défaut résolus via i18n.
-  const labels = useMemo<string[]>(
-    () =>
-      cyclingLabels && cyclingLabels.length > 0
-        ? cyclingLabels
-        : DEFAULT_CYCLING_LABEL_KEYS.map((k) => t(k as Parameters<typeof t>[0])),
-    [cyclingLabels, t],
-  );
+  // Libellés : ceux du dossier, ou rien. Ils viennent de la base et ne sont
+  // donc pas traduits ici.
+  const labels = useMemo<string[]>(() => cyclingLabels ?? [], [cyclingLabels]);
   const [index, setIndex] = useState(0);
   // Nombre de swaps déjà effectués (sert à basculer rapide → lent).
   const swapsRef = useRef(0);

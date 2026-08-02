@@ -3817,6 +3817,7 @@
       "runnerGroupActivitesRevenusDesc": "Details over je inkomsten.",
       "runnerGroupFamilleDesc": "Informatie over je gezin.",
       "runnerGroupFinalDesc": "Laatste gegevens en verzending.",
+      "runnerGroupAnnexesSignature": "Bijlagen en handtekening",
       "runnerProgressBarLabel": "Voortgang van het formulier",
       "runnerStepBadge": "{current} / {total} stappen",
       "runnerPaymentChoiceEditable": "Wijzigbare keuze",

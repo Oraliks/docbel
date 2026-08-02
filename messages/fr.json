@@ -5241,6 +5241,7 @@
       "runnerGroupActivitesRevenusDesc": "Détails sur vos ressources.",
       "runnerGroupFamilleDesc": "Informations sur votre foyer.",
       "runnerGroupFinalDesc": "Dernières informations et envoi.",
+      "runnerGroupAnnexesSignature": "Annexes et signature",
       "runnerProgressBarLabel": "Avancement du formulaire",
       "runnerStepBadge": "{current} / {total} étapes",
       "runnerPaymentChoiceEditable": "Choix modifiable",

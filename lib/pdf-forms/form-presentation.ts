@@ -149,6 +149,16 @@ const PRESENTATION_BY_SLUG: Readonly<Record<string, FormPresentation>> = {
     // (« non » sept fois) tient donc en huit écrans au lieu d'une grille de
     // vingt-huit champs d'un seul tenant.
     stepGroupOrder: [C1_REGIS_GROUPE_IDENTITE, ...C1_REGIS_QUESTIONS],
+    // SEULE clé de titre du parc, et elle corrige une inexactitude. La dernière
+    // étape retombait sur le libellé de la section `signature`, « Date et
+    // signature » — partagé par les huit documents. Or l'Annexe REGIS est le
+    // seul à n'imprimer AUCUNE date de signature (une seule zone « Date –
+    // signature », que l'horodatage remplit ; cf. l'en-tête de
+    // `seed/c1-regis-fields.ts`). L'étape annonçait donc une case qui n'existe
+    // pas, alors qu'elle demande en réalité le nombre d'annexes puis la
+    // signature. Le libellé partagé reste juste pour les sept autres : on ne
+    // le touche pas, on l'écrase ici.
+    stepGroupTitleKey: { signature: "runnerGroupAnnexesSignature" },
     hideStepList: true,
   },
 };

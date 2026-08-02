@@ -1562,6 +1562,7 @@
       "runnerGroupActivitesRevenusDesc": "Details zu deinen Einkünften.",
       "runnerGroupFamilleDesc": "Informationen zu deinem Haushalt.",
       "runnerGroupFinalDesc": "Letzte Angaben und Versand.",
+      "runnerGroupAnnexesSignature": "Anlagen und Unterschrift",
       "runnerProgressBarLabel": "Fortschritt des Formulars",
       "runnerStepBadge": "{current} / {total} Schritte",
       "runnerPaymentChoiceEditable": "Änderbare Auswahl",

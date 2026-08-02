@@ -147,3 +147,58 @@ describe("form-presentation", () => {
     });
   });
 });
+
+// ===========================================================================
+// LES CLÉS DE TITRE EXISTENT VRAIMENT
+// ===========================================================================
+//
+// `stepGroupTitle` fait primer la clé i18n sur tout le reste : si elle n'existe
+// pas dans le catalogue, next-intl rend la CLÉ BRUTE, et le citoyen lit
+// « runnerGroupAnnexesSignature » en titre d'étape. Un formulaire ONEM en
+// production, sur un texte que personne ne relit après la mise en place.
+//
+// Le catalogue FR sert de référence : les autres langues se replient dessus
+// (cf. `i18n/request.ts`, `deepMerge`), donc une clé présente en FR ne peut
+// jamais manquer ailleurs.
+describe("clés i18n des titres d'étapes", () => {
+  it("toutes celles déclarées par un formulaire existent dans le catalogue FR", async () => {
+    const fr = (await import("../../../messages/fr.json")).default as {
+      public: { dossier: Record<string, unknown> };
+    };
+    const catalogue = fr.public.dossier;
+
+    // Les huit slugs semés + un inconnu, pour couvrir aussi le repli.
+    const slugs = [
+      "c1-changement-situation",
+      "c1-regis",
+      "c1-partenaire",
+      "c1a",
+      "c1b",
+      "c1c",
+      "c46",
+      "c47",
+      "slug-inexistant",
+    ];
+
+    const manquantes: string[] = [];
+    for (const slug of slugs) {
+      const p = getFormPresentation(slug);
+      for (const cle of [
+        ...Object.values(p.stepGroupTitleKey ?? {}),
+        ...Object.values(p.stepGroupDescriptionKey ?? {}),
+      ]) {
+        if (!(cle in catalogue)) manquantes.push(`${slug} → ${cle}`);
+      }
+    }
+    expect(manquantes).toEqual([]);
+  });
+
+  it("l'Annexe REGIS n'annonce pas une date de signature qu'elle n'imprime pas", () => {
+    // Le libellé de section partagé dit « Date et signature » ; ce document
+    // est le seul du parc à n'avoir aucune case de date (cf. l'en-tête de
+    // `seed/c1-regis-fields.ts`), d'où le seul titre d'étape surchargé du parc.
+    expect(getFormPresentation("c1-regis").stepGroupTitleKey?.signature).toBe(
+      "runnerGroupAnnexesSignature",
+    );
+  });
+});

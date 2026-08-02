@@ -172,6 +172,25 @@ export const C1_MOTIF: PdfFormField[] = [
     required: false,
     label: { fr: "Date de création du document" },
     prefillFrom: "system.today",
+    // Guide en peigne, TROISIÈME alphabet du parc : ni le souligné ASCII des
+    // dates du motif, ni le glyphe SymbolMT du C1B, mais huit U+23AF
+    // (« ⎯ », extension de trait horizontal). Le détecteur ne le connaissait
+    // pas, donc aucun garde ne voyait ce guide-là : « 02/08/2026 » sortait
+    // d'un bloc, centré dans un rectangle deux fois trop haut, et laissait la
+    // grille vide juste en dessous — une date écrite À CÔTÉ de sa case, au bas
+    // de la déclaration signée (relevé le 2026-08-02).
+    //
+    // Mesuré : boîtes de 12,96 pt, ruptures de 6,12, première boîte à 0,86 du
+    // bord du widget. L'encre du guide est un barreau plein posé sur le bas du
+    // rectangle (y 41,52-41,94) — d'où une ligne de base à peine au-dessus.
+    fontSize: 12,
+    printAsComb: {
+      groups: [2, 2, 4],
+      slotWidth: 12.96,
+      groupExtra: 6.12,
+      startX: 0.86,
+      baselineY: 1.2,
+    },
     section: SECTION_SIGNATURE,
   },
 ];

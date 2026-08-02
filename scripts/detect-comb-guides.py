@@ -27,11 +27,23 @@ from pypdf.generic import IndirectObject
 
 SORTIE = os.path.join("lib", "pdf-forms", "__tests__", "fixtures", "comb-guides.json")
 
-# Un guide est dessine soit avec des soulignes ASCII, soit avec un glyphe de la
-# zone a usage prive d'une police symbole (SymbolMT sur le C1A). Les deux se
-# rencontrent dans le parc, parfois sur le meme document.
+# TROIS alphabets de guide se rencontrent dans le parc, parfois sur le meme
+# document :
+#   - le souligne ASCII « _ » (dates du motif du C1) ;
+#   - un glyphe de la zone a usage prive d'une police symbole (SymbolMT sur le
+#     C1A, Wingdings ailleurs) ;
+#   - U+23AF « HORIZONTAL LINE EXTENSION » (date de signature du C1, numeros
+#     BCE du C1C). Celui-la manquait : sa case etait invisible pour tous les
+#     gardes, et la date du bas de la page 2 du C1 sortait d'un bloc a cote de
+#     sa grille (2026-08-02).
+#
+# Attention a la ligne de base : pour « _ » l'encre est au bas de la boite du
+# glyphe, pour les deux autres elle est plus haut (barreau au milieu). Le
+# calage `baselineY` du seed s'en deduit a la mesure, pas a la regle.
 def est_glyphe_guide(texte):
-    return texte == "_" or (len(texte) == 1 and ord(texte) >= 0xF000)
+    if len(texte) != 1:
+        return False
+    return texte == "_" or texte == "⎯" or ord(texte) >= 0xF000
 
 
 # Nombre minimal de glyphes alignes pour parler de PEIGNE. En dessous, on est

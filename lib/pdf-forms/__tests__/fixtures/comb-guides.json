@@ -1515,6 +1515,54 @@
         ],
         "tailleGuide": 9.0
       }
+    ],
+    "Nom de lentreprise": [
+      {
+        "cases": 10,
+        "ecartGroupe": [
+          6.0
+        ],
+        "finX": 536.38,
+        "groupes": [
+          4,
+          3,
+          3
+        ],
+        "guideY": 260.67,
+        "page": 0,
+        "pas": 12.96,
+        "premierX": 398.47,
+        "rect": [
+          396.81,
+          265.38,
+          535.7,
+          273.69
+        ],
+        "tailleGuide": 9.0
+      },
+      {
+        "cases": 10,
+        "ecartGroupe": [
+          6.12
+        ],
+        "finX": 492.46,
+        "groupes": [
+          4,
+          3,
+          3
+        ],
+        "guideY": 212.64,
+        "page": 0,
+        "pas": 12.96,
+        "premierX": 354.31,
+        "rect": [
+          354.7,
+          216.28,
+          493.59,
+          224.6
+        ],
+        "tailleGuide": 9.0
+      }
     ]
   },
   "C1_FR.pdf": {
@@ -1643,6 +1691,31 @@
           458.19
         ],
         "tailleGuide": 8.04
+      }
+    ],
+    "DateDeCréationDocument": [
+      {
+        "cases": 8,
+        "ecartGroupe": [
+          6.12
+        ],
+        "finX": 212.81,
+        "groupes": [
+          2,
+          2,
+          4
+        ],
+        "guideY": 37.66,
+        "page": 1,
+        "pas": 12.96,
+        "premierX": 100.7,
+        "rect": [
+          99.84,
+          41.52,
+          214.58,
+          63.52
+        ],
+        "tailleGuide": 9.0
       }
     ],
     "DateDeDA": [

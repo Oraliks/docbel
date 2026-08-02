@@ -30,7 +30,7 @@ import {
   signatureTimestamp,
 } from "./signature";
 import { isSignatureField } from "./auto-fields";
-import { isFieldVisible } from "./validation";
+import { isFieldVisible, visiblePayload } from "./validation";
 import { formatDateFR } from "./bindings/format";
 import type { CombWidgetSpec } from "./bindings/comb-widgets";
 
@@ -994,7 +994,7 @@ const POSITIONAL_EXTRA_STAMPS: Record<string, PositionalStampSpec> = {
 export async function fillForm(
   source: Buffer,
   fields: PdfFormField[],
-  payload: FormPayload,
+  payloadBrut: FormPayload,
   opts: {
     flatten?: boolean;
     technicalSchema?: AcroFieldRaw[];
@@ -1010,6 +1010,23 @@ export async function fillForm(
   } = {}
 ): Promise<FillResult> {
   const flatten = opts.flatten !== false;
+
+  // Visibilité EN CASCADE, calculée une fois pour toute la fonction.
+  //
+  // Les tests `field.visibleIf` plus bas s'évaluaient contre le payload BRUT :
+  // chacun voyait bien sa propre condition, mais pas celle de son parent. Une
+  // sous-question dont le parent venait de disparaître passait donc pour
+  // visible et s'imprimait seule — « je joins une copie » coché sous une
+  // rubrique « j'habite seul » elle-même décochée (relevé le 2026-08-02 à la
+  // relecture du C1). `visiblePayload` itère jusqu'au point fixe et supprime en
+  // cascade ; c'est la même notion de « visible » que celle déjà appliquée aux
+  // règles serveur dans la route de génération. Les deux moitiés du document
+  // parlent enfin de la même chose.
+  //
+  // Ne touche QUE les champs porteurs d'un `visibleIf` : les champs auto
+  // (signature, date du jour) et les champs `hidden` traversent inchangés.
+  const payload = visiblePayload(fields, payloadBrut);
+
   const doc = await PDFDocument.load(source, { ignoreEncryption: true });
   const form = doc.getForm();
 

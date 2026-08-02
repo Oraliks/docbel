@@ -683,7 +683,12 @@ function PdfFieldControl({
           <DatePickerInput
             id={field.id}
             value={String(displayValue)}
-            placeholder={placeholder}
+            // Le gabarit vient de la LANGUE, pas du seed : « JJ/MM/AAAA » en
+            // français, « DD/MM/JJJJ » en néerlandais. Un `placeholder` posé
+            // sur le champ le remplace, pour les rares dates qui méritent une
+            // consigne propre.
+            placeholder={placeholder || t("fieldDatePlaceholder")}
+            calendarLabel={t("fieldDateCalendarLabel")}
             invalid={invalid}
             noWeekend={field.noWeekend}
             className="flex-1"

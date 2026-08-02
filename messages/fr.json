@@ -5346,6 +5346,8 @@
       "ferBtnClose": "Fermer",
       "ferBtnCancel": "Annuler",
       "ferBtnSend": "Envoyer le signalement",
+      "fieldDateCalendarLabel": "Choisir dans le calendrier",
+      "fieldDatePlaceholder": "JJ/MM/AAAA",
       "fieldSelectPlaceholder": "Sélectionner…",
       "fieldFirstName": "Prénom",
       "fieldLastName": "Nom",

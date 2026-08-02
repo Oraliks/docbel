@@ -1562,6 +1562,8 @@
       "runnerGroupActivitesRevenusDesc": "Details zu deinen Einkünften.",
       "runnerGroupFamilleDesc": "Informationen zu deinem Haushalt.",
       "runnerGroupFinalDesc": "Letzte Angaben und Versand.",
+      "fieldDateCalendarLabel": "Im Kalender auswählen",
+      "fieldDatePlaceholder": "TT/MM/JJJJ",
       "runnerGroupAnnexesSignature": "Anlagen und Unterschrift",
       "runnerProgressBarLabel": "Fortschritt des Formulars",
       "runnerStepBadge": "{current} / {total} Schritte",

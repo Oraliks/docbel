@@ -3817,6 +3817,8 @@
       "runnerGroupActivitesRevenusDesc": "Details over je inkomsten.",
       "runnerGroupFamilleDesc": "Informatie over je gezin.",
       "runnerGroupFinalDesc": "Laatste gegevens en verzending.",
+      "fieldDateCalendarLabel": "Kies in de kalender",
+      "fieldDatePlaceholder": "DD/MM/JJJJ",
       "runnerGroupAnnexesSignature": "Bijlagen en handtekening",
       "runnerProgressBarLabel": "Voortgang van het formulier",
       "runnerStepBadge": "{current} / {total} stappen",

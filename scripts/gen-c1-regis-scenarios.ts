@@ -54,7 +54,7 @@ const SCENARIOS: Scenario[] = [
     cle: "1-nationalite-seule",
     titre: "Une seule différence : la nationalité (codes N)",
     payload: {
-      ...entete("Vandenbroucke", "Amélie", "85.07.14-231.05"),
+      ...entete("Vandenbroucke", "Amélie", "85.07.14-231.19"),
       nationaliteDifference: "oui",
       nationaliteC1: "Belge",
       nationaliteRegistre: "Française",
@@ -74,7 +74,7 @@ const SCENARIOS: Scenario[] = [
     cle: "2-adresse-seule",
     titre: "Une seule différence : l'adresse (codes A)",
     payload: {
-      ...entete("El Ouazzani", "Mohammed", "78.11.02-088.44"),
+      ...entete("El Ouazzani", "Mohammed", "78.11.02-088.15"),
       nationaliteDifference: "non",
       adresseDifference: "oui",
       adresseC1: "Rue de la Loi 16, 1000 Bruxelles",
@@ -94,7 +94,7 @@ const SCENARIOS: Scenario[] = [
     cle: "3-colocataires-fn4",
     titre: "Deux colocataires à déclarer en FN4",
     payload: {
-      ...entete("De Clercq", "Sofie", "94.03.28-088.44"),
+      ...entete("De Clercq", "Sofie", "94.03.28-088.97"),
       nationaliteDifference: "non",
       adresseDifference: "non",
       personne1Difference: "oui",
@@ -126,7 +126,7 @@ const SCENARIOS: Scenario[] = [
     cle: "4-toutes-les-lignes",
     titre: "Les sept lignes en différence — couverture maximale",
     payload: {
-      ...entete("Vanderstichelen-Delacroix", "Jean-Baptiste", "69.12.31-999.09"),
+      ...entete("Vanderstichelen-Delacroix", "Jean-Baptiste", "69.12.31-999.89"),
       nationaliteDifference: "oui",
       nationaliteC1: "Belge",
       nationaliteRegistre: "Italienne",

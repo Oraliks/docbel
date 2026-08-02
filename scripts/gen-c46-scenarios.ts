@@ -35,7 +35,7 @@ const SCENARIOS: Scenario[] = [
     titre: "Un seul mandat, publié au Moniteur belge",
     payload: {
       nom_et_pr_nom: { first: "Amélie", last: "Vandenbroucke" },
-      niss: "85.07.14-231.05",
+      niss: "85.07.14-231.19",
       organisme1: "Conseil supérieur de la Culture de la Communauté française",
       moniteurBelgeDate1: "2026-03-12",
     },
@@ -48,7 +48,7 @@ const SCENARIOS: Scenario[] = [
     titre: "Trois mandats, trois dates de publication distinctes",
     payload: {
       nom_et_pr_nom: { first: "Mohammed", last: "El Ouazzani" },
-      niss: "78.11.02-088.44",
+      niss: "78.11.02-088.15",
       organisme1: "Commission du travail des arts",
       moniteurBelgeDate1: "2026-01-05",
       organisme2: "Conseil de la Musique",
@@ -64,7 +64,7 @@ const SCENARIOS: Scenario[] = [
     titre: "Pas de publication au Moniteur — copies de nomination en annexe",
     payload: {
       nom_et_pr_nom: { first: "Sofie", last: "De Clercq" },
-      niss: "94.03.28-088.44",
+      niss: "94.03.28-088.97",
       organisme1: "Conseil consultatif des Arts plastiques",
       organisme2: "Commission consultative du Patrimoine culturel immatériel",
       nominations_suivantes_1:
@@ -78,7 +78,7 @@ const SCENARIOS: Scenario[] = [
     titre: "Un mandat publié, un autre justifié par une annexe",
     payload: {
       nom_et_pr_nom: { first: "Jean-Baptiste", last: "Vanderstichelen-Delacroix" },
-      niss: "69.12.31-999.09",
+      niss: "69.12.31-999.89",
       organisme1: "Conseil supérieur de l'Audiovisuel",
       moniteurBelgeDate1: "2026-06-01",
       organisme2: "Commission du travail des arts",

@@ -88,7 +88,7 @@ const SCENARIOS: Scenario[] = [
     cle: "2-aide-independant-et-mandat",
     titre: "Aide à un indépendant (grille Q4 complète) + mandat politique",
     payload: {
-      ...entete("El Ouazzani", "Mohammed", "78.11.02-088.44"),
+      ...entete("El Ouazzani", "Mohammed", "78.11.02-088.15"),
       aideIndependant: "oui",
       independantNom: "Peeters Lieven",
       independantNumeroEntreprise: "0123456749",
@@ -141,7 +141,7 @@ const SCENARIOS: Scenario[] = [
     cle: "3-activite-salariee-et-chomage-temporaire",
     titre: "Activité accessoire salariée (grille Q18 complète) + chômeur temporaire",
     payload: {
-      ...entete("De Clercq", "Sofie", "94.03.28-088.44"),
+      ...entete("De Clercq", "Sofie", "94.03.28-088.97"),
       aideIndependant: "non",
       mandatPolitiqueOuJuge: "non",
       autreActiviteAccessoire: "oui",
@@ -188,7 +188,7 @@ const SCENARIOS: Scenario[] = [
     cle: "4-mandataire-et-revenus-annuels",
     titre: "Activité comme mandataire, période irrégulière, revenus annuels",
     payload: {
-      ...entete("Vanderstichelen-Delacroix", "Jean-Baptiste", "69.12.31-999.09"),
+      ...entete("Vanderstichelen-Delacroix", "Jean-Baptiste", "69.12.31-999.89"),
       aideIndependant: "oui",
       independantNom: "Atelier Kowalczyk",
       independantAdresseRueNumero: "Avenue Louise 250 bte 4",
@@ -237,7 +237,7 @@ const SCENARIOS: Scenario[] = [
     cle: "5-branches-non",
     titre: "Les trois « non » d'embranchement (Q3, n° d'entreprise, Q17)",
     payload: {
-      ...entete("Kowalczyk", "Agnieszka", "94.03.28-088.44"),
+      ...entete("Kowalczyk", "Agnieszka", "94.03.28-088.97"),
       aideIndependant: "oui",
       independantNom: "Diallo Ousmane",
       independantAdresseRueNumero: "Rue Haute 88",
@@ -272,7 +272,7 @@ const SCENARIOS: Scenario[] = [
     cle: "6-periodes-restantes",
     titre: "Q4 toute l'année + Q18 pendant les périodes suivantes",
     payload: {
-      ...entete("Nkosi", "Grace", "78.11.02-088.44"),
+      ...entete("Nkosi", "Grace", "78.11.02-088.15"),
       aideIndependant: "oui",
       independantNom: "Peeters Lieven",
       independantAdresseRueNumero: "Rue du Marché 3",

@@ -28,7 +28,7 @@ const SCENARIOS: Scenario[] = [
     titre: "Personne physique — le parcours le plus court",
     payload: {
       pr_nom_et_nom: { first: "Amélie", last: "Vandenbroucke" },
-      niss: "85.07.14-231.05",
+      niss: "85.07.14-231.19",
       dateDebutActivite: "2026-09-01",
       descriptionActivite1:
         "Cours particuliers de mathématiques et de physique à domicile, pour des élèves du secondaire.",
@@ -49,7 +49,7 @@ const SCENARIOS: Scenario[] = [
     titre: "Société — toutes les branches « oui », tous les champs servis",
     payload: {
       pr_nom_et_nom: { first: "Mohammed", last: "El Ouazzani" },
-      niss: "78.11.02-145.37",
+      niss: "78.11.02-145.55",
       dateDebutActivite: "2026-08-15",
       descriptionActivite1:
         "Réparation de vélos électriques à domicile et vente en ligne de pièces détachées d'occasion, principalement des batteries reconditionnées et des moteurs de roue avant.",
@@ -78,7 +78,7 @@ const SCENARIOS: Scenario[] = [
     titre: "Personne physique sans BCE — le champ « Autre » sert d'explication",
     payload: {
       pr_nom_et_nom: { first: "Sofie", last: "De Clercq" },
-      niss: "94.03.28-088.44",
+      niss: "94.03.28-088.97",
       dateDebutActivite: "2026-10-01",
       descriptionActivite1: "Création de bijoux artisanaux vendus sur les marchés locaux.",
       possedeSiteInternet: "oui",
@@ -100,7 +100,7 @@ const SCENARIOS: Scenario[] = [
     titre: "Textes longs — repli sur toutes les lignes pointillées",
     payload: {
       pr_nom_et_nom: { first: "Jean-Baptiste", last: "Vanderstichelen-Delacroix" },
-      niss: "69.12.31-999.09",
+      niss: "69.12.31-999.89",
       dateDebutActivite: "2026-12-31",
       descriptionActivite1:
         "Je preste des services de conseil en transition énergétique auprès de petites communes rurales : audit des bâtiments publics, montage de dossiers de subsides régionaux, accompagnement des marchés publics de rénovation, et formation du personnel technique communal aux nouveaux équipements de chauffage.",
@@ -136,7 +136,7 @@ const SCENARIOS: Scenario[] = [
     titre: "Nom non latin et accents — repli de police",
     payload: {
       pr_nom_et_nom: { first: "Οδυσσέας", last: "Παπαδόπουλος" },
-      niss: "88.02.29-123.19",
+      niss: "88.02.29-123.93",
       dateDebutActivite: "2026-11-03",
       descriptionActivite1: "Traduction et interprétariat grec — français pour des études notariales.",
       possedeSiteInternet: "non",

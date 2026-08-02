@@ -193,6 +193,41 @@ const HELP: Record<string, Partial<Record<Locale, SectionHelp>>> = {
   },
 };
 
+/// Surcharges PAR FORMULAIRE, quand deux documents partagent une clé de
+/// section mais ne posent pas la même question.
+///
+/// Le cas qui l'a rendue nécessaire : `demande` sert au C1 (« quel changement
+/// déclarez-vous ? ») ET au C47 (« dans quel cadre demandez-vous la fixation
+/// de vos allocations ? »). Le texte, écrit pour le C1, s'affichait tel quel
+/// sur le C47 : un citoyen déclarant une inaptitude permanente de 33 % lisait
+/// « Indiquez la nature du changement intervenu dans votre situation », avec
+/// pour exemples un mariage, un déménagement ou une naissance (2026-08-02).
+///
+/// Indexé `slug → section → locale`. Ne rien y mettre qui vaille pour tous les
+/// documents : le tableau commun reste la référence, celui-ci l'exception.
+const SURCHARGES: Record<string, Record<string, Partial<Record<Locale, SectionHelp>>>> = {
+  c47: {
+    demande: {
+      // Strictement ce que le papier annonce : le formulaire distingue les
+      // demandes qui relèvent du contrôle de la disponibilité active de celles
+      // qui n'en relèvent pas, et exige un certificat médical en annexe. Aucune
+      // condition d'octroi n'est affirmée ici — ce n'est pas le rôle de l'aide.
+      fr: {
+        title: "Comprendre cette étape",
+        body: "Indiquez dans quel cadre vous demandez la fixation du montant de vos allocations. Un certificat médical attestant votre inaptitude permanente au travail est à joindre au formulaire.",
+      },
+      nl: {
+        title: "Deze stap begrijpen",
+        body: "Geef aan in welk kader u de vaststelling van het bedrag van uw uitkeringen vraagt. Een medisch attest van uw blijvende arbeidsongeschiktheid moet bij het formulier worden gevoegd.",
+      },
+      de: {
+        title: "Diesen Schritt verstehen",
+        body: "Geben Sie an, in welchem Rahmen Sie die Festsetzung des Betrags Ihrer Leistungen beantragen. Ein ärztliches Attest über Ihre dauerhafte Arbeitsunfähigkeit ist dem Formular beizufügen.",
+      },
+    },
+  },
+};
+
 const FALLBACK: Record<Locale, SectionHelp> = {
   fr: { title: "Pourquoi ces questions ?", body: "Ces informations permettent d'actualiser votre dossier et de vérifier si vos droits peuvent changer." },
   nl: { title: "Waarom deze vragen?", body: "Met deze gegevens kan uw dossier worden bijgewerkt en kan worden nagegaan of uw rechten kunnen wijzigen." },
@@ -203,7 +238,19 @@ const FALLBACK: Record<Locale, SectionHelp> = {
 /// Repli sur le FR si la traduction manque pour cette section/locale, puis
 /// sur un texte générique si la section n'a pas d'entrée dédiée (ex. un
 /// formulaire compagnon non documenté ici) — ne renvoie jamais de chaîne vide.
-export function getSectionHelp(key: string | undefined, lang: Locale): SectionHelp {
+export function getSectionHelp(
+  key: string | undefined,
+  lang: Locale,
+  /// Slug du formulaire, quand il est connu de l'appelant : permet à un
+  /// document de surcharger une section qu'il PARTAGE avec un autre sans en
+  /// changer le texte pour tout le monde (cf. `SURCHARGES`). Absent = strictement
+  /// le comportement d'avant.
+  formSlug?: string
+): SectionHelp {
+  if (key && formSlug) {
+    const propre = SURCHARGES[formSlug]?.[key];
+    if (propre) return propre[lang] ?? propre[DEFAULT_LOCALE] ?? FALLBACK[lang];
+  }
   if (key && HELP[key]) {
     return HELP[key][lang] ?? HELP[key][DEFAULT_LOCALE] ?? FALLBACK[lang];
   }

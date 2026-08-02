@@ -46,7 +46,7 @@ const SCENARIOS: Scenario[] = [
     cle: "1-tout-non",
     titre: "Aucun revenu à déclarer — toutes les réponses « non »",
     payload: {
-      ...IDENTITE("Vandenbroucke", "Amélie", "85.07.14-231.05"),
+      ...IDENTITE("Vandenbroucke", "Amélie", "85.07.14-231.19"),
       droitPensionRetraiteComplete: "non",
       percoitPension: "non",
       indemniteMaladieInvaliditeEtrangere: "non",
@@ -63,7 +63,7 @@ const SCENARIOS: Scenario[] = [
     cle: "2-pension-survie-belge-quatre-dates",
     titre: "Pension de survie belge — les quatre dates doivent être DIFFÉRENTES",
     payload: {
-      ...IDENTITE("El Ouazzani", "Mohammed", "78.11.02-088.44"),
+      ...IDENTITE("El Ouazzani", "Mohammed", "78.11.02-088.15"),
       droitPensionRetraiteComplete: "oui",
       typePensionRetraiteComplete: "belge",
       denominationPensionRetraiteComplete: "Pension de retraite du secteur privé",
@@ -90,7 +90,7 @@ const SCENARIOS: Scenario[] = [
     cle: "3-conge-sans-solde",
     titre: "Congé sans solde — les deux bornes de la période doivent différer",
     payload: {
-      ...IDENTITE("De Clercq", "Sofie", "94.03.28-088.44"),
+      ...IDENTITE("De Clercq", "Sofie", "94.03.28-088.97"),
       droitPensionRetraiteComplete: "non",
       percoitPension: "oui",
       typePensionPercue: "retraite-belge",
@@ -119,7 +119,7 @@ const SCENARIOS: Scenario[] = [
     cle: "4-textes-longs",
     titre: "Textes longs et nom non latin",
     payload: {
-      ...IDENTITE("Παπαδόπουλος", "Οδυσσέας", "69.12.31-999.09"),
+      ...IDENTITE("Παπαδόπουλος", "Οδυσσέας", "69.12.31-999.89"),
       droitPensionRetraiteComplete: "oui",
       typePensionRetraiteComplete: "etrangere",
       denominationPensionRetraiteComplete:
@@ -141,7 +141,7 @@ const SCENARIOS: Scenario[] = [
     cle: "5-pension-retraite-percue-refus-cumul",
     titre: "Pension de retraite belge perçue — refus de cumul, pas de cumul antérieur",
     payload: {
-      ...IDENTITE("Vanderstichelen", "Louise", "88.02.29-123.19"),
+      ...IDENTITE("Vanderstichelen", "Louise", "88.02.29-123.93"),
       droitPensionRetraiteComplete: "oui",
       typePensionRetraiteComplete: "etrangere",
       denominationPensionRetraiteComplete: "Pension de retraite d'indépendant",
@@ -165,7 +165,7 @@ const SCENARIOS: Scenario[] = [
     cle: "6-pension-survie-etrangere",
     titre: "Pension de survie étrangère",
     payload: {
-      ...IDENTITE("Berger", "Nadia", "82.06.15-201.19"),
+      ...IDENTITE("Berger", "Nadia", "82.06.15-201.46"),
       droitPensionRetraiteComplete: "non",
       percoitPension: "oui",
       typePensionPercue: "survie-etrangere",

@@ -59,7 +59,10 @@ export function ContextHelpPanel({
   const t = useTranslations("public.dossier");
   const source = entries ?? getDefaultTipsForForm(formSlug);
   const shown = resolveTips(source, { sectionKeys, checkedFieldIds });
-  const help = getSectionHelp(sectionKeys[0], locale);
+  // Le slug compte : deux documents peuvent partager une clé de section sans
+  // poser la même question (« demande » = motif du C1, cadre de la demande du
+  // C47). Cf. `SURCHARGES` dans section-help.ts.
+  const help = getSectionHelp(sectionKeys[0], locale, formSlug);
   // Couche focus (§10.4) AU-DESSUS du système existant : aide propre du champ
   // focalisé, résolue via le sélecteur pur `pickFieldHelp`. N'altère ni
   // `resolveTips`, ni le repli de section, ni le contact.

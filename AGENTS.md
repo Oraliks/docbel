@@ -96,8 +96,8 @@ défini mais inutilisé (dette — cf. TECH_DEBT_QUEUE).
 
 ## Validation
 ```bash
-pnpm lint     # ⚠️ ~74 erreurs PRÉ-EXISTANTES — ne pas en ajouter (pas de zéro forcé)
-pnpm test     # vitest (271 tests)
+pnpm lint     # ⚠️ 129 erreurs / 52 warnings PRÉ-EXISTANTS — ne pas en ajouter (pas de zéro forcé)
+pnpm test     # vitest (~2 320 tests, joués en CI à chaque push)
 pnpm build    # build + typecheck (PAS de "pnpm typecheck")
 pnpm i18n:check
 ```

@@ -56,9 +56,9 @@ base, refactor du runner, e2e, conception de schéma).
 | 10 | S10 | « Vous » partout dans les seeds (aides uniquement) | Sonnet | fait (ed2b8b4) — ⚠️ RE-SEMIS à lancer par Oraliks, sinon rien ne change à l'écran |
 | 11 | S11 ♦ | E2E Playwright : un parcours C47 complet → PDF | Opus | fait (a9f4bee) — 3 tests, rejoués 3× (9/9) ; S12 peut s'appuyer dessus |
 | 12 | S12 ♦ | Runner dégraissé (pied de soumission + hook autosave) | Opus | fait (92fefce + c5203c1) — 2 413 → 2 090 l. ; ⚠️ QA visuelle Oraliks |
-| 13 | S13 ♦ | Moules réellement partagés — 1er passage (C46 + C47) | Opus | à faire |
-| 14 | S14 ♦ | C1-Regis réaligné (= NEXT_ACTIONS #31 enrichi) | Opus | à faire |
-| 15 | S15 | Docs à jour + monitoring crons + perf mineures | Sonnet | à faire |
+| 13 | S13 ♦ | Moules réellement partagés — 1er passage (C46 + C47) | Opus | fait (d241ffa + c72e91e) — 8 seeds identiques octet pour octet ; `ouiNonSur` reporté |
+| 14 | S14 ♦ | C1-Regis réaligné (= NEXT_ACTIONS #31 enrichi) | Opus | fait (7046dc7) — 14 écarts → 0, couverture 40/42 ; ⚠️ RE-SEMIS + relecture PDF par Oraliks |
+| 15 | S15 | Docs à jour + monitoring crons + perf mineures | Sonnet | fait (voir dernier commit) |
 
 S1→S12 sont indépendants du travail documentaire en cours (#26–#30) ; S13/S14
 se calent sur les reprises de documents ; S15 quand on veut.

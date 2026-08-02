@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { notFound, redirect } from "next/navigation";
 import { headers, cookies } from "next/headers";
 import type { Metadata } from "next";
@@ -87,6 +88,17 @@ async function loadForm(
     },
   };
 }
+
+/// `generateMetadata` et la page appellent tous deux `loadForm` : le
+/// formulaire était donc lu DEUX FOIS en base à chaque affichage. `cache()`
+/// dédoublonne à l'échelle de la requête.
+///
+/// La clé est le chemin JOINT, une chaîne — et non le tableau de `params` :
+/// `cache()` compare ses arguments par IDENTITÉ, et `await params` rend un
+/// tableau neuf à chaque appel, qui ne toucherait jamais le cache. Le
+/// aller-retour join/split est fidèle : un segment de route ne contient jamais
+/// de « / ».
+const loadFormCached = cache((chemin: string) => loadForm(chemin ? chemin.split("/") : []));
 
 /// Charge les valeurs partagées du bundle si on est ouvert dans le contexte
 /// d'un dossier. Lit BundleRun.payloads et reconstruit la map prefillFrom →
@@ -204,7 +216,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { path } = await params;
   const t = await getTranslations("public.contenu");
-  const res = await loadForm(path);
+  const res = await loadFormCached(path.join("/"));
   if (res.kind === "missing") return { title: t("formMetaUnavailable") };
   if (res.kind === "redirect") return { title: t("formMetaUnavailable") };
   if (res.kind === "disabled")
@@ -230,7 +242,7 @@ export default async function PdfFormPage({
 }) {
   const { path } = await params;
   const { bundleRun, bundleSlug } = await searchParams;
-  const res = await loadForm(path);
+  const res = await loadFormCached(path.join("/"));
   if (res.kind === "missing") notFound();
   if (res.kind === "redirect") {
     // Redirection slug → publicPath (URL canonique) EN PRÉSERVANT le contexte

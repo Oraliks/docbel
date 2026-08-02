@@ -65,13 +65,34 @@ const UNICODE_FONT_PATH = join(process.cwd(), "public", "fonts", "DejaVuSans-Lat
 /// pdf-lib ne sait pas faire. Elles restent détectées et journalisées.
 const FALLBACK_FONT_PATH = join(process.cwd(), "public", "fonts", "NotoSans-Regular.ttf");
 
-async function loadFontFile(path: string): Promise<Buffer | null> {
-  try {
-    if (existsSync(path)) return await readFile(path);
-  } catch {
-    /* ignore */
-  }
-  return null;
+/// Mémoïsation des lectures de polices sur disque. Chaque génération relisait
+/// jusqu'à trois fichiers (principale, repli, cursive) alors qu'ils ne changent
+/// jamais en cours de vie du processus.
+///
+/// On mémoïse la PROMESSE, pas le tampon : deux générations concurrentes
+/// partagent alors la même lecture au lieu d'en lancer deux. Et le cache retient
+/// aussi le `null` d'une police absente — sinon un `existsSync` inutile
+/// repartirait à chaque document.
+///
+/// Reste LAZY : rien n'est lu à l'import du module. En contrepartie, déposer un
+/// fichier de police pendant que le serveur tourne demande un redémarrage.
+const cachePolices = new Map<string, Promise<Buffer | null>>();
+
+function loadFontFile(path: string): Promise<Buffer | null> {
+  const dejaLu = cachePolices.get(path);
+  if (dejaLu) return dejaLu;
+  // La lecture n'échoue jamais vers l'appelant (tout est capturé ici) : le
+  // cache ne peut donc pas retenir une promesse rejetée.
+  const lecture = (async () => {
+    try {
+      if (existsSync(path)) return await readFile(path);
+    } catch {
+      /* ignore */
+    }
+    return null;
+  })();
+  cachePolices.set(path, lecture);
+  return lecture;
 }
 
 async function loadUnicodeFont(): Promise<Buffer | null> {

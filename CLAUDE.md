@@ -35,8 +35,8 @@ better-auth 1.6 · Tailwind 4 + shadcn (base-ui) · next-intl 4 · Zod 4 · Tipt
 
 ## Commandes de validation
 ```bash
-pnpm lint          # ESLint (⚠️ ~74 erreurs PRÉ-EXISTANTES, ne pas en ajouter)
-pnpm test          # vitest (271 tests)
+pnpm lint          # ESLint (⚠️ 129 erreurs / 52 warnings PRÉ-EXISTANTS, ne pas en ajouter)
+pnpm test          # vitest (~2 320 tests)
 pnpm build         # build + typecheck (PAS de "pnpm typecheck")
 pnpm i18n:check    # ICU + couverture des langues
 ```

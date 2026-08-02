@@ -18,7 +18,7 @@ Source de vérité du routage de chrome : `resolveProSegment` + early-returns da
 ## Briques métier (lib/)
 - **Auth** : `lib/auth.ts` (config unique), `lib/auth-check.ts` (`requireAdminAuth`).
 - **Utilisateurs / accès** : `lib/users.ts`, `lib/entitlements.ts` (`canUseTool`).
-- **Dossiers dynamiques** : `lib/documents/bundle-conditions.ts` (moteur AND/OR V2),
+- **Dossiers dynamiques** : `lib/bundles/conditions.ts` (moteur AND/OR V2),
   `lib/bundles/` (resume-code, eligibility, vocabulary, types/LIFE_EVENT_CATEGORIES).
 - **Calculateurs** (montants légaux) : `lib/calculators/` (IPP, préavis, allocs-fam, km,
   pécule, indemnité, tarif social ; `_methodology.ts` ~2828 l.). ⚠️ **0 test** aujourd'hui.

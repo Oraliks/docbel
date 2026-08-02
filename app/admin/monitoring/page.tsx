@@ -7,19 +7,9 @@ import { HealthHistory } from "@/components/admin/monitoring/health-history";
 import { DependencyGrid } from "@/components/admin/monitoring/dependency-grid";
 import { RuntimePanel } from "@/components/admin/monitoring/runtime-panel";
 import { FlagsPanel, type FlagRow } from "@/components/admin/monitoring/flags-panel";
+import { CRONS_PLANIFIES } from "@/lib/health/crons";
 
 export const dynamic = "force-dynamic";
-
-// Crons connus (source : vercel.json). Statique et documenté — on n'a pas
-// d'API Vercel pour interroger l'état d'exécution ; on liste le planning.
-const CRONS: { path: string; label: string }[] = [
-  { path: "/api/inbox/sync", label: "Synchro inbox IMAP" },
-  { path: "/api/documents/cron/purge", label: "Purge dossiers (RGPD)" },
-  { path: "/api/admin/pdf/cron/purge-drafts", label: "Purge brouillons PDF" },
-  { path: "/api/chomage-ia/ingestion/cron", label: "Veille / ingestion IA" },
-  { path: "/api/chomage-ia/sources/cron-obsolescence", label: "Obsolescence sources IA" },
-  { path: "/api/cron/kbo-refresh", label: "Rafraîchissement KBO" },
-];
 
 export default async function MonitoringPage() {
   const auth = await requireAdminAuth();
@@ -59,11 +49,21 @@ export default async function MonitoringPage() {
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <RuntimePanel runtime={report.runtime} />
         <FlagsPanel flags={flags} />
+        {/* Dérivé de `vercel.json` : ajouter un cron le fait apparaître ici le
+            jour même. Vercel n'expose pas d'état d'exécution — c'est le
+            PLANNING qu'on montre, pas le dernier résultat. */}
         <section className="rounded-xl border bg-card p-4">
-          <h2 className="mb-2 text-xs font-semibold">Tâches planifiées</h2>
-          {CRONS.map((c, i) => (
+          <h2 className="mb-2 text-xs font-semibold">
+            Tâches planifiées ({CRONS_PLANIFIES.length})
+          </h2>
+          {CRONS_PLANIFIES.map((c, i) => (
             <div key={c.path} className={i > 0 ? "border-t py-1.5" : "py-1.5"}>
-              <p className="text-[12px] font-medium">{c.label}</p>
+              <div className="flex items-baseline justify-between gap-2">
+                <p className="text-[12px] font-medium">{c.label}</p>
+                <p className="shrink-0 font-mono text-[10px] text-muted-foreground">
+                  {c.schedule}
+                </p>
+              </div>
               <p className="font-mono text-[11px] text-muted-foreground">{c.path}</p>
             </div>
           ))}

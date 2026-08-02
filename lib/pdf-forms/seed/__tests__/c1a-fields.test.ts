@@ -29,12 +29,17 @@ describe("C1A_FIELDS", () => {
     expect(byId.get("signature")?.type).toBe("signature");
   });
 
-  it("Q2 : nature de l'activité est un champ array de 5 lignes max (Commit 2)", () => {
+  it("Q2 : nature de l'activité est un champ array de 4 lignes max (le papier n'en imprime que 4)", () => {
     const byId = new Map(C1A_FIELDS.map((f) => [f.id, f]));
     const f = byId.get("natureActiviteIndependant");
     expect(f, "natureActiviteIndependant doit exister").toBeDefined();
     expect(f?.type).toBe("array");
-    expect(f?.maxRows).toBe(5);
+    // QUATRE, pas cinq : le papier n'imprime que quatre pointillés, mais
+    // l'AcroForm porte CINQ widgets — « mentionnez les toutes 4 » et « … 5 »
+    // sont posés sur la MÊME dernière ligne (x=53,8 et x=42,8, y=186,6). À cinq
+    // lignes, les deux dernières activités s'imprimaient l'une PAR-DESSUS
+    // l'autre sur la déclaration (relevé le 2026-08-02 en relisant un PDF).
+    expect(f?.maxRows).toBe(4);
     expect(f?.addRowLabel?.fr).toBeTruthy();
     expect(f?.itemFields?.map((sf) => sf.pdfFieldNameTemplate)).toEqual([
       "mentionnez les toutes {index}",
@@ -685,11 +690,11 @@ describe("C1A — Commit 2 : nature de l'activité (Q2) et description de l'aide
   const fields = applyC1AImprovements([]);
   const parCle = new Map(fields.map((f) => [f.id, f]));
 
-  it("natureActiviteIndependant : une ligne, bouton + explicite, plafonné à 5 (le PDF n'a que 5 lignes)", () => {
+  it("natureActiviteIndependant : une ligne, bouton + explicite, plafonné à 4 (le PDF n'imprime que 4 lignes)", () => {
     const f = parCle.get("natureActiviteIndependant");
     expect(f?.type).toBe("array");
     expect(f?.required).toBe(true);
-    expect(f?.maxRows).toBe(5);
+    expect(f?.maxRows).toBe(4);
     expect(f?.addRowLabel?.fr).toBeTruthy();
     expect(f?.itemFields?.length).toBe(1);
     expect(f?.itemFields?.[0]?.pdfFieldNameTemplate).toBe("mentionnez les toutes {index}");

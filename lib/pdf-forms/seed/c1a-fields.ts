@@ -355,6 +355,19 @@ export const C1A_FIELDS: PdfFormField[] = [
     placeholder: { fr: "00.00.00-000.00" },
     prefillFrom: "profile.niss",
     canonicalKey: "identity.niss",
+    // Guide imprimé en peigne, ajouté le 2026-08-02 à la relecture d'un PDF
+    // généré : sans lui, « 78.11.02-088.44 » partait d'un bloc PAR-DESSUS les
+    // onze cases, points et tirets compris, et les deux dernières cases
+    // restaient visibles à droite du texte. Même défaut qu'Oraliks avait
+    // signalé sur le C1 le 2026-07-27.
+    //
+    // Onze glyphes SymbolMT mesurés à pdfplumber (x=31,7 → 167,9), groupés
+    // 9 + 2 : ce formulaire-ci ne sépare que les deux chiffres de contrôle, là
+    // où le C1 et les compagnons découpent en 6-3-2. Pas de 13,02 pt et écart
+    // de groupe de 6,06 — exactement les mesures des deux peignes BCE déjà
+    // câblés dans ce fichier, le PDF réutilisant le même gabarit.
+    fontSize: 9,
+    printAsComb: { groups: [9, 2], slotWidth: 13.02, groupExtra: 6.06, startX: 0.7, baselineY: 1.3 },
     section: SECTION_IDENTITE,
     // -100 et non -99 : sur la page 1, la case NISS (y=573) est imprimée
     // AU-DESSUS de la case Nom et prénom (y=534). L'ordre suit celui du
@@ -554,13 +567,27 @@ export const C1A_FIELDS: PdfFormField[] = [
     required: true,
     label: { fr: "Nature de l'activité de l'indépendant" },
     help: {
-      fr: "Si l'indépendant exerce plusieurs activités, ajoutez une ligne par activité.",
+      fr: "Si l'indépendant exerce plusieurs activités, ajoutez une ligne par activité — le formulaire officiel en offre quatre.",
     },
     addRowLabel: { fr: "Ajouter une autre nature d'activité" },
     visibleIf: { fieldId: "aideIndependant", op: "equals", value: "oui" },
     section: SECTION_AIDE_INDEPENDANT,
     order: 5,
-    maxRows: 5,
+    // QUATRE lignes, et non cinq (2026-08-02, relecture d'un PDF généré).
+    //
+    // Le papier n'imprime que quatre pointillés (y=229,6 / 214,6 / 199,6 /
+    // 184,6, tous à x=42,3), mais l'AcroForm porte CINQ widgets : « mentionnez
+    // les toutes 4 » et « … 5 » sont posés sur la MÊME ligne, la dernière —
+    // le premier décalé de 11 pt vers la droite (x=53,8 contre 42,8 pour les
+    // quatre autres). Anomalie du PDF officiel, pas de notre mapping.
+    //
+    // À cinq lignes, les deux dernières activités s'imprimaient donc l'une
+    // PAR-DESSUS l'autre, illisibles, sur une déclaration officielle. Le
+    // template `mentionnez les toutes {index}` ne permet pas de sauter le
+    // numéro 4 : la 4ᵉ ligne atterrit sur le widget décalé, soit onze points
+    // trop à droite. C'est inélégant, mais lisible — et sans commune mesure
+    // avec deux textes superposés.
+    maxRows: 4,
     itemFields: [
       {
         id: "nature",
@@ -780,6 +807,12 @@ export const C1A_FIELDS: PdfFormField[] = [
     required: true,
     label: { fr: "À partir de quelle date aidiez-vous déjà cet indépendant ?" },
     visibleIf: { fieldId: "aidaitDejaIndependant", op: "equals", value: "oui" },
+    // Guide « __ __ / __ __ / __ __ __ __ » sous-titré jour / mois / année.
+    // Huit glyphes mesurés à x=316,7 → 406,5 : pas de 11,52 pt, +4,58 aux deux
+    // ruptures. Sans peigne, « 01/09/2025 » s'imprimait d'un bloc sur les
+    // quatre premières cases et les quatre autres restaient vides à droite.
+    fontSize: 9,
+    printAsComb: { groups: [2, 2, 4], slotWidth: 11.52, groupExtra: 4.58, startX: 0.8, baselineY: 1.1 },
     section: SECTION_AIDE_INDEPENDANT,
     order: 57,
   },
@@ -1270,6 +1303,9 @@ export const C1A_FIELDS: PdfFormField[] = [
     required: true,
     label: { fr: "Depuis quand exercez-vous cette activité ?" },
     visibleIf: { fieldId: "exerceDejaActivite", op: "equals", value: "oui" },
+    // Même guide que Q8, sur la page 2 : huit glyphes à x=323,0 → 412,8.
+    fontSize: 9,
+    printAsComb: { groups: [2, 2, 4], slotWidth: 11.52, groupExtra: 4.58, startX: 0.1, baselineY: 1.4 },
     section: SECTION_ACTIVITES,
     order: 151,
   },

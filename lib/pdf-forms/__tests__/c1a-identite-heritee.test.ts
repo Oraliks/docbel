@@ -21,10 +21,11 @@
 // (`/document/onem/c1a`), où AUCUN C1 n'a été rempli. L'identité doit y rester
 // posée à l'écran, et le serveur doit refuser une soumission sans elle.
 
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { readFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
-import { PDFDocument, PDFTextField } from "pdf-lib";
+import { PDFDocument, PDFPage, PDFTextField } from "pdf-lib";
+import type { PDFPageDrawTextOptions } from "pdf-lib";
 import { parsePdf } from "../acroform-parser";
 import { applyC1AImprovements } from "../seed/c1a-fields";
 import { applyC1Improvements } from "../seed/c1-fields-improvements";
@@ -168,11 +169,30 @@ describe("C1A dans un dossier — l'identité quitte l'écran", () => {
     // 4. Le papier. Même geste que la route /generate (`flatten: false` pour
     //    pouvoir relire les widgets).
     const parsed = await parsePdf(readFileSync(C1A_PDF));
-    const { bytes, diagnostics } = await fillForm(readFileSync(C1A_PDF), fields, valide, {
-      flatten: false,
-      technicalSchema: parsed.fields,
-      extraStamps: resolveStamps(visiblePayload(fields, valide), getRulesForSlug("c1a")),
-    });
+    // Les chiffres du NISS ne passent plus par la valeur du widget mais par des
+    // `drawText` case par case : on les capte au vol pour pouvoir les relire.
+    const chiffres: { c: string; y: number }[] = [];
+    const originalDrawText = PDFPage.prototype.drawText;
+    const spy = vi
+      .spyOn(PDFPage.prototype, "drawText")
+      .mockImplementation(function (this: PDFPage, text: string, options?: PDFPageDrawTextOptions) {
+        // Un peigne dessine UN caractère à la fois. On note l'ordonnée pour
+        // pouvoir distinguer le peigne de la page 1 du rappel d'en-tête de la
+        // page 2, qui écrit le MÊME NISS ailleurs (règle `niss-header-p2`).
+        if (/^\d$/.test(text)) chiffres.push({ c: text, y: options?.y ?? NaN });
+        return originalDrawText.call(this, text, options);
+      });
+    let bytes: Uint8Array;
+    let diagnostics: Awaited<ReturnType<typeof fillForm>>["diagnostics"];
+    try {
+      ({ bytes, diagnostics } = await fillForm(readFileSync(C1A_PDF), fields, valide, {
+        flatten: false,
+        technicalSchema: parsed.fields,
+        extraStamps: resolveStamps(visiblePayload(fields, valide), getRulesForSlug("c1a")),
+      }));
+    } finally {
+      spy.mockRestore();
+    }
     expect(diagnostics.filter((d) => IDS_IDENTITE.includes(d.fieldId))).toEqual([]);
 
     const acro = (await PDFDocument.load(bytes)).getForm();
@@ -180,7 +200,20 @@ describe("C1A dans un dossier — l'identité quitte l'écran", () => {
 
     // Nom : « Nom et prénom » imprimé → assemblé dans cet ordre par le filler.
     expect(texte("Nom et prénom")).toBe("Dupont Jean");
-    expect(texte("NISS").replace(/\D/g, "")).toBe("85073003328");
+    // Le NISS ne se relit PLUS par la valeur du widget : depuis le 2026-08-02
+    // il s'imprime en PEIGNE, un chiffre par case du guide (le widget ne sert
+    // plus que de repère géométrique, sa valeur reste vide). Ce sont donc les
+    // onze appels de dessin qu'on compte — même garantie, « aucune case
+    // blanche », mesurée là où l'encre se pose vraiment.
+    //
+    // Ligne de base du peigne : rect du widget NISS (y=572,6) + baselineY 1,3.
+    const peigneP1 = chiffres.filter((d) => Math.abs(d.y - 573.9) < 1);
+    expect(peigneP1.map((d) => d.c).join("")).toBe("85073003328");
+    // Et le rappel d'en-tête de la page 2 porte le MÊME numéro : deux endroits,
+    // une seule valeur, aucun des deux blanc.
+    expect(chiffres.filter((d) => Math.abs(d.y - 573.9) >= 1).map((d) => d.c).join("")).toBe(
+      "85073003328",
+    );
     // Adresse : deux widgets du PDF fusionnent chacun deux informations, ce
     // sont les règles serveur du C1A qui les recomposent.
     expect(texte("Rue")).toBe("Rue de la Loi 16");

@@ -50,9 +50,9 @@ const SCENARIOS: Scenario[] = [
     titre: "Partenaire sans revenu — les six réponses « non »",
     payload: {
       ...toutes("non"),
-      niss_ch_meur: "85.07.14-231.05",
+      niss_ch_meur: "85.07.14-231.19",
       nom_ch_meur: { first: "Amélie", last: "Vandenbroucke" },
-      niss_partenaire: "90.03.22-145.83",
+      niss_partenaire: "90.03.22-145.39",
       nom_partenaire: "Lefèvre Thomas",
     },
   },
@@ -64,9 +64,9 @@ const SCENARIOS: Scenario[] = [
     titre: "Revenu professionnel ET de remplacement — deux montants différents",
     payload: {
       ...toutes("non"),
-      niss_ch_meur: "78.11.02-088.44",
+      niss_ch_meur: "78.11.02-088.15",
       nom_ch_meur: { first: "Mohammed", last: "El Ouazzani" },
-      niss_partenaire: "82.06.15-201.19",
+      niss_partenaire: "82.06.15-201.46",
       nom_partenaire: "El Ouazzani-Berger Nadia",
       partenaireRevenuProfessionnel: "oui",
       m_tier: "salariée (mi-temps, secteur horeca)",
@@ -83,7 +83,7 @@ const SCENARIOS: Scenario[] = [
     titre: "Les six réponses « oui » — couverture des cases oui_N",
     payload: {
       ...toutes("oui"),
-      niss_ch_meur: "69.12.31-999.09",
+      niss_ch_meur: "69.12.31-999.89",
       nom_ch_meur: { first: "Jean-Baptiste", last: "Vanderstichelen-Delacroix" },
       niss_partenaire: "01.01.2005",
       nom_partenaire: "Vanderstichelen Louise",
@@ -100,9 +100,9 @@ const SCENARIOS: Scenario[] = [
     titre: "Textes longs et nom non latin",
     payload: {
       ...toutes("non"),
-      niss_ch_meur: "88.02.29-123.19",
+      niss_ch_meur: "88.02.29-123.93",
       nom_ch_meur: { first: "Οδυσσέας", last: "Παπαδόπουλος" },
-      niss_partenaire: "95.09.09-333.61",
+      niss_partenaire: "95.09.09-333.97",
       nom_partenaire: "Παπαδοπούλου Ελένη",
       partenaireRevenuProfessionnel: "oui",
       m_tier:

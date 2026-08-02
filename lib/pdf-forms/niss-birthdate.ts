@@ -52,5 +52,19 @@ export function deriveBirthDateFromNiss(raw: string): NissBirthDate | null {
   if (d.getUTCFullYear() !== year || d.getUTCMonth() !== month - 1 || d.getUTCDate() !== day) {
     return { iso: null };
   }
+  // Naissance DANS LE FUTUR : la lecture du numéro est fausse, pas l'état civil
+  // du citoyen. Un numéro inventé ou mal recopié a environ une chance sur 97 de
+  // satisfaire la branche 20xx par hasard ; quand ses deux premiers chiffres
+  // dépassent l'année en cours, on obtenait une date à venir — « 2078-11-02 »
+  // relevé le 2026-08-02 en remplissant le C1 à l'écran. Le champ « date de
+  // naissance » étant dérivé et verrouillé, le citoyen ne pouvait ni la voir
+  // venir ni la corriger : elle partait telle quelle sur la déclaration.
+  //
+  // On rend `{ iso: null }` (même régime que les dates incomplètes du T.I. 000)
+  // plutôt que `null` : le NISS reste valide au sens du checksum, c'est la date
+  // qu'on refuse d'affirmer. Le champ redevient éditable.
+  const finDuJour = new Date();
+  finDuJour.setUTCHours(23, 59, 59, 999);
+  if (d.getTime() > finDuJour.getTime()) return { iso: null };
   return { iso: `${year}-${mm}-${dd}` };
 }

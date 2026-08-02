@@ -39,6 +39,29 @@ interface Props {
   messageId?: string;
 }
 
+/// Vrai si le citoyen a écrit QUELQUE CHOSE dans ce champ — la seule
+/// situation où « Vous êtes sûr de votre saisie ? » a un sens.
+///
+/// Un champ obligatoire resté vide déclenche aussi une erreur, mais il n'y a
+/// alors aucune saisie à défendre : proposer de la signaler n'apprend rien à
+/// l'administrateur, et l'étape Identité du C1 affichait dix fois le lien au
+/// premier « Continuer » à blanc (2026-08-02).
+///
+/// On regarde À L'INTÉRIEUR des valeurs composées : un `fullname` vierge est
+/// un objet (que `JSON.stringify` rendrait « {} », donc non vide), et le
+/// tableau des cohabitants crée une ligne blanche au clic sur « Ajouter ».
+export function aUneSaisieSignalable(valeur: unknown): boolean {
+  if (valeur === null || valeur === undefined) return false;
+  if (typeof valeur === "string") return valeur.trim() !== "";
+  if (typeof valeur === "boolean") return valeur;
+  if (typeof valeur === "number") return true; // 0 € est une réponse.
+  if (Array.isArray(valeur)) return valeur.some((v) => aUneSaisieSignalable(v));
+  if (typeof valeur === "object") {
+    return Object.values(valeur as Record<string, unknown>).some((v) => aUneSaisieSignalable(v));
+  }
+  return false;
+}
+
 /// Remplace `<FieldError>` : affiche l'erreur + un petit lien « Signaler »
 /// qui ouvre une dialog pour transmettre un faux positif à l'admin.
 export function FieldErrorReport({
@@ -60,15 +83,17 @@ export function FieldErrorReport({
           que l'ancre `id` du `aria-describedby` — un `aria-live` en plus
           rétrograderait la politesse de la région. */}
       <FieldError id={messageId}>{error}</FieldError>
-      <ReportDialogTrigger
-        fieldId={fieldId}
-        fieldType={fieldType}
-        rejectedValue={rejectedValue}
-        errorMessage={error}
-        formId={formId}
-        formSlug={formSlug}
-        locale={locale}
-      />
+      {aUneSaisieSignalable(rejectedValue) && (
+        <ReportDialogTrigger
+          fieldId={fieldId}
+          fieldType={fieldType}
+          rejectedValue={rejectedValue}
+          errorMessage={error}
+          formId={formId}
+          formSlug={formSlug}
+          locale={locale}
+        />
+      )}
     </div>
   );
 }

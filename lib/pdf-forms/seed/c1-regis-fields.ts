@@ -223,14 +223,30 @@ export const C1_REGIS_FIELDS: PdfFormField[] = [
     order: -99,
   },
   {
-    // Date de la demande d'allocations. Pré-remplie du jour, comme le widget
-    // homonyme du C1 lui-même (stampé par la règle `date-header-p2`) : cette
-    // annexe se dépose avec le C1, les deux dates sont donc la même.
+    // Widget « Date de DA », aligné le 2026-08-02 sur la lecture qu'Oraliks a
+    // arbitrée pour le MÊME widget du C1-Partenaire : une case de cachet dateur
+    // réservée à l'organisme de paiement, donc facultative.
+    //
+    // `prefillFrom: "system.today"` en fait un champ AUTO (cf.
+    // `isCreationDateField`) : il n'est jamais rendu à l'écran et le serveur y
+    // pose la date du jour à la génération. C'est cohérent avec un cachet
+    // dateur — mais pas avec le libellé imprimé, qui dit « date de la demande
+    // d'allocations ». Un citoyen qui dépose cette annexe deux semaines après
+    // son C1 verra donc la date du jour, sans pouvoir la corriger.
+    //
+    // Ne PAS justifier ce choix par le C1 principal : sa règle `date-header-p2`
+    // ne pose pas `system.today`, elle reprend une date DÉCLARÉE
+    // (`dateModificationEffective` / `dateDemande`, cf.
+    // `bindings/per-form/c1-changement.ts`). Trois documents donnent aujourd'hui
+    // deux sens à ce widget ; l'arbitrage définitif revient à Oraliks.
     id: "dateDA",
     pdfFieldName: "Date de DA",
     type: "date",
-    required: true,
+    required: false,
     label: { fr: "Date de la demande d'allocations" },
+    help: {
+      fr: "Case réservée à l'organisme de paiement (cachet dateur) — vous pouvez généralement la laisser vide.",
+    },
     prefillFrom: "system.today",
     section: SECTION_IDENTITE,
     order: -98,

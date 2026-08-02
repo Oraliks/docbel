@@ -33,9 +33,12 @@ interface Scenario {
   payload: FormPayload;
 }
 
-/// En-tête commun : nom, prénom, date de la demande d'allocations.
+/// En-tête commun. `dateDA` n'y figure PAS volontairement : c'est un champ AUTO
+/// (`prefillFrom: "system.today"`), et `applyServerAutoFields` y écrase toute
+/// valeur fournie. L'y mettre donnerait à un relecteur l'illusion de contrôler
+/// une date métier alors qu'il regarderait l'horodatage du jour de génération.
 function entete(last: string, first: string): FormPayload {
-  return { nom: last, prenom: first, dateDA: "2026-04-15" };
+  return { nom: last, prenom: first };
 }
 
 const SCENARIOS: Scenario[] = [
@@ -108,6 +111,13 @@ const SCENARIOS: Scenario[] = [
     // cases `oui`, les quatorze colonnes du tableau et les sept explications.
     // La 5e personne est le cas de nommage irrégulier du PDF (« PERSONNE »
     // sans numéro) : si elle s'imprimait sur la mauvaise ligne, ce serait ici.
+    //
+    // ⚠ Ce scénario vise la COUVERTURE DES CASES, pas la justesse des codes.
+    // Les trois enfants portent le même écart (patronyme du parent sur le C1,
+    // nom d'état civil aux registres) : ils reçoivent donc le MÊME code. Leur
+    // donner FY1, FY2 puis FY3 enseignerait au relecteur une correspondance
+    // situation → code que rien dans le dépôt n'atteste — la légende page 2 du
+    // formulaire n'est transcrite nulle part (cf. NEXT_ACTIONS).
     cle: "4-toutes-les-lignes",
     titre: "Les sept lignes en différence — couverture maximale",
     payload: {
@@ -127,15 +137,15 @@ const SCENARIOS: Scenario[] = [
       personne2Difference: "oui",
       personne2C1: "Delacroix Louis",
       personne2Registre: "VANDERSTICHELEN Louis",
-      personne2Explication: "FY2",
+      personne2Explication: "FY1",
       personne3Difference: "oui",
       personne3C1: "Delacroix Jeanne",
       personne3Registre: "VANDERSTICHELEN Jeanne",
-      personne3Explication: "FY3",
+      personne3Explication: "FY1",
       personne4Difference: "oui",
       personne4C1: "Kowalczyk Agnieszka",
       personne4Registre: "KOWALCZYK Agnieszka Maria",
-      personne4Explication: "FN5",
+      personne4Explication: "FN4",
       personne5Difference: "oui",
       personne5C1: "Diallo Ousmane",
       personne5Registre: "DIALLO Ousmane Bakary",

@@ -77,7 +77,10 @@ const W_DATE_HEADER_P2 = "DateDeDA";
 // `NomPrenom`. Le champ `nom_et_pr_nom` qui le cible est `hidden` (jamais saisi)
 // et le citoyen ne remplit que `pr_nom` (Prénom) + `nom` séparément (page 1) →
 // on compose « Prénom Nom » ici (règle `nom-prenom-header-p2`).
-const W_NOM_PRENOM_P2 = "NomPrenom";
+// Écrit POSITIONNELLEMENT depuis le 2026-08-02 : le widget `NomPrenom` est plus
+// court que sa police, pdf-lib y centrait le texte et le pointillé imprimé
+// passait au travers des lettres.
+const W_NOM_PRENOM_P2 = "c1:header-p2-nom";
 
 // Dates « à partir du » par ligne de motif. Oraliks a scindé le champ unique
 // `DateModification` (1 champ / 5 widgets) en 5 widgets distincts le 2026-07-10

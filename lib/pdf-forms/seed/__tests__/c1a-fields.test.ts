@@ -41,9 +41,17 @@ describe("C1A_FIELDS", () => {
     // l'autre sur la déclaration (relevé le 2026-08-02 en relisant un PDF).
     expect(f?.maxRows).toBe(4);
     expect(f?.addRowLabel?.fr).toBeTruthy();
-    expect(f?.itemFields?.map((sf) => sf.pdfFieldNameTemplate)).toEqual([
-      "mentionnez les toutes {index}",
+    // Liste EXPLICITE et non template : le PDF numérote ces quatre lignes
+    // 1, 2, 3 et **5**, son widget n° 4 étant un doublon décalé de 11 pt.
+    expect(f?.itemFields?.map((sf) => sf.pdfFieldNames)).toEqual([
+      [
+        "mentionnez les toutes 1",
+        "mentionnez les toutes 2",
+        "mentionnez les toutes 3",
+        "mentionnez les toutes 5",
+      ],
     ]);
+    expect(f?.itemFields?.[0]?.pdfFieldNameTemplate).toBeUndefined();
     // Les anciens ids à 5 lignes fixes ont disparu.
     const ids = C1A_FIELDS.map((x) => x.id);
     for (let n = 1; n <= 5; n++) {
@@ -568,18 +576,31 @@ describe("C1A — Commit 1 puis 2026-07-30 : grilles horaires, un textarea par o
     }
   });
 
-  it("Q18 : vérifié, ne présente PAS le même défaut (aucun widget partagé sur la ligne « irrégulier »)", () => {
-    // Géométrie mesurée (page 2) : case "irrégulièrement à savoir_2" à
-    // y=699, seule sur sa ligne — 1_4 suit à y=686, sans rien entre les
-    // deux. La répartition 4 lignes périodes / 3 lignes irrégulier est
-    // donc déjà correcte ; verrouillé ici pour ne pas régresser vers le
-    // défaut de Q4.
+  it("Q18 : quatre lignes de chaque côté, dont une écrite positionnellement", () => {
+    // Le papier imprime QUATRE pointillés sous chacune des deux options
+    // (« périodes » : y=753/740/727/714 ; « irrégulièrement » : y=684/671/
+    // 658/645). Les deux blocs ont chacun une ligne dont le widget est
+    // PARTAGÉ, donc écrite positionnellement plutôt que revendiquée :
+    //   • la 1re de « périodes » (widget `1_3`, 3 rectangles) ;
+    //   • la 4e d'« irrégulièrement » (widget `voir 19`, 4 rectangles) —
+    //     rattachée à tort à Q19 jusqu'au 2026-08-02 sur la foi de son nom,
+    //     alors qu'elle est alignée sur les trois autres (x=334,6) et treize
+    //     points sous `3_4`.
     const periodes = parCle.get("q18periodesTexte");
     expect(periodes?.lineTargets?.length).toBe(4);
+    expect(periodes?.lineTargets?.[0]?.pdfFieldName).toBe("");
+    expect(periodes?.lineTargets?.[0]?.drawAt).toBeDefined();
     expect(periodes?.lineTargets?.slice(1).map((t) => t.pdfFieldName)).toEqual(["2_3", "3_3", "4_3"]);
 
     const irreguliers = parCle.get("q18irregulierementTexte");
-    expect(irreguliers?.lineTargets?.map((t) => t.pdfFieldName)).toEqual(["1_4", "2_4", "3_4"]);
+    expect(irreguliers?.lineTargets?.length).toBe(4);
+    expect(irreguliers?.lineTargets?.slice(0, 3).map((t) => t.pdfFieldName)).toEqual([
+      "1_4",
+      "2_4",
+      "3_4",
+    ]);
+    expect(irreguliers?.lineTargets?.[3]?.pdfFieldName).toBe("");
+    expect(irreguliers?.lineTargets?.[3]?.drawAt).toBeDefined();
   });
 });
 
@@ -697,7 +718,12 @@ describe("C1A — Commit 2 : nature de l'activité (Q2) et description de l'aide
     expect(f?.maxRows).toBe(4);
     expect(f?.addRowLabel?.fr).toBeTruthy();
     expect(f?.itemFields?.length).toBe(1);
-    expect(f?.itemFields?.[0]?.pdfFieldNameTemplate).toBe("mentionnez les toutes {index}");
+    expect(f?.itemFields?.[0]?.pdfFieldNames).toEqual([
+      "mentionnez les toutes 1",
+      "mentionnez les toutes 2",
+      "mentionnez les toutes 3",
+      "mentionnez les toutes 5",
+    ]);
     expect(f?.itemFields?.[0]?.type).toBe("text");
   });
 
@@ -758,7 +784,7 @@ describe("C1A — Commit 2 : nature de l'activité (Q2) et description de l'aide
     const ids = merged.map((f) => f.id);
     for (let n = 1; n <= 5; n++) expect(ids).not.toContain(`natureActiviteIndependant${n}`);
     for (let n = 2; n <= 9; n++) expect(ids).not.toContain(`descriptionAide${n}`);
-    // Chaque widget n'est plus revendiqué qu'une fois (par pdfFieldNameTemplate,
+    // Chaque widget n'est plus revendiqué qu'une fois (par `pdfFieldNames`,
     // invisible à ce filtre — donc PAR AUCUN champ top-level, ce qui est attendu).
     for (const n of [1, 2, 3, 4, 5]) {
       expect(merged.filter((f) => f.pdfFieldName === `mentionnez les toutes ${n}`)).toEqual([]);

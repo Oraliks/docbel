@@ -7,12 +7,26 @@ import { C1B_RULES } from "../per-form/c1b";
 /// il restait VIDE pour qui saisissait son nom directement dans le C1B, sans
 /// possibilité de corriger. Une règle le recopie à la génération.
 describe("Rules C1B — en-tête de la page 2", () => {
+  // Cible POSITIONNELLE depuis le 2026-08-02 (`c1b:header-p2-nom`) : le widget
+  // « Nom » est plus court que sa police, pdf-lib y centrait le texte et le
+  // pointillé imprimé traversait les lettres.
+  const NOM = "c1b:header-p2-nom";
+
   it("recopie le nom de la page 1", () => {
-    expect(resolveStamps({ nom: "Dupont" }, C1B_RULES).get("Nom")).toBe("Dupont");
+    expect(resolveStamps({ nom: "Dupont" }, C1B_RULES).get(NOM)).toBe("Dupont");
   });
 
   it("ne stampe rien quand le nom est vide", () => {
-    expect(resolveStamps({ nom: "" }, C1B_RULES).has("Nom")).toBe(false);
-    expect(resolveStamps({}, C1B_RULES).has("Nom")).toBe(false);
+    expect(resolveStamps({ nom: "" }, C1B_RULES).has(NOM)).toBe(false);
+    expect(resolveStamps({}, C1B_RULES).has(NOM)).toBe(false);
+  });
+
+  it("recopie aussi le NISS dans l'en-tête de la PAGE 1", () => {
+    // Le champ `niss` écrit en peigne, ce qui ne couvre qu'un rectangle —
+    // celui de la page 2 sur ce document. Sans cette règle, l'en-tête de la
+    // page 1 partirait blanc.
+    expect(resolveStamps({ niss: "85073003328" }, C1B_RULES).get("c1b:header-p1-niss")).toBe(
+      "85073003328",
+    );
   });
 });

@@ -196,6 +196,19 @@ function collectFieldClaims(
   }
 }
 
+/// Vrai pour une cible qui n'est PAS un widget AcroForm mais un emplacement
+/// dessiné : les clés de `POSITIONAL_EXTRA_STAMPS` suivent la convention
+/// `<slug>:<nom>` (« c1a:header-p2-niss »), et le caractère « : » n'apparaît
+/// dans aucun nom de widget des formulaires ONEM.
+///
+/// Sans cette garde, une règle qui vise un tel emplacement était comptée comme
+/// « widget absent du PDF » et bloquait la publication du formulaire — ce qui
+/// est arrivé au C1 et au C1B le 2026-08-02, quand leurs deux noms d'en-tête
+/// sont passés en positionnel.
+function estStampPositionnel(widget: string): boolean {
+  return widget.includes(":");
+}
+
 function collectRuleClaims(
   rules: readonly MappingRule[],
   claimsByWidget: Map<string, WidgetClaim[]>
@@ -203,6 +216,7 @@ function collectRuleClaims(
   for (const rule of rules) {
     // stamp statique → chaque widget est traçable au parseur.
     for (const s of rule.stamp ?? []) {
+      if (estStampPositionnel(s.widget)) continue;
       addClaim(claimsByWidget, s.widget, {
         source: "rule",
         ruleName: rule.name,
@@ -213,6 +227,7 @@ function collectRuleClaims(
     // `declaredWidgets` fournis par l'auteur de la règle. Les règles qui
     // n'en déclarent pas sont invisibles pour ce rapport (accepté).
     for (const w of rule.declaredWidgets ?? []) {
+      if (estStampPositionnel(w)) continue;
       addClaim(claimsByWidget, w, {
         source: "rule",
         ruleName: rule.name,

@@ -135,7 +135,9 @@ function grilleHoraire(opts: {
   // `textarea` par option (cf. plus bas) : le citoyen écrit librement, et
   // `filler.ts` répartit son texte sur ces cibles dans l'ordre donné ici.
   periodesTextFields: Array<string | { pdfFieldName: string; drawAt?: PdfFormField["drawAt"] }>;
-  irregulierementTextFields: string[];
+  // Même union que `periodesTextFields` : la Q18 a besoin d'une entrée
+  // POSITIONNELLE pour sa 4ᵉ ligne — le widget qui la porte est partagé.
+  irregulierementTextFields: Array<string | { pdfFieldName: string; drawAt?: PdfFormField["drawAt"] }>;
 }): PdfFormField[] {
   const { suffixes } = opts;
   const jours = ["lundi", "mardi", "mercredi", "jeudi", "vendredi"] as const;
@@ -292,7 +294,9 @@ function grilleHoraire(opts: {
   fields.push({
     id: `${opts.idPrefix}irregulierementTexte`,
     pdfFieldName: "",
-    lineTargets: opts.irregulierementTextFields.map((pdfFieldName) => ({ pdfFieldName })),
+    lineTargets: opts.irregulierementTextFields.map((cible) =>
+      typeof cible === "string" ? { pdfFieldName: cible } : cible,
+    ),
     type: "textarea",
     required: false,
     label: { fr: "Précisez à quel rythme" },
@@ -595,7 +599,17 @@ export const C1A_FIELDS: PdfFormField[] = [
         type: "text",
         required: true,
         label: { fr: "Nature de l'activité" },
-        pdfFieldNameTemplate: "mentionnez les toutes {index}",
+        // Liste EXPLICITE, et non le template : le PDF officiel numérote ces
+        // quatre lignes 1, 2, 3 et **5**. Son widget n° 4 est un doublon posé
+        // sur la même dernière ligne, décalé de onze points vers la droite —
+        // c'est lui que `{index}` attrapait, d'où une 4ᵉ activité imprimée en
+        // retrait des trois autres (relevé le 2026-08-02).
+        pdfFieldNames: [
+          "mentionnez les toutes 1",
+          "mentionnez les toutes 2",
+          "mentionnez les toutes 3",
+          "mentionnez les toutes 5",
+        ],
         order: 1,
       },
     ],
@@ -1199,7 +1213,23 @@ export const C1A_FIELDS: PdfFormField[] = [
       { pdfFieldName: "", drawAt: { page: 1, x: 337, y: 749, size: 9, maxWidth: 218 } },
       "2_3", "3_3", "4_3",
     ],
-    irregulierementTextFields: ["1_4", "2_4", "3_4"],
+    // QUATRE lignes, et non trois (2026-08-02). Le papier en imprime quatre
+    // sous « irrégulièrement, à savoir » (pointillés à y=684 / 671 / 658 /
+    // 645) ; le seed n'en câblait que trois. La quatrième EXISTE bien comme
+    // widget — c'est le premier des quatre rectangles du champ « voir 19 »,
+    // que le passage précédent avait rattaché à Q19 sur la foi de son nom.
+    // Or il est aligné sur les trois autres (x=334,6) et treize points sous
+    // « 3_4 » : c'est la ligne suivante du MÊME bloc, pas une case de Q19.
+    //
+    // Le revendiquer par son nom stamperait ses quatre rectangles — dont les
+    // deux cases de revenus de Q19. D'où l'écriture positionnelle, calée comme
+    // la première ligne de `periodesTextFields` juste au-dessus.
+    irregulierementTextFields: [
+      "1_4",
+      "2_4",
+      "3_4",
+      { pdfFieldName: "", drawAt: { page: 1, x: 337, y: 643, size: 9, maxWidth: 218 } },
+    ],
   }),
 
   // ====================================================================

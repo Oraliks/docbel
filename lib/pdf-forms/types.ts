@@ -543,6 +543,15 @@ export interface PdfFormField {
   /// mais sans cible PDF). Concrètement utilisé pour la grille des
   /// cohabitants du C1, qui expose 5 slots positionnels.
   pdfFieldNameTemplate?: string;
+  /// Noms de widgets EXPLICITES, un par ligne (index 0 = 1ʳᵉ ligne). Prime sur
+  /// `pdfFieldNameTemplate` quand une entrée existe pour la ligne considérée.
+  ///
+  /// Nécessaire quand la numérotation du PDF officiel n'est pas régulière : sur
+  /// le C1A, les quatre lignes « mentionnez-les toutes » sont portées par les
+  /// widgets 1, 2, 3 et **5** — le n° 4 est un doublon décalé de 11 pt que le
+  /// template `{index}` ne peut pas éviter. Sans cette liste, la 4ᵉ activité
+  /// déclarée s'imprimait onze points trop à droite des trois autres.
+  pdfFieldNames?: string[];
   /// Stamping « first-match » sur un champ `array` : la PREMIÈRE ligne qui
   /// satisfait `where` voit ses sous-champs déversés sur des widgets PDF
   /// uniques (typiquement les widgets « partenaire » du C1 qui n'existent

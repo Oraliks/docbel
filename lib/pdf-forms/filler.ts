@@ -580,6 +580,23 @@ function texteEnPeigne(
 /// defaut pour remonter a la ligne de base (cf. `dessinerPeigne`) ; des
 /// coordonnees `drawAt`, elles, SONT deja par convention la ligne de base
 /// exacte (comme partout ailleurs dans ce fichier), d'ou +0 dans ce cas.
+/// Nom du widget qui reçoit la ligne `index` d'un champ `array`.
+///
+/// La liste EXPLICITE (`pdfFieldNames`) prime sur le template : la numérotation
+/// d'un PDF officiel n'est pas toujours régulière — sur le C1A, les quatre
+/// lignes « mentionnez-les toutes » sont portées par les widgets 1, 2, 3 et 5,
+/// le n° 4 étant un doublon décalé de onze points. Chaîne vide = cette ligne
+/// n'a pas de cible, l'appelant passe son tour.
+function nomDeWidgetDeLigne(
+  sub: { pdfFieldNames?: string[]; pdfFieldNameTemplate?: string },
+  index: number,
+  unBase: string
+): string {
+  const explicite = sub.pdfFieldNames?.[index];
+  if (explicite) return explicite;
+  return sub.pdfFieldNameTemplate?.replace(/\{index\}/g, unBase) ?? "";
+}
+
 function placerPeigne(
   page: PDFPage,
   bx: number,
@@ -786,11 +803,11 @@ function stampArrayField(
     const row = effectiveRows[i];
     const oneBased = String(i + 1);
     for (const sub of subFields) {
-      if (!sub.pdfFieldNameTemplate) continue;
       if (!isSubFieldVisible(sub, row, payload)) continue;
       const subValue = row[sub.id];
       if (subValue === null || subValue === undefined) continue;
-      const widgetName = sub.pdfFieldNameTemplate.replace(/\{index\}/g, oneBased);
+      const widgetName = nomDeWidgetDeLigne(sub, i, oneBased);
+      if (!widgetName) continue;
       // Sous-champ radio + pipe → convention multi-options.
       if (
         stampPipeRadio(form, widgetName, sub.type, sub.options, subValue as FieldValue)
@@ -948,6 +965,15 @@ const POSITIONAL_EXTRA_STAMPS: Record<string, PositionalStampSpec> = {
     maxWidth: 150,
     printAsComb: { groups: [9, 2], slotWidth: 12.96, groupExtra: 6.12 },
   },
+  // Les deux NOMS d'en-tête qui restaient écrits DANS leur widget. pdf-lib
+  // centre le texte dans le rectangle, or ces deux rectangles sont plus courts
+  // que la police qu'ils reçoivent : la ligne de base tombait alors pile sur le
+  // pointillé imprimé, qui traversait les lettres (relu à 576 dpi le
+  // 2026-08-02). En positionnel, on choisit la ligne de base — juste au-dessus
+  // de l'encre du guide, comme l'en-tête du C1A.
+  "c1:header-p2-nom": { page: 1, x: 302, y: 815.5, size: 9, maxWidth: 119 },
+  "c1b:header-p2-nom": { page: 1, x: 313, y: 794.5, size: 9, maxWidth: 251 },
+
   "c1c:header-p2-niss": {
     page: 1,
     x: 212.09,
@@ -1452,14 +1478,16 @@ export async function fillForm(
       rows.slice(0, cap).forEach((row, idx) => {
         for (const sub of field.itemFields ?? []) {
           const combSub = sub.printAsComb;
-          if (!combSub?.slotWidth || !sub.pdfFieldNameTemplate) continue;
+          if (!combSub?.slotWidth) continue;
+          const cible = nomDeWidgetDeLigne(sub, idx, String(idx + 1));
+          if (!cible) continue;
           if (!isSubFieldVisible(sub, row, payload)) continue;
           const v = row[sub.id];
           if (v === null || v === undefined || v === "") continue;
           const texte = sub.type === "date" ? formatDateFR(String(v)) : String(v);
           dessinerPeigne(
             `${field.id}[${idx + 1}].${sub.id}`,
-            sub.pdfFieldNameTemplate.replace(/\{index\}/g, String(idx + 1)),
+            cible,
             texte,
             combSub,
             sub.fontSize ?? UNIFORM_TEXT_FONT_SIZE

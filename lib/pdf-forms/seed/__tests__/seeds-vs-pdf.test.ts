@@ -106,6 +106,11 @@ const C1_ORPHELINS_ASSUMES: Record<string, string> = {
   Personne3_LienParente_Ligne2: "2e ligne du lien de parenté — volontairement libre",
   Personne4_LienParente_Ligne2: "2e ligne du lien de parenté — volontairement libre",
   Personne5_LienParente_Ligne2: "2e ligne du lien de parenté — volontairement libre",
+  // En-tête de la page 2 : le nom y est désormais DESSINÉ (stamp positionnel
+  // `c1:header-p2-nom`) et non écrit dans le widget, qui reste donc orphelin.
+  // pdf-lib centrait le texte dans ce rectangle plus court que sa police, et le
+  // pointillé imprimé passait au travers des lettres (2026-08-02).
+  NomPrenom: "en-tête page 2 — écrit positionnellement, le widget reste vide",
 };
 
 /// Idem pour le C1C, réaligné le 2026-07-30. Un seul orphelin, et il est

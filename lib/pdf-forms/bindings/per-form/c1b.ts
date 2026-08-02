@@ -24,7 +24,10 @@ import type { MappingRule } from "../types";
 
 /// Widget « Nom » de l'en-tête de la page 2 (distinct du widget « nom » de la
 /// page 1, en minuscule — le PDF distingue bien les deux par la casse).
-const W_NOM_PAGE_2 = "Nom";
+// Écrit POSITIONNELLEMENT depuis le 2026-08-02, pour la même raison que sur le
+// C1 : le rectangle est plus court que la police, et le pointillé imprimé
+// traversait les lettres.
+const W_NOM_PAGE_2 = "c1b:header-p2-nom";
 
 /// Rappel du NISS en en-tête de PAGE 1. Le champ `niss` du seed écrit en
 /// peigne, et le dessin case par case ne couvre qu'UN widget : celui que

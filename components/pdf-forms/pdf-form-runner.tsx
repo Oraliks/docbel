@@ -539,6 +539,13 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
     if (ids.length === 0) return;
     const clamped = Math.max(0, Math.min(index, ids.length - 1));
     setActiveStep({ id: ids[clamped], index: clamped });
+    // L'aide « À propos de ce champ » suit le champ focalisé, et rien ne
+    // l'effaçait en changeant d'étape : arrivé sur « Situation familiale », le
+    // citoyen lisait encore le conseil sur les suggestions de rue laissé par
+    // l'étape « Identité » (relevé le 2026-08-02). `setActive` est le seul
+    // passage obligé de toute navigation — on y remet le panneau à zéro, et le
+    // premier champ touché sur la nouvelle étape le remplira de nouveau.
+    setActiveFieldId(undefined);
     // Geste de navigation DÉLIBÉRÉ : c'est le seul chemin qui autorise le
     // défilement vers l'en-tête (cf. `navigationTick`).
     setNavigationTick((n) => n + 1);

@@ -17,10 +17,14 @@ function isBelgianCountry(value: unknown): boolean {
   return /belg/i.test(value);
 }
 
+/// Vouvoiement, comme partout ailleurs dans le parcours (« Ce champ est
+/// obligatoire, merci de le remplir. », « Vérifiez que votre nom… »). Ce
+/// message-ci était resté au tutoiement dans les trois langues — seule fausse
+/// note du C1 à l'écran, relevée le 2026-08-02.
 const DEFAULT_MESSAGE: Localized = {
-  fr: "Choisis ta rue dans la liste proposée, ou coche « ma rue n'est pas dans la liste ».",
-  nl: "Kies je straat uit de lijst, of vink « mijn straat staat niet in de lijst » aan.",
-  de: "Wähle deine Straße aus der Liste oder kreuze « meine Straße ist nicht in der Liste » an.",
+  fr: "Choisissez votre rue dans la liste proposée, ou cochez « ma rue n'est pas dans la liste ».",
+  nl: "Kies uw straat uit de lijst, of vink « mijn straat staat niet in de lijst » aan.",
+  de: "Wählen Sie Ihre Straße aus der Liste oder kreuzen Sie « meine Straße ist nicht in der Liste » an.",
 };
 
 /// Vérifie les champs `requireListMatch` : un champ rempli, VISIBLE, non

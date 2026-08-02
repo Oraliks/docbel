@@ -10,6 +10,7 @@ import type { PdfFormField } from "../../types";
 import {
   SECTION_PAIEMENT,
   SECTION_COTISATION,
+  COMB_DATE_C1,
 } from "./helpers";
 
 export const C1_PAIEMENT: PdfFormField[] = [
@@ -215,6 +216,13 @@ export const C1_PAIEMENT: PdfFormField[] = [
     },
     placeholder: { fr: "MM/AAAA" },
     readOnly: true,
+    // Guide en cases, comme les dates du document — mais SIX cases seulement
+    // (MM/AAAA, pas de jour), d'où les groupes 2-4. Le champ est `readOnly` et
+    // laissé vide par décision d'Oraliks : le peigne ne sert donc à rien
+    // aujourd'hui, il évite simplement que la case parte de travers le jour où
+    // quelqu'un décide de la remplir.
+    fontSize: 9,
+    printAsComb: { ...COMB_DATE_C1, groups: [2, 4], startX: 3.25 },
     section: SECTION_COTISATION,
     order: 702,
     stepPriority: "optional",

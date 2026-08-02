@@ -50,7 +50,14 @@ export function ArrayField({ field, value, error, locale, onChange, formId, form
   const t = useTranslations("public.dossier");
   const label = loc(field.label, locale);
   const help = loc(field.help, locale);
-  const addLabel = loc(field.addRowLabel, locale) || t("arrayAddRow");
+  // Le libellé du seed dit « Ajouter une AUTRE nature d'activité », « Ajouter
+  // une AUTRE personne » : juste quand une ligne existe déjà, faux sur un
+  // tableau vide — où l'écran annonçait « Aucune ligne. Cliquez sur "Ajouter
+  // une autre nature d'activité" ». On retombe donc sur le libellé générique
+  // tant qu'il n'y a rien à compléter (relevé en parcourant le C1A, 2026-08-02).
+  const lignesExistantes = isFieldValueRecordArray(value) ? value.length : 0;
+  const addLabel =
+    lignesExistantes > 0 ? loc(field.addRowLabel, locale) || t("arrayAddRow") : t("arrayAddRow");
   // Le <FieldLabel> du tableau ne titre aucun contrôle unique : sans
   // `aria-labelledby` sur le groupe, un lecteur d'écran annonce un « groupe »
   // anonyme au lieu du nom du tableau (ex. « Personnes du ménage »).

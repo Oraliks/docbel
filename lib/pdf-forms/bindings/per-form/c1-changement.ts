@@ -447,9 +447,25 @@ export const C1_CHANGEMENT_RULES: MappingRule[] = [
     },
   }),
 
-  // NOTE — `niss-header-p2` mentionné dans le plan §1.4 est intentionnellement
-  // OMIS : le header NISS de la page 2 n'a pas de widget AcroForm dédié
-  // (vérifié au dump). L'inférence actuelle stampe le NISS via un champ
-  // masqué (`Nom et prénom` marqué `hidden`) — laisser en l'état pour ne
-  // rien casser. À rouvrir en Phase 7 quand on aura un vrai widget cible.
+  // Rappel du NISS en en-tête de PAGE 2 — la « Phase 7 » annoncée ici depuis
+  // le début, rouverte le 2026-08-02.
+  //
+  // L'ancienne note disait « pas de widget AcroForm dédié, vérifié au dump ».
+  // C'était le DUMP qui était incomplet : `dump-pdf-widgets.ts` ne garde qu'un
+  // rectangle par NOM de champ, et le champ « NISS » en porte DEUX (page 1
+  // y=708, page 2 y=811, tous deux sur un guide en onze cases). Le second
+  // existait donc bel et bien.
+  //
+  // Et il partait BLANC sur chaque C1 généré : le champ `niss` du seed écrit
+  // en peigne, ce qui vide le widget et ne dessine qu'à un seul rectangle —
+  // celui de la page 1. Vérifié sur un PDF généré : « SUITE C1 | NISS __ __ …»
+  // sans un chiffre, alors que le nom et la date, eux, étaient bien là.
+  {
+    name: "niss-header-p2",
+    whenFn: (payload) => typeof payload.niss === "string" && payload.niss.trim() !== "",
+    stampFn: (payload) => {
+      const value = typeof payload.niss === "string" ? payload.niss.trim() : "";
+      return value ? [{ widget: "c1:header-p2-niss", value }] : [];
+    },
+  },
 ];

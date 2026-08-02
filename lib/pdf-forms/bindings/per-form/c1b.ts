@@ -26,4 +26,20 @@ import type { MappingRule } from "../types";
 /// page 1, en minuscule — le PDF distingue bien les deux par la casse).
 const W_NOM_PAGE_2 = "Nom";
 
-export const C1B_RULES: MappingRule[] = [bind("nom", W_NOM_PAGE_2)];
+/// Rappel du NISS en en-tête de PAGE 1. Le champ `niss` du seed écrit en
+/// peigne, et le dessin case par case ne couvre qu'UN widget : celui que
+/// `parsePdf` retient, ici celui de la PAGE 2. Sans cette règle, l'en-tête de
+/// la page 1 partirait blanc (relevé le 2026-08-02).
+const W_HEADER_P1_NISS = "c1b:header-p1-niss";
+
+export const C1B_RULES: MappingRule[] = [
+  bind("nom", W_NOM_PAGE_2),
+  {
+    name: "niss-header-p1",
+    whenFn: (payload) => typeof payload.niss === "string" && payload.niss.trim() !== "",
+    stampFn: (payload) => {
+      const value = typeof payload.niss === "string" ? payload.niss.trim() : "";
+      return value ? [{ widget: W_HEADER_P1_NISS, value }] : [];
+    },
+  },
+];

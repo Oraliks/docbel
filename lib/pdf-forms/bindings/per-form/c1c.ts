@@ -28,6 +28,21 @@ import type { MappingRule } from "../types";
 /// imprimé au-dessus de lui — ici la question elle-même.
 const W_SITE_INTERNET = "Je dispose dun site internet pour mon activité";
 
+/// Rappel du NISS en en-tête de PAGE 2 (« Numéro de registre national (NISS)
+/// __ __ … »). Le champ `niss` porte deux widgets et écrit désormais en
+/// peigne : le dessin ne couvre que le widget de la page 1, celui que
+/// `parsePdf` retient. Sans cette règle, l'en-tête de la page 2 partirait
+/// blanc (relevé le 2026-08-02).
+const W_HEADER_P2_NISS = "c1c:header-p2-niss";
+
 export const C1C_RULES: MappingRule[] = [
   bind("siteInternetUrl", W_SITE_INTERNET, "web-strip-www"),
+  {
+    name: "niss-header-p2",
+    whenFn: (payload) => typeof payload.niss === "string" && payload.niss.trim() !== "",
+    stampFn: (payload) => {
+      const value = typeof payload.niss === "string" ? payload.niss.trim() : "";
+      return value ? [{ widget: W_HEADER_P2_NISS, value }] : [];
+    },
+  },
 ];

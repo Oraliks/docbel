@@ -77,6 +77,24 @@ export function ouiNon(opts: {
   };
 }
 
+/// Guide « __ __ / __ __ / __ __ __ __ » des dates du C1. Les quatre lignes
+/// « à partir du » l'impriment à l'identique : huit cases, pas mesuré entre
+/// 11,03 et 11,15 pt selon la ligne, écart de groupe entre 5,30 et 5,42 là où
+/// le papier dessine « / ». On pose la moyenne : l'écart résiduel est de
+/// l'ordre du dixième de point, invisible dans une case de 11 pt.
+///
+/// Sans ce peigne, « 01/09/2025 » s'imprimait d'un bloc PAR-DESSUS les cases
+/// et leurs barres obliques, et les dernières restaient vides à droite — le
+/// défaut qu'Oraliks avait signalé sur le C1 le 2026-07-27 et que
+/// `combs-vs-guides.test.ts` détecte désormais tout seul.
+const DATE_A_PARTIR_DU_COMB: NonNullable<PdfFormField["printAsComb"]> = {
+  groups: [2, 2, 4],
+  slotWidth: 11.06,
+  groupExtra: 5.39,
+  startX: 2,
+  baselineY: 2,
+};
+
 /// Date « À partir du » adossée à une question oui/non : elle n'apparaît que
 /// si la déclaration parente vaut « oui ». Quatre lignes du C1 suivent ce
 /// moule (études, apprentissage, formation Syntra, congé sans solde), chacune
@@ -95,11 +113,18 @@ export function dateAPartirDu(opts: {
     required: false,
     label: { fr: "À partir du" },
     visibleIf: { fieldId: opts.parentId, op: "equals", value: "oui" },
+    fontSize: 9,
+    printAsComb: DATE_A_PARTIR_DU_COMB,
     section: opts.section,
     order: opts.order,
     stepPriority: "optional",
   };
 }
+
+/// Le même guide, pour les dates du C1 qui ne passent pas par le moule
+/// ci-dessus (la borne « jusqu'au » du congé sans solde, et la case
+/// mois/année de la cotisation syndicale, qui n'en a que six).
+export const COMB_DATE_C1 = DATE_A_PARTIR_DU_COMB;
 
 /// Case « J'ai joint … » de la rubrique Annexes. Le libellé se déduit du nom
 /// du document : le PDF officiel nomme son widget d'après le document lui-même

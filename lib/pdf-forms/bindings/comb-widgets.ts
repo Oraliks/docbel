@@ -38,6 +38,20 @@ const PAR_SLUG: Record<string, Record<string, CombWidgetSpec>> = {
     DatePersonnelleOuMenage: C1_DATE_MOTIF,
     DateBanque: C1_DATE_MOTIF,
     DateDeTransfert: C1_DATE_MOTIF,
+    // En-tête de la page 2 (« date DA / modification »), écrit par la règle
+    // `date-header-p2`. Guide DEUX FOIS plus serré que celui du motif : huit
+    // cases de 6,59 pt contre 11, en corps 8. Sans lui, « 02/08/2026 » partait
+    // d'un bloc sur les tirets (relevé le 2026-08-02, sur un PDF généré).
+    // Les deux ruptures sont INÉGALES sur ce guide-là (2,54 et 4,82) : on pose
+    // la moyenne, l'écart résiduel est inférieur au trait.
+    DateDeDA: {
+      groups: [2, 2, 4],
+      slotWidth: 6.59,
+      groupExtra: 3.68,
+      startX: 0.44,
+      baselineY: 1.05,
+      fontSize: 8,
+    },
   },
 };
 

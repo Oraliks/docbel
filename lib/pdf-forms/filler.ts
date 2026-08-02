@@ -909,6 +909,50 @@ const POSITIONAL_EXTRA_STAMPS: Record<string, PositionalStampSpec> = {
   "c47:case-art114": { page: 0, x: 228.18, y: 395.08, size: 8 },
   "c47:case-jeune-travailleur": { page: 0, x: 210.58, y: 275.38, size: 8 },
   "c47:case-chomeur-indemnise": { page: 0, x: 210.78, y: 238.48, size: 8 },
+
+  // ── LE NISS RAPPELÉ SUR L'AUTRE PAGE (2026-08-02) ──────────────────────
+  //
+  // Trois documents impriment le NISS DEUX fois : dans l'en-tête d'identité et
+  // dans le bandeau « suite » de l'autre page. Le PDF le fait avec UN champ
+  // AcroForm à deux widgets — donc une seule valeur, ce qui est exactement ce
+  // qu'on veut… jusqu'à ce que le champ passe en peigne. Le dessin case par
+  // case ne connaît qu'UN rectangle (celui que `parsePdf` retient) et vide le
+  // champ pour ne pas imprimer deux fois : l'autre bandeau part alors BLANC.
+  //
+  // D'où une règle par document pour l'occurrence que le peigne ne couvre pas.
+  // Laquelle dépend du widget que `parsePdf` retient en premier, et ce n'est
+  // pas le même partout — c'est une propriété de l'ordre interne du PDF, pas
+  // un choix. `combs-vs-guides.test.ts` vérifie qu'aucune des deux occurrences
+  // ne reste vide, quelle que soit cette ordre.
+  //
+  // Abscisses et pas MESURÉS (scripts/detect-comb-guides.py) ; `y` calé sur le
+  // haut du guide arrondi, même relation que l'en-tête du C1A juste au-dessus.
+  "c1:header-p2-niss": {
+    page: 1,
+    x: 116.66,
+    y: 812,
+    size: 9,
+    maxWidth: 146,
+    printAsComb: { groups: [6, 3, 2], slotWidth: 12.47, groupExtra: 5.31 },
+  },
+  // C1B : ici c'est la PAGE 1 qui n'est pas couverte — `parsePdf` retient le
+  // widget de la page 2.
+  "c1b:header-p1-niss": {
+    page: 0,
+    x: 39.12,
+    y: 542,
+    size: 9,
+    maxWidth: 150,
+    printAsComb: { groups: [9, 2], slotWidth: 12.96, groupExtra: 6.12 },
+  },
+  "c1c:header-p2-niss": {
+    page: 1,
+    x: 212.09,
+    y: 794,
+    size: 9,
+    maxWidth: 146,
+    printAsComb: { groups: [6, 3, 2], slotWidth: 12.45, groupExtra: 5.38 },
+  },
 };
 
 /// Remplit un PDF AcroForm à partir du schéma enrichi et d'un payload validé.

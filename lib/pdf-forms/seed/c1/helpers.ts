@@ -18,6 +18,7 @@ export {
   YN,
   YN_DECLARE,
   dateAPartirDu,
+  COMB_DATE_C1,
   annexeJointe,
   ouiNon,
   dejaDeclare,

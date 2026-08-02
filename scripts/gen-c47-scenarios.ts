@@ -16,6 +16,7 @@ import { applyC47Improvements } from "@/lib/pdf-forms/seed/c47-fields";
 import { parsePdf } from "@/lib/pdf-forms/acroform-parser";
 import { resolveStamps } from "@/lib/pdf-forms/bindings/engine";
 import { getRulesForSlug } from "@/lib/pdf-forms/bindings/registry";
+import { getCombWidgetsForSlug } from "@/lib/pdf-forms/bindings/comb-widgets";
 import { applyServerAutoFields } from "@/lib/pdf-forms/auto-fields";
 import { visiblePayload } from "@/lib/pdf-forms/validation";
 import type { FormPayload, PdfFormField } from "@/lib/pdf-forms/types";
@@ -136,6 +137,10 @@ async function main() {
         flatten,
         technicalSchema: parsed.fields,
         extraStamps,
+        // Même calage des peignes qu'en production : sans lui, les widgets
+        // écrits par une RÈGLE serveur sortiraient d'un bloc sur leur guide,
+        // et la recette montrerait autre chose que le PDF réel.
+        combWidgets: getCombWidgetsForSlug("c47"),
       });
       writeFileSync(join(SORTIE, flatten ? `${s.cle}.pdf` : `_controle/${s.cle}.pdf`), bytes);
       if (flatten) {

@@ -113,6 +113,17 @@ export const C1B_FIELDS: PdfFormField[] = [
     prefillFrom: "profile.niss",
     canonicalKey: "identity.niss",
     inheritedFromDossier: true,
+    // Guide en peigne, ajouté le 2026-08-02 : onze cases groupées 9 + 2 (ce
+    // document ne sépare que les deux chiffres de contrôle), pas de 12,96 pt.
+    // Sans lui, « 85.07.30-033.28 » s'imprimait d'un bloc par-dessus.
+    //
+    // ⚠ Le champ AcroForm « NISS » porte DEUX widgets (page 1 y=545, page 2
+    // y=793) et `parsePdf` retient celui de la PAGE 2 : le peigne dessine donc
+    // là, et c'est la règle `niss-header-p1` de `bindings/per-form/c1b.ts` qui
+    // couvre la page 1. Inversé par rapport au C1 et au C1C — c'est l'ordre
+    // interne du PDF qui décide, pas nous.
+    fontSize: 9,
+    printAsComb: { groups: [9, 2], slotWidth: 12.96, groupExtra: 6.12, startX: 1, baselineY: -2.7 },
     section: SECTION_IDENTITE,
     order: -100,
   },

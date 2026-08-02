@@ -17,6 +17,7 @@ import {
   ouiNon,
   dejaDeclare,
   dateAPartirDu,
+  COMB_DATE_C1,
   annexeJointe,
 } from "./helpers";
 
@@ -158,6 +159,10 @@ export const C1_FINAL: PdfFormField[] = [
     label: { fr: "Jusqu'au" },
     help: { fr: "Laissez vide si la période n'a pas encore de date de fin connue." },
     visibleIf: { fieldId: "congeSansSolde", op: "equals", value: "oui" },
+    // Même guide en cases que la borne de début, juste à sa gauche sur la même
+    // ligne imprimée : sans peigne, la date s'écrasait sur les tirets.
+    fontSize: 9,
+    printAsComb: COMB_DATE_C1,
     section: SECTION_DIVERS,
     order: 902,
     stepPriority: "optional",

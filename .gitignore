@@ -83,3 +83,7 @@ lib/agr/__tests__/fixtures/*.pdf
 
 # Graphe de connaissance graphify (17 Mo, regenerable : /graphify --update)
 graphify-out/
+
+# Caches Python des scripts d'outillage (detect-comb-guides, verif-couverture-widgets).
+__pycache__/
+*.pyc

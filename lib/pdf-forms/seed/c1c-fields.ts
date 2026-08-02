@@ -116,9 +116,12 @@ export const C1C_FIELDS: PdfFormField[] = [
     // deux widgets (`/Kids`), page 1 y=634,3 et page 2 y=793,0. Les deux
     // reçoivent donc la même valeur — c'est exactement ce que demande le
     // papier, dont l'en-tête de page 2 rappelle « Numéro de registre national
-    // (NISS) __ __ … ». Contrairement aux multi-widgets du C1A (`TVA`,
-    // `Montant`, `1_3`), aucune écriture positionnelle n'est nécessaire ici :
-    // ne pas « réparer » ce cas, il n'est pas cassé.
+    // (NISS) __ __ … ».
+    //
+    // ⚠ Ce raisonnement tenait tant que le champ écrivait par `setText`. Depuis
+    // qu'il passe en peigne (2026-08-02), le dessin case par case ne couvre
+    // qu'UN rectangle : le rappel de la page 2 est repris par une règle
+    // serveur — cf. le `printAsComb` plus bas.
     id: "niss",
     pdfFieldName: "NISS",
     type: "niss",
@@ -132,6 +135,14 @@ export const C1C_FIELDS: PdfFormField[] = [
     canonicalKey: "identity.niss",
     // Hérité du C1 dans un dossier, comme le nom ci-dessus.
     inheritedFromDossier: true,
+    // Guide en peigne, ajouté le 2026-08-02 : onze cases 6-3-2, pas de
+    // 12,45 pt. Sans lui, le NISS s'imprimait d'un bloc par-dessus les cases.
+    //
+    // ⚠ Le peigne ne dessine qu'à UN rectangle — celui de la page 1, que
+    // `parsePdf` retient — et vide le champ. L'en-tête de la page 2 est donc
+    // repris par la règle `niss-header-p2` de `bindings/per-form/c1c.ts`.
+    fontSize: 9,
+    printAsComb: { groups: [6, 3, 2], slotWidth: 12.45, groupExtra: 5.38, startX: 2.4, baselineY: 2.2 },
     section: SECTION_IDENTITE,
     order: 1,
   },
@@ -152,6 +163,11 @@ export const C1C_FIELDS: PdfFormField[] = [
     help: {
       fr: "L'avantage « Tremplin-indépendants » dure 12 mois maximum, et en tout cas jamais plus longtemps que votre droit aux allocations. Pendant cette période, vous ne devez ni mentionner cette activité sur votre carte de contrôle, ni introduire de formulaire de déclaration remplaçant la carte de contrôle en cas de dispense.",
     },
+    // Guide « __ __ / __ __ / __ __ __ __ » : huit cases, pas de 11,03 pt. Les
+    // deux ruptures sont larges sur ce guide-ci (7,05) — le papier y imprime
+    // des barres obliques plus espacées qu'ailleurs.
+    fontSize: 9,
+    printAsComb: { groups: [2, 2, 4], slotWidth: 11.03, groupExtra: 7.05, startX: 1.5, baselineY: 1.6 },
     section: SECTION_IDENTITE,
     order: 2,
   },
@@ -539,6 +555,9 @@ export const C1C_FIELDS: PdfFormField[] = [
     label: { fr: "Date de signature" },
     help: { fr: "Pré-remplie automatiquement avec la date du jour." },
     prefillFrom: "system.today",
+    // Même guide en huit cases que la date de début, en bas de la page 2.
+    fontSize: 9,
+    printAsComb: { groups: [2, 2, 4], slotWidth: 11.15, groupExtra: 5.54, startX: 1.3, baselineY: 2.9 },
     section: SECTION_SIGNATURE,
     order: 210,
   },

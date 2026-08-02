@@ -127,7 +127,7 @@ def main():
                         couverts.setdefault(nom, set()).add(idx)
         par_scenario[cle] = vus
 
-    print(f"AcroForm C1C : {len(geo)} champs / {total_widgets} widgets\n")
+    print(f"AcroForm {os.path.basename(BASE)} : {len(geo)} champs / {total_widgets} widgets\n")
     for cle, vus in par_scenario.items():
         print(f"  {cle:<34} {len(vus):>2} champs servis")
 

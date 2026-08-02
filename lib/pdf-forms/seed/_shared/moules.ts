@@ -143,15 +143,23 @@ export function annexeJointe(opts: {
 /// Bloc NISS de l'en-tête. `printAsComb` n'a pas de valeur par défaut : chaque
 /// document imprime son propre guide en peigne, et un peigne hérité d'un autre
 /// formulaire écrirait à côté des cases.
+///
+/// `drawAt` sert aux guides qu'AUCUN widget ne peut revendiquer — sur l'Annexe
+/// Regis, la case NISS est le second widget du champ AcroForm « NOM », donc
+/// inutilisable (les deux widgets d'un champ partagent une valeur, cf.
+/// PDF_FORMS_RULES.md). Les deux sont alors écrits positionnellement.
 export function champNISS(opts: {
-  pdfFieldName: string;
+  /// Vide quand la case est écrite positionnellement (voir `drawAt`).
+  pdfFieldName?: string;
+  drawAt?: PdfFormField["drawAt"];
   printAsComb: NonNullable<PdfFormField["printAsComb"]>;
   section: string;
   order: number;
 }): PdfFormField {
   return {
     id: "niss",
-    pdfFieldName: opts.pdfFieldName,
+    pdfFieldName: opts.pdfFieldName ?? "",
+    ...(opts.drawAt ? { drawAt: opts.drawAt } : {}),
     type: "niss",
     required: true,
     label: { fr: "Numéro NISS (registre national)" },

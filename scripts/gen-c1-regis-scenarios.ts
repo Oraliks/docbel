@@ -37,8 +37,12 @@ interface Scenario {
 /// (`prefillFrom: "system.today"`), et `applyServerAutoFields` y écrase toute
 /// valeur fournie. L'y mettre donnerait à un relecteur l'illusion de contrôler
 /// une date métier alors qu'il regarderait l'horodatage du jour de génération.
-function entete(last: string, first: string): FormPayload {
-  return { nom: last, prenom: first };
+///
+/// Le NISS, lui, est indispensable : sa case est le SECOND widget du champ
+/// « NOM » et s'écrit positionnellement (cf. le seed). Sans valeur ici, la
+/// recette ne verrait pas si le peigne tombe juste.
+function entete(last: string, first: string, niss: string): FormPayload {
+  return { nom: last, prenom: first, niss };
 }
 
 const SCENARIOS: Scenario[] = [
@@ -49,7 +53,7 @@ const SCENARIOS: Scenario[] = [
     cle: "1-nationalite-seule",
     titre: "Une seule différence : la nationalité (codes N)",
     payload: {
-      ...entete("Vandenbroucke", "Amélie"),
+      ...entete("Vandenbroucke", "Amélie", "85.07.14-231.05"),
       nationaliteDifference: "oui",
       nationaliteC1: "Belge",
       nationaliteRegistre: "Française",
@@ -69,7 +73,7 @@ const SCENARIOS: Scenario[] = [
     cle: "2-adresse-seule",
     titre: "Une seule différence : l'adresse (codes A)",
     payload: {
-      ...entete("El Ouazzani", "Mohammed"),
+      ...entete("El Ouazzani", "Mohammed", "78.11.02-088.44"),
       nationaliteDifference: "non",
       adresseDifference: "oui",
       adresseC1: "Rue de la Loi 16, 1000 Bruxelles",
@@ -89,7 +93,7 @@ const SCENARIOS: Scenario[] = [
     cle: "3-colocataires-fn4",
     titre: "Deux colocataires à déclarer en FN4",
     payload: {
-      ...entete("De Clercq", "Sofie"),
+      ...entete("De Clercq", "Sofie", "94.03.28-088.44"),
       nationaliteDifference: "non",
       adresseDifference: "non",
       personne1Difference: "oui",
@@ -121,7 +125,7 @@ const SCENARIOS: Scenario[] = [
     cle: "4-toutes-les-lignes",
     titre: "Les sept lignes en différence — couverture maximale",
     payload: {
-      ...entete("Vanderstichelen-Delacroix", "Jean-Baptiste"),
+      ...entete("Vanderstichelen-Delacroix", "Jean-Baptiste", "69.12.31-999.09"),
       nationaliteDifference: "oui",
       nationaliteC1: "Belge",
       nationaliteRegistre: "Italienne",

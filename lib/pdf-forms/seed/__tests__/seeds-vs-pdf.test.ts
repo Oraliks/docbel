@@ -209,3 +209,83 @@ describe("C1 — couverture des widgets AcroForm", () => {
     expect(report.summary.conflict, "aucun widget ne doit être revendiqué deux fois").toBe(0);
   });
 });
+
+// ===========================================================================
+// CHAMPS ACROFORM À PLUSIEURS WIDGETS
+// ===========================================================================
+//
+// Le piège le plus coûteux du parc, et le seul à s'être reproduit TROIS fois :
+// un champ AcroForm qui porte plusieurs widgets n'a qu'UNE valeur. Le
+// revendiquer depuis le seed remplit donc toutes ses cases d'un coup.
+//
+//   • C46  — `Date39_af_date` (3 widgets) imprimait la même date dans les trois
+//     guides « Moniteur Belge du », sous un libellé « date de signature » ;
+//   • C47  — le champ « jeune travailleur » (2 widgets) cochait AUSSI la case
+//     « art. 114 » de l'autre cadre, deux déclarations contradictoires ;
+//   • Regis — `NOM` (2 widgets) écrivait le nom du citoyen dans la case
+//     « Numéro de registre national (NISS) » (relevé le 2026-08-02, à la
+//     relecture d'un PDF généré — aucun test ne le voyait).
+//
+// Les deux garde-fous existants sont aveugles à ce défaut : `seeds-vs-pdf`
+// vérifie qu'un nom de widget EXISTE, `widget-geometry` que l'ordre déclaré
+// suit la lecture. Ni l'un ni l'autre ne regarde COMBIEN de cases un nom
+// recouvre.
+//
+// Ce test liste les champs multi-widgets qu'un seed revendique, et exige que
+// chacun soit assumé ci-dessous avec sa raison. Revendiquer n'est pas toujours
+// faux : le NISS est volontairement rappelé en en-tête de page 2, et la même
+// valeur aux deux endroits est exactement ce qu'on veut.
+const MULTI_WIDGETS_ASSUMES: Readonly<Record<string, Readonly<Record<string, string>>>> = {
+  "c1-changement-situation": {
+    NISS: "rappel d'en-tête page 2 — la même valeur aux deux endroits est voulue",
+    // ⚠ Assumé parce qu'INERTE, pas parce que c'est sain. Ses deux widgets sont
+    // posés sur « J'autorise la retenue … à partir du mois de » et « Je
+    // n'autorise PLUS … à partir du mois de » — deux déclarations qui
+    // s'excluent. Une valeur les remplirait toutes les deux. Le champ est
+    // `readOnly` et laissé vide (Oraliks 2026-07-26 : la cotisation syndicale
+    // est renseignée par l'organisme de paiement), donc rien ne s'imprime
+    // aujourd'hui. Le jour où on décide de le remplir, il faudra passer en
+    // écriture positionnelle — c'est ce que ce test rappellera.
+    "Mois + Année": "readOnly et vide par défaut : aucune des deux lignes n'est écrite",
+  },
+  c1b: { NISS: "rappel d'en-tête page 2 — même valeur voulue" },
+  c1c: { NISS: "rappel d'en-tête page 2 — même valeur voulue" },
+};
+
+describe("champs AcroForm à plusieurs widgets", () => {
+  for (const target of TARGETS) {
+    it(`${target.slug} ne revendique que des champs multi-widgets assumés`, async ({ skip }) => {
+      const path = join(PDF_DIR, target.pdf);
+      if (!existsSync(path)) skip();
+
+      const { PDFDocument } = await import("pdf-lib");
+      const doc = await PDFDocument.load(readFileSync(path));
+      const multi = new Set(
+        doc
+          .getForm()
+          .getFields()
+          .filter((f) => f.acroField.getWidgets().length > 1)
+          .map((f) => f.getName()),
+      );
+
+      const parsed = await parsePdf(readFileSync(path));
+      const fields = target.improve([], { technicalSchema: parsed.fields });
+
+      // Convention pipe (`"oui_2|non_2"`) : chaque segment est un nom de champ.
+      const revendiques = new Set<string>();
+      for (const f of fields) {
+        for (const nom of (f.pdfFieldName ?? "").split("|")) {
+          const propre = nom.trim();
+          if (propre && multi.has(propre)) revendiques.add(propre);
+        }
+      }
+
+      expect(
+        [...revendiques].sort(),
+        `${target.slug} : un champ à plusieurs widgets remplit TOUTES ses cases d'un coup — ` +
+          `soit c'est voulu et il faut l'inscrire dans MULTI_WIDGETS_ASSUMES avec sa raison, ` +
+          `soit il faut passer en écriture positionnelle (drawAt)`,
+      ).toEqual(Object.keys(MULTI_WIDGETS_ASSUMES[target.slug] ?? {}).sort());
+    });
+  }
+});

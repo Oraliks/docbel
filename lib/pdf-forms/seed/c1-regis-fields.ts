@@ -3,7 +3,8 @@
 // registres officiels (registre national).
 //
 // Mapping AcroForm vérifié sur private/pdfs/Annexe_Regis_FR.pdf via
-// lib/pdf-forms/acroform-parser.ts#parsePdf (2 pages, 42 widgets).
+// lib/pdf-forms/acroform-parser.ts#parsePdf — 2 pages, 42 champs pour
+// 43 WIDGETS : le champ « NOM » en porte deux (cf. plus bas).
 // Référence métier : légende "Explications relatives à la rubrique I" (page
 // 2 du formulaire officiel) — codes N1-N2 (nationalité), A1-A2 + sous-codes
 // (adresse), FN1-FN5 / FY1-FY5 (membres du ménage).
@@ -50,12 +51,66 @@ import { mergeEnrichedFields } from "./_merge";
 import {
   appliquerGroupes,
   carteDesGroupes,
+  champNISS,
   champSignature,
   SECTION_ANNEXES,
   SECTION_GRILLE_DIFFERENCES,
   SECTION_IDENTITE,
   YN,
 } from "./_shared/moules";
+
+// ===========================================================================
+// EN-TÊTE : DEUX CASES POUR UN SEUL CHAMP ACROFORM
+// ===========================================================================
+//
+// Défaut relevé le 2026-08-02 à la relecture du PDF généré : le champ AcroForm
+// « NOM » porte DEUX widgets (`/Kids`, vérifié à pypdf) —
+//
+//   [71,9 ; 665,9]  la ligne « NOM ····· » ;
+//   [289,4 ; 687,7] le guide en peigne « Numéro de registre national (NISS) ».
+//
+// Deux widgets d'un même champ partagent une seule valeur : le NOM du citoyen
+// s'imprimait donc AUSSI dans la case NISS, par-dessus le peigne. Sur une
+// déclaration officielle, une donnée d'identification fausse.
+//
+// Sortie : ÉCRITURE POSITIONNELLE des deux, comme les trois dates du C46. Plus
+// personne ne revendique le champ « NOM » — sinon ses deux widgets seraient
+// tamponnés. Ces coordonnées sont MESURÉES à pdfplumber (abscisse de chaque
+// tiret, ligne de base du guide), jamais approchées à l'œil.
+
+/// Ligne de base des guides de l'en-tête. pdfplumber rapporte le BAS de la
+/// boîte du caractère, soit la ligne de base moins le jambage (ArialMT :
+/// 0,212 em) — d'où le rattrapage.
+/// Ligne de base du NOM : 4 pt AU-DESSUS du bas du widget (665,9), et non
+/// dessus. Le guide de cette ligne n'est pas un trait mais un CHAPELET DE
+/// POINTS centré à y≈669,3 — soit en plein dans la hauteur d'x. Poser le
+/// texte sur 665,9 faisait passer les points au travers des lettres
+/// (relecture du 2026-08-02). À 670, ils courent juste sous la ligne
+/// d'écriture, comme sur un formulaire rempli à la main.
+const BASELINE_NOM = 670.0;
+const BASELINE_NISS = 689.4; // mesuré 687,50 + 0,212 × 8,8
+
+/// « __ __ __ __ __ __ / __ __ __ - __ __ » (y≈689). Vingt-deux tirets, donc
+/// onze cases groupées 6-3-2 ; pas relevé 12,25 pt, séparateurs +5,1.
+/// `startX` centre le chiffre sur sa paire de tirets (encre large de 9,7 pt).
+const NISS_COMB: NonNullable<PdfFormField["printAsComb"]> = {
+  groups: [6, 3, 2],
+  slotWidth: 12.25,
+  groupExtra: 5.1,
+  startX: 2.35,
+};
+
+/// « au __ __ / __ __ / __ __ __ __ » (y≈615) — huit cases, pas de 11,97 pt,
+/// séparateurs +4,68. Ici le widget EXISTE et n'a qu'une case : le peigne se
+/// cale donc sur son rectangle (x=445,2 ; y=613,2), d'où un `startX` et un
+/// `baselineY` comptés depuis ce coin et non depuis le premier tiret.
+const DATE_DA_COMB: NonNullable<PdfFormField["printAsComb"]> = {
+  groups: [2, 2, 4],
+  slotWidth: 11.97,
+  groupExtra: 4.68,
+  startX: 5.95,
+  baselineY: 2.0,
+};
 
 /// Préfixes exacts des 2 colonnes de la Grille 1 sur le PDF officiel — la
 /// virgule et les apostrophes du texte affiché sont absentes du nom de champ
@@ -194,9 +249,21 @@ export const C1_REGIS_FIELDS: PdfFormField[] = [
   // ====================================================================
   // EN-TÊTE (page 1, y=666 et 613)
   // ====================================================================
+  // Le peigne NISS est le SECOND widget du champ « NOM » : il se remplit donc
+  // positionnellement, et le nom aussi (cf. l'en-tête de section ci-dessus).
+  champNISS({
+    drawAt: { page: 0, x: 289.6, y: BASELINE_NISS },
+    printAsComb: NISS_COMB,
+    section: SECTION_IDENTITE,
+    order: -101,
+  }),
   {
     id: "nom",
-    pdfFieldName: "NOM",
+    // Aucun widget revendiqué : le remplir tamponnerait AUSSI la case NISS.
+    pdfFieldName: "",
+    // `maxWidth` = jusqu'au bord droit du widget d'origine (x=291) : un nom
+    // long est réduit au lieu de courir sur la case « PRENOM ».
+    drawAt: { page: 0, x: 74.9, y: BASELINE_NOM, size: 10, maxWidth: 214 },
     type: "text",
     required: true,
     label: { fr: "Nom" },
@@ -248,6 +315,12 @@ export const C1_REGIS_FIELDS: PdfFormField[] = [
       fr: "Case réservée à l'organisme de paiement (cachet dateur) — vous pouvez généralement la laisser vide.",
     },
     prefillFrom: "system.today",
+    // Le papier imprime ici un guide en peigne. Sans `printAsComb`, la date
+    // partait d'un bloc « 02/08/2026 » écrit PAR-DESSUS les tirets et leurs
+    // barres obliques, et débordait du guide — même défaut qu'Oraliks avait
+    // signalé sur le C1 le 2026-07-27.
+    fontSize: 9,
+    printAsComb: DATE_DA_COMB,
     section: SECTION_IDENTITE,
     order: -98,
   },

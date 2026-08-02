@@ -1161,6 +1161,16 @@ export async function fillForm(
         const heightAt1 = Math.max(0.5, nameFont.heightAtSize(1));
         let nameSize = Math.min(targetW / widthAt1, nameAreaH / heightAt1);
         nameSize = Math.max(9, Math.min(28, nameSize));
+        // Le plancher de 9 pt vise la lisibilité, mais il ÉCRASAIT l'ajustement
+        // à la largeur : « Jean-Baptiste Vanderstichelen-Delacroix » dans la
+        // case de 128 pt de l'Annexe Regis sortait à 9 pt pour 148 pt de large,
+        // donc hors de la case ET hors de la page (relecture du 2026-08-02).
+        // Un nom de citoyen n'est pas négociable : on redescend jusqu'à ce
+        // qu'il tienne. 5 pt reste lisible à l'impression, et vaut mieux qu'un
+        // nom tronqué au bord de la feuille.
+        if (nameFont.widthOfTextAtSize(block.name, nameSize) > targetW) {
+          nameSize = Math.max(5, targetW / widthAt1);
+        }
         const nameW = nameFont.widthOfTextAtSize(block.name, nameSize);
         const nameX = bx + pad + Math.max(0, (targetW - nameW) / 2);
         page.drawText(block.name, {

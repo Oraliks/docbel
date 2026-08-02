@@ -21,6 +21,11 @@ export const BUNDLE_EVENT_TYPES = [
   /// UNIQUEMENT côté serveur (routes download-all / email) — étape finale du
   /// funnel « Parcours ». Non émissible depuis le navigateur.
   "documents_downloaded",
+  /// Le panneau « Et maintenant ? » (feuille de route) a été affiché sur
+  /// l'écran de sortie du dossier. Émissible client. JAMAIS de metadata sur
+  /// l'organisme de paiement choisi (donnée art. 9 potentielle — spec
+  /// feuille-de-route 2026-08-02).
+  "feuille_de_route_viewed",
   "resume_success",
   "resume_failed",
 ] as const;
@@ -45,6 +50,7 @@ export const CLIENT_BUNDLE_EVENTS: readonly BundleEventType[] = [
   "wizard_result_shown",
   "bundle_opened",
   "bundle_resumed",
+  "feuille_de_route_viewed",
 ];
 
 export function isClientBundleEvent(v: unknown): v is BundleEventType {

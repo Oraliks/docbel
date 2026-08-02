@@ -31,6 +31,8 @@ import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { CompletionFeedback } from "@/components/docbel/completion-feedback";
+import { FeuilleDeRoutePanel } from "./feuille-de-route-panel";
+import type { OpCode } from "@/lib/feuille-de-route/model";
 
 export interface RoadmapDocument {
   slug: string;
@@ -75,6 +77,11 @@ export function BundleRoadmap({
   const [emailConsent, setEmailConsent] = useState(false);
   const [sendingEmail, setSendingEmail] = useState(false);
   const [emailDialogOpen, setEmailDialogOpen] = useState(false);
+  /// Organisme de paiement choisi dans le panneau « Et maintenant ? » —
+  /// state LOCAL, jamais persisté (spec feuille-de-route, art. 9). Transmis
+  /// en transitoire au zip (?op=) et à l'e-mail (body.op) pour composer la
+  /// page de garde.
+  const [op, setOp] = useState<OpCode | null>(null);
 
   async function sendByEmail() {
     if (!bundleRunId) return;
@@ -83,7 +90,7 @@ export function BundleRoadmap({
       const res = await fetch(`/api/bundles/runs/${bundleRunId}/email`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ to: emailTo.trim(), consent: emailConsent }),
+        body: JSON.stringify({ to: emailTo.trim(), consent: emailConsent, op }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -234,6 +241,16 @@ export function BundleRoadmap({
     icon: <Landmark className="size-4" aria-hidden />,
     title: t("roadmapStepSend"),
     body: t("roadmapStepSendBody"),
+    // Feuille de route « Et maintenant ? » : bureaux OP compétents pour la
+    // commune du citoyen + consignes de signatures/exemplaires par document.
+    content: bundleRunId ? (
+      <FeuilleDeRoutePanel
+        documents={documents}
+        bundleRunId={bundleRunId}
+        op={op}
+        onOpChange={setOp}
+      />
+    ) : undefined,
   });
 
   if (resumeCode) {
@@ -264,7 +281,9 @@ export function BundleRoadmap({
             {bundleRunId ? (
               <Button
                 render={
-                  <a href={`/api/bundles/runs/${bundleRunId}/download-all`} />
+                  <a
+                    href={`/api/bundles/runs/${bundleRunId}/download-all${op ? `?op=${op}` : ""}`}
+                  />
                 }
                 nativeButton={false}
                 size="sm"

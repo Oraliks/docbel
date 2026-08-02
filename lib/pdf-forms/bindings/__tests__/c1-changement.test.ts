@@ -416,3 +416,28 @@ describe("Rules C1 — hors-EEE", () => {
     expect(stamps.has("non_17")).toBe(false);
   });
 });
+
+/// Le bandeau « SUITE C1 | NISS … | Nom … » de la page 2 composait
+/// « Prénom Nom », là où le C1A et le C1B écrivent « Nom Prénom » sous le même
+/// libellé imprimé — et là où la page 1 du C1 lui-même sépare « Nom » puis
+/// « Prénom », dans cet ordre. Trois pages arrivant ensemble à l'ONEM se
+/// présentaient donc de deux façons (relevé le 2026-08-02).
+describe("Rules C1 — bandeau d'identité de la page 2", () => {
+  const NOM_P2 = "c1:header-p2-nom";
+
+  it("écrit « Nom Prénom », comme le C1A et le C1B", () => {
+    const stamps = resolveStamps({ nom: "El Ouazzani", pr_nom: "Mohammed" }, C1_CHANGEMENT_RULES);
+    expect(stamps.get(NOM_P2)).toBe("El Ouazzani Mohammed");
+  });
+
+  it("se contente de ce qui est saisi quand une moitié manque", () => {
+    expect(resolveStamps({ nom: "El Ouazzani" }, C1_CHANGEMENT_RULES).get(NOM_P2)).toBe(
+      "El Ouazzani",
+    );
+    expect(resolveStamps({ pr_nom: "Mohammed" }, C1_CHANGEMENT_RULES).get(NOM_P2)).toBe("Mohammed");
+  });
+
+  it("n'écrit rien quand l'identité est vide", () => {
+    expect(resolveStamps({ nom: "", pr_nom: "  " }, C1_CHANGEMENT_RULES).has(NOM_P2)).toBe(false);
+  });
+});

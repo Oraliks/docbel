@@ -191,6 +191,98 @@ const HELP: Record<string, Partial<Record<Locale, SectionHelp>>> = {
       body: "Zusätzliche Dokumente oder Angaben, nur bereitzustellen, wenn Ihre Situation dies erfordert.",
     },
   },
+
+  // ── Sections ajoutées le 2026-08-02 ───────────────────────────────────────
+  //
+  // Elles retombaient toutes sur le générique « Pourquoi ces questions ? ».
+  // Chaque texte ci-dessous ne dit que DEUX choses : ce que la rubrique demande
+  // (repris du formulaire imprimé) et, le cas échéant, ce que fait Docbel.
+  // Aucune condition d'octroi, aucun délai, aucun montant : une aide de section
+  // n'est pas une source réglementaire.
+  signature: {
+    fr: {
+      title: "Votre signature",
+      body: "Votre signature et la date du jour sont apposées automatiquement à la génération du document. Relisez vos réponses : c'est cette version que vous téléchargerez.",
+    },
+    nl: {
+      title: "Uw handtekening",
+      body: "Uw handtekening en de datum van vandaag worden automatisch aangebracht bij het aanmaken van het document. Lees uw antwoorden na: dit is de versie die u zult downloaden.",
+    },
+    de: {
+      title: "Ihre Unterschrift",
+      body: "Ihre Unterschrift und das heutige Datum werden bei der Erstellung des Dokuments automatisch eingefügt. Lesen Sie Ihre Antworten noch einmal durch: Das ist die Fassung, die Sie herunterladen.",
+    },
+  },
+  employeur: {
+    fr: {
+      title: "Votre employeur",
+      body: "Indiquez le nom et l'adresse de votre employeur, tels qu'ils figurent sur votre contrat de travail ou votre fiche de paie.",
+    },
+    nl: {
+      title: "Uw werkgever",
+      body: "Vermeld de naam en het adres van uw werkgever, zoals ze op uw arbeidsovereenkomst of loonfiche staan.",
+    },
+    de: {
+      title: "Ihr Arbeitgeber",
+      body: "Geben Sie Namen und Anschrift Ihres Arbeitgebers an, so wie sie in Ihrem Arbeitsvertrag oder auf Ihrer Lohnabrechnung stehen.",
+    },
+  },
+  "activites-anterieures": {
+    fr: {
+      title: "Vos activités antérieures",
+      body: "Le formulaire demande si vous avez déjà exercé une activité indépendante à titre principal au cours des six dernières années, et laquelle.",
+    },
+    nl: {
+      title: "Uw eerdere activiteiten",
+      body: "Het formulier vraagt of u de voorbije zes jaar al een zelfstandige activiteit in hoofdberoep hebt uitgeoefend, en welke.",
+    },
+    de: {
+      title: "Ihre früheren Tätigkeiten",
+      body: "Das Formular fragt, ob Sie in den letzten sechs Jahren bereits eine selbständige Tätigkeit im Hauptberuf ausgeübt haben, und welche.",
+    },
+  },
+  "grille-differences": {
+    fr: {
+      title: "La grille des différences",
+      body: "Pour chaque ligne, comparez ce que vous avez déclaré sur le C1 avec ce que disent les registres. Une différence appelle un code d'explication, repris dans la légende du formulaire.",
+    },
+    nl: {
+      title: "Het verschillenrooster",
+      body: "Vergelijk voor elke regel wat u op het C1 hebt verklaard met wat de registers vermelden. Een verschil vraagt om een verklarende code, terug te vinden in de legende van het formulier.",
+    },
+    de: {
+      title: "Die Abweichungstabelle",
+      body: "Vergleichen Sie Zeile für Zeile Ihre Angaben auf dem C1 mit den Eintragungen der Register. Eine Abweichung erfordert einen Erklärungscode aus der Legende des Formulars.",
+    },
+  },
+  "mandat-culturel": {
+    fr: {
+      title: "Vos mandats",
+      body: "Nommez chaque organe consultatif où vous exercez un mandat. Si votre nomination a paru au Moniteur belge, indiquez-en la date ; sinon, joignez une copie de la nomination.",
+    },
+    nl: {
+      title: "Uw mandaten",
+      body: "Noem elk adviesorgaan waar u een mandaat uitoefent. Is uw benoeming in het Belgisch Staatsblad verschenen, vermeld dan de datum; zo niet, voeg een kopie van de benoeming bij.",
+    },
+    de: {
+      title: "Ihre Mandate",
+      body: "Nennen Sie jedes Beratungsorgan, in dem Sie ein Mandat ausüben. Wurde Ihre Ernennung im Belgischen Staatsblatt veröffentlicht, geben Sie das Datum an; andernfalls fügen Sie eine Kopie der Ernennung bei.",
+    },
+  },
+  partenaire: {
+    fr: {
+      title: "Les revenus de votre partenaire",
+      body: "Ces six questions servent à déterminer si votre partenaire peut être considéré comme financièrement à votre charge.",
+    },
+    nl: {
+      title: "De inkomsten van uw partner",
+      body: "Deze zes vragen dienen om te bepalen of uw partner als financieel ten laste kan worden beschouwd.",
+    },
+    de: {
+      title: "Die Einkünfte Ihrer Partnerin oder Ihres Partners",
+      body: "Diese sechs Fragen dienen der Feststellung, ob Ihre Partnerin oder Ihr Partner als finanziell zu Ihren Lasten gelten kann.",
+    },
+  },
 };
 
 /// Surcharges PAR FORMULAIRE, quand deux documents partagent une clé de
@@ -238,6 +330,20 @@ const FALLBACK: Record<Locale, SectionHelp> = {
 /// Repli sur le FR si la traduction manque pour cette section/locale, puis
 /// sur un texte générique si la section n'a pas d'entrée dédiée (ex. un
 /// formulaire compagnon non documenté ici) — ne renvoie jamais de chaîne vide.
+/// Quelle section d'une macro-étape doit titrer le panneau d'aide.
+///
+/// Par défaut la PREMIÈRE, dans l'ordre du formulaire. Exception : la
+/// signature. Elle ne mène jamais une étape — elle partage toujours l'écran
+/// avec la dernière question ou avec les annexes, et l'aide affichée parlait
+/// donc d'autre chose au moment précis où le citoyen appose une déclaration sur
+/// l'honneur (mesuré le 2026-08-02 : l'Annexe REGIS titrait « Annexes », le
+/// C1-PARTENAIRE « Les revenus de votre partenaire », le C47 « Comprendre cette
+/// étape »). Quand une étape porte la signature, c'est d'elle qu'il faut
+/// parler : c'est le geste de l'écran.
+export function choisirCleDAide(sectionKeys: readonly string[]): string | undefined {
+  return sectionKeys.includes("signature") ? "signature" : sectionKeys[0];
+}
+
 export function getSectionHelp(
   key: string | undefined,
   lang: Locale,

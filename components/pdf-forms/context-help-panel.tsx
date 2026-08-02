@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { ArrowRightIcon, CheckIcon, InfoIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { getSectionHelp } from "@/lib/pdf-forms/section-help";
+import { choisirCleDAide, getSectionHelp } from "@/lib/pdf-forms/section-help";
 import type { Locale, Localized } from "@/lib/pdf-forms/types";
 import { pickFieldHelp } from "@/lib/pdf-forms/field-help";
 import {
@@ -59,10 +59,11 @@ export function ContextHelpPanel({
   const t = useTranslations("public.dossier");
   const source = entries ?? getDefaultTipsForForm(formSlug);
   const shown = resolveTips(source, { sectionKeys, checkedFieldIds });
-  // Le slug compte : deux documents peuvent partager une clé de section sans
-  // poser la même question (« demande » = motif du C1, cadre de la demande du
-  // C47). Cf. `SURCHARGES` dans section-help.ts.
-  const help = getSectionHelp(sectionKeys[0], locale, formSlug);
+  // Deux règles, toutes deux dans section-help.ts : `choisirCleDAide` décide
+  // QUELLE section titre l'écran (la signature l'emporte, elle n'est jamais
+  // première), et le slug départage deux documents qui partagent une clé sans
+  // poser la même question (« demande » = motif du C1, cadre du C47).
+  const help = getSectionHelp(choisirCleDAide(sectionKeys), locale, formSlug);
   // Couche focus (§10.4) AU-DESSUS du système existant : aide propre du champ
   // focalisé, résolue via le sélecteur pur `pickFieldHelp`. N'altère ni
   // `resolveTips`, ni le repli de section, ni le contact.

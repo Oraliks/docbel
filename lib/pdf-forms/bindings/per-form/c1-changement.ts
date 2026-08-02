@@ -16,6 +16,7 @@ import {
   horsEeeTripleNon,
   dateHeaderFallback,
 } from "../macros";
+import { concatBinding } from "../shared";
 import { formatDateFR, wrapAcrossLines } from "../format";
 
 // ---------------------------------------------------------------------------
@@ -400,22 +401,19 @@ export const C1_CHANGEMENT_RULES: MappingRule[] = [
   // Le citoyen saisit `pr_nom` (Prénom) et `nom` séparément (page 1, widgets
   // `Prenom`/`Nom`). L'en-tête de page 2 a un widget unique `NomPrenom` dont le
   // champ cible (`nom_et_pr_nom`) est `hidden` → jamais alimenté. On compose
-  // « Prénom Nom » ici pour que l'identité apparaisse aussi en page 2.
-  {
+  // l'identité ici pour qu'elle apparaisse aussi en page 2.
+  //
+  // ORDRE « NOM PRÉNOM » (2026-08-02, après relecture des trois bandeaux du
+  // parc). Cette règle écrivait « Prénom Nom » quand le C1A et le C1B écrivent
+  // « Nom Prénom » sous le MÊME libellé imprimé (« Nom ») : trois pages
+  // arrivant ensemble à l'ONEM se présentaient de deux façons. L'ordre retenu
+  // est celui du libellé et celui de la page 1 du C1 lui-même, qui pose « Nom »
+  // puis « Prénom » dans cet ordre.
+  concatBinding({
     name: "nom-prenom-header-p2",
-    whenFn: (payload) => {
-      const p = typeof payload.pr_nom === "string" ? payload.pr_nom.trim() : "";
-      const n = typeof payload.nom === "string" ? payload.nom.trim() : "";
-      return p !== "" || n !== "";
-    },
-    stampFn: (payload) => {
-      const p = typeof payload.pr_nom === "string" ? payload.pr_nom.trim() : "";
-      const n = typeof payload.nom === "string" ? payload.nom.trim() : "";
-      const value = [p, n].filter(Boolean).join(" ");
-      return value ? [{ widget: W_NOM_PRENOM_P2, value }] : [];
-    },
-    declaredWidgets: [W_NOM_PRENOM_P2],
-  },
+    widget: W_NOM_PRENOM_P2,
+    fields: ["nom", "pr_nom"],
+  }),
 
   // -------- Code postal + commune (widget fusionné) --------
   //

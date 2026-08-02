@@ -12,7 +12,17 @@ describe("Rules C1B — en-tête de la page 2", () => {
   // pointillé imprimé traversait les lettres.
   const NOM = "c1b:header-p2-nom";
 
-  it("recopie le nom de la page 1", () => {
+  it("recopie le nom ET le prénom de la page 1", () => {
+    // Le bandeau ne portait que le NOM (2026-08-02) : « El Ouazzani » là où le
+    // C1A affiche « El Ouazzani Mohammed » sous le même libellé imprimé. Sur
+    // une page 2 détachée, un patronyme seul identifie moins bien son porteur
+    // qu'un nom complet, et la ligne pointillée a la place.
+    expect(resolveStamps({ nom: "Dupont", pr_nom: "Jean" }, C1B_RULES).get(NOM)).toBe(
+      "Dupont Jean",
+    );
+  });
+
+  it("se contente du nom quand le prénom manque", () => {
     expect(resolveStamps({ nom: "Dupont" }, C1B_RULES).get(NOM)).toBe("Dupont");
   });
 

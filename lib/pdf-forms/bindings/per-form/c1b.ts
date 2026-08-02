@@ -19,7 +19,7 @@
 // ⚠ `pdfFieldName` = nom EXACT du widget. Le copier depuis
 // `pnpm tsx scripts/dump-pdf-widgets.ts C1B_FR`, jamais le retaper.
 
-import { bind } from "../engine";
+import { concatBinding } from "../shared";
 import type { MappingRule } from "../types";
 
 /// Widget « Nom » de l'en-tête de la page 2 (distinct du widget « nom » de la
@@ -36,7 +36,12 @@ const W_NOM_PAGE_2 = "c1b:header-p2-nom";
 const W_HEADER_P1_NISS = "c1b:header-p1-niss";
 
 export const C1B_RULES: MappingRule[] = [
-  bind("nom", W_NOM_PAGE_2),
+  // NOM + PRÉNOM, comme le bandeau du C1A sous le même libellé imprimé. Il ne
+  // portait que le patronyme (relevé le 2026-08-02 en comparant les trois
+  // bandeaux du parc) : sur une page 2 détachée de sa page 1, « El Ouazzani »
+  // identifie moins bien son porteur qu'« El Ouazzani Mohammed », et la ligne
+  // pointillée court jusqu'à la marge. `concatBinding` ignore un prénom absent.
+  concatBinding({ name: "nom-header-p2", widget: W_NOM_PAGE_2, fields: ["nom", "pr_nom"] }),
   {
     name: "niss-header-p1",
     whenFn: (payload) => typeof payload.niss === "string" && payload.niss.trim() !== "",

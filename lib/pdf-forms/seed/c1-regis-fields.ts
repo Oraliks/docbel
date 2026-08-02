@@ -7,19 +7,55 @@
 // Référence métier : légende "Explications relatives à la rubrique I" (page
 // 2 du formulaire officiel) — codes N1-N2 (nationalité), A1-A2 + sous-codes
 // (adresse), FN1-FN5 / FY1-FY5 (membres du ménage).
+//
+// ===========================================================================
+// RÉALIGNÉ LE 2026-08-02 (lot S14) — il était le dernier document non repris
+// ===========================================================================
+//
+// Quatre écarts par rapport aux sept autres documents, tous corrigés ici :
+//
+// 1. ORDRE DE LECTURE. Le formulaire imprime un TABLEAU de sept lignes :
+//
+//      | INDICATION SUR LE C1 | DANS LES REGISTRES |      | différence ? |
+//      |  x=140               |  x=307             |      | non/oui x=487|
+//
+//    ...puis, quatre-vingts points PLUS BAS sur la même page, un second bloc
+//    « Explications » d'une case par ligne (x=140, y=258 → 130).
+//
+//    Le schéma déclarait chaque ligne comme un quatuor
+//    « différence → C1 → registres → EXPLICATION », ce qui faisait remonter
+//    l'explication de 220 points au milieu du tableau. D'où les 14 écarts
+//    géométriques recensés — le pire du parc. Les explications forment
+//    désormais leur propre bloc, dans l'ordre où elles sont imprimées.
+//
+// 2. PARCOURS. Seul document resté au découpage par SECTION : une seule étape
+//    « grille des différences » de vingt-huit champs. Il suit maintenant le
+//    patron des six autres — une question par étape (`stepGroup`), la question
+//    étant « y a-t-il une différence ? » de chaque ligne.
+//
+// 3. MOULES PARTAGÉS. Sa paire oui/non monolingue et sa signature étaient des
+//    copies locales (cf. `_shared/moules.ts`, lot S13).
+//
+// 4. DATE DE SIGNATURE : il n'y en a PAS, et c'est vérifié, pas oublié. Le bas
+//    du formulaire imprime une seule légende, « Date – signature de l'assuré
+//    social » (x=324→459, y=77), au-dessus d'une SEULE zone : le widget
+//    `Signature6`. Aucun guide de date ne lui est associé. Le bloc de
+//    signature « façon Adobe » y appose déjà l'horodatage de Bruxelles
+//    (« Signé via Docbel.be · 2026.08.02 14:31:07 »), ce qui remplit la moitié
+//    « Date » de la légende. Ajouter un champ de date positionnel écrirait
+//    soit par-dessus la signature, soit sur du papier vierge.
 
 import type { PdfFormField } from "../types";
 import { mergeEnrichedFields } from "./_merge";
-
-const SECTION_IDENTITE = "identite";
-const SECTION_GRILLE1 = "grille-differences";
-const SECTION_ANNEXES = "annexes";
-const SECTION_SIGNATURE = "signature";
-
-const YN = [
-  { value: "oui", label: { fr: "Oui" } },
-  { value: "non", label: { fr: "Non" } },
-];
+import {
+  appliquerGroupes,
+  carteDesGroupes,
+  champSignature,
+  SECTION_ANNEXES,
+  SECTION_GRILLE_DIFFERENCES,
+  SECTION_IDENTITE,
+  YN,
+} from "./_shared/moules";
 
 /// Préfixes exacts des 2 colonnes de la Grille 1 sur le PDF officiel — la
 /// virgule et les apostrophes du texte affiché sont absentes du nom de champ
@@ -32,120 +68,132 @@ const GRILLE1_REGISTRE_PREFIX =
 const FN4_HELP =
   "Si cette personne est une ou un colocataire (aucun lien de parenté) qui vit réellement à la même adresse mais avec qui vous ne partagez pas la vie domestique/financière : indiquez le code FN4. Pour les autres cas, référez-vous à la légende page 2 du formulaire officiel (codes FN1-FN5, FY1-FY5).";
 
-/// Une ligne de la Grille 1/Grille 2 hors "personne" (nationalité, adresse).
-function fixedRow(opts: {
-  key: "nationalite" | "adresse";
+/// Les sept lignes du tableau, dans l'ordre imprimé. Chacune donne son nom aux
+/// quatre champs qu'elle produit (`<clé>Difference`, `<clé>C1`,
+/// `<clé>Registre`, `<clé>Explication`) et porte les deux irrégularités de
+/// nommage du PDF officiel :
+///
+///   • le suffixe des cases à cocher (`oui`/`non` nu pour la 1re ligne, puis
+///     `_2` … `_7`) ;
+///   • le suffixe des colonnes de texte, où la 5e personne n'a PAS de numéro
+///     (« PERSONNE » et non « PERSONNE 5 ») — même limitation déjà documentée
+///     pour la grille « cohabitants » du C1 lui-même.
+interface Ligne {
+  cle: string;
   label: string;
-  checkboxSuffix: string; // "" pour la 1re ligne (bare), "_2" pour la 2e…
-  grille1Suffix: string; // "MA NATIONALITE" | "MON ADRESSE"
-  order: number;
-}): PdfFormField[] {
-  const diffId = `${opts.key}Difference`;
-  const checkbox =
-    opts.checkboxSuffix === ""
-      ? "oui|non"
-      : `oui${opts.checkboxSuffix}|non${opts.checkboxSuffix}`;
-  return [
-    {
-      id: diffId,
-      pdfFieldName: checkbox,
-      type: "radio",
-      required: false,
-      label: { fr: `${opts.label} — y a-t-il une différence avec les registres ?` },
-      options: YN,
-      section: SECTION_GRILLE1,
-      order: opts.order,
-    },
-    {
-      id: `${opts.key}C1`,
-      pdfFieldName: `${GRILLE1_C1_PREFIX}${opts.grille1Suffix}`,
-      type: "text",
-      required: false,
-      label: { fr: `${opts.label} — indication sur le C1` },
-      visibleIf: { fieldId: diffId, op: "equals", value: "oui" },
-      section: SECTION_GRILLE1,
-      order: opts.order + 1,
-    },
-    {
-      id: `${opts.key}Registre`,
-      pdfFieldName: `${GRILLE1_REGISTRE_PREFIX}${opts.grille1Suffix}`,
-      type: "text",
-      required: false,
-      label: { fr: `${opts.label} — indication dans les registres officiels` },
-      help: { fr: "Ce que dit votre registre national — vérifiez sur votre eID." },
-      visibleIf: { fieldId: diffId, op: "equals", value: "oui" },
-      section: SECTION_GRILLE1,
-      order: opts.order + 2,
-    },
-    {
-      id: `${opts.key}Explication`,
-      pdfFieldName: opts.grille1Suffix,
-      type: "text",
-      required: false,
-      label: { fr: `${opts.label} — explication (voir légende page 2, codes N/A)` },
-      visibleIf: { fieldId: diffId, op: "equals", value: "oui" },
-      section: SECTION_GRILLE1,
-      order: opts.order + 3,
-    },
-  ];
+  /// "" pour la 1re ligne (cases `oui`/`non` nues), "_2" pour la 2e…
+  suffixeCase: string;
+  /// Suffixe des trois widgets de texte de la ligne.
+  suffixeTexte: string;
+  /// Aide de la case « explication » : la légende des codes diffère selon
+  /// qu'il s'agit de vous (codes N/A) ou d'un membre du ménage (codes FN/FY).
+  aideExplication: string;
+  /// Précision demandée à la colonne « registres ».
+  aideRegistre: string;
 }
 
-/// Une ligne "Personne N" (N = 1..5). La 5e personne n'a pas de suffixe
-/// numérique sur le PDF officiel (nommage irrégulier — même limitation déjà
-/// documentée pour la grille "cohabitants" du C1 lui-même).
-function personneRow(n: 1 | 2 | 3 | 4 | 5): PdfFormField[] {
-  const checkboxSuffix = { 1: "_3", 2: "_4", 3: "_5", 4: "_6", 5: "_7" }[n];
-  const grille1Suffix = n === 5 ? "PERSONNE" : `PERSONNE ${n}`;
-  const label = n === 5 ? "Personne (5e)" : `Personne ${n}`;
-  const diffId = `personne${n}Difference`;
-  const order = 200 + n * 10;
+const LIGNES: readonly Ligne[] = [
+  {
+    cle: "nationalite",
+    label: "Ma nationalité",
+    suffixeCase: "",
+    suffixeTexte: "MA NATIONALITE",
+    aideExplication: "voir légende page 2, codes N",
+    aideRegistre: "Ce que dit votre registre national — vérifiez sur votre eID.",
+  },
+  {
+    cle: "adresse",
+    label: "Mon adresse",
+    suffixeCase: "_2",
+    suffixeTexte: "MON ADRESSE",
+    aideExplication: "voir légende page 2, codes A",
+    aideRegistre: "Ce que dit votre registre national — vérifiez sur votre eID.",
+  },
+  ...([1, 2, 3, 4, 5] as const).map((n) => ({
+    cle: `personne${n}`,
+    label: n === 5 ? "Personne (5e)" : `Personne ${n}`,
+    suffixeCase: `_${n + 2}`,
+    suffixeTexte: n === 5 ? "PERSONNE" : `PERSONNE ${n}`,
+    aideExplication: "code",
+    aideRegistre:
+      "Ce que dit votre registre national pour cette personne — vérifiez sur son eID ou demandez-lui.",
+  })),
+];
+
+/// Les trois champs d'une ligne du TABLEAU (la case « explication », imprimée
+/// bien plus bas sur la page, est produite à part par `champsExplication`).
+function champsTableau(ligne: Ligne, order: number): PdfFormField[] {
+  const diffId = `${ligne.cle}Difference`;
+  const cases =
+    ligne.suffixeCase === ""
+      ? "oui|non"
+      : `oui${ligne.suffixeCase}|non${ligne.suffixeCase}`;
+  const suiteVisible: PdfFormField["visibleIf"] = {
+    fieldId: diffId,
+    op: "equals",
+    value: "oui",
+  };
   return [
     {
       id: diffId,
-      pdfFieldName: `oui${checkboxSuffix}|non${checkboxSuffix}`,
+      pdfFieldName: cases,
       type: "radio",
       required: false,
-      label: { fr: `${label} — y a-t-il une différence avec les registres ?` },
+      label: { fr: `${ligne.label} — y a-t-il une différence avec les registres ?` },
       options: YN,
-      section: SECTION_GRILLE1,
+      section: SECTION_GRILLE_DIFFERENCES,
       order,
     },
     {
-      id: `personne${n}C1`,
-      pdfFieldName: `${GRILLE1_C1_PREFIX}${grille1Suffix}`,
+      id: `${ligne.cle}C1`,
+      pdfFieldName: `${GRILLE1_C1_PREFIX}${ligne.suffixeTexte}`,
       type: "text",
       required: false,
-      label: { fr: `${label} — indication sur le C1 (nom, prénom)` },
-      visibleIf: { fieldId: diffId, op: "equals", value: "oui" },
-      section: SECTION_GRILLE1,
+      label: {
+        fr:
+          ligne.cle.startsWith("personne")
+            ? `${ligne.label} — indication sur le C1 (nom, prénom)`
+            : `${ligne.label} — indication sur le C1`,
+      },
+      visibleIf: suiteVisible,
+      section: SECTION_GRILLE_DIFFERENCES,
       order: order + 1,
     },
     {
-      id: `personne${n}Registre`,
-      pdfFieldName: `${GRILLE1_REGISTRE_PREFIX}${grille1Suffix}`,
+      id: `${ligne.cle}Registre`,
+      pdfFieldName: `${GRILLE1_REGISTRE_PREFIX}${ligne.suffixeTexte}`,
       type: "text",
       required: false,
-      label: { fr: `${label} — indication dans les registres officiels` },
-      help: { fr: "Ce que dit votre registre national pour cette personne — vérifiez sur son eID ou demandez-lui." },
-      visibleIf: { fieldId: diffId, op: "equals", value: "oui" },
-      section: SECTION_GRILLE1,
+      label: { fr: `${ligne.label} — indication dans les registres officiels` },
+      help: { fr: ligne.aideRegistre },
+      visibleIf: suiteVisible,
+      section: SECTION_GRILLE_DIFFERENCES,
       order: order + 2,
-    },
-    {
-      id: `personne${n}Explication`,
-      pdfFieldName: grille1Suffix,
-      type: "text",
-      required: false,
-      label: { fr: `${label} — explication (code)` },
-      help: { fr: FN4_HELP },
-      visibleIf: { fieldId: diffId, op: "equals", value: "oui" },
-      section: SECTION_GRILLE1,
-      order: order + 3,
     },
   ];
 }
 
+/// La case « explication » d'une ligne. Le PDF les imprime toutes ensemble,
+/// sous le tableau (x=140, y=258 → 130) : elles forment donc un bloc à elles,
+/// APRÈS les sept lignes, et non la queue de chaque ligne.
+function champExplication(ligne: Ligne, order: number): PdfFormField {
+  return {
+    id: `${ligne.cle}Explication`,
+    pdfFieldName: ligne.suffixeTexte,
+    type: "text",
+    required: false,
+    label: { fr: `${ligne.label} — explication (${ligne.aideExplication})` },
+    ...(ligne.cle.startsWith("personne") ? { help: { fr: FN4_HELP } } : {}),
+    visibleIf: { fieldId: `${ligne.cle}Difference`, op: "equals", value: "oui" },
+    section: SECTION_GRILLE_DIFFERENCES,
+    order,
+  };
+}
+
 export const C1_REGIS_FIELDS: PdfFormField[] = [
+  // ====================================================================
+  // EN-TÊTE (page 1, y=666 et 613)
+  // ====================================================================
   {
     id: "nom",
     pdfFieldName: "NOM",
@@ -154,6 +202,11 @@ export const C1_REGIS_FIELDS: PdfFormField[] = [
     label: { fr: "Nom" },
     prefillFrom: "profile.lastName",
     canonicalKey: "identity.nom",
+    // Dans un dossier, le C1 a déjà donné nom et prénom : les deux champs
+    // deviennent `autoAnswered` à l'ouverture et l'étape d'identité disparaît.
+    // Sur l'URL publique, où il n'y a aucun C1 dont hériter, ils restent à
+    // l'écran et obligatoires. Les six autres compagnons font de même.
+    inheritedFromDossier: true,
     section: SECTION_IDENTITE,
     order: -100,
   },
@@ -165,10 +218,14 @@ export const C1_REGIS_FIELDS: PdfFormField[] = [
     label: { fr: "Prénom" },
     prefillFrom: "profile.firstName",
     canonicalKey: "identity.prenom",
+    inheritedFromDossier: true,
     section: SECTION_IDENTITE,
     order: -99,
   },
   {
+    // Date de la demande d'allocations. Pré-remplie du jour, comme le widget
+    // homonyme du C1 lui-même (stampé par la règle `date-header-p2`) : cette
+    // annexe se dépose avec le C1, les deux dates sont donc la même.
     id: "dateDA",
     pdfFieldName: "Date de DA",
     type: "date",
@@ -179,14 +236,20 @@ export const C1_REGIS_FIELDS: PdfFormField[] = [
     order: -98,
   },
 
-  ...fixedRow({ key: "nationalite", label: "Ma nationalité", checkboxSuffix: "", grille1Suffix: "MA NATIONALITE", order: 100 }),
-  ...fixedRow({ key: "adresse", label: "Mon adresse", checkboxSuffix: "_2", grille1Suffix: "MON ADRESSE", order: 110 }),
-  ...personneRow(1),
-  ...personneRow(2),
-  ...personneRow(3),
-  ...personneRow(4),
-  ...personneRow(5),
+  // ====================================================================
+  // TABLEAU DES DIFFÉRENCES (page 1, y=486 → 342)
+  // Sept lignes de trois champs, dans l'ordre imprimé.
+  // ====================================================================
+  ...LIGNES.flatMap((ligne, i) => champsTableau(ligne, 100 + i * 10)),
 
+  // ====================================================================
+  // EXPLICATIONS (page 1, y=258 → 130) — un bloc séparé sur le papier.
+  // ====================================================================
+  ...LIGNES.map((ligne, i) => champExplication(ligne, 300 + i * 10)),
+
+  // ====================================================================
+  // PIED DE PAGE : « Je joins … preuves. » puis « Date – signature »
+  // ====================================================================
   {
     id: "nombreAnnexesJointes",
     pdfFieldName: "Nombre d'annexe joint",
@@ -196,20 +259,17 @@ export const C1_REGIS_FIELDS: PdfFormField[] = [
     section: SECTION_ANNEXES,
     order: 900,
   },
-  {
-    id: "signature",
+  champSignature({
     pdfFieldName: "Signature6",
-    type: "signature",
-    required: true,
-    label: { fr: "Signature électronique" },
-    help: { fr: "Signature « façon Adobe » : votre nom + prénom + horodatage seront appliqués à la position de la signature." },
-    section: SECTION_SIGNATURE,
+    help: "Signature « façon Adobe » : votre nom + prénom + horodatage seront appliqués à la position de la signature.",
     order: 1000,
-  },
+  }),
 
   // Cases administratives (page 2) : utilisées uniquement quand le Registre
   // national lui-même n'a aucune donnée exploitable — décision de
-  // l'ONEM/bureau du chômage, pas une déclaration citoyenne. Masquées.
+  // l'ONEM/bureau du chômage, pas une déclaration citoyenne. Masquées, donc
+  // jamais stampées : ce sont les deux seuls widgets du formulaire qu'aucun
+  // scénario de recette ne peut couvrir, et c'est voulu.
   {
     id: "regisRegistreIndisponible1",
     pdfFieldName:
@@ -234,9 +294,55 @@ export const C1_REGIS_FIELDS: PdfFormField[] = [
   },
 ];
 
+// ===========================================================================
+// PARCOURS À L'ÉCRAN — une question = une étape (patron du C1A / C1C / C47)
+// ===========================================================================
+
+/// Étape de l'en-tête d'identité — la seule qui ne soit pas une question.
+export const C1_REGIS_GROUPE_IDENTITE = "identite";
+
+/// Les questions du document, DANS L'ORDRE IMPRIMÉ : une par ligne du tableau.
+/// Chacune devient une étape et porte l'identifiant du champ qui la pose (son
+/// ANCRE, cf. `stepAnchorField`), si bien que sa question titre l'étape.
+///
+/// `signature` ferme la liste sans jamais produire d'étape sur les documents où
+/// le serveur pose la signature — ici il en produit une, car « Je joins …
+/// preuves » lui est rattaché et reste à saisir.
+export const C1_REGIS_QUESTIONS: readonly string[] = [
+  ...LIGNES.map((l) => `${l.cle}Difference`),
+  "signature",
+];
+
+/// Champs RATTACHÉS à une question : les trois précisions d'une ligne suivent
+/// sa question « y a-t-il une différence ? » plutôt que de fabriquer trois
+/// étapes vides quand la réponse est « non ».
+const RATTACHEMENTS: Readonly<Record<string, readonly string[]>> = {
+  ...Object.fromEntries(
+    LIGNES.map((l) => [
+      `${l.cle}Difference`,
+      [`${l.cle}C1`, `${l.cle}Registre`, `${l.cle}Explication`],
+    ]),
+  ),
+  // Le bas du formulaire papier, d'un seul tenant : on compte ses annexes,
+  // on date et on signe.
+  signature: ["nombreAnnexesJointes"],
+};
+
+const CARTE_DES_GROUPES = carteDesGroupes(C1_REGIS_QUESTIONS, RATTACHEMENTS);
+
 /// Applique le schéma enrichi sur une liste de champs bruts (typiquement
 /// issue de l'inférence automatique au moment de l'import). Idempotent :
 /// ré-exécutable sans dupliquer (compare les `id`).
+///
+/// Aucun `legacyIds` n'est passé, et ce n'est pas un oubli : les 42 widgets du
+/// PDF sont TOUS revendiqués ci-dessus, donc la règle `pdfFieldName` de
+/// `mergeEnrichedFields` évince à elle seule chaque champ auto-inféré resté en
+/// base. Un `legacyIds` ne sert qu'aux champs dont le widget est passé à une
+/// RÈGLE serveur — ce formulaire n'en a aucun.
 export function applyC1RegisImprovements(fields: PdfFormField[]): PdfFormField[] {
-  return mergeEnrichedFields(fields, C1_REGIS_FIELDS);
+  return appliquerGroupes(mergeEnrichedFields(fields, C1_REGIS_FIELDS), {
+    parChamp: CARTE_DES_GROUPES,
+    groupeEntete: C1_REGIS_GROUPE_IDENTITE,
+    sectionsEntete: [SECTION_IDENTITE],
+  });
 }

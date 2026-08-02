@@ -72,7 +72,19 @@ const CIBLES: Cible[] = [
         technicalSchema: ctx?.technicalSchema,
       }),
   },
-  { slug: "c1-regis", pdf: "Annexe_Regis_FR.pdf", improve: applyC1RegisImprovements },
+  {
+    slug: "c1-regis",
+    pdf: "Annexe_Regis_FR.pdf",
+    improve: applyC1RegisImprovements,
+    // Ce document n'a pas deux colonnes : il a un TABLEAU, qui se lit ligne
+    // par ligne. Ses trois blocs de widgets (indications x=140, registres
+    // x=307, cases non/oui x=487) sont les COLONNES D'UN MÊME TABLEAU, et le
+    // seuil de 300 pt les coupait en deux — il exigeait alors de déclarer les
+    // sept lignes d'indications, PUIS les sept lignes de registres, PUIS les
+    // sept paires de cases, soit l'inverse de l'ordre où le formulaire se
+    // remplit. D'où les 14 écarts, le pire score du parc.
+    colonneX: null,
+  },
   {
     slug: "c1-partenaire",
     pdf: "C1-Partenaire_FR.pdf",
@@ -163,22 +175,13 @@ const ECARTS_ASSUMES: Record<string, string[]> = {
     "statutJugementPensionAlimentaire > separeDeFaitDelegationRevenu",
     "tremplinIndependantsDejaDeclare > activiteAccessoireOuAide",
   ],
-  "c1-regis": [
-    "adresseDifference > adresseC1",
-    "adresseRegistre > adresseExplication",
-    "nationaliteDifference > nationaliteC1",
-    "nationaliteRegistre > nationaliteExplication",
-    "personne1Difference > personne1C1",
-    "personne1Registre > personne1Explication",
-    "personne2Difference > personne2C1",
-    "personne2Registre > personne2Explication",
-    "personne3Difference > personne3C1",
-    "personne3Registre > personne3Explication",
-    "personne4Difference > personne4C1",
-    "personne4Registre > personne4Explication",
-    "personne5Difference > personne5C1",
-    "personne5Registre > personne5Explication",
-  ],
+  // `c1-regis` : entrée VIDÉE le 2026-08-02 (réalignement du formulaire, lot
+  // S14). Ses 14 écarts — le pire score du parc — avaient deux causes, et une
+  // seule était un artefact : le découpage en deux colonnes appliqué à un
+  // TABLEAU (cf. `colonneX: null` sur sa cible), et un VRAI défaut d'ordre,
+  // les sept cases « explication » déclarées au milieu du tableau alors
+  // qu'elles sont imprimées 220 points plus bas, dans leur propre bloc.
+  // Ne rien réintroduire ici sans avoir relu le PDF généré.
   // `c1-partenaire` : entrée VIDÉE le 2026-07-31 (reprise du formulaire). Ses
   // trois écarts étaient des artefacts du découpage en deux colonnes — cf.
   // `colonneX: null` sur sa cible. Le doute de fond sur son widget partagé

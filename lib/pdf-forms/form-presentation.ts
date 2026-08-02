@@ -22,6 +22,7 @@ import {
 } from "./seed/c1-partenaire-fields";
 import { C46_QUESTIONS, C46_GROUPE_IDENTITE } from "./seed/c46-fields";
 import { C1B_QUESTIONS, C1B_GROUPE_IDENTITE } from "./seed/c1b-fields";
+import { C1_REGIS_QUESTIONS, C1_REGIS_GROUPE_IDENTITE } from "./seed/c1-regis-fields";
 
 export interface FormPresentation {
   /// Ordre canonique des macro-étapes. Les groupes absents de cette liste
@@ -138,6 +139,16 @@ const PRESENTATION_BY_SLUG: Readonly<Record<string, FormPresentation>> = {
     // imprimées, dont la plupart ne s'affichent que sur leur branche. Le
     // parcours le plus court (« non » partout) tient en huit écrans.
     stepGroupOrder: [C1B_GROUPE_IDENTITE, ...C1B_QUESTIONS],
+    hideStepList: true,
+  },
+  "c1-regis": {
+    // MÊME GRAMMAIRE, sur le dernier document à l'avoir rejointe (lot S14). Le
+    // papier est un tableau de sept lignes ; chaque ligne pose la même question
+    // — « y a-t-il une différence avec les registres ? » — et n'ouvre ses trois
+    // précisions que si la réponse est « oui ». Le parcours le plus court
+    // (« non » sept fois) tient donc en huit écrans au lieu d'une grille de
+    // vingt-huit champs d'un seul tenant.
+    stepGroupOrder: [C1_REGIS_GROUPE_IDENTITE, ...C1_REGIS_QUESTIONS],
     hideStepList: true,
   },
 };

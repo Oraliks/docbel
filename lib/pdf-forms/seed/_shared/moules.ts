@@ -197,8 +197,13 @@ export function champDateDeSignature(opts: {
   };
 }
 
-/// Signature électronique du pied de page.
-export function champSignature(opts: { pdfFieldName: string; order: number }): PdfFormField {
+/// Signature électronique du pied de page. `help` par défaut : l'engagement sur
+/// l'honneur, que six des huit documents impriment mot pour mot.
+export function champSignature(opts: {
+  pdfFieldName: string;
+  help?: string;
+  order: number;
+}): PdfFormField {
   return {
     id: "signature",
     pdfFieldName: opts.pdfFieldName,
@@ -206,7 +211,9 @@ export function champSignature(opts: { pdfFieldName: string; order: number }): P
     required: true,
     label: { fr: "Signature électronique" },
     help: {
-      fr: "En signant, vous affirmez sur l'honneur que votre déclaration est sincère et complète.",
+      fr:
+        opts.help ??
+        "En signant, vous affirmez sur l'honneur que votre déclaration est sincère et complète.",
     },
     section: SECTION_SIGNATURE,
     order: opts.order,

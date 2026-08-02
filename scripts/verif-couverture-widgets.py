@@ -1,4 +1,4 @@
-"""Couverture des widgets du C1C par les scenarios generes.
+"""Couverture des widgets d'un formulaire ONEM par les scenarios generes.
 
 Deux sources, parce qu'aucune ne suffit seule :
   - PDF NON aplati : la valeur de chaque champ AcroForm et l'etat de chaque

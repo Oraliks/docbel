@@ -125,6 +125,136 @@ export function annexeJointe(opts: {
   };
 }
 
+// ===========================================================================
+// EN-TÊTE D'IDENTITÉ ET PIED DE SIGNATURE
+// ===========================================================================
+//
+// Les trois blocs ci-dessous ouvrent et ferment TOUS les documents ONEM. Ils
+// étaient recopiés dans chaque seed, et c'est là qu'ils se sont mis à diverger
+// en silence : le C46 avait perdu le `prefillFrom: "system.today"` de sa date
+// de signature (sa case partait blanche sur chaque document généré) et rangé
+// cette date dans la page 1 comme un « tampon de réception ».
+//
+// Ce qui est FIXE ici l'est parce qu'il est identique partout ; ce qui varie
+// (nom du widget, peigne imprimé, rang) est un paramètre. Aucune option n'est
+// ouverte « au cas où » : le premier document qui aura besoin d'un libellé
+// différent l'ajoutera à ce moment-là.
+
+/// Bloc NISS de l'en-tête. `printAsComb` n'a pas de valeur par défaut : chaque
+/// document imprime son propre guide en peigne, et un peigne hérité d'un autre
+/// formulaire écrirait à côté des cases.
+export function champNISS(opts: {
+  pdfFieldName: string;
+  printAsComb: NonNullable<PdfFormField["printAsComb"]>;
+  section: string;
+  order: number;
+}): PdfFormField {
+  return {
+    id: "niss",
+    pdfFieldName: opts.pdfFieldName,
+    type: "niss",
+    required: true,
+    label: { fr: "Numéro NISS (registre national)" },
+    help: {
+      fr: "11 chiffres au dos de votre carte d'identité (eID), au-dessus du code-barres.",
+    },
+    placeholder: { fr: "00.00.00-000.00" },
+    prefillFrom: "profile.niss",
+    canonicalKey: "identity.niss",
+    // Dans un dossier, le C1 a déjà donné le NISS : le champ devient
+    // `autoAnswered` à l'ouverture. Sur l'URL publique, il reste à l'écran.
+    inheritedFromDossier: true,
+    fontSize: 9,
+    printAsComb: opts.printAsComb,
+    section: opts.section,
+    order: opts.order,
+  };
+}
+
+/// Date de signature du pied de page. `prefillFrom: "system.today"` est
+/// l'invariant à ne jamais perdre — c'est lui qui remplit la case.
+export function champDateDeSignature(opts: {
+  pdfFieldName: string;
+  /// Par défaut « Date de signature » : le libellé de six des huit documents.
+  label?: string;
+  help?: string;
+  fontSize: number;
+  printAsComb: NonNullable<PdfFormField["printAsComb"]>;
+  order: number;
+}): PdfFormField {
+  return {
+    id: "aujourd_hui",
+    pdfFieldName: opts.pdfFieldName,
+    type: "date",
+    required: true,
+    label: { fr: opts.label ?? "Date de signature" },
+    help: { fr: opts.help ?? "Pré-remplie automatiquement avec la date du jour." },
+    prefillFrom: "system.today",
+    fontSize: opts.fontSize,
+    printAsComb: opts.printAsComb,
+    section: SECTION_SIGNATURE,
+    order: opts.order,
+  };
+}
+
+/// Signature électronique du pied de page.
+export function champSignature(opts: { pdfFieldName: string; order: number }): PdfFormField {
+  return {
+    id: "signature",
+    pdfFieldName: opts.pdfFieldName,
+    type: "signature",
+    required: true,
+    label: { fr: "Signature électronique" },
+    help: {
+      fr: "En signant, vous affirmez sur l'honneur que votre déclaration est sincère et complète.",
+    },
+    section: SECTION_SIGNATURE,
+    order: opts.order,
+  };
+}
+
+// ===========================================================================
+// DÉCOUPAGE EN ÉTAPES (`stepGroup`)
+// ===========================================================================
+
+/// Table « id de champ → étape » d'un document : chaque question est sa propre
+/// étape, et les champs qui la complètent la rejoignent.
+export function carteDesGroupes(
+  questions: readonly string[],
+  rattachements: Readonly<Record<string, readonly string[]>>,
+): Map<string, string> {
+  const parChamp = new Map<string, string>();
+  for (const question of questions) parChamp.set(question, question);
+  for (const [question, rattaches] of Object.entries(rattachements)) {
+    for (const id of rattaches) parChamp.set(id, question);
+  }
+  return parChamp;
+}
+
+/// Pose `stepGroup` sur chaque champ. Les champs des sections d'en-tête
+/// tombent dans le groupe d'en-tête ; un champ inconnu des deux tables reste
+/// SANS groupe et atterrit dans « Autres informations » de la dernière étape —
+/// repli visible, jamais une perte.
+///
+/// La carte l'emporte sur le repli par section : un champ rattaché à une
+/// question la suit même s'il est posé dans une section d'en-tête.
+export function appliquerGroupes(
+  fields: PdfFormField[],
+  opts: {
+    parChamp: ReadonlyMap<string, string>;
+    groupeEntete: string;
+    /// Sections dont les champs se lisent d'un bloc en tête du document.
+    sectionsEntete: readonly string[];
+  },
+): PdfFormField[] {
+  return fields.map((f) => {
+    const groupe =
+      opts.parChamp.get(f.id) ??
+      (f.section && opts.sectionsEntete.includes(f.section) ? opts.groupeEntete : undefined);
+    return groupe ? { ...f, stepGroup: groupe } : f;
+  });
+}
+
 /// Construit un champ radio "déjà déclaré ?" virtuel par défaut (pas de widget
 /// PDF correspondant). Si `pdfFieldName` est fourni (paire dejaDeclareWidget|
 /// declareWidget), on stamp les deux cases : "oui = déjà déclaré" coche la 1ʳᵉ,

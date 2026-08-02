@@ -27,11 +27,16 @@
 
 import type { PdfFormField } from "../types";
 import { mergeEnrichedFields } from "./_merge";
-
-const SECTION_IDENTITE = "identite";
-const SECTION_ADRESSE = "adresse";
-const SECTION_DEMANDE = "demande";
-const SECTION_SIGNATURE = "signature";
+import {
+  appliquerGroupes,
+  carteDesGroupes,
+  champDateDeSignature,
+  champNISS,
+  champSignature,
+  SECTION_ADRESSE,
+  SECTION_DEMANDE,
+  SECTION_IDENTITE,
+} from "./_shared/moules";
 
 // ===========================================================================
 // PEIGNES IMPRIMÉS
@@ -180,26 +185,14 @@ export const C47_FIELDS: PdfFormField[] = [
     section: SECTION_ADRESSE,
     order: 2.5,
   },
-  {
-    id: "niss",
+  // Guide imprimé en peigne : un chiffre par case, points et tirets du NISS
+  // retirés au dessin (ils sont DÉJÀ imprimés sur le guide).
+  champNISS({
     pdfFieldName: "NISS",
-    type: "niss",
-    required: true,
-    label: { fr: "Numéro NISS (registre national)" },
-    help: {
-      fr: "11 chiffres au dos de votre carte d'identité (eID), au-dessus du code-barres.",
-    },
-    placeholder: { fr: "00.00.00-000.00" },
-    prefillFrom: "profile.niss",
-    canonicalKey: "identity.niss",
-    inheritedFromDossier: true,
-    // Guide imprimé en peigne : un chiffre par case, points et tirets du NISS
-    // retirés au dessin (ils sont DÉJÀ imprimés sur le guide).
-    fontSize: 9,
     printAsComb: NISS_COMB,
     section: SECTION_IDENTITE,
     order: 3,
-  },
+  }),
   // TÉLÉPHONE ET E-MAIL — muets à l'écran, comme sur le C1 (Oraliks
   // 2026-07-31). Le formulaire imprime lui-même « Les données "téléphone" et
   // "e-mail" sont facultatives » : deux cases de plus à remplir pour rien.
@@ -357,32 +350,16 @@ export const C47_FIELDS: PdfFormField[] = [
   // ==========================================================================
   // Signature
   // ==========================================================================
-  {
-    id: "aujourd_hui",
+  // « Date : __ __ / __ __ / __ __ __ __ » — guide en peigne, huit cases.
+  champDateDeSignature({
     pdfFieldName: "AUJOURD'HUI",
-    type: "date",
-    required: true,
-    label: { fr: "Date" },
-    help: { fr: "Date à laquelle vous signez cette déclaration." },
-    prefillFrom: "system.today",
-    // « Date : __ __ / __ __ / __ __ __ __ » — guide en peigne, huit cases.
+    label: "Date",
+    help: "Date à laquelle vous signez cette déclaration.",
     fontSize: 9,
     printAsComb: DATE_SIGNATURE_COMB,
-    section: SECTION_SIGNATURE,
     order: 200,
-  },
-  {
-    id: "signature",
-    pdfFieldName: "Signature",
-    type: "signature",
-    required: true,
-    label: { fr: "Signature électronique" },
-    help: {
-      fr: "En signant, vous affirmez sur l'honneur que votre déclaration est sincère et complète.",
-    },
-    section: SECTION_SIGNATURE,
-    order: 201,
-  },
+  }),
+  champSignature({ pdfFieldName: "Signature", order: 201 }),
 ];
 
 /// Applique le schéma enrichi sur une liste de champs bruts (typiquement
@@ -443,26 +420,13 @@ const RATTACHEMENTS: Readonly<Record<string, readonly string[]>> = {
   signature: ["aujourd_hui"],
 };
 
-/// Pose `stepGroup` sur chaque champ. L'identité ET l'adresse tombent dans le
-/// groupe d'en-tête (elles se lisent d'un bloc sur le papier) ; un champ
-/// inconnu des deux tables reste sans groupe et atterrit dans « Autres
-/// informations » de la dernière étape — repli visible, jamais une perte.
-function appliquerGroupes(fields: PdfFormField[]): PdfFormField[] {
-  const parChamp = new Map<string, string>();
-  for (const question of C47_QUESTIONS) parChamp.set(question, question);
-  for (const [question, rattaches] of Object.entries(RATTACHEMENTS)) {
-    for (const id of rattaches) parChamp.set(id, question);
-  }
-  return fields.map((f) => {
-    const groupe =
-      parChamp.get(f.id) ??
-      (f.section === SECTION_IDENTITE || f.section === SECTION_ADRESSE
-        ? C47_GROUPE_IDENTITE
-        : undefined);
-    return groupe ? { ...f, stepGroup: groupe } : f;
-  });
-}
+const CARTE_DES_GROUPES = carteDesGroupes(C47_QUESTIONS, RATTACHEMENTS);
 
 export function applyC47Improvements(fields: PdfFormField[]): PdfFormField[] {
-  return appliquerGroupes(mergeEnrichedFields(fields, C47_FIELDS, LEGACY_C47_FIELD_IDS));
+  return appliquerGroupes(mergeEnrichedFields(fields, C47_FIELDS, LEGACY_C47_FIELD_IDS), {
+    parChamp: CARTE_DES_GROUPES,
+    groupeEntete: C47_GROUPE_IDENTITE,
+    // L'identité ET l'adresse se lisent d'un bloc sur le papier.
+    sectionsEntete: [SECTION_IDENTITE, SECTION_ADRESSE],
+  });
 }

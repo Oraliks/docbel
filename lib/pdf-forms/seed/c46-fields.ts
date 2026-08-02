@@ -39,11 +39,16 @@
 
 import type { PdfFormField } from "../types";
 import { mergeEnrichedFields } from "./_merge";
-
-const SECTION_IDENTITE = "identite";
-const SECTION_MANDAT = "mandat-culturel";
-const SECTION_ANNEXES = "annexes";
-const SECTION_SIGNATURE = "signature";
+import {
+  appliquerGroupes,
+  carteDesGroupes,
+  champDateDeSignature,
+  champNISS,
+  champSignature,
+  SECTION_ANNEXES,
+  SECTION_IDENTITE,
+  SECTION_MANDAT_CULTUREL as SECTION_MANDAT,
+} from "./_shared/moules";
 
 /// « Une valeur est présente » — le seul moyen d'exprimer « non vide » avec les
 /// opérateurs de `visibleIf` (equals / notEquals / in / notIn / matchesRegex).
@@ -142,24 +147,12 @@ export const C46_FIELDS: PdfFormField[] = [
     section: SECTION_IDENTITE,
     order: -100,
   },
-  {
-    id: "niss",
+  champNISS({
     pdfFieldName: "NISS",
-    type: "niss",
-    required: true,
-    label: { fr: "Numéro NISS (registre national)" },
-    help: {
-      fr: "11 chiffres au dos de votre carte d'identité (eID), au-dessus du code-barres.",
-    },
-    placeholder: { fr: "00.00.00-000.00" },
-    prefillFrom: "profile.niss",
-    canonicalKey: "identity.niss",
-    inheritedFromDossier: true,
-    fontSize: 9,
     printAsComb: NISS_COMB,
     section: SECTION_IDENTITE,
     order: -99,
-  },
+  }),
   // NOTE canonique : `nom_et_pr_nom` (type "fullname" = { first, last })
   // combine deux clés canoniques (identity.nom + identity.prenom) → non tagué.
 
@@ -270,35 +263,17 @@ export const C46_FIELDS: PdfFormField[] = [
   // SECTION — DATE + SIGNATURE (page 2)
   // Texte imprimé : « Date: __ __ / __ __ / __ __ __ __   Signature »
   // ====================================================================
-  {
-    // C'EST la date de signature, et elle est sur la PAGE 2. Elle était
-    // `hidden` et décrite comme un « tampon de réception » de la page 1 : sa
-    // case partait blanche sur chaque C46 généré, pendant que la date du jour
-    // s'imprimait dans les trois guides « Moniteur Belge » de la page 1.
-    id: "aujourd_hui",
+  // C'EST la date de signature, et elle est sur la PAGE 2. Elle était `hidden`
+  // et décrite comme un « tampon de réception » de la page 1 : sa case partait
+  // blanche sur chaque C46 généré, pendant que la date du jour s'imprimait dans
+  // les trois guides « Moniteur Belge » de la page 1.
+  champDateDeSignature({
     pdfFieldName: "AUJOURD'HUI",
-    type: "date",
-    required: true,
-    label: { fr: "Date de signature" },
-    help: { fr: "Pré-remplie automatiquement avec la date du jour." },
-    prefillFrom: "system.today",
     fontSize: 8,
     printAsComb: DATE_SIGNATURE_COMB,
-    section: SECTION_SIGNATURE,
     order: 1000,
-  },
-  {
-    id: "signature",
-    pdfFieldName: "Signature",
-    type: "signature",
-    required: true,
-    label: { fr: "Signature électronique" },
-    help: {
-      fr: "En signant, vous affirmez sur l'honneur que votre déclaration est sincère et complète.",
-    },
-    section: SECTION_SIGNATURE,
-    order: 1001,
-  },
+  }),
+  champSignature({ pdfFieldName: "Signature", order: 1001 }),
 ];
 
 /// Champs d'une version antérieure à purger de la base. Sans cette liste ils
@@ -354,25 +329,15 @@ const RATTACHEMENTS: Readonly<Record<string, readonly string[]>> = {
   signature: ["aujourd_hui"],
 };
 
-/// Pose `stepGroup` sur chaque champ. Les champs d'identité tombent dans le
-/// groupe d'en-tête ; un champ inconnu des deux tables reste sans groupe et
-/// atterrit dans « Autres informations » de la dernière étape.
-function appliquerGroupes(fields: PdfFormField[]): PdfFormField[] {
-  const parChamp = new Map<string, string>();
-  for (const question of C46_QUESTIONS) parChamp.set(question, question);
-  for (const [question, rattaches] of Object.entries(RATTACHEMENTS)) {
-    for (const id of rattaches) parChamp.set(id, question);
-  }
-  return fields.map((f) => {
-    const groupe =
-      parChamp.get(f.id) ?? (f.section === SECTION_IDENTITE ? C46_GROUPE_IDENTITE : undefined);
-    return groupe ? { ...f, stepGroup: groupe } : f;
-  });
-}
+const CARTE_DES_GROUPES = carteDesGroupes(C46_QUESTIONS, RATTACHEMENTS);
 
 /// Applique le schéma enrichi sur une liste de champs bruts (typiquement
 /// issue de l'inférence automatique au moment de l'import). Idempotent :
 /// ré-exécutable sans dupliquer (compare les `id`).
 export function applyC46Improvements(fields: PdfFormField[]): PdfFormField[] {
-  return appliquerGroupes(mergeEnrichedFields(fields, C46_FIELDS, LEGACY_C46_FIELD_IDS));
+  return appliquerGroupes(mergeEnrichedFields(fields, C46_FIELDS, LEGACY_C46_FIELD_IDS), {
+    parChamp: CARTE_DES_GROUPES,
+    groupeEntete: C46_GROUPE_IDENTITE,
+    sectionsEntete: [SECTION_IDENTITE],
+  });
 }

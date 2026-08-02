@@ -123,7 +123,11 @@ export const C1B_FIELDS: PdfFormField[] = [
     // couvre la page 1. Inversé par rapport au C1 et au C1C — c'est l'ordre
     // interne du PDF qui décide, pas nous.
     fontSize: 9,
-    printAsComb: { groups: [9, 2], slotWidth: 12.96, groupExtra: 6.12, startX: 1, baselineY: -2.7 },
+    // `baselineY` = guide + 4,4 : sur ce document le guide est en glyphes
+    // SymbolMT, qui dessinent leur barre au MILIEU de leur boîte et non sur
+    // la ligne de base. Calé à −2,7 (relation des guides en soulignés), le
+    // trait passait EN PLEIN MILIEU des chiffres — relu sur un PDF généré.
+    printAsComb: { groups: [9, 2], slotWidth: 12.96, groupExtra: 6.12, startX: 1, baselineY: 1.67 },
     section: SECTION_IDENTITE,
     order: -100,
   },

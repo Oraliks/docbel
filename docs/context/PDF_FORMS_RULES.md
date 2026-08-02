@@ -150,6 +150,35 @@ pour une année de quatre chiffres — le peigne doit alors être resserré, et 
 décision écrite dans le seed), et un champ qui accepte **deux formats** (« NISS
 ou date de naissance ») ne doit pas recevoir de peigne du tout.
 
+**Deux familles de guides, deux calages.** Les soulignés ASCII (`__`) posent le
+chiffre à peu près sur la ligne de base du guide ; les glyphes SymbolMT
+dessinent leur barre **au milieu de leur boîte**, et il faut alors viser
+`guideY + 4,4` — à défaut, le trait passe en plein milieu des chiffres. Le C1B
+en a fait la démonstration le 2026-08-02, sur ses deux occurrences du NISS.
+
+**Ne plus chercher ces guides à la main.** `python scripts/detect-comb-guides.py`
+relève l'inventaire complet sur les PDF versionnés (widget par widget : nombre
+de cases, groupes, pas, écart de groupe, abscisse et ordonnée du guide) et
+`lib/pdf-forms/__tests__/combs-vs-guides.test.ts` le confronte au seed à chaque
+`pnpm test`. Un champ posé sur un guide sans `printAsComb` fait échouer le test,
+avec la géométrie mesurée dans le message. Les exceptions s'inscrivent dans
+`SANS_PEIGNE_ASSUME`, **avec leur raison**.
+
+**Peigne + champ multi-widgets = un bandeau vide.** Le dessin case par case ne
+connaît qu'UN rectangle (celui que `parsePdf` retient) et vide le champ pour ne
+pas imprimer deux fois. Sur les trois documents qui rappellent le NISS en
+en-tête de l'autre page (C1, C1B, C1C), l'autre occurrence part donc blanche :
+il faut une **règle serveur** pour la couvrir (`POSITIONAL_EXTRA_STAMPS` +
+`bindings/per-form/*.ts`). Quel widget `parsePdf` retient dépend de l'ordre
+interne du PDF — page 1 pour le C1 et le C1C, page 2 pour le C1B — donc on ne le
+suppose pas : `combs-vs-guides.test.ts` vérifie que les DEUX occurrences portent
+les onze chiffres.
+
+**Les widgets écrits par une RÈGLE ont leur propre registre de calage**
+(`bindings/comb-widgets.ts`), consommé par les trois chemins de génération et —
+depuis le 2026-08-02 — par les scripts de recette `gen-*-scenarios.ts`. Sans lui
+la recette montre autre chose que la production.
+
 ## Visibilité : le tableau à connaître par cœur
 
 | Mécanisme | À l'écran | Dans le PDF |

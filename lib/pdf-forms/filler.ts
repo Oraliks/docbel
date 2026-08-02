@@ -940,7 +940,10 @@ const POSITIONAL_EXTRA_STAMPS: Record<string, PositionalStampSpec> = {
   "c1b:header-p1-niss": {
     page: 0,
     x: 39.12,
-    y: 542,
+    // Guide SymbolMT : sa barre est au MILIEU de la boîte du glyphe, pas sur
+    // la ligne de base. y = ordonnée du guide (541,38) + 4,4 — même relation
+    // que les n° BCE du C1A. À 542, le trait barrait les chiffres.
+    y: 545.8,
     size: 9,
     maxWidth: 150,
     printAsComb: { groups: [9, 2], slotWidth: 12.96, groupExtra: 6.12 },

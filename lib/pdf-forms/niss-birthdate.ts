@@ -63,8 +63,21 @@ export function deriveBirthDateFromNiss(raw: string): NissBirthDate | null {
   // On rend `{ iso: null }` (même régime que les dates incomplètes du T.I. 000)
   // plutôt que `null` : le NISS reste valide au sens du checksum, c'est la date
   // qu'on refuse d'affirmer. Le champ redevient éditable.
-  const finDuJour = new Date();
-  finDuJour.setUTCHours(23, 59, 59, 999);
-  if (d.getTime() > finDuJour.getTime()) return { iso: null };
+  // Borne = fin du jour CIVIL LOCAL, projetée en UTC. L'ancienne borne
+  // (`setUTCHours(23,59,59)` sur l'instant courant) vivait dans le jour UTC :
+  // entre 00h00 et 02h00 heure belge (UTC+2), « aujourd'hui » local est
+  // encore « demain » pour UTC, et une naissance du jour même était rejetée
+  // — vu le 2026-08-03 à 00h04, suite de tests rouge sur « laisse passer une
+  // naissance du jour même ». `d` étant à minuit UTC du jour encodé, la
+  // comparaison calendrier-local contre calendrier-encodé est exacte des deux
+  // côtés de la borne.
+  const maintenant = new Date();
+  const finDuJour = Date.UTC(
+    maintenant.getFullYear(),
+    maintenant.getMonth(),
+    maintenant.getDate(),
+    23, 59, 59, 999,
+  );
+  if (d.getTime() > finDuJour) return { iso: null };
   return { iso: `${year}-${mm}-${dd}` };
 }

@@ -32,7 +32,7 @@ export interface RegeneratedDoc {
 /// `computeItemStatuses` le marque `eligibility === false` — il ne doit alors
 /// pas être re-inclus dans un export. On filtre donc sur la visibilité
 /// calculée, pas sur la seule complétion.
-function completedEligibleItems(state: DossierState): BundleItem[] {
+export function completedEligibleItems(state: DossierState): BundleItem[] {
   const { itemStatuses } = computeItemStatuses(
     state.items,
     state.completedTemplateIds,

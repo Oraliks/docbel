@@ -3,9 +3,14 @@ import { headers } from "next/headers";
 import AdmZip from "adm-zip";
 import { auth } from "@/lib/auth";
 import { loadDossierState } from "@/lib/bundles/completion";
-import { regenerateAllDocuments } from "@/lib/bundles/regenerate-pdfs";
+import { completedEligibleItems, regenerateAllDocuments } from "@/lib/bundles/regenerate-pdfs";
 import { checkRateLimit, getClientIp } from "@/lib/pdf-forms/security";
 import { trackBundleEvent } from "@/lib/bundles/analytics";
+import { itemTitle } from "@/components/docbel/bundle-runner/compute";
+import { buildFeuilleDeRoute } from "@/lib/feuille-de-route/build";
+import { feuilleServerDataForState } from "@/lib/feuille-de-route/server";
+import { buildPageDeGarde } from "@/lib/feuille-de-route/page-de-garde";
+import { isOpCode } from "@/lib/feuille-de-route/model";
 
 const json = { "Content-Type": "application/json; charset=utf-8" };
 
@@ -17,6 +22,11 @@ export async function GET(
   { params }: { params: Promise<{ runId: string }> },
 ) {
   const { runId } = await params;
+  // Choix d'organisme de paiement du citoyen — paramètre TRANSITOIRE (spec,
+  // art. 9) : il compose la page de garde puis est oublié. Ne jamais l'écrire
+  // dans un log, un event analytics ou une ligne PdfFormSubmissionLog.
+  const opRaw = req.nextUrl.searchParams.get("op");
+  const opChoice = isOpCode(opRaw) ? opRaw : null;
   const ip = getClientIp(req);
   const rl = checkRateLimit(`bundle-download-all:${ip}:${runId}`, { windowMs: 60_000, max: 5 });
   if (!rl.ok) {
@@ -57,6 +67,20 @@ export async function GET(
   }
 
   const zip = new AdmZip();
+  // Page de garde « Et maintenant ? » en tête du zip — best-effort : son
+  // échec ne prive jamais le citoyen de ses documents (même règle que les
+  // logs de régénération).
+  try {
+    const serverData = await feuilleServerDataForState(result.state);
+    const pieces = completedEligibleItems(result.state).flatMap((it) =>
+      it.pdfForm ? [{ slug: it.pdfForm.slug, titre: itemTitle(it) }] : [],
+    );
+    const feuille = buildFeuilleDeRoute({ pieces, serverData, opChoice });
+    const garde = await buildPageDeGarde(feuille);
+    zip.addFile("0_LISEZ-MOI_feuille-de-route.pdf", Buffer.from(garde));
+  } catch (err) {
+    console.error("[bundle-download-all] page de garde échouée (non bloquant) :", err);
+  }
   for (const doc of result.docs) {
     zip.addFile(doc.filename, doc.bytes);
   }

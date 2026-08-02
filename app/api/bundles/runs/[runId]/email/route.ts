@@ -3,9 +3,14 @@ import { headers } from "next/headers";
 import { Resend } from "resend";
 import { auth } from "@/lib/auth";
 import { loadDossierState } from "@/lib/bundles/completion";
-import { regenerateAllDocuments } from "@/lib/bundles/regenerate-pdfs";
+import { completedEligibleItems, regenerateAllDocuments } from "@/lib/bundles/regenerate-pdfs";
 import { checkRateLimit, getClientIp } from "@/lib/pdf-forms/security";
 import { trackBundleEvent } from "@/lib/bundles/analytics";
+import { itemTitle } from "@/components/docbel/bundle-runner/compute";
+import { buildFeuilleDeRoute } from "@/lib/feuille-de-route/build";
+import { feuilleServerDataForState } from "@/lib/feuille-de-route/server";
+import { buildPageDeGarde } from "@/lib/feuille-de-route/page-de-garde";
+import { isOpCode } from "@/lib/feuille-de-route/model";
 
 const json = { "Content-Type": "application/json; charset=utf-8" };
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -24,12 +29,15 @@ export async function POST(
     return NextResponse.json({ error: "Trop de requêtes, réessayez plus tard" }, { status: 429, headers: json });
   }
 
-  let body: { to?: unknown; consent?: unknown };
+  let body: { to?: unknown; consent?: unknown; op?: unknown };
   try {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400, headers: json });
   }
+  // Choix d'organisme de paiement — paramètre TRANSITOIRE (spec, art. 9) :
+  // compose la page de garde puis est oublié. Jamais journalisé.
+  const opChoice = isOpCode(body.op) ? body.op : null;
   if (body.consent !== true) {
     return NextResponse.json({ error: "Consentement RGPD requis" }, { status: 400, headers: json });
   }
@@ -77,6 +85,20 @@ export async function POST(
     return NextResponse.json({ error: "Aucun document à envoyer" }, { status: 404, headers: json });
   }
 
+  // Page de garde « Et maintenant ? » en première pièce jointe — best-effort :
+  // son échec ne prive jamais le citoyen de ses documents.
+  let garde: Uint8Array | null = null;
+  try {
+    const serverData = await feuilleServerDataForState(result.state);
+    const pieces = completedEligibleItems(result.state).flatMap((it) =>
+      it.pdfForm ? [{ slug: it.pdfForm.slug, titre: itemTitle(it) }] : [],
+    );
+    const feuille = buildFeuilleDeRoute({ pieces, serverData, opChoice });
+    garde = await buildPageDeGarde(feuille);
+  } catch (err) {
+    console.error("[bundles/email] page de garde échouée (non bloquant) :", err);
+  }
+
   try {
     const resend = new Resend(apiKey);
     const res = await resend.emails.send({
@@ -84,7 +106,12 @@ export async function POST(
       to,
       subject: `Vos documents — ${result.state.run.bundleSlug}`,
       text: `Bonjour,\n\nVoici les ${result.docs.length} document(s) complété(s) de votre dossier.\n\nCeci est un envoi automatique, ne pas répondre.`,
-      attachments: result.docs.map((d) => ({ filename: d.filename, content: d.bytes })),
+      attachments: [
+        ...(garde
+          ? [{ filename: "0_LISEZ-MOI_feuille-de-route.pdf", content: Buffer.from(garde) }]
+          : []),
+        ...result.docs.map((d) => ({ filename: d.filename, content: d.bytes })),
+      ],
     });
     if (res.error) {
       console.error("[bundles/email] envoi échoué:", res.error);

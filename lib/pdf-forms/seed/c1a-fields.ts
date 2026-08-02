@@ -60,6 +60,7 @@
 import type { PdfFormField, VisibleIf } from "../types";
 import { compilerRoutage } from "../routing";
 import { mergeEnrichedFields } from "./_merge";
+import { appliquerGroupes } from "./_shared/moules";
 import { C1A_DEPART, C1A_ROUTAGE } from "./c1a-routing";
 
 const SECTION_IDENTITE = "identite";
@@ -1789,17 +1790,14 @@ const GROUPE_IDENTITE = "identite";
 ///
 /// L'ordre des étapes est celui du document (cf. `C1A_QUESTIONS`), consommé
 /// par `form-presentation.ts`.
-function appliquerGroupes(fields: PdfFormField[]): PdfFormField[] {
-  const parChamp = questionParChamp(fields);
-  return fields.map((f) => {
-    const groupe =
-      parChamp.get(f.id) ?? (f.section === SECTION_IDENTITE ? GROUPE_IDENTITE : undefined);
-    return groupe ? { ...f, stepGroup: groupe } : f;
-  });
-}
-
+/// Contrairement aux six autres documents, la carte du C1A se DÉRIVE des champs
+/// reçus (rattachements par préfixe d'identifiant) : elle se construit à chaque
+/// appel, et non une fois pour toutes en portée module.
 export function applyC1AImprovements(fields: PdfFormField[]): PdfFormField[] {
-  return appliquerGroupes(
-    appliquerRoutage(mergeEnrichedFields(fields, C1A_FIELDS, LEGACY_C1A_FIELD_IDS)),
-  );
+  const enrichis = appliquerRoutage(mergeEnrichedFields(fields, C1A_FIELDS, LEGACY_C1A_FIELD_IDS));
+  return appliquerGroupes(enrichis, {
+    parChamp: questionParChamp(enrichis),
+    groupeEntete: GROUPE_IDENTITE,
+    sectionsEntete: [SECTION_IDENTITE],
+  });
 }

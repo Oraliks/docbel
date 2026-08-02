@@ -21,6 +21,7 @@
 
 import type { PdfFormField } from "../types";
 import { mergeEnrichedFields } from "./_merge";
+import { appliquerGroupes, carteDesGroupes } from "./_shared/moules";
 
 const SECTION_IDENTITE = "identite";
 const SECTION_REVENUS = "mes-revenus";
@@ -766,23 +767,12 @@ const RATTACHEMENTS: Readonly<Record<string, readonly string[]>> = {
   signature: ["dateSignature"],
 };
 
-/// Pose `stepGroup` sur chaque champ. Les champs d'identité tombent dans le
-/// groupe d'en-tête ; un champ inconnu des deux tables reste sans groupe et
-/// atterrit dans « Autres informations » de la dernière étape — repli visible,
-/// jamais une perte.
-function appliquerGroupes(fields: PdfFormField[]): PdfFormField[] {
-  const parChamp = new Map<string, string>();
-  for (const question of C1B_QUESTIONS) parChamp.set(question, question);
-  for (const [question, rattaches] of Object.entries(RATTACHEMENTS)) {
-    for (const id of rattaches) parChamp.set(id, question);
-  }
-  return fields.map((f) => {
-    const groupe =
-      parChamp.get(f.id) ?? (f.section === SECTION_IDENTITE ? C1B_GROUPE_IDENTITE : undefined);
-    return groupe ? { ...f, stepGroup: groupe } : f;
-  });
-}
+const CARTE_DES_GROUPES = carteDesGroupes(C1B_QUESTIONS, RATTACHEMENTS);
 
 export function applyC1BImprovements(fields: PdfFormField[]): PdfFormField[] {
-  return appliquerGroupes(mergeEnrichedFields(fields, C1B_FIELDS, LEGACY_C1B_FIELD_IDS));
+  return appliquerGroupes(mergeEnrichedFields(fields, C1B_FIELDS, LEGACY_C1B_FIELD_IDS), {
+    parChamp: CARTE_DES_GROUPES,
+    groupeEntete: C1B_GROUPE_IDENTITE,
+    sectionsEntete: [SECTION_IDENTITE],
+  });
 }

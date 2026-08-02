@@ -15,6 +15,7 @@
 
 import type { PdfFormField } from "../types";
 import { mergeEnrichedFields } from "./_merge";
+import { appliquerGroupes, carteDesGroupes } from "./_shared/moules";
 
 const SECTION_IDENTITE = "identite";
 const SECTION_PARTENAIRE = "partenaire";
@@ -445,24 +446,9 @@ const RATTACHEMENTS: Readonly<Record<string, readonly string[]>> = {
   signature_du_ch_meur: ["aujourd_hui"],
 };
 
-/// Pose `stepGroup` sur chaque champ. Les champs d'identité (et la date
-/// d'en-tête, qui vit dans la même section) tombent dans le groupe d'en-tête ;
-/// un champ inconnu des deux tables reste sans groupe et atterrit dans
-/// « Autres informations » de la dernière étape — repli visible, jamais une
-/// perte.
-function appliquerGroupes(fields: PdfFormField[]): PdfFormField[] {
-  const parChamp = new Map<string, string>();
-  for (const question of C1_PARTENAIRE_QUESTIONS) parChamp.set(question, question);
-  for (const [question, rattaches] of Object.entries(RATTACHEMENTS)) {
-    for (const id of rattaches) parChamp.set(id, question);
-  }
-  return fields.map((f) => {
-    const groupe =
-      parChamp.get(f.id) ??
-      (f.section === SECTION_IDENTITE ? C1_PARTENAIRE_GROUPE_IDENTITE : undefined);
-    return groupe ? { ...f, stepGroup: groupe } : f;
-  });
-}
+/// Étape de chaque champ. Les champs d'identité (et la date d'en-tête, qui vit
+/// dans la même section) tombent dans le groupe d'en-tête.
+const CARTE_DES_GROUPES = carteDesGroupes(C1_PARTENAIRE_QUESTIONS, RATTACHEMENTS);
 
 /// Applique le schéma enrichi sur une liste de champs bruts (typiquement
 /// issue de l'inférence automatique au moment de l'import).
@@ -478,6 +464,11 @@ function appliquerGroupes(fields: PdfFormField[]): PdfFormField[] {
 /// `pdfFieldName` couverts).
 export function applyC1PartenaireImprovements(fields: PdfFormField[]): PdfFormField[] {
   return appliquerGroupes(
-    mergeEnrichedFields(fields, C1_PARTENAIRE_FIELDS, LEGACY_C1_PARTENAIRE_FIELD_IDS)
+    mergeEnrichedFields(fields, C1_PARTENAIRE_FIELDS, LEGACY_C1_PARTENAIRE_FIELD_IDS),
+    {
+      parChamp: CARTE_DES_GROUPES,
+      groupeEntete: C1_PARTENAIRE_GROUPE_IDENTITE,
+      sectionsEntete: [SECTION_IDENTITE],
+    },
   );
 }

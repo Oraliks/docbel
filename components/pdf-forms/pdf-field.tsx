@@ -17,6 +17,7 @@ import { Field, FieldLabel, FieldDescription } from "@/components/ui/field";
 import { NissInput } from "@/components/ui/niss-input";
 import { IbanInput } from "@/components/ui/iban-input";
 import { StreetAutocompleteInput } from "@/components/ui/street-autocomplete-input";
+import { EnterpriseAutocompleteInput } from "@/components/ui/enterprise-autocomplete-input";
 import { CountrySelectInput } from "@/components/ui/country-select-input";
 import { CommuneSelectInput } from "@/components/ui/commune-select-input";
 import { DatePickerInput } from "@/components/ui/date-picker-input";
@@ -77,6 +78,10 @@ interface Props {
   /// code postal : permet au formulaire de remplir le champ code postal en
   /// retour. Ignoré si `field.streetAutocomplete` est absent.
   onSelectStreetSuggestion?: (postalCode: string) => void;
+  /// Appelé quand l'utilisateur choisit une suggestion d'entreprise
+  /// (`field.enterpriseAutocomplete`) : permet au formulaire de remplir le
+  /// champ adresse désigné par `addressFieldId` en retour.
+  onSelectEnterpriseAddress?: (address: string) => void;
   /// Remonte l'état de vérification d'une rue `requireListMatch` : true si
   /// choisie dans la liste, false si tapée librement (cf. list-match.ts).
   onStreetVerifiedChange?: (verified: boolean) => void;
@@ -157,6 +162,7 @@ function PdfFieldControl({
   derivedValue = null, relatedPostalCode, onSelectStreetSuggestion, onStreetVerifiedChange, parentValues,
   onFocusField,
   hideLabel = false,
+  onSelectEnterpriseAddress,
 }: Props) {
   // `locale` sert à choisir la traduction MÉTIER stockée en base (libellés du
   // formulaire) ; `t` couvre le châssis de l'UI, qui vit dans les catalogues
@@ -615,6 +621,7 @@ function PdfFieldControl({
   const locked = autoToday || isDerivedLocked || field.readOnly === true || autoLocked;
   const displayValue = isDerivedLocked ? derivedValue : ((value as string | number) ?? "");
   const useStreetAutocomplete = field.streetAutocomplete != null && !locked;
+  const useEnterpriseAutocomplete = field.enterpriseAutocomplete != null && !locked;
   const useCountrySelect = field.countrySelect === true && !locked;
   const useCommuneSelect = field.communeFrom != null && !locked;
   // Calendrier moderne pour les dates saisies par l'utilisateur (les dates
@@ -652,6 +659,19 @@ function PdfFieldControl({
             onChange={(v) => onChange(v)}
             onSelectSuggestion={(s) => onSelectStreetSuggestion?.(s.postalCode)}
             onVerifiedChange={field.requireListMatch ? onStreetVerifiedChange : undefined}
+            onBlur={markTouched}
+          />
+        ) : useEnterpriseAutocomplete ? (
+          <EnterpriseAutocompleteInput
+            id={field.id}
+            value={String(displayValue)}
+            placeholder={placeholder}
+            aria-invalid={invalid}
+            aria-required={ariaRequired}
+            aria-describedby={textDescribedBy}
+            className="flex-1"
+            onChange={(v) => onChange(v)}
+            onSelectSuggestion={(s) => onSelectEnterpriseAddress?.(s.address)}
             onBlur={markTouched}
           />
         ) : useCountrySelect ? (

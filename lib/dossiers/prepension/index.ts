@@ -135,9 +135,9 @@ export const prepension: DossierDefinition = {
   questions: [
     {
       id: "age",
-      label: { fr: "Quel âge as-tu ?" },
+      label: { fr: "Quel âge avez-vous ?" },
       helpText: {
-        fr: "Le RCC commence en principe à partir de 60 ou 62 ans selon ta situation. Si tu as moins de 60 ans, l'accès au RCC est très limité (uniquement en cas de restructuration reconnue).",
+        fr: "Le RCC commence en principe à partir de 60 ou 62 ans selon votre situation. Si vous avez moins de 60 ans, l'accès au RCC est très limité (uniquement en cas de restructuration reconnue).",
       },
       type: "select",
       options: [
@@ -149,9 +149,9 @@ export const prepension: DossierDefinition = {
     },
     {
       id: "anciennete",
-      label: { fr: "Combien d'années de carrière as-tu accumulées ?" },
+      label: { fr: "Combien d'années de carrière avez-vous accumulées ?" },
       helpText: {
-        fr: "On compte ici toutes les années où tu as travaillé (ou été assimilé : service militaire, certaines périodes de chômage ou de maladie). Si tu n'es pas sûr, ton organisme de paiement peut faire le calcul exact à partir de ton compte individuel de pension.",
+        fr: "On compte ici toutes les années où vous avez travaillé (ou été assimilé : service militaire, certaines périodes de chômage ou de maladie). Si vous n'êtes pas sûr(e), votre organisme de paiement peut faire le calcul exact à partir de votre compte individuel de pension.",
       },
       type: "select",
       options: [
@@ -162,17 +162,17 @@ export const prepension: DossierDefinition = {
     },
     {
       id: "metierLourd",
-      label: { fr: "As-tu exercé un métier lourd ?" },
+      label: { fr: "Avez-vous exercé un métier lourd ?" },
       helpText: {
-        fr: "Métier lourd = travail physiquement épuisant ou avec horaires difficiles (équipes 3×8, travail de nuit, chantier extérieur permanent…). Le SPF Emploi tient une liste — demande à ton organisme de paiement si tu n'es pas sûr.",
+        fr: "Métier lourd = travail physiquement épuisant ou avec horaires difficiles (équipes 3×8, travail de nuit, chantier extérieur permanent…). Le SPF Emploi tient une liste — demandez à votre organisme de paiement si vous n'êtes pas sûr(e).",
       },
       type: "boolean",
     },
     {
       id: "motifFinContrat",
-      label: { fr: "Comment ton contrat de travail s'est-il terminé (ou va se terminer) ?" },
+      label: { fr: "Comment votre contrat de travail s'est-il terminé (ou va se terminer) ?" },
       helpText: {
-        fr: "Pour avoir droit au RCC, il faut être LICENCIÉ par l'employeur. Si tu donnes ta démission ou si tu signes une rupture amiable, tu n'as pas droit au RCC — c'est une règle absolue.",
+        fr: "Pour avoir droit au RCC, il faut être LICENCIÉ par l'employeur. Si vous donnez votre démission ou si vous signez une rupture amiable, vous n'avez pas droit au RCC — c'est une règle absolue.",
       },
       type: "select",
       options: [
@@ -184,9 +184,9 @@ export const prepension: DossierDefinition = {
     },
     {
       id: "dateLicenciementApprox",
-      label: { fr: "Depuis combien de temps as-tu été licencié (ou vas l'être) ?" },
+      label: { fr: "Depuis combien de temps avez-vous été licencié (ou allez-vous l'être) ?" },
       helpText: {
-        fr: "Cette information sert à savoir si tu es encore dans les délais pour introduire ta demande ou si une décision a déjà été prise sur ton dossier.",
+        fr: "Cette information sert à savoir si vous êtes encore dans les délais pour introduire votre demande ou si une décision a déjà été prise sur votre dossier.",
       },
       type: "select",
       options: [
@@ -198,9 +198,9 @@ export const prepension: DossierDefinition = {
     },
     {
       id: "cctApplicable",
-      label: { fr: "Quelle CCT (convention) s'applique à ta situation ?" },
+      label: { fr: "Quelle CCT (convention) s'applique à votre situation ?" },
       helpText: {
-        fr: "CCT = Convention Collective de Travail. C'est un accord négocié entre patrons et syndicats qui fixe les conditions exactes. Si tu ne sais pas laquelle s'applique, demande à ton délégué syndical ou à ton organisme de paiement.",
+        fr: "CCT = Convention Collective de Travail. C'est un accord négocié entre patrons et syndicats qui fixe les conditions exactes. Si vous ne savez pas laquelle s'applique, demandez à votre délégué syndical ou à votre organisme de paiement.",
       },
       type: "select",
       options: [
@@ -214,25 +214,25 @@ export const prepension: DossierDefinition = {
     },
     {
       id: "complementEntreprise",
-      label: { fr: "Ton ex-employeur s'est-il engagé par écrit à payer le complément ?" },
+      label: { fr: "Votre ex-employeur s'est-il engagé par écrit à payer le complément ?" },
       helpText: {
-        fr: "Le RCC n'est PAS automatique : ton ex-employeur doit s'engager par écrit à payer le complément. Si l'employeur refuse, tu n'as pas accès au RCC — c'est juste du chômage classique.",
+        fr: "Le RCC n'est PAS automatique : votre ex-employeur doit s'engager par écrit à payer le complément. Si l'employeur refuse, vous n'avez pas accès au RCC — c'est juste du chômage classique.",
       },
       type: "boolean",
       visibleIf: { fieldId: "motifFinContrat", op: "equals", value: "licenciement" },
     },
     {
       id: "dispenseDispo",
-      label: { fr: "As-tu obtenu une dispense de disponibilité adaptée pour le marché du travail ?" },
+      label: { fr: "Avez-vous obtenu une dispense de disponibilité adaptée pour le marché du travail ?" },
       helpText: {
-        fr: "Dispense de disponibilité = autorisation de ne PAS chercher activement un emploi, accordée généralement aux personnes proches de la pension. Sans dispense, tu dois rester inscrit comme demandeur d'emploi.",
+        fr: "Dispense de disponibilité = autorisation de ne PAS chercher activement un emploi, accordée généralement aux personnes proches de la pension. Sans dispense, vous devez rester inscrit(e) comme demandeur d'emploi.",
       },
       type: "boolean",
       visibleIf: { fieldId: "complementEntreprise", op: "equals", value: true },
     },
     {
       id: "inscritServiceEmploi",
-      label: { fr: "Es-tu déjà inscrit comme demandeur d'emploi (FOREM, ACTIRIS, VDAB, ARBEITSAMT DG) ?" },
+      label: { fr: "Êtes-vous déjà inscrit(e) comme demandeur d'emploi (FOREM, ACTIRIS, VDAB, ARBEITSAMT DG) ?" },
       helpText: {
         fr: "Sauf dispense, le bénéficiaire du RCC reste demandeur d'emploi et doit être inscrit auprès du service régional (FOREM en Wallonie, ACTIRIS à Bruxelles, VDAB en Flandre, ARBEITSAMT pour la communauté germanophone).",
       },
@@ -245,7 +245,7 @@ export const prepension: DossierDefinition = {
       title: "Licenciement obligatoire",
       titleKey: "rcc.warning.licenciementObligatoire.title",
       message:
-        "Le RCC nécessite IMPÉRATIVEMENT un licenciement par l'employeur. Si tu donnes ta démission, tu perds ce droit.",
+        "Le RCC nécessite IMPÉRATIVEMENT un licenciement par l'employeur. Si vous donnez votre démission, vous perdez ce droit.",
       messageKey: "rcc.warning.licenciementObligatoire.message",
       severity: "critical",
     },
@@ -253,7 +253,7 @@ export const prepension: DossierDefinition = {
       title: "Seuils variables",
       titleKey: "rcc.warning.seuilsVariables.title",
       message:
-        "Les conditions d'âge et d'ancienneté changent régulièrement (loi-programme, accord interprofessionnel, CCT sectorielles). Vérifie auprès de ton organisme de paiement les seuils en vigueur pour ta situation.",
+        "Les conditions d'âge et d'ancienneté changent régulièrement (loi-programme, accord interprofessionnel, CCT sectorielles). Vérifiez auprès de votre organisme de paiement les seuils en vigueur pour votre situation.",
       messageKey: "rcc.warning.seuilsVariables.message",
       severity: "warning",
     },

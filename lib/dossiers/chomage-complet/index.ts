@@ -171,9 +171,9 @@ export const chomageComplet: DossierDefinition = {
   questions: [
     {
       id: "famille_situation",
-      label: { fr: "Avec qui vis-tu actuellement ?", nl: "", de: "" },
+      label: { fr: "Avec qui vivez-vous actuellement ?", nl: "", de: "" },
       helpText: {
-        fr: "Choisis conjoint si tu es marié, partenaire si vous vivez en couple sans être mariés, ou aucun lien pour une personne qui n'est ni famille ni partenaire.",
+        fr: "Choisissez conjoint si vous êtes marié(e), partenaire si vous vivez en couple sans être mariés, ou aucun lien pour une personne qui n'est ni famille ni partenaire.",
         nl: "", de: "",
       },
       type: "select",
@@ -188,7 +188,7 @@ export const chomageComplet: DossierDefinition = {
       id: "famille_colocation",
       label: { fr: "Est-ce une colocation où chacun gère sa vie séparément ?", nl: "", de: "" },
       helpText: {
-        fr: "Si oui, ne détaille pas le colocataire dans le C1 : l'Annexe REGIS sera proposée ensuite.",
+        fr: "Si oui, ne détaillez pas le colocataire dans le C1 : l'Annexe REGIS sera proposée ensuite.",
         nl: "", de: "",
       },
       type: "select",
@@ -200,9 +200,9 @@ export const chomageComplet: DossierDefinition = {
     },
     {
       id: "famille_charge",
-      label: { fr: "Cette personne dépend-elle principalement de tes revenus ?", nl: "", de: "" },
+      label: { fr: "Cette personne dépend-elle principalement de vos revenus ?", nl: "", de: "" },
       helpText: {
-        fr: "Réponds oui seulement si tu prends réellement cette personne en charge. L'organisme de paiement vérifiera les preuves.",
+        fr: "Répondez oui seulement si vous prenez réellement cette personne en charge. L'organisme de paiement vérifiera les preuves.",
         nl: "", de: "",
       },
       type: "select",
@@ -214,7 +214,7 @@ export const chomageComplet: DossierDefinition = {
     },
     {
       id: "famille_enfants",
-      label: { fr: "Y a-t-il des enfants dans ton ménage ?", nl: "", de: "" },
+      label: { fr: "Y a-t-il des enfants dans votre ménage ?", nl: "", de: "" },
       helpText: {
         fr: "Cette réponse permet de préparer les questions sur les allocations familiales, les revenus d'un enfant et la garde alternée.",
         nl: "", de: "",
@@ -227,9 +227,9 @@ export const chomageComplet: DossierDefinition = {
     },
     {
       id: "famille_pension",
-      label: { fr: "Paies-tu une pension alimentaire ?", nl: "", de: "" },
+      label: { fr: "Payez-vous une pension alimentaire ?", nl: "", de: "" },
       helpText: {
-        fr: "Si oui, prépare le jugement, l'acte notarié ou la preuve de l'état de besoin si elle est disponible.",
+        fr: "Si oui, préparez le jugement, l'acte notarié ou la preuve de l'état de besoin si elle est disponible.",
         nl: "", de: "",
       },
       type: "select",
@@ -241,7 +241,7 @@ export const chomageComplet: DossierDefinition = {
     },
     {
       id: "famille_garde_alternee",
-      label: { fr: "Un enfant vit-il régulièrement chez toi en garde alternée ?", nl: "", de: "" },
+      label: { fr: "Un enfant vit-il régulièrement chez vous en garde alternée ?", nl: "", de: "" },
       helpText: {
         fr: "Le C1 demandera ensuite les jours de présence et les éventuels justificatifs.",
         nl: "", de: "",
@@ -274,7 +274,7 @@ export const chomageComplet: DossierDefinition = {
       title: "Délai d'inscription : 8 jours",
       titleKey: "complet.warning.delaiInscription.title",
       message:
-        "Inscris-toi auprès du service régional de l'emploi (FOREM / ACTIRIS / VDAB / ADG) dans les 8 jours ouvrables qui suivent la fin de ton contrat. Un dépôt tardif peut entraîner la perte des allocations pour la période couverte par le retard.",
+        "Inscrivez-vous auprès du service régional de l'emploi (FOREM / ACTIRIS / VDAB / ADG) dans les 8 jours ouvrables qui suivent la fin de votre contrat. Un dépôt tardif peut entraîner la perte des allocations pour la période couverte par le retard.",
       messageKey: "complet.warning.delaiInscription.message",
       severity: "warning",
     },
@@ -282,7 +282,7 @@ export const chomageComplet: DossierDefinition = {
       title: "Documents employeur à demander",
       titleKey: "complet.warning.documentsEmployeur.title",
       message:
-        "Le C4 (certificat de chômage) doit t'être remis par ton employeur dès la fin du contrat. S'il tarde, réclame-le par écrit : sans C4, ton organisme de paiement ne peut pas constituer ton dossier.",
+        "Le C4 (certificat de chômage) doit vous être remis par votre employeur dès la fin du contrat. S'il tarde, réclamez-le par écrit : sans C4, votre organisme de paiement ne peut pas constituer votre dossier.",
       messageKey: "complet.warning.documentsEmployeur.message",
       severity: "info",
     },
@@ -302,7 +302,7 @@ export const chomageComplet: DossierDefinition = {
       required: true,
       responsibility: "employer",
       responsibilityNote: {
-        fr: "Ce document doit t'être remis par ton (ex-)employeur dès la fin du contrat. Tu ne peux pas le remplir toi-même. S'il tarde, réclame-le par écrit : sans C4, ton organisme de paiement ne peut pas constituer ton dossier.",
+        fr: "Ce document doit vous être remis par votre (ex-)employeur dès la fin du contrat. Vous ne pouvez pas le remplir vous-même. S'il tarde, réclamez-le par écrit : sans C4, votre organisme de paiement ne peut pas constituer votre dossier.",
       },
       internalRef:
         "Dossier chomage-complet — C4 employeur (durée prestations + motif fin contrat).",
@@ -324,33 +324,33 @@ export const chomageComplet: DossierDefinition = {
     {
       order: 1,
       icon: "user-check",
-      title: "Commence ton formulaire C1",
+      title: "Commencez votre formulaire C1",
       titleKey: "complet.journey.step1.title",
-      body: "L'assistant a déjà choisi le bon dossier. Tu peux répondre directement dans le formulaire, étape par étape.",
+      body: "L'assistant a déjà choisi le bon dossier. Vous pouvez répondre directement dans le formulaire, étape par étape.",
       bodyKey: "complet.journey.step1.body",
     },
     {
       order: 2,
       icon: "file-check",
-      title: "Remplis ton formulaire C1",
+      title: "Remplissez votre formulaire C1",
       titleKey: "complet.journey.step2.title",
-      body: "Nous avançons partie par partie : identité, famille, activités, revenus et paiement. Tu peux relire et corriger avant de terminer.",
+      body: "Nous avançons partie par partie : identité, famille, activités, revenus et paiement. Vous pouvez relire et corriger avant de terminer.",
       bodyKey: "complet.journey.step2.body",
     },
     {
       order: 3,
       icon: "calendar",
-      title: "Demande ton C4 à ton employeur",
+      title: "Demandez votre C4 à votre employeur",
       titleKey: "complet.journey.step3.title",
-      body: "Le C4 est préparé par ton ancien employeur. Si tu ne l'as pas reçu, le dossier t'explique comment le réclamer.",
+      body: "Le C4 est préparé par votre ancien employeur. Si vous ne l'avez pas reçu, le dossier vous explique comment le réclamer.",
       bodyKey: "complet.journey.step3.body",
     },
     {
       order: 4,
       icon: "wallet",
-      title: "Transmets ton dossier",
+      title: "Transmettez votre dossier",
       titleKey: "complet.journey.step4.title",
-      body: "Après vérification, remets les documents à ton organisme de paiement : la CAPAC ou ton syndicat.",
+      body: "Après vérification, remettez les documents à votre organisme de paiement : la CAPAC ou votre syndicat.",
       bodyKey: "complet.journey.step4.body",
     },
   ],

@@ -8432,11 +8432,11 @@
         "warning": {
           "delaiInscription": {
             "title": "Délai d'inscription : 8 jours",
-            "message": "Inscris-toi auprès du service régional de l'emploi (FOREM / ACTIRIS / VDAB / ADG) dans les 8 jours ouvrables qui suivent la fin de ton contrat. Un dépôt tardif peut entraîner la perte des allocations pour la période couverte par le retard."
+            "message": "Inscrivez-vous auprès du service régional de l'emploi (FOREM / ACTIRIS / VDAB / ADG) dans les 8 jours ouvrables qui suivent la fin de votre contrat. Un dépôt tardif peut entraîner la perte des allocations pour la période couverte par le retard."
           },
           "documentsEmployeur": {
             "title": "Documents employeur à demander",
-            "message": "Le C4 (certificat de chômage) doit t'être remis par ton employeur dès la fin du contrat. S'il tarde, réclame-le par écrit : sans C4, ton organisme de paiement ne peut pas constituer ton dossier."
+            "message": "Le C4 (certificat de chômage) doit vous être remis par votre employeur dès la fin du contrat. S'il tarde, réclamez-le par écrit : sans C4, votre organisme de paiement ne peut pas constituer votre dossier."
           }
         },
         "doc": {
@@ -8450,20 +8450,20 @@
         "journeyCtaLabel": "Commencer mon dossier de chômage",
         "journey": {
           "step1": {
-            "title": "Commence ton formulaire C1",
-            "body": "L'assistant a déjà choisi le bon dossier. Tu peux répondre directement dans le formulaire, étape par étape."
+            "title": "Commencez votre formulaire C1",
+            "body": "L'assistant a déjà choisi le bon dossier. Vous pouvez répondre directement dans le formulaire, étape par étape."
           },
           "step2": {
-            "title": "Remplis ton formulaire C1",
-            "body": "Nous avançons partie par partie : identité, famille, activités, revenus et paiement. Tu peux relire et corriger avant de terminer."
+            "title": "Remplissez votre formulaire C1",
+            "body": "Nous avançons partie par partie : identité, famille, activités, revenus et paiement. Vous pouvez relire et corriger avant de terminer."
           },
           "step3": {
-            "title": "Demande ton C4 à ton employeur",
-            "body": "Le C4 est préparé par ton ancien employeur. Si tu ne l'as pas reçu, le dossier t'explique comment le réclamer."
+            "title": "Demandez votre C4 à votre employeur",
+            "body": "Le C4 est préparé par votre ancien employeur. Si vous ne l'avez pas reçu, le dossier vous explique comment le réclamer."
           },
           "step4": {
-            "title": "Transmets ton dossier",
-            "body": "Après vérification, remets les documents à ton organisme de paiement : la CAPAC ou ton syndicat."
+            "title": "Transmettez votre dossier",
+            "body": "Après vérification, remettez les documents à votre organisme de paiement : la CAPAC ou votre syndicat."
           }
         },
         "theory": {
@@ -8487,11 +8487,11 @@
         "warning": {
           "demandeU1": {
             "title": "Demande du U1 — anticipe les délais",
-            "message": "Le formulaire U1 doit être demandé à l'institution de chômage du pays où tu as travaillé en dernier. Compte plusieurs semaines de délai. Sans U1, l'ONEM ne peut pas reconstituer ta carrière à l'étranger."
+            "message": "Le formulaire U1 doit être demandé à l'institution de chômage du pays où vous avez travaillé en dernier. Comptez plusieurs semaines de délai. Sans U1, l'ONEM ne peut pas reconstituer votre carrière à l'étranger."
           },
           "u2": {
             "title": "U2 — à demander avant de partir",
-            "message": "Si tu veux chercher un emploi dans un autre pays EEE en gardant tes allocations, demande le U2 AVANT de partir. Une fois sur place, il est trop tard pour ouvrir ce droit."
+            "message": "Si vous voulez chercher un emploi dans un autre pays EEE en gardant vos allocations, demandez le U2 AVANT de partir. Une fois sur place, il est trop tard pour ouvrir ce droit."
           }
         },
         "doc": {
@@ -8505,7 +8505,7 @@
         "theory": {
           "quiEstConcerne": {
             "title": "Qui est concerné ?",
-            "body": "Le « chômage frontalier » regroupe les travailleurs qui résident dans un pays de l'Espace économique européen (EEE) et travaillent dans un autre. Plusieurs profils coexistent :\n\n- **Frontalier classique** — tu habites dans un pays et tu travailles dans un autre, mais tu rentres chez toi au moins une fois par semaine.\n- **Transfrontalier occasionnel** — même configuration, mais tu ne rentres pas chaque semaine (mission longue, logement sur place…).\n- **Détaché** — ton employeur d'origine t'envoie temporairement travailler à l'étranger (chantier, mission). Tu restes affilié à la sécurité sociale de ton pays d'origine.\n\nPour la Belgique, les configurations les plus fréquentes sont BE/FR, BE/LU, BE/NL et BE/DE."
+            "body": "Le « chômage frontalier » regroupe les travailleurs qui résident dans un pays de l'Espace économique européen (EEE) et travaillent dans un autre. Plusieurs profils coexistent :\n\n- **Frontalier classique** — vous habitez dans un pays et travaillez dans un autre, mais vous rentrez chez vous au moins une fois par semaine.\n- **Transfrontalier occasionnel** — même configuration, mais vous ne rentrez pas chaque semaine (mission longue, logement sur place…).\n- **Détaché** — votre employeur d'origine vous envoie temporairement travailler à l'étranger (chantier, mission). Vous restez affilié à la sécurité sociale de votre pays d'origine.\n\nPour la Belgique, les configurations les plus fréquentes sont BE/FR, BE/LU, BE/NL et BE/DE."
           },
           "paysCompetent": {
             "title": "Quel pays est compétent ?",
@@ -8523,11 +8523,11 @@
         "warning": {
           "licenciementObligatoire": {
             "title": "Licenciement obligatoire",
-            "message": "Le RCC nécessite IMPÉRATIVEMENT un licenciement par l'employeur. Si tu donnes ta démission, tu perds ce droit."
+            "message": "Le RCC nécessite IMPÉRATIVEMENT un licenciement par l'employeur. Si vous donnez votre démission, vous perdez ce droit."
           },
           "seuilsVariables": {
             "title": "Seuils variables",
-            "message": "Les conditions d'âge et d'ancienneté changent régulièrement (loi-programme, accord interprofessionnel, CCT sectorielles). Vérifie auprès de ton organisme de paiement les seuils en vigueur pour ta situation."
+            "message": "Les conditions d'âge et d'ancienneté changent régulièrement (loi-programme, accord interprofessionnel, CCT sectorielles). Vérifiez auprès de votre organisme de paiement les seuils en vigueur pour votre situation."
           }
         },
         "doc": {
@@ -8604,30 +8604,30 @@
       },
       "changementSituation": {
         "title": "Changement dans ma situation personnelle",
-        "description": "Déclare un changement d'adresse, de compte bancaire, de situation familiale, de permis de séjour, de cotisation syndicale ou d'organisme de paiement pendant que tu touches des allocations.",
+        "description": "Déclarez un changement d'adresse, de compte bancaire, de situation familiale, de permis de séjour, de cotisation syndicale ou d'organisme de paiement pendant que vous touchez des allocations.",
         "journeyCtaLabel": "Déclarer mon changement",
         "journey": {
           "step1": {
-            "title": "Ta situation a changé",
+            "title": "Votre situation a changé",
             "body": "Déménagement, nouveau compte bancaire, changement familial, permis de séjour ou envie de changer d'organisme de paiement : ce formulaire couvre ces cas."
           },
           "step2": {
             "title": "Un seul C1 pour plusieurs changements",
-            "body": "Tu peux cocher plusieurs cases à la fois si elles prennent effet à la même date. Sinon, fais une déclaration séparée par date."
+            "body": "Vous pouvez cocher plusieurs cases à la fois si elles prennent effet à la même date. Sinon, faites une déclaration séparée par date."
           },
           "step3": {
-            "title": "Prépare tes informations",
-            "body": "Nouvelle adresse, IBAN, date d'effet : aie ces éléments sous la main avant de commencer."
+            "title": "Préparez vos informations",
+            "body": "Nouvelle adresse, IBAN, date d'effet : ayez ces éléments sous la main avant de commencer."
           },
           "step4": {
-            "title": "Envoi à ton organisme de paiement",
-            "body": "Une fois complété, le C1 (et les formulaires complémentaires si besoin) part vers ton organisme de paiement (FGTB, CSC, SYNOVA, CAPAC)."
+            "title": "Envoi à votre organisme de paiement",
+            "body": "Une fois complété, le C1 (et les formulaires complémentaires si besoin) part vers votre organisme de paiement (FGTB, CSC, SYNOVA, CAPAC)."
           }
         },
         "warning": {
           "uneSeuleDate": {
             "title": "Une seule date par déclaration",
-            "message": "Si tes changements n'ont pas tous la même date d'effet, fais une déclaration séparée pour chaque date différente."
+            "message": "Si vos changements n'ont pas tous la même date d'effet, faites une déclaration séparée pour chaque date différente."
           }
         },
         "doc": {

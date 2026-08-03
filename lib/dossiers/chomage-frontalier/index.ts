@@ -25,13 +25,13 @@ Le « chômage frontalier » regroupe les travailleurs qui résident dans un
 pays de l'Espace économique européen (EEE) et travaillent dans un autre.
 Plusieurs profils coexistent :
 
-- **Frontalier classique** — tu habites dans un pays et tu travailles dans
-  un autre, mais tu rentres chez toi au moins une fois par semaine.
-- **Transfrontalier occasionnel** — même configuration, mais tu ne rentres
+- **Frontalier classique** — vous habitez dans un pays et travaillez dans
+  un autre, mais vous rentrez chez vous au moins une fois par semaine.
+- **Transfrontalier occasionnel** — même configuration, mais vous ne rentrez
   pas chaque semaine (mission longue, logement sur place…).
-- **Détaché** — ton employeur d'origine t'envoie temporairement travailler
-  à l'étranger (chantier, mission). Tu restes affilié à la sécurité
-  sociale de ton pays d'origine.
+- **Détaché** — votre employeur d'origine vous envoie temporairement
+  travailler à l'étranger (chantier, mission). Vous restez affilié à la
+  sécurité sociale de votre pays d'origine.
 
 Pour la Belgique, les configurations les plus fréquentes sont
 BE/FR, BE/LU, BE/NL et BE/DE.
@@ -122,9 +122,9 @@ export const chomageFrontalier: DossierDefinition = {
   questions: [
     {
       id: "paysResidence",
-      label: { fr: "Dans quel pays habites-tu ?" },
+      label: { fr: "Dans quel pays habitez-vous ?" },
       helpText: {
-        fr: "On parle ici de ton lieu de résidence officiel — là où tu rentres dormir le plus souvent, où ta famille vit, où tu es domicilié administrativement.",
+        fr: "On parle ici de votre lieu de résidence officiel — là où vous rentrez dormir le plus souvent, où votre famille vit, où vous êtes domicilié(e) administrativement.",
       },
       type: "select",
       options: [
@@ -138,9 +138,9 @@ export const chomageFrontalier: DossierDefinition = {
     },
     {
       id: "paysDernierEmploi",
-      label: { fr: "Dans quel pays as-tu travaillé en dernier ?" },
+      label: { fr: "Dans quel pays avez-vous travaillé en dernier ?" },
       helpText: {
-        fr: "Le pays où se trouvait ton dernier employeur, peu importe ta nationalité ou ton domicile. Si tu avais plusieurs employeurs en même temps, indique celui chez qui tu prestais le plus d'heures.",
+        fr: "Le pays où se trouvait votre dernier employeur, peu importe votre nationalité ou votre domicile. Si vous aviez plusieurs employeurs en même temps, indiquez celui chez qui vous prestiez le plus d'heures.",
       },
       type: "select",
       options: [
@@ -154,9 +154,9 @@ export const chomageFrontalier: DossierDefinition = {
     },
     {
       id: "typeFrontalier",
-      label: { fr: "Quel type de travailleur frontalier es-tu ?" },
+      label: { fr: "Quel type de travailleur frontalier êtes-vous ?" },
       helpText: {
-        fr: "Frontalier classique = tu habites dans un pays et tu travailles dans un autre, et tu rentres chez toi AU MOINS 1 fois par semaine. Transfrontalier occasionnel = tu travailles à l'étranger mais tu rentres moins souvent qu'une fois par semaine (logement sur place, mission longue…). Détaché = ton employeur belge t'a envoyé temporairement travailler dans un autre pays (chantier, mission…). Tu restes affilié à la sécurité sociale belge.",
+        fr: "Frontalier classique = vous habitez dans un pays et travaillez dans un autre, et vous rentrez chez vous AU MOINS 1 fois par semaine. Transfrontalier occasionnel = vous travaillez à l'étranger mais rentrez moins souvent qu'une fois par semaine (logement sur place, mission longue…). Détaché = votre employeur belge vous a envoyé temporairement travailler dans un autre pays (chantier, mission…). Vous restez affilié à la sécurité sociale belge.",
       },
       type: "select",
       options: [
@@ -176,17 +176,17 @@ export const chomageFrontalier: DossierDefinition = {
     },
     {
       id: "aDejaTouche",
-      label: { fr: "As-tu déjà perçu des allocations de chômage dans l'un de ces pays ?" },
+      label: { fr: "Avez-vous déjà perçu des allocations de chômage dans l'un de ces pays ?" },
       helpText: {
-        fr: "On parle d'allocations versées par un organisme officiel de chômage (ONEM en Belgique, Pôle emploi / France Travail en France, ADEM au Luxembourg, UWV aux Pays-Bas, Arbeitsagentur en Allemagne…). Si tu n'as jamais touché ce type d'allocations, réponds « non ».",
+        fr: "On parle d'allocations versées par un organisme officiel de chômage (ONEM en Belgique, Pôle emploi / France Travail en France, ADEM au Luxembourg, UWV aux Pays-Bas, Arbeitsagentur en Allemagne…). Si vous n'avez jamais touché ce type d'allocations, répondez « non ».",
       },
       type: "boolean",
     },
     {
       id: "dureeOccupationEtranger",
-      label: { fr: "Combien de temps as-tu travaillé dans ce pays à l'étranger ?" },
+      label: { fr: "Combien de temps avez-vous travaillé dans ce pays à l'étranger ?" },
       helpText: {
-        fr: "Indique la durée totale, même si tu as eu plusieurs contrats ou plusieurs employeurs. Cette durée est utilisée pour vérifier les conditions d'admissibilité au chômage.",
+        fr: "Indiquez la durée totale, même si vous avez eu plusieurs contrats ou plusieurs employeurs. Cette durée est utilisée pour vérifier les conditions d'admissibilité au chômage.",
       },
       type: "select",
       options: [
@@ -201,26 +201,26 @@ export const chomageFrontalier: DossierDefinition = {
     },
     {
       id: "aDemandeU1",
-      label: { fr: "As-tu déjà demandé un formulaire U1 au pays où tu as travaillé ?" },
+      label: { fr: "Avez-vous déjà demandé un formulaire U1 au pays où vous avez travaillé ?" },
       helpText: {
-        fr: "U1 = un papier officiel délivré par l'organisme de chômage du pays où tu as travaillé, qui prouve combien de temps tu y as travaillé. C'est la clé pour ouvrir tes droits ici. Sans ce document, l'ONEM ne peut pas calculer ta carrière à l'étranger.",
+        fr: "U1 = un papier officiel délivré par l'organisme de chômage du pays où vous avez travaillé, qui prouve combien de temps vous y avez travaillé. C'est la clé pour ouvrir vos droits ici. Sans ce document, l'ONEM ne peut pas calculer votre carrière à l'étranger.",
       },
       type: "boolean",
       visibleIf: { fieldId: "aDejaTouche", op: "equals", value: false },
     },
     {
       id: "vientChercherEmploi",
-      label: { fr: "Viens-tu chercher un emploi en Belgique ?" },
+      label: { fr: "Venez-vous chercher un emploi en Belgique ?" },
       helpText: {
-        fr: "Réponds « oui » si tu arrives en Belgique pour y chercher un nouveau travail (avec ou sans transfert de tes allocations via le U2). Réponds « non » si tu résides déjà en Belgique depuis longtemps et tu rentres juste t'inscrire au chômage après avoir perdu ton emploi à l'étranger.",
+        fr: "Répondez « oui » si vous arrivez en Belgique pour y chercher un nouveau travail (avec ou sans transfert de vos allocations via le U2). Répondez « non » si vous résidez déjà en Belgique depuis longtemps et venez juste vous inscrire au chômage après avoir perdu votre emploi à l'étranger.",
       },
       type: "boolean",
     },
     {
       id: "commissionParitaire",
-      label: { fr: "Tu travailles dans le secteur du bâtiment / construction ?" },
+      label: { fr: "Travaillez-vous dans le secteur du bâtiment / construction ?" },
       helpText: {
-        fr: "On parle ici de la « Commission paritaire 124 », c'est-à-dire les ouvriers du bâtiment (maçons, peintres, électriciens sur chantier, etc.). Si tu ne sais pas, choisis « Je ne sais pas » — on adaptera.",
+        fr: "On parle ici de la « Commission paritaire 124 », c'est-à-dire les ouvriers du bâtiment (maçons, peintres, électriciens sur chantier, etc.). Si vous ne savez pas, choisissez « Je ne sais pas » — on adaptera.",
       },
       type: "select",
       options: [
@@ -236,7 +236,7 @@ export const chomageFrontalier: DossierDefinition = {
       title: "Demande du U1 — anticipe les délais",
       titleKey: "frontalier.warning.demandeU1.title",
       message:
-        "Le formulaire U1 doit être demandé à l'institution de chômage du pays où tu as travaillé en dernier. Compte plusieurs semaines de délai. Sans U1, l'ONEM ne peut pas reconstituer ta carrière à l'étranger.",
+        "Le formulaire U1 doit être demandé à l'institution de chômage du pays où vous avez travaillé en dernier. Comptez plusieurs semaines de délai. Sans U1, l'ONEM ne peut pas reconstituer votre carrière à l'étranger.",
       messageKey: "frontalier.warning.demandeU1.message",
       severity: "warning",
     },
@@ -244,7 +244,7 @@ export const chomageFrontalier: DossierDefinition = {
       title: "U2 — à demander avant de partir",
       titleKey: "frontalier.warning.u2.title",
       message:
-        "Si tu veux chercher un emploi dans un autre pays EEE en gardant tes allocations, demande le U2 AVANT de partir. Une fois sur place, il est trop tard pour ouvrir ce droit.",
+        "Si vous voulez chercher un emploi dans un autre pays EEE en gardant vos allocations, demandez le U2 AVANT de partir. Une fois sur place, il est trop tard pour ouvrir ce droit.",
       messageKey: "frontalier.warning.u2.message",
       severity: "info",
     },

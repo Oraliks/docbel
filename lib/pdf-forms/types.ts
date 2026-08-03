@@ -338,6 +338,14 @@ export interface PdfFormField {
   /// une suggestion remplit aussi ce champ code postal en retour (cf.
   /// components/ui/street-autocomplete-input.tsx).
   streetAutocomplete?: { postalFieldId: string };
+  /// Active l'autocomplete d'entreprise belge (mirroir KBO local, cf.
+  /// lib/be-companies/kbo-lookup.ts) sur un champ `text`. `addressFieldId` =
+  /// id du champ adresse du MÊME formulaire : choisir une suggestion remplit
+  /// aussi ce champ avec l'adresse du siège social (cf.
+  /// components/ui/enterprise-autocomplete-input.tsx). Le mirroir ne porte
+  /// pas les unités d'établissement — l'adresse suggérée peut différer du
+  /// lieu de travail réel, d'où l'aide de champ dédiée côté seed.
+  enterpriseAutocomplete?: { addressFieldId: string };
   /// Force la saisie à correspondre à une entrée de la liste d'autocomplétion
   /// (ex. rue BeStAddress FR/NL). La valeur n'est acceptée que si l'utilisateur
   /// l'a CHOISIE dans les suggestions (vérifiée côté runner) OU s'il coche la

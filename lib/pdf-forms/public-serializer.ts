@@ -47,6 +47,7 @@ export interface PublicField {
   derivedFrom?: PdfFormField["derivedFrom"];
   onSelectSet?: PdfFormField["onSelectSet"];
   streetAutocomplete?: PdfFormField["streetAutocomplete"];
+  enterpriseAutocomplete?: PdfFormField["enterpriseAutocomplete"];
   requireListMatch?: PdfFormField["requireListMatch"];
   countrySelect?: PdfFormField["countrySelect"];
   communeFrom?: PdfFormField["communeFrom"];
@@ -103,6 +104,7 @@ export function toPublicField(f: PdfFormField): PublicField {
     derivedFrom: f.derivedFrom,
     onSelectSet: f.onSelectSet,
     streetAutocomplete: f.streetAutocomplete,
+    enterpriseAutocomplete: f.enterpriseAutocomplete,
     requireListMatch: f.requireListMatch,
     countrySelect: f.countrySelect,
     communeFrom: f.communeFrom,

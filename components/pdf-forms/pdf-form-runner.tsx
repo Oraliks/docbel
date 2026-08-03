@@ -1751,6 +1751,9 @@ function FieldsCluster({
                   onSelectStreetSuggestion={(postalCode) => {
                     if (f.streetAutocomplete) setValue(f.streetAutocomplete.postalFieldId, postalCode);
                   }}
+                  onSelectEnterpriseAddress={(address) => {
+                    if (f.enterpriseAutocomplete) setValue(f.enterpriseAutocomplete.addressFieldId, address);
+                  }}
                   onStreetVerifiedChange={(v) => onStreetVerifiedChange?.(f.id, v)}
                   parentValues={values}
                   onFocusField={onFocusField}

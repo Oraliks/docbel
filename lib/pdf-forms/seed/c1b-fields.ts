@@ -234,6 +234,7 @@ export const C1B_FIELDS: PdfFormField[] = [
     label: {
       fr: "Avez-vous, vu votre âge et votre carrière professionnelle, droit à une pension de retraite complète (même si vous n'en bénéficiez pas) ?",
     },
+    // Pas de `help` : le label reprend déjà, mot pour mot, la question imprimée.
     options: YN,
     section: SECTION_REVENUS,
     order: 1,
@@ -244,6 +245,7 @@ export const C1B_FIELDS: PdfFormField[] = [
     type: "radio",
     required: false,
     label: { fr: "Cette pension de retraite complète est…" },
+    // Pas de `help` : les deux options recopient fidèlement les cases imprimées.
     options: [
       { value: "belge", label: { fr: "Une pension de retraite belge" } },
       { value: "etrangere", label: { fr: "Une pension de retraite étrangère" } },
@@ -286,6 +288,7 @@ export const C1B_FIELDS: PdfFormField[] = [
     type: "date",
     required: false,
     label: { fr: "À partir de quelle date avez-vous droit à cette pension ?" },
+    // Pas de `help` : le label reprend déjà, mot pour mot, la question imprimée.
     visibleIf: { fieldId: "droitPensionRetraiteComplete", op: "equals", value: "oui" },
     section: SECTION_REVENUS,
     order: 6,
@@ -300,6 +303,7 @@ export const C1B_FIELDS: PdfFormField[] = [
     type: "radio",
     required: true,
     label: { fr: "Percevez-vous une pension ?" },
+    // Pas de `help` : le label EST déjà la question complète imprimée.
     options: YN,
     section: SECTION_REVENUS,
     order: 10,
@@ -339,6 +343,8 @@ export const C1B_FIELDS: PdfFormField[] = [
     type: "date",
     required: false,
     label: { fr: "Pension de survie belge — à partir du" },
+    // Pas de `help` : label déjà contextualisé (contrairement au moule
+    // générique du C1, ce champ nomme directement son sujet).
     visibleIf: { fieldId: "typePensionPercue", op: "equals", value: "survie-belge" },
     section: SECTION_REVENUS,
     order: 20,
@@ -368,6 +374,7 @@ export const C1B_FIELDS: PdfFormField[] = [
     label: {
       fr: "Avez-vous déjà bénéficié de cette pension de survie lors de périodes durant lesquelles vous perceviez également des allocations pour maladie ou invalidité, chômage, prépension conventionnelle, chômage avec complément d'entreprise, interruption de carrière ou crédit-temps ?",
     },
+    // Pas de `help` : le label reprend déjà, mot pour mot, la question imprimée.
     options: [
       { value: "non", label: { fr: "Non" } },
       { value: "oui", label: { fr: "Oui, du…" } },
@@ -385,6 +392,7 @@ export const C1B_FIELDS: PdfFormField[] = [
     type: "date",
     required: false,
     label: { fr: "Période de cumul antérieur — du" },
+    // Pas de `help` : label déjà contextualisé.
     visibleIf: { fieldId: "cumulAnterieurMaladieChomagePrepension", op: "equals", value: "oui" },
     section: SECTION_REVENUS,
     order: 23,
@@ -395,6 +403,7 @@ export const C1B_FIELDS: PdfFormField[] = [
     type: "date",
     required: false,
     label: { fr: "Période de cumul antérieur — au" },
+    // Pas de `help` : label déjà contextualisé, borne de fin de cumulAnterieurDateDebut.
     visibleIf: { fieldId: "cumulAnterieurMaladieChomagePrepension", op: "equals", value: "oui" },
     section: SECTION_REVENUS,
     order: 24,
@@ -410,6 +419,7 @@ export const C1B_FIELDS: PdfFormField[] = [
     type: "radio",
     required: true,
     label: { fr: "Percevez-vous une indemnité de maladie-invalidité à charge d'une institution étrangère ?" },
+    // Pas de `help` : le label EST déjà la question complète imprimée.
     options: YN,
     section: SECTION_REVENUS,
     order: 30,
@@ -438,6 +448,7 @@ export const C1B_FIELDS: PdfFormField[] = [
     type: "radio",
     required: true,
     label: { fr: "Percevez-vous une indemnité belge d'accident du travail ou de maladie professionnelle ?" },
+    // Pas de `help` : le label EST déjà la question complète imprimée.
     options: YN,
     section: SECTION_REVENUS,
     order: 40,
@@ -481,6 +492,7 @@ export const C1B_FIELDS: PdfFormField[] = [
     type: "radio",
     required: true,
     label: { fr: "Vous trouvez-vous dans une période de congé sans solde ?" },
+    // Pas de `help` : le label EST déjà la question complète imprimée.
     options: YN,
     section: SECTION_DIVERS,
     order: 50,
@@ -524,6 +536,7 @@ export const C1B_FIELDS: PdfFormField[] = [
     type: "date",
     required: false,
     label: { fr: "Période de congé sans solde — du" },
+    // Pas de `help` : label déjà contextualisé.
     visibleIf: { fieldId: "congeSansSolde", op: "equals", value: "oui" },
     section: SECTION_DIVERS,
     order: 53,
@@ -535,6 +548,7 @@ export const C1B_FIELDS: PdfFormField[] = [
     type: "date",
     required: false,
     label: { fr: "Période de congé sans solde — au" },
+    // Pas de `help` : label déjà contextualisé, borne de fin de congeSansSoldeDateDebut.
     visibleIf: { fieldId: "congeSansSolde", op: "equals", value: "oui" },
     section: SECTION_DIVERS,
     order: 54,

@@ -101,6 +101,8 @@ export const C1C_FIELDS: PdfFormField[] = [
     type: "fullname",
     required: true,
     label: { fr: "Prénom et nom" },
+    // Pas de `help` : aucun texte imprimé propre à ce champ (audit
+    // couverture aide de champ, 2026-08-04).
     // Dans un dossier, le C1 a déjà donné le nom : `applyDossierInheritance`
     // rend ce champ `autoAnswered` à l'ouverture, l'étape d'identité perd son
     // dernier champ visible et disparaît (cf. `buildMacroSteps`). Sur l'URL
@@ -210,6 +212,7 @@ export const C1C_FIELDS: PdfFormField[] = [
     type: "radio",
     required: true,
     label: { fr: "Je dispose d'un site internet pour mon activité" },
+    // Pas de `help` : le label EST déjà la question complète imprimée.
     options: NON_OUI,
     section: SECTION_ACTIVITES,
     order: 13,
@@ -234,6 +237,7 @@ export const C1C_FIELDS: PdfFormField[] = [
     // Sans `www.` : c'est ce que le formulaire attend, et le placeholder est
     // le seul endroit qui le montre avant la saisie. Une adresse collée avec
     // son `https://www.` reste acceptée — elle est nettoyée au stamping.
+    // Pas de `help` distinct : le placeholder ci-dessous porte déjà l'info.
     placeholder: { fr: "exemple.be" },
     visibleIf: { fieldId: "possedeSiteInternet", op: "equals", value: "oui" },
     section: SECTION_ACTIVITES,
@@ -245,6 +249,7 @@ export const C1C_FIELDS: PdfFormField[] = [
     type: "radio",
     required: true,
     label: { fr: "J'exerce mon activité" },
+    // Pas de `help` : les deux options recopient fidèlement les cases imprimées.
     options: [
       { value: "domicile", label: { fr: "À l'adresse de mon domicile" } },
       { value: "autre", label: { fr: "À une autre adresse" } },
@@ -269,6 +274,7 @@ export const C1C_FIELDS: PdfFormField[] = [
     type: "textarea",
     required: false,
     label: { fr: "Adresse où j'exerce mon activité" },
+    // Pas de `help` : aucun texte imprimé propre à cette ligne.
     visibleIf: { fieldId: "lieuExerciceActivite", op: "equals", value: "autre" },
     section: SECTION_ACTIVITES,
     order: 16,
@@ -283,6 +289,7 @@ export const C1C_FIELDS: PdfFormField[] = [
     type: "radio",
     required: true,
     label: { fr: "Je souhaite exercer cette activité en tant que" },
+    // Pas de `help` : les deux options recopient fidèlement les cases imprimées.
     options: [
       { value: "personne-physique", label: { fr: "Personne physique" } },
       {
@@ -331,6 +338,7 @@ export const C1C_FIELDS: PdfFormField[] = [
     type: "text",
     required: false,
     label: { fr: "Nom de l'entreprise" },
+    // Pas de `help` : aucun texte imprimé propre à ce champ.
     visibleIf: { fieldId: "formeExerciceActivite", op: "equals", value: "societe" },
     section: SECTION_ACTIVITES,
     order: 22,
@@ -394,6 +402,9 @@ export const C1C_FIELDS: PdfFormField[] = [
     type: "text",
     required: false,
     label: { fr: "Précisez" },
+    // Pas de `help` distinct : l'avertissement du PDF est déjà porté par la
+    // question mère `activiteExerceeParTiers`, dont ce champ n'est qu'un
+    // détail conditionnel — le répéter ici serait redondant.
     visibleIf: { fieldId: "activiteExerceeParTiers", op: "equals", value: "oui" },
     section: SECTION_ACTIVITES,
     order: 26,
@@ -464,6 +475,7 @@ export const C1C_FIELDS: PdfFormField[] = [
     label: {
       fr: "J'ai exercé une activité indépendante à titre principal au cours des 6 dernières années, calculées de date à date, précédant la date de début de la nouvelle activité",
     },
+    // Pas de `help` : le label reprend déjà, mot pour mot, la question imprimée.
     options: NON_OUI,
     section: SECTION_ACTIVITES_ANTERIEURES,
     order: 40,
@@ -481,6 +493,8 @@ export const C1C_FIELDS: PdfFormField[] = [
     type: "textarea",
     required: false,
     label: { fr: "Je décris précisément ci-dessous chaque activité exercée" },
+    // Pas de `help` : couvert par le contexte de la question précédente
+    // (activité indépendante antérieure), déjà auto-explicatif.
     visibleIf: { fieldId: "activiteIndependanteAnterieure", op: "equals", value: "oui" },
     section: SECTION_ACTIVITES_ANTERIEURES,
     order: 41,

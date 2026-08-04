@@ -25,13 +25,18 @@ export const C1_ACTIVITES: PdfFormField[] = [
     section: SECTION_ACTIVITES,
     order: 200,
   }),
-  dateAPartirDu({
-    id: "etudesPleinExerciceDate",
-    pdfFieldName: "DateEtudes",
-    parentId: "etudesPleinExercice",
-    section: SECTION_ACTIVITES,
-    order: 201,
-  }),
+  {
+    // Le moule `dateAPartirDu` pose un label générique (« À partir du ») —
+    // help ajoutée pour rappeler le sujet, son label ne le dit pas seul.
+    ...dateAPartirDu({
+      id: "etudesPleinExerciceDate",
+      pdfFieldName: "DateEtudes",
+      parentId: "etudesPleinExercice",
+      section: SECTION_ACTIVITES,
+      order: 201,
+    }),
+    help: { fr: "Date à partir de laquelle vous suivez ces études de plein exercice." },
+  },
   ouiNon({
     id: "apprentissageAlternance",
     pdfFieldName: "oui_3|non_3",
@@ -40,13 +45,18 @@ export const C1_ACTIVITES: PdfFormField[] = [
     section: SECTION_ACTIVITES,
     order: 210,
   }),
-  dateAPartirDu({
-    id: "apprentissageAlternanceDate",
-    pdfFieldName: "DateFormation",
-    parentId: "apprentissageAlternance",
-    section: SECTION_ACTIVITES,
-    order: 211,
-  }),
+  {
+    ...dateAPartirDu({
+      id: "apprentissageAlternanceDate",
+      pdfFieldName: "DateFormation",
+      parentId: "apprentissageAlternance",
+      section: SECTION_ACTIVITES,
+      order: 211,
+    }),
+    help: {
+      fr: "Date à partir de laquelle vous suivez cet apprentissage ou cette formation en alternance.",
+    },
+  },
   ouiNon({
     id: "formationStageSyntra",
     pdfFieldName: "oui_4|non_4",
@@ -55,13 +65,16 @@ export const C1_ACTIVITES: PdfFormField[] = [
     section: SECTION_ACTIVITES,
     order: 220,
   }),
-  dateAPartirDu({
-    id: "formationStageSyntraDate",
-    pdfFieldName: "DateFormationStageSyntraIfapmeEpepmeIawm",
-    parentId: "formationStageSyntra",
-    section: SECTION_ACTIVITES,
-    order: 221,
-  }),
+  {
+    ...dateAPartirDu({
+      id: "formationStageSyntraDate",
+      pdfFieldName: "DateFormationStageSyntraIfapmeEpepmeIawm",
+      parentId: "formationStageSyntra",
+      section: SECTION_ACTIVITES,
+      order: 221,
+    }),
+    help: { fr: "Date à partir de laquelle vous suivez cette formation avec convention de stage." },
+  },
   ouiNon({
     id: "mandatArtistique",
     pdfFieldName: "oui_5|non_5",

@@ -44,6 +44,8 @@ export const C1_PAIEMENT: PdfFormField[] = [
     label: {
       fr: "Je confirme avoir compris que le chèque circulaire est rare et plus lent à la réception. Celui-ci sera envoyé à l'adresse mentionnée sur le formulaire C1.",
     },
+    // Pas de `help` distinct : le label EST déjà la phrase de confirmation
+    // complète — rien à ajouter sans la répéter.
     visibleIf: { fieldId: "modePaiement", op: "equals", value: "cheque" },
     section: SECTION_PAIEMENT,
     order: 601,
@@ -60,6 +62,8 @@ export const C1_PAIEMENT: PdfFormField[] = [
     // propriété du compte n'a plus de sens pour le chèque circulaire (envoyé à
     // l'adresse, pas viré sur un compte) → masquée quand mode = chèque.
     label: { fr: "Le compte bancaire est à mon nom ?" },
+    // Pas de `help` : la question et ses deux options recopient fidèlement
+    // le texte imprimé.
     options: [
       { value: "mon-nom", label: { fr: "Oui, à mon nom" } },
       { value: "autre-nom", label: { fr: "Non, au nom d'une autre personne" } },
@@ -112,6 +116,7 @@ export const C1_PAIEMENT: PdfFormField[] = [
     type: "text",
     required: true,
     label: { fr: "Nom et prénom du propriétaire du compte" },
+    // Pas de `help` : aucun texte imprimé propre à ce champ.
     placeholder: { fr: "Nom et prénom de la personne" },
     // ET mode = virement (Oraliks 2026-07-18) : même garde-fou que le BIC. Sans
     // ça, un usager qui choisit « au nom d'une autre personne » PUIS bascule sur

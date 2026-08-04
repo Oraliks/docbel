@@ -343,6 +343,7 @@ export const C1A_FIELDS: PdfFormField[] = [
     required: true,
     inheritedFromDossier: true,
     label: { fr: "Nom et prénom" },
+    // Pas de `help` : aucun texte imprimé propre à ce champ.
     section: SECTION_IDENTITE,
     order: -99,
   },
@@ -395,6 +396,7 @@ export const C1A_FIELDS: PdfFormField[] = [
     required: true,
     inheritedFromDossier: true,
     label: { fr: "Rue" },
+    // Pas de `help` : aucun texte imprimé propre à ce champ.
     prefillFrom: "profile.street",
     canonicalKey: "adresse.rue",
     section: SECTION_IDENTITE,
@@ -407,6 +409,7 @@ export const C1A_FIELDS: PdfFormField[] = [
     required: true,
     inheritedFromDossier: true,
     label: { fr: "Numéro" },
+    // Pas de `help` : aucun texte imprimé propre à ce champ.
     canonicalKey: "adresse.numero",
     section: SECTION_IDENTITE,
     order: -97.5,
@@ -418,6 +421,7 @@ export const C1A_FIELDS: PdfFormField[] = [
     required: true,
     inheritedFromDossier: true,
     label: { fr: "Code postal" },
+    // Pas de `help` : aucun texte imprimé propre à ce champ.
     prefillFrom: "profile.postalCode",
     canonicalKey: "adresse.codePostal",
     section: SECTION_IDENTITE,
@@ -430,6 +434,7 @@ export const C1A_FIELDS: PdfFormField[] = [
     required: true,
     inheritedFromDossier: true,
     label: { fr: "Commune" },
+    // Pas de `help` : aucun texte imprimé propre à ce champ.
     prefillFrom: "profile.city",
     canonicalKey: "adresse.commune",
     section: SECTION_IDENTITE,
@@ -467,6 +472,7 @@ export const C1A_FIELDS: PdfFormField[] = [
     type: "text",
     required: true,
     label: { fr: "Nom de l'indépendant que vous aidez" },
+    // Pas de `help` : le label EST déjà la question complète imprimée.
     visibleIf: { fieldId: "aideIndependant", op: "equals", value: "oui" },
     section: SECTION_AIDE_INDEPENDANT,
     order: 1,
@@ -544,6 +550,7 @@ export const C1A_FIELDS: PdfFormField[] = [
     type: "text",
     required: false,
     label: { fr: "Code postal et commune de l'activité indépendante" },
+    // Pas de `help` : aucun texte imprimé propre à ce champ.
     visibleIf: { fieldId: "aideIndependant", op: "equals", value: "oui" },
     section: SECTION_ADRESSE,
     order: 4,

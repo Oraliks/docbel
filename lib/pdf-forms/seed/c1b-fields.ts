@@ -137,6 +137,8 @@ export const C1B_FIELDS: PdfFormField[] = [
     type: "text",
     required: true,
     label: { fr: "Nom" },
+    // Pas de `help` : aucun texte imprimé propre à ce champ (audit
+    // couverture aide de champ, 2026-08-04).
     prefillFrom: "profile.lastName",
     canonicalKey: "identity.nom",
     inheritedFromDossier: true,
@@ -149,6 +151,7 @@ export const C1B_FIELDS: PdfFormField[] = [
     type: "text",
     required: true,
     label: { fr: "Prénom" },
+    // Pas de `help` : aucun texte imprimé propre à ce champ.
     prefillFrom: "profile.firstName",
     canonicalKey: "identity.prenom",
     inheritedFromDossier: true,
@@ -161,6 +164,7 @@ export const C1B_FIELDS: PdfFormField[] = [
     type: "text",
     required: true,
     label: { fr: "Rue" },
+    // Pas de `help` : aucun texte imprimé propre à ce champ.
     prefillFrom: "profile.street",
     canonicalKey: "adresse.rue",
     inheritedFromDossier: true,
@@ -173,6 +177,7 @@ export const C1B_FIELDS: PdfFormField[] = [
     type: "text",
     required: true,
     label: { fr: "Numéro" },
+    // Pas de `help` : aucun texte imprimé propre à ce champ.
     canonicalKey: "adresse.numero",
     inheritedFromDossier: true,
     section: SECTION_IDENTITE,
@@ -184,6 +189,7 @@ export const C1B_FIELDS: PdfFormField[] = [
     type: "postal_be",
     required: true,
     label: { fr: "Code postal" },
+    // Pas de `help` : aucun texte imprimé propre à ce champ.
     placeholder: { fr: "1000" },
     prefillFrom: "profile.postalCode",
     canonicalKey: "adresse.codePostal",
@@ -197,6 +203,7 @@ export const C1B_FIELDS: PdfFormField[] = [
     type: "text",
     required: true,
     label: { fr: "Commune" },
+    // Pas de `help` : aucun texte imprimé propre à ce champ.
     // Seul champ d'adresse du C1B sans clé canonique jusqu'au 2026-07-26 : le
     // citoyen retapait sa commune alors que tout le reste de son adresse
     // arrivait tout seul.

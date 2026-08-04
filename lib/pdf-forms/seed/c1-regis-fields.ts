@@ -234,6 +234,13 @@ function champsTableau(ligne: Ligne, order: number): PdfFormField[] {
   ];
 }
 
+/// Texte-cadre du PDF officiel (bas de la GRILLE 2, recopié mot pour mot) —
+/// dit QUE des codes existent au verso et QUE faire s'ils ne correspondent
+/// pas, sans reproduire leur contenu (légende page 2, cf. NEXT_ACTIONS #33 —
+/// à transcrire séparément, avec Oraliks).
+const EXPLICATION_CADRE_HELP =
+  "Indiquez l'une des réponses possibles indiquées au verso du formulaire officiel. Si aucune de ces réponses ne vous est applicable, indiquez alors votre propre explication, de la manière la plus détaillée possible.";
+
 /// La case « explication » d'une ligne. Le PDF les imprime toutes ensemble,
 /// sous le tableau (x=140, y=258 → 130) : elles forment donc un bloc à elles,
 /// APRÈS les sept lignes, et non la queue de chaque ligne.
@@ -244,7 +251,9 @@ function champExplication(ligne: Ligne, order: number): PdfFormField {
     type: "text",
     required: false,
     label: { fr: `${ligne.label} — explication (${ligne.aideExplication})` },
-    ...(ligne.cle.startsWith("personne") ? { help: { fr: FN4_HELP } } : {}),
+    help: {
+      fr: ligne.cle.startsWith("personne") ? FN4_HELP : EXPLICATION_CADRE_HELP,
+    },
     visibleIf: { fieldId: `${ligne.cle}Difference`, op: "equals", value: "oui" },
     section: SECTION_GRILLE_DIFFERENCES,
     order,

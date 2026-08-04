@@ -765,6 +765,7 @@ export const C1A_FIELDS: PdfFormField[] = [
     type: "radio",
     required: true,
     label: { fr: "Ce montant est :" },
+    // Pas de `help` : les deux options recopient fidèlement les cases imprimées.
     options: [
       { value: "mois", label: { fr: "Par mois" } },
       { value: "an", label: { fr: "Par an" } },
@@ -816,6 +817,7 @@ export const C1A_FIELDS: PdfFormField[] = [
     type: "radio",
     required: true,
     label: { fr: "Aidiez-vous déjà cet indépendant dans le passé ?" },
+    // Pas de `help` : le label EST déjà la question complète imprimée.
     options: YN,
     visibleIf: { fieldId: "aideIndependant", op: "equals", value: "oui" },
     section: SECTION_AIDE_INDEPENDANT,
@@ -833,6 +835,7 @@ export const C1A_FIELDS: PdfFormField[] = [
     type: "date",
     required: true,
     label: { fr: "À partir de quelle date aidiez-vous déjà cet indépendant ?" },
+    // Pas de `help` : le label reprend déjà, mot pour mot, la question imprimée.
     visibleIf: { fieldId: "aidaitDejaIndependant", op: "equals", value: "oui" },
     // Guide « __ __ / __ __ / __ __ __ __ » sous-titré jour / mois / année.
     // Huit glyphes mesurés à x=316,7 → 406,5 : pas de 11,52 pt, +4,58 aux deux
@@ -929,6 +932,9 @@ export const C1A_FIELDS: PdfFormField[] = [
     numberFormat: "money",
     required: false,
     label: { fr: "Second montant, si vous exercez plus d'un mandat (EUR)" },
+    // Pas de `help` : l'ambiguïté du PDF ci-dessus (« A VALIDER Oraliks »)
+    // empêche d'écrire une explication fiable — inventer une précision ici
+    // trancherait silencieusement une question ouverte.
     visibleIf: { fieldId: "mandatPolitiqueOuJuge", op: "equals", value: "oui" },
     section: SECTION_REVENUS,
     order: 60.5,

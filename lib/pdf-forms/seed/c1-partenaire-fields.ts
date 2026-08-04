@@ -178,6 +178,8 @@ export const C1_PARTENAIRE_FIELDS: PdfFormField[] = [
     nameOrder: "last-first",
     required: true,
     label: { fr: "Votre nom et prénom" },
+    // Pas de `help` : aucun texte imprimé propre à ce champ (audit
+    // couverture aide de champ, 2026-08-04).
     inheritedFromDossier: true,
     section: SECTION_IDENTITE,
     order: -99,
@@ -309,6 +311,9 @@ export const C1_PARTENAIRE_FIELDS: PdfFormField[] = [
     numberFormat: "money",
     required: false,
     label: { fr: "Montant mensuel brut du revenu de remplacement" },
+    // Pas de `help` : contrairement à son jumeau `montant_mensuel_brut`
+    // (revenu professionnel), la note (2) du PDF sur l'indépendant ne
+    // s'applique PAS ici — aucune instruction imprimée propre à ce montant.
     visibleIf: { fieldId: "partenaireRevenuRemplacement", op: "equals", value: "oui" },
     section: SECTION_PARTENAIRE,
     order: 112,
@@ -342,6 +347,9 @@ export const C1_PARTENAIRE_FIELDS: PdfFormField[] = [
     pdfNon: "non_6",
     pdfOui: "oui_6",
     label: "Le partenaire est une personne pour qui quelqu'un perçoit des allocations familiales",
+    // Même formule que partenaireRevenuIntegration : la seule justification
+    // vérifiable sans inférer un lien non énoncé mot pour mot ici.
+    help: "⚠ Si oui, cette personne ne peut pas être déclarée comme partenaire à charge (une des 6 conditions cumulatives n'est plus remplie).",
     order: 150,
   }),
 

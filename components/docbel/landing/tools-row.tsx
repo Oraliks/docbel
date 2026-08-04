@@ -59,7 +59,7 @@ export async function LandingToolsRow({
         </CardAction>
       </CardHeader>
 
-      <CardContent className="px-5 sm:px-7">
+      <CardContent className="px-5 pb-5 sm:px-7 sm:pb-6">
         <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           {visible.map((tool, index) => {
             const { Icon, hue } = glyphForTool(tool);

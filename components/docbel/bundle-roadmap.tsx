@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import {
   Archive,
   Download,
+  Eye,
   ExternalLink,
   Landmark,
   ListChecks,
@@ -125,18 +126,35 @@ export function BundleRoadmap({
               >
                 <span className="text-sm font-medium">{document.title}</span>
                 {bundleRunId ? (
-                  <Button
-                    render={
-                      <a
-                        href={`/api/bundles/runs/${bundleRunId}/download/${document.pdfFormId}`}
-                      />
-                    }
-                    nativeButton={false}
-                    size="sm"
-                  >
-                    <Download data-icon="inline-start" aria-hidden />
-                    {t("roadmapDownloadOne")}
-                  </Button>
+                  <>
+                    <Button
+                      render={
+                        <a
+                          href={`/api/bundles/runs/${bundleRunId}/download/${document.pdfFormId}?inline=1`}
+                          target="_blank"
+                          rel="noreferrer"
+                        />
+                      }
+                      nativeButton={false}
+                      size="sm"
+                      variant="outline"
+                    >
+                      <Eye data-icon="inline-start" aria-hidden />
+                      {t("roadmapPreview")}
+                    </Button>
+                    <Button
+                      render={
+                        <a
+                          href={`/api/bundles/runs/${bundleRunId}/download/${document.pdfFormId}`}
+                        />
+                      }
+                      nativeButton={false}
+                      size="sm"
+                    >
+                      <Download data-icon="inline-start" aria-hidden />
+                      {t("roadmapDownloadOne")}
+                    </Button>
+                  </>
                 ) : null}
                 <Button
                   render={<Link href={document.href} />}

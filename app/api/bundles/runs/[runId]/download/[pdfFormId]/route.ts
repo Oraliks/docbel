@@ -18,6 +18,11 @@ export async function GET(
   { params }: { params: Promise<{ runId: string; pdfFormId: string }> },
 ) {
   const { runId, pdfFormId } = await params;
+  // Aperçu (chantier 3, écran Mes documents) : ?inline=1 affiche le PDF dans
+  // le viewer natif du navigateur au lieu de forcer un téléchargement. Un
+  // aperçu n'est pas une fin de parcours — l'event documents_downloaded (qui
+  // alimente le funnel « Parcours ») n'est émis QUE sans ce paramètre.
+  const inline = req.nextUrl.searchParams.get("inline") === "1";
   const ip = getClientIp(req);
   const rl = checkRateLimit(`bundle-download-one:${ip}:${runId}`, { windowMs: 60_000, max: 10 });
   if (!rl.ok) {
@@ -58,18 +63,20 @@ export async function GET(
   // Étape finale du funnel « Parcours » : documents récupérés (téléchargement
   // unitaire) — même événement que le zip et l'email (download-all/email),
   // qui restait jusqu'ici absent de CETTE route, sous-comptant le funnel.
-  await trackBundleEvent("documents_downloaded", {
-    sessionId,
-    userId,
-    metadata: { bundleSlug: state.run.bundleSlug, via: "download-one" },
-  });
+  if (!inline) {
+    await trackBundleEvent("documents_downloaded", {
+      sessionId,
+      userId,
+      metadata: { bundleSlug: state.run.bundleSlug, via: "download-one" },
+    });
+  }
 
   // `result.doc.filename` provient de renderFilename → déjà normalisé
   // ([a-zA-Z0-9._-]), sûr pour l'en-tête Content-Disposition.
   return new NextResponse(new Uint8Array(result.doc.bytes), {
     headers: {
       "Content-Type": "application/pdf",
-      "Content-Disposition": `attachment; filename="${result.doc.filename}"`,
+      "Content-Disposition": `${inline ? "inline" : "attachment"}; filename="${result.doc.filename}"`,
       "Cache-Control": "private, no-store",
     },
   });

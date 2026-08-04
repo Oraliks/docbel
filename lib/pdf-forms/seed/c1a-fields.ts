@@ -1344,6 +1344,7 @@ export const C1A_FIELDS: PdfFormField[] = [
     type: "radio",
     required: true,
     label: { fr: "Exerciez-vous déjà cette activité dans le passé ?" },
+    // Pas de `help` : le label EST déjà la question complète imprimée.
     options: YN,
     visibleIf: { fieldId: "autreActiviteAccessoire", op: "equals", value: "oui" },
     section: SECTION_ACTIVITES,
@@ -1361,6 +1362,7 @@ export const C1A_FIELDS: PdfFormField[] = [
     type: "date",
     required: true,
     label: { fr: "Depuis quand exercez-vous cette activité ?" },
+    // Pas de `help` : le label reprend déjà, mot pour mot, la question imprimée.
     visibleIf: { fieldId: "exerceDejaActivite", op: "equals", value: "oui" },
     // Même guide que Q8, sur la page 2 : huit glyphes à x=323,0 → 412,8.
     fontSize: 9,
@@ -1416,6 +1418,8 @@ export const C1A_FIELDS: PdfFormField[] = [
     type: "checkbox",
     required: false,
     label: { fr: "Lundi" },
+    // Pas de `help` : le nom du jour EST déjà toute l'information ; le
+    // contexte (« chômeur temporaire ») est expliqué par estChomeurTemporaire.
     visibleIf: VISIBLE_SI_CHOMEUR_TEMPORAIRE,
     section: SECTION_ACTIVITES,
     order: 160,
@@ -1431,6 +1435,8 @@ export const C1A_FIELDS: PdfFormField[] = [
     type: "checkbox",
     required: false,
     label: { fr: "Mardi" },
+    // Pas de `help` : le nom du jour EST déjà toute l'information ; le
+    // contexte (« chômeur temporaire ») est expliqué par estChomeurTemporaire.
     visibleIf: VISIBLE_SI_CHOMEUR_TEMPORAIRE,
     section: SECTION_ACTIVITES,
     order: 161,
@@ -1442,6 +1448,8 @@ export const C1A_FIELDS: PdfFormField[] = [
     type: "checkbox",
     required: false,
     label: { fr: "Mercredi" },
+    // Pas de `help` : le nom du jour EST déjà toute l'information ; le
+    // contexte (« chômeur temporaire ») est expliqué par estChomeurTemporaire.
     visibleIf: VISIBLE_SI_CHOMEUR_TEMPORAIRE,
     section: SECTION_ACTIVITES,
     order: 162,
@@ -1453,6 +1461,8 @@ export const C1A_FIELDS: PdfFormField[] = [
     type: "checkbox",
     required: false,
     label: { fr: "Jeudi" },
+    // Pas de `help` : le nom du jour EST déjà toute l'information ; le
+    // contexte (« chômeur temporaire ») est expliqué par estChomeurTemporaire.
     visibleIf: VISIBLE_SI_CHOMEUR_TEMPORAIRE,
     section: SECTION_ACTIVITES,
     order: 163,
@@ -1464,6 +1474,8 @@ export const C1A_FIELDS: PdfFormField[] = [
     type: "checkbox",
     required: false,
     label: { fr: "Vendredi" },
+    // Pas de `help` : le nom du jour EST déjà toute l'information ; le
+    // contexte (« chômeur temporaire ») est expliqué par estChomeurTemporaire.
     visibleIf: VISIBLE_SI_CHOMEUR_TEMPORAIRE,
     section: SECTION_ACTIVITES,
     order: 164,
@@ -1475,6 +1487,8 @@ export const C1A_FIELDS: PdfFormField[] = [
     type: "checkbox",
     required: false,
     label: { fr: "Samedi" },
+    // Pas de `help` : le nom du jour EST déjà toute l'information ; le
+    // contexte (« chômeur temporaire ») est expliqué par estChomeurTemporaire.
     visibleIf: VISIBLE_SI_CHOMEUR_TEMPORAIRE,
     section: SECTION_ACTIVITES,
     order: 165,
@@ -1526,6 +1540,7 @@ export const C1A_FIELDS: PdfFormField[] = [
     label: {
       fr: "J'affirme sur l'honneur que la présente déclaration est sincère et complète et je m'engage à communiquer toute modification à mon organisme de paiement.",
     },
+    // Pas de `help` : le label EST la déclaration légale complète imprimée.
     section: SECTION_AFFIRMATIONS,
     order: 180,
   },

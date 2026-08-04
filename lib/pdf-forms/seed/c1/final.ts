@@ -138,16 +138,22 @@ export const C1_FINAL: PdfFormField[] = [
     id: "congeSansSolde",
     pdfFieldName: "oui du|non_20",
     label: "Je suis actuellement dans une période de congé sans solde",
+    // Pas de `help` : le label EST déjà la question complète imprimée.
     section: SECTION_DIVERS,
     order: 900,
   }),
-  dateAPartirDu({
-    id: "congeSansSoldeDate",
-    pdfFieldName: "Date11_af_date",
-    parentId: "congeSansSolde",
-    section: SECTION_DIVERS,
-    order: 901,
-  }),
+  {
+    // Cohérent avec son jumeau `congeSansSoldeDateFin` (« Jusqu'au »,
+    // help déjà présente juste en dessous) — celui-ci précise le début.
+    ...dateAPartirDu({
+      id: "congeSansSoldeDate",
+      pdfFieldName: "Date11_af_date",
+      parentId: "congeSansSolde",
+      section: SECTION_DIVERS,
+      order: 901,
+    }),
+    help: { fr: "Date de début du congé sans solde." },
+  },
   {
     // La ligne imprimée est « oui, du … au … » : seule la borne de DÉBUT était
     // branchée, la case de fin (`Date12_af_date`) restait orpheline et la
@@ -219,6 +225,8 @@ export const C1_FINAL: PdfFormField[] = [
     label: {
       fr: "J'affirme sur l'honneur que la présente déclaration est sincère et complète",
     },
+    // Pas de `help` : le label EST la déclaration légale complète imprimée
+    // — rien à ajouter sans la répéter.
     // labelShort mobile (Phase 4 du plan bindings-canonical-ux). Le sens
     // légal est préservé — c'est bien la même déclaration sur l'honneur,
     // formulée plus terse pour tenir sur mobile.
@@ -232,6 +240,7 @@ export const C1_FINAL: PdfFormField[] = [
     type: "checkbox",
     required: true,
     label: { fr: "J'ai lu la feuille d'informations C1" },
+    // Pas de `help` : le label EST la déclaration légale complète imprimée.
     labelShort: { fr: "J'ai lu la feuille d'info C1" },
     section: SECTION_AFFIRMATIONS,
     order: 1001,
@@ -244,6 +253,7 @@ export const C1_FINAL: PdfFormField[] = [
     label: {
       fr: "Je sais que je dois communiquer toute modification à mon organisme de paiement et que je peux être sanctionné(e) si je ne le fais pas",
     },
+    // Pas de `help` : le label EST la déclaration légale complète imprimée.
     labelShort: { fr: "Je signalerai tout changement" },
     section: SECTION_AFFIRMATIONS,
     order: 1002,
@@ -252,38 +262,54 @@ export const C1_FINAL: PdfFormField[] = [
   // ====================================================================
   // SECTION — ANNEXES (optionnelles)
   // ====================================================================
-  annexeJointe({
-    id: "annexeHandicap",
-    pdfFieldName: "une attestation de la DG Personnes handicapées du SPF Sécurité sociale",
-    order: 1100,
-  }),
-  annexeJointe({
-    id: "annexeExtraitPension",
-    pdfFieldName: "une copie de l'extrait de la pension",
-    order: 1101,
-  }),
-  annexeJointe({
-    id: "annexeC1Regis",
-    pdfFieldName: "un FORMULAIRE C1 ANNEXE REGIS",
-    order: 1102,
-  }),
-  annexeJointe({
-    id: "annexePermisSejour",
-    pdfFieldName: "une copie du permis de séjour et/ou du permis de travail",
-    order: 1103,
-  }),
-  annexeJointe({
-    id: "annexeAutre",
-    pdfFieldName: "autre",
-    label: "J'ai joint un autre document (préciser ci-dessous)",
-    order: 1104,
-  }),
+  {
+    ...annexeJointe({
+      id: "annexeHandicap",
+      pdfFieldName: "une attestation de la DG Personnes handicapées du SPF Sécurité sociale",
+      order: 1100,
+    }),
+    // Pas de `help` : le libellé nomme déjà exactement le document attendu.
+  },
+  {
+    ...annexeJointe({
+      id: "annexeExtraitPension",
+      pdfFieldName: "une copie de l'extrait de la pension",
+      order: 1101,
+    }),
+    // Pas de `help` : le libellé nomme déjà exactement le document attendu.
+  },
+  {
+    ...annexeJointe({
+      id: "annexeC1Regis",
+      pdfFieldName: "un FORMULAIRE C1 ANNEXE REGIS",
+      order: 1102,
+    }),
+    // Pas de `help` : le libellé nomme déjà exactement le document attendu.
+  },
+  {
+    ...annexeJointe({
+      id: "annexePermisSejour",
+      pdfFieldName: "une copie du permis de séjour et/ou du permis de travail",
+      order: 1103,
+    }),
+    // Pas de `help` : le libellé nomme déjà exactement le document attendu.
+  },
+  {
+    ...annexeJointe({
+      id: "annexeAutre",
+      pdfFieldName: "autre",
+      label: "J'ai joint un autre document (préciser ci-dessous)",
+      order: 1104,
+    }),
+    // Pas de `help` : le libellé nomme déjà exactement le document attendu.
+  },
   {
     id: "annexeAutreDescription",
     pdfFieldName: "Texte18",
     type: "text",
     required: false,
     label: { fr: "Description du document joint" },
+    // Pas de `help` : aucun texte imprimé propre à ce champ.
     visibleIf: { fieldId: "annexeAutre", op: "equals", value: true },
     section: SECTION_ANNEXES,
     order: 1105,

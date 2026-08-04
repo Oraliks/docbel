@@ -174,6 +174,8 @@ const TRANSFERE_ORGANISME_FIELD: PdfFormField = {
   type: "checkbox",
   required: false,
   label: { fr: "Je transfère mon dossier vers un autre organisme de paiement" },
+  // Pas de `help` : champ synthétique Docbel (pas de case PDF propre), déjà
+  // nommé explicitement.
   labelShort: { fr: "Je change d'organisme de paiement" },
   section: SECTION_DEMANDE,
   order: 8.5,

@@ -31,6 +31,8 @@ export const C1_IDENTITE: PdfFormField[] = [
     type: "text",
     required: true,
     label: { fr: "Nom" },
+    // Pas de `help` : aucun texte imprimé propre à ce champ (audit
+    // couverture aide de champ, 2026-08-04).
     prefillFrom: "profile.lastName",
     canonicalKey: "identity.nom",
     section: SECTION_IDENTITE,
@@ -42,6 +44,7 @@ export const C1_IDENTITE: PdfFormField[] = [
     type: "text",
     required: true,
     label: { fr: "Prénom" },
+    // Pas de `help` : aucun texte imprimé propre à ce champ.
     prefillFrom: "profile.firstName",
     canonicalKey: "identity.prenom",
     section: SECTION_IDENTITE,
@@ -162,6 +165,7 @@ export const C1_IDENTITE: PdfFormField[] = [
     type: "postal_be",
     required: true,
     label: { fr: "Code postal" },
+    // Pas de `help` : aucun texte imprimé propre à ce champ.
     placeholder: { fr: "1000" },
     prefillFrom: "profile.postalCode",
     canonicalKey: "adresse.codePostal",
@@ -211,6 +215,7 @@ export const C1_IDENTITE: PdfFormField[] = [
     type: "text",
     required: true,
     label: { fr: "Numéro" },
+    // Pas de `help` : aucun texte imprimé propre à ce champ.
     canonicalKey: "adresse.numero",
     section: SECTION_IDENTITE,
     order: -88,

@@ -109,6 +109,8 @@ export const C47_FIELDS: PdfFormField[] = [
     type: "fullname",
     required: true,
     label: { fr: "Prénom et nom" },
+    // Pas de `help` : le PDF n'imprime aucun texte explicatif autour de ce
+    // champ (audit couverture aide de champ, 2026-08-04) — rien à recopier.
     // Le bas de la case coïncide avec la ligne pointillée imprimée (mesuré :
     // écart de 0,03 pt sur les cinq guides de la page), exactement comme sur
     // le C1C — le texte se pose donc sur le trait au lieu de flotter au-dessus.
@@ -142,6 +144,7 @@ export const C47_FIELDS: PdfFormField[] = [
     type: "text",
     required: true,
     label: { fr: "Rue" },
+    // Pas de `help` : « Numéro et rue » n'a aucun texte imprimé propre.
     prefillFrom: "profile.street",
     canonicalKey: "adresse.rue",
     inheritedFromDossier: true,
@@ -154,6 +157,7 @@ export const C47_FIELDS: PdfFormField[] = [
     type: "text",
     required: true,
     label: { fr: "Numéro" },
+    // Pas de `help` : couvert par la même ligne imprimée que `rue`.
     canonicalKey: "adresse.numero",
     inheritedFromDossier: true,
     section: SECTION_ADRESSE,
@@ -167,6 +171,7 @@ export const C47_FIELDS: PdfFormField[] = [
     type: "postal_be",
     required: true,
     label: { fr: "Code postal" },
+    // Pas de `help` : « Code postal et commune » n'a aucun texte imprimé propre.
     prefillFrom: "profile.postalCode",
     canonicalKey: "adresse.codePostal",
     inheritedFromDossier: true,
@@ -179,6 +184,7 @@ export const C47_FIELDS: PdfFormField[] = [
     type: "text",
     required: true,
     label: { fr: "Commune" },
+    // Pas de `help` : couverte par la même ligne imprimée que `codePostal`.
     prefillFrom: "profile.city",
     canonicalKey: "adresse.commune",
     inheritedFromDossier: true,

@@ -92,6 +92,8 @@ export const C1_MOTIF: PdfFormField[] = [
     type: "checkbox",
     required: false,
     label: { fr: "Modification d'adresse" },
+    // Pas de `help` : le label recopie fidèlement la case imprimée, une des
+    // 5 situations du bloc « je déclare une modification concernant ».
     visibleIf: { fieldId: "motifIntroduction", op: "equals", value: "modification" },
     section: SECTION_DEMANDE,
     order: 5,
@@ -103,6 +105,7 @@ export const C1_MOTIF: PdfFormField[] = [
     type: "checkbox",
     required: false,
     label: { fr: "Modification du compte bancaire" },
+    // Pas de `help` : label fidèle à la case imprimée (cf. modificationAdresse).
     visibleIf: { fieldId: "motifIntroduction", op: "equals", value: "modification" },
     section: SECTION_DEMANDE,
     order: 6,
@@ -114,6 +117,7 @@ export const C1_MOTIF: PdfFormField[] = [
     type: "checkbox",
     required: false,
     label: { fr: "Modification de situation familiale" },
+    // Pas de `help` : label fidèle à la case imprimée (cf. modificationAdresse).
     visibleIf: { fieldId: "motifIntroduction", op: "equals", value: "modification" },
     section: SECTION_DEMANDE,
     order: 7,
@@ -125,6 +129,7 @@ export const C1_MOTIF: PdfFormField[] = [
     type: "checkbox",
     required: false,
     label: { fr: "Modification du permis de séjour" },
+    // Pas de `help` : label fidèle à la case imprimée (cf. modificationAdresse).
     visibleIf: { fieldId: "motifIntroduction", op: "equals", value: "modification" },
     section: SECTION_DEMANDE,
     order: 8,
@@ -171,6 +176,8 @@ export const C1_MOTIF: PdfFormField[] = [
     type: "date",
     required: false,
     label: { fr: "Date de création du document" },
+    // Pas de `help` : champ auto-rempli (`system.today`) et jamais rendu à
+    // l'écran (`isCreationDateField`) — le citoyen ne le voit jamais.
     prefillFrom: "system.today",
     // Guide en peigne, TROISIÈME alphabet du parc : ni le souligné ASCII des
     // dates du motif, ni le glyphe SymbolMT du C1B, mais huit U+23AF

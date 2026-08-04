@@ -170,6 +170,7 @@ function grilleHoraire(opts: {
       type: "checkbox",
       required: false,
       label: { fr: jour.charAt(0).toUpperCase() + jour.slice(1) },
+      // Pas de `help` : le nom du jour EST déjà toute l'information.
       visibleIf: { fieldId: opts.parentId, op: "equals", value: opts.parentValue },
       section: opts.section,
       order: ordre(),
@@ -184,6 +185,7 @@ function grilleHoraire(opts: {
       type: "checkbox",
       required: false,
       label: { fr: "Avant 7 h" },
+      // Pas de `help` : la tranche horaire EST déjà toute l'information.
       section: opts.section,
       order: ordre(),
       scheduleGrid: { row: jour, col: "avant7h" },
@@ -194,6 +196,7 @@ function grilleHoraire(opts: {
       type: "checkbox",
       required: false,
       label: { fr: "Entre 7 h et 18 h" },
+      // Pas de `help` : la tranche horaire EST déjà toute l'information.
       section: opts.section,
       order: ordre(),
       scheduleGrid: { row: jour, col: "entre7h18h" },
@@ -204,6 +207,7 @@ function grilleHoraire(opts: {
       type: "checkbox",
       required: false,
       label: { fr: "Après 18 h" },
+      // Pas de `help` : la tranche horaire EST déjà toute l'information.
       section: opts.section,
       order: ordre(),
       scheduleGrid: { row: jour, col: "apres18h" },
@@ -216,6 +220,7 @@ function grilleHoraire(opts: {
     type: "checkbox",
     required: false,
     label: { fr: "Samedi" },
+    // Pas de `help` : le nom du jour EST déjà toute l'information.
     visibleIf: { fieldId: opts.parentId, op: "equals", value: opts.parentValue },
     section: opts.section,
     order: ordre(),
@@ -229,6 +234,7 @@ function grilleHoraire(opts: {
     type: "checkbox",
     required: false,
     label: { fr: "Dimanche" },
+    // Pas de `help` : le nom du jour EST déjà toute l'information.
     visibleIf: { fieldId: opts.parentId, op: "equals", value: opts.parentValue },
     section: opts.section,
     order: ordre(),

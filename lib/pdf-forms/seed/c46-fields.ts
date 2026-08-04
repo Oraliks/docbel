@@ -141,6 +141,8 @@ export const C46_FIELDS: PdfFormField[] = [
     alignTextToGuide: true,
     // Le libellé imprimé est « Nom et prénom » → on assemble dans cet ordre.
     nameOrder: "last-first",
+    // Pas de `help` : le PDF n'imprime aucun texte explicatif autour de ce
+    // champ (audit couverture aide de champ, 2026-08-04) — rien à recopier.
     required: true,
     label: { fr: "Nom et prénom" },
     inheritedFromDossier: true,
@@ -208,6 +210,11 @@ export const C46_FIELDS: PdfFormField[] = [
     type: "text",
     required: false,
     label: { fr: "Nom de l'organisme (mandat 3)" },
+    // Même patron que organisme2 (jumeau conditionnel) — le texte du PDF sur
+    // la nature de l'organisme est déjà porté par organisme1.
+    help: {
+      fr: "À remplir uniquement si vous déclarez un troisième mandat distinct.",
+    },
     visibleIf: { fieldId: "organisme2", op: "matchesRegex", value: NON_VIDE },
     section: SECTION_MANDAT,
     order: 5,

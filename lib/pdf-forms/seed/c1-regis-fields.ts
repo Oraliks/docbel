@@ -210,6 +210,12 @@ function champsTableau(ligne: Ligne, order: number): PdfFormField[] {
             ? `${ligne.label} — indication sur le C1 (nom, prénom)`
             : `${ligne.label} — indication sur le C1`,
       },
+      // Recopie ce que le citoyen a déjà indiqué sur le C1 principal — ce
+      // document sert précisément à comparer cette valeur aux registres
+      // officiels, pas à recueillir une nouvelle réponse.
+      help: {
+        fr: "Recopiez ici exactement ce que vous avez indiqué sur le formulaire C1 — c'est cette valeur qui est comparée aux registres officiels.",
+      },
       visibleIf: suiteVisible,
       section: SECTION_GRILLE_DIFFERENCES,
       order: order + 1,

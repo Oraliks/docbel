@@ -968,6 +968,7 @@ export const C1A_FIELDS: PdfFormField[] = [
     type: "radio",
     required: true,
     label: { fr: "Exercez-vous cette activité comme salarié ?" },
+    // Pas de `help` : le label EST déjà la question complète imprimée.
     options: YN,
     visibleIf: { fieldId: "autreActiviteAccessoire", op: "equals", value: "oui" },
     section: SECTION_ACTIVITES,
@@ -1024,6 +1025,7 @@ export const C1A_FIELDS: PdfFormField[] = [
     type: "text",
     required: true,
     label: { fr: "À quelle adresse exercez-vous cette activité ? — rue et numéro" },
+    // Pas de `help` : le label EST déjà la question complète imprimée.
     visibleIf: { fieldId: "autreActiviteAccessoire", op: "equals", value: "oui" },
     section: SECTION_ADRESSE,
     order: 65,
@@ -1039,6 +1041,7 @@ export const C1A_FIELDS: PdfFormField[] = [
     type: "text",
     required: false,
     label: { fr: "Code postal et commune (activité accessoire)" },
+    // Pas de `help` : aucun texte imprimé propre à ce champ.
     visibleIf: { fieldId: "autreActiviteAccessoire", op: "equals", value: "oui" },
     section: SECTION_ADRESSE,
     order: 66,
@@ -1054,6 +1057,7 @@ export const C1A_FIELDS: PdfFormField[] = [
     type: "radio",
     required: true,
     label: { fr: "J'exerce l'activité comme :" },
+    // Pas de `help` : les deux options recopient fidèlement les cases imprimées.
     options: [
       { value: "personne-physique", label: { fr: "Personne physique" } },
       { value: "mandataire", label: { fr: "Mandataire, administrateur ou gestionnaire" } },
@@ -1068,6 +1072,7 @@ export const C1A_FIELDS: PdfFormField[] = [
     type: "radio",
     required: false,
     label: { fr: "Je dispose d'un numéro d'entreprise :" },
+    // Pas de `help` : le label EST déjà la question complète imprimée.
     options: YN,
     visibleIf: { fieldId: "formeActivite", op: "equals", value: "mandataire" },
     section: SECTION_ACTIVITES,
@@ -1107,6 +1112,7 @@ export const C1A_FIELDS: PdfFormField[] = [
     type: "bce",
     required: false,
     label: { fr: "Numéro d'entreprise (BCE)" },
+    // Pas de `help` : aucun texte imprimé propre à ce champ.
     visibleIf: { fieldId: "disposeNumeroEntreprise", op: "equals", value: "oui" },
     section: SECTION_ACTIVITES,
     order: 69,
@@ -1144,6 +1150,7 @@ export const C1A_FIELDS: PdfFormField[] = [
     type: "textarea",
     required: false,
     label: { fr: "Je décris mon activité" },
+    // Pas de `help` : aucun texte imprimé propre à ce champ.
     visibleIf: { fieldId: "autreActiviteAccessoire", op: "equals", value: "oui" },
     section: SECTION_ACTIVITES,
     order: 70,

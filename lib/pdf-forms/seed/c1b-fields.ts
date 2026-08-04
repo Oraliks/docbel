@@ -595,6 +595,7 @@ export const C1B_FIELDS: PdfFormField[] = [
     type: "checkbox",
     required: false,
     label: { fr: "Je joins : décision(s) d'octroi d'institutions belges" },
+    // Pas de `help` : le libellé nomme déjà exactement le document attendu.
     // ANCRE du groupe : `buildValidator` attache l'erreur au premier champ
     // visible qui porte la clé, et c'est donc ce libellé-ci qui la reçoit. Le
     // message par défaut (« Sélectionnez au moins une option ci-dessus ») dirait
@@ -613,6 +614,7 @@ export const C1B_FIELDS: PdfFormField[] = [
     type: "checkbox",
     required: false,
     label: { fr: "Je joins : décision(s) d'octroi d'institutions étrangères" },
+    // Pas de `help` : le libellé nomme déjà exactement le document attendu.
     requiredGroup: GROUPE_ANNEXES,
     section: SECTION_ANNEXES,
     order: 61,
@@ -623,6 +625,7 @@ export const C1B_FIELDS: PdfFormField[] = [
     type: "checkbox",
     required: false,
     label: { fr: "Je joins : copie(s) de paiement" },
+    // Pas de `help` : le libellé nomme déjà exactement le document attendu.
     requiredGroup: GROUPE_ANNEXES,
     section: SECTION_ANNEXES,
     order: 62,
@@ -633,6 +636,7 @@ export const C1B_FIELDS: PdfFormField[] = [
     type: "checkbox",
     required: false,
     label: { fr: "Je joins : une copie du modèle 74 ou 74bis PSS ou de la Déclaration Pension, activité professionnelle et revenu de remplacement du Service fédéral des Pensions" },
+    // Pas de `help` : le libellé nomme déjà exactement le document attendu.
     requiredGroup: GROUPE_ANNEXES,
     section: SECTION_ANNEXES,
     order: 63,
@@ -643,6 +647,7 @@ export const C1B_FIELDS: PdfFormField[] = [
     type: "checkbox",
     required: false,
     label: { fr: "Je joins : autre document, à savoir…" },
+    // Pas de `help` : le libellé nomme déjà exactement le document attendu.
     requiredGroup: GROUPE_ANNEXES,
     section: SECTION_ANNEXES,
     order: 64,
@@ -668,6 +673,7 @@ export const C1B_FIELDS: PdfFormField[] = [
     // aucune pièce.
     required: true,
     label: { fr: "Description du document joint" },
+    // Pas de `help` : aucun texte imprimé propre à ce champ.
     visibleIf: { fieldId: "annexeAutre", op: "equals", value: true },
     section: SECTION_ANNEXES,
     order: 65,

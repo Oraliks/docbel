@@ -195,6 +195,7 @@ function champsTableau(ligne: Ligne, order: number): PdfFormField[] {
       type: "radio",
       required: false,
       label: { fr: `${ligne.label} — y a-t-il une différence avec les registres ?` },
+      // Pas de `help` : le label EST déjà la question complète.
       options: YN,
       section: SECTION_GRILLE_DIFFERENCES,
       order,
@@ -282,6 +283,7 @@ export const C1_REGIS_FIELDS: PdfFormField[] = [
     type: "text",
     required: true,
     label: { fr: "Nom" },
+    // Pas de `help` : aucun texte imprimé propre à ce champ.
     prefillFrom: "profile.lastName",
     canonicalKey: "identity.nom",
     // Dans un dossier, le C1 a déjà donné nom et prénom : les deux champs
@@ -298,6 +300,7 @@ export const C1_REGIS_FIELDS: PdfFormField[] = [
     type: "text",
     required: true,
     label: { fr: "Prénom" },
+    // Pas de `help` : aucun texte imprimé propre à ce champ.
     prefillFrom: "profile.firstName",
     canonicalKey: "identity.prenom",
     inheritedFromDossier: true,
@@ -360,6 +363,7 @@ export const C1_REGIS_FIELDS: PdfFormField[] = [
     type: "number",
     required: false,
     label: { fr: "Nombre d'annexes jointes" },
+    // Pas de `help` : aucun texte imprimé propre à ce champ.
     section: SECTION_ANNEXES,
     order: 900,
   },

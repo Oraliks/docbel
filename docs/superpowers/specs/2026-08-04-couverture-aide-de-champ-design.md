@@ -1,5 +1,11 @@
 # Spec — Couverture de l'aide de champ (chantier 4 : assistant par champ, sans IA)
 
+**Statut : TERMINÉ 2026-08-04** — 8 documents traités (C46, C47,
+C1-Partenaire, C1C, C1, C1B, C1-Regis, C1A). 13 vraies aides ajoutées au
+total (le reste, largement majoritaire, était déjà auto-explicatif une fois
+regroupé par famille — cf. commits individuels par document). Rollout
+(re-semis) laissé à Oraliks, comme toute évolution de seed.
+
 Date : 2026-08-04 · Design **validé par Oraliks** (brainstorm de session).
 Prochaine étape : plan d'implémentation par document, en commençant par le
 plus petit (C46).

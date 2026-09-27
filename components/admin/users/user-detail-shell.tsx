@@ -28,6 +28,7 @@ import { cn } from "@/lib/utils"
 import { formatDateTime as formatFixedDateTime } from "@/lib/i18n/format"
 import { defaultLocale } from "@/i18n/locales"
 import type { User360 } from "@/lib/admin/user-360"
+import { USER_TABS, type UserTab } from "@/lib/admin/user-tabs"
 import { isBanActive, isLockActive } from "@/lib/admin/user-flags"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -62,16 +63,6 @@ const SEGMENT_KEYS: Record<string, "segmentPartenaire" | "segmentEmployeur"> = {
   partenaire: "segmentPartenaire",
   employeur: "segmentEmployeur",
 }
-
-export const USER_TABS = [
-  "apercu",
-  "securite",
-  "profil",
-  "activite",
-  "confidentialite",
-  "edition",
-] as const
-export type UserTab = (typeof USER_TABS)[number]
 
 function isUserTab(v: string): v is UserTab {
   return (USER_TABS as readonly string[]).includes(v)

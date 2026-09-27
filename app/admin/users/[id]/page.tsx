@@ -5,11 +5,8 @@ import {
   loadUserProfileDetail,
   loadUserSecurity,
 } from "@/lib/admin/user-360"
-import {
-  UserDetailShell,
-  USER_TABS,
-  type UserTab,
-} from "@/components/admin/users/user-detail-shell"
+import { UserDetailShell } from "@/components/admin/users/user-detail-shell"
+import { USER_TABS, type UserTab } from "@/lib/admin/user-tabs"
 import { UserSecurityTab } from "@/components/admin/users/user-security-tab"
 import { UserProfileTab } from "@/components/admin/users/user-profile-tab"
 import { UserActivityTab } from "@/components/admin/users/user-activity-tab"

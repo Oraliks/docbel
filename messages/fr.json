@@ -4637,6 +4637,8 @@
       "errAccountInactive": "Ce compte est inactif. Contactez un administrateur.",
       "errAccountLocked": "Compte temporairement verrouillé après plusieurs tentatives.",
       "errSignInFailed": "Connexion impossible. Vérifiez vos identifiants.",
+      "errRateLimited": "Trop de tentatives. Patientez quelques instants avant de réessayer.",
+      "errAuthUnavailable": "La connexion est temporairement indisponible. Réessayez dans quelques instants.",
       "errUnknown": "Erreur inconnue",
       "backToSignIn": "Retour à la connexion",
       "forgotEyebrow": "Accès oublié",

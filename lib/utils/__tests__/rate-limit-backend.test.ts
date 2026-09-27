@@ -13,7 +13,7 @@ beforeEach(() => {
   vi.stubEnv("RATE_LIMIT_KEY_SECRET", "rate-limit-backend-fixture");
   vi.stubEnv("NODE_ENV", "test");
   db.$executeRaw.mockResolvedValue(0);
-  db.$queryRaw.mockResolvedValue([{ count: 1, resetAtMs: BigInt(Date.now() + 60_000) }]);
+  db.$queryRaw.mockResolvedValue([{ count: 1, remainingMs: BigInt(60_000) }]);
 });
 afterEach(() => vi.unstubAllEnvs());
 

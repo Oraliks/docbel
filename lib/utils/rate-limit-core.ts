@@ -46,7 +46,7 @@ export function createPostgresRateLimiter(db: RateLimitDatabase, secret: string)
             AND target."resetAt" <= clock_timestamp()
         `;
       }
-      const rows = await db.$queryRaw<Array<{ count: number; resetAtMs: bigint }>>`
+      const rows = await db.$queryRaw<Array<{ count: number; remainingMs: bigint }>>`
         WITH tick AS (SELECT clock_timestamp() AS now)
         INSERT INTO "RateLimitWindow" ("keyHash", "count", "resetAt")
         SELECT ${keyHash}, 1, tick.now + (${options.windowMs} * interval '1 millisecond') FROM tick
@@ -56,11 +56,20 @@ export function createPostgresRateLimiter(db: RateLimitDatabase, secret: string)
           "resetAt" = CASE WHEN "RateLimitWindow"."resetAt" <= (SELECT now FROM tick)
             THEN (SELECT now FROM tick) + (${options.windowMs} * interval '1 millisecond')
             ELSE "RateLimitWindow"."resetAt" END
-        RETURNING "count", (EXTRACT(EPOCH FROM "resetAt") * 1000)::bigint AS "resetAtMs"
+        RETURNING "count",
+          GREATEST(0, CEIL(EXTRACT(EPOCH FROM ("resetAt" - clock_timestamp())) * 1000))::bigint AS "remainingMs"
       `;
       if (rows.length !== 1) return unavailableRateLimit();
-      const { count, resetAtMs } = rows[0];
-      return { ok: count <= options.max, remaining: Math.max(0, options.max - count), resetAt: Number(resetAtMs) };
+      const { count, remainingMs } = rows[0];
+      if (!Number.isSafeInteger(count) || count < 1 || count > options.max + 1 ||
+          typeof remainingMs !== "bigint" || remainingMs < BigInt(0) || remainingMs > BigInt(options.windowMs)) {
+        return unavailableRateLimit();
+      }
+      // Enforcement uses only PostgreSQL's clock. Translate its remaining
+      // duration to the application's clock for Retry-After/X-RateLimit-Reset.
+      // Measuring from receipt conservatively includes any response latency;
+      // comparing a DB epoch with Date.now() would break under clock skew.
+      return { ok: count <= options.max, remaining: Math.max(0, options.max - count), resetAt: Date.now() + Number(remainingMs) };
     } catch {
       // Never silently fall back to per-instance memory on a backend failure.
       // Existing callers turn this into their established controlled 429.

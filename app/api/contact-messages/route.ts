@@ -1,8 +1,11 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { Resend } from "resend";
+import { z } from "zod";
 import { logActivity } from "@/lib/activity-logger";
 import { checkRateLimit, getClientIp } from "@/lib/utils/rate-limit";
 import { ensureWriteAllowed } from "@/lib/admin/readonly-guard";
+import { apiError, apiOk } from "@/lib/api/response";
+import { tooManyRequests } from "@/lib/api/rate-limit-response";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -12,6 +15,33 @@ const LIMITS = {
   subject: { min: 3, max: 200 },
   message: { min: 10, max: 5000 },
 } as const;
+
+// Check the raw value before trimming: CR/LF at either end is invalid too.
+// These three fields become email headers; the message may remain multiline.
+function headerField(error: string) {
+  return z.string({ error: "Tous les champs sont obligatoires" })
+    .refine((value) => !/[\r\n]/.test(value), { error })
+    .trim()
+    .min(1, "Tous les champs sont obligatoires");
+}
+
+const contactSchema = z.object({
+  name: headerField("Nom invalide")
+    .min(LIMITS.name.min, "Nom invalide")
+    .max(LIMITS.name.max, "Nom invalide"),
+  email: headerField("Email invalide")
+    .toLowerCase()
+    .max(LIMITS.email.max, "Email invalide")
+    .regex(EMAIL_RE, "Email invalide"),
+  subject: headerField("Sujet invalide")
+    .min(LIMITS.subject.min, "Sujet invalide")
+    .max(LIMITS.subject.max, "Sujet invalide"),
+  message: z.string({ error: "Tous les champs sont obligatoires" })
+    .trim()
+    .min(1, "Tous les champs sont obligatoires")
+    .min(LIMITS.message.min, "Message invalide")
+    .max(LIMITS.message.max, "Message invalide"),
+});
 
 function escapeHtml(s: string): string {
   return s
@@ -44,46 +74,28 @@ export async function POST(request: NextRequest) {
       max: 3,
     });
     if (!rl.ok) {
-      return NextResponse.json(
-        { error: "Trop de messages envoyés — réessayez dans quelques minutes" },
-        { status: 429, headers: { "Content-Type": "application/json; charset=utf-8" } }
-      );
+      return tooManyRequests({
+        limit: 3,
+        resetAt: rl.resetAt,
+        message: "Trop de messages envoyés — réessayez dans quelques minutes",
+      });
     }
 
-    const body = await request.json();
-    const name = typeof body.name === "string" ? body.name.trim() : "";
-    const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
-    const subject = typeof body.subject === "string" ? body.subject.trim() : "";
-    const message = typeof body.message === "string" ? body.message.trim() : "";
-
-    if (!name || !email || !subject || !message) {
-      return NextResponse.json(
-        { error: "Tous les champs sont obligatoires" },
-        { status: 400 }
-      );
+    const body = await request.json().catch(() => null);
+    const parsed = contactSchema.safeParse(body);
+    if (!parsed.success) {
+      return apiError(400, body === null || typeof body !== "object" || Array.isArray(body)
+        ? "Tous les champs sont obligatoires"
+        : parsed.error.issues[0].message);
     }
-    if (name.length < LIMITS.name.min || name.length > LIMITS.name.max) {
-      return NextResponse.json({ error: "Nom invalide" }, { status: 400 });
-    }
-    if (email.length > LIMITS.email.max || !EMAIL_RE.test(email)) {
-      return NextResponse.json({ error: "Email invalide" }, { status: 400 });
-    }
-    if (subject.length < LIMITS.subject.min || subject.length > LIMITS.subject.max) {
-      return NextResponse.json({ error: "Sujet invalide" }, { status: 400 });
-    }
-    if (message.length < LIMITS.message.min || message.length > LIMITS.message.max) {
-      return NextResponse.json({ error: "Message invalide" }, { status: 400 });
-    }
+    const { name, email, subject, message } = parsed.data;
 
     const apiKey = process.env.RESEND_API_KEY;
     const noreplyFrom = process.env.EMAIL_FROM;
     const contactInbox = process.env.CONTACT_EMAIL_FROM;
     if (!apiKey || !noreplyFrom || !contactInbox) {
       console.error("[contact-form] missing env vars (RESEND_API_KEY/EMAIL_FROM/CONTACT_EMAIL_FROM)");
-      return NextResponse.json(
-        { error: "Service de messagerie indisponible" },
-        { status: 503 }
-      );
+      return apiError(503, "Service de messagerie indisponible");
     }
 
     const formattedSubject = `[Formulaire] ${subject}`;
@@ -124,10 +136,7 @@ export async function POST(request: NextRequest) {
 
     if (result.error) {
       console.error("[contact-form] Resend error:", result.error);
-      return NextResponse.json(
-        { error: "Échec de l'envoi" },
-        { status: 502 }
-      );
+      return apiError(502, "Échec de l'envoi");
     }
 
     await logActivity(
@@ -139,12 +148,9 @@ export async function POST(request: NextRequest) {
       `Sujet: ${subject}`
     );
 
-    return NextResponse.json({ status: "ok" }, { status: 201 });
+    return apiOk({ status: "ok" }, { status: 201 });
   } catch (err) {
     console.error("[contact-form] failed:", err);
-    return NextResponse.json(
-      { error: "Failed to send message" },
-      { status: 500 }
-    );
+    return apiError(500, "Failed to send message");
   }
 }

@@ -38,10 +38,13 @@ describe("Copie « Mes démarches » ↔ politique de rétention", () => {
 
   it("n'attache PAS la suppression des données à l'expiration du code", () => {
     const note = dossier.resumeNoCodeNote;
-    // La note parle bien du code, et de sa durée à lui.
-    expect(note).toContain(`${RESUME_CODE_DEFAULT_TTL_DAYS} jours`);
-    // …mais elle ne doit pas promettre que les données disparaissent avec lui.
-    expect(note.toLowerCase()).not.toMatch(/supprim/);
+    // La durée par défaut figure dans le libellé utilisé quand la date manque.
+    expect(dossier.bannerExpiresFallback).toBe(`${RESUME_CODE_DEFAULT_TTL_DAYS} jours`);
+    // La notice distingue explicitement expiration et effacement. Interdire le
+    // mot « supprime » rejetterait aussi cette négation correcte.
+    expect(note).toMatch(/code de reprise/i);
+    expect(note).toContain("ne supprime pas immédiatement les données");
+    expect(dossier.resumeExpiredError.toLowerCase()).not.toMatch(/supprim/);
   });
 
   it("garde les deux durées distinctes — le code n'est pas la donnée", () => {

@@ -6,6 +6,9 @@ import { checkRateLimit, getClientIp } from "@/lib/utils/rate-limit";
 import { normalizeResumeCode } from "@/lib/bundles/resume-code";
 import { hashResumeCode } from "@/lib/bundles/resume-code-hash";
 import { ensureWriteAllowed } from "@/lib/admin/readonly-guard";
+import { getTranslations } from "next-intl/server";
+import { getUserLocale } from "@/i18n/locale";
+import { formatDate } from "@/lib/i18n/format";
 
 // Même mécanisme que lib/booking/emails.ts et lib/formations/emails.ts : pas
 // de nouvel env, on réutilise l'URL publique de l'app (déjà documentée README).
@@ -97,13 +100,11 @@ export async function POST(
     );
   }
 
+  const locale = await getUserLocale();
+  const t = await getTranslations({ locale, namespace: "public.dossier" });
   const expiresAtText = run.resumeCodeExpiresAt
-    ? run.resumeCodeExpiresAt.toLocaleDateString("fr-BE", {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      })
-    : "30 jours";
+    ? formatDate(run.resumeCodeExpiresAt, locale)
+    : t("bannerExpiresFallback");
 
   const resend = new Resend(apiKey);
   try {
@@ -123,11 +124,9 @@ export async function POST(
         ``,
         `Et entrez le code ci-dessus.`,
         ``,
-        `Ce code expire le ${expiresAtText}. Aucune donnée nominative n'est`,
-        `liée à ce code — il vous donne uniquement accès à votre dossier en cours.`,
+        `Ce code expire le ${expiresAtText}.`,
         ``,
-        `Si vous ne reprenez pas le dossier avant cette date, toutes les données`,
-        `saisies seront automatiquement supprimées. Conservez bien cet email.`,
+        t("resumeNoCodeNote"),
         ``,
         `Cordialement,`,
         `L'équipe beldoc`,

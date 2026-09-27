@@ -1,6 +1,7 @@
 # Sous-agent `verif-reglementation` — Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **Historique :** la configuration Claude décrite ici a été remplacée le 28/09/2026.
+> Utiliser désormais [la procédure indépendante de l'assistant](../../agents/chomage/VERIFICATION_WORKFLOW.md).
 
 **Goal:** Doter DocBel d'un sous-agent vérificateur réglementaire chômage, en lecture seule et jamais bloquant, invocable à la main (`/verif-reglementation`) ou en réflexe avant commit.
 

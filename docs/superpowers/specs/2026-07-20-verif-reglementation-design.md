@@ -47,7 +47,10 @@ Raisons :
 
 ## 3. Architecture — 3 fichiers créés + 1 édition
 
-### 3.1 Le sous-agent — `.claude/agents/verif-reglementation.md`
+### 3.1 Le sous-agent — configuration historique
+
+> Remplacée le 28/09/2026 par [VERIFICATION_WORKFLOW.md](../../agents/chomage/VERIFICATION_WORKFLOW.md).
+> Les chemins `.claude/` ci-dessous décrivent l'ancienne intégration et ne sont plus utilisés.
 
 Fichier de définition d'agent Claude Code (frontmatter + prompt système).
 

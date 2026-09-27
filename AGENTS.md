@@ -1,7 +1,15 @@
 # AGENTS.md
 
-Guide pour Codex / Claude Code sur ce dépôt. Démarrage de session : voir
-[`CLAUDE.md`](CLAUDE.md). Installation/commandes : [`README.md`](README.md).
+Guide de travail pour Codex et les contributeurs de ce dépôt.
+Installation et commandes : [`README.md`](README.md).
+
+## Démarrage de session
+Lire ce fichier, [`README.md`](README.md), la carte
+[`PROJECT_INDEX.md`](docs/context/PROJECT_INDEX.md) et les priorités
+[`NEXT_ACTIONS.md`](docs/tasks/NEXT_ACTIONS.md). Charger ensuite uniquement les
+règles spécialisées utiles à la tâche. Les audits anciens et les plans conservés
+sont des références historiques : leurs états et consignes d'outillage peuvent
+être dépassés ; les règles de ce fichier et le code actuel font foi.
 
 > **Une session = un objectif précis.** Pas de ré-audit global, pas de refonte.
 > Lire le nécessaire, agir par lots de **3–5 fichiers max**.
@@ -75,8 +83,10 @@ next-intl 4 · Zod 4 · Tiptap 2 · pnpm 10. Détail + commandes :
 **Vérification réglementaire (chômage)**
 - Tout lot touchant `lib/calculators/**`, un arbre de décision / runtime d'orientation,
   `lib/pdf-forms/seed/**`, `docs/knowledge/chomage/**`, ou un contenu affirmant des
-  conditions / montants / durées : lancer **`/verif-reglementation`** (ou dispatcher le
-  sous-agent `verif-reglementation`) **avant commit**. Rapport informatif, **jamais bloquant**.
+  conditions / montants / durées : appliquer la
+  [procédure de vérification](docs/agents/chomage/VERIFICATION_WORKFLOW.md)
+  **avant commit**, directement ou avec un sous-agent `verif-reglementation`.
+  Rapport informatif, **jamais bloquant**. Aucune commande propre à un assistant requise.
   Charte : [`docs/agents/chomage/AGENT_CHOMAGE.md`](docs/agents/chomage/AGENT_CHOMAGE.md).
 
 ## Modèle utilisateur (résumé)
@@ -96,8 +106,8 @@ défini mais inutilisé (dette — cf. TECH_DEBT_QUEUE).
 
 ## Validation
 ```bash
-pnpm lint     # ⚠️ 129 erreurs / 52 warnings PRÉ-EXISTANTS — ne pas en ajouter (pas de zéro forcé)
-pnpm test     # vitest (~2 320 tests, joués en CI à chaque push)
+pnpm lint     # ne pas ajouter d'erreur ; baseline CI décrite dans STACK_AND_COMMANDS
+pnpm test     # suite Vitest complète, également jouée en CI
 pnpm build    # build + typecheck (PAS de "pnpm typecheck")
 pnpm i18n:check
 ```

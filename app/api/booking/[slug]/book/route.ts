@@ -35,7 +35,7 @@ export async function POST(
   ctx: { params: Promise<{ slug: string }> },
 ) {
   const ip = getClientIp(req);
-  if (!checkRateLimit(`booking-book:${ip}`, { windowMs: 60 * 60_000, max: 12 }).ok) {
+  if (!(await checkRateLimit(`booking-book:${ip}`, { windowMs: 60 * 60_000, max: 12 })).ok) {
     return NextResponse.json(
       { error: "Trop de demandes — réessayez plus tard" },
       { status: 429, headers: json },

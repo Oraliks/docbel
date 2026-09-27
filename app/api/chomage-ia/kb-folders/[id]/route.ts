@@ -55,7 +55,7 @@ export async function PATCH(req: NextRequest, { params }: RouteContext) {
   if (!auth.isAuthorized) return auth.error;
 
   const ip = getClientIp(req);
-  const rl = checkRateLimit(`chomage-ia:kb-folders:patch:${ip}`, {
+  const rl = await checkRateLimit(`chomage-ia:kb-folders:patch:${ip}`, {
     windowMs: 60_000,
     max: 80,
   });

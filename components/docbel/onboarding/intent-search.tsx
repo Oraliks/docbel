@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useId, useState, useTransition } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { AlertCircle, ArrowRight, Loader2, MessageCircle, Sparkles } from "lucide-react";
@@ -30,9 +30,12 @@ interface IntentSearchProps {
 export function IntentSearch({ query }: IntentSearchProps) {
   const t = useTranslations("public.dossier");
   const [pending, startTransition] = useTransition();
+  const privacyNoticeId = useId();
+  const [aiAllowedForQuery, setAiAllowedForQuery] = useState<string | null>(null);
   const [result, setResult] = useState<{ query: string; response: IntentResponse } | null>(null);
   const [error, setError] = useState<{ query: string; message: string } | null>(null);
   const normalizedQuery = query.trim();
+  const allowAi = aiAllowedForQuery === normalizedQuery;
   const response = result?.query === normalizedQuery ? result.response : null;
   const visibleError = error?.query === normalizedQuery ? error.message : null;
 
@@ -44,7 +47,7 @@ export function IntentSearch({ query }: IntentSearchProps) {
         const res = await fetch("/api/intent-detect", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ query: normalizedQuery }),
+          body: JSON.stringify({ query: normalizedQuery, allowAi }),
         });
         if (!res.ok) {
           const data = await res.json().catch(() => ({}));
@@ -67,6 +70,20 @@ export function IntentSearch({ query }: IntentSearchProps) {
 
   return (
     <div className="flex flex-col gap-3">
+      <label className="flex items-start gap-2 text-sm text-[color:var(--glass-ink-soft)]">
+        <input
+          type="checkbox"
+          checked={allowAi}
+          disabled={pending}
+          onChange={(event) => setAiAllowedForQuery(event.target.checked ? normalizedQuery : null)}
+          className="mt-1 size-4 shrink-0 accent-[color:var(--glass-accent-deep)]"
+          aria-describedby={privacyNoticeId}
+        />
+        <span>{t("intentAiChoice")}</span>
+      </label>
+      <p id={privacyNoticeId} className="text-xs text-[color:var(--glass-ink-faint)]">
+        {t("intentAiPrivacy")}
+      </p>
       <Button
         type="button"
         size="lg"

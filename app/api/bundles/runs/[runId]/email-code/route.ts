@@ -39,7 +39,7 @@ export async function POST(
 
   // Rate limit
   const ip = getClientIp(req);
-  const rl = checkRateLimit(`email-resume-code:${ip}`, {
+  const rl = await checkRateLimit(`email-resume-code:${ip}`, {
     windowMs: 15 * 60_000,
     max: 5,
   });

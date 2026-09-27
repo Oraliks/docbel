@@ -3,6 +3,7 @@ import { BookingStatus } from "@prisma/client";
 
 import { prisma } from "@/lib/prisma";
 import { checkRateLimit, getClientIp } from "@/lib/utils/rate-limit";
+import { apiError } from "@/lib/api/response";
 import { locationAddress } from "@/lib/booking/route-bureau";
 import { sendManagementLink } from "@/lib/booking/emails";
 
@@ -26,7 +27,11 @@ export async function POST(
   ctx: { params: Promise<{ slug: string }> },
 ) {
   const ip = getClientIp(req);
-  if (!checkRateLimit(`booking-resend:${ip}`, { windowMs: 60_000, max: 5 }).ok) {
+  const rl = await checkRateLimit(`booking-resend:${ip}`, { windowMs: 60_000, max: 5 });
+  if (rl.unavailable) return apiError(503, "Service temporairement indisponible", {
+    code: "rate_limit_unavailable", headers: { "Retry-After": "5" },
+  });
+  if (!rl.ok) {
     return NextResponse.json({ ok: true }, { headers: json });
   }
 

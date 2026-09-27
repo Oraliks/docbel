@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { useAuthSession } from "@/components/auth-session-provider"
@@ -144,6 +144,11 @@ export function ImpersonationBanner() {
   const [switching, setSwitching] = useState<string | null>(null)
   const [extending, setExtending] = useState(false)
   const [accounts, setAccounts] = useState<DemoAccount[] | null>(null)
+  // Toujours appeler ce hook, y compris sans session ou en mode visiteur :
+  // l'ordre des hooks doit rester stable quand la session change.
+  const [reasonTarget, setReasonTarget] = useState<ImpersonationTarget | null>(
+    null
+  )
   const [now, setNow] = useState<number>(() =>
     typeof window === "undefined" ? 0 : Date.now()
   )
@@ -224,17 +229,19 @@ export function ImpersonationBanner() {
   /// reload "en arrière-plan" si l'admin n'a pas la page active — on déclenche
   /// seulement à la 1ère détection d'expiration et on POST stop-impersonate
   /// (idempotent, cf. #5) pour que le serveur ferme proprement l'audit log.
-  const [redirected, setRedirected] = useState(false)
+  // Verrou d'un effet externe, sans incidence sur le rendu : le ref empêche
+  // aussi un double POST lors d'une réexécution de l'effet en Strict Mode.
+  const redirected = useRef(false)
   useEffect(() => {
-    if (!isImpersonating || redirected) return
+    if (!isImpersonating || redirected.current) return
     if (secondsLeft === null || secondsLeft > 0) return
-    setRedirected(true)
+    redirected.current = true
     toast.info("Session d'impersonation expirée — retour admin")
     void fetch("/api/admin/stop-impersonate", { method: "POST" }).finally(() => {
       router.push("/admin")
       router.refresh()
     })
-  }, [secondsLeft, isImpersonating, redirected, router])
+  }, [secondsLeft, isImpersonating, router])
 
   /// Branche dédiée au mode visiteur anonyme (session=null + cookie marqueur).
   /// UI plus minimale : pas de countdown (le stash dure 1h max mais la session
@@ -352,12 +359,6 @@ export function ImpersonationBanner() {
       setTogglingRO(false)
     }
   }
-
-  // Dialog raison (cf. ImpersonationReasonDialog) — ouvert quand on switche
-  // en prod. En dev, le switcher exécute direct sans demander.
-  const [reasonTarget, setReasonTarget] = useState<ImpersonationTarget | null>(
-    null
-  )
 
   /// Switcher : stop l'impersonation courante puis lance une nouvelle
   /// impersonation. Enchaîné côté client en 2 requêtes parce que Better Auth

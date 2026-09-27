@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import {
   CheckIcon,
   ChevronRightIcon,
@@ -44,6 +44,18 @@ const COPY = {
 function t(key: keyof typeof COPY, locale: string): string {
   const map = COPY[key] as Record<string, string>;
   return map[locale] ?? map.fr;
+}
+
+// Identité stable entre deux saisies : le bouton ne doit pas être remonté
+// à chaque rendu du sélecteur et perdre son focus clavier.
+function LocaleCloseButton() {
+  const translate = useTranslations("public.dossier");
+  return (
+    <DialogClose className="flex size-8 shrink-0 items-center justify-center rounded-lg opacity-60 transition-opacity hover:bg-accent hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring">
+      <XIcon className="size-4" />
+      <span className="sr-only">{translate("close")}</span>
+    </DialogClose>
+  );
 }
 
 export function LocaleSwitcher({
@@ -95,14 +107,6 @@ export function LocaleSwitcher({
     localeNames[l].toLowerCase().includes(search.toLowerCase()),
   );
 
-  /* Bouton fermer réutilisé dans les deux panneaux */
-  const CloseBtn = () => (
-    <DialogClose className="flex size-8 shrink-0 items-center justify-center rounded-lg opacity-60 transition-opacity hover:bg-accent hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring">
-      <XIcon className="size-4" />
-      <span className="sr-only">Fermer</span>
-    </DialogClose>
-  );
-
   return (
     <>
       <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -140,7 +144,7 @@ export function LocaleSwitcher({
                 <div className="flex size-11 items-center justify-center rounded-full bg-primary/10">
                   <GlobeIcon className="size-6 text-primary" />
                 </div>
-                <CloseBtn />
+                <LocaleCloseButton />
               </div>
 
               <p aria-hidden="true" className="text-xl font-bold leading-tight">
@@ -187,7 +191,7 @@ export function LocaleSwitcher({
               <p aria-hidden="true" className="flex-1 text-base font-bold">
                 {t("title", current)}
               </p>
-              <CloseBtn />
+              <LocaleCloseButton />
             </div>
 
             {/* ════ RECHERCHE + DISCLAIMER — mobile ════ */}

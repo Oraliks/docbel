@@ -2,20 +2,20 @@
 //  Seed — pages légales (BROUILLON) : mentions légales, politique de
 //  confidentialité, politique de cookies.
 // ---------------------------------------------------------------------
-//  Crée (ou met à jour) trois pages builder en `status: 'draft'`, bâties
+//  Crée trois pages builder absentes en `status: 'draft'`, bâties
 //  sur le vocabulaire du template `legal` (heading / text / alert) de
 //  `lib/page-builder/page-templates.ts`.
 //
 //  ⚠️ BROUILLON — aucun texte ici n'est juridiquement validé. Chaque fait
-//  concret (dénomination de l'ASBL, n° BCE, siège, DPO, durées, bases
+//  concret (identité de l'éditeur, n° BCE si applicable, siège, DPO, durées, bases
 //  légales…) est un PLACEHOLDER `[À COMPLÉTER : …]` à renseigner, puis
 //  l'ensemble doit être RELU PAR UN JURISTE IT BELGE avant publication.
 //  Tant que `status` reste `draft`, la page n'est PAS rendue publiquement
 //  (le catch-all `app/[slug]/page.tsx` ne sert que published/scheduled).
 //
-//  Idempotent : crée la page si absente, sinon met à jour le contenu et
-//  les métas SANS toucher au `status` (pour ne pas re-brouillonner une
-//  page déjà publiée après relecture). À lancer via :
+//  Idempotent : crée la page si absente ; préserve intégralement toute page
+//  existante, même brouillon. Les mises à jour se font en admin après revue,
+//  sans jamais remplacer un texte relu par ces placeholders. À lancer via :
 //    npx tsx scripts/seed-legal-pages.ts
 // =====================================================================
 
@@ -82,9 +82,9 @@ const mentionsLegales: LegalPage = {
     p(
       '<p>Le Site est édité par&nbsp;:</p>' +
         '<ul>' +
-        '<li><strong>[À COMPLÉTER : DÉNOMINATION DE L’ASBL]</strong> — association sans but lucratif de droit belge <em>(en cours de constitution)</em>&nbsp;;</li>' +
+        '<li><strong>[À COMPLÉTER : IDENTITÉ DE L’ÉDITEUR ET FORME JURIDIQUE]</strong>&nbsp;;</li>' +
         '<li>Siège social&nbsp;: [À COMPLÉTER : ADRESSE COMPLÈTE DU SIÈGE]&nbsp;;</li>' +
-        '<li>Numéro d’entreprise (BCE)&nbsp;: [À COMPLÉTER : N° BCE — en cours d’attribution]&nbsp;;</li>' +
+        '<li>Numéro d’entreprise (BCE)&nbsp;: [À COMPLÉTER : N° BCE si applicable]&nbsp;;</li>' +
         '<li>Représentée par&nbsp;: [À COMPLÉTER : NOM, qualité — ex. administrateur·rice]&nbsp;;</li>' +
         '<li>Courriel de contact&nbsp;: [À COMPLÉTER : contact@docbel.be].</li>' +
         '</ul>',
@@ -168,10 +168,10 @@ const politiqueConfidentialite: LegalPage = {
     h2('1. Responsable du traitement'),
     p(
       '<ul>' +
-        '<li>[À COMPLÉTER : DÉNOMINATION DE L’ASBL], BCE [À COMPLÉTER : N° BCE]&nbsp;;</li>' +
+        '<li>[À COMPLÉTER : IDENTITÉ DU RESPONSABLE DU TRAITEMENT], BCE [À COMPLÉTER : N° BCE si applicable]&nbsp;;</li>' +
         '<li>Siège&nbsp;: [À COMPLÉTER : ADRESSE]&nbsp;;</li>' +
         '<li>Contact vie privée&nbsp;: [À COMPLÉTER : vie-privee@docbel.be]&nbsp;;</li>' +
-        '<li>Délégué à la protection des données (DPO)&nbsp;: [À COMPLÉTER : NOM / dpo@docbel.be, ou « non désigné à ce stade »].</li>' +
+        '<li>Délégué à la protection des données (DPO)&nbsp;: [À COMPLÉTER : vérifier si une désignation est requise et indiquer le contact si désigné].</li>' +
         '</ul>',
     ),
 
@@ -192,7 +192,7 @@ const politiqueConfidentialite: LegalPage = {
       '<ul>' +
         '<li>Fournir le service et gérer votre compte — <em>exécution du service</em> (art. 6.1.b RGPD)&nbsp;;</li>' +
         '<li>Mesure d’audience — <em>consentement</em> (art. 6.1.a), retirable à tout moment&nbsp;;</li>' +
-        '<li>Données sensibles (voir section 4) — <em>consentement explicite</em> (art. 9.2.a)&nbsp;;</li>' +
+        '<li>Données sensibles (voir section 4) — [À COMPLÉTER : exception applicable de l’art. 9.2, pour chaque traitement]&nbsp;;</li>' +
         '<li>Sécurité et prévention des abus — <em>intérêt légitime</em> (art. 6.1.f)&nbsp;;</li>' +
         '<li>Obligations légales éventuelles — <em>obligation légale</em> (art. 6.1.c).</li>' +
         '</ul>' +
@@ -203,17 +203,21 @@ const politiqueConfidentialite: LegalPage = {
     p(
       '<p>Certaines démarches peuvent révéler des données sensibles (par ex. ' +
         'une <strong>affiliation syndicale</strong> lors d’une prise de rendez-vous ' +
-        'avec une organisation syndicale). Ces données ne sont traitées qu’avec ' +
-        'votre <strong>consentement explicite</strong>, et uniquement pour la ' +
-        'finalité concernée. [À COMPLÉTER : détailler les traitements art. 9.]</p>',
+        'avec une organisation syndicale). [À COMPLÉTER : détailler les finalités, ' +
+        'la base légale de l’art. 6 et l’exception de l’art. 9.2 applicable. ' +
+        'Si le consentement explicite est retenu, préciser sa collecte, sa preuve ' +
+        'et les modalités de retrait avant activation du parcours.]</p>',
     ),
 
     h2('5. Numéro de registre national (NRN / NISS)'),
     p(
       '<p>Le NRN n’est traité que lorsqu’une démarche l’exige. ' +
-        '[À COMPLÉTER : base légale — autorisation du Comité sectoriel compétent ' +
-        '(loi du 8 août 1983), statut de la demande.] Il est stocké de manière ' +
-        'sécurisée (chiffrement) et son accès est limité et journalisé.</p>',
+        '[À COMPLÉTER : vérifier la nécessité, l’habilitation applicable et, si ' +
+        'nécessaire, l’autorisation d’utilisation auprès de l’autorité compétente ' +
+        '(loi du 8 août 1983).] Le NRN de réservation est chiffré ; les champs NISS ' +
+        'des profils et des réponses aux formulaires ne bénéficient pas tous de ' +
+        'ce chiffrement applicatif. [À COMPLÉTER : protections et traçabilité ' +
+        'effectivement vérifiées pour chaque parcours.]</p>',
     ),
 
     h2('6. Destinataires et sous-traitants'),
@@ -221,9 +225,9 @@ const politiqueConfidentialite: LegalPage = {
       '<p>Vos données peuvent être traitées par des sous-traitants agissant pour ' +
         'notre compte, notamment&nbsp;: [À COMPLÉTER : liste à confirmer — ex. ' +
         'Vercel (hébergement), Neon (base de données), Anthropic (assistance IA), ' +
-        '[autres : OpenAI, Voyage, Brave, Resend, Stripe…]]. Un accord de ' +
-        'traitement (DPA) est conclu avec chacun. [À COMPLÉTER : confirmer la ' +
-        'liste et archiver les DPA.]</p>',
+        '[autres : OpenAI, Voyage, Brave, Resend, Stripe…]]. [À COMPLÉTER : ' +
+        'confirmer les prestataires réellement actifs et vérifier/archiver ' +
+        'les accords de traitement (DPA) applicables.]</p>',
     ),
 
     h2('7. Transferts hors Union européenne'),
@@ -349,7 +353,10 @@ const PAGES: LegalPage[] = [
 
 async function main(): Promise<void> {
   for (const page of PAGES) {
-    const existing = await prisma.page.findFirst({ where: { slug: page.slug } })
+    const existing = await prisma.page.findUnique({
+      where: { slug: page.slug },
+      select: { slug: true, status: true },
+    })
 
     if (!existing) {
       const created = await prisma.page.create({
@@ -368,19 +375,8 @@ async function main(): Promise<void> {
       continue
     }
 
-    // Idempotent : on rafraîchit le contenu et les métas, SANS écraser le
-    // `status` (pour ne pas re-brouillonner une page déjà publiée/relue).
-    const updated = await prisma.page.update({
-      where: { id: existing.id },
-      data: {
-        title: page.title,
-        metaTitle: page.metaTitle,
-        metaDesc: page.metaDesc,
-        content: page.blocks as unknown as object,
-      },
-    })
     console.log(
-      `[seed-legal-pages] Mise à jour : /${updated.slug} (id ${updated.id}, status=${updated.status} inchangé).`,
+      `[seed-legal-pages] Préservée : /${existing.slug} (status=${existing.status}, aucun changement).`,
     )
   }
 }

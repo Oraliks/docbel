@@ -76,7 +76,7 @@ export function withAiRoute<TSchema extends z.ZodTypeAny>(
 
     // 2. Rate-limit — FIX-6 : clé basée sur l'utilisateur (non spoofable),
     //    plus sur l'IP cliente.
-    const rl = checkRateLimit(`pagebuilder:${config.name}:${auth.user.id}`, {
+    const rl = await checkRateLimit(`pagebuilder:${config.name}:${auth.user.id}`, {
       windowMs,
       max,
     });

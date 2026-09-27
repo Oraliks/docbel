@@ -24,7 +24,7 @@ export async function POST(
 ) {
   const { runId } = await params;
   const ip = getClientIp(req);
-  const rl = checkRateLimit(`bundle-email:${ip}:${runId}`, { windowMs: 60_000, max: 3 });
+  const rl = await checkRateLimit(`bundle-email:${ip}:${runId}`, { windowMs: 60_000, max: 3 });
   if (!rl.ok) {
     return NextResponse.json({ error: "Trop de requêtes, réessayez plus tard" }, { status: 429, headers: json });
   }

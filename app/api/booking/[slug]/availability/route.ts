@@ -18,7 +18,7 @@ export async function GET(
   ctx: { params: Promise<{ slug: string }> },
 ) {
   const ip = getClientIp(req);
-  if (!checkRateLimit(`booking-availability:${ip}`, { windowMs: 60_000, max: 60 }).ok) {
+  if (!(await checkRateLimit(`booking-availability:${ip}`, { windowMs: 60_000, max: 60 })).ok) {
     return NextResponse.json({ error: "Trop de requêtes" }, { status: 429, headers: json });
   }
 

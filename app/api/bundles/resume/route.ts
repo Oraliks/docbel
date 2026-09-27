@@ -42,12 +42,12 @@ export async function POST(req: NextRequest) {
   const sessionId = cookieStore.get(BUNDLE_COOKIE)?.value ?? null;
 
   // Rate-limit par IP ET par session (10 / 5 min chacun).
-  const ipRl = checkRateLimit(`bundle-resume:ip:${ip}`, {
+  const ipRl = await checkRateLimit(`bundle-resume:ip:${ip}`, {
     windowMs: 5 * 60_000,
     max: 10,
   });
   const sessRl = sessionId
-    ? checkRateLimit(`bundle-resume:sess:${sessionId}`, {
+    ? await checkRateLimit(`bundle-resume:sess:${sessionId}`, {
         windowMs: 5 * 60_000,
         max: 10,
       })

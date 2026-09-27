@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const rl = checkRateLimit(`iban-verify:${getClientIp(req)}`, { windowMs: 60_000, max: 30 });
+  const rl = await checkRateLimit(`iban-verify:${getClientIp(req)}`, { windowMs: 60_000, max: 30 });
   if (!rl.ok) {
     return NextResponse.json({ error: "Trop de requêtes" }, { status: 429, headers: json });
   }

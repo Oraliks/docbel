@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
   try {
     // Rate-limit anti-spam : 5 inscriptions / 10 min / IP
     const ip = getClientIp(request)
-    const rl = checkRateLimit(`newsletter:${ip}`, { windowMs: 10 * 60_000, max: 5 })
+    const rl = await checkRateLimit(`newsletter:${ip}`, { windowMs: 10 * 60_000, max: 5 })
     if (!rl.ok) {
       return tooManyRequests({
         limit: 5,

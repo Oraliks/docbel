@@ -24,7 +24,7 @@ export async function GET(
   // alimente le funnel « Parcours ») n'est émis QUE sans ce paramètre.
   const inline = req.nextUrl.searchParams.get("inline") === "1";
   const ip = getClientIp(req);
-  const rl = checkRateLimit(`bundle-download-one:${ip}:${runId}`, { windowMs: 60_000, max: 10 });
+  const rl = await checkRateLimit(`bundle-download-one:${ip}:${runId}`, { windowMs: 60_000, max: 10 });
   if (!rl.ok) {
     return NextResponse.json({ error: "Trop de requêtes, réessayez plus tard" }, { status: 429, headers: json });
   }

@@ -15,7 +15,7 @@ export async function GET(req: Request) {
     req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
     req.headers.get("x-real-ip") ||
     "unknown";
-  const rl = checkRateLimit(`bce-verify:${ip}`, { windowMs: 60_000, max: 20 });
+  const rl = await checkRateLimit(`bce-verify:${ip}`, { windowMs: 60_000, max: 20 });
   if (!rl.ok) {
     return NextResponse.json(
       { error: "Trop de requêtes" },

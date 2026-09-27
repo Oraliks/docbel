@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
   try {
     // Rate-limit anti-spam : 3 messages / 10 min / IP
     const ip = getClientIp(request);
-    const rl = checkRateLimit(`contact-messages:${ip}`, {
+    const rl = await checkRateLimit(`contact-messages:${ip}`, {
       windowMs: 10 * 60_000,
       max: 3,
     });

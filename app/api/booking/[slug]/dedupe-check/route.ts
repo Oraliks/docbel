@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
 import { checkRateLimit, getClientIp } from "@/lib/utils/rate-limit";
+import { apiError } from "@/lib/api/response";
 import { getServerAuthSession } from "@/lib/auth-session";
 import { normalizeName } from "@/lib/rendez-vous/history";
 import { isValidNrn } from "@/lib/booking/form-fields";
@@ -23,7 +24,11 @@ export async function POST(
   ctx: { params: Promise<{ slug: string }> },
 ) {
   const ip = getClientIp(req);
-  if (!checkRateLimit(`booking-dedupe:${ip}`, { windowMs: 60_000, max: 30 }).ok) {
+  const rl = await checkRateLimit(`booking-dedupe:${ip}`, { windowMs: 60_000, max: 30 });
+  if (rl.unavailable) return apiError(503, "Service temporairement indisponible", {
+    code: "rate_limit_unavailable", headers: { "Retry-After": "5" },
+  });
+  if (!rl.ok) {
     return NextResponse.json({ blocked: false }, { headers: json });
   }
 

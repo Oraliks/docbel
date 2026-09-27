@@ -27,11 +27,11 @@ export async function POST(req: NextRequest) {
 
   // Anti-abus : l'import parse un classeur complet (coûteux). 10/h par admin + 20/h par IP.
   const ip = getClientIp(req)
-  const byUser = checkRateLimit(`baremes-import:user:${auth.user.id}`, {
+  const byUser = await checkRateLimit(`baremes-import:user:${auth.user.id}`, {
     windowMs: 60 * 60_000,
     max: 10,
   })
-  const byIp = checkRateLimit(`baremes-import:ip:${ip}`, { windowMs: 60 * 60_000, max: 20 })
+  const byIp = await checkRateLimit(`baremes-import:ip:${ip}`, { windowMs: 60 * 60_000, max: 20 })
   if (!byUser.ok || !byIp.ok) {
     return NextResponse.json(
       { error: 'Trop d\'imports — réessayez dans une heure' },

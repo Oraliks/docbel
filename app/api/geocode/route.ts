@@ -38,7 +38,7 @@ function cacheSet(key: string, value: unknown) {
 export async function GET(req: NextRequest) {
   // Rate-limit anti-abus du proxy Nominatim : 30 req / min / IP
   const ip = getClientIp(req);
-  const rl = checkRateLimit(`geocode:${ip}`, { windowMs: 60_000, max: 30 });
+  const rl = await checkRateLimit(`geocode:${ip}`, { windowMs: 60_000, max: 30 });
   if (!rl.ok) {
     return NextResponse.json(
       { error: "Trop de requêtes — réessayez dans une minute" },

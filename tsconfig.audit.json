@@ -1,0 +1,5 @@
+{
+  "extends": "./tsconfig.build.json",
+  "compilerOptions": { "tsBuildInfoFile": ".next-audit/tsconfig.tsbuildinfo" },
+  "exclude": ["node_modules", ".next/dev/**", ".next-audit/dev/**"]
+}

@@ -88,7 +88,7 @@ export async function POST(req: NextRequest) {
   if (!auth.isAuthorized) return auth.error;
 
   const ip = getClientIp(req);
-  const rl = checkRateLimit(`chomage-ia:snippets:create:${ip}`, {
+  const rl = await checkRateLimit(`chomage-ia:snippets:create:${ip}`, {
     windowMs: 60_000,
     max: 30,
   });

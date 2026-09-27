@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
   if (writeBlock) return writeBlock;
 
   const ip = getClientIp(request);
-  const rl = checkRateLimit(`pagebuilder:checkout:${ip}`, {
+  const rl = await checkRateLimit(`pagebuilder:checkout:${ip}`, {
     windowMs: 60_000,
     max: 10,
   });

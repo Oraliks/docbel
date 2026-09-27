@@ -1,40 +1,41 @@
-// Rate-limit en mémoire (per-instance). Suffisant pour un déploiement single-instance.
-// À remplacer par Redis/Upstash en multi-instance.
+import {
+  createMemoryRateLimiter,
+  createPostgresRateLimiter,
+  unavailableRateLimit,
+  type RateLimitOptions,
+  type RateLimitResult,
+} from "./rate-limit-core";
 
-interface Bucket {
-  count: number;
-  resetAt: number;
-}
+export type { RateLimitOptions, RateLimitResult } from "./rate-limit-core";
 
-const buckets = new Map<string, Bucket>();
+let postgres: Promise<ReturnType<typeof createPostgresRateLimiter>> | undefined;
+let memory: ReturnType<typeof createMemoryRateLimiter> | undefined;
 
-export interface RateLimitOptions {
-  windowMs: number;
-  max: number;
-}
-
-export function checkRateLimit(
+export async function checkRateLimit(
   key: string,
   options: RateLimitOptions = { windowMs: 60_000, max: 10 }
-): { ok: boolean; remaining: number; resetAt: number } {
-  const now = Date.now();
-  const existing = buckets.get(key);
-
-  if (!existing || existing.resetAt < now) {
-    const resetAt = now + options.windowMs;
-    buckets.set(key, { count: 1, resetAt });
-    return { ok: true, remaining: options.max - 1, resetAt };
+): Promise<RateLimitResult> {
+  try {
+    const backend = process.env.RATE_LIMIT_BACKEND ?? (process.env.NODE_ENV === "test" ? "memory" : undefined);
+    const secret = process.env.RATE_LIMIT_KEY_SECRET || process.env.BETTER_AUTH_SECRET;
+    if (!secret) return unavailableRateLimit();
+    if (backend === "postgres") {
+      // Lazy loading keeps pure PDF signing/hashing consumers independent of DB.
+      postgres ??= import("@/lib/prisma").then(({ prisma }) => createPostgresRateLimiter(prisma, secret));
+      return await (await postgres)(key, options);
+    }
+    if (backend === "memory" && !process.env.VERCEL &&
+        (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "test")) {
+      memory ??= createMemoryRateLimiter(secret);
+      return await memory.check(key, options);
+    }
+    // Missing/invalid configuration, production memory and Vercel memory all
+    // fail closed. Deployment must install the SQL table before setting flag.
+    return unavailableRateLimit();
+  } catch {
+    postgres = undefined;
+    return unavailableRateLimit();
   }
-
-  existing.count++;
-  if (existing.count > options.max) {
-    return { ok: false, remaining: 0, resetAt: existing.resetAt };
-  }
-  return {
-    ok: true,
-    remaining: options.max - existing.count,
-    resetAt: existing.resetAt,
-  };
 }
 
 export function getClientIp(req: Request): string {

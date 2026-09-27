@@ -28,7 +28,7 @@ export async function GET(
   const opRaw = req.nextUrl.searchParams.get("op");
   const opChoice = isOpCode(opRaw) ? opRaw : null;
   const ip = getClientIp(req);
-  const rl = checkRateLimit(`bundle-download-all:${ip}:${runId}`, { windowMs: 60_000, max: 5 });
+  const rl = await checkRateLimit(`bundle-download-all:${ip}:${runId}`, { windowMs: 60_000, max: 5 });
   if (!rl.ok) {
     return NextResponse.json({ error: "Trop de requêtes, réessayez plus tard" }, { status: 429, headers: json });
   }

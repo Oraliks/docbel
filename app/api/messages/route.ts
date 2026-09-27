@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const ip = getClientIp(request);
-    const rl = checkRateLimit(`pagebuilder:messages:${ip}`, {
+    const rl = await checkRateLimit(`pagebuilder:messages:${ip}`, {
       windowMs: 10 * 60_000,
       max: 5,
     });

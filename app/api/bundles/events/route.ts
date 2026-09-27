@@ -36,7 +36,7 @@ function sanitizeMetadata(
 /// d'erreur côté client). Rate-limité par IP. Non authentifié.
 export async function POST(req: NextRequest) {
   const ip = getClientIp(req);
-  const rl = checkRateLimit(`bundle-events:${ip}`, { windowMs: 60_000, max: 60 });
+  const rl = await checkRateLimit(`bundle-events:${ip}`, { windowMs: 60_000, max: 60 });
   if (!rl.ok) return new NextResponse(null, { status: 429 });
 
   let parsed: z.infer<typeof BodySchema>;

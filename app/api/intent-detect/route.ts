@@ -1,13 +1,15 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { checkRateLimit, getClientIp } from "@/lib/utils/rate-limit";
 import { getSetting, SETTING_KEYS } from "@/lib/app-settings";
 import { parseVocabularyTags, searchBundles } from "@/lib/bundles/vocabulary";
+import { apiError, apiOk } from "@/lib/api/response";
+import { tooManyRequests } from "@/lib/api/rate-limit-response";
 
 /// POST /api/intent-detect
 ///
-/// Body : `{ query: string }`
+/// Body : `{ query: string, allowAi?: boolean }` — assistance externe opt-in.
 ///
 /// Détecte vers quel(s) bundle(s) orienter une requête en langage libre
 /// (ex. "mon patron m'a dit intempéries", "je perds mon emploi").
@@ -25,6 +27,7 @@ import { parseVocabularyTags, searchBundles } from "@/lib/bundles/vocabulary";
 
 const BodySchema = z.object({
   query: z.string().min(2, "Requête trop courte").max(500),
+  allowAi: z.boolean().default(false),
 });
 
 const SYSTEM_PROMPT = `Tu es un assistant administratif expert des démarches belges (ONEM, Actiris, CPAS, mutuelles, communes).
@@ -61,32 +64,28 @@ interface Suggestion {
 export async function POST(req: NextRequest) {
   // Rate-limit : 20 requêtes / minute / IP (l'IA est facturée)
   const ip = getClientIp(req);
-  const rl = checkRateLimit(`intent-detect:${ip}`, { windowMs: 60_000, max: 20 });
+  const rl = await checkRateLimit(`intent-detect:${ip}`, { windowMs: 60_000, max: 20 });
   if (!rl.ok) {
-    return NextResponse.json(
-      { error: "Trop de requêtes — réessayez dans une minute" },
-      { status: 429 }
-    );
+    return tooManyRequests({ limit: 20, resetAt: rl.resetAt });
   }
 
   let parsed;
   try {
     parsed = BodySchema.parse(await req.json());
   } catch (err) {
-    return NextResponse.json(
-      {
-        error:
-          err instanceof z.ZodError
-            ? err.issues[0]?.message || "Données invalides"
-            : "Données invalides",
-      },
-      { status: 400 }
+    return apiError(
+      400,
+      err instanceof z.ZodError
+        ? err.issues[0]?.message || "Données invalides"
+        : "Données invalides"
     );
   }
 
   // Récupère les bundles actifs avec leurs outils
   const bundles = await prisma.documentBundle.findMany({
     where: { active: true },
+    orderBy: { id: "asc" },
+    take: 500,
     select: {
       id: true,
       slug: true,
@@ -94,6 +93,7 @@ export async function POST(req: NextRequest) {
       description: true,
       vocabularyTags: true,
       items: {
+        take: 100,
         select: {
           pdfForm: { select: { title: true } },
         },
@@ -116,10 +116,10 @@ export async function POST(req: NextRequest) {
   const localMatches = searchBundles(parsed.query, bundlesForMatching, 5);
 
   // 2) IA si activée
-  const aiEnabled = (await getSetting(SETTING_KEYS.AI_HELP_ENABLED)) === "true";
+  const aiEnabled = parsed.allowAi && (await getSetting(SETTING_KEYS.AI_HELP_ENABLED)) === "true";
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!aiEnabled || !apiKey || bundlesForMatching.length === 0) {
-    return NextResponse.json({
+    return apiOk({
       suggestions: localMatches.map((m) => ({
         bundleId: m.bundleId,
         slug: m.slug,
@@ -178,9 +178,9 @@ export async function POST(req: NextRequest) {
     });
 
     if (!res.ok) {
-      const errText = await res.text().catch(() => "");
-      console.error("Anthropic API error:", res.status, errText);
-      return NextResponse.json({
+      // Ne pas journaliser le corps fournisseur : il peut reprendre la saisie.
+      console.error("Anthropic API error:", res.status);
+      return apiOk({
         suggestions: localMatches.map((m) => ({
           bundleId: m.bundleId,
           slug: m.slug,
@@ -232,7 +232,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    return NextResponse.json({
+    return apiOk({
       suggestions,
       aiUsed: true,
       aiMessage: aiResult?.explanation,
@@ -242,9 +242,9 @@ export async function POST(req: NextRequest) {
         cacheRead: data?.usage?.cache_read_input_tokens,
       },
     });
-  } catch (err) {
-    console.error("intent-detect error:", err);
-    return NextResponse.json({
+  } catch {
+    console.error("intent-detect: external assistance unavailable");
+    return apiOk({
       suggestions: localMatches.map((m) => ({
         bundleId: m.bundleId,
         slug: m.slug,

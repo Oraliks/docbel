@@ -14,7 +14,7 @@ const json = { "Content-Type": "application/json; charset=utf-8" };
 /// duplication ici.
 export async function GET(req: NextRequest) {
   const ip = getClientIp(req);
-  const rl = checkRateLimit(`lookup-entreprise:${ip}`, { windowMs: 60_000, max: 30 });
+  const rl = await checkRateLimit(`lookup-entreprise:${ip}`, { windowMs: 60_000, max: 30 });
   if (!rl.ok) {
     return NextResponse.json(
       { error: "Trop de requêtes, réessayez plus tard" },

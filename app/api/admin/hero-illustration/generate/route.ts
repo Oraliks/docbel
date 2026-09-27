@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
 
   // 2. Rate limit: 5 generations per minute per user
   const rateLimitKey = `hero-illustration:${auth.user?.id ?? getClientIp(req)}`;
-  const rateLimit = checkRateLimit(rateLimitKey, { windowMs: 60_000, max: 5 });
+  const rateLimit = await checkRateLimit(rateLimitKey, { windowMs: 60_000, max: 5 });
   if (!rateLimit.ok) {
     return json({ error: "Trop de générations. Réessayez dans une minute." }, 429);
   }

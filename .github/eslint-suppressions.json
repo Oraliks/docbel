@@ -406,16 +406,8 @@
     }
   },
   "components/impersonation-banner.tsx": {
-    "react-hooks/rules-of-hooks": {
-      "count": 1
-    },
     "react-hooks/set-state-in-effect": {
-      "count": 4
-    }
-  },
-  "components/locale-switcher.tsx": {
-    "react-hooks/static-components": {
-      "count": 2
+      "count": 3
     }
   },
   "components/page-blocks/docbel/counter.tsx": {

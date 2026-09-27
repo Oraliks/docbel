@@ -16,7 +16,7 @@ export async function GET(
 ) {
   const { runId } = await params;
   const ip = getClientIp(req);
-  const rl = checkRateLimit(`bundle-feuille:${ip}:${runId}`, { windowMs: 60_000, max: 10 });
+  const rl = await checkRateLimit(`bundle-feuille:${ip}:${runId}`, { windowMs: 60_000, max: 10 });
   if (!rl.ok) {
     return NextResponse.json({ error: "Trop de requêtes, réessayez plus tard" }, { status: 429, headers: json });
   }

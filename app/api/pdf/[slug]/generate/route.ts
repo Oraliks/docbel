@@ -38,7 +38,7 @@ export async function POST(
 
   const { slug } = await params;
   const ip = getClientIp(req);
-  const rl = checkRateLimit(`pdf-generate:${ip}:${slug}`, { windowMs: 60_000, max: 5 });
+  const rl = await checkRateLimit(`pdf-generate:${ip}:${slug}`, { windowMs: 60_000, max: 5 });
   if (!rl.ok) {
     return NextResponse.json({ error: "Trop de requêtes, réessayez plus tard" }, { status: 429, headers: json });
   }

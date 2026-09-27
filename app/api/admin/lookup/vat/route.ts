@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
   if (!auth.isAuthorized) return auth.error;
 
   // VIES throttle agressivement ; on protège côté docbel.
-  const rl = checkRateLimit(`vat-lookup:${getClientIp(req)}`, { windowMs: 60_000, max: 20 });
+  const rl = await checkRateLimit(`vat-lookup:${getClientIp(req)}`, { windowMs: 60_000, max: 20 });
   if (!rl.ok) {
     return NextResponse.json({ error: "Trop de requêtes" }, { status: 429, headers: json });
   }

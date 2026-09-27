@@ -58,9 +58,12 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  // Cache distinct pour les vérifications HTTP sur une base de test isolée.
+  distDir: process.env.DOCBEL_ACCESS_TEST_SERVER === "1" ? ".next-audit" : ".next",
   // Les types de `next dev` ne font pas partie du build de production : ils
   // peuvent être réécrits pendant qu'un serveur de développement est actif.
-  typescript: { tsconfigPath: isProd ? "tsconfig.build.json" : "tsconfig.json" },
+  typescript: { tsconfigPath: process.env.DOCBEL_ACCESS_TEST_SERVER === "1"
+    ? "tsconfig.audit.json" : isProd ? "tsconfig.build.json" : "tsconfig.json" },
   // pdf-parse / pdfjs-dist embarquent un « worker » que le bundler serveur de
   // Next ne sait pas résoudre (« Cannot find module pdf.worker.mjs »). On les
   // externalise pour qu'ils soient chargés depuis node_modules à l'exécution.

@@ -1,1 +1,11 @@
-{}
+{
+  "public": {
+    "dossier": {
+      "intentAiChoice": "Folosiți și asistența IA oferită de Anthropic pentru această căutare (opțional)",
+      "intentAiPrivacy": "Dacă selectați această opțiune, textul dumneavoastră poate fi trimis către Anthropic, un furnizor american, pentru a sugera proceduri. Fără această opțiune, căutarea folosește doar catalogul DocBel. Evitați numele, numerele din registrul național și informațiile despre sănătate sau apartenența sindicală."
+    },
+    "landing": {
+      "bookingPrivacyNotice": "DocBel stochează informațiile introduse și le pune la dispoziția persoanelor autorizate din cadrul {tenantName} pentru a vă gestiona cererea. Puteți primi e-mailuri pentru confirmare, urmărirea cererii sau un loc pe lista de așteptare. Introduceți doar informațiile necesare pentru programare."
+    }
+  }
+}

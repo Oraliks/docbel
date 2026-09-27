@@ -69,7 +69,7 @@ export async function createReport(input: CreateReportInput): Promise<CreateRepo
 
   const isAnonymous = !input.session;
   if (isAnonymous) {
-    const rl = checkRateLimit(`reports:${input.type}:${input.ip}`, { windowMs: 60 * 60_000, max: 5 });
+    const rl = await checkRateLimit(`reports:${input.type}:${input.ip}`, { windowMs: 60 * 60_000, max: 5 });
     if (!rl.ok) {
       return { ok: false, status: 429, error: "Trop de signalements depuis cette adresse. Réessayez dans une heure." };
     }

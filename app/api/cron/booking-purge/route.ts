@@ -1,13 +1,12 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 
 import { prisma } from "@/lib/prisma";
 import { addDaysYmd, brusselsNowParts } from "@/lib/booking/dates";
 import { cronAuthError } from "@/lib/booking/notify";
+import { apiError, apiOk } from "@/lib/api/response";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-
-const json = { "Content-Type": "application/json; charset=utf-8" };
 
 // Rétention RGPD : on minimise les données nominatives 6 mois après le RDV,
 // puis on supprime complètement après 24 mois.
@@ -18,7 +17,7 @@ const HARD_DELETE_DAYS = 730;
 async function run(req: NextRequest) {
   const authErr = cronAuthError(req);
   if (authErr) {
-    return NextResponse.json({ error: authErr.message }, { status: authErr.status, headers: json });
+    return apiError(authErr.status, authErr.message);
   }
 
   const today = brusselsNowParts().ymd;
@@ -30,7 +29,18 @@ async function run(req: NextRequest) {
   });
 
   const anonymized = await prisma.booking.updateMany({
-    where: { date: { lt: piiCutoff }, citizenName: { not: null } },
+    where: {
+      date: { lt: piiCutoff },
+      OR: [
+        { citizenName: { not: null } }, { citizenNameNormalized: { not: null } },
+        { citizenEmail: { not: null } }, { citizenPhone: { not: null } },
+        { citizenNrnHash: { not: null } }, { citizenNrnLast4: { not: null } },
+        { citizenNrnEnc: { not: null } }, { citizenPostalCode: { not: null } },
+        { citizenCommuneId: { not: null } }, { userId: { not: null } },
+        { internalNote: { not: null } }, { cancelReason: { not: null } },
+        { rejectionReason: { not: null } }, { formData: { not: {} } },
+      ],
+    },
     data: {
       citizenName: null,
       citizenNameNormalized: null,
@@ -41,14 +51,15 @@ async function run(req: NextRequest) {
       citizenNrnEnc: null,
       citizenPostalCode: null,
       citizenCommuneId: null,
+      userId: null,
+      internalNote: null,
+      cancelReason: null,
+      rejectionReason: null,
       formData: {},
     },
   });
 
-  return NextResponse.json(
-    { ok: true, deleted: deleted.count, anonymized: anonymized.count },
-    { headers: json },
-  );
+  return apiOk({ ok: true, deleted: deleted.count, anonymized: anonymized.count });
 }
 
 export async function POST(req: NextRequest) {

@@ -49,21 +49,21 @@ export type SettingKey = (typeof SETTING_KEYS)[keyof typeof SETTING_KEYS];
 const DEFAULTS: Record<SettingKey, string> = {
   commissions_last_updated: "2026-04-26",
   u1_institutions_last_updated: "2026-04-26",
-  rgpd_general: `Conditions générales d'utilisation et politique de confidentialité
+  rgpd_general: `Informations sur l'utilisation du service et les données personnelles
 
-En utilisant ce service, vous acceptez les conditions suivantes :
+Voici comment les fonctionnalités du service utilisent les informations que vous saisissez :
 
 1. Traitement des données
-Les données saisies dans les formulaires servent uniquement à générer le document demandé. Elles ne sont pas conservées en clair sur nos serveurs au-delà du temps nécessaire à la génération.
+Les données saisies servent aux fonctionnalités que vous utilisez : génération de documents, reprise d'un dossier et préremplissage depuis votre profil. Selon le parcours, vos réponses et vos coordonnées sont enregistrées sur nos serveurs. Ne saisissez que les informations nécessaires à la démarche.
 
 2. Documents générés
-Les documents générés sont conservés temporairement pour vous permettre de les télécharger. Ils sont supprimés automatiquement après le délai indiqué (par défaut 30 jours).
+La durée de validité d'un lien de téléchargement ou d'un code de reprise ne correspond pas nécessairement à la durée de conservation des données du dossier. Les délais dépendent du service utilisé ; la suppression d'un profil ne supprime pas automatiquement les réservations ni tous les historiques associés.
 
 3. Droits RGPD
-Conformément au Règlement Général sur la Protection des Données (RGPD), vous disposez d'un droit d'accès, de rectification, de suppression et de portabilité de vos données. Pour exercer ces droits, contactez-nous.
+Vous pouvez demander l'accès, la rectification, la suppression ou la portabilité de vos données, dans les conditions prévues par le Règlement Général sur la Protection des Données (RGPD). Pour exercer ces droits, contactez-nous.
 
 4. Sécurité
-Vos données sont transmises en HTTPS. Les hash de vos saisies sont conservés à des fins d'audit, sans contenu lisible.
+L'accès aux données est contrôlé selon le service utilisé. Les réponses enregistrées dans les dossiers et les profils restent lisibles par l'application : elles ne sont pas toutes remplacées par des empreintes cryptographiques.
 
 5. Cookies et traceurs
 Ce site dépose des cookies strictement nécessaires à son fonctionnement (notamment la session de connexion), qui ne requièrent pas votre consentement. Les éventuels outils de mesure d'audience ne sont activés qu'avec votre accord, via le bandeau cookies. Pour le détail, consultez notre politique de cookies.

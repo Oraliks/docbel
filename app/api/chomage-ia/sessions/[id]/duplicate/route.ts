@@ -27,7 +27,7 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
   if (!auth.isAuthorized) return auth.error;
 
   const ip = getClientIp(req);
-  const rl = checkRateLimit(`chomage-ia:sessions:duplicate:${ip}`, {
+  const rl = await checkRateLimit(`chomage-ia:sessions:duplicate:${ip}`, {
     windowMs: 60_000,
     max: 10,
   });

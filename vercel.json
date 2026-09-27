@@ -8,10 +8,6 @@
       "schedule": "*/15 * * * *"
     },
     {
-      "path": "/api/documents/cron/purge",
-      "schedule": "0 0 * * *"
-    },
-    {
       "path": "/api/admin/pdf/cron/purge-drafts",
       "schedule": "0 1 * * *"
     },

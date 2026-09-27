@@ -6,37 +6,8 @@ export function sha256Hex(input: string | Buffer): string {
   return createHash("sha256").update(input).digest("hex");
 }
 
-// --- Rate limit (en mémoire, par instance) ---
-// ⚠️ Sur un déploiement multi-instance / serverless (Vercel), remplacer par
-// un store partagé (Upstash/Redis). Voir RATE_LIMIT_REDIS_URL.
-
-interface Bucket {
-  count: number;
-  resetAt: number;
-}
-const buckets = new Map<string, Bucket>();
-
-export function checkRateLimit(
-  key: string,
-  opts: { windowMs: number; max: number } = { windowMs: 60_000, max: 10 }
-): { ok: boolean; remaining: number; resetAt: number } {
-  const now = Date.now();
-  const b = buckets.get(key);
-  if (!b || b.resetAt < now) {
-    const resetAt = now + opts.windowMs;
-    buckets.set(key, { count: 1, resetAt });
-    return { ok: true, remaining: opts.max - 1, resetAt };
-  }
-  b.count++;
-  if (b.count > opts.max) return { ok: false, remaining: 0, resetAt: b.resetAt };
-  return { ok: true, remaining: opts.max - b.count, resetAt: b.resetAt };
-}
-
-export function getClientIp(req: Request): string {
-  const xff = req.headers.get("x-forwarded-for");
-  if (xff) return xff.split(",")[0].trim();
-  return req.headers.get("x-real-ip") || "unknown";
-}
+// Même compteur partagé que les autres routes : aucun store PDF indépendant.
+export { checkRateLimit, getClientIp } from "@/lib/utils/rate-limit";
 
 // --- Tokens de téléchargement signés (one-shot, courte durée) ---
 

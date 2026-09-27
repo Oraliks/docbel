@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
   }
 
   const ip = getClientIp(req);
-  const rl = checkRateLimit(`chomage-ia:voice:transcribe:${ip}`, {
+  const rl = await checkRateLimit(`chomage-ia:voice:transcribe:${ip}`, {
     windowMs: 60_000,
     max: 3,
   });

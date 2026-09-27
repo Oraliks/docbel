@@ -81,7 +81,7 @@ function matchServices(q: string): SuggestResponse["services"] {
 export async function GET(req: NextRequest) {
   // Rate-limit anti-abus : 60 req / min / IP (endpoint public, pas d'auth)
   const ip = getClientIp(req);
-  const rl = checkRateLimit(`bureaux-suggest:${ip}`, { windowMs: 60_000, max: 60 });
+  const rl = await checkRateLimit(`bureaux-suggest:${ip}`, { windowMs: 60_000, max: 60 });
   if (!rl.ok) {
     return NextResponse.json(
       { error: "Trop de requêtes — réessayez dans une minute" },

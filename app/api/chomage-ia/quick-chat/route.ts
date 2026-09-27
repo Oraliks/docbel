@@ -65,7 +65,7 @@ export async function POST(req: NextRequest) {
   if (!auth.isAuthorized) return auth.error;
 
   const ip = getClientIp(req);
-  const rl = checkRateLimit(`chomage-ia:quick-chat:${ip}`, {
+  const rl = await checkRateLimit(`chomage-ia:quick-chat:${ip}`, {
     windowMs: 60_000,
     max: 20,
   });

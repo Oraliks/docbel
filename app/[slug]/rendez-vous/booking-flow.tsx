@@ -692,6 +692,9 @@ export function BookingFlow({
               {t("bookingWaitlistNeedEmail")}
             </p>
           )}
+          <p className="text-[13px] text-[color:var(--glass-ink-soft)]">
+            {t("bookingPrivacyNotice", { tenantName })}
+          </p>
           <div className="flex flex-wrap items-center gap-3">
             <button
               onClick={handleJoinWaitlist}
@@ -1060,6 +1063,9 @@ export function BookingFlow({
         <form onSubmit={handleSubmit} noValidate className={`${GLASS_CARD} glass-surface rounded-2xl p-4`}>
           <div className="flex flex-col gap-4">
             <p className={GLASS_LABEL}>{t("yourInfo")}</p>
+            <p className="text-[13px] text-[color:var(--glass-ink-soft)]">
+              {t("bookingPrivacyNotice", { tenantName })}
+            </p>
             {fields.map((f) => renderField(f))}
 
             <div className="flex items-center gap-3 pt-2">

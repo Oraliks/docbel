@@ -37,7 +37,7 @@ function frenchDateLabel(d: Date): string {
 /// par un tiers. AUCUN stockage (RGPD) ; aucune PII en log.
 export async function POST(req: NextRequest) {
   const ip = getClientIp(req);
-  const rl = checkRateLimit(`dossier-letter:${ip}`, { windowMs: 60_000, max: 10 });
+  const rl = await checkRateLimit(`dossier-letter:${ip}`, { windowMs: 60_000, max: 10 });
   if (!rl.ok) {
     return NextResponse.json(
       { error: "Trop de requêtes, réessayez plus tard" },

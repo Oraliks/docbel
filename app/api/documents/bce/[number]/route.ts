@@ -10,7 +10,7 @@ export async function GET(
 
   // Rate limit (par IP) — la lookup BCE peut taper sur un service externe
   const ip = getClientIp(req);
-  const rl = checkRateLimit(`bce:${ip}`, { windowMs: 60_000, max: 20 });
+  const rl = await checkRateLimit(`bce:${ip}`, { windowMs: 60_000, max: 20 });
   if (!rl.ok) {
     return NextResponse.json(
       { error: "Trop de requêtes" },

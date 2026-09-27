@@ -1,6 +1,6 @@
 # Conventions i18n — Beldoc
 
-> **Pour qui :** tout dev *et* toute session Claude Code. À lire avant d'écrire la moindre UI.
+> **Pour qui :** tous les contributeurs et assistants de développement. À lire avant d'écrire la moindre UI.
 > **But :** chaque nouvelle feature est **i18n-ready par défaut**. On ne « rajoutera pas l'i18n plus tard ».
 > **Stack :** `next-intl` en **mode cookie** (pas de `/fr/` dans l'URL). Source = `messages/fr.json`. Les autres locales retombent sur FR automatiquement (deep-merge dans `i18n/request.ts`). 8 langues figées dans `i18n/config.ts`.
 

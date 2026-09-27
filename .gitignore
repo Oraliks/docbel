@@ -1,5 +1,6 @@
 # Dependencies
 node_modules/
+.pnpm-store/
 .pnp
 .pnp.js
 
@@ -11,9 +12,8 @@ dist/
 build/
 
 # Environment variables
-.env
-.env.local
-.env.*.local
+.env*
+!.env.example
 
 # Logs
 *.log
@@ -55,6 +55,7 @@ private/backups/
 # Temporary files
 tempzip/
 *.tmp
+*.bak
 *.zip
 
 # Seed PDFs (PII possible, ne pas committer)
@@ -62,9 +63,7 @@ seed-pdfs/
 ONBOARDING_IMPLEMENTATION.md
 
 # Development tools
-.claude/*
-!.claude/agents/
-!.claude/commands/
+.claude/
 .agents/
 .codex/
 skills-lock.json
@@ -79,12 +78,12 @@ playwright/.cache/
 # WECH 506 réels (données personnelles) — fixtures de test locales uniquement
 lib/agr/__tests__/fixtures/*.pdf
 
-# Logs du hook post-commit (mise à jour mémoire Claude)
-.claude/logs/
-
 # Graphe de connaissance graphify (17 Mo, regenerable : /graphify --update)
 graphify-out/
 
 # Caches Python des scripts d'outillage (detect-comb-guides, verif-couverture-widgets).
 __pycache__/
 *.pyc
+
+# Liaison Vercel et artefacts de recette locaux
+.vercel/

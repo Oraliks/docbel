@@ -10,7 +10,7 @@ au CPAS et à l'emploi.
 - **TypeScript** strict
 - **Prisma** + PostgreSQL (Neon en dev/prod)
 - **better-auth** (email/mot de passe + magic link)
-- **Tailwind CSS 4** + **shadcn/ui** (Radix)
+- **Tailwind CSS 4** + **shadcn/ui** (base-ui)
 - **Tiptap** pour l'éditeur de pages
 
 ## Prérequis
@@ -22,8 +22,8 @@ au CPAS et à l'emploi.
 ## Installation
 
 ```bash
-git clone <url-du-repo>
-cd beldoc
+git clone https://github.com/Oraliks/docbel.git
+cd docbel
 pnpm install
 ```
 
@@ -69,10 +69,15 @@ pnpm start      # serveur production (après build)
 
 ## Structure
 
+Les consignes de contribution et de travail avec un assistant se trouvent dans
+[`AGENTS.md`](AGENTS.md), avec les liens vers les règles spécialisées. La
+[vérification réglementaire](docs/agents/chomage/VERIFICATION_WORKFLOW.md) est
+indépendante de l'assistant utilisé.
+
 ```
 app/                 Routes Next.js (App Router)
   api/               Endpoints REST
-  admin/             Back-office (protégé par middleware d'auth)
+  admin/             Back-office (session et contrôles d'accès côté serveur)
   actualites/        Articles publics
   outils/[slug]/     Outils dynamiques
 components/

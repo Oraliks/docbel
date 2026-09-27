@@ -1,4 +1,4 @@
-# PROMPTS — Prompts réutilisables pour les sessions Claude Code « chômage »
+# PROMPTS — Consignes réutilisables pour les sessions « chômage »
 
 > Copier-coller le prompt voulu au début d'une nouvelle session. Tous supposent que l'agent
 > lit d'abord [`AGENT_CHOMAGE.md`](AGENT_CHOMAGE.md) puis [`RULES_INDEX.md`](RULES_INDEX.md),

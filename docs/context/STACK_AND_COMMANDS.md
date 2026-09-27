@@ -1,6 +1,6 @@
 # STACK & COMMANDES — DocBel
 
-Source = `package.json` (vérifié 2026-06-28). **Ne pas se fier au training data du modèle.**
+Source = `package.json`. **Vérifier les versions installées avant toute modification.**
 
 ## Versions réelles
 | Brique | Version | Note |
@@ -25,7 +25,7 @@ pnpm dev              # next dev --webpack (localhost:3000)
 pnpm build            # next build (= build + typecheck de prod)
 pnpm start            # serveur prod après build
 pnpm lint             # eslint
-pnpm test             # vitest run (271 tests)
+pnpm test             # suite Vitest complète
 pnpm test:watch       # vitest
 pnpm test:e2e         # playwright (skippé sans E2E_ADMIN_*)
 pnpm i18n:check       # tsx scripts/i18n-validate.ts (ICU + couverture)
@@ -34,15 +34,23 @@ pnpm lint:i18n        # eslint config i18n
 
 ### ⚠️ Pièges commandes
 - **Il n'y a PAS de `pnpm typecheck`.** Le typecheck passe par `pnpm build`.
-- `pnpm lint` sort en **exit 1** : ~74 erreurs ESLint **pré-existantes**. Objectif =
-  ne pas en ajouter, pas « faire passer le lint » d'un coup.
-- DB : `db:migrate:deploy`, `db:migrate:dev`, `db:generate`, `seed*`. **Jamais `db:push`
+- La CI utilise `pnpm lint --suppressions-location .github/eslint-suppressions.json` :
+  les erreurs existantes sont recensées par fichier/règle ; toute erreur supplémentaire
+  bloque. Ne pas régénérer cette baseline pour accepter une régression. Après réduction
+  de la dette, ajouter `--prune-suppressions` à cette commande pour retirer les entrées
+  devenues inutiles. Les avertissements restent visibles.
+- Le build utilise `tsconfig.build.json`, qui hérite des options strictes et exclut
+  uniquement les types temporaires `.next/dev/**`. Les types de production restent
+  contrôlés ; aucun `ignoreBuildErrors` n'est activé.
+- La CI exécute lint avec baseline, tests, i18n et build. Ses valeurs DB/auth sont
+  factices ; aucun secret de production n'est nécessaire à la compilation.
+- DB : `db:migrate`, `db:migrate:dev`, `db:generate`, `seed*`. **Jamais `db:push`
   sur la Neon partagée** (le script existe mais il est dangereux ici → SQL additif via
   `prisma db execute`).
-- Serveur dev : l'environnement Claude injecte parfois `ANTHROPIC_API_KEY=""` qui casse
-  les endpoints IA → lancer `pnpm dev` depuis un PowerShell qui nettoie la variable.
-- Bash sandboxé (défaut) peut revert les fichiers **trackés** à HEAD → pour git/build/test
-  toucher des fichiers trackés, utiliser le mode `dangerouslyDisableSandbox`.
+- Les variables déjà définies dans le shell peuvent prendre le pas sur `.env.local`,
+  y compris lorsqu'elles sont vides. Vérifier la configuration sans afficher de secret.
+- Respecter les permissions de l'environnement utilisé ; aucune option de désactivation
+  du sandbox propre à un ancien assistant n'est nécessaire au projet.
 
 ## Variables d'environnement
 Modèle : `.env.example`. Clés requises minimales : `DATABASE_URL`, `DIRECT_URL`,

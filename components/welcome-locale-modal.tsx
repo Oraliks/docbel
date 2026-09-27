@@ -3,6 +3,11 @@
 import { useEffect, useState } from "react";
 import { GlobeIcon, CheckIcon } from "lucide-react";
 import { setLocale } from "@/i18n/actions";
+import {
+  commitLocaleChoice,
+  hasLocaleCookie,
+  LOCALE_STORAGE_KEY,
+} from "@/i18n/client-locale";
 import { publicLocales, localeNames, defaultLocale, type Locale } from "@/i18n/config";
 import {
   Dialog,
@@ -11,8 +16,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import "flag-icons/css/flag-icons.min.css";
-
-const LS_KEY = "beldoc.locale.chosen";
 
 const FLAG: Record<string, string> = {
   fr: "fr",
@@ -26,24 +29,33 @@ export function WelcomeLocaleModal() {
 
   useEffect(() => {
     if (window.location.pathname.startsWith("/admin")) return;
+    if (hasLocaleCookie(document.cookie)) return;
+
+    let shouldOpen = false;
     try {
-      if (!localStorage.getItem(LS_KEY)) setOpen(true);
-    } catch {}
+      shouldOpen = !localStorage.getItem(LOCALE_STORAGE_KEY);
+    } catch {
+      shouldOpen = true;
+    }
+    if (!shouldOpen) return;
+
+    const timeout = window.setTimeout(() => setOpen(true), 0);
+    return () => window.clearTimeout(timeout);
   }, []);
 
   async function choose(locale: Locale) {
     if (pending) return;
     setPending(true);
-    try {
-      localStorage.setItem(LS_KEY, locale);
-      await setLocale(locale);
-      if (locale !== defaultLocale) {
-        window.location.reload();
-      } else {
-        setOpen(false);
-        setPending(false);
-      }
-    } catch {
+    const result = await commitLocaleChoice(locale, { persistLocale: setLocale });
+    if (result === "failed") {
+      setPending(false);
+      return;
+    }
+
+    if (locale !== defaultLocale) {
+      window.location.reload();
+    } else {
+      setOpen(false);
       setPending(false);
     }
   }
@@ -51,10 +63,8 @@ export function WelcomeLocaleModal() {
   // Dismiss via Escape → save FR default silently
   function handleOpenChange(next: boolean) {
     if (!next && !pending) {
-      try {
-        localStorage.setItem(LS_KEY, defaultLocale);
-      } catch {}
       setOpen(false);
+      void commitLocaleChoice(defaultLocale, { persistLocale: setLocale });
     }
   }
 

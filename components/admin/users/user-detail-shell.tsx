@@ -19,11 +19,14 @@ import {
   MailWarning,
   PencilLine,
   ShieldAlert,
+  ShieldCheck,
   UserCog,
 } from "lucide-react"
 import { toast } from "sonner"
 
 import { cn } from "@/lib/utils"
+import { formatDateTime as formatFixedDateTime } from "@/lib/i18n/format"
+import { defaultLocale } from "@/i18n/locales"
 import type { User360 } from "@/lib/admin/user-360"
 import { isBanActive, isLockActive } from "@/lib/admin/user-flags"
 import { Button } from "@/components/ui/button"
@@ -32,6 +35,7 @@ import {
   ImpersonationReasonDialog,
   type ImpersonationTarget,
 } from "@/components/admin/impersonation-reason-dialog"
+import { UserPrivacyTab } from "@/components/admin/users/user-privacy-tab"
 
 const ROLE_KEYS: Record<
   string,
@@ -64,6 +68,7 @@ export const USER_TABS = [
   "securite",
   "profil",
   "activite",
+  "confidentialite",
   "edition",
 ] as const
 export type UserTab = (typeof USER_TABS)[number]
@@ -114,13 +119,7 @@ function initials(name: string, email: string): string {
 
 export function formatDateTime(iso: string | null): string {
   if (!iso) return "—"
-  return new Date(iso).toLocaleDateString("fr-FR", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  })
+  return formatFixedDateTime(iso, defaultLocale) || "—"
 }
 
 interface UserDetailShellProps {
@@ -303,6 +302,10 @@ export function UserDetailShell({
           <TabsTrigger value="securite">{t("tabSecurite")}</TabsTrigger>
           <TabsTrigger value="profil">{t("tabProfil")}</TabsTrigger>
           <TabsTrigger value="activite">{t("tabActivite")}</TabsTrigger>
+          <TabsTrigger value="confidentialite" className="gap-1.5">
+            <ShieldCheck className="size-3.5" />
+            {t("tabConfidentialite")}
+          </TabsTrigger>
           <TabsTrigger value="edition">{t("tabEdition")}</TabsTrigger>
         </TabsList>
 
@@ -317,6 +320,9 @@ export function UserDetailShell({
         </TabsContent>
         <TabsContent value="activite" className="pt-4">
           {activitySlot ?? <ComingSoon label={t("tabActivite")} />}
+        </TabsContent>
+        <TabsContent value="confidentialite" className="pt-4">
+          <UserPrivacyTab userId={user.id} />
         </TabsContent>
         <TabsContent value="edition" className="pt-4">
           {editionSlot ?? <ComingSoon label={t("tabEdition")} />}

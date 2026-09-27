@@ -7,6 +7,10 @@ const mocks = vi.hoisted(() => ({
   bundleDelete: vi.fn(),
   bookingDelete: vi.fn(),
   bookingUpdate: vi.fn(),
+  waitlistCount: vi.fn(),
+  waitlistFind: vi.fn(),
+  waitlistDelete: vi.fn(),
+  waitlistUpdate: vi.fn(),
   draftDelete: vi.fn(),
 }))
 
@@ -14,6 +18,12 @@ vi.mock("@/lib/prisma", () => ({ prisma: {
   $executeRaw: mocks.executeRaw,
   bundleRun: { deleteMany: mocks.bundleDelete },
   booking: { deleteMany: mocks.bookingDelete, updateMany: mocks.bookingUpdate },
+  bookingWaitlist: {
+    count: mocks.waitlistCount,
+    findMany: mocks.waitlistFind,
+    deleteMany: mocks.waitlistDelete,
+    updateMany: mocks.waitlistUpdate,
+  },
   pdfFormDraft: { deleteMany: mocks.draftDelete },
 } }))
 
@@ -29,6 +39,10 @@ describe("retention cron authentication", () => {
     vi.resetAllMocks()
     vi.stubEnv("CRON_SECRET", "test-retention-secret")
     vi.stubEnv("CRON_PURGE_SECRET", "")
+    vi.stubEnv("BOOKING_WAITLIST_RETENTION_MODE", "")
+    vi.stubEnv("BOOKING_WAITLIST_ANONYMIZE_AFTER_DAYS", "")
+    vi.stubEnv("BOOKING_WAITLIST_DELETE_AFTER_DAYS", "")
+    vi.stubEnv("BOOKING_WAITLIST_RETENTION_BATCH_SIZE", "")
   })
   afterEach(() => vi.unstubAllEnvs())
 
@@ -62,7 +76,12 @@ describe("retention cron authentication", () => {
     mocks.bookingDelete.mockResolvedValue({ count: 0 })
     mocks.bookingUpdate.mockResolvedValue({ count: 1 })
     const response = await bookingCron.POST(request({ authorization: "Bearer test-retention-secret" }))
-    expect(await response.json()).toEqual({ ok: true, deleted: 0, anonymized: 1 })
+    expect(await response.json()).toEqual({
+      ok: true,
+      deleted: 0,
+      anonymized: 1,
+      waitlistRetention: { mode: "disabled" },
+    })
     const { where, data } = mocks.bookingUpdate.mock.calls[0][0]
     expect(where.OR).toEqual(expect.arrayContaining([
       { citizenEmail: { not: null } }, { userId: { not: null } },
@@ -71,6 +90,17 @@ describe("retention cron authentication", () => {
     ]))
     expect(data).toMatchObject({ userId: null, internalNote: null, cancelReason: null, rejectionReason: null, formData: {} })
     expect(where.date.lt).toMatch(/^\d{4}-\d{2}-\d{2}$/)
+  })
+
+  it("refuses invalid waitlist configuration before any retention write", async () => {
+    vi.stubEnv("BOOKING_WAITLIST_RETENTION_MODE", "apply")
+    vi.stubEnv("BOOKING_WAITLIST_ANONYMIZE_AFTER_DAYS", "180")
+    vi.stubEnv("BOOKING_WAITLIST_DELETE_AFTER_DAYS", "90")
+
+    const response = await bookingCron.POST(request({ authorization: "Bearer test-retention-secret" }))
+    expect(response.status).toBe(500)
+    expect(await response.json()).toMatchObject({ code: "WAITLIST_RETENTION_CONFIG_INVALID" })
+    for (const mock of Object.values(mocks)) expect(mock).not.toHaveBeenCalled()
   })
 })
 

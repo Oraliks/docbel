@@ -9,25 +9,27 @@
  * - Limite client : 25 Mo (limite native de Whisper).
  * - Rate limit : 3 req/min par IP — Whisper n'est pas gratuit et un click
  *   accidentel sur le bouton micro ne doit pas spam la facture.
- * - Modèle : `whisper-1` (le seul modèle de l'endpoint `/audio/transcriptions`
- *   au 2026-05). Note : OpenAI annonce `gpt-4o-mini-transcribe` mais il
- *   utilise un endpoint séparé (`/audio/transcriptions` sur le modèle
- *   `gpt-4o-mini-transcribe`) — on reste sur whisper-1 pour stabilité.
+ * - Modèle existant conservé : `whisper-1`, via `/audio/transcriptions`.
  * - Langue : "fr" (Belgique francophone primary). On pourrait laisser Whisper
  *   détecter, mais le forcer améliore la précision sur les termes techniques
  *   ("préavis", "ONEM", "intempéries", etc.).
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import { getTranslations } from "next-intl/server";
 import { requireAdminAuth } from "@/lib/auth-check";
+import { ensureWriteAllowed } from "@/lib/admin/readonly-guard";
 import { checkRateLimit, getClientIp } from "@/lib/utils/rate-limit";
 import { getSetting, SETTING_KEYS } from "@/lib/app-settings";
+import { apiError, apiOk } from "@/lib/api/response";
+import { tooManyRequests } from "@/lib/api/rate-limit-response";
 
 /** Limite serveur = 25 Mo (limite hard de Whisper). */
 const MAX_BYTES = 25 * 1024 * 1024;
 
-/** Modèle Whisper. Aujourd'hui le seul modèle stable de cet endpoint. */
+/** Modèle déjà utilisé par cette intégration. */
 const WHISPER_MODEL = "whisper-1";
+const NO_STORE = { "Cache-Control": "no-store" };
 
 /** Langue forcée pour améliorer la précision sur les termes belges chômage. */
 const WHISPER_LANGUAGE = "fr";
@@ -39,6 +41,9 @@ const OPENAI_TRANSCRIPTIONS_URL =
 export async function POST(req: NextRequest) {
   const auth = await requireAdminAuth();
   if (!auth.isAuthorized) return auth.error;
+  const writeBlock = await ensureWriteAllowed();
+  if (writeBlock) return writeBlock;
+  const t = await getTranslations("admin.chomageIa");
 
   // Feature désactivée par défaut côté admin — l'admin doit l'activer
   // explicitement dans /admin/documents/settings (nécessite OPENAI_API_KEY).
@@ -59,10 +64,9 @@ export async function POST(req: NextRequest) {
     max: 3,
   });
   if (!rl.ok) {
-    return NextResponse.json(
-      { error: "Trop de transcriptions — réessayez dans une minute" },
-      { status: 429 }
-    );
+    const response = tooManyRequests({ limit: 3, resetAt: rl.resetAt, message: t("voiceTooMany") });
+    response.headers.set("Cache-Control", "no-store");
+    return response;
   }
 
   const apiKey = process.env.OPENAI_API_KEY?.trim();
@@ -138,51 +142,41 @@ export async function POST(req: NextRequest) {
       // Timeout via AbortController : 90s max (audio long = transcription longue)
       signal: AbortSignal.timeout(90_000),
     });
-  } catch (e) {
-    const msg = e instanceof Error ? e.message : String(e);
-    return NextResponse.json(
-      {
-        error: msg.includes("aborted")
-          ? "Timeout de transcription Whisper (90s)"
-          : `Erreur réseau vers Whisper : ${msg}`,
-      },
-      { status: 502 }
-    );
+  } catch (error) {
+    const timeout = error instanceof Error && ["AbortError", "TimeoutError"].includes(error.name);
+    return apiError(timeout ? 504 : 502, t("voiceNetworkError"), {
+      code: timeout ? "voice_provider_timeout" : "voice_provider_network",
+      headers: NO_STORE,
+    });
   }
 
   if (!whisperRes.ok) {
-    let detail = "";
-    try {
-      const errBody = await whisperRes.json();
-      detail = errBody?.error?.message || errBody?.error || "";
-    } catch {
-      detail = await whisperRes.text().catch(() => "");
+    // Un diagnostic amont peut contenir une clé ou du contexte privé.
+    // Ne jamais transmettre ni journaliser son corps : seul le statut est classé.
+    if (whisperRes.status === 401 || whisperRes.status === 403) {
+      return apiError(503, t("voiceNotConfigured"), { code: "voice_provider_auth", headers: NO_STORE });
     }
-    return NextResponse.json(
-      {
-        error: `Whisper a renvoyé ${whisperRes.status}${detail ? ` — ${detail}` : ""}`,
-      },
-      { status: 502 }
-    );
+    if (whisperRes.status === 429) {
+      return apiError(503, t("voiceTooMany"), {
+        code: "voice_provider_rate_limited", headers: { ...NO_STORE, "Retry-After": "30" },
+      });
+    }
+    return apiError(502, t("voiceTranscribeError"), { code: "voice_provider_error", headers: NO_STORE });
   }
 
-  let payload: { text?: string };
+  let payload: unknown;
   try {
-    payload = (await whisperRes.json()) as { text?: string };
+    payload = await whisperRes.json();
   } catch {
-    return NextResponse.json(
-      { error: "Réponse Whisper invalide (JSON malformé)" },
-      { status: 502 }
-    );
+    return apiError(502, t("voiceTranscribeError"), { code: "voice_provider_response", headers: NO_STORE });
   }
-
-  const text = (payload.text || "").trim();
+  if (!payload || typeof payload !== "object" || !("text" in payload) || typeof payload.text !== "string") {
+    return apiError(502, t("voiceTranscribeError"), { code: "voice_provider_response", headers: NO_STORE });
+  }
+  const text = payload.text.trim();
   if (!text) {
-    return NextResponse.json(
-      { error: "Whisper n'a rien retourné — réessaie en parlant plus fort" },
-      { status: 200 }
-    );
+    return apiOk({ error: t("voiceNoSpeechDesc"), code: "voice_no_speech" }, { headers: NO_STORE });
   }
 
-  return NextResponse.json({ text });
+  return apiOk({ text }, { headers: NO_STORE });
 }

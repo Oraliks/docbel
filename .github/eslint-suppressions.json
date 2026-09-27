@@ -430,11 +430,6 @@
       "count": 1
     }
   },
-  "components/welcome-locale-modal.tsx": {
-    "react-hooks/set-state-in-effect": {
-      "count": 1
-    }
-  },
   "hooks/useBareme.ts": {
     "react-hooks/set-state-in-effect": {
       "count": 1

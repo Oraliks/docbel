@@ -4,6 +4,10 @@ import { prisma } from "@/lib/prisma";
 import { addDaysYmd, brusselsNowParts } from "@/lib/booking/dates";
 import { cronAuthError } from "@/lib/booking/notify";
 import { apiError, apiOk } from "@/lib/api/response";
+import {
+  parseWaitlistRetentionConfig,
+  runWaitlistRetention,
+} from "@/lib/booking/waitlist-retention";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -20,9 +24,27 @@ async function run(req: NextRequest) {
     return apiError(authErr.status, authErr.message);
   }
 
+  let waitlistConfig;
+  try {
+    waitlistConfig = parseWaitlistRetentionConfig();
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Configuration invalide";
+    return apiError(500, `Rétention BookingWaitlist refusée : ${message}`, {
+      code: "WAITLIST_RETENTION_CONFIG_INVALID",
+    });
+  }
+
   const today = brusselsNowParts().ymd;
   const piiCutoff = addDaysYmd(today, -RETAIN_PII_DAYS);
   const deleteCutoff = addDaysYmd(today, -HARD_DELETE_DAYS);
+
+  // Le traitement Waitlist est indépendant de la politique Booking existante.
+  // Il reste inactif sans opt-in et inventorie avant toute éventuelle écriture.
+  const waitlistRetention = await runWaitlistRetention(
+    prisma.bookingWaitlist,
+    waitlistConfig,
+    today,
+  );
 
   const deleted = await prisma.booking.deleteMany({
     where: { date: { lt: deleteCutoff } },
@@ -59,7 +81,12 @@ async function run(req: NextRequest) {
     },
   });
 
-  return apiOk({ ok: true, deleted: deleted.count, anonymized: anonymized.count });
+  return apiOk({
+    ok: true,
+    deleted: deleted.count,
+    anonymized: anonymized.count,
+    waitlistRetention,
+  });
 }
 
 export async function POST(req: NextRequest) {

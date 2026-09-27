@@ -13,6 +13,7 @@ import {
   XIcon,
 } from "lucide-react";
 import { setLocale } from "@/i18n/actions";
+import { commitLocaleChoice } from "@/i18n/client-locale";
 import { locales, localeNames, localeCountryCodes, type Locale } from "@/i18n/locales";
 import {
   Dialog,
@@ -95,10 +96,15 @@ export function LocaleSwitcher({
   }
 
   function confirm() {
-    if (selected === current) { handleOpenChange(false); return; }
-    handleOpenChange(false);
     startTransition(async () => {
-      await setLocale(selected);
+      const result = await commitLocaleChoice(selected, {
+        currentLocale: current,
+        persistLocale: setLocale,
+      });
+      if (result === "failed") return;
+
+      handleOpenChange(false);
+      if (result === "unchanged") return;
       window.location.reload();
     });
   }

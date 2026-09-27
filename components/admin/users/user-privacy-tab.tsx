@@ -9,7 +9,7 @@ import type { PrivacyInventory, PrivacyInventoryEntry } from "@/lib/privacy/type
 import { formatNumber } from "@/lib/i18n/format"
 import type { Locale } from "@/i18n/locales"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
+import { Button, buttonVariants } from "@/components/ui/button"
 
 type ExportPage = {
   dataset: string
@@ -22,6 +22,7 @@ type ExportProgress = {
   dataset: string
   nextCursor: string | null
   page: number
+  downloadUrl: string
 }
 
 function UserPrivacyContent({ userId }: { userId: string }) {
@@ -75,18 +76,15 @@ function UserPrivacyContent({ userId }: { userId: string }) {
     }
   }
 
-  function downloadPage(page: ExportPage, pageNumber: number) {
-    const blob = new Blob([JSON.stringify(page, null, 2)], {
-      type: "application/json;charset=utf-8",
-    })
-    const url = URL.createObjectURL(blob)
+  function downloadPage(url: string) {
+    // Native HTTP downloads also work in embedded browsers that cannot save Blob URLs.
+    // The API rechecks the admin's access when it serves the file.
     const link = document.createElement("a")
     link.href = url
-    link.download = `docbel-privacy-${page.dataset}-page-${pageNumber}.json`
+    link.download = ""
     document.body.appendChild(link)
     link.click()
     link.remove()
-    window.setTimeout(() => URL.revokeObjectURL(url), 0)
   }
 
   async function exportPage(dataset: string, cursor: string | null, pageNumber: number) {
@@ -96,9 +94,10 @@ function UserPrivacyContent({ userId }: { userId: string }) {
     const controller = createRequest()
     const query = new URLSearchParams({ dataset, limit: "100" })
     if (cursor) query.set("cursor", cursor)
+    const downloadUrl = `/api/admin/privacy/accounts/${encodeURIComponent(userId)}/export?${query}`
     try {
       const response = await fetch(
-        `/api/admin/privacy/accounts/${encodeURIComponent(userId)}/export?${query}`,
+        downloadUrl,
         { cache: "no-store", signal: controller.signal },
       )
       if (!response.ok) throw new Error("export_request_failed")
@@ -110,8 +109,8 @@ function UserPrivacyContent({ userId }: { userId: string }) {
         !Array.isArray(result.records)
       ) return
 
-      downloadPage(result, pageNumber)
-      setExportProgress({ dataset, nextCursor: result.nextCursor, page: pageNumber })
+      downloadPage(downloadUrl)
+      setExportProgress({ dataset, nextCursor: result.nextCursor, page: pageNumber, downloadUrl })
       toast.success(t("exportSuccess", { dataset, page: pageNumber }))
     } catch {
       if (!mounted.current || controller.signal.aborted) return
@@ -229,6 +228,13 @@ function UserPrivacyContent({ userId }: { userId: string }) {
                 <p className="text-xs text-muted-foreground">
                   {exportProgress.nextCursor ? t("morePages") : t("lastPage")}
                 </p>
+                <a
+                  href={exportProgress.downloadUrl}
+                  download
+                  className={buttonVariants({ variant: "link", className: "mt-1 px-0" })}
+                >
+                  {t("downloadAgain")}
+                </a>
               </div>
               {exportProgress.nextCursor && (
                 <Button

@@ -2,13 +2,22 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, dev]
   pull_request:
-    branches: [main]
+    branches: [main, dev]
 
 jobs:
   test:
     runs-on: ubuntu-latest
+    env:
+      # Valeurs factices : aucun secret de production requis pour compiler.
+      DATABASE_URL: postgresql://docbel:docbel@127.0.0.1:5432/docbel_ci
+      DIRECT_URL: postgresql://docbel:docbel@127.0.0.1:5432/docbel_ci
+      BETTER_AUTH_SECRET: ci-only-auth-secret-not-for-production
+      BETTER_AUTH_URL: http://localhost:3000
+      NEXT_PUBLIC_BETTER_AUTH_URL: http://localhost:3000
+      BOOKING_NRN_SECRET: ci-only-nrn-secret-not-for-production
+      NEXT_TELEMETRY_DISABLED: "1"
     steps:
       - uses: actions/checkout@v4
 
@@ -24,7 +33,11 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      # Dette de 129 erreurs assumée (cf. CLAUDE.md) — non bloquant pour l'instant.
-      - run: pnpm lint || true
+      # Baseline explicite de la dette : toute erreur supplémentaire bloque.
+      - run: pnpm lint --suppressions-location .github/eslint-suppressions.json
 
       - run: pnpm test
+
+      - run: pnpm i18n:check
+
+      - run: pnpm build

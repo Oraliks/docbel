@@ -6,7 +6,7 @@ import { Prisma } from "@prisma/client";
 ///   1. soft-delete   : `status = "abandoned"` (posé par DELETE /runs/[id]) —
 ///      la donnée reste, récupérable un temps.
 ///   2. anonymisation : après ANONYMIZE_DAYS d'inactivité, on vide les payloads
-///      et toute trace pseudonyme (sessionId, resumeEmail) → `anonymizedAt`.
+///      et tout lien au compte / trace pseudonyme → `anonymizedAt`.
 ///   3. suppression   : après HARD_DELETE_DAYS d'inactivité, la ligne est
 ///      supprimée définitivement.
 ///
@@ -57,6 +57,7 @@ export const ANONYMIZATION_RESET_FIELDS = {
   orientationAnswers: Prisma.DbNull,
   completedTemplateIds: [],
   resumeEmail: null,
+  userId: null,
   sessionId: null,
   resumeCode: null,
   resumeCodeHash: null,

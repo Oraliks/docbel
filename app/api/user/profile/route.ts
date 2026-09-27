@@ -1,8 +1,9 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { ensureWriteAllowed } from "@/lib/admin/readonly-guard";
+import { apiError, apiOk } from "@/lib/api/response";
 import {
   isValidNISS,
   isValidBelgianIBAN,
@@ -66,15 +67,15 @@ function parseHouseholdMembers(
 
 export async function GET() {
   const userId = await getUserId();
-  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!userId) return apiError(401, "Unauthorized");
 
   const profile = await prisma.userProfile.findUnique({ where: { userId } });
-  return NextResponse.json(profile || { userId });
+  return apiOk(profile || { userId });
 }
 
 export async function PUT(req: NextRequest) {
   const userId = await getUserId();
-  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!userId) return apiError(401, "Unauthorized");
 
   // Garde lecture seule (Phase C #8 + #17) : refuse les mutations si l'admin
   // est en mode "lecture seule" sous impersonation, ou si le user actif est
@@ -86,7 +87,7 @@ export async function PUT(req: NextRequest) {
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+    return apiError(400, "Invalid JSON");
   }
 
   const errors: string[] = [];
@@ -109,7 +110,7 @@ export async function PUT(req: NextRequest) {
   }
 
   if (errors.length > 0) {
-    return NextResponse.json({ error: errors.join(" ; ") }, { status: 422 });
+    return apiError(422, errors.join(" ; "));
   }
 
   // Champs autorisés (whitelist explicite)
@@ -170,13 +171,16 @@ export async function PUT(req: NextRequest) {
     create: { userId, ...data },
   });
 
-  return NextResponse.json(profile);
+  return apiOk(profile);
 }
 
 export async function DELETE() {
   const userId = await getUserId();
-  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!userId) return apiError(401, "Unauthorized");
+
+  const writeBlock = await ensureWriteAllowed();
+  if (writeBlock) return writeBlock;
 
   await prisma.userProfile.deleteMany({ where: { userId } });
-  return NextResponse.json({ ok: true });
+  return apiOk({ ok: true });
 }

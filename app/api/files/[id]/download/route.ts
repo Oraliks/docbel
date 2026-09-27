@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server"
-import { headers } from "next/headers"
-import { auth } from "@/lib/auth"
+import { requireAdminAuth } from "@/lib/auth-check"
+import { apiError } from "@/lib/api/response"
 import { resolveStoredFilePath } from "@/lib/file-storage"
 import { prisma } from "@/lib/prisma"
 import { readFile } from "fs/promises"
 import { existsSync } from "fs"
-import { isBlobsPath, getBlob } from "@/lib/storage/blob-storage"
+import { isBlobsPath, isPrivateBlobPath, getBlob } from "@/lib/storage/blob-storage"
 
 const MIME_BY_EXT: Record<string, string> = {
   pdf: "application/pdf",
@@ -62,30 +62,17 @@ export async function GET(
     })
 
     if (!file) {
-      return NextResponse.json({ error: "File not found" }, { status: 404 })
+      return apiError(404, "File not found")
     }
 
-    if (file.isPrivate) {
-      const session = await auth.api.getSession({ headers: await headers() })
-      const role = (session?.user as { role?: string } | undefined)?.role
-
-      if (!session) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-      }
-
-      if (role !== "admin") {
-        return NextResponse.json(
-          { error: "Forbidden - Admin access required" },
-          { status: 403 }
-        )
-      }
+    const isPrivate = file.isPrivate || Boolean(file.filePath && isPrivateBlobPath(file.filePath))
+    if (isPrivate) {
+      const authCheck = await requireAdminAuth()
+      if (!authCheck.isAuthorized) return authCheck.error
     }
 
     if (!file.filePath) {
-      return NextResponse.json(
-        { error: "File has no path" },
-        { status: 400 }
-      )
+      return apiError(400, "File has no path")
     }
 
     let fileContent: Buffer
@@ -93,27 +80,18 @@ export async function GET(
     if (isBlobsPath(file.filePath)) {
       const buf = await getBlob(file.filePath)
       if (!buf) {
-        return NextResponse.json(
-          { error: "File not found in Blobs" },
-          { status: 404 }
-        )
+        return apiError(404, "File not found in Blobs")
       }
       fileContent = buf
     } else {
       const fullPath = resolveStoredFilePath(file.filePath)
 
       if (!fullPath) {
-        return NextResponse.json(
-          { error: "Unsupported file path" },
-          { status: 400 }
-        )
+        return apiError(400, "Unsupported file path")
       }
 
       if (!existsSync(fullPath)) {
-        return NextResponse.json(
-          { error: "File not found on disk" },
-          { status: 404 }
-        )
+        return apiError(404, "File not found on disk")
       }
 
       fileContent = await readFile(fullPath)
@@ -129,7 +107,7 @@ export async function GET(
     const disposition: "inline" | "attachment" =
       wantsDownload || mustForceAttachment ? "attachment" : "inline"
 
-    const cacheControl = file.isPrivate
+    const cacheControl = isPrivate
       ? "private, no-store"
       : "public, max-age=3600"
 
@@ -143,9 +121,6 @@ export async function GET(
     })
   } catch (error) {
     console.error("GET /api/files/[id]/download error:", error)
-    return NextResponse.json(
-      { error: "Failed to serve file" },
-      { status: 500 }
-    )
+    return apiError(500, "Failed to serve file")
   }
 }

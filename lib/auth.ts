@@ -21,6 +21,14 @@ const LOCK_DURATION_MINUTES = 15
 
 const SIGN_IN_PATH = "/sign-in/email"
 
+// Les opérations admin passent par les routes DocBel (contrôle DB, raison et
+// journal d'impersonation). Le plugin reste disponible via auth.api côté serveur.
+const adminPlugin = admin({
+  adminRoles: ["admin"],
+  defaultRole: "user",
+  impersonationSessionDuration: 60 * 60,
+})
+
 async function getCanonicalUser(email: string) {
   const normalized = email.trim().toLowerCase()
   return prisma.user.findUnique({
@@ -78,6 +86,9 @@ export const auth = betterAuth({
   baseURL: process.env.BETTER_AUTH_URL,
   secret: authSecret,
   database: prismaAdapter(prisma, { provider: "postgresql" }),
+  // disabledPaths ne s'applique qu'au routeur HTTP de Better Auth, pas à auth.api.
+  // Dériver la liste du plugin couvre aussi ses futurs endpoints administratifs.
+  disabledPaths: Object.values(adminPlugin.endpoints).map((endpoint) => endpoint.path),
   trustedOrigins:
     process.env.BETTER_AUTH_TRUSTED_ORIGINS?.split(",")
       .map((value) => value.trim())
@@ -190,7 +201,7 @@ export const auth = betterAuth({
       segment: { type: "string", input: false, required: false },
       partnerType: { type: "string", input: false, required: false },
       status: { type: "string", input: false, defaultValue: "active" },
-      password: { type: "string", input: false, required: false, defaultValue: "" },
+      password: { type: "string", input: false, returned: false, required: false, defaultValue: "" },
       passwordChangedAt: { type: "date", input: false, required: false },
       lastLoginAt: { type: "date", input: false, required: false },
       failedLoginAttempts: { type: "number", input: false, defaultValue: 0 },
@@ -202,8 +213,10 @@ export const auth = betterAuth({
     expiresIn: 60 * 60 * 24 * 30,
     updateAge: 60 * 60 * 24,
     cookieCache: {
-      enabled: true,
-      maxAge: 60 * 5,
+      // Une révocation (désactivation, changement de rôle ou suppression du
+      // compte) doit être visible dès la requête suivante sur toutes les API.
+      // Un cache cookie continuerait à accepter une session supprimée en DB.
+      enabled: false,
     },
   },
   hooks: {
@@ -267,11 +280,7 @@ export const auth = betterAuth({
     //     dans 1h max même si la session admin a un TTL de 30j.
     // L'audit log est géré côté API route (/api/admin/impersonate),
     // pas par Better Auth lui-même.
-    admin({
-      adminRoles: ["admin"],
-      defaultRole: "user",
-      impersonationSessionDuration: 60 * 60,
-    }),
+    adminPlugin,
     magicLink({
       expiresIn: 60 * 15,
       sendMagicLink: async ({ email, url }) => {

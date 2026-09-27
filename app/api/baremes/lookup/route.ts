@@ -3,8 +3,9 @@ import { getActiveBaremeData } from '@/lib/baremes/getActiveBaremeData'
 import type { BaremeCategory } from '@/lib/baremes/types'
 
 export const runtime = 'nodejs'
-// Re-vérifie après 60s côté Next.js fetch cache
-export const revalidate = 60
+// Le résultat dépend des paramètres de requête : interroger la DB à l'exécution,
+// pas pendant le build. Le cache mémoire des barèmes et les headers CDN restent actifs.
+export const dynamic = 'force-dynamic'
 
 const jsonHeaders = {
   'Content-Type': 'application/json; charset=utf-8',

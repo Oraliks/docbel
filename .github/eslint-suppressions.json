@@ -1,0 +1,466 @@
+{
+  "app/admin/i18n/[locale]/locale-translations-manager.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 2
+    }
+  },
+  "app/admin/i18n/content-translations-manager.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 2
+    }
+  },
+  "app/admin/pages/page.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 2
+    }
+  },
+  "app/admin/parametres/parametres-client.tsx": {
+    "react/no-unescaped-entities": {
+      "count": 9
+    }
+  },
+  "app/admin/signalements/signalements-client.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "app/api/admin/formations/module/route.ts": {
+    "@next/next/no-assign-module-variable": {
+      "count": 1
+    }
+  },
+  "app/formations/[slug]/page.tsx": {
+    "react-hooks/purity": {
+      "count": 1
+    }
+  },
+  "app/formations/[slug]/training-detail-client.tsx": {
+    "react-hooks/static-components": {
+      "count": 1
+    }
+  },
+  "app/formations/boussole/boussole-client.tsx": {
+    "react-hooks/purity": {
+      "count": 2
+    },
+    "react-hooks/static-components": {
+      "count": 2
+    }
+  },
+  "app/inscription/employeur/page.tsx": {
+    "@next/next/no-html-link-for-pages": {
+      "count": 1
+    }
+  },
+  "app/inscription/partenaire/page.tsx": {
+    "@next/next/no-html-link-for-pages": {
+      "count": 1
+    }
+  },
+  "app/outils/bureaux/_components/custom-belgium-map.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "app/outils/bureaux/_components/geoloc-banner.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "app/partenaire/reglementation/qualite/page.tsx": {
+    "react/no-unescaped-entities": {
+      "count": 1
+    }
+  },
+  "app/rendez-vous/manage-client.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "app/rendez-vous/page.tsx": {
+    "@next/next/no-html-link-for-pages": {
+      "count": 1
+    }
+  },
+  "components/admin/bureaux/bureaux-table.tsx": {
+    "react-hooks/purity": {
+      "count": 1
+    }
+  },
+  "components/admin/bureaux/health-dashboard.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/admin/bureaux/revisions-dialog.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/admin/bureaux/service-assignments-manager.tsx": {
+    "@next/next/no-html-link-for-pages": {
+      "count": 1
+    },
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/admin/calculateurs/assets-manager.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/admin/calculateurs/overview/overview-card.tsx": {
+    "react-hooks/static-components": {
+      "count": 1
+    }
+  },
+  "components/admin/categories-dialog.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/admin/changelog-manager.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/admin/chomage-ia/_shared-alerts.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/admin/chomage-ia/chat/markdown.tsx": {
+    "react-hooks/static-components": {
+      "count": 2
+    }
+  },
+  "components/admin/chomage-ia/chat/message-bubble.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/admin/chomage-ia/chat/promote-qa-dialog.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/admin/chomage-ia/chat/prompts-history-sheet.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/admin/chomage-ia/chat/snippet-command-palette.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 2
+    }
+  },
+  "components/admin/chomage-ia/chat/snippets-sheet.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/admin/chomage-ia/gaps/gaps-workspace.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/admin/chomage-ia/ingestion/ingestion-source-form.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/admin/chomage-ia/ingestion/ingestion-workspace.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/admin/chomage-ia/memory/memory-form-dialog.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/admin/chomage-ia/memory/memory-workspace.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/admin/chomage-ia/sources/source-form.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 2
+    }
+  },
+  "components/admin/chomage-ia/sources/table/folder-form-dialog.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/admin/chomage-ia/sources/table/folders-tree.tsx": {
+    "react-hooks/static-components": {
+      "count": 1
+    }
+  },
+  "components/admin/chomage-ia/sources/table/source-detail-drawer.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    },
+    "react-hooks/static-components": {
+      "count": 1
+    }
+  },
+  "components/admin/chomage-ia/sources/table/sources-table-row.tsx": {
+    "react-hooks/static-components": {
+      "count": 1
+    }
+  },
+  "components/admin/chomage-ia/sources/table/sources-table-workspace.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/admin/chomage-ia/usage-badge.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/admin/dashboard/api-health-card.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/admin/i18n/glossary-manager.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/admin/i18n/translation-jobs-manager.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/admin/impersonation-reason-dialog.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/admin/messagerie/email-detail.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/admin/messagerie/forward-dialog.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/admin/messagerie/messagerie-panel.tsx": {
+    "react-hooks/preserve-manual-memoization": {
+      "count": 1
+    },
+    "react-hooks/purity": {
+      "count": 1
+    },
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/admin/messagerie/signature-dialog.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/admin/news/overview/news-overview-shell.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/admin/partenaires/overview/partner-overview-dialogs.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 4
+    }
+  },
+  "components/admin/pdf-forms/form-settings.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/admin/tools-admin/tool-row.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/admin/tools-admin/tools-table.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/admin/use-impersonation-read-only.ts": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/admin/users/user-security-tab.tsx": {
+    "react-hooks/purity": {
+      "count": 1
+    }
+  },
+  "components/admin/view-as-menu.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/booking/agenda-client.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/booking/configuration-client.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/booking/creneaux-client.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/booking/equipe-client.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/booking/exceptions-client.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/booking/stats-client.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/decision-builder/simulation-panel.tsx": {
+    "react/no-unescaped-entities": {
+      "count": 4
+    }
+  },
+  "components/decision-builder/versions-dialog.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    },
+    "react/no-unescaped-entities": {
+      "count": 1
+    }
+  },
+  "components/docbel/bureau-callout.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 2
+    }
+  },
+  "components/docbel/ec32/ec32-correction-modal.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/docbel/ec32/ec32-interactive-simulator.tsx": {
+    "react-hooks/immutability": {
+      "count": 1
+    },
+    "react-hooks/set-state-in-effect": {
+      "count": 2
+    }
+  },
+  "components/docbel/ec32/ec32-send-modal.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/docbel/ec32/mandates/ec32-mandate-wizard.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/docbel/file-manager.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/docbel/notification-bell.tsx": {
+    "react-hooks/purity": {
+      "count": 1
+    }
+  },
+  "components/docbel/share-menu.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/formations/mes-formations-client.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/formations/training-card.tsx": {
+    "react-hooks/static-components": {
+      "count": 1
+    }
+  },
+  "components/impersonation-banner.tsx": {
+    "react-hooks/rules-of-hooks": {
+      "count": 1
+    },
+    "react-hooks/set-state-in-effect": {
+      "count": 4
+    }
+  },
+  "components/locale-switcher.tsx": {
+    "react-hooks/static-components": {
+      "count": 2
+    }
+  },
+  "components/page-blocks/docbel/counter.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/page-blocks/navigation/last-updated.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/pdf-forms/__tests__/array-field-error.test.ts": {
+    "react/no-children-prop": {
+      "count": 1
+    }
+  },
+  "components/reglementation/legal-text.tsx": {
+    "react-hooks/immutability": {
+      "count": 1
+    }
+  },
+  "components/welcome-locale-modal.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "hooks/useBareme.ts": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "hooks/useChangelogNotifications.ts": {
+    "react-hooks/set-state-in-effect": {
+      "count": 2
+    }
+  },
+  "lib/chomage-ia/voice-input.ts": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "scripts/audit-page-content.ts": {
+    "prefer-const": {
+      "count": 1
+    }
+  }
+}

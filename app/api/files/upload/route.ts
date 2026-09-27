@@ -140,25 +140,17 @@ export async function POST(req: NextRequest) {
 
     const sha256 = createHash("sha256").update(nodeBuffer).digest("hex");
 
-    // Dedup: when the same content is re-uploaded by the same user, point to the
-    // existing blob instead of writing a second physical copy. We still create a
-    // distinct DB row so each file-tree entry has its own id/parent/name.
-    const dedupSource = await prisma.file.findFirst({
-      where: { sha256, type: "file", createdBy: userId, isPrivate },
-      select: { filePath: true, mimeType: true },
-    });
-
     const safeName = sanitizeFileName(file.name);
     const fileType = getFileType(fileExt);
 
     let filePath: string;
 
-    if (dedupSource?.filePath) {
-      filePath = dedupSource.filePath;
-    } else if (isBlobsEnabled()) {
+    // Each upload owns its bytes. A reused path could be retired concurrently by
+    // a privacy transition; legacy private rows can also point at PUBLIC blobs.
+    if (isBlobsEnabled()) {
       const folder = isPrivate ? "private" : "public";
       const key = `${folder}/${nanoid()}-${safeName}`;
-      filePath = await saveBlob(nodeBuffer, key);
+      filePath = await saveBlob(nodeBuffer, key, isPrivate);
     } else {
       const { relativeDir, absoluteDir } = getUploadDirectory(isPrivate);
 

@@ -36,9 +36,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "ids required" }, { status: 400 });
     }
     const cleanIds = ids.filter((v): v is string => typeof v === "string");
+    if (cleanIds.length > 500) {
+      return NextResponse.json({ error: "Too many files" }, { status: 413 });
+    }
 
     const targets = await prisma.file.findMany({
       where: { id: { in: cleanIds } },
+      take: 500,
       include: {
         usage: { select: { id: true, pageSlug: true } },
         children: { select: { id: true } },
@@ -88,7 +92,10 @@ export async function POST(req: NextRequest) {
       where: { id: { in: deletable.map((d) => d.id) } },
     });
 
-    await Promise.all(pathsToFree.map(deleteStored));
+    for (const filePath of new Set(pathsToFree)) {
+      // Recheck after DB deletion; another surviving alias must keep its bytes.
+      if (await prisma.file.count({ where: { filePath } }) === 0) await deleteStored(filePath);
+    }
 
     return NextResponse.json({
       deleted: deletable.length,

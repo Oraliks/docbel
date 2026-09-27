@@ -1,8 +1,10 @@
-import { NextRequest, NextResponse } from "next/server"
+import { NextRequest } from "next/server"
 import { Prisma } from "@prisma/client"
 import { z } from "zod"
 import { prisma } from "@/lib/prisma"
 import { requireAdminAuth } from "@/lib/auth-check"
+import { apiError, apiOk } from "@/lib/api/response"
+import { deleteUserAndPersonalData } from "@/lib/users-delete"
 import {
   normalizeEmail,
   resolveUserSegmentFields,
@@ -11,8 +13,6 @@ import {
   validatePassword,
 } from "@/lib/users"
 import * as bcrypt from "bcryptjs"
-
-const jsonHeaders = { "Content-Type": "application/json; charset=utf-8" }
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -47,15 +47,12 @@ export async function GET(
     })
 
     if (!user) {
-      return NextResponse.json({ error: "User not found" }, { status: 404, headers: jsonHeaders })
+      return apiError(404, "User not found")
     }
 
-    return NextResponse.json(serializeUser(user), { headers: jsonHeaders })
+    return apiOk(serializeUser(user))
   } catch {
-    return NextResponse.json(
-      { error: "Failed to fetch user" },
-      { status: 500, headers: jsonHeaders }
-    )
+    return apiError(500, "Failed to fetch user")
   }
 }
 
@@ -73,10 +70,7 @@ export async function PUT(
       | null
     const parsed = updateUserSchema.safeParse(rawBody ?? {})
     if (!parsed.success) {
-      return NextResponse.json(
-        { error: parsed.error.issues[0]?.message ?? "Données invalides" },
-        { status: 400, headers: jsonHeaders },
-      )
+      return apiError(400, parsed.error.issues[0]?.message ?? "Données invalides")
     }
 
     const { name, role, status, password } = parsed.data
@@ -87,11 +81,11 @@ export async function PUT(
     })
 
     if (!user) {
-      return NextResponse.json({ error: "User not found" }, { status: 404, headers: jsonHeaders })
+      return apiError(404, "User not found")
     }
 
     if (email !== undefined && !EMAIL_REGEX.test(email)) {
-      return NextResponse.json({ error: "Email invalide" }, { status: 400, headers: jsonHeaders })
+      return apiError(400, "Email invalide")
     }
 
     if (email) {
@@ -103,19 +97,13 @@ export async function PUT(
       })
 
       if (emailExists) {
-        return NextResponse.json(
-          { error: "Cet email est déjà utilisé" },
-          { status: 409, headers: jsonHeaders }
-        )
+        return apiError(409, "Cet email est déjà utilisé")
       }
     }
 
     const passwordError = password ? validatePassword(password) : null
     if (passwordError) {
-      return NextResponse.json(
-        { error: passwordError },
-        { status: 400, headers: jsonHeaders }
-      )
+      return apiError(400, passwordError)
     }
 
     const updateData: Prisma.UserUpdateInput = {
@@ -131,10 +119,7 @@ export async function PUT(
     if (rawBody && typeof rawBody === "object" && "segment" in rawBody) {
       const segment = resolveUserSegmentFields(parsed.data)
       if (!segment.ok) {
-        return NextResponse.json(
-          { error: segment.error },
-          { status: 400, headers: jsonHeaders },
-        )
+        return apiError(400, segment.error)
       }
       Object.assign(updateData, segment.fields)
     }
@@ -176,10 +161,22 @@ export async function PUT(
         })
       }
 
+      // Révoquer aussi les sessions où cet admin impersonait un autre compte.
+      // L'écriture et la révocation doivent réussir ou échouer ensemble.
+      if (
+        newPasswordHash ||
+        (role !== undefined && role !== user.role) ||
+        (status !== undefined && status !== "active")
+      ) {
+        await tx.session.deleteMany({
+          where: { OR: [{ userId: id }, { impersonatedBy: id }] },
+        })
+      }
+
       return result
     })
 
-    return NextResponse.json(serializeUser(updatedUser), { headers: jsonHeaders })
+    return apiOk(serializeUser(updatedUser))
   } catch (error) {
     if (
       error instanceof Prisma.PrismaClientKnownRequestError &&
@@ -189,16 +186,10 @@ export async function PUT(
       const onVat = Array.isArray(target)
         ? target.includes("vatNumber")
         : typeof target === "string" && target.includes("vatNumber")
-      return NextResponse.json(
-        { error: onVat ? "Ce numéro de TVA est déjà utilisé" : "Contrainte d'unicité" },
-        { status: 409, headers: jsonHeaders },
-      )
+      return apiError(409, onVat ? "Ce numéro de TVA est déjà utilisé" : "Contrainte d'unicité")
     }
     console.error("Error updating user:", error)
-    return NextResponse.json(
-      { error: "Failed to update user" },
-      { status: 500, headers: jsonHeaders }
-    )
+    return apiError(500, "Failed to update user")
   }
 }
 
@@ -216,29 +207,18 @@ export async function DELETE(
     })
 
     if (!user) {
-      return NextResponse.json({ error: "User not found" }, { status: 404, headers: jsonHeaders })
+      return apiError(404, "User not found")
     }
 
     if (authCheck.user?.id === id) {
-      return NextResponse.json(
-        { error: "You cannot delete your own account" },
-        { status: 400, headers: jsonHeaders }
-      )
+      return apiError(400, "You cannot delete your own account")
     }
 
-    await prisma.user.delete({
-      where: { id },
-    })
+    await deleteUserAndPersonalData(id)
 
-    return NextResponse.json(
-      { message: "User deleted successfully" },
-      { status: 200, headers: jsonHeaders }
-    )
+    return apiOk({ message: "User deleted successfully" })
   } catch (error) {
     console.error("Error deleting user:", error)
-    return NextResponse.json(
-      { error: "Failed to delete user" },
-      { status: 500, headers: jsonHeaders }
-    )
+    return apiError(500, "Failed to delete user")
   }
 }

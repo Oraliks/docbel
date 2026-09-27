@@ -2,15 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdminAuth } from "@/lib/auth-check";
 import {
-  isLocalStoredPath,
-  moveStoredFile,
   resolveStoredFilePath,
 } from "@/lib/file-storage";
 import {
   isBlobsPath,
   deleteBlob,
-  moveBlob,
 } from "@/lib/storage/blob-storage";
+import { changeFilePrivacy, FilePrivacyError } from "@/lib/storage/file-privacy";
+import { apiError, apiOk } from "@/lib/api/response";
 import { unlink } from "fs/promises";
 import { existsSync } from "fs";
 
@@ -84,6 +83,9 @@ export async function PATCH(
     const { id } = await params;
     const body = await req.json();
     const { name, isPrivate, parentId } = body;
+    if (isPrivate !== undefined && typeof isPrivate !== "boolean") {
+      return apiError(400, "isPrivate must be a boolean");
+    }
 
     const file = await prisma.file.findUnique({ where: { id } });
     if (!file) {
@@ -98,32 +100,7 @@ export async function PATCH(
     } = {};
     if (name) updateData.name = name;
 
-    // Privacy change: also move the physical asset, otherwise the file stays in
-    // /public/uploads and remains reachable via direct URL despite isPrivate=true.
-    let newPathFromPrivacy: string | null = null;
-    if (isPrivate !== undefined && isPrivate !== file.isPrivate) {
-      updateData.isPrivate = isPrivate;
-      if (file.type === "file" && file.filePath) {
-        try {
-          if (isBlobsPath(file.filePath)) {
-            newPathFromPrivacy = await moveBlob(file.filePath, isPrivate);
-          } else if (isLocalStoredPath(file.filePath)) {
-            newPathFromPrivacy = await moveStoredFile(file.filePath, isPrivate);
-          }
-          if (newPathFromPrivacy && newPathFromPrivacy !== file.filePath) {
-            updateData.filePath = newPathFromPrivacy;
-          }
-        } catch (error) {
-          console.error("Error moving stored file on privacy change:", error);
-          return NextResponse.json(
-            { error: "Failed to move file when changing privacy" },
-            { status: 500 }
-          );
-        }
-      }
-    } else if (isPrivate !== undefined) {
-      updateData.isPrivate = isPrivate;
-    }
+    if (isPrivate !== undefined) updateData.isPrivate = isPrivate;
 
     if (parentId !== undefined) {
       if (parentId === id) {
@@ -165,6 +142,7 @@ export async function PATCH(
       const existingFiles = await prisma.file.findMany({
         where: { parentId },
         select: { name: true },
+        take: 1000,
       });
 
       const existingNames = new Set(existingFiles.map((f) => f.name));
@@ -196,6 +174,13 @@ export async function PATCH(
       );
     }
 
+    if (isPrivate !== undefined) {
+      await changeFilePrivacy([id], isPrivate, {
+        ...(updateData.name !== undefined ? { name: updateData.name } : {}),
+        ...(updateData.parentId !== undefined ? { parentId: updateData.parentId } : {}),
+      });
+      return apiOk(await prisma.file.findUnique({ where: { id } }));
+    }
     const updated = await prisma.file.update({
       where: { id },
       data: updateData,
@@ -203,6 +188,7 @@ export async function PATCH(
 
     return NextResponse.json(updated);
   } catch (error) {
+    if (error instanceof FilePrivacyError) return apiError(error.status, error.code, { code: error.code });
     console.error("PATCH /api/files/[id] error:", error);
     return NextResponse.json(
       {
@@ -243,6 +229,7 @@ export async function DELETE(
       const pages = pageIds.length
         ? await prisma.page.findMany({
             where: { id: { in: pageIds } },
+            take: pageIds.length,
             select: { id: true, title: true, slug: true, status: true, deletedAt: true, ogImage: true },
           })
         : [];
@@ -310,6 +297,8 @@ export async function DELETE(
       );
     }
 
+    await prisma.file.delete({ where: { id } });
+
     if (file.type === "file" && file.filePath) {
       // Dedup may share the same physical blob across rows. Only delete the
       // bytes when no other File row still points at this filePath.
@@ -320,8 +309,6 @@ export async function DELETE(
         await deleteStoredContent(file.filePath);
       }
     }
-
-    await prisma.file.delete({ where: { id } });
 
     return NextResponse.json({ success: true });
   } catch (error) {

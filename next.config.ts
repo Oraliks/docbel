@@ -29,11 +29,11 @@ const csp = [
   "worker-src 'self' blob:",
 ].join("; ");
 
-// Permissions-Policy : on coupe les capteurs sensibles. geolocation reste
-// autorisée en same-origin pour le localisateur de bureaux (/outils/bureaux).
+// Permissions-Policy : géolocalisation et microphone restent réservés à
+// l'origine de l'application (localisateur de bureaux et saisie vocale du chat).
 const permissionsPolicy = [
   "camera=()",
-  "microphone=()",
+  "microphone=(self)",
   "payment=()",
   "usb=()",
   "browsing-topics=()",
@@ -58,6 +58,9 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  // Les types de `next dev` ne font pas partie du build de production : ils
+  // peuvent être réécrits pendant qu'un serveur de développement est actif.
+  typescript: { tsconfigPath: isProd ? "tsconfig.build.json" : "tsconfig.json" },
   // pdf-parse / pdfjs-dist embarquent un « worker » que le bundler serveur de
   // Next ne sait pas résoudre (« Cannot find module pdf.worker.mjs »). On les
   // externalise pour qu'ils soient chargés depuis node_modules à l'exécution.

@@ -1,10 +1,11 @@
-import { NextRequest, NextResponse } from "next/server"
+import { NextRequest } from "next/server"
 import { headers, cookies } from "next/headers"
 import { auth } from "@/lib/auth"
 import { requireAdminAuth } from "@/lib/auth-check"
 import { prisma } from "@/lib/prisma"
 import { isDemoEmail } from "@/lib/admin/demo-users"
 import { READONLY_COOKIE } from "@/lib/admin/readonly-guard"
+import { apiError, apiOk } from "@/lib/api/response"
 
 /// POST /api/admin/impersonate
 /// Body : { userId: string }
@@ -28,7 +29,7 @@ export async function POST(req: NextRequest) {
   try {
     body = await req.json()
   } catch {
-    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 })
+    return apiError(400, "Invalid JSON")
   }
 
   const userId =
@@ -36,7 +37,7 @@ export async function POST(req: NextRequest) {
       ? body.userId
       : null
   if (!userId) {
-    return NextResponse.json({ error: "userId requis" }, { status: 400 })
+    return apiError(400, "userId requis")
   }
 
   // Raison (Phase C #11) : obligatoire en prod, optionnelle ailleurs.
@@ -46,13 +47,9 @@ export async function POST(req: NextRequest) {
       : ""
   const reason = rawReason.length > 0 ? rawReason : null
   if (process.env.NODE_ENV === "production" && (!reason || reason.length < 10)) {
-    return NextResponse.json(
-      {
-        error: "Raison requise en production (10 caractères minimum)",
-        code: "reason_required",
-      },
-      { status: 400 }
-    )
+    return apiError(400, "Raison requise en production (10 caractères minimum)", {
+      code: "reason_required",
+    })
   }
 
   const target = await prisma.user.findUnique({
@@ -60,32 +57,20 @@ export async function POST(req: NextRequest) {
     select: { id: true, role: true, status: true, email: true },
   })
   if (!target) {
-    return NextResponse.json({ error: "Compte introuvable" }, { status: 404 })
+    return apiError(404, "Compte introuvable")
   }
   if (target.role === "admin") {
-    return NextResponse.json(
-      { error: "Impossible d'impersonifier un autre admin" },
-      { status: 403 }
-    )
+    return apiError(403, "Impossible d'impersonifier un autre admin")
   }
   if (target.status !== "active") {
-    return NextResponse.json(
-      { error: "Le compte cible n'est pas actif" },
-      { status: 400 }
-    )
+    return apiError(400, "Le compte cible n'est pas actif")
   }
 
   const reqHeaders = await headers()
 
-  // Délègue à Better Auth admin : pose le cookie de session impersonée.
-  // nextCookies() (plugin Better Auth Next.js, cf. lib/auth.ts) propage les
-  // Set-Cookie à la réponse Next.js automatiquement.
-  await auth.api.impersonateUser({
-    body: { userId: target.id },
-    headers: reqHeaders,
-  })
-
-  await prisma.adminImpersonationLog.create({
+  // Écrire le journal AVANT de créer la session : si l'audit échoue, aucun
+  // cookie d'impersonation ne doit être posé par le plugin nextCookies().
+  const auditLog = await prisma.adminImpersonationLog.create({
     data: {
       adminId: adminUser.id,
       targetId: target.id,
@@ -94,6 +79,23 @@ export async function POST(req: NextRequest) {
       reason,
     },
   })
+
+  try {
+    // nextCookies() propage les Set-Cookie à la réponse Next.js.
+    await auth.api.impersonateUser({
+      body: { userId: target.id },
+      headers: reqHeaders,
+    })
+  } catch (error) {
+    // Conserver la tentative auditée, sans la laisser apparaître en cours.
+    await prisma.adminImpersonationLog.updateMany({
+      where: { id: auditLog.id, stoppedAt: null },
+      data: { stoppedAt: new Date() },
+    }).catch((auditError) => {
+      console.error("Failed to close unsuccessful impersonation audit:", auditError)
+    })
+    throw error
+  }
 
   // Phase D #7 garde-fou : si on impersonifie un VRAI user (pas un compte
   // demo), on force le mode lecture seule a ON par defaut, peu importe l'env.
@@ -110,5 +112,5 @@ export async function POST(req: NextRequest) {
     })
   }
 
-  return NextResponse.json({ ok: true, targetEmail: target.email })
+  return apiOk({ ok: true, targetEmail: target.email })
 }

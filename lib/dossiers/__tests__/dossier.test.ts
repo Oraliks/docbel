@@ -68,10 +68,15 @@ describe("registre des dossiers", () => {
 const FAKE: DossierDefinition = {
   slug: "fake",
   title: "Dossier de test",
-  organism: "ONEM",
+  description: "Définition synthétique pour tester le moteur",
+  category: "test",
+  icon: "FileText",
+  color: "",
+  vocabularyTags: [],
   types: ["Alpha", "Beta"],
   whoConcerned: { Alpha: ["ouvrier", "interimaire"], Beta: ["employe"] },
   questions: [],
+  warnings: [],
   documents: [
     { slug: "doc-toujours", title: "Toujours", issuer: "ONEM", fields: [] },
     {

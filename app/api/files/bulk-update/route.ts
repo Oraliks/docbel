@@ -1,98 +1,35 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdminAuth } from "@/lib/auth-check";
-import { isLocalStoredPath, moveStoredFile } from "@/lib/file-storage";
-import { isBlobsPath, moveBlob } from "@/lib/storage/blob-storage";
+import { apiError, apiOk } from "@/lib/api/response";
+import { changeFilePrivacy, FilePrivacyError, MAX_PRIVACY_FILES } from "@/lib/storage/file-privacy";
 
 export async function PATCH(req: NextRequest) {
   const auth = await requireAdminAuth();
   if (!auth.isAuthorized) return auth.error;
-
   try {
-    const body = await req.json();
-    const { parentId, isPrivate } = body;
-
-    if (parentId === undefined || isPrivate === undefined) {
-      return NextResponse.json(
-        { error: "Missing parentId or isPrivate" },
-        { status: 400 }
-      );
+    const { parentId, isPrivate } = await req.json();
+    if (typeof parentId !== "string" || typeof isPrivate !== "boolean") {
+      return apiError(400, "parentId and boolean isPrivate are required");
     }
-
-    // Walk the subtree once with a BFS to collect every descendant id, then
-    // update flags + physical asset locations together.
-    const descendants: { id: string; type: string; filePath: string | null; isPrivate: boolean }[] = [];
-    let frontier: string[] = [parentId];
-    const seen = new Set<string>([parentId]);
-
-    while (frontier.length > 0) {
+    const ids: string[] = [];
+    let frontier = [parentId];
+    const seen = new Set([parentId]);
+    while (frontier.length) {
       const children = await prisma.file.findMany({
         where: { parentId: { in: frontier } },
-        select: { id: true, type: true, filePath: true, isPrivate: true },
+        select: { id: true, type: true }, take: MAX_PRIVACY_FILES + 1,
       });
-      for (const c of children) {
-        descendants.push(c);
-      }
-      frontier = children
-        .filter((c) => c.type === "folder")
-        .map((c) => c.id)
-        .filter((id) => {
-          if (seen.has(id)) return false;
-          seen.add(id);
-          return true;
-        });
+      const fresh = children.filter((child) => !seen.has(child.id));
+      for (const child of fresh) { seen.add(child.id); ids.push(child.id); }
+      if (ids.length > MAX_PRIVACY_FILES) return apiError(413, "Too many files; select a smaller folder");
+      frontier = fresh.filter((child) => child.type === "folder").map((child) => child.id);
     }
-
-    // Move physical files first; if anything fails we abort before mutating DB.
-    type Move = { id: string; oldPath: string; newPath: string };
-    const moves: Move[] = [];
-    for (const node of descendants) {
-      if (node.type !== "file" || !node.filePath) continue;
-      if (node.isPrivate === isPrivate) continue;
-      try {
-        let newPath = node.filePath;
-        if (isBlobsPath(node.filePath)) {
-          newPath = await moveBlob(node.filePath, isPrivate);
-        } else if (isLocalStoredPath(node.filePath)) {
-          newPath = await moveStoredFile(node.filePath, isPrivate);
-        }
-        if (newPath !== node.filePath) {
-          moves.push({ id: node.id, oldPath: node.filePath, newPath });
-        }
-      } catch (error) {
-        console.error("bulk-update: failed to move file", node.id, error);
-        return NextResponse.json(
-          { error: "Failed to move some files" },
-          { status: 500 }
-        );
-      }
-    }
-
-    const allIds = descendants.map((d) => d.id);
-
-    const result = await prisma.$transaction([
-      prisma.file.updateMany({
-        where: { id: { in: allIds } },
-        data: { isPrivate },
-      }),
-      ...moves.map((m) =>
-        prisma.file.update({
-          where: { id: m.id },
-          data: { filePath: m.newPath },
-        })
-      ),
-    ]);
-
-    return NextResponse.json({
-      success: true,
-      updated: result[0].count,
-      moved: moves.length,
-    });
+    const result = await changeFilePrivacy(ids, isPrivate);
+    return apiOk({ success: true, ...result });
   } catch (error) {
-    console.error("PATCH /api/files/bulk-update error:", error);
-    return NextResponse.json(
-      { error: "Failed to update files" },
-      { status: 500 }
-    );
+    if (error instanceof FilePrivacyError) return apiError(error.status, error.code, { code: error.code });
+    console.error("PATCH /api/files/bulk-update failed");
+    return apiError(500, "Failed to update files");
   }
 }

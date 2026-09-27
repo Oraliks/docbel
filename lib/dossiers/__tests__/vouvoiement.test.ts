@@ -72,7 +72,7 @@ describe("Vouvoiement des 4 dossiers d'orientation", () => {
     // On ne scanne QUE les chaînes entre guillemets/backticks — pas les
     // identifiants de code (ex. `titleKey`, `visibleIf`) qui utilisent
     // légitimement des mots proches.
-    const chaines = [...source.matchAll(/"((?:[^"\\]|\\.)*)"|`([^`]*)`/gs)].map(
+    const chaines = [...source.matchAll(/"((?:[^"\\]|\\[\s\S])*)"|`([^`]*)`/g)].map(
       (m) => m[1] ?? m[2] ?? "",
     );
     const trouves = chaines.flatMap((c) => motsTutoiementDansTexte(c));

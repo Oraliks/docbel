@@ -41,4 +41,16 @@ describe("ANONYMIZATION_RESET_FIELDS", () => {
     expect(ANONYMIZATION_RESET_FIELDS.resumeCode).toBeNull();
     expect(ANONYMIZATION_RESET_FIELDS.resumeCodeHash).toBeNull();
   });
+
+  it("retire le rattachement au compte d'un dossier connecté", () => {
+    const run = {
+      userId: "user-to-anonymize",
+      sessionId: "session-to-anonymize",
+      payloads: { form: { firstName: "Exemple" } },
+    };
+    const anonymized = { ...run, ...ANONYMIZATION_RESET_FIELDS };
+    expect(anonymized.userId).toBeNull();
+    expect(anonymized.sessionId).toBeNull();
+    expect(anonymized.payloads).toEqual({});
+  });
 });

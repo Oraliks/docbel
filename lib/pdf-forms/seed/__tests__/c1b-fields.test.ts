@@ -6,6 +6,7 @@ import {
   applyC1BImprovements,
 } from "../c1b-fields";
 import { countRequirements, validateStepFields } from "../../validation";
+import type { FormPayload } from "../../types";
 
 describe("C1B_FIELDS", () => {
   it("couvre l'identité, les 15 questions numérotées et la signature", () => {
@@ -250,7 +251,7 @@ describe("C1B Q15 — au moins une annexe", () => {
 
   it("une seule case cochée suffit — n'importe laquelle des cinq", () => {
     for (const id of CASES_ANNEXES) {
-      const payload: Record<string, unknown> = { nombreAnnexes: "1", [id]: true };
+      const payload: FormPayload = { nombreAnnexes: "1", [id]: true };
       // « autre » ouvre une ligne « à savoir : … » qu'il faut alors renseigner.
       if (id === "annexeAutre") payload.annexeAutreDescription = "Attestation de la caisse";
       const erreurs = validateStepFields(etapeQ15(), payload, "fr");

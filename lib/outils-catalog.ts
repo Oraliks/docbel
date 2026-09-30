@@ -9,8 +9,8 @@
  */
 
 import { getLocale } from 'next-intl/server'
+import type { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
-import { fetchAllToolsActive } from '@/lib/tools-active'
 import { localizeRecords } from '@/lib/i18n/content'
 import { TOOLS_DATA, type Tool, toolSlug } from '@/lib/docbel-data'
 import {
@@ -88,43 +88,53 @@ function hashCode(s: string): number {
   return h
 }
 
+const CATALOG_PAGE_SIZE = 200
+const catalogSelect = {
+  id: true,
+  slug: true,
+  name: true,
+  description: true,
+  type: true,
+  icon: true,
+  popular: true,
+  timeMin: true,
+  order: true,
+  audience: true,
+  createdAt: true,
+  active: true,
+} satisfies Prisma.ToolSelect
+
+async function loadCatalogRows() {
+  const rows: Prisma.ToolGetPayload<{ select: typeof catalogSelect }>[] = []
+  let cursor: string | undefined
+  // Le client généré connaît maintenant active : une seule lecture pour le
+  // catalogue courant, au lieu d'une seconde requête raw SQL et ses retries.
+  // Pagination bornée pour ne pas tronquer silencieusement un futur catalogue.
+  while (true) {
+    const page = await prisma.tool.findMany({
+      select: catalogSelect,
+      take: CATALOG_PAGE_SIZE,
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+      orderBy: [{ popular: 'desc' }, { order: 'asc' }, { name: 'asc' }, { id: 'asc' }],
+    })
+    rows.push(...page)
+    if (page.length < CATALOG_PAGE_SIZE) return rows
+    cursor = page[page.length - 1].id
+  }
+}
+
 export async function getPublicCatalog(): Promise<Tool[]> {
-  // 1) Tous les outils DB. Le filtre `active=true` passe par un raw SQL
-  // (cf. fetchAllToolsActive) car le client Prisma ne connaît pas encore le
-  // champ tant que pnpm db:generate n'a pas tourné après la migration.
-  const [allTools, activeRows] = await Promise.all([
-    prisma.tool.findMany({
-      select: {
-        id: true,
-        slug: true,
-        name: true,
-        description: true,
-        type: true,
-        icon: true,
-        popular: true,
-        timeMin: true,
-        order: true,
-        audience: true,
-        createdAt: true,
-      },
-      orderBy: [{ popular: 'desc' }, { order: 'asc' }, { name: 'asc' }],
-    }),
-    fetchAllToolsActive(),
-  ])
+  const [allTools, locale] = await Promise.all([loadCatalogRows(), getLocale()])
 
   // Traductions du contenu DB (ContentTranslation) : on superpose name/description
   // en locale courante AVANT tout mapping (no-op si locale=fr, fallback FR sinon).
   // Match par Tool.id (cuid) — sélectionné ci-dessus avec name/description.
-  const locale = await getLocale()
-  const localizedTools = await localizeRecords(
+  const dbTools = await localizeRecords(
     'Tool',
-    allTools,
+    allTools.filter((tool) => tool.active),
     ['name', 'description'],
     locale,
   )
-
-  const activeSlugs = new Set(activeRows.filter((r) => r.active).map((r) => r.slug))
-  const dbTools = localizedTools.filter((t) => activeSlugs.has(t.slug))
 
   // IMPORTANT : pour la déduplication entre DB et statique, on utilise
   // TOUS les slugs DB (actifs OU désactivés) — pas seulement les actifs.

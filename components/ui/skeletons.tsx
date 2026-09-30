@@ -1,6 +1,58 @@
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
+/** Panneau de reprise de l'accueil, dimensionné comme la carte latérale. */
+export function LandingAsideSkeleton() {
+  return (
+    <div aria-hidden="true" className="glass-surface flex h-full min-h-[400px] flex-col gap-5 rounded-[24px] p-5">
+      <Skeleton className="h-5 w-28" />
+      <Skeleton className="h-7 w-4/5" />
+      <Skeleton className="h-4 w-full" />
+      <div className="flex flex-1 flex-col justify-center gap-5">
+        {[0, 1, 2].map((step) => (
+          <div key={step} className="flex items-center gap-3">
+            <Skeleton className="size-8 shrink-0 rounded-xl" />
+            <div className="flex flex-1 flex-col gap-2">
+              <Skeleton className="h-4 w-4/5" />
+              <Skeleton className="h-3 w-full" />
+            </div>
+          </div>
+        ))}
+      </div>
+      <Skeleton className="h-10 w-full rounded-xl" />
+    </div>
+  );
+}
+
+/** Outils + bande de confiance / trois actualités : même grille que l'accueil. */
+export function LandingContentSkeleton() {
+  return (
+    <div aria-hidden="true" className="grid items-stretch gap-4 xl:grid-cols-[minmax(0,1.62fr)_minmax(360px,1fr)]">
+      <div className="flex min-w-0 flex-col gap-4">
+        <div className="glass-surface flex flex-col gap-6 rounded-[24px] p-5 sm:p-7">
+          <Skeleton className="h-8 w-3/5" />
+          <CardGridSkeleton count={4} withMedia={false} className="lg:grid-cols-2 xl:grid-cols-4" />
+        </div>
+        <Skeleton className="h-40 w-full rounded-[24px]" />
+      </div>
+      <div className="glass-surface flex flex-col gap-5 rounded-[24px] p-5 sm:p-6">
+        <Skeleton className="h-8 w-3/5" />
+        {[0, 1, 2].map((article) => (
+          <div key={article} className="grid min-h-[132px] grid-cols-[116px_minmax(0,1fr)] gap-3 p-2">
+            <Skeleton className="h-full w-full rounded-xl" />
+            <div className="flex flex-col gap-3">
+              <Skeleton className="h-5 w-2/3" />
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="mt-auto h-3 w-1/2" />
+            </div>
+          </div>
+        ))}
+        <Skeleton className="mt-auto h-10 w-full rounded-xl" />
+      </div>
+    </div>
+  );
+}
+
 /**
  * Briques de skeleton réutilisables pour les fichiers `loading.tsx`.
  *

@@ -104,28 +104,30 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // Lit la session côté serveur (cookieCache Better Auth = ~ms, pas de DB).
-  // Permet aux headers d'afficher le bon état dès le 1er render → zéro
-  // flash "Invité → Compte".
-  const initialSession = await getServerAuthSession();
-  // i18n (mode cookie) : locale + messages côté serveur, hydratés au provider
-  // racine → couvre tout le front (vitrine glass, espaces pros, admin).
-  const locale = await getLocale();
+  // Lectures indépendantes : ne pas faire attendre les réglages/i18n derrière
+  // une session dont le cookie-cache doit être renouvelé en DB.
+  // La session reste rendue côté serveur, sans flash « Invité → Compte ».
+  const [initialSession, locale, messages, cookieStore, siteSettings] = await Promise.all([
+    getServerAuthSession(),
+    getLocale(),
+    getMessages(),
+    cookies(),
+    getSiteSettings(),
+  ]);
   // SPLIT admin/public : le provider RACINE ne sert QUE les messages `public.*`
   // au client (≈348 KB). Le volumineux `admin.*` (≈132 KB, FR) n'est PLUS
   // embarqué par les visiteurs publics : il est servi par un provider imbriqué
   // dans app/admin/layout.tsx (tous les consommateurs admin.* vivent sous /admin).
   // Côté SERVEUR, getTranslations garde l'accès complet (request.ts inchangé).
-  const messages = await getMessages();
   const publicMessages = { public: messages.public };
 
   // RGPD : état de consentement lu côté serveur (anti-flash + aucun traceur
   // monté avant accord). `null` = pas de décision → la bannière s'affichera.
-  const initialConsent = parseConsent((await cookies()).get(CONSENT_COOKIE)?.value);
+  const initialConsent = parseConsent(cookieStore.get(CONSENT_COOKIE)?.value);
 
   // Paramètres globaux (tranche publique) : identité, maintenance, annonce —
   // exposés au client pour la bannière + le gate maintenance. Lecture cachée.
-  const publicSiteSettings = toPublicSiteSettings(await getSiteSettings());
+  const publicSiteSettings = toPublicSiteSettings(siteSettings);
 
   return (
     <html

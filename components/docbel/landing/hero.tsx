@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { useTranslations } from "next-intl";
 import {
   ArrowRight,
@@ -24,13 +25,8 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { useAppState } from "@/lib/app-state-context";
 import { cn } from "@/lib/utils";
-import {
-  ResumeStrip,
-  type ResumeStripRun,
-} from "@/components/docbel/landing/resume-strip";
-
 interface LandingHeroProps {
-  activeRun: ResumeStripRun | null;
+  aside: ReactNode;
 }
 
 const SEARCH_EXAMPLES = [
@@ -39,7 +35,7 @@ const SEARCH_EXAMPLES = [
   "searchExample3",
 ] as const;
 
-function HowItWorksCard() {
+export function HowItWorksCard() {
   const t = useTranslations("public.home");
   const steps = [
     {
@@ -113,7 +109,7 @@ function HowItWorksCard() {
 }
 
 /** Accueil guide : recherche dominante, illustration et reprise reelle du dossier. */
-export function LandingHero({ activeRun }: LandingHeroProps) {
+export function LandingHero({ aside }: LandingHeroProps) {
   const t = useTranslations("public.home");
   const tc = useTranslations("public.chrome");
   const { openSearch } = useAppState();
@@ -204,7 +200,7 @@ export function LandingHero({ activeRun }: LandingHeroProps) {
       </div>
 
       <aside className="min-w-0" aria-label={t("guidedAsideLabel")}>
-        {activeRun ? <ResumeStrip run={activeRun} /> : <HowItWorksCard />}
+        {aside}
       </aside>
     </section>
   );

@@ -1,7 +1,10 @@
+import { Suspense } from "react";
 import { getLocale } from "next-intl/server";
 import { prisma } from "@/lib/prisma";
 import { localizeRecords } from "@/lib/i18n/content";
-import { LandingHero } from "@/components/docbel/landing/hero";
+import { LandingHero, HowItWorksCard } from "@/components/docbel/landing/hero";
+import { ResumeStrip } from "@/components/docbel/landing/resume-strip";
+import { LandingAsideSkeleton, LandingContentSkeleton } from "@/components/ui/skeletons";
 import { LandingEditorialStrip } from "@/components/docbel/landing/editorial-strip";
 import { LandingToolsRow } from "@/components/docbel/landing/tools-row";
 import { TrustBand } from "@/components/docbel/landing/trust-band";
@@ -14,9 +17,15 @@ import type { NewsItem } from "@/lib/docbel-data";
 
 export const dynamic = "force-dynamic";
 
-/** Accueil serveur : outils et reprise sont charges en parallele et fail-soft. */
-export default async function HomePage() {
-  const [articles, catalog, activeRun, locale] = await Promise.all([
+/** La reprise personnalisée reste isolée des données publiques et de leur cache. */
+async function HomeResume() {
+  const activeRun = await loadActiveBundleRun({ respectDismiss: false });
+  return activeRun ? <ResumeStrip run={activeRun} /> : <HowItWorksCard />;
+}
+
+/** Les lectures DB secondaires ne bloquent ni le titre ni la recherche. */
+async function HomeContent() {
+  const [articles, catalog, locale] = await Promise.all([
     prisma.news.findMany({
       where: { status: "published" },
       orderBy: { publishedAt: "desc" },
@@ -37,7 +46,6 @@ export default async function HomePage() {
       },
     }).catch(() => []),
     getPublicCatalog().catch(() => []),
-    loadActiveBundleRun({ respectDismiss: false }),
     getLocale(),
   ]);
 
@@ -65,9 +73,6 @@ export default async function HomePage() {
   }));
 
   return (
-    <div className="docbel-home flex w-full flex-col gap-4 sm:gap-5">
-      <LandingHero activeRun={activeRun} />
-      <WizardTeaser />
       <div
         className={
           news.length > 0
@@ -81,6 +86,24 @@ export default async function HomePage() {
         </div>
         {news.length > 0 ? <LandingEditorialStrip articles={news} /> : null}
       </div>
+  );
+}
+
+/** Chaque zone attend uniquement ses données ; le shell et le héros restent visibles. */
+export default function HomePage() {
+  return (
+    <div className="docbel-home flex w-full flex-col gap-4 sm:gap-5">
+      <LandingHero
+        aside={
+          <Suspense fallback={<LandingAsideSkeleton />}>
+            <HomeResume />
+          </Suspense>
+        }
+      />
+      <WizardTeaser />
+      <Suspense fallback={<LandingContentSkeleton />}>
+        <HomeContent />
+      </Suspense>
     </div>
   );
 }

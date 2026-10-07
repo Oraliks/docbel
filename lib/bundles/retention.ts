@@ -49,12 +49,13 @@ export function retentionCutoffs(
 
 /// Champs remis à zéro par l'étape 2 du cron `bundle-runs-purge` (anonymisation) —
 /// tout ce qui pourrait identifier ou réidentifier le dossier : payloads,
-/// réponses d'orientation, repères pseudonymes et brouillon en cours.
+/// réponses d'orientation, décision réglementaire, repères pseudonymes et brouillon en cours.
 /// `anonymizedAt` n'y figure pas (l'appelant l'horodate au moment de l'exécution).
 export const ANONYMIZATION_RESET_FIELDS = {
   payloads: {},
   eligibilityAnswers: {},
   orientationAnswers: Prisma.DbNull,
+  regulatoryDecisionSnapshot: Prisma.DbNull,
   completedTemplateIds: [],
   resumeEmail: null,
   userId: null,

@@ -151,6 +151,7 @@ export async function exportPrivacyDataset(input: {
           status: true, startedAt: true, updatedAt: true, completedAt: true,
           anonymizedAt: true, orientationAnswers: true, lastFormId: true,
           lastStepId: true, lastActiveField: true, draftPayloads: true,
+          regulatoryDecisionSnapshot: true,
         },
         orderBy: { id: "asc" }, take, ...cursorArgs(input.cursor),
       })

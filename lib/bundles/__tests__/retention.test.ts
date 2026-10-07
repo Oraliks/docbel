@@ -30,8 +30,9 @@ describe("retentionCutoffs", () => {
 });
 
 describe("ANONYMIZATION_RESET_FIELDS", () => {
-  it("vide orientationAnswers (wizard d'orientation) en plus des payloads", () => {
+  it("vide les réponses d'orientation et la décision réglementaire associée", () => {
     expect(ANONYMIZATION_RESET_FIELDS.orientationAnswers).toBe(Prisma.DbNull);
+    expect(ANONYMIZATION_RESET_FIELDS.regulatoryDecisionSnapshot).toBe(Prisma.DbNull);
   });
 
   it("vide aussi les repères pseudonymes et le brouillon en cours", () => {

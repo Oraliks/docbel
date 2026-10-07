@@ -29,14 +29,14 @@ async function run(req: NextRequest) {
 
   // 2. Anonymisation des runs inactifs non encore anonymisés : on vide tout ce
   //    qui pourrait identifier ou réidentifier le dossier — y compris le
-  //    brouillon en cours (draftPayloads) et les repères de reprise (Lot 3).
+  //    brouillon en cours (draftPayloads), la décision réglementaire et les repères de reprise (Lot 3).
   // SQL explicite pour préserver updatedAt. Prisma @updatedAt ferait passer
   // l'entretien pour une activité utilisateur et repousserait les échéances.
   // Garder ces champs alignés avec ANONYMIZATION_RESET_FIELDS.
   const anonymized = await prisma.$executeRaw`
     UPDATE "BundleRun" SET
       "payloads" = '{}'::jsonb, "eligibilityAnswers" = '{}'::jsonb,
-      "orientationAnswers" = NULL, "completedTemplateIds" = '[]'::jsonb,
+      "orientationAnswers" = NULL, "regulatoryDecisionSnapshot" = NULL, "completedTemplateIds" = '[]'::jsonb,
       "resumeEmail" = NULL, "userId" = NULL, "sessionId" = NULL,
       "resumeCode" = NULL, "resumeCodeHash" = NULL, "draftPayloads" = NULL,
       "lastFormId" = NULL, "lastStepId" = NULL, "lastActiveField" = NULL,

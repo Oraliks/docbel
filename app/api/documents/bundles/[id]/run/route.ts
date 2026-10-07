@@ -19,6 +19,7 @@ import { apiError, apiOk } from "@/lib/api/response";
 import { parseOrientationAnswers } from "@/lib/dossiers/orientation";
 import { bundleRunHasProgress } from "@/lib/bundles/run-progress";
 import { resolveForceNewAction } from "@/lib/bundles/run-creation";
+import { decideRegulatoryScenarioForBundle } from "@/lib/regulatory-decision/personal-situation";
 
 const COOKIE_NAME = "beldoc-bundle-session";
 const ORIENTATION_COOKIE = "beldoc-orientation";
@@ -104,6 +105,9 @@ export async function POST(
   if (!bundle || !bundle.active) {
     return apiError(404, "Bundle indisponible", { code: "not_found" });
   }
+  // Une décision n'est créée que pour les vertical slices explicitement
+  // raccordés. Les autres bundles conservent leur comportement historique.
+  const regulatoryDecision = decideRegulatoryScenarioForBundle(bundle.slug);
 
   const session = await auth.api.getSession({ headers: await headers() });
   const userId = session?.user?.id || null;
@@ -195,13 +199,16 @@ export async function POST(
       const hasEligibilityAnswers = Object.keys(eligibilityAnswers).length > 0;
       // Une nouvelle orientation doit aussi rafraîchir un run réutilisé, même si
       // ce dossier n'a aucune question de pré-qualification.
-      if (hasEligibilityAnswers || orientationAnswers) {
+      if (hasEligibilityAnswers || orientationAnswers || (regulatoryDecision && !existing.regulatoryDecisionSnapshot)) {
         const updated = await prisma.bundleRun.update({
           where: { id: existing.id },
           data: {
             ...(hasEligibilityAnswers ? { eligibilityAnswers } : {}),
             ...(orientationAnswers
               ? { orientationAnswers: orientationAnswers as Prisma.InputJsonValue }
+              : {}),
+            ...(regulatoryDecision && !existing.regulatoryDecisionSnapshot
+              ? { regulatoryDecisionSnapshot: regulatoryDecision as unknown as Prisma.InputJsonValue }
               : {}),
           },
         });
@@ -241,6 +248,9 @@ export async function POST(
       // statut « complété » pour ne pas tout ressaisir.
       ...(clonedPayloads ? { payloads: clonedPayloads } : {}),
       ...(clonedCompleted ? { completedTemplateIds: clonedCompleted } : {}),
+      ...(regulatoryDecision
+        ? { regulatoryDecisionSnapshot: regulatoryDecision as unknown as Prisma.InputJsonValue }
+        : {}),
     },
   });
 

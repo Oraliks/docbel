@@ -1,0 +1,100 @@
+import { describe, expect, it } from "vitest";
+
+import { evaluateArticle110Verifier } from "../article-110-verifier";
+
+const thresholds = {
+  spouseProfessionalMonthly: 1_000,
+  childProfessionalMonthly: 1_000,
+  spouseReplacementMonthly: 1_000,
+  childReplacementMonthly: 1_000,
+  ascendantPensionWithChildMonthly: 1_500,
+  ascendantPensionMonthly: 1_000,
+  ascendantDisabledPensionMonthly: 1_200,
+  source: { fileId: "test", fileName: "bareme-test", validFrom: new Date("2026-09-01") },
+} as const;
+
+describe("Article 110 verifier adapter", () => {
+  it("uses spouse priority even when a relative has income", () => {
+    const result = evaluateArticle110Verifier({ thresholds, people: [
+      { id: "spouse", label: "Conjoint", relation: "spouse", hasProfessionalIncome: false, hasReplacementIncome: false },
+      { id: "parent", label: "Père", relation: "relative", hasProfessionalIncome: true },
+    ] });
+    expect(result.expectedCategory).toBe("A");
+    expect(result.composition.kind).toBe("spouse_or_partner");
+  });
+
+  it("keeps 110&1M temporal information separate from the household result", () => {
+    const result = evaluateArticle110Verifier({ assessedAt: new Date("2026-10-08"), thresholds, people: [{
+      id: "child", label: "Enfant", relation: "child", hasProfessionalIncome: true, hasReplacementIncome: false,
+      firstProfessionalIncome: true, neutralisationRequested: true, firstProfessionalIncomeStartedAt: "2026-09-01", studiesEndedAt: "2026-08-31",
+    }] });
+    expect(result.article110Decision?.temporalEffect).toMatchObject({ onemCode: "110&1M", reassessmentAt: "2027-09-01" });
+    expect(result.expectedCategory).toBe("A");
+  });
+
+  it("finds A for children only when a child opens family allowances", () => {
+    const result = evaluateArticle110Verifier({ thresholds, people: [{
+      id: "child", label: "Enfant", relation: "child", receivesFamilyAllowances: true,
+      hasProfessionalIncome: false, hasReplacementIncome: false,
+    }] });
+    expect(result.expectedCategory).toBe("A");
+  });
+
+  it("keeps A when one child starts work while another child opens family allowances", () => {
+    const result = evaluateArticle110Verifier({ thresholds, people: [
+      { id: "working", label: "Enfant 1", relation: "child", hasProfessionalIncome: true, hasReplacementIncome: false },
+      { id: "allowance", label: "Enfant 2", relation: "child", receivesFamilyAllowances: true, hasProfessionalIncome: false, hasReplacementIncome: false },
+    ] });
+    expect(result.expectedCategory).toBe("A");
+    expect(result.declarationRequired).toBe(true);
+  });
+
+  it("uses the pension threshold for a documented ascendant pension below it", () => {
+    const result = evaluateArticle110Verifier({ thresholds, people: [{
+      id: "parent", label: "Père", relation: "relative", isAscendant: true,
+      hasProfessionalIncome: false, hasReplacementIncome: true, replacementIncomeType: "pension",
+      replacementIncomeAmount: 500, pensionProofAvailable: true, pensionGrossAmountConfirmed: true,
+    }] });
+    expect(result.expectedCategory).toBe("A");
+  });
+
+  it("finds B for a documented ascendant pension above its threshold", () => {
+    const result = evaluateArticle110Verifier({ thresholds, people: [{
+      id: "parent", label: "Père", relation: "relative", isAscendant: true,
+      hasProfessionalIncome: false, hasReplacementIncome: true, replacementIncomeType: "pension",
+      replacementIncomeAmount: 1_500, pensionProofAvailable: true, pensionGrossAmountConfirmed: true,
+    }] });
+    expect(result.expectedCategory).toBe("B");
+  });
+
+  it("finds B when a third party has a relevant income", () => {
+    const result = evaluateArticle110Verifier({ thresholds, people: [
+      { id: "child", label: "Enfant", relation: "child", receivesFamilyAllowances: true, hasProfessionalIncome: false, hasReplacementIncome: false },
+      { id: "friend", label: "Ami", relation: "third_party", hasProfessionalIncome: true, hasReplacementIncome: false },
+    ] });
+    expect(result.expectedCategory).toBe("B");
+  });
+
+  it("keeps an unestablished partner in review", () => {
+    const result = evaluateArticle110Verifier({ thresholds, people: [{
+      id: "partner", label: "Partenaire", relation: "partner", partnerEstablished: false,
+    }] });
+    expect(result).toMatchObject({ expectedCategory: null, level: "review" });
+  });
+
+  it("surfaces C110A as an action without turning 60B into A", () => {
+    const result = evaluateArticle110Verifier({ thresholds, people: [{
+      id: "partner", label: "Partenaire", relation: "partner", partnerEstablished: true,
+      hasProfessionalIncome: true, professionalIncomeAmount: 900, professionalIncomeContract: "cdd", professionalIncomeVariable: true,
+      hasReplacementIncome: false, c110aReceived: false,
+    }] });
+    expect(result.householdAssessment).toMatchObject({ operationalArticle: "60B", expectedCategory: "B", monthlyPaymentAssessment: "NEEDS_C110A" });
+    expect(result.actions).toContain("Fournir le C110A officiel");
+  });
+
+  it("makes an explicit cohousing claim a documented review", () => {
+    const result = evaluateArticle110Verifier({ thresholds, cohousingClaim: true, people: [] });
+    expect(result).toMatchObject({ expectedCategory: null, level: "review" });
+    expect(result.actions).toContain("Annexe REGIS");
+  });
+});

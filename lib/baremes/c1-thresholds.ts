@@ -7,6 +7,9 @@ export interface C1BaremeThresholds {
   childProfessionalMonthly: number | null
   spouseReplacementMonthly: number | null
   childReplacementMonthly: number | null
+  ascendantPensionWithChildMonthly?: number | null
+  ascendantPensionMonthly?: number | null
+  ascendantDisabledPensionMonthly?: number | null
   source: { fileId: string; fileName: string; validFrom: Date | null } | null
 }
 
@@ -21,6 +24,9 @@ export function getC1BaremeThresholds(data: ActiveBaremeData | null): C1BaremeTh
     childProfessionalMonthly: null,
     spouseReplacementMonthly: null,
     childReplacementMonthly: null,
+    ascendantPensionWithChildMonthly: null,
+    ascendantPensionMonthly: null,
+    ascendantDisabledPensionMonthly: null,
     source: data ? { fileId: data.fileId, fileName: data.fileName, validFrom: data.validFrom } : null,
   }
   if (!data) return empty
@@ -28,13 +34,15 @@ export function getC1BaremeThresholds(data: ActiveBaremeData | null): C1BaremeTh
   const rows = (data.amountsByCategory.other_unemployment_amount ?? []).filter(
     (row) => row.unit === 'monthly'
   )
-  const find = (article: number, paragraph: number): number | null => {
+  const find = (article: number, paragraph: number, labelIncludes: string[] = [], labelExcludes: string[] = []): number | null => {
     const row = rows.find((candidate) => {
       const haystack = `${candidate.article ?? ''} ${candidate.labelFr ?? ''} ${candidate.labelNl ?? ''}`
         .normalize('NFD')
         .replace(/[\u0300-\u036f]/g, '')
         .toLowerCase()
       return new RegExp(`\\b${article}\\b[\\s\\S]{0,24}\\b(?:al|aline?a|§)\\.?\\s*${paragraph}\\b`).test(haystack)
+        && labelIncludes.every((term) => haystack.includes(term.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()))
+        && labelExcludes.every((term) => !haystack.includes(term.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()))
     })
     return row?.amount ?? null
   }
@@ -47,6 +55,11 @@ export function getC1BaremeThresholds(data: ActiveBaremeData | null): C1BaremeTh
     // AM art. 61, al. 2 et art. 62, al. 1 : revenus de remplacement
     spouseReplacementMonthly: find(61, 2),
     childReplacementMonthly: find(62, 1),
+    // AM art. 62 : seuils des pensions d'ascendants, extraits du bloc
+    // « Situation familiale revenus bruts » du barème versionné.
+    ascendantPensionWithChildMonthly: find(62, 2),
+    ascendantPensionMonthly: find(62, 3, ['ascendant'], ['handicap']),
+    ascendantDisabledPensionMonthly: find(62, 3, ['ascendant', 'handicap']),
   }
 }
 

@@ -22,6 +22,9 @@ import { ensureWriteAllowed } from "@/lib/admin/readonly-guard";
 import { loadDossierState } from "@/lib/bundles/completion";
 import { stableDocumentKey } from "@/lib/bundles/document-identity";
 import { EDITABLE_BUNDLE_RUN_STATUSES } from "@/lib/bundles/run-lifecycle";
+import { withPersonalSituationTrace } from "@/lib/regulatory-decision/personal-situation-change";
+import { getActiveBaremeData } from "@/lib/baremes/getActiveBaremeData";
+import { getC1BaremeThresholds } from "@/lib/baremes/c1-thresholds";
 
 const json = { "Content-Type": "application/json; charset=utf-8" };
 
@@ -166,14 +169,32 @@ export async function POST(
     // actifs. La reprise fine ne doit plus rouvrir ce document sur une étape.
     const runDraft = await prisma.bundleRun.findUnique({
       where: { id: bundleRunId },
-      select: { draftPayloads: true },
+      select: { draftPayloads: true, regulatoryDecisionSnapshot: true },
     });
     const nextDraft = { ...((runDraft?.draftPayloads as Record<string, unknown>) ?? {}) };
     delete nextDraft[form.id];
+    const c1Thresholds = form.slug === "c1-changement-situation"
+      ? getC1BaremeThresholds(await getActiveBaremeData())
+      : undefined;
     await prisma.bundleRun.update({
       where: { id: bundleRunId },
       data: {
         payloads: { ...before.payloads, [form.id]: validated } as unknown as Prisma.InputJsonValue,
+        ...(form.slug === "c1-changement-situation"
+          ? {
+              regulatoryDecisionSnapshot: withPersonalSituationTrace(
+                runDraft?.regulatoryDecisionSnapshot as never,
+                validated,
+                new Date(),
+                c1Thresholds,
+                {
+                  regisCompleted: before.items.some((item) =>
+                    item.pdfForm?.slug === "c1-regis" && !!item.pdfFormId && before.completedTemplateIds.includes(item.pdfFormId),
+                  ),
+                },
+              ) as unknown as Prisma.InputJsonValue,
+            }
+          : {}),
         completedTemplateIds: (before.completedTemplateIds.includes(form.id)
           ? before.completedTemplateIds
           : [...before.completedTemplateIds, form.id]) as unknown as Prisma.InputJsonValue,
@@ -323,6 +344,16 @@ export async function POST(
           data: {
             payloads: newPayloads as unknown as Prisma.InputJsonValue,
             completedTemplateIds: newCompleted as unknown as Prisma.InputJsonValue,
+            ...(form.slug === "c1-changement-situation"
+              ? {
+                  regulatoryDecisionSnapshot: withPersonalSituationTrace(
+                    run.regulatoryDecisionSnapshot as never,
+                    validated,
+                    new Date(),
+                    getC1BaremeThresholds(await getActiveBaremeData()),
+                  ) as unknown as Prisma.InputJsonValue,
+                }
+              : {}),
           },
         });
         // Complétion : le téléchargement est une action terminale du dossier.

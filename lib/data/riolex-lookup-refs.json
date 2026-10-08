@@ -875,6 +875,16 @@
       "tableSlug": "s04-s36-article-indemnisation",
       "label": "Travailleur ayant charge de famille - conjoint sans revenus",
       "code": "110&1A"
+    },
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "label": "Revenu enfant neutralisé",
+      "code": "110&1M"
+    },
+    {
+      "tableSlug": "s04-s36-article-indemnisation",
+      "label": "Fin de l’octroi temporaire de chef de famille sur base du 110&1F ou du 110&1M",
+      "code": "110&1V"
     }
   ],
   "25_11_1991-1-art_114": [

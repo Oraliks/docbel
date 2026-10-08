@@ -29,25 +29,21 @@ export const C1_TRIGGERS: PdfFormTrigger[] = [
     reason: { fr: "Incapacité 33 % — demande de fixation des allocations" },
   },
   {
-    // L'utilisateur signale lui-même une situation de cohabitation ambiguë
-    // → joindre une ANNEXE REGIS. Trigger sur la nouvelle question
-    // `situationCohabitationAmbigue` qu'on ajoute juste après.
+    // L'ONEM décrit l'Annexe REGIS comme l'explication d'une différence entre
+    // les déclarations C1 et les registres. Une colocation seule ne suffit pas
+    // à la déduire : elle reste une information factuelle à confirmer.
     whenFieldId: "situationCohabitationAmbigue",
     whenValue: "oui",
-    unlessFieldId: "situationCohabitationAmbigueDejaDeclare",
-    unlessValue: "oui",
     requiresFormSlug: "c1-regis",
-    reason: { fr: "Situation de cohabitation à préciser via Annexe REGIS" },
+    reason: { fr: "Une différence avec les registres est déclarée : l'Annexe REGIS permet de l'expliquer." },
   },
   {
-    // Nouvelle question concrète (2026-07) : la colocation (aucun lien de
-    // parenté, pas de ménage commun) est exactement le cas couvert par le
-    // code FN4 de l'Annexe Regis. Pas de suivi "déjà déclaré" pour cette
-    // question — non demandé, cf. spec.
-    whenFieldId: "habiteEnColocation",
+    // Une demande explicite de co-housing appelle l'Annexe REGIS existante.
+    // Ce n'est pas déduit d'une simple colocation : la qualification reste à l'ONEM.
+    whenFieldId: "cohousingVieAutonomeRevendiquee",
     whenValue: "oui",
     requiresFormSlug: "c1-regis",
-    reason: { fr: "Ne remplissez pas les détails du colocataire sur ce C1 : l'Annexe REGIS (code FN4) sera le prochain document à compléter." },
+    reason: { fr: "Co-housing déclaré : l'Annexe REGIS existante permet d'expliquer la situation aux registres." },
   },
   {
     whenFieldId: "mandatArtistique",

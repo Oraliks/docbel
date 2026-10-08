@@ -1,4 +1,5 @@
 import type { C1BaremeThresholds } from "@/lib/baremes/c1-thresholds";
+import type { FormPayload } from "@/lib/pdf-forms/types";
 
 import { decideArticle110ChildFirstProfessionalIncome } from "./article-110-child-income";
 import {
@@ -8,6 +9,29 @@ import {
   type HouseholdRelation,
 } from "./household-composition";
 import type { RegulatoryFacts } from "./types";
+import { assessIsolatedHouseholdClaim } from "./personal-situation-change";
+
+type AlimonyFacts = {
+  enabled: boolean;
+  beneficiary?: "conjoint" | "enfant-mineur" | "enfant-majeur" | "autre";
+  paymentEffective?: boolean;
+  legalBasis?: "decision-judiciaire" | "acte-notarie-divorce" | "acte-notarie-enfant" | "autre";
+  documentStatus?: "en-main" | "deja-introduit" | "en-cours";
+  decisionDate?: string;
+  effectiveDate?: string;
+  requestDate?: string;
+};
+
+type AlternatingCareFacts = {
+  enabled: boolean;
+  regular?: boolean;
+  familyAllowances?: boolean;
+  childRelevantIncome?: boolean;
+  documentStatus?: "jugement" | "acte-notarie" | "en-cours";
+  decisionDate?: string;
+  effectiveDate?: string;
+  requestDate?: string;
+};
 
 export type Article110VerifierPerson = Omit<HouseholdMemberFact, "factKey" | "relation"> & {
   id: string;
@@ -24,9 +48,21 @@ export type Article110VerifierInput = {
   thresholds: C1BaremeThresholds;
   cohousingClaim?: boolean;
   cohousingDocuments?: { lease?: boolean; swornStatement?: boolean; regis?: boolean };
+  alimony?: AlimonyFacts;
+  alternatingCare?: AlternatingCareFacts;
 };
 
 export type Article110VerifierResult = ReturnType<typeof evaluateArticle110Verifier>;
+
+function documentLabel(document: string) {
+  return ({
+    judgment_or_admissible_act: "Jugement ou acte notarié",
+    payment_proof: "Preuve de paiement",
+    lease: "Bail",
+    sworn_statement: "Attestation sur l'honneur",
+    "c1-regis": "Annexe REGIS",
+  } as Record<string, string>)[document] ?? document;
+}
 
 /**
  * Thin UI adapter: it only turns professional facts into the contracts already
@@ -63,38 +99,64 @@ export function evaluateArticle110Verifier(input: Article110VerifierInput) {
     ascendantDisabledPensionMonthlyThreshold: input.thresholds.ascendantDisabledPensionMonthly,
     baremeSource: input.thresholds.source,
   });
-  const cohousing = input.cohousingClaim ? {
-    status: "needs_review" as const,
-    reason: "La demande de co-housing doit être examinée : elle ne découle pas de la seule adresse.",
-    documents: [
-      !input.cohousingDocuments?.lease && "Bail",
-      !input.cohousingDocuments?.swornStatement && "Attestation sur l'honneur",
-      !input.cohousingDocuments?.regis && "Annexe REGIS",
-    ].filter(Boolean) as string[],
-    sourceRuleIds: ["situation_familiale_cohousing_a_verifier", "c1_annexe_regis_difference"],
-  } : undefined;
-  const expectedCategory = cohousing ? null : householdAssessment.expectedCategory;
+  const isolatedPayload: FormPayload = {
+    statutFamilial: "isole",
+    ...(input.alimony?.enabled ? {
+      pensionAlimentaire: "oui", pensionAlimentaireBeneficiaire: input.alimony.beneficiary,
+      pensionAlimentairePaiementEffectif: input.alimony.paymentEffective === undefined ? undefined : input.alimony.paymentEffective ? "oui" : "non",
+      pensionAlimentaireBaseJuridique: input.alimony.legalBasis, statutJugementPensionAlimentaire: input.alimony.documentStatus,
+      dateActePensionAlimentaire: input.alimony.decisionDate, dateEffetRevendiquePensionAlimentaire: input.alimony.effectiveDate, dateDemandePensionAlimentaire: input.alimony.requestDate,
+    } : {}),
+    ...(input.alternatingCare?.enabled ? {
+      hebergementAlterneEnfant: "oui", hebergementAlterneRegulier: input.alternatingCare.regular === undefined ? undefined : input.alternatingCare.regular ? "oui" : "non",
+      hebergementAlterneAllocationsFamiliales: input.alternatingCare.familyAllowances === undefined ? undefined : input.alternatingCare.familyAllowances ? "oui" : "non",
+      hebergementAlterneEnfantRevenuPertinent: input.alternatingCare.childRelevantIncome === undefined ? undefined : input.alternatingCare.childRelevantIncome ? "oui" : "non",
+      hebergementAlternePieceStatut: input.alternatingCare.documentStatus, datePieceHebergementAlterne: input.alternatingCare.decisionDate,
+      dateEffetRevendiqueHebergementAlterne: input.alternatingCare.effectiveDate, dateDemandeHebergementAlterne: input.alternatingCare.requestDate,
+    } : {}),
+    ...(input.cohousingClaim ? {
+      cohousingVieAutonomeRevendiquee: "oui", cohousingBailDisponible: input.cohousingDocuments?.lease ? "oui" : "non",
+      cohousingAttestationHonneur: input.cohousingDocuments?.swornStatement ? "oui" : "non",
+    } : {}),
+  };
+  const isolatedAssessment = assessIsolatedHouseholdClaim(isolatedPayload, composition, input.officialOnemCode, { regisCompleted: input.cohousingDocuments?.regis });
+  const expectedCategory = isolatedAssessment ? isolatedAssessment.expectedCategory : householdAssessment.expectedCategory;
   return {
     composition,
     householdAssessment,
     article110Decision,
-    cohousing,
+    cohousing: isolatedAssessment?.branch === "cohousing" ? isolatedAssessment : undefined,
     expectedCategory,
     expectedLabel: expectedCategory === "A" ? "Charge de famille" : expectedCategory === "B" ? "Cohabitant" : "À confirmer",
-    level: cohousing || householdAssessment.status === "needs_review" ? "review" as const
-      : householdAssessment.status === "needs_information" ? "information" as const : "confirmed" as const,
+    level: isolatedAssessment?.status === "needs_review" || isolatedAssessment?.status === "pending_judgment" || householdAssessment.status === "needs_review" ? "review" as const
+      : isolatedAssessment?.status === "needs_information" || householdAssessment.status === "needs_information" ? "information" as const : "confirmed" as const,
     declarationRequired: input.people.length > 0,
     sourceRuleIds: [...new Set([
       ...householdAssessment.sourceRuleIds,
       ...(article110Decision?.sourceRuleIds ?? []),
-      ...(cohousing?.sourceRuleIds ?? []),
+      ...(isolatedAssessment?.sourceRuleIds ?? []),
     ])],
     actions: [
       ...(householdAssessment.requiredExternalDocument?.status === "required" ? ["Fournir le C110A officiel"] : []),
       ...(householdAssessment.pensionAssessment?.status === "NEEDS_DOCUMENT" ? ["Fournir la preuve SPF Pensions"] : []),
-      ...(cohousing?.documents ?? []),
+      ...(isolatedAssessment?.documents.filter((document) => document.status === "required" || document.status === "pending").map((document) => documentLabel(document.document)) ?? []),
       ...(householdAssessment.recommendedAction === "declaration_required" ? ["Introduire ou mettre à jour le C1"] : []),
-      ...(householdAssessment.recommendedAction === "review_required" || cohousing ? ["Revue ONEM / organisme de paiement nécessaire"] : []),
+      ...(householdAssessment.recommendedAction === "review_required" || isolatedAssessment?.recommendedAction === "onem_review" ? ["Revue ONEM / organisme de paiement nécessaire"] : []),
     ],
+    isolatedAssessment,
+  };
+}
+
+export function compareArticle110Verifier(before: Article110VerifierInput, after: Article110VerifierInput) {
+  const beforeResult = evaluateArticle110Verifier(before);
+  const afterResult = evaluateArticle110Verifier(after);
+  const inputsChanged = JSON.stringify({ ...before, thresholds: undefined }) !== JSON.stringify({ ...after, thresholds: undefined });
+  return {
+    before: beforeResult,
+    after: afterResult,
+    categoryChanged: beforeResult.expectedCategory !== afterResult.expectedCategory,
+    declarationRequired: inputsChanged,
+    declarationReason: inputsChanged ? "La composition, un revenu ou une situation déclarée a changé." : undefined,
+    officialOnemCode: before.officialOnemCode ?? after.officialOnemCode,
   };
 }

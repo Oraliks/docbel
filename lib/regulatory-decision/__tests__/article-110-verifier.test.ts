@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { evaluateArticle110Verifier } from "../article-110-verifier";
+import { compareArticle110Verifier, evaluateArticle110Verifier } from "../article-110-verifier";
 
 const thresholds = {
   spouseProfessionalMonthly: 1_000,
@@ -96,5 +96,25 @@ describe("Article 110 verifier adapter", () => {
     const result = evaluateArticle110Verifier({ thresholds, cohousingClaim: true, people: [] });
     expect(result).toMatchObject({ expectedCategory: null, level: "review" });
     expect(result.actions).toContain("Annexe REGIS");
+  });
+
+  it("uses the existing alimony assessment and exposes the pending judgment", () => {
+    const established = evaluateArticle110Verifier({ thresholds, people: [], alimony: { enabled: true, beneficiary: "enfant-mineur", paymentEffective: true, legalBasis: "decision-judiciaire", documentStatus: "en-main", effectiveDate: "2026-09-01" } });
+    expect(established.isolatedAssessment).toMatchObject({ branch: "alimony", expectedCategory: "A" });
+    const pending = evaluateArticle110Verifier({ thresholds, people: [], alimony: { enabled: true, documentStatus: "en-cours" } });
+    expect(pending.isolatedAssessment).toMatchObject({ status: "pending_judgment" });
+    expect(pending.actions).toContain("Jugement ou acte notarié");
+  });
+
+  it("uses the existing alternating-care assessment", () => {
+    const result = evaluateArticle110Verifier({ thresholds, people: [], alternatingCare: { enabled: true, regular: true, familyAllowances: true, documentStatus: "jugement" } });
+    expect(result.isolatedAssessment).toMatchObject({ branch: "alternating_care", expectedCategory: "A" });
+  });
+
+  it("compares facts without changing the official ONEM state", () => {
+    const before = { thresholds, officialOnemCode: "B", people: [{ id: "child", label: "Enfant", relation: "child" as const, receivesFamilyAllowances: true, hasProfessionalIncome: false, hasReplacementIncome: false }] };
+    const after = { ...before, people: [...before.people, { id: "working", label: "Enfant 2", relation: "child" as const, hasProfessionalIncome: true, hasReplacementIncome: false }] };
+    const comparison = compareArticle110Verifier(before, after);
+    expect(comparison).toMatchObject({ categoryChanged: false, declarationRequired: true, officialOnemCode: "B" });
   });
 });

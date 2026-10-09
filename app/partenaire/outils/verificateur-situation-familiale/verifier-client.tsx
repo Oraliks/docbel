@@ -37,13 +37,11 @@ export function FamilySituationVerifierClient({ thresholds, canLoadScenarios }: 
   const [relationToAdd, setRelationToAdd] = useState("spouse");
   const [cohousingClaim, setCohousingClaim] = useState(false);
   const [cohousingDocuments, setCohousingDocuments] = useState({ lease: false, swornStatement: false, regis: false });
-  const [alimony, setAlimony] = useState<Article110VerifierInput["alimony"]>({ enabled: false });
-  const [alternatingCare, setAlternatingCare] = useState<Article110VerifierInput["alternatingCare"]>({ enabled: false });
+  const [alimony, setAlimony] = useState<NonNullable<Article110VerifierInput["alimony"]>>({ enabled: false });
+  const [alternatingCare, setAlternatingCare] = useState<NonNullable<Article110VerifierInput["alternatingCare"]>>({ enabled: false });
   const [before, setBefore] = useState<Article110VerifierInput | null>(null);
-  const input = { people, thresholds, officialOnemCode: officialOnemCode.trim() || undefined, cohousingClaim, cohousingDocuments, alimony, alternatingCare };
-  const result = useMemo(() => evaluateArticle110Verifier({
-    ...input,
-  }), [people, thresholds, officialOnemCode, cohousingClaim, cohousingDocuments, alimony, alternatingCare]);
+  const input = useMemo(() => ({ people, thresholds, officialOnemCode: officialOnemCode.trim() || undefined, cohousingClaim, cohousingDocuments, alimony, alternatingCare }), [people, thresholds, officialOnemCode, cohousingClaim, cohousingDocuments, alimony, alternatingCare]);
+  const result = useMemo(() => evaluateArticle110Verifier(input), [input]);
   const comparison = before ? compareArticle110Verifier(before, input) : null;
 
   const update = (id: string, patch: Partial<Article110VerifierPerson>) => setPeople((items) => items.map((person) => person.id === id ? { ...person, ...patch } : person));

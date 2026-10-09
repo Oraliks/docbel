@@ -151,4 +151,24 @@ describe("Article 110 verifier adapter", () => {
     const comparison = compareArticle110Verifier(before, after);
     expect(comparison).toMatchObject({ categoryChanged: false, declarationRequired: true, officialOnemCode: "B" });
   });
+
+  it("exposes a complete, actionable contract for a cohousing review", () => {
+    const result = evaluateArticle110Verifier({ thresholds, people: [], isAloneExplicit: true, cohousingClaim: true });
+    expect(result).toMatchObject({ status: "review", reason: expect.any(String), reviewReason: expect.any(String) });
+    expect(result.missingDocuments).toEqual(expect.arrayContaining(["Bail", "Annexe REGIS"]));
+    expect(result.nextActions).toContain("Transmettre pour vérification au Bureau du chômage");
+    expect(result.potentialOutcome).toContain("N ou A");
+  });
+
+  it("never returns an unexplained incomplete result", () => {
+    const cases = [
+      evaluateArticle110Verifier({ thresholds, people: [] }),
+      evaluateArticle110Verifier({ thresholds, people: [{ id: "friend", label: "friend", relation: "third_party" }] }),
+      evaluateArticle110Verifier({ thresholds, people: [], isAloneExplicit: true, cohousingClaim: true }),
+    ];
+    for (const result of cases.filter((result) => result.status !== "complete")) {
+      expect(result.reason).not.toBe("");
+      expect(result.missingFacts.length > 0 || result.missingDocuments.length > 0 || result.nextActions.length > 0 || result.reviewReason).toBeTruthy();
+    }
+  });
 });

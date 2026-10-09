@@ -114,7 +114,7 @@ const W_NON_HORS_EEE = "non_19";
 /// c1-remarque-derivation.ts pour parité comportementale.
 function buildRemarqueFragments(payload: FormPayload): string[] {
   const parts: string[] = [];
-  if (payload.statutFamilial === "isole" && payload.habiteEnColocation === "oui") {
+  if (payload.cohousingVieAutonomeRevendiquee === "oui") {
     parts.push("cohousing");
   }
   // « en cours » et « pas encore reçu » disaient la même chose : les deux
@@ -124,7 +124,10 @@ function buildRemarqueFragments(payload: FormPayload): string[] {
   // officielle du PDF et n'ont donc rien à dire en remarque.
   const jugement = payload.statutJugementPensionAlimentaire;
   if (jugement === "en-cours" || jugement === "pas-encore-recu") {
-    parts.push("jugement en cours, pas encore en ma possession");
+    parts.push("en attente de la copie du jugement pour la pension alimentaire");
+  }
+  if (payload.hebergementAlternePieceStatut === "en-cours") {
+    parts.push("en attente de la copie du jugement ou de l'acte pour l'hébergement alterné");
   }
   // Remarques saisies par ligne de cohabitant (grille « Personnes avec qui je
   // cohabite ») : le sous-champ `remarque` n'a AUCUN widget PDF propre
@@ -163,7 +166,7 @@ function hasModificationMotif(payload: FormPayload): boolean {
 /// source (date saisie) est non vide, après formatage FR (DD/MM/YYYY). Renvoie
 /// un tableau vide sinon → la ligne du motif non renseigné reste vierge.
 function motifDateStamp(payload: FormPayload, widget: string, source: string) {
-  const v = payload[source];
+  const v = payload[source] ?? payload.dateModificationEffective;
   const raw = typeof v === "string" ? v.trim() : "";
   if (!raw) return [];
   return [{ widget, value: formatDateFR(raw) }];
@@ -347,19 +350,19 @@ export const C1_CHANGEMENT_RULES: MappingRule[] = [
   {
     name: "date-adresse",
     when: { modificationAdresse: true },
-    stampFn: (p) => motifDateStamp(p, W_DATE_ADRESSE, "dateModificationEffective"),
+    stampFn: (p) => motifDateStamp(p, W_DATE_ADRESSE, "dateModificationAdresseEffective"),
     declaredWidgets: [W_DATE_ADRESSE],
   },
   {
     name: "date-situation",
     when: { modificationSituationFamiliale: true },
-    stampFn: (p) => motifDateStamp(p, W_DATE_SITUATION, "dateModificationEffective"),
+    stampFn: (p) => motifDateStamp(p, W_DATE_SITUATION, "dateModificationSituationFamilialeEffective"),
     declaredWidgets: [W_DATE_SITUATION],
   },
   {
     name: "date-banque",
     when: { modificationCompte: true },
-    stampFn: (p) => motifDateStamp(p, W_DATE_BANQUE, "dateModificationEffective"),
+    stampFn: (p) => motifDateStamp(p, W_DATE_BANQUE, "dateModificationCompteEffective"),
     declaredWidgets: [W_DATE_BANQUE],
   },
   {
@@ -392,7 +395,7 @@ export const C1_CHANGEMENT_RULES: MappingRule[] = [
   // Widget `DateDeDA` (ex-`DateDeModification`).
   dateHeaderFallback({
     widget: W_DATE_HEADER_P2,
-    sources: ["dateModificationEffective", "dateDemande"],
+    sources: ["dateModificationSituationFamilialeEffective", "dateModificationAdresseEffective", "dateModificationCompteEffective", "dateModificationEffective", "dateDemande"],
     name: "date-header-p2",
   }),
 

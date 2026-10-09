@@ -94,6 +94,52 @@ related_topics:
 ```
 
 ```yaml
+rule_id: c1_partenaire_personne_charge
+theme: formulaires
+effective_from: 2022-09-15
+source_name: ONEM — C1-Partenaire
+source_url: https://www.onem.be/formulaires-attestations/c1-partenaire
+last_verified: 2026-10-07
+confidence: official
+status: active
+summary: >
+  Le C1-Partenaire est utilisé avec le C1 lorsqu'une personne est déclarée
+  financièrement à charge. Le C1-Info précise qu'il est à joindre, sauf si
+  cette déclaration a déjà été faite et que la situation est inchangée.
+agent_instruction: >
+  Ajouter le C1-Partenaire uniquement à partir d'une déclaration explicite de
+  personne financièrement à charge et de première déclaration ou modification.
+related_forms:
+  - C1
+  - C1-Partenaire
+related_topics:
+  - situation_familiale
+```
+
+```yaml
+rule_id: c1_annexe_regis_difference
+theme: formulaires
+effective_from: 2014-04-01
+source_name: ONEM — C1-Annexe Regis
+source_url: https://www.onem.be/formulaires-attestations/c1-annexe-regis
+last_verified: 2026-10-07
+confidence: official
+status: active
+summary: >
+  L'Annexe REGIS sert à expliquer une différence entre les données personnelles
+  ou familiales déclarées sur le C1 et celles du Registre national ou des
+  registres de la Banque-Carrefour.
+agent_instruction: >
+  Ne pas inférer cette différence d'une colocation ou d'une composition de
+  ménage. La demander explicitement ou orienter vers l'organisme de paiement.
+related_forms:
+  - C1
+  - C1-Annexe REGIS
+related_topics:
+  - situation_familiale
+```
+
+```yaml
 rule_id: formulaire_c4
 theme: formulaires
 effective_from: unknown

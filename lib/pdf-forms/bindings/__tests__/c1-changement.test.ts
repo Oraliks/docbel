@@ -211,11 +211,10 @@ describe("Rules C1 — titulaire compte", () => {
 });
 
 describe("Rules C1 — remarque situation familiale", () => {
-  it("cohousing = isolé + colocation → « cohousing » sur Remarques 1", () => {
+  it("cohousing déclaré explicitement → « cohousing » sur Remarques 1", () => {
     const payload = {
       ...baseline(),
-      statutFamilial: "isole",
-      habiteEnColocation: "oui",
+      cohousingVieAutonomeRevendiquee: "oui",
     };
     const stamps = resolveStamps(payload, C1_CHANGEMENT_RULES);
     expect(stamps.get("Remarques 1 Haut")).toBe("cohousing");
@@ -226,14 +225,13 @@ describe("Rules C1 — remarque situation familiale", () => {
     // Une remarque courte n'occupe que la 1ʳᵉ ligne…
     const court = { ...baseline(), statutJugementPensionAlimentaire: "en-cours" };
     const stampsCourt = resolveStamps(court, C1_CHANGEMENT_RULES);
-    expect(stampsCourt.get("Remarques 1 Haut")).toBe("jugement en cours, pas encore en ma possession");
+    expect(stampsCourt.get("Remarques 1 Haut")).toBe("en attente de la copie du jugement pour la pension alimentaire");
     expect(stampsCourt.get("Remarques 2 Haut")).toBeUndefined();
 
     // …et une remarque longue est répartie, sans perdre un seul mot.
     const long = {
       ...baseline(),
-      statutFamilial: "isole",
-      habiteEnColocation: "oui",
+      cohousingVieAutonomeRevendiquee: "oui",
       statutJugementPensionAlimentaire: "en-cours",
       cohabitants: [{ prenom: "Jean", nom: "Dupont", remarque: "hébergé à titre gratuit depuis le 1er janvier" }],
     };
@@ -244,7 +242,7 @@ describe("Rules C1 — remarque situation familiale", () => {
     expect(l2).toBeTruthy();
     expect(l1.length).toBeLessThanOrEqual(88);
     expect(`${l1} ${l2}`).toBe(
-      "cohousing ; jugement en cours, pas encore en ma possession ; Jean Dupont : hébergé à titre gratuit depuis le 1er janvier",
+      "cohousing ; en attente de la copie du jugement pour la pension alimentaire ; Jean Dupont : hébergé à titre gratuit depuis le 1er janvier",
     );
   });
 
@@ -266,21 +264,20 @@ describe("Rules C1 — remarque situation familiale", () => {
     // Cas isolé : cohousing seul.
     const cohousingOnly = {
       ...baseline(),
-      statutFamilial: "isole",
-      habiteEnColocation: "oui",
+      cohousingVieAutonomeRevendiquee: "oui",
     };
     expect(resolveStamps(cohousingOnly, C1_CHANGEMENT_RULES).get("Remarques 1 Haut")).toBe("cohousing");
 
     // Cas jugement en cours seul.
     const enCours = { ...baseline(), statutJugementPensionAlimentaire: "en-cours" };
     expect(resolveStamps(enCours, C1_CHANGEMENT_RULES).get("Remarques 1 Haut")).toBe(
-      "jugement en cours, pas encore en ma possession"
+      "en attente de la copie du jugement pour la pension alimentaire"
     );
 
     // Valeur héritée d'avant la fusion des deux options (brouillons existants).
     const pasRecu = { ...baseline(), statutJugementPensionAlimentaire: "pas-encore-recu" };
     expect(resolveStamps(pasRecu, C1_CHANGEMENT_RULES).get("Remarques 1 Haut")).toBe(
-      "jugement en cours, pas encore en ma possession"
+      "en attente de la copie du jugement pour la pension alimentaire"
     );
 
     // Les statuts qui cochent une case officielle ne produisent PAS de remarque.
@@ -295,17 +292,29 @@ describe("Rules C1 — remarque situation familiale", () => {
     // Cas combiné cohousing + en-cours.
     const combo = {
       ...baseline(),
-      statutFamilial: "isole",
-      habiteEnColocation: "oui",
+      cohousingVieAutonomeRevendiquee: "oui",
       statutJugementPensionAlimentaire: "en-cours",
     };
     expect(resolveStamps(combo, C1_CHANGEMENT_RULES).get("Remarques 1 Haut")).toBe(
-      "cohousing ; jugement en cours, pas encore en ma possession"
+      "cohousing ; en attente de la copie du jugement pour la pension alimentaire"
     );
   });
 });
 
 describe("Rules C1 — dates par ligne de motif (widgets scindés 2026-07-10)", () => {
+  it("conserve une date distincte pour chaque changement déclaré", () => {
+    const stamps = resolveStamps({
+      ...baseline(),
+      modificationAdresse: true,
+      modificationSituationFamiliale: true,
+      dateModificationAdresseEffective: "2026-10-01",
+      dateModificationSituationFamilialeEffective: "2026-10-15",
+    }, C1_CHANGEMENT_RULES);
+
+    expect(stamps.get("DateAdresse")).toBe("01/10/2026");
+    expect(stamps.get("DatePersonnelleOuMenage")).toBe("15/10/2026");
+  });
+
   it("date la ligne de CHAQUE chip modification coché avec dateModificationEffective", () => {
     const payload = {
       ...baseline(),

@@ -165,6 +165,36 @@ export const C1_MOTIF: PdfFormField[] = [
     order: 9.5,
   },
   {
+    id: "dateModificationAdresseEffective",
+    pdfFieldName: "",
+    type: "date",
+    required: true,
+    label: { fr: "Depuis quelle date votre adresse a-t-elle changé ?" },
+    visibleIf: { fieldId: "modificationAdresse", op: "equals", value: true },
+    section: SECTION_DEMANDE,
+    order: 9.6,
+  },
+  {
+    id: "dateModificationSituationFamilialeEffective",
+    pdfFieldName: "",
+    type: "date",
+    required: true,
+    label: { fr: "Depuis quelle date votre situation personnelle ou familiale a-t-elle changé ?" },
+    visibleIf: { fieldId: "modificationSituationFamiliale", op: "equals", value: true },
+    section: SECTION_DEMANDE,
+    order: 9.7,
+  },
+  {
+    id: "dateModificationCompteEffective",
+    pdfFieldName: "",
+    type: "date",
+    required: true,
+    label: { fr: "Depuis quelle date votre compte bancaire a-t-il changé ?" },
+    visibleIf: { fieldId: "modificationCompte", op: "equals", value: true },
+    section: SECTION_DEMANDE,
+    order: 9.8,
+  },
+  {
     // Date de création du DOCUMENT (Oraliks 2026-07-10 : « date du jour tout en
     // bas de la page 2 »). Stampe le widget `DateDeCréationDocument` (zone
     // signature, bas de page 2). Auto-remplie du jour : `prefillFrom

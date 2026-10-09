@@ -354,7 +354,7 @@ Sans état ONEM confirmé, la catégorie en l’état est **B** et une décision
 
 Assertions : types=true, catégories=true, incohérents=true, justifications=true, A=true, B=true, N=true.
 
-Durée : 32.42 ms
+Durée : 37.57 ms
 
 ## Décisions ONEM par branche
 

@@ -164,7 +164,7 @@ function combinatorialCandidates(thresholds: C1BaremeThresholds): ScenarioCandid
     ["unknown", [member("unknown", "Relation inconnue", "unknown")]],
     ["partner-ambiguous", [member("partner", "Partenaire", "partner", { partnerEstablished: false })]],
   ] as const;
-  for (const [id, people] of compositions) candidates.push(scenario(`comb-composition-${id}`, "Composition croisée", { people }));
+  for (const [id, people] of compositions) candidates.push(scenario(`comb-composition-${id}`, "Composition croisée", { people: [...people] }));
   for (const [id, alimony] of [["pending", { enabled: true, documentStatus: "en-cours" as const }], ["available", { enabled: true, beneficiary: "enfant-mineur" as const, paymentEffective: true, legalBasis: "decision-judiciaire" as const, documentStatus: "en-main" as const }]] as const) candidates.push(scenario(`comb-alimony-${id}`, "Pension alimentaire", { people: [], alimony }));
   for (const [id, alternatingCare] of [["pending", { enabled: true, documentStatus: "en-cours" as const }], ["available", { enabled: true, regular: true, familyAllowances: true, documentStatus: "jugement" as const }]] as const) candidates.push(scenario(`comb-care-${id}`, "Hébergement alterné", { people: [], alternatingCare }));
   for (const lease of [false, true]) for (const regis of [false, true]) for (const swornStatement of [false, true]) candidates.push(scenario(`comb-cohousing-${Number(lease)}${Number(regis)}${Number(swornStatement)}`, "Co-housing", { people: [], isAloneExplicit: true, cohousingClaim: true, cohousingDocuments: { lease, regis, swornStatement } }));

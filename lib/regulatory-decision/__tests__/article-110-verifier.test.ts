@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { compareArticle110Verifier, evaluateArticle110Verifier } from "../article-110-verifier";
+import { compareArticle110Verifier, evaluateArticle110Verifier, getArticle110VerifierFormSections } from "../article-110-verifier";
 
 const thresholds = {
   spouseProfessionalMonthly: 1_000,
@@ -14,6 +14,23 @@ const thresholds = {
 } as const;
 
 describe("Article 110 verifier adapter", () => {
+  it("uses the engine composition to expose only the spouse questions when a spouse is present", () => {
+    expect(getArticle110VerifierFormSections({ people: [
+      { id: "spouse", label: "Conjoint", relation: "spouse" },
+      { id: "parent", label: "Père", relation: "relative", isAscendant: true },
+    ] })).toEqual(["partner"]);
+  });
+
+  it("returns to the isolated questions as soon as the last member is removed", () => {
+    expect(getArticle110VerifierFormSections({ people: [] })).toEqual(["isolated"]);
+  });
+
+  it("keeps child and ascendant questions visible for their actual mixed composition", () => {
+    expect(getArticle110VerifierFormSections({ people: [
+      { id: "child", label: "Enfant", relation: "child" },
+      { id: "parent", label: "Mère", relation: "relative", isAscendant: true },
+    ] })).toEqual(["children", "relatives"]);
+  });
   it("uses spouse priority even when a relative has income", () => {
     const result = evaluateArticle110Verifier({ thresholds, people: [
       { id: "spouse", label: "Conjoint", relation: "spouse", hasProfessionalIncome: false, hasReplacementIncome: false },

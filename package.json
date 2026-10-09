@@ -65,6 +65,8 @@
     "rename:cgslb-synova": "dotenv -e .env.local -- tsx scripts/rename-cgslb-synova.ts",
     "tools:cleanup-mocks": "dotenv -e .env.local -- tsx scripts/cleanup-mock-tools.ts",
     "test": "vitest run",
+    "test:article110-matrix": "vitest run lib/regulatory-decision/__tests__/article-110-scenario-matrix.test.ts",
+    "report:article110-matrix": "tsx scripts/article110-scenario-matrix.ts",
     "test:watch": "vitest",
     "test:e2e": "dotenv -e .env.local -- playwright test",
     "e2e:set-admin-password": "dotenv -e .env.local -- tsx scripts/set-e2e-admin-password.ts"

@@ -128,7 +128,7 @@ describe("Article 110 verifier adapter", () => {
 
   it("makes an explicit cohousing claim a documented review", () => {
     const result = evaluateArticle110Verifier({ thresholds, cohousingClaim: true, people: [] });
-    expect(result).toMatchObject({ expectedCategory: null, level: "review" });
+    expect(result).toMatchObject({ expectedCategory: null, level: "review", resultType: "onem_decision_required" });
     expect(result.actions).toContain("Annexe REGIS");
   });
 
@@ -154,7 +154,7 @@ describe("Article 110 verifier adapter", () => {
 
   it("exposes a complete, actionable contract for a cohousing review", () => {
     const result = evaluateArticle110Verifier({ thresholds, people: [], isAloneExplicit: true, cohousingClaim: true });
-    expect(result).toMatchObject({ status: "review", reason: expect.any(String), reviewReason: expect.any(String) });
+    expect(result).toMatchObject({ status: "review", resultType: "onem_decision_required", reason: expect.stringContaining("situation de co-housing"), reviewReason: expect.any(String) });
     expect(result.missingDocuments).toEqual(expect.arrayContaining(["Bail", "Annexe REGIS"]));
     expect(result.nextActions).toContain("Transmettre pour vérification au Bureau du chômage");
     expect(result.potentialOutcome).toContain("N ou A");
@@ -170,5 +170,10 @@ describe("Article 110 verifier adapter", () => {
       expect(result.reason).not.toBe("");
       expect(result.missingFacts.length > 0 || result.missingDocuments.length > 0 || result.nextActions.length > 0 || result.reviewReason).toBeTruthy();
     }
+  });
+
+  it("identifies a genuinely unsupported composition without pretending it is an ONEM decision", () => {
+    const result = evaluateArticle110Verifier({ thresholds, people: [{ id: "unknown", label: "Autre", relation: "unknown" }] });
+    expect(result.resultType).toBe("not_automated");
   });
 });

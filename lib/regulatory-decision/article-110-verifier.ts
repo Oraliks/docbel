@@ -55,6 +55,17 @@ export type Article110VerifierInput = {
 
 export type Article110VerifierResult = ReturnType<typeof evaluateArticle110Verifier>;
 
+/**
+ * Stable, user-facing outcome families for the verifier. They describe the
+ * next step without turning the indicative assessment into an ONEM decision.
+ */
+export type Article110ResultType =
+  | "decision_determined"
+  | "information_missing"
+  | "document_required"
+  | "onem_decision_required"
+  | "not_automated";
+
 export type Article110MissingFact = {
   factKey: string;
   personId?: string;
@@ -102,11 +113,29 @@ function categoryLabel(category: "A" | "B" | "N" | null) {
 function resultReason(input: Article110VerifierInput, compositionKnown: boolean, missingFacts: Article110MissingFact[], householdStatus: string, cohousing: boolean) {
   if (!compositionKnown) return "La composition réelle du ménage n'est pas encore renseignée.";
   if (missingFacts.length > 0) return "Des informations sont nécessaires pour évaluer la situation familiale.";
-  if (cohousing) return "La situation réelle de cohabitation doit être appréciée par l’ONEM avant de confirmer le statut d’isolé.";
+  if (cohousing) return "La situation de co-housing est appréciée par l’ONEM sur la situation réelle.\n\nLe Bureau du chômage peut effectuer une enquête avant de décider si le chômeur peut être considéré comme isolé.";
   if (householdStatus === "needs_review") return "Les éléments déclarés nécessitent une vérification avant de déterminer la catégorie.";
   if (input.people.some((person) => person.relation === "spouse" || person.relation === "partner")) return "Le conjoint ou partenaire est prioritaire pour l'évaluation de la situation familiale.";
   if (input.isAloneExplicit) return "Le chômeur a déclaré vivre seul et aucune autre situation particulière n'est établie.";
   return "La catégorie résulte de la composition du ménage et des revenus déclarés.";
+}
+
+function resultTypeFor(input: {
+  composition: ReturnType<typeof classifyHouseholdComposition>;
+  compositionKnown: boolean;
+  missingFacts: Article110MissingFact[];
+  missingDocuments: string[];
+  cohousing: boolean;
+  householdStatus: string;
+  isolatedStatus?: string;
+  expectedCategory: "A" | "B" | "N" | null;
+}): Article110ResultType {
+  if (input.composition.kind === "mixed_or_unsupported") return "not_automated";
+  if (!input.compositionKnown || input.missingFacts.length > 0) return "information_missing";
+  if (input.cohousing) return "onem_decision_required";
+  if (input.missingDocuments.length > 0) return "document_required";
+  if (input.householdStatus === "needs_review" || input.isolatedStatus === "needs_review" || input.isolatedStatus === "pending_judgment") return "onem_decision_required";
+  return input.expectedCategory ? "decision_determined" : "not_automated";
 }
 
 function getMissingFacts(input: Article110VerifierInput, sections: Article110VerifierFormSection[]): Article110MissingFact[] {
@@ -200,6 +229,16 @@ export function evaluateArticle110Verifier(input: Article110VerifierInput) {
   const status = !compositionKnown || effectiveMissingFacts.length > 0 ? "incomplete" as const
     : isCohousing || householdAssessment.status === "needs_review" || isolatedAssessment?.status === "needs_review" || isolatedAssessment?.status === "pending_judgment" ? "review" as const
     : missingDocuments.length > 0 ? "document" as const : "complete" as const;
+  const resultType = resultTypeFor({
+    composition,
+    compositionKnown,
+    missingFacts: effectiveMissingFacts,
+    missingDocuments,
+    cohousing: isCohousing,
+    householdStatus: householdAssessment.status,
+    isolatedStatus: isolatedAssessment?.status,
+    expectedCategory,
+  });
   const nextActions = [
     ...(effectiveMissingFacts.length > 0 ? ["Compléter les informations"] : []),
     ...missingDocuments.map((document) => `Obtenir : ${document}`),
@@ -212,6 +251,7 @@ export function evaluateArticle110Verifier(input: Article110VerifierInput) {
     cohousing: isolatedAssessment?.branch === "cohousing" ? isolatedAssessment : undefined,
     expectedCategory,
     status,
+    resultType,
     categoryLabel: categoryLabel(expectedCategory),
     reason,
     decisiveFacts: [

@@ -1,0 +1,725 @@
+{
+  "generatedAt": "2026-10-10",
+  "method": "Classes d’équivalence des branches, seuils réels fournis au moteur, états documentaires et dates 110&1M/110&1V ; aucune combinaison cartésienne.",
+  "total": 21,
+  "byResultType": {
+    "decision_determined": 11,
+    "information_missing": 2,
+    "document_required": 4,
+    "onem_decision_required": 3,
+    "not_automated": 1
+  },
+  "byBranch": {
+    "alimony": 2,
+    "alone": 1,
+    "alternating_care": 2,
+    "children_and_third_parties": 1,
+    "children_only": 4,
+    "cohousing": 1,
+    "mixed_or_unsupported": 1,
+    "relatives_only": 3,
+    "spouse_or_partner": 6
+  },
+  "incoherent": [],
+  "withoutReason": [],
+  "scenarios": [
+    {
+      "id": "composition-missing",
+      "label": "Composition non renseignée",
+      "branch": "alone",
+      "facts": {
+        "people": []
+      },
+      "resultType": "information_missing",
+      "category": null,
+      "reason": "La composition réelle du ménage n'est pas encore renseignée.",
+      "decisiveFacts": [],
+      "missingFacts": [
+        "Indiquer si le chômeur vit seul ou ajouter une personne au ménage."
+      ],
+      "missingDocuments": [],
+      "actions": [
+        "Compléter les informations"
+      ],
+      "declarationRequired": false,
+      "sourceRuleIds": [
+        "situation_familiale_composition_priorities"
+      ]
+    },
+    {
+      "id": "spouse-missing-income",
+      "label": "Conjoint sans revenus renseignés",
+      "branch": "spouse_or_partner",
+      "facts": {
+        "people": [
+          {
+            "id": "spouse",
+            "label": "Conjoint",
+            "relation": "spouse"
+          }
+        ]
+      },
+      "resultType": "information_missing",
+      "category": null,
+      "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
+      "decisiveFacts": [
+        "1 personne(s) dans le ménage"
+      ],
+      "missingFacts": [
+        "Indiquer si conjoint dispose d'un revenu professionnel.",
+        "Indiquer si conjoint perçoit un revenu de remplacement."
+      ],
+      "missingDocuments": [],
+      "actions": [
+        "Compléter les informations"
+      ],
+      "declarationRequired": true,
+      "sourceRuleIds": [
+        "situation_familiale_composition_priorities",
+        "situation_familiale_conjoint_revenu_am60"
+      ]
+    },
+    {
+      "id": "spouse-no-income",
+      "label": "Conjoint sans revenu",
+      "branch": "spouse_or_partner",
+      "facts": {
+        "people": [
+          {
+            "id": "spouse",
+            "label": "Conjoint",
+            "relation": "spouse",
+            "hasProfessionalIncome": false,
+            "hasReplacementIncome": false
+          }
+        ]
+      },
+      "resultType": "decision_determined",
+      "category": "A",
+      "reason": "Le conjoint ou partenaire est prioritaire pour l'évaluation de la situation familiale.",
+      "decisiveFacts": [
+        "1 personne(s) dans le ménage"
+      ],
+      "missingFacts": [],
+      "missingDocuments": [],
+      "actions": [],
+      "potentialOutcome": "Travailleur ayant charge de famille",
+      "declarationRequired": true,
+      "sourceRuleIds": [
+        "situation_familiale_composition_priorities",
+        "situation_familiale_conjoint_revenu_am60"
+      ]
+    },
+    {
+      "id": "spouse-cdi-below",
+      "label": "Conjoint CDI sous le seuil",
+      "branch": "spouse_or_partner",
+      "facts": {
+        "people": [
+          {
+            "id": "spouse",
+            "label": "Conjoint",
+            "relation": "spouse",
+            "hasProfessionalIncome": true,
+            "professionalIncomeAmount": 999,
+            "professionalIncomeContract": "cdi",
+            "professionalIncomeVariable": false,
+            "hasReplacementIncome": false
+          }
+        ]
+      },
+      "resultType": "decision_determined",
+      "category": "A",
+      "reason": "Le conjoint ou partenaire est prioritaire pour l'évaluation de la situation familiale.",
+      "decisiveFacts": [
+        "1 personne(s) dans le ménage"
+      ],
+      "missingFacts": [],
+      "missingDocuments": [],
+      "actions": [],
+      "potentialOutcome": "Travailleur ayant charge de famille",
+      "declarationRequired": true,
+      "sourceRuleIds": [
+        "situation_familiale_composition_priorities",
+        "situation_familiale_conjoint_revenu_am60"
+      ]
+    },
+    {
+      "id": "spouse-cdi-at-threshold",
+      "label": "Conjoint CDI au seuil",
+      "branch": "spouse_or_partner",
+      "facts": {
+        "people": [
+          {
+            "id": "spouse",
+            "label": "Conjoint",
+            "relation": "spouse",
+            "hasProfessionalIncome": true,
+            "professionalIncomeAmount": 1000,
+            "professionalIncomeContract": "cdi",
+            "professionalIncomeVariable": false,
+            "hasReplacementIncome": false
+          }
+        ]
+      },
+      "resultType": "decision_determined",
+      "category": "A",
+      "reason": "Le conjoint ou partenaire est prioritaire pour l'évaluation de la situation familiale.",
+      "decisiveFacts": [
+        "1 personne(s) dans le ménage"
+      ],
+      "missingFacts": [],
+      "missingDocuments": [],
+      "actions": [],
+      "potentialOutcome": "Travailleur ayant charge de famille",
+      "declarationRequired": true,
+      "sourceRuleIds": [
+        "situation_familiale_composition_priorities",
+        "situation_familiale_conjoint_revenu_am60"
+      ]
+    },
+    {
+      "id": "spouse-cdi-above",
+      "label": "Conjoint CDI au-dessus du seuil",
+      "branch": "spouse_or_partner",
+      "facts": {
+        "people": [
+          {
+            "id": "spouse",
+            "label": "Conjoint",
+            "relation": "spouse",
+            "hasProfessionalIncome": true,
+            "professionalIncomeAmount": 1001,
+            "professionalIncomeContract": "cdi",
+            "professionalIncomeVariable": false,
+            "hasReplacementIncome": false
+          }
+        ]
+      },
+      "resultType": "decision_determined",
+      "category": "B",
+      "reason": "Le conjoint ou partenaire est prioritaire pour l'évaluation de la situation familiale.",
+      "decisiveFacts": [
+        "1 personne(s) dans le ménage"
+      ],
+      "missingFacts": [],
+      "missingDocuments": [],
+      "actions": [],
+      "potentialOutcome": "Cohabitant",
+      "declarationRequired": true,
+      "sourceRuleIds": [
+        "situation_familiale_composition_priorities",
+        "situation_familiale_conjoint_revenu_am60"
+      ]
+    },
+    {
+      "id": "spouse-variable-c110a-missing",
+      "label": "Conjoint à revenu variable sans C110A",
+      "branch": "spouse_or_partner",
+      "facts": {
+        "people": [
+          {
+            "id": "spouse",
+            "label": "Conjoint",
+            "relation": "spouse",
+            "hasProfessionalIncome": true,
+            "professionalIncomeAmount": 1000,
+            "professionalIncomeContract": "cdd",
+            "professionalIncomeVariable": true,
+            "hasReplacementIncome": false,
+            "c110aReceived": false
+          }
+        ]
+      },
+      "resultType": "document_required",
+      "category": "B",
+      "reason": "Les éléments déclarés nécessitent une vérification avant de déterminer la catégorie.",
+      "decisiveFacts": [
+        "1 personne(s) dans le ménage"
+      ],
+      "missingFacts": [],
+      "missingDocuments": [
+        "C110A du mois concerné"
+      ],
+      "actions": [
+        "Obtenir : C110A du mois concerné"
+      ],
+      "potentialOutcome": "Cohabitant",
+      "declarationRequired": true,
+      "sourceRuleIds": [
+        "situation_familiale_composition_priorities",
+        "situation_familiale_conjoint_revenu_am60"
+      ]
+    },
+    {
+      "id": "children-allowances",
+      "label": "Enfant avec allocations familiales",
+      "branch": "children_only",
+      "facts": {
+        "people": [
+          {
+            "id": "child",
+            "label": "Enfant",
+            "relation": "child",
+            "hasProfessionalIncome": false,
+            "hasReplacementIncome": false,
+            "receivesFamilyAllowances": true
+          }
+        ]
+      },
+      "resultType": "decision_determined",
+      "category": "A",
+      "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
+      "decisiveFacts": [
+        "1 personne(s) dans le ménage"
+      ],
+      "missingFacts": [],
+      "missingDocuments": [],
+      "actions": [],
+      "potentialOutcome": "Travailleur ayant charge de famille",
+      "declarationRequired": true,
+      "sourceRuleIds": [
+        "situation_familiale_composition_priorities"
+      ]
+    },
+    {
+      "id": "children-income",
+      "label": "Enfant avec revenu pertinent",
+      "branch": "children_only",
+      "facts": {
+        "people": [
+          {
+            "id": "child",
+            "label": "Enfant",
+            "relation": "child",
+            "hasProfessionalIncome": true,
+            "professionalIncomeAmount": 1000,
+            "hasReplacementIncome": false,
+            "receivesFamilyAllowances": false
+          }
+        ]
+      },
+      "resultType": "decision_determined",
+      "category": "B",
+      "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
+      "decisiveFacts": [
+        "1 personne(s) dans le ménage"
+      ],
+      "missingFacts": [],
+      "missingDocuments": [],
+      "actions": [],
+      "potentialOutcome": "Cohabitant",
+      "declarationRequired": true,
+      "sourceRuleIds": [
+        "situation_familiale_composition_priorities"
+      ]
+    },
+    {
+      "id": "children-110-1m",
+      "label": "Premier emploi neutralisé (110&1M)",
+      "branch": "children_only",
+      "facts": {
+        "assessedAt": "2026-10-08T12:00:00.000Z",
+        "people": [
+          {
+            "id": "child",
+            "label": "Enfant",
+            "relation": "child",
+            "hasProfessionalIncome": true,
+            "professionalIncomeAmount": 1000,
+            "hasReplacementIncome": false,
+            "receivesFamilyAllowances": false,
+            "firstProfessionalIncome": true,
+            "neutralisationRequested": true,
+            "firstProfessionalIncomeStartedAt": "2026-09-01",
+            "studiesEndedAt": "2026-08-31"
+          }
+        ]
+      },
+      "resultType": "decision_determined",
+      "category": "A",
+      "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
+      "decisiveFacts": [
+        "1 personne(s) dans le ménage"
+      ],
+      "missingFacts": [],
+      "missingDocuments": [],
+      "actions": [],
+      "potentialOutcome": "Travailleur ayant charge de famille",
+      "declarationRequired": true,
+      "sourceRuleIds": [
+        "situation_familiale_composition_priorities",
+        "situation_familiale_revenu_enfant_premier_emploi",
+        "formulaire_c1"
+      ]
+    },
+    {
+      "id": "children-110-1v",
+      "label": "Réévaluation après 110&1M (110&1V)",
+      "branch": "children_only",
+      "facts": {
+        "assessedAt": "2027-09-01T12:00:00.000Z",
+        "people": [
+          {
+            "id": "child",
+            "label": "Enfant",
+            "relation": "child",
+            "hasProfessionalIncome": true,
+            "professionalIncomeAmount": 1000,
+            "hasReplacementIncome": false,
+            "receivesFamilyAllowances": false,
+            "firstProfessionalIncome": true,
+            "neutralisationRequested": true,
+            "firstProfessionalIncomeStartedAt": "2026-09-01",
+            "studiesEndedAt": "2026-08-31"
+          }
+        ]
+      },
+      "resultType": "decision_determined",
+      "category": "B",
+      "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
+      "decisiveFacts": [
+        "1 personne(s) dans le ménage"
+      ],
+      "missingFacts": [],
+      "missingDocuments": [],
+      "actions": [],
+      "potentialOutcome": "Cohabitant",
+      "declarationRequired": true,
+      "sourceRuleIds": [
+        "situation_familiale_composition_priorities",
+        "situation_familiale_revenu_enfant_premier_emploi",
+        "formulaire_c1"
+      ]
+    },
+    {
+      "id": "relative-pension-document-missing",
+      "label": "Pension d’ascendant sans preuve",
+      "branch": "relatives_only",
+      "facts": {
+        "people": [
+          {
+            "id": "parent",
+            "label": "Père",
+            "relation": "relative",
+            "isAscendant": true,
+            "hasProfessionalIncome": false,
+            "hasReplacementIncome": true,
+            "replacementIncomeType": "pension",
+            "replacementIncomeAmount": 1000,
+            "pensionProofAvailable": false,
+            "pensionGrossAmountConfirmed": false
+          }
+        ]
+      },
+      "resultType": "document_required",
+      "category": null,
+      "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
+      "decisiveFacts": [
+        "1 personne(s) dans le ménage"
+      ],
+      "missingFacts": [],
+      "missingDocuments": [
+        "Preuve SPF Pensions du mois concerné"
+      ],
+      "actions": [
+        "Obtenir : Preuve SPF Pensions du mois concerné"
+      ],
+      "declarationRequired": true,
+      "sourceRuleIds": [
+        "situation_familiale_composition_priorities",
+        "situation_familiale_ascendants_pensions"
+      ]
+    },
+    {
+      "id": "relative-pension-at-threshold",
+      "label": "Pension d’ascendant au seuil",
+      "branch": "relatives_only",
+      "facts": {
+        "people": [
+          {
+            "id": "parent",
+            "label": "Père",
+            "relation": "relative",
+            "isAscendant": true,
+            "hasProfessionalIncome": false,
+            "hasReplacementIncome": true,
+            "replacementIncomeType": "pension",
+            "replacementIncomeAmount": 1000,
+            "pensionProofAvailable": true,
+            "pensionGrossAmountConfirmed": true
+          }
+        ]
+      },
+      "resultType": "decision_determined",
+      "category": "A",
+      "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
+      "decisiveFacts": [
+        "1 personne(s) dans le ménage"
+      ],
+      "missingFacts": [],
+      "missingDocuments": [],
+      "actions": [],
+      "potentialOutcome": "Travailleur ayant charge de famille",
+      "declarationRequired": true,
+      "sourceRuleIds": [
+        "situation_familiale_composition_priorities",
+        "situation_familiale_ascendants_pensions"
+      ]
+    },
+    {
+      "id": "relative-pension-above",
+      "label": "Pension d’ascendant au-dessus du seuil",
+      "branch": "relatives_only",
+      "facts": {
+        "people": [
+          {
+            "id": "parent",
+            "label": "Père",
+            "relation": "relative",
+            "isAscendant": true,
+            "hasProfessionalIncome": false,
+            "hasReplacementIncome": true,
+            "replacementIncomeType": "pension",
+            "replacementIncomeAmount": 1001,
+            "pensionProofAvailable": true,
+            "pensionGrossAmountConfirmed": true
+          }
+        ]
+      },
+      "resultType": "decision_determined",
+      "category": "B",
+      "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
+      "decisiveFacts": [
+        "1 personne(s) dans le ménage"
+      ],
+      "missingFacts": [],
+      "missingDocuments": [],
+      "actions": [],
+      "potentialOutcome": "Cohabitant",
+      "declarationRequired": true,
+      "sourceRuleIds": [
+        "situation_familiale_composition_priorities",
+        "situation_familiale_ascendants_pensions"
+      ]
+    },
+    {
+      "id": "child-third-party-income",
+      "label": "Enfant et tiers avec revenu",
+      "branch": "children_and_third_parties",
+      "facts": {
+        "people": [
+          {
+            "id": "child",
+            "label": "Enfant",
+            "relation": "child",
+            "hasProfessionalIncome": false,
+            "hasReplacementIncome": false,
+            "receivesFamilyAllowances": true
+          },
+          {
+            "id": "third",
+            "label": "Ami",
+            "relation": "third_party",
+            "hasProfessionalIncome": true,
+            "professionalIncomeAmount": 1000,
+            "hasReplacementIncome": false
+          }
+        ]
+      },
+      "resultType": "decision_determined",
+      "category": "B",
+      "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
+      "decisiveFacts": [
+        "2 personne(s) dans le ménage"
+      ],
+      "missingFacts": [],
+      "missingDocuments": [],
+      "actions": [],
+      "potentialOutcome": "Cohabitant",
+      "declarationRequired": true,
+      "sourceRuleIds": [
+        "situation_familiale_composition_priorities",
+        "situation_familiale_third_parties"
+      ]
+    },
+    {
+      "id": "alimony-document-pending",
+      "label": "Pension alimentaire : acte en attente",
+      "branch": "alimony",
+      "facts": {
+        "people": [],
+        "alimony": {
+          "enabled": true,
+          "documentStatus": "en-cours"
+        }
+      },
+      "resultType": "document_required",
+      "category": null,
+      "reason": "Les éléments déclarés nécessitent une vérification avant de déterminer la catégorie.",
+      "decisiveFacts": [],
+      "missingFacts": [],
+      "missingDocuments": [
+        "Jugement ou acte notarié",
+        "Preuve de paiement"
+      ],
+      "actions": [
+        "Obtenir : Jugement ou acte notarié",
+        "Obtenir : Preuve de paiement"
+      ],
+      "declarationRequired": false,
+      "sourceRuleIds": [
+        "situation_familiale_composition_priorities",
+        "situation_familiale_isole_pension_alimentaire"
+      ]
+    },
+    {
+      "id": "alimony-established",
+      "label": "Pension alimentaire documentée",
+      "branch": "alimony",
+      "facts": {
+        "people": [],
+        "alimony": {
+          "enabled": true,
+          "beneficiary": "enfant-mineur",
+          "paymentEffective": true,
+          "legalBasis": "decision-judiciaire",
+          "documentStatus": "en-main"
+        }
+      },
+      "resultType": "onem_decision_required",
+      "category": "A",
+      "reason": "Les éléments déclarés nécessitent une vérification avant de déterminer la catégorie.",
+      "decisiveFacts": [],
+      "missingFacts": [],
+      "missingDocuments": [],
+      "actions": [],
+      "potentialOutcome": "Travailleur ayant charge de famille",
+      "declarationRequired": false,
+      "sourceRuleIds": [
+        "situation_familiale_composition_priorities",
+        "situation_familiale_isole_pension_alimentaire"
+      ]
+    },
+    {
+      "id": "alternating-care-pending",
+      "label": "Hébergement alterné : acte en attente",
+      "branch": "alternating_care",
+      "facts": {
+        "people": [],
+        "alternatingCare": {
+          "enabled": true,
+          "documentStatus": "en-cours"
+        }
+      },
+      "resultType": "document_required",
+      "category": null,
+      "reason": "Les éléments déclarés nécessitent une vérification avant de déterminer la catégorie.",
+      "decisiveFacts": [],
+      "missingFacts": [],
+      "missingDocuments": [
+        "Jugement ou acte notarié"
+      ],
+      "actions": [
+        "Obtenir : Jugement ou acte notarié"
+      ],
+      "declarationRequired": false,
+      "sourceRuleIds": [
+        "situation_familiale_composition_priorities",
+        "situation_familiale_isole_garde_alternee"
+      ]
+    },
+    {
+      "id": "alternating-care-established",
+      "label": "Hébergement alterné documenté",
+      "branch": "alternating_care",
+      "facts": {
+        "people": [],
+        "alternatingCare": {
+          "enabled": true,
+          "regular": true,
+          "familyAllowances": true,
+          "documentStatus": "jugement"
+        }
+      },
+      "resultType": "onem_decision_required",
+      "category": "A",
+      "reason": "Les éléments déclarés nécessitent une vérification avant de déterminer la catégorie.",
+      "decisiveFacts": [],
+      "missingFacts": [],
+      "missingDocuments": [],
+      "actions": [],
+      "potentialOutcome": "Travailleur ayant charge de famille",
+      "declarationRequired": false,
+      "sourceRuleIds": [
+        "situation_familiale_composition_priorities",
+        "situation_familiale_isole_garde_alternee"
+      ]
+    },
+    {
+      "id": "cohousing-complete",
+      "label": "Co-housing documenté",
+      "branch": "cohousing",
+      "facts": {
+        "people": [],
+        "isAloneExplicit": true,
+        "cohousingClaim": true,
+        "cohousingDocuments": {
+          "lease": true,
+          "regis": true,
+          "swornStatement": true
+        }
+      },
+      "resultType": "onem_decision_required",
+      "category": null,
+      "reason": "La situation de co-housing est appréciée par l’ONEM sur la situation réelle.\n\nLe Bureau du chômage peut effectuer une enquête avant de décider si le chômeur peut être considéré comme isolé.",
+      "decisiveFacts": [
+        "Le chômeur a déclaré vivre seul"
+      ],
+      "missingFacts": [],
+      "missingDocuments": [],
+      "actions": [
+        "Transmettre pour vérification au Bureau du chômage"
+      ],
+      "potentialOutcome": "La catégorie N ou A peut être envisagée si le statut d’isolé est reconnu et selon les autres faits.",
+      "declarationRequired": false,
+      "sourceRuleIds": [
+        "situation_familiale_composition_priorities",
+        "c1_annexe_regis_difference",
+        "situation_familiale_cohousing_a_verifier"
+      ]
+    },
+    {
+      "id": "unknown-relation",
+      "label": "Relation hors périmètre",
+      "branch": "mixed_or_unsupported",
+      "facts": {
+        "people": [
+          {
+            "id": "unknown",
+            "label": "Autre",
+            "relation": "unknown"
+          }
+        ]
+      },
+      "resultType": "not_automated",
+      "category": null,
+      "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
+      "decisiveFacts": [
+        "1 personne(s) dans le ménage"
+      ],
+      "missingFacts": [
+        "Indiquer si cette personne dispose d'un revenu professionnel.",
+        "Indiquer si cette personne perçoit un revenu de remplacement."
+      ],
+      "missingDocuments": [],
+      "actions": [
+        "Compléter les informations"
+      ],
+      "declarationRequired": true,
+      "sourceRuleIds": [
+        "situation_familiale_composition_priorities"
+      ]
+    }
+  ]
+}

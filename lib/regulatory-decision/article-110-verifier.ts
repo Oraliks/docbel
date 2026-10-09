@@ -149,7 +149,6 @@ export function evaluateArticle110Verifier(input: Article110VerifierInput) {
     article110Decision,
     cohousing: isolatedAssessment?.branch === "cohousing" ? isolatedAssessment : undefined,
     expectedCategory,
-    expectedLabel: expectedCategory === "A" ? "Charge de famille" : expectedCategory === "B" ? "Cohabitant" : "À confirmer",
     level: isolatedAssessment?.status === "needs_review" || isolatedAssessment?.status === "pending_judgment" || householdAssessment.status === "needs_review" ? "review" as const
       : isolatedAssessment?.status === "needs_information" || householdAssessment.status === "needs_information" ? "information" as const : "confirmed" as const,
     declarationRequired: input.people.length > 0,

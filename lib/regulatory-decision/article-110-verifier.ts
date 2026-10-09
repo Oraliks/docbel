@@ -95,6 +95,20 @@ function documentLabel(document: string) {
   } as Record<string, string>)[document] ?? document;
 }
 
+function categoryLabel(category: "A" | "B" | "N" | null) {
+  return category === "A" ? "Travailleur ayant charge de famille" : category === "B" ? "Cohabitant" : category === "N" ? "Isolé" : "À vérifier";
+}
+
+function resultReason(input: Article110VerifierInput, compositionKnown: boolean, missingFacts: Article110MissingFact[], householdStatus: string, cohousing: boolean) {
+  if (!compositionKnown) return "La composition réelle du ménage n'est pas encore renseignée.";
+  if (missingFacts.length > 0) return "Des informations sont nécessaires pour évaluer la situation familiale.";
+  if (cohousing) return "La situation réelle de cohabitation doit être appréciée par l’ONEM avant de confirmer le statut d’isolé.";
+  if (householdStatus === "needs_review") return "Les éléments déclarés nécessitent une vérification avant de déterminer la catégorie.";
+  if (input.people.some((person) => person.relation === "spouse" || person.relation === "partner")) return "Le conjoint ou partenaire est prioritaire pour l'évaluation de la situation familiale.";
+  if (input.isAloneExplicit) return "Le chômeur a déclaré vivre seul et aucune autre situation particulière n'est établie.";
+  return "La catégorie résulte de la composition du ménage et des revenus déclarés.";
+}
+
 function getMissingFacts(input: Article110VerifierInput, sections: Article110VerifierFormSection[]): Article110MissingFact[] {
   const missing: Article110MissingFact[] = [];
   const add = (person: Article110VerifierPerson, key: string, label: string, value: unknown) => {
@@ -174,13 +188,43 @@ export function evaluateArticle110Verifier(input: Article110VerifierInput) {
   const isolatedSituationProvided = input.isAloneExplicit || input.cohousingClaim === true || input.alimony?.enabled === true || input.alternatingCare?.enabled === true;
   const isolatedAssessment = isolatedSituationProvided ? assessIsolatedHouseholdClaim(isolatedPayload, composition, input.officialOnemCode, { regisCompleted: input.cohousingDocuments?.regis }) : undefined;
   const compositionKnown = isolatedSituationProvided || input.people.length > 0;
+  const effectiveMissingFacts = compositionKnown ? missingFacts : [{ factKey: "composition", label: "Indiquer si le chômeur vit seul ou ajouter une personne au ménage.", step: 1 as const }];
   const expectedCategory = compositionKnown ? (isolatedAssessment ? isolatedAssessment.expectedCategory : householdAssessment.expectedCategory) : null;
+  const missingDocuments = [
+    ...(householdAssessment.requiredExternalDocument?.status === "required" ? ["C110A du mois concerné"] : []),
+    ...(householdAssessment.pensionAssessment?.status === "NEEDS_DOCUMENT" ? ["Preuve SPF Pensions du mois concerné"] : []),
+    ...(isolatedAssessment?.documents.filter((document) => document.status === "required" || document.status === "pending").map((document) => documentLabel(document.document)) ?? []),
+  ];
+  const isCohousing = isolatedAssessment?.branch === "cohousing";
+  const reason = resultReason(input, compositionKnown, effectiveMissingFacts, householdAssessment.status, isCohousing);
+  const status = !compositionKnown || effectiveMissingFacts.length > 0 ? "incomplete" as const
+    : isCohousing || householdAssessment.status === "needs_review" || isolatedAssessment?.status === "needs_review" || isolatedAssessment?.status === "pending_judgment" ? "review" as const
+    : missingDocuments.length > 0 ? "document" as const : "complete" as const;
+  const nextActions = [
+    ...(effectiveMissingFacts.length > 0 ? ["Compléter les informations"] : []),
+    ...missingDocuments.map((document) => `Obtenir : ${document}`),
+    ...(isCohousing ? ["Transmettre pour vérification au Bureau du chômage"] : []),
+  ];
   return {
     composition,
     householdAssessment,
     article110Decision,
     cohousing: isolatedAssessment?.branch === "cohousing" ? isolatedAssessment : undefined,
     expectedCategory,
+    status,
+    categoryLabel: categoryLabel(expectedCategory),
+    reason,
+    decisiveFacts: [
+      input.isAloneExplicit ? "Le chômeur a déclaré vivre seul" : undefined,
+      input.people.length > 0 ? `${input.people.length} personne(s) dans le ménage` : undefined,
+      input.officialOnemCode ? `Situation ONEM actuelle : ${input.officialOnemCode}` : undefined,
+    ].filter((fact): fact is string => Boolean(fact)),
+    missingDocuments,
+    nextActions,
+    potentialOutcome: isCohousing ? "La catégorie N ou A peut être envisagée si le statut d’isolé est reconnu et selon les autres faits." : expectedCategory ? categoryLabel(expectedCategory) : undefined,
+    reviewReason: status === "review" ? reason : undefined,
+    officialOnemState: input.officialOnemCode,
+    expectedOnemState: expectedCategory,
     level: !compositionKnown ? "information" as const : isolatedAssessment?.status === "needs_review" || isolatedAssessment?.status === "pending_judgment" || householdAssessment.status === "needs_review" ? "review" as const
       : isolatedAssessment?.status === "needs_information" || householdAssessment.status === "needs_information" ? "information" as const : "confirmed" as const,
     declarationRequired: input.people.length > 0,
@@ -190,13 +234,12 @@ export function evaluateArticle110Verifier(input: Article110VerifierInput) {
       ...(isolatedAssessment?.sourceRuleIds ?? []),
     ])],
     actions: [
+      ...missingDocuments,
       ...(householdAssessment.requiredExternalDocument?.status === "required" ? ["Fournir le C110A officiel"] : []),
-      ...(householdAssessment.pensionAssessment?.status === "NEEDS_DOCUMENT" ? ["Fournir la preuve SPF Pensions"] : []),
-      ...(isolatedAssessment?.documents.filter((document) => document.status === "required" || document.status === "pending").map((document) => documentLabel(document.document)) ?? []),
       ...(householdAssessment.recommendedAction === "declaration_required" ? ["Introduire ou mettre à jour le C1"] : []),
       ...(householdAssessment.recommendedAction === "review_required" || isolatedAssessment?.recommendedAction === "onem_review" ? ["Revue ONEM / organisme de paiement nécessaire"] : []),
     ],
-    missingFacts: compositionKnown ? missingFacts : [{ factKey: "composition", label: "Indiquer si le chômeur vit seul ou ajouter une personne au ménage.", step: 1 as const }],
+    missingFacts: effectiveMissingFacts,
     isolatedAssessment,
   };
 }

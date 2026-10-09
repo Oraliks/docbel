@@ -4364,6 +4364,8 @@
       "article110HowItWorksReview": "Quand un fait ou une pièce manque, le moteur demande une revue plutôt que de supposer.",
       "article110BaremeDate": "Barème ONEM applicable depuis le {date}",
       "article110BaremeUnavailable": "Barème ONEM : date non disponible",
+      "article110SelectRelation": "Sélectionner le lien",
+      "article110ScenarioLabel": "Scénario de test",
       "article110CategoryA": "A — Travailleur ayant charge de famille",
       "article110CategoryB": "B — Cohabitant",
       "article110CategoryN": "N — Isolé",

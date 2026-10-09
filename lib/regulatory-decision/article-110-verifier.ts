@@ -54,6 +54,28 @@ export type Article110VerifierInput = {
 
 export type Article110VerifierResult = ReturnType<typeof evaluateArticle110Verifier>;
 
+/**
+ * UI-only projection of the composition already established by the engine.
+ * It deliberately contains no category or income rule: the client uses it
+ * only to avoid asking questions that cannot affect the active branch.
+ */
+export type Article110VerifierFormSection = "partner" | "children" | "relatives" | "third_parties" | "isolated";
+
+export function getArticle110VerifierFormSections(input: Pick<Article110VerifierInput, "people">): Article110VerifierFormSection[] {
+  const composition = classifyHouseholdComposition(input.people.map((person) => ({ ...person, factKey: `verifier.${person.id}` })));
+  switch (composition.kind) {
+    case "alone": return ["isolated"];
+    case "spouse_or_partner": return ["partner"];
+    case "children_only": return ["children"];
+    case "children_and_relatives": return ["children", "relatives"];
+    case "relatives_only": return ["relatives"];
+    case "children_and_third_parties": return ["children", "third_parties"];
+    case "relatives_and_third_parties": return ["relatives", "third_parties"];
+    case "children_relatives_and_third_parties": return ["children", "relatives", "third_parties"];
+    case "mixed_or_unsupported": return ["partner", "children", "relatives", "third_parties"];
+  }
+}
+
 function documentLabel(document: string) {
   return ({
     judgment_or_admissible_act: "Jugement ou acte notarié",

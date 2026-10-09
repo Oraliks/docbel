@@ -59,7 +59,7 @@ export type Article110MissingFact = {
   factKey: string;
   personId?: string;
   label: string;
-  step: 2;
+  step: 1 | 2;
 };
 
 /**

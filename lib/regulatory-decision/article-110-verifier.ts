@@ -12,7 +12,7 @@ import type { RegulatoryFacts } from "./types";
 import { assessIsolatedHouseholdClaim } from "./personal-situation-change";
 
 type AlimonyFacts = {
-  enabled: boolean;
+  enabled?: boolean;
   beneficiary?: "conjoint" | "enfant-mineur" | "enfant-majeur" | "autre";
   paymentEffective?: boolean;
   legalBasis?: "decision-judiciaire" | "acte-notarie-divorce" | "acte-notarie-enfant" | "autre";
@@ -23,7 +23,7 @@ type AlimonyFacts = {
 };
 
 type AlternatingCareFacts = {
-  enabled: boolean;
+  enabled?: boolean;
   regular?: boolean;
   familyAllowances?: boolean;
   childRelevantIncome?: boolean;

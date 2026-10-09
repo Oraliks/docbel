@@ -17,9 +17,16 @@ describe("Article 110 scenario matrix", () => {
   const report = evaluateArticle110ScenarioMatrix(thresholds);
 
   it("covers every meaningful evaluator branch and result family", () => {
-    expect(report.total).toBeGreaterThanOrEqual(20);
+    expect(report.total).toBeGreaterThan(100);
     expect(Object.keys(report.byBranch)).toEqual(expect.arrayContaining(["spouse_or_partner", "children_only", "relatives_only", "cohousing", "alimony", "alternating_care", "mixed_or_unsupported"]));
     expect(Object.values(report.byResultType).filter(Boolean)).toHaveLength(5);
+  });
+
+  it("accounts for every generated combination before execution", () => {
+    expect(report.space.raw).toBe(report.space.executed + report.space.invalid + report.space.duplicates);
+    expect(report.space.invalid).toBeGreaterThan(0);
+    expect(report.space.duplicates).toBeGreaterThan(0);
+    expect(report.coverage.enfants).toContain("nombre : 1/2/3");
   });
 
   it("keeps every generated contract justified and internally coherent", () => {
@@ -37,5 +44,10 @@ describe("Article 110 scenario matrix", () => {
     const cohousing = report.scenarios.find((scenario) => scenario.id === "cohousing-complete");
     expect(cohousing).toMatchObject({ resultType: "onem_decision_required", category: null });
     expect(cohousing?.reason).toContain("Bureau du chômage");
+  });
+
+  it("documents every mixed or unsupported composition instead of silently dropping it", () => {
+    expect(report.mixedOrUnsupported.length).toBeGreaterThan(0);
+    expect(report.mixedOrUnsupported.every((group) => group.count > 0 && group.classifierReason.length > 0)).toBe(true);
   });
 });

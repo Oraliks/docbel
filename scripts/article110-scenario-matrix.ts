@@ -18,9 +18,10 @@ const thresholds: C1BaremeThresholds = {
 async function main() {
   const report = evaluateArticle110ScenarioMatrix(thresholds);
   const root = process.cwd();
+  const markdown = `${formatArticle110MatrixMarkdown(report)}\n## Résumé d’audit\n\n- Combinaisons brutes : ${report.space.raw}\n- Invalides : ${report.space.invalid}\n- Dédupliquées : ${report.space.duplicates}\n- Scénarios exécutés : ${report.space.executed}\n- A : ${report.byCategory.A}\n- B : ${report.byCategory.B}\n- N : ${report.byCategory.N}\n- Durée : ${report.durationMs} ms\n`;
   await mkdir(path.join(root, "artifacts"), { recursive: true });
   await Promise.all([
-    writeFile(path.join(root, "docs", "audits", "ARTICLE_110_SCENARIO_MATRIX.md"), formatArticle110MatrixMarkdown(report), "utf8"),
+    writeFile(path.join(root, "docs", "audits", "ARTICLE_110_SCENARIO_MATRIX.md"), markdown, "utf8"),
     writeFile(path.join(root, "artifacts", "article-110-scenario-matrix.json"), `${JSON.stringify(report, null, 2)}\n`, "utf8"),
   ]);
   console.log(`Article 110 scenario matrix: ${report.total} scenarios, ${report.incoherent.length} incoherent, ${report.withoutReason.length} without reason.`);

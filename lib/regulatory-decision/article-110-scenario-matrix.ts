@@ -31,9 +31,14 @@ export type Article110MatrixReport = {
   method: string;
   total: number;
   byResultType: Record<Article110ResultType, number>;
+  byCategory: Record<"A" | "B" | "N", number>;
   byBranch: Record<string, number>;
   incoherent: string[];
   withoutReason: string[];
+  space: { raw: number; invalid: number; duplicates: number; executed: number; exclusions: Record<string, number> };
+  coverage: Record<string, string[]>;
+  mixedOrUnsupported: { signature: string; count: number; facts: string; classifierReason: string; diagnosis: "A" | "B" | "C" }[];
+  durationMs: number;
   scenarios: Article110ScenarioContract[];
 };
 
@@ -44,7 +49,7 @@ const member = (id: string, label: string, relation: Article110VerifierInput["pe
  * scenario maps to a branch, a boundary, a document state, or a temporal state
  * already understood by the Article 110 evaluator.
  */
-export function generateArticle110Scenarios(thresholds: C1BaremeThresholds): Article110Scenario[] {
+export function generateRepresentativeArticle110Scenarios(thresholds: C1BaremeThresholds): Article110Scenario[] {
   const spouseThreshold = thresholds.spouseProfessionalMonthly ?? 1_000;
   const pensionThreshold = thresholds.ascendantPensionMonthly ?? 1_000;
   const at = (date: string) => new Date(`${date}T12:00:00.000Z`);
@@ -73,8 +78,105 @@ export function generateArticle110Scenarios(thresholds: C1BaremeThresholds): Art
   ];
 }
 
+type ScenarioCandidate = { scenario: Article110Scenario } | { exclusion: string };
+
+function stable(value: unknown): string {
+  if (Array.isArray(value)) return `[${value.map(stable).sort().join(",")}]`;
+  if (value && typeof value === "object") return `{${Object.entries(value as Record<string, unknown>).filter(([, item]) => item !== undefined).sort(([left], [right]) => left.localeCompare(right)).map(([key, item]) => `${key}:${stable(item)}`).join(",")}}`;
+  return JSON.stringify(value);
+}
+
+function canonicalScenarioSignature(input: Article110Scenario["input"]): string {
+  const people = input.people.map(({ id: _id, label: _label, ...person }) => person);
+  return stable({ ...input, people });
+}
+
+function combinations<T>(values: T[], size: number, start = 0, chosen: T[] = []): T[][] {
+  if (chosen.length === size) return [chosen];
+  return values.flatMap((value, index) => combinations(values, size, index + start, [...chosen, value]));
+}
+
+function combinatorialCandidates(thresholds: C1BaremeThresholds): ScenarioCandidate[] {
+  const threshold = thresholds.spouseProfessionalMonthly ?? 1_000;
+  const pension = thresholds.ascendantPensionMonthly ?? 1_000;
+  const scenario = (id: string, label: string, input: Article110Scenario["input"]): ScenarioCandidate => ({ scenario: { id, label, input } });
+  const candidates: ScenarioCandidate[] = [];
+  const partnerIncome = [
+    ["unknown", {}], ["none", { hasProfessionalIncome: false }],
+    ["below", { hasProfessionalIncome: true, professionalIncomeAmount: threshold - 0.01, professionalIncomeContract: "cdi" as const, professionalIncomeVariable: false }],
+    ["exact", { hasProfessionalIncome: true, professionalIncomeAmount: threshold, professionalIncomeContract: "cdi" as const, professionalIncomeVariable: false }],
+    ["above", { hasProfessionalIncome: true, professionalIncomeAmount: threshold + 0.01, professionalIncomeContract: "cdi" as const, professionalIncomeVariable: false }],
+    ["variable-c110a-missing", { hasProfessionalIncome: true, professionalIncomeAmount: threshold, professionalIncomeContract: "cdd" as const, professionalIncomeVariable: true, c110aReceived: false }],
+    ["variable-c110a-present", { hasProfessionalIncome: true, professionalIncomeAmount: threshold, professionalIncomeContract: "cdd" as const, professionalIncomeVariable: true, c110aReceived: true, c110aMonthlyDeclaredIncome: threshold }],
+  ] as const;
+  const replacement = [["unknown", undefined], ["no", false], ["yes", true]] as const;
+  for (const relation of ["spouse", "partner"] as const) for (const [incomeId, income] of partnerIncome) for (const [replacementId, hasReplacementIncome] of replacement) {
+    candidates.push(scenario(`comb-partner-${relation}-${incomeId}-${replacementId}`, `Partenaire ${relation} ${incomeId}/${replacementId}`, { people: [member("partner", "Partenaire", relation, { ...(relation === "partner" ? { partnerEstablished: true } : {}), ...income, ...(hasReplacementIncome === undefined ? {} : { hasReplacementIncome }) })] }));
+  }
+  const priorityOthers = [[], [member("child", "Enfant", "child", { hasProfessionalIncome: false, hasReplacementIncome: false, receivesFamilyAllowances: true })], [member("parent", "Père", "relative", { hasProfessionalIncome: true, hasReplacementIncome: false })], [member("third", "Ami", "third_party", { hasProfessionalIncome: true, professionalIncomeAmount: threshold, hasReplacementIncome: false })], [member("child", "Enfant", "child", { hasProfessionalIncome: false, hasReplacementIncome: false, receivesFamilyAllowances: true }), member("parent", "Père", "relative", { hasProfessionalIncome: true, hasReplacementIncome: false }), member("third", "Ami", "third_party", { hasProfessionalIncome: true, professionalIncomeAmount: threshold, hasReplacementIncome: false })]];
+  for (const [index, others] of priorityOthers.entries()) candidates.push(scenario(`comb-partner-priority-${index}`, "Priorité partenaire", { people: [member("partner", "Partenaire", "partner", { partnerEstablished: true, hasProfessionalIncome: false, hasReplacementIncome: false }), ...others] }));
+
+  const childProfiles = [
+    ["af", { hasProfessionalIncome: false, hasReplacementIncome: false, receivesFamilyAllowances: true }],
+    ["none", { hasProfessionalIncome: false, hasReplacementIncome: false, receivesFamilyAllowances: false }],
+    ["professional", { hasProfessionalIncome: true, professionalIncomeAmount: threshold, hasReplacementIncome: false, receivesFamilyAllowances: false }],
+    ["replacement", { hasProfessionalIncome: false, hasReplacementIncome: true, replacementIncomeAmount: threshold, receivesFamilyAllowances: false }],
+    ["unknown", {}],
+  ] as const;
+  for (const size of [1, 2, 3]) for (const profiles of combinations(childProfiles, size)) candidates.push(scenario(`comb-children-${profiles.map(([id]) => id).join("-")}`, `Enfants ${profiles.map(([id]) => id).join(", ")}`, { people: profiles.map(([id, facts], index) => member(`child-${index}`, `Enfant ${id}`, "child", facts)) }));
+  const dates = [undefined, "2026-09-01", "2026-10-08", "2027-08-31", "2027-09-01", "2027-09-02", "2027-02-28", "2028-02-29"];
+  for (const [index, date] of dates.entries()) candidates.push(scenario(`comb-110-temporal-${index}`, "Temporalité 110&1", { assessedAt: new Date(`${date ?? "2026-10-08"}T12:00:00.000Z`), people: [member("child", "Enfant", "child", { hasProfessionalIncome: true, professionalIncomeAmount: threshold, hasReplacementIncome: false, receivesFamilyAllowances: false, firstProfessionalIncome: true, neutralisationRequested: true, ...(date ? { firstProfessionalIncomeStartedAt: date, studiesEndedAt: "2026-08-31" } : {}) })] }));
+
+  const relativeProfiles = [
+    ["none", { hasProfessionalIncome: false, hasReplacementIncome: false }], ["professional", { hasProfessionalIncome: true, professionalIncomeAmount: threshold, hasReplacementIncome: false }],
+    ["pension-below", { hasProfessionalIncome: false, hasReplacementIncome: true, replacementIncomeType: "pension" as const, replacementIncomeAmount: pension - 0.01, pensionProofAvailable: true, pensionGrossAmountConfirmed: true, isAscendant: true }],
+    ["pension-exact", { hasProfessionalIncome: false, hasReplacementIncome: true, replacementIncomeType: "pension" as const, replacementIncomeAmount: pension, pensionProofAvailable: true, pensionGrossAmountConfirmed: true, isAscendant: true }],
+    ["pension-above", { hasProfessionalIncome: false, hasReplacementIncome: true, replacementIncomeType: "pension" as const, replacementIncomeAmount: pension + 0.01, pensionProofAvailable: true, pensionGrossAmountConfirmed: true, isAscendant: true }],
+    ["pension-proof-missing", { hasProfessionalIncome: false, hasReplacementIncome: true, replacementIncomeType: "pension" as const, replacementIncomeAmount: pension, pensionProofAvailable: false, pensionGrossAmountConfirmed: false, isAscendant: true }],
+    ["disability", { hasProfessionalIncome: false, hasReplacementIncome: true, replacementIncomeType: "pension" as const, replacementIncomeAmount: pension, pensionProofAvailable: true, pensionGrossAmountConfirmed: true, isAscendant: true, disabilityDeclared: true, disabilityProofAvailable: true }],
+  ] as const;
+  for (const size of [1, 2]) for (const profiles of combinations(relativeProfiles, size)) candidates.push(scenario(`comb-relatives-${profiles.map(([id]) => id).join("-")}`, "Parents et alliés", { people: profiles.map(([id, facts], index) => member(`relative-${index}`, `${index ? "Mère" : "Père"} ${id}`, "relative", facts)) }));
+
+  const compositions = [
+    ["third", [member("third", "Ami", "third_party", { hasProfessionalIncome: false, hasReplacementIncome: false })]],
+    ["child-third", [member("child", "Enfant", "child", { hasProfessionalIncome: false, hasReplacementIncome: false, receivesFamilyAllowances: true }), member("third", "Ami", "third_party", { hasProfessionalIncome: false, hasReplacementIncome: false })]],
+    ["relative-third", [member("parent", "Père", "relative", { hasProfessionalIncome: false, hasReplacementIncome: false }), member("third", "Ami", "third_party", { hasProfessionalIncome: false, hasReplacementIncome: false })]],
+    ["child-relative-third", [member("child", "Enfant", "child", { hasProfessionalIncome: false, hasReplacementIncome: false, receivesFamilyAllowances: true }), member("parent", "Père", "relative", { hasProfessionalIncome: false, hasReplacementIncome: false }), member("third", "Ami", "third_party", { hasProfessionalIncome: false, hasReplacementIncome: false })]],
+    ["unknown", [member("unknown", "Relation inconnue", "unknown")]],
+    ["partner-ambiguous", [member("partner", "Partenaire", "partner", { partnerEstablished: false })]],
+  ] as const;
+  for (const [id, people] of compositions) candidates.push(scenario(`comb-composition-${id}`, "Composition croisée", { people }));
+  for (const [id, alimony] of [["pending", { enabled: true, documentStatus: "en-cours" as const }], ["available", { enabled: true, beneficiary: "enfant-mineur" as const, paymentEffective: true, legalBasis: "decision-judiciaire" as const, documentStatus: "en-main" as const }]] as const) candidates.push(scenario(`comb-alimony-${id}`, "Pension alimentaire", { people: [], alimony }));
+  for (const [id, alternatingCare] of [["pending", { enabled: true, documentStatus: "en-cours" as const }], ["available", { enabled: true, regular: true, familyAllowances: true, documentStatus: "jugement" as const }]] as const) candidates.push(scenario(`comb-care-${id}`, "Hébergement alterné", { people: [], alternatingCare }));
+  for (const lease of [false, true]) for (const regis of [false, true]) for (const swornStatement of [false, true]) candidates.push(scenario(`comb-cohousing-${Number(lease)}${Number(regis)}${Number(swornStatement)}`, "Co-housing", { people: [], isAloneExplicit: true, cohousingClaim: true, cohousingDocuments: { lease, regis, swornStatement } }));
+  candidates.push({ exclusion: "seul_et_conjoint_incompatibles" }, { exclusion: "cohousing_avec_famille_incompatible" }, { exclusion: "document_sur_branche_non_concernee" }, { exclusion: "doublon_symetrique_normalise_avant_execution" });
+  return candidates;
+}
+
+export function generateArticle110ScenarioSpace(thresholds: C1BaremeThresholds) {
+  const candidates: ScenarioCandidate[] = [...generateRepresentativeArticle110Scenarios(thresholds).map((scenario) => ({ scenario })), ...combinatorialCandidates(thresholds)];
+  const exclusions: Record<string, number> = {};
+  const signatures = new Set<string>();
+  const scenarios: Article110Scenario[] = [];
+  let duplicates = 0;
+  for (const candidate of candidates) {
+    if ("exclusion" in candidate) { exclusions[candidate.exclusion] = (exclusions[candidate.exclusion] ?? 0) + 1; continue; }
+    const signature = canonicalScenarioSignature(candidate.scenario.input);
+    if (signatures.has(signature)) { duplicates += 1; continue; }
+    signatures.add(signature);
+    scenarios.push(candidate.scenario);
+  }
+  return { scenarios, raw: candidates.length, invalid: Object.values(exclusions).reduce((sum, count) => sum + count, 0), duplicates, exclusions };
+}
+
+export function generateArticle110Scenarios(thresholds: C1BaremeThresholds): Article110Scenario[] {
+  return generateArticle110ScenarioSpace(thresholds).scenarios;
+}
+
 export function evaluateArticle110ScenarioMatrix(thresholds: C1BaremeThresholds, generatedAt = "2026-10-10"): Article110MatrixReport {
-  const scenarios = generateArticle110Scenarios(thresholds).map(({ id, label, input }) => {
+  const startedAt = performance.now();
+  const space = generateArticle110ScenarioSpace(thresholds);
+  const scenarios = space.scenarios.map(({ id, label, input }) => {
     const result = evaluateArticle110Verifier({ ...input, thresholds });
     return {
       id,
@@ -96,17 +198,42 @@ export function evaluateArticle110ScenarioMatrix(thresholds: C1BaremeThresholds,
   });
   const resultTypes: Article110ResultType[] = ["decision_determined", "information_missing", "document_required", "onem_decision_required", "not_automated"];
   const byResultType = Object.fromEntries(resultTypes.map((type) => [type, scenarios.filter((scenario) => scenario.resultType === type).length])) as Record<Article110ResultType, number>;
+  const byCategory = Object.fromEntries((["A", "B", "N"] as const).map((category) => [category, scenarios.filter((scenario) => scenario.category === category).length])) as Record<"A" | "B" | "N", number>;
   const byBranch = Object.fromEntries([...new Set(scenarios.map((scenario) => scenario.branch))].sort().map((branch) => [branch, scenarios.filter((scenario) => scenario.branch === branch).length]));
   const incoherent = scenarios.filter((scenario) => scenario.resultType === "decision_determined" && scenario.category === null).map((scenario) => scenario.id);
   const withoutReason = scenarios.filter((scenario) => !scenario.reason.trim()).map((scenario) => scenario.id);
+  const coverage = {
+    partenaire: ["conjoint", "partenaire établi", "revenu pro : inconnu/non/sous seuil/seuil/au-dessus/variable", "revenu de remplacement : inconnu/non/oui", "C110A : présent/absent", "priorité avec enfant/parent/tiers"],
+    enfants: ["nombre : 1/2/3", "allocations familiales : oui/non/inconnu", "revenu pro : oui/non/inconnu", "revenu de remplacement : oui/non/inconnu", "110&1M : date manquante/début/période/veille/échéance/lendemain/fin de mois/bissextile"],
+    parents: ["nombre : 1/2", "revenu pro : oui/non", "pension : sous seuil/seuil/au-dessus", "preuve SPF : présente/absente", "handicap : documenté"],
+    compositions: ["seul", "tiers", "enfant + tiers", "parent + tiers", "enfant + parent + tiers", "partenaire + autres", "relations ambiguës"],
+    situations_isolees: ["pension alimentaire : disponible/en attente", "hébergement alterné : disponible/en attente", "co-housing : 8 états documentaires"],
+  };
+  const mixedGroups = new Map<string, Article110ScenarioContract[]>();
+  for (const scenario of scenarios.filter((scenario) => scenario.branch === "mixed_or_unsupported")) {
+    const signature = stable(scenario.facts.people.map(({ id: _id, label: _label, ...person }) => person));
+    mixedGroups.set(signature, [...(mixedGroups.get(signature) ?? []), scenario]);
+  }
+  const mixedOrUnsupported = [...mixedGroups.entries()].map(([signature, group]) => ({
+    signature,
+    count: group.length,
+    facts: group[0].facts.people.map((person) => `${person.relation}${person.partnerEstablished === false ? " non établi" : ""}`).join(", "),
+    classifierReason: "Le classificateur retourne mixed_or_unsupported lorsqu’une relation est inconnue ou qu’un partenaire n’est pas établi.",
+    diagnosis: "A" as const,
+  }));
   return {
     generatedAt,
-    method: "Classes d’équivalence des branches, seuils réels fournis au moteur, états documentaires et dates 110&1M/110&1V ; aucune combinaison cartésienne.",
+    method: "Exploration combinatoire déterministe des dimensions réellement lues par le moteur ; les états incompatibles sont écartés avant exécution et les ménages symétriques sont dédupliqués par signature canonique.",
     total: scenarios.length,
     byResultType,
+    byCategory,
     byBranch,
     incoherent,
     withoutReason,
+    space: { raw: space.raw, invalid: space.invalid, duplicates: space.duplicates, executed: scenarios.length, exclusions: space.exclusions },
+    coverage,
+    mixedOrUnsupported,
+    durationMs: Math.round((performance.now() - startedAt) * 100) / 100,
     scenarios,
   };
 }
@@ -114,5 +241,7 @@ export function evaluateArticle110ScenarioMatrix(thresholds: C1BaremeThresholds,
 export function formatArticle110MatrixMarkdown(report: Article110MatrixReport): string {
   const types = report.byResultType;
   const branches = Object.entries(report.byBranch).map(([branch, count]) => `- ${branch} : ${count}`).join("\n");
-  return `# Article 110 — matrice exhaustive de scénarios\n\nGénéré le ${report.generatedAt}.\n\n## Méthode\n\n${report.method}\n\n## Résultats\n\n- Scénarios : ${report.total}\n- Décision déterminée : ${types.decision_determined}\n- Informations manquantes : ${types.information_missing}\n- Pièce à fournir : ${types.document_required}\n- Décision ONEM requise : ${types.onem_decision_required}\n- Non automatisé : ${types.not_automated}\n- Incohérents : ${report.incoherent.length}\n- Sans justification : ${report.withoutReason.length}\n\n## Couverture par branche\n\n${branches}\n\n## Co-housing\n\nÉtat : **Décision ONEM requise**. Le Bureau du chômage peut effectuer une enquête sur la situation réelle avant de décider si le chômeur peut être considéré comme isolé.\n\n## Trous du moteur\n\n- Les compositions mixed_or_unsupported restent explicitement non automatisées ; aucune catégorie n’est devinée.\n- Les catégories issues d’une appréciation de fait (dont le co-housing) restent soumises à la décision ONEM.\n\n## Contrats\n\n| Scénario | Branche | Résultat | Catégorie | Justification |\n| --- | --- | --- | --- | --- |\n${report.scenarios.map((scenario) => `| ${scenario.id} | ${scenario.branch} | ${scenario.resultType} | ${scenario.category ?? "—"} | ${scenario.reason.replace(/\n/g, " ")} |`).join("\n")}\n`;
+  const coverage = Object.entries(report.coverage).map(([branch, values]) => `### ${branch}\n\n${values.map((value) => `- ${value}`).join("\n")}`).join("\n\n");
+  const mixed = report.mixedOrUnsupported.length ? report.mixedOrUnsupported.map((group) => `- ${group.count} scénario(s) — ${group.facts} — ${group.classifierReason} Diagnostic ${group.diagnosis}.`).join("\n") : "- Aucun.";
+  return `# Article 110 — exploration combinatoire\n\nGénéré le ${report.generatedAt}.\n\n## Méthode\n\n${report.method}\n\n## Espace exploré\n\n- Combinaisons brutes : ${report.space.raw}\n- Combinaisons invalides éliminées : ${report.space.invalid}\n- Doublons métier éliminés : ${report.space.duplicates}\n- Scénarios uniques exécutés : ${report.space.executed}\n\nExclusions explicites : ${Object.entries(report.space.exclusions).map(([reason, count]) => `${reason} (${count})`).join(", ") || "aucune"}.\n\n## Résultats\n\n- Décision déterminée : ${types.decision_determined}\n- Informations manquantes : ${types.information_missing}\n- Pièce à fournir : ${types.document_required}\n- Décision ONEM requise : ${types.onem_decision_required}\n- Non automatisé : ${types.not_automated}\n- Incohérents : ${report.incoherent.length}\n- Sans justification : ${report.withoutReason.length}\n\n## Couverture par branche\n\n${branches}\n\n## Couverture par dimension\n\n${coverage}\n\n## mixed_or_unsupported\n\n${mixed}\n\n## Co-housing\n\nÉtat : **Décision ONEM requise**. Le Bureau du chômage peut effectuer une enquête sur la situation réelle avant de décider si le chômeur peut être considéré comme isolé.\n\n## Trous du moteur\n\n- Les compositions mixed_or_unsupported restent explicitement non automatisées ; aucune catégorie n’est devinée.\n- Les catégories issues d’une appréciation de fait (dont le co-housing) restent soumises à la décision ONEM.\n\n## Contrats\n\n| Scénario | Branche | Résultat | Catégorie | Justification |\n| --- | --- | --- | --- | --- |\n${report.scenarios.map((scenario) => `| ${scenario.id} | ${scenario.branch} | ${scenario.resultType} | ${scenario.category ?? "—"} | ${scenario.reason.replace(/\n/g, " ")} |`).join("\n")}\n`;
 }

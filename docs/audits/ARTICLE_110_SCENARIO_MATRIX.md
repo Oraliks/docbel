@@ -1,19 +1,27 @@
-# Article 110 — matrice exhaustive de scénarios
+# Article 110 — exploration combinatoire
 
 Généré le 2026-10-10.
 
 ## Méthode
 
-Classes d’équivalence des branches, seuils réels fournis au moteur, états documentaires et dates 110&1M/110&1V ; aucune combinaison cartésienne.
+Exploration combinatoire déterministe des dimensions réellement lues par le moteur ; les états incompatibles sont écartés avant exécution et les ménages symétriques sont dédupliqués par signature canonique.
+
+## Espace exploré
+
+- Combinaisons brutes : 309
+- Combinaisons invalides éliminées : 4
+- Doublons métier éliminés : 138
+- Scénarios uniques exécutés : 167
+
+Exclusions explicites : seul_et_conjoint_incompatibles (1), cohousing_avec_famille_incompatible (1), document_sur_branche_non_concernee (1), doublon_symetrique_normalise_avant_execution (1).
 
 ## Résultats
 
-- Scénarios : 21
-- Décision déterminée : 11
-- Informations manquantes : 2
-- Pièce à fournir : 4
-- Décision ONEM requise : 3
-- Non automatisé : 1
+- Décision déterminée : 89
+- Informations manquantes : 52
+- Pièce à fournir : 11
+- Décision ONEM requise : 12
+- Non automatisé : 3
 - Incohérents : 0
 - Sans justification : 0
 
@@ -22,12 +30,63 @@ Classes d’équivalence des branches, seuils réels fournis au moteur, états d
 - alimony : 2
 - alone : 1
 - alternating_care : 2
-- children_and_third_parties : 1
-- children_only : 4
-- cohousing : 1
-- mixed_or_unsupported : 1
-- relatives_only : 3
-- spouse_or_partner : 6
+- children_and_third_parties : 2
+- children_only : 63
+- children_relatives_and_third_parties : 1
+- cohousing : 8
+- mixed_or_unsupported : 3
+- relatives_and_third_parties : 1
+- relatives_only : 36
+- spouse_or_partner : 48
+
+## Couverture par dimension
+
+### partenaire
+
+- conjoint
+- partenaire établi
+- revenu pro : inconnu/non/sous seuil/seuil/au-dessus/variable
+- revenu de remplacement : inconnu/non/oui
+- C110A : présent/absent
+- priorité avec enfant/parent/tiers
+
+### enfants
+
+- nombre : 1/2/3
+- allocations familiales : oui/non/inconnu
+- revenu pro : oui/non/inconnu
+- revenu de remplacement : oui/non/inconnu
+- 110&1M : date manquante/début/période/veille/échéance/lendemain/fin de mois/bissextile
+
+### parents
+
+- nombre : 1/2
+- revenu pro : oui/non
+- pension : sous seuil/seuil/au-dessus
+- preuve SPF : présente/absente
+- handicap : documenté
+
+### compositions
+
+- seul
+- tiers
+- enfant + tiers
+- parent + tiers
+- enfant + parent + tiers
+- partenaire + autres
+- relations ambiguës
+
+### situations_isolees
+
+- pension alimentaire : disponible/en attente
+- hébergement alterné : disponible/en attente
+- co-housing : 8 états documentaires
+
+## mixed_or_unsupported
+
+- 1 scénario(s) — unknown — Le classificateur retourne mixed_or_unsupported lorsqu’une relation est inconnue ou qu’un partenaire n’est pas établi. Diagnostic A.
+- 1 scénario(s) — third_party — Le classificateur retourne mixed_or_unsupported lorsqu’une relation est inconnue ou qu’un partenaire n’est pas établi. Diagnostic A.
+- 1 scénario(s) — partner non établi — Le classificateur retourne mixed_or_unsupported lorsqu’une relation est inconnue ou qu’un partenaire n’est pas établi. Diagnostic A.
 
 ## Co-housing
 
@@ -52,7 +111,6 @@ Classes d’équivalence des branches, seuils réels fournis au moteur, états d
 | children-allowances | children_only | decision_determined | A | La catégorie résulte de la composition du ménage et des revenus déclarés. |
 | children-income | children_only | decision_determined | B | La catégorie résulte de la composition du ménage et des revenus déclarés. |
 | children-110-1m | children_only | decision_determined | A | La catégorie résulte de la composition du ménage et des revenus déclarés. |
-| children-110-1v | children_only | decision_determined | B | La catégorie résulte de la composition du ménage et des revenus déclarés. |
 | relative-pension-document-missing | relatives_only | document_required | — | La catégorie résulte de la composition du ménage et des revenus déclarés. |
 | relative-pension-at-threshold | relatives_only | decision_determined | A | La catégorie résulte de la composition du ménage et des revenus déclarés. |
 | relative-pension-above | relatives_only | decision_determined | B | La catégorie résulte de la composition du ménage et des revenus déclarés. |
@@ -63,3 +121,161 @@ Classes d’équivalence des branches, seuils réels fournis au moteur, états d
 | alternating-care-established | alternating_care | onem_decision_required | A | Les éléments déclarés nécessitent une vérification avant de déterminer la catégorie. |
 | cohousing-complete | cohousing | onem_decision_required | — | La situation de co-housing est appréciée par l’ONEM sur la situation réelle.  Le Bureau du chômage peut effectuer une enquête avant de décider si le chômeur peut être considéré comme isolé. |
 | unknown-relation | mixed_or_unsupported | not_automated | — | Des informations sont nécessaires pour évaluer la situation familiale. |
+| comb-partner-spouse-unknown-no | spouse_or_partner | information_missing | — | Des informations sont nécessaires pour évaluer la situation familiale. |
+| comb-partner-spouse-unknown-yes | spouse_or_partner | information_missing | — | Des informations sont nécessaires pour évaluer la situation familiale. |
+| comb-partner-spouse-none-unknown | spouse_or_partner | information_missing | — | Des informations sont nécessaires pour évaluer la situation familiale. |
+| comb-partner-spouse-none-yes | spouse_or_partner | information_missing | B | Des informations sont nécessaires pour évaluer la situation familiale. |
+| comb-partner-spouse-below-unknown | spouse_or_partner | information_missing | — | Des informations sont nécessaires pour évaluer la situation familiale. |
+| comb-partner-spouse-below-no | spouse_or_partner | decision_determined | A | Le conjoint ou partenaire est prioritaire pour l'évaluation de la situation familiale. |
+| comb-partner-spouse-below-yes | spouse_or_partner | information_missing | A | Des informations sont nécessaires pour évaluer la situation familiale. |
+| comb-partner-spouse-exact-unknown | spouse_or_partner | information_missing | — | Des informations sont nécessaires pour évaluer la situation familiale. |
+| comb-partner-spouse-exact-yes | spouse_or_partner | information_missing | A | Des informations sont nécessaires pour évaluer la situation familiale. |
+| comb-partner-spouse-above-unknown | spouse_or_partner | information_missing | — | Des informations sont nécessaires pour évaluer la situation familiale. |
+| comb-partner-spouse-above-no | spouse_or_partner | decision_determined | B | Le conjoint ou partenaire est prioritaire pour l'évaluation de la situation familiale. |
+| comb-partner-spouse-above-yes | spouse_or_partner | information_missing | B | Des informations sont nécessaires pour évaluer la situation familiale. |
+| comb-partner-spouse-variable-c110a-missing-unknown | spouse_or_partner | information_missing | — | Des informations sont nécessaires pour évaluer la situation familiale. |
+| comb-partner-spouse-variable-c110a-missing-yes | spouse_or_partner | information_missing | B | Des informations sont nécessaires pour évaluer la situation familiale. |
+| comb-partner-spouse-variable-c110a-present-unknown | spouse_or_partner | information_missing | — | Des informations sont nécessaires pour évaluer la situation familiale. |
+| comb-partner-spouse-variable-c110a-present-no | spouse_or_partner | onem_decision_required | B | Les éléments déclarés nécessitent une vérification avant de déterminer la catégorie. |
+| comb-partner-spouse-variable-c110a-present-yes | spouse_or_partner | information_missing | B | Des informations sont nécessaires pour évaluer la situation familiale. |
+| comb-partner-partner-unknown-unknown | spouse_or_partner | information_missing | — | Des informations sont nécessaires pour évaluer la situation familiale. |
+| comb-partner-partner-unknown-no | spouse_or_partner | information_missing | — | Des informations sont nécessaires pour évaluer la situation familiale. |
+| comb-partner-partner-unknown-yes | spouse_or_partner | information_missing | — | Des informations sont nécessaires pour évaluer la situation familiale. |
+| comb-partner-partner-none-unknown | spouse_or_partner | information_missing | — | Des informations sont nécessaires pour évaluer la situation familiale. |
+| comb-partner-partner-none-no | spouse_or_partner | decision_determined | A | Le conjoint ou partenaire est prioritaire pour l'évaluation de la situation familiale. |
+| comb-partner-partner-none-yes | spouse_or_partner | information_missing | B | Des informations sont nécessaires pour évaluer la situation familiale. |
+| comb-partner-partner-below-unknown | spouse_or_partner | information_missing | — | Des informations sont nécessaires pour évaluer la situation familiale. |
+| comb-partner-partner-below-no | spouse_or_partner | decision_determined | A | Le conjoint ou partenaire est prioritaire pour l'évaluation de la situation familiale. |
+| comb-partner-partner-below-yes | spouse_or_partner | information_missing | A | Des informations sont nécessaires pour évaluer la situation familiale. |
+| comb-partner-partner-exact-unknown | spouse_or_partner | information_missing | — | Des informations sont nécessaires pour évaluer la situation familiale. |
+| comb-partner-partner-exact-no | spouse_or_partner | decision_determined | A | Le conjoint ou partenaire est prioritaire pour l'évaluation de la situation familiale. |
+| comb-partner-partner-exact-yes | spouse_or_partner | information_missing | A | Des informations sont nécessaires pour évaluer la situation familiale. |
+| comb-partner-partner-above-unknown | spouse_or_partner | information_missing | — | Des informations sont nécessaires pour évaluer la situation familiale. |
+| comb-partner-partner-above-no | spouse_or_partner | decision_determined | B | Le conjoint ou partenaire est prioritaire pour l'évaluation de la situation familiale. |
+| comb-partner-partner-above-yes | spouse_or_partner | information_missing | B | Des informations sont nécessaires pour évaluer la situation familiale. |
+| comb-partner-partner-variable-c110a-missing-unknown | spouse_or_partner | information_missing | — | Des informations sont nécessaires pour évaluer la situation familiale. |
+| comb-partner-partner-variable-c110a-missing-no | spouse_or_partner | document_required | B | Les éléments déclarés nécessitent une vérification avant de déterminer la catégorie. |
+| comb-partner-partner-variable-c110a-missing-yes | spouse_or_partner | information_missing | B | Des informations sont nécessaires pour évaluer la situation familiale. |
+| comb-partner-partner-variable-c110a-present-unknown | spouse_or_partner | information_missing | — | Des informations sont nécessaires pour évaluer la situation familiale. |
+| comb-partner-partner-variable-c110a-present-no | spouse_or_partner | onem_decision_required | B | Les éléments déclarés nécessitent une vérification avant de déterminer la catégorie. |
+| comb-partner-partner-variable-c110a-present-yes | spouse_or_partner | information_missing | B | Des informations sont nécessaires pour évaluer la situation familiale. |
+| comb-partner-priority-1 | spouse_or_partner | decision_determined | A | Le conjoint ou partenaire est prioritaire pour l'évaluation de la situation familiale. |
+| comb-partner-priority-2 | spouse_or_partner | decision_determined | A | Le conjoint ou partenaire est prioritaire pour l'évaluation de la situation familiale. |
+| comb-partner-priority-3 | spouse_or_partner | decision_determined | A | Le conjoint ou partenaire est prioritaire pour l'évaluation de la situation familiale. |
+| comb-partner-priority-4 | spouse_or_partner | decision_determined | A | Le conjoint ou partenaire est prioritaire pour l'évaluation de la situation familiale. |
+| comb-children-none | children_only | decision_determined | A | La catégorie résulte de la composition du ménage et des revenus déclarés. |
+| comb-children-replacement | children_only | decision_determined | B | La catégorie résulte de la composition du ménage et des revenus déclarés. |
+| comb-children-unknown | children_only | information_missing | A | Des informations sont nécessaires pour évaluer la situation familiale. |
+| comb-children-af-af | children_only | decision_determined | A | La catégorie résulte de la composition du ménage et des revenus déclarés. |
+| comb-children-af-none | children_only | decision_determined | A | La catégorie résulte de la composition du ménage et des revenus déclarés. |
+| comb-children-af-professional | children_only | decision_determined | A | La catégorie résulte de la composition du ménage et des revenus déclarés. |
+| comb-children-af-replacement | children_only | decision_determined | A | La catégorie résulte de la composition du ménage et des revenus déclarés. |
+| comb-children-af-unknown | children_only | information_missing | A | Des informations sont nécessaires pour évaluer la situation familiale. |
+| comb-children-none-none | children_only | decision_determined | A | La catégorie résulte de la composition du ménage et des revenus déclarés. |
+| comb-children-none-professional | children_only | decision_determined | B | La catégorie résulte de la composition du ménage et des revenus déclarés. |
+| comb-children-none-replacement | children_only | decision_determined | B | La catégorie résulte de la composition du ménage et des revenus déclarés. |
+| comb-children-none-unknown | children_only | information_missing | A | Des informations sont nécessaires pour évaluer la situation familiale. |
+| comb-children-professional-professional | children_only | decision_determined | B | La catégorie résulte de la composition du ménage et des revenus déclarés. |
+| comb-children-professional-replacement | children_only | decision_determined | B | La catégorie résulte de la composition du ménage et des revenus déclarés. |
+| comb-children-professional-unknown | children_only | information_missing | B | Des informations sont nécessaires pour évaluer la situation familiale. |
+| comb-children-replacement-replacement | children_only | decision_determined | B | La catégorie résulte de la composition du ménage et des revenus déclarés. |
+| comb-children-replacement-unknown | children_only | information_missing | B | Des informations sont nécessaires pour évaluer la situation familiale. |
+| comb-children-unknown-unknown | children_only | information_missing | A | Des informations sont nécessaires pour évaluer la situation familiale. |
+| comb-children-af-af-af | children_only | decision_determined | A | La catégorie résulte de la composition du ménage et des revenus déclarés. |
+| comb-children-af-af-none | children_only | decision_determined | A | La catégorie résulte de la composition du ménage et des revenus déclarés. |
+| comb-children-af-af-professional | children_only | decision_determined | A | La catégorie résulte de la composition du ménage et des revenus déclarés. |
+| comb-children-af-af-replacement | children_only | decision_determined | A | La catégorie résulte de la composition du ménage et des revenus déclarés. |
+| comb-children-af-af-unknown | children_only | information_missing | A | Des informations sont nécessaires pour évaluer la situation familiale. |
+| comb-children-af-none-none | children_only | decision_determined | A | La catégorie résulte de la composition du ménage et des revenus déclarés. |
+| comb-children-af-none-professional | children_only | decision_determined | A | La catégorie résulte de la composition du ménage et des revenus déclarés. |
+| comb-children-af-none-replacement | children_only | decision_determined | A | La catégorie résulte de la composition du ménage et des revenus déclarés. |
+| comb-children-af-none-unknown | children_only | information_missing | A | Des informations sont nécessaires pour évaluer la situation familiale. |
+| comb-children-af-professional-professional | children_only | decision_determined | A | La catégorie résulte de la composition du ménage et des revenus déclarés. |
+| comb-children-af-professional-replacement | children_only | decision_determined | A | La catégorie résulte de la composition du ménage et des revenus déclarés. |
+| comb-children-af-professional-unknown | children_only | information_missing | A | Des informations sont nécessaires pour évaluer la situation familiale. |
+| comb-children-af-replacement-replacement | children_only | decision_determined | A | La catégorie résulte de la composition du ménage et des revenus déclarés. |
+| comb-children-af-replacement-unknown | children_only | information_missing | A | Des informations sont nécessaires pour évaluer la situation familiale. |
+| comb-children-af-unknown-unknown | children_only | information_missing | A | Des informations sont nécessaires pour évaluer la situation familiale. |
+| comb-children-none-none-none | children_only | decision_determined | A | La catégorie résulte de la composition du ménage et des revenus déclarés. |
+| comb-children-none-none-professional | children_only | decision_determined | B | La catégorie résulte de la composition du ménage et des revenus déclarés. |
+| comb-children-none-none-replacement | children_only | decision_determined | B | La catégorie résulte de la composition du ménage et des revenus déclarés. |
+| comb-children-none-none-unknown | children_only | information_missing | A | Des informations sont nécessaires pour évaluer la situation familiale. |
+| comb-children-none-professional-professional | children_only | decision_determined | B | La catégorie résulte de la composition du ménage et des revenus déclarés. |
+| comb-children-none-professional-replacement | children_only | decision_determined | B | La catégorie résulte de la composition du ménage et des revenus déclarés. |
+| comb-children-none-professional-unknown | children_only | information_missing | B | Des informations sont nécessaires pour évaluer la situation familiale. |
+| comb-children-none-replacement-replacement | children_only | decision_determined | B | La catégorie résulte de la composition du ménage et des revenus déclarés. |
+| comb-children-none-replacement-unknown | children_only | information_missing | B | Des informations sont nécessaires pour évaluer la situation familiale. |
+| comb-children-none-unknown-unknown | children_only | information_missing | A | Des informations sont nécessaires pour évaluer la situation familiale. |
+| comb-children-professional-professional-professional | children_only | decision_determined | B | La catégorie résulte de la composition du ménage et des revenus déclarés. |
+| comb-children-professional-professional-replacement | children_only | decision_determined | B | La catégorie résulte de la composition du ménage et des revenus déclarés. |
+| comb-children-professional-professional-unknown | children_only | information_missing | B | Des informations sont nécessaires pour évaluer la situation familiale. |
+| comb-children-professional-replacement-replacement | children_only | decision_determined | B | La catégorie résulte de la composition du ménage et des revenus déclarés. |
+| comb-children-professional-replacement-unknown | children_only | information_missing | B | Des informations sont nécessaires pour évaluer la situation familiale. |
+| comb-children-professional-unknown-unknown | children_only | information_missing | B | Des informations sont nécessaires pour évaluer la situation familiale. |
+| comb-children-replacement-replacement-replacement | children_only | decision_determined | B | La catégorie résulte de la composition du ménage et des revenus déclarés. |
+| comb-children-replacement-replacement-unknown | children_only | information_missing | B | Des informations sont nécessaires pour évaluer la situation familiale. |
+| comb-children-replacement-unknown-unknown | children_only | information_missing | B | Des informations sont nécessaires pour évaluer la situation familiale. |
+| comb-children-unknown-unknown-unknown | children_only | information_missing | A | Des informations sont nécessaires pour évaluer la situation familiale. |
+| comb-110-temporal-0 | children_only | decision_determined | B | La catégorie résulte de la composition du ménage et des revenus déclarés. |
+| comb-110-temporal-2 | children_only | decision_determined | A | La catégorie résulte de la composition du ménage et des revenus déclarés. |
+| comb-110-temporal-3 | children_only | decision_determined | A | La catégorie résulte de la composition du ménage et des revenus déclarés. |
+| comb-110-temporal-4 | children_only | decision_determined | A | La catégorie résulte de la composition du ménage et des revenus déclarés. |
+| comb-110-temporal-5 | children_only | decision_determined | A | La catégorie résulte de la composition du ménage et des revenus déclarés. |
+| comb-110-temporal-6 | children_only | decision_determined | A | La catégorie résulte de la composition du ménage et des revenus déclarés. |
+| comb-110-temporal-7 | children_only | decision_determined | A | La catégorie résulte de la composition du ménage et des revenus déclarés. |
+| comb-relatives-none | relatives_only | decision_determined | A | La catégorie résulte de la composition du ménage et des revenus déclarés. |
+| comb-relatives-professional | relatives_only | decision_determined | B | La catégorie résulte de la composition du ménage et des revenus déclarés. |
+| comb-relatives-pension-below | relatives_only | decision_determined | A | La catégorie résulte de la composition du ménage et des revenus déclarés. |
+| comb-relatives-pension-above | relatives_only | decision_determined | B | La catégorie résulte de la composition du ménage et des revenus déclarés. |
+| comb-relatives-disability | relatives_only | decision_determined | A | La catégorie résulte de la composition du ménage et des revenus déclarés. |
+| comb-relatives-none-none | relatives_only | decision_determined | A | La catégorie résulte de la composition du ménage et des revenus déclarés. |
+| comb-relatives-none-professional | relatives_only | decision_determined | B | La catégorie résulte de la composition du ménage et des revenus déclarés. |
+| comb-relatives-none-pension-below | relatives_only | decision_determined | A | La catégorie résulte de la composition du ménage et des revenus déclarés. |
+| comb-relatives-none-pension-exact | relatives_only | decision_determined | A | La catégorie résulte de la composition du ménage et des revenus déclarés. |
+| comb-relatives-none-pension-above | relatives_only | decision_determined | B | La catégorie résulte de la composition du ménage et des revenus déclarés. |
+| comb-relatives-none-pension-proof-missing | relatives_only | document_required | — | La catégorie résulte de la composition du ménage et des revenus déclarés. |
+| comb-relatives-none-disability | relatives_only | decision_determined | A | La catégorie résulte de la composition du ménage et des revenus déclarés. |
+| comb-relatives-professional-professional | relatives_only | decision_determined | B | La catégorie résulte de la composition du ménage et des revenus déclarés. |
+| comb-relatives-professional-pension-below | relatives_only | decision_determined | B | La catégorie résulte de la composition du ménage et des revenus déclarés. |
+| comb-relatives-professional-pension-exact | relatives_only | decision_determined | B | La catégorie résulte de la composition du ménage et des revenus déclarés. |
+| comb-relatives-professional-pension-above | relatives_only | decision_determined | B | La catégorie résulte de la composition du ménage et des revenus déclarés. |
+| comb-relatives-professional-pension-proof-missing | relatives_only | decision_determined | B | La catégorie résulte de la composition du ménage et des revenus déclarés. |
+| comb-relatives-professional-disability | relatives_only | decision_determined | B | La catégorie résulte de la composition du ménage et des revenus déclarés. |
+| comb-relatives-pension-below-pension-below | relatives_only | decision_determined | B | La catégorie résulte de la composition du ménage et des revenus déclarés. |
+| comb-relatives-pension-below-pension-exact | relatives_only | decision_determined | B | La catégorie résulte de la composition du ménage et des revenus déclarés. |
+| comb-relatives-pension-below-pension-above | relatives_only | decision_determined | B | La catégorie résulte de la composition du ménage et des revenus déclarés. |
+| comb-relatives-pension-below-pension-proof-missing | relatives_only | document_required | — | La catégorie résulte de la composition du ménage et des revenus déclarés. |
+| comb-relatives-pension-below-disability | relatives_only | decision_determined | B | La catégorie résulte de la composition du ménage et des revenus déclarés. |
+| comb-relatives-pension-exact-pension-exact | relatives_only | decision_determined | B | La catégorie résulte de la composition du ménage et des revenus déclarés. |
+| comb-relatives-pension-exact-pension-above | relatives_only | decision_determined | B | La catégorie résulte de la composition du ménage et des revenus déclarés. |
+| comb-relatives-pension-exact-pension-proof-missing | relatives_only | document_required | — | La catégorie résulte de la composition du ménage et des revenus déclarés. |
+| comb-relatives-pension-exact-disability | relatives_only | decision_determined | B | La catégorie résulte de la composition du ménage et des revenus déclarés. |
+| comb-relatives-pension-above-pension-above | relatives_only | decision_determined | B | La catégorie résulte de la composition du ménage et des revenus déclarés. |
+| comb-relatives-pension-above-pension-proof-missing | relatives_only | document_required | — | La catégorie résulte de la composition du ménage et des revenus déclarés. |
+| comb-relatives-pension-above-disability | relatives_only | decision_determined | B | La catégorie résulte de la composition du ménage et des revenus déclarés. |
+| comb-relatives-pension-proof-missing-pension-proof-missing | relatives_only | document_required | — | La catégorie résulte de la composition du ménage et des revenus déclarés. |
+| comb-relatives-pension-proof-missing-disability | relatives_only | document_required | — | La catégorie résulte de la composition du ménage et des revenus déclarés. |
+| comb-relatives-disability-disability | relatives_only | decision_determined | B | La catégorie résulte de la composition du ménage et des revenus déclarés. |
+| comb-composition-third | mixed_or_unsupported | not_automated | — | Les éléments déclarés nécessitent une vérification avant de déterminer la catégorie. |
+| comb-composition-child-third | children_and_third_parties | decision_determined | A | La catégorie résulte de la composition du ménage et des revenus déclarés. |
+| comb-composition-relative-third | relatives_and_third_parties | decision_determined | A | La catégorie résulte de la composition du ménage et des revenus déclarés. |
+| comb-composition-child-relative-third | children_relatives_and_third_parties | decision_determined | A | La catégorie résulte de la composition du ménage et des revenus déclarés. |
+| comb-composition-partner-ambiguous | mixed_or_unsupported | not_automated | — | Des informations sont nécessaires pour évaluer la situation familiale. |
+| comb-cohousing-000 | cohousing | onem_decision_required | — | La situation de co-housing est appréciée par l’ONEM sur la situation réelle.  Le Bureau du chômage peut effectuer une enquête avant de décider si le chômeur peut être considéré comme isolé. |
+| comb-cohousing-001 | cohousing | onem_decision_required | — | La situation de co-housing est appréciée par l’ONEM sur la situation réelle.  Le Bureau du chômage peut effectuer une enquête avant de décider si le chômeur peut être considéré comme isolé. |
+| comb-cohousing-010 | cohousing | onem_decision_required | — | La situation de co-housing est appréciée par l’ONEM sur la situation réelle.  Le Bureau du chômage peut effectuer une enquête avant de décider si le chômeur peut être considéré comme isolé. |
+| comb-cohousing-011 | cohousing | onem_decision_required | — | La situation de co-housing est appréciée par l’ONEM sur la situation réelle.  Le Bureau du chômage peut effectuer une enquête avant de décider si le chômeur peut être considéré comme isolé. |
+| comb-cohousing-100 | cohousing | onem_decision_required | — | La situation de co-housing est appréciée par l’ONEM sur la situation réelle.  Le Bureau du chômage peut effectuer une enquête avant de décider si le chômeur peut être considéré comme isolé. |
+| comb-cohousing-101 | cohousing | onem_decision_required | — | La situation de co-housing est appréciée par l’ONEM sur la situation réelle.  Le Bureau du chômage peut effectuer une enquête avant de décider si le chômeur peut être considéré comme isolé. |
+| comb-cohousing-110 | cohousing | onem_decision_required | — | La situation de co-housing est appréciée par l’ONEM sur la situation réelle.  Le Bureau du chômage peut effectuer une enquête avant de décider si le chômeur peut être considéré comme isolé. |
+
+## Résumé d’audit
+
+- Combinaisons brutes : 309
+- Invalides : 4
+- Dédupliquées : 138
+- Scénarios exécutés : 167
+- A : 65
+- B : 63
+- N : 0
+- Durée : 31.54 ms

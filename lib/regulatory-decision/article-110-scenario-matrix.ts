@@ -16,6 +16,8 @@ export type Article110ScenarioContract = {
   officialOnemState?: string;
   resultType: Article110ResultType;
   category: "A" | "B" | "N" | null;
+  potentialCategory: "A" | "B" | "N" | null;
+  householdComposition: string;
   reason: string;
   decisiveFacts: string[];
   missingFacts: string[];
@@ -37,7 +39,10 @@ export type Article110MatrixReport = {
   withoutReason: string[];
   space: { raw: number; invalid: number; duplicates: number; executed: number; exclusions: Record<string, number> };
   coverage: Record<string, string[]>;
-  mixedOrUnsupported: { signature: string; count: number; facts: string; classifierReason: string; diagnosis: "A" | "B" | "C" }[];
+  mixedOrUnsupported: { scenarioIds: string[]; signature: string; count: number; facts: string; householdComposition: string; classifierReason: string; expectedBranchIfKnown: string; diagnosis: "A" | "B" | "C" }[];
+  compositionCoverage: { composition: string; total: number; determined: number; information: number; document: number; onem: number; notAutomated: number }[];
+  assertions: { resultTypesTotal: boolean; categoriesTotal: boolean; incoherent: boolean; withoutReason: boolean; atLeastOneA: boolean; atLeastOneB: boolean; atLeastOneN: boolean };
+  anomalies: string[];
   durationMs: number;
   scenarios: Article110ScenarioContract[];
 };
@@ -55,6 +60,7 @@ export function generateRepresentativeArticle110Scenarios(thresholds: C1BaremeTh
   const at = (date: string) => new Date(`${date}T12:00:00.000Z`);
   return [
     { id: "composition-missing", label: "Composition non renseignée", input: { people: [] } },
+    { id: "alone-no-special-situation", label: "Vit seul sans situation particulière", input: { people: [], isAloneExplicit: true, alimony: { enabled: false }, alternatingCare: { enabled: false }, cohousingClaim: false } },
     { id: "spouse-missing-income", label: "Conjoint sans revenus renseignés", input: { people: [member("spouse", "Conjoint", "spouse")] } },
     { id: "spouse-no-income", label: "Conjoint sans revenu", input: { people: [member("spouse", "Conjoint", "spouse", { hasProfessionalIncome: false, hasReplacementIncome: false })] } },
     { id: "spouse-cdi-below", label: "Conjoint CDI sous le seuil", input: { people: [member("spouse", "Conjoint", "spouse", { hasProfessionalIncome: true, professionalIncomeAmount: spouseThreshold - 1, professionalIncomeContract: "cdi", professionalIncomeVariable: false, hasReplacementIncome: false })] } },
@@ -138,7 +144,11 @@ function combinatorialCandidates(thresholds: C1BaremeThresholds): ScenarioCandid
   for (const size of [1, 2]) for (const profiles of combinations(relativeProfiles, size)) candidates.push(scenario(`comb-relatives-${profiles.map(([id]) => id).join("-")}`, "Parents et alliés", { people: profiles.map(([id, facts], index) => member(`relative-${index}`, `${index ? "Mère" : "Père"} ${id}`, "relative", facts)) }));
 
   const compositions = [
-    ["third", [member("third", "Ami", "third_party", { hasProfessionalIncome: false, hasReplacementIncome: false })]],
+    ["third-no-income", [member("third", "Ami", "third_party", { hasProfessionalIncome: false, hasReplacementIncome: false })]],
+    ["third-professional-income", [member("third", "Ami", "third_party", { hasProfessionalIncome: true, professionalIncomeAmount: threshold, hasReplacementIncome: false })]],
+    ["third-replacement-income", [member("third", "Ami", "third_party", { hasProfessionalIncome: false, hasReplacementIncome: true, replacementIncomeAmount: threshold })]],
+    ["third-income-unknown", [member("third", "Ami", "third_party")]],
+    ["child-relative", [member("child", "Enfant", "child", { hasProfessionalIncome: false, hasReplacementIncome: false, receivesFamilyAllowances: true }), member("parent", "Père", "relative", { hasProfessionalIncome: false, hasReplacementIncome: false })]],
     ["child-third", [member("child", "Enfant", "child", { hasProfessionalIncome: false, hasReplacementIncome: false, receivesFamilyAllowances: true }), member("third", "Ami", "third_party", { hasProfessionalIncome: false, hasReplacementIncome: false })]],
     ["relative-third", [member("parent", "Père", "relative", { hasProfessionalIncome: false, hasReplacementIncome: false }), member("third", "Ami", "third_party", { hasProfessionalIncome: false, hasReplacementIncome: false })]],
     ["child-relative-third", [member("child", "Enfant", "child", { hasProfessionalIncome: false, hasReplacementIncome: false, receivesFamilyAllowances: true }), member("parent", "Père", "relative", { hasProfessionalIncome: false, hasReplacementIncome: false }), member("third", "Ami", "third_party", { hasProfessionalIncome: false, hasReplacementIncome: false })]],
@@ -185,7 +195,9 @@ export function evaluateArticle110ScenarioMatrix(thresholds: C1BaremeThresholds,
       facts: input,
       officialOnemState: result.officialOnemState,
       resultType: result.resultType,
-      category: result.expectedCategory,
+      category: result.resultType === "decision_determined" ? result.expectedCategory : null,
+      potentialCategory: result.resultType === "decision_determined" ? null : result.expectedCategory,
+      householdComposition: result.composition.kind,
       reason: result.reason,
       decisiveFacts: result.decisiveFacts,
       missingFacts: result.missingFacts.map((fact) => fact.label),
@@ -198,7 +210,7 @@ export function evaluateArticle110ScenarioMatrix(thresholds: C1BaremeThresholds,
   });
   const resultTypes: Article110ResultType[] = ["decision_determined", "information_missing", "document_required", "onem_decision_required", "not_automated"];
   const byResultType = Object.fromEntries(resultTypes.map((type) => [type, scenarios.filter((scenario) => scenario.resultType === type).length])) as Record<Article110ResultType, number>;
-  const byCategory = Object.fromEntries((["A", "B", "N"] as const).map((category) => [category, scenarios.filter((scenario) => scenario.category === category).length])) as Record<"A" | "B" | "N", number>;
+  const byCategory = Object.fromEntries((["A", "B", "N"] as const).map((category) => [category, scenarios.filter((scenario) => scenario.resultType === "decision_determined" && scenario.category === category).length])) as Record<"A" | "B" | "N", number>;
   const byBranch = Object.fromEntries([...new Set(scenarios.map((scenario) => scenario.branch))].sort().map((branch) => [branch, scenarios.filter((scenario) => scenario.branch === branch).length]));
   const incoherent = scenarios.filter((scenario) => scenario.resultType === "decision_determined" && scenario.category === null).map((scenario) => scenario.id);
   const withoutReason = scenarios.filter((scenario) => !scenario.reason.trim()).map((scenario) => scenario.id);
@@ -215,12 +227,44 @@ export function evaluateArticle110ScenarioMatrix(thresholds: C1BaremeThresholds,
     mixedGroups.set(signature, [...(mixedGroups.get(signature) ?? []), scenario]);
   }
   const mixedOrUnsupported = [...mixedGroups.entries()].map(([signature, group]) => ({
+    scenarioIds: group.map((scenario) => scenario.id),
     signature,
     count: group.length,
     facts: group[0].facts.people.map((person) => `${person.relation}${person.partnerEstablished === false ? " non établi" : ""}`).join(", "),
+    householdComposition: group[0].householdComposition,
     classifierReason: "Le classificateur retourne mixed_or_unsupported lorsqu’une relation est inconnue ou qu’un partenaire n’est pas établi.",
+    expectedBranchIfKnown: group[0].facts.people.some((person) => person.relation === "third_party") ? "tiers seul : branche non automatisée" : group[0].facts.people.some((person) => person.relation === "partner") ? "conjoint ou partenaire établi" : "relation à qualifier",
     diagnosis: "A" as const,
   }));
+  const compositionName = (scenario: Article110ScenarioContract) => {
+    const relations = scenario.facts.people.map((person) => person.relation);
+    if (scenario.facts.isAloneExplicit) return "seul";
+    if (relations.includes("spouse")) return relations.length > 1 ? "conjoint + autres" : "conjoint";
+    if (relations.includes("partner")) return relations.length > 1 ? "partenaire + autres" : "partenaire";
+    if (relations.every((relation) => relation === "child")) return "enfants seuls";
+    if (relations.every((relation) => relation === "relative")) return "parents seuls";
+    if (relations.every((relation) => relation === "third_party")) return "tiers seul";
+    if (relations.includes("child") && relations.includes("relative") && relations.includes("third_party")) return "enfants + parents + tiers";
+    if (relations.includes("child") && relations.includes("relative")) return "enfants + parents";
+    if (relations.includes("child") && relations.includes("third_party")) return "enfants + tiers";
+    if (relations.includes("relative") && relations.includes("third_party")) return "parents + tiers";
+    return "relation à clarifier";
+  };
+  const compositionCoverage = ["seul", "conjoint", "partenaire", "enfants seuls", "parents seuls", "tiers seul", "enfants + parents", "enfants + tiers", "parents + tiers", "enfants + parents + tiers", "partenaire + autres"].map((composition) => {
+    const group = scenarios.filter((scenario) => compositionName(scenario) === composition);
+    const count = (resultType: Article110ResultType) => group.filter((scenario) => scenario.resultType === resultType).length;
+    return { composition, total: group.length, determined: count("decision_determined"), information: count("information_missing"), document: count("document_required"), onem: count("onem_decision_required"), notAutomated: count("not_automated") };
+  });
+  const assertions = {
+    resultTypesTotal: Object.values(byResultType).reduce((sum, count) => sum + count, 0) === scenarios.length,
+    categoriesTotal: Object.values(byCategory).reduce((sum, count) => sum + count, 0) === byResultType.decision_determined,
+    incoherent: incoherent.length === 0,
+    withoutReason: withoutReason.length === 0,
+    atLeastOneA: byCategory.A > 0,
+    atLeastOneB: byCategory.B > 0,
+    atLeastOneN: byCategory.N > 0,
+  };
+  const anomalies = assertions.atLeastOneN ? [] : ["ANOMALIE DE COUVERTURE : le scénario explicite « vit seul sans situation particulière » est généré, mais le moteur actuel ne renvoie pas N ; il renvoie une revue sans catégorie attendue."];
   return {
     generatedAt,
     method: "Exploration combinatoire déterministe des dimensions réellement lues par le moteur ; les états incompatibles sont écartés avant exécution et les ménages symétriques sont dédupliqués par signature canonique.",
@@ -233,6 +277,9 @@ export function evaluateArticle110ScenarioMatrix(thresholds: C1BaremeThresholds,
     space: { raw: space.raw, invalid: space.invalid, duplicates: space.duplicates, executed: scenarios.length, exclusions: space.exclusions },
     coverage,
     mixedOrUnsupported,
+    compositionCoverage,
+    assertions,
+    anomalies,
     durationMs: Math.round((performance.now() - startedAt) * 100) / 100,
     scenarios,
   };

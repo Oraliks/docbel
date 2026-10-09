@@ -1,28 +1,29 @@
 {
   "generatedAt": "2026-10-10",
   "method": "Exploration combinatoire déterministe des dimensions réellement lues par le moteur ; les états incompatibles sont écartés avant exécution et les ménages symétriques sont dédupliqués par signature canonique.",
-  "total": 167,
+  "total": 172,
   "byResultType": {
-    "decision_determined": 89,
+    "decision_determined": 90,
     "information_missing": 52,
     "document_required": 11,
-    "onem_decision_required": 12,
-    "not_automated": 3
+    "onem_decision_required": 13,
+    "not_automated": 6
   },
   "byCategory": {
-    "A": 65,
-    "B": 63,
+    "A": 48,
+    "B": 42,
     "N": 0
   },
   "byBranch": {
     "alimony": 2,
-    "alone": 1,
+    "alone": 2,
     "alternating_care": 2,
+    "children_and_relatives": 1,
     "children_and_third_parties": 2,
     "children_only": 63,
     "children_relatives_and_third_parties": 1,
     "cohousing": 8,
-    "mixed_or_unsupported": 3,
+    "mixed_or_unsupported": 6,
     "relatives_and_third_parties": 1,
     "relatives_only": 36,
     "spouse_or_partner": 48
@@ -30,10 +31,10 @@
   "incoherent": [],
   "withoutReason": [],
   "space": {
-    "raw": 309,
+    "raw": 314,
     "invalid": 4,
     "duplicates": 138,
-    "executed": 167,
+    "executed": 172,
     "exclusions": {
       "seul_et_conjoint_incompatibles": 1,
       "cohousing_avec_famille_incompatible": 1,
@@ -81,28 +82,192 @@
   },
   "mixedOrUnsupported": [
     {
+      "scenarioIds": [
+        "unknown-relation"
+      ],
       "signature": "[{relation:\"unknown\"}]",
       "count": 1,
       "facts": "unknown",
+      "householdComposition": "mixed_or_unsupported",
       "classifierReason": "Le classificateur retourne mixed_or_unsupported lorsqu’une relation est inconnue ou qu’un partenaire n’est pas établi.",
+      "expectedBranchIfKnown": "relation à qualifier",
       "diagnosis": "A"
     },
     {
+      "scenarioIds": [
+        "comb-composition-third-no-income"
+      ],
       "signature": "[{hasProfessionalIncome:false,hasReplacementIncome:false,relation:\"third_party\"}]",
       "count": 1,
       "facts": "third_party",
+      "householdComposition": "mixed_or_unsupported",
       "classifierReason": "Le classificateur retourne mixed_or_unsupported lorsqu’une relation est inconnue ou qu’un partenaire n’est pas établi.",
+      "expectedBranchIfKnown": "tiers seul : branche non automatisée",
       "diagnosis": "A"
     },
     {
+      "scenarioIds": [
+        "comb-composition-third-professional-income"
+      ],
+      "signature": "[{hasProfessionalIncome:true,hasReplacementIncome:false,professionalIncomeAmount:1000,relation:\"third_party\"}]",
+      "count": 1,
+      "facts": "third_party",
+      "householdComposition": "mixed_or_unsupported",
+      "classifierReason": "Le classificateur retourne mixed_or_unsupported lorsqu’une relation est inconnue ou qu’un partenaire n’est pas établi.",
+      "expectedBranchIfKnown": "tiers seul : branche non automatisée",
+      "diagnosis": "A"
+    },
+    {
+      "scenarioIds": [
+        "comb-composition-third-replacement-income"
+      ],
+      "signature": "[{hasProfessionalIncome:false,hasReplacementIncome:true,relation:\"third_party\",replacementIncomeAmount:1000}]",
+      "count": 1,
+      "facts": "third_party",
+      "householdComposition": "mixed_or_unsupported",
+      "classifierReason": "Le classificateur retourne mixed_or_unsupported lorsqu’une relation est inconnue ou qu’un partenaire n’est pas établi.",
+      "expectedBranchIfKnown": "tiers seul : branche non automatisée",
+      "diagnosis": "A"
+    },
+    {
+      "scenarioIds": [
+        "comb-composition-third-income-unknown"
+      ],
+      "signature": "[{relation:\"third_party\"}]",
+      "count": 1,
+      "facts": "third_party",
+      "householdComposition": "mixed_or_unsupported",
+      "classifierReason": "Le classificateur retourne mixed_or_unsupported lorsqu’une relation est inconnue ou qu’un partenaire n’est pas établi.",
+      "expectedBranchIfKnown": "tiers seul : branche non automatisée",
+      "diagnosis": "A"
+    },
+    {
+      "scenarioIds": [
+        "comb-composition-partner-ambiguous"
+      ],
       "signature": "[{partnerEstablished:false,relation:\"partner\"}]",
       "count": 1,
       "facts": "partner non établi",
+      "householdComposition": "mixed_or_unsupported",
       "classifierReason": "Le classificateur retourne mixed_or_unsupported lorsqu’une relation est inconnue ou qu’un partenaire n’est pas établi.",
+      "expectedBranchIfKnown": "conjoint ou partenaire établi",
       "diagnosis": "A"
     }
   ],
-  "durationMs": 31.54,
+  "compositionCoverage": [
+    {
+      "composition": "seul",
+      "total": 9,
+      "determined": 0,
+      "information": 0,
+      "document": 0,
+      "onem": 9,
+      "notAutomated": 0
+    },
+    {
+      "composition": "conjoint",
+      "total": 23,
+      "determined": 6,
+      "information": 15,
+      "document": 1,
+      "onem": 1,
+      "notAutomated": 0
+    },
+    {
+      "composition": "partenaire",
+      "total": 22,
+      "determined": 4,
+      "information": 15,
+      "document": 1,
+      "onem": 1,
+      "notAutomated": 1
+    },
+    {
+      "composition": "enfants seuls",
+      "total": 68,
+      "determined": 42,
+      "information": 22,
+      "document": 2,
+      "onem": 2,
+      "notAutomated": 0
+    },
+    {
+      "composition": "parents seuls",
+      "total": 36,
+      "determined": 29,
+      "information": 0,
+      "document": 7,
+      "onem": 0,
+      "notAutomated": 0
+    },
+    {
+      "composition": "tiers seul",
+      "total": 4,
+      "determined": 0,
+      "information": 0,
+      "document": 0,
+      "onem": 0,
+      "notAutomated": 4
+    },
+    {
+      "composition": "enfants + parents",
+      "total": 1,
+      "determined": 1,
+      "information": 0,
+      "document": 0,
+      "onem": 0,
+      "notAutomated": 0
+    },
+    {
+      "composition": "enfants + tiers",
+      "total": 2,
+      "determined": 2,
+      "information": 0,
+      "document": 0,
+      "onem": 0,
+      "notAutomated": 0
+    },
+    {
+      "composition": "parents + tiers",
+      "total": 1,
+      "determined": 1,
+      "information": 0,
+      "document": 0,
+      "onem": 0,
+      "notAutomated": 0
+    },
+    {
+      "composition": "enfants + parents + tiers",
+      "total": 1,
+      "determined": 1,
+      "information": 0,
+      "document": 0,
+      "onem": 0,
+      "notAutomated": 0
+    },
+    {
+      "composition": "partenaire + autres",
+      "total": 4,
+      "determined": 4,
+      "information": 0,
+      "document": 0,
+      "onem": 0,
+      "notAutomated": 0
+    }
+  ],
+  "assertions": {
+    "resultTypesTotal": true,
+    "categoriesTotal": true,
+    "incoherent": true,
+    "withoutReason": true,
+    "atLeastOneA": true,
+    "atLeastOneB": true,
+    "atLeastOneN": false
+  },
+  "anomalies": [
+    "ANOMALIE DE COUVERTURE : le scénario explicite « vit seul sans situation particulière » est généré, mais le moteur actuel ne renvoie pas N ; il renvoie une revue sans catégorie attendue."
+  ],
+  "durationMs": 33.86,
   "scenarios": [
     {
       "id": "composition-missing",
@@ -113,6 +278,8 @@
       },
       "resultType": "information_missing",
       "category": null,
+      "potentialCategory": null,
+      "householdComposition": "alone",
       "reason": "La composition réelle du ménage n'est pas encore renseignée.",
       "decisiveFacts": [],
       "missingFacts": [
@@ -122,6 +289,37 @@
       "actions": [
         "Compléter les informations"
       ],
+      "declarationRequired": false,
+      "sourceRuleIds": [
+        "situation_familiale_composition_priorities"
+      ]
+    },
+    {
+      "id": "alone-no-special-situation",
+      "label": "Vit seul sans situation particulière",
+      "branch": "alone",
+      "facts": {
+        "people": [],
+        "isAloneExplicit": true,
+        "alimony": {
+          "enabled": false
+        },
+        "alternatingCare": {
+          "enabled": false
+        },
+        "cohousingClaim": false
+      },
+      "resultType": "onem_decision_required",
+      "category": null,
+      "potentialCategory": null,
+      "householdComposition": "alone",
+      "reason": "Les éléments déclarés nécessitent une vérification avant de déterminer la catégorie.",
+      "decisiveFacts": [
+        "Le chômeur a déclaré vivre seul"
+      ],
+      "missingFacts": [],
+      "missingDocuments": [],
+      "actions": [],
       "declarationRequired": false,
       "sourceRuleIds": [
         "situation_familiale_composition_priorities"
@@ -142,6 +340,8 @@
       },
       "resultType": "information_missing",
       "category": null,
+      "potentialCategory": null,
+      "householdComposition": "spouse_or_partner",
       "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
       "decisiveFacts": [
         "1 personne(s) dans le ménage"
@@ -177,6 +377,8 @@
       },
       "resultType": "decision_determined",
       "category": "A",
+      "potentialCategory": null,
+      "householdComposition": "spouse_or_partner",
       "reason": "Le conjoint ou partenaire est prioritaire pour l'évaluation de la situation familiale.",
       "decisiveFacts": [
         "1 personne(s) dans le ménage"
@@ -211,6 +413,8 @@
       },
       "resultType": "decision_determined",
       "category": "A",
+      "potentialCategory": null,
+      "householdComposition": "spouse_or_partner",
       "reason": "Le conjoint ou partenaire est prioritaire pour l'évaluation de la situation familiale.",
       "decisiveFacts": [
         "1 personne(s) dans le ménage"
@@ -245,6 +449,8 @@
       },
       "resultType": "decision_determined",
       "category": "A",
+      "potentialCategory": null,
+      "householdComposition": "spouse_or_partner",
       "reason": "Le conjoint ou partenaire est prioritaire pour l'évaluation de la situation familiale.",
       "decisiveFacts": [
         "1 personne(s) dans le ménage"
@@ -279,6 +485,8 @@
       },
       "resultType": "decision_determined",
       "category": "B",
+      "potentialCategory": null,
+      "householdComposition": "spouse_or_partner",
       "reason": "Le conjoint ou partenaire est prioritaire pour l'évaluation de la situation familiale.",
       "decisiveFacts": [
         "1 personne(s) dans le ménage"
@@ -313,7 +521,9 @@
         ]
       },
       "resultType": "document_required",
-      "category": "B",
+      "category": null,
+      "potentialCategory": "B",
+      "householdComposition": "spouse_or_partner",
       "reason": "Les éléments déclarés nécessitent une vérification avant de déterminer la catégorie.",
       "decisiveFacts": [
         "1 personne(s) dans le ménage"
@@ -350,6 +560,8 @@
       },
       "resultType": "decision_determined",
       "category": "A",
+      "potentialCategory": null,
+      "householdComposition": "children_only",
       "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
       "decisiveFacts": [
         "1 personne(s) dans le ménage"
@@ -382,6 +594,8 @@
       },
       "resultType": "decision_determined",
       "category": "B",
+      "potentialCategory": null,
+      "householdComposition": "children_only",
       "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
       "decisiveFacts": [
         "1 personne(s) dans le ménage"
@@ -419,6 +633,8 @@
       },
       "resultType": "decision_determined",
       "category": "A",
+      "potentialCategory": null,
+      "householdComposition": "children_only",
       "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
       "decisiveFacts": [
         "1 personne(s) dans le ménage"
@@ -456,6 +672,8 @@
       },
       "resultType": "document_required",
       "category": null,
+      "potentialCategory": null,
+      "householdComposition": "relatives_only",
       "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
       "decisiveFacts": [
         "1 personne(s) dans le ménage"
@@ -495,6 +713,8 @@
       },
       "resultType": "decision_determined",
       "category": "A",
+      "potentialCategory": null,
+      "householdComposition": "relatives_only",
       "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
       "decisiveFacts": [
         "1 personne(s) dans le ménage"
@@ -531,6 +751,8 @@
       },
       "resultType": "decision_determined",
       "category": "B",
+      "potentialCategory": null,
+      "householdComposition": "relatives_only",
       "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
       "decisiveFacts": [
         "1 personne(s) dans le ménage"
@@ -571,6 +793,8 @@
       },
       "resultType": "decision_determined",
       "category": "B",
+      "potentialCategory": null,
+      "householdComposition": "children_and_third_parties",
       "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
       "decisiveFacts": [
         "2 personne(s) dans le ménage"
@@ -598,6 +822,8 @@
       },
       "resultType": "document_required",
       "category": null,
+      "potentialCategory": null,
+      "householdComposition": "alone",
       "reason": "Les éléments déclarés nécessitent une vérification avant de déterminer la catégorie.",
       "decisiveFacts": [],
       "missingFacts": [],
@@ -630,7 +856,9 @@
         }
       },
       "resultType": "onem_decision_required",
-      "category": "A",
+      "category": null,
+      "potentialCategory": "A",
+      "householdComposition": "alone",
       "reason": "Les éléments déclarés nécessitent une vérification avant de déterminer la catégorie.",
       "decisiveFacts": [],
       "missingFacts": [],
@@ -656,6 +884,8 @@
       },
       "resultType": "document_required",
       "category": null,
+      "potentialCategory": null,
+      "householdComposition": "alone",
       "reason": "Les éléments déclarés nécessitent une vérification avant de déterminer la catégorie.",
       "decisiveFacts": [],
       "missingFacts": [],
@@ -685,7 +915,9 @@
         }
       },
       "resultType": "onem_decision_required",
-      "category": "A",
+      "category": null,
+      "potentialCategory": "A",
+      "householdComposition": "alone",
       "reason": "Les éléments déclarés nécessitent une vérification avant de déterminer la catégorie.",
       "decisiveFacts": [],
       "missingFacts": [],
@@ -714,6 +946,8 @@
       },
       "resultType": "onem_decision_required",
       "category": null,
+      "potentialCategory": null,
+      "householdComposition": "alone",
       "reason": "La situation de co-housing est appréciée par l’ONEM sur la situation réelle.\n\nLe Bureau du chômage peut effectuer une enquête avant de décider si le chômeur peut être considéré comme isolé.",
       "decisiveFacts": [
         "Le chômeur a déclaré vivre seul"
@@ -746,6 +980,8 @@
       },
       "resultType": "not_automated",
       "category": null,
+      "potentialCategory": null,
+      "householdComposition": "mixed_or_unsupported",
       "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
       "decisiveFacts": [
         "1 personne(s) dans le ménage"
@@ -779,6 +1015,8 @@
       },
       "resultType": "information_missing",
       "category": null,
+      "potentialCategory": null,
+      "householdComposition": "spouse_or_partner",
       "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
       "decisiveFacts": [
         "1 personne(s) dans le ménage"
@@ -812,6 +1050,8 @@
       },
       "resultType": "information_missing",
       "category": null,
+      "potentialCategory": null,
+      "householdComposition": "spouse_or_partner",
       "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
       "decisiveFacts": [
         "1 personne(s) dans le ménage"
@@ -846,6 +1086,8 @@
       },
       "resultType": "information_missing",
       "category": null,
+      "potentialCategory": null,
+      "householdComposition": "spouse_or_partner",
       "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
       "decisiveFacts": [
         "1 personne(s) dans le ménage"
@@ -879,7 +1121,9 @@
         ]
       },
       "resultType": "information_missing",
-      "category": "B",
+      "category": null,
+      "potentialCategory": "B",
+      "householdComposition": "spouse_or_partner",
       "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
       "decisiveFacts": [
         "1 personne(s) dans le ménage"
@@ -917,6 +1161,8 @@
       },
       "resultType": "information_missing",
       "category": null,
+      "potentialCategory": null,
+      "householdComposition": "spouse_or_partner",
       "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
       "decisiveFacts": [
         "1 personne(s) dans le ménage"
@@ -954,6 +1200,8 @@
       },
       "resultType": "decision_determined",
       "category": "A",
+      "potentialCategory": null,
+      "householdComposition": "spouse_or_partner",
       "reason": "Le conjoint ou partenaire est prioritaire pour l'évaluation de la situation familiale.",
       "decisiveFacts": [
         "1 personne(s) dans le ménage"
@@ -987,7 +1235,9 @@
         ]
       },
       "resultType": "information_missing",
-      "category": "A",
+      "category": null,
+      "potentialCategory": "A",
+      "householdComposition": "spouse_or_partner",
       "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
       "decisiveFacts": [
         "1 personne(s) dans le ménage"
@@ -1025,6 +1275,8 @@
       },
       "resultType": "information_missing",
       "category": null,
+      "potentialCategory": null,
+      "householdComposition": "spouse_or_partner",
       "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
       "decisiveFacts": [
         "1 personne(s) dans le ménage"
@@ -1061,7 +1313,9 @@
         ]
       },
       "resultType": "information_missing",
-      "category": "A",
+      "category": null,
+      "potentialCategory": "A",
+      "householdComposition": "spouse_or_partner",
       "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
       "decisiveFacts": [
         "1 personne(s) dans le ménage"
@@ -1099,6 +1353,8 @@
       },
       "resultType": "information_missing",
       "category": null,
+      "potentialCategory": null,
+      "householdComposition": "spouse_or_partner",
       "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
       "decisiveFacts": [
         "1 personne(s) dans le ménage"
@@ -1136,6 +1392,8 @@
       },
       "resultType": "decision_determined",
       "category": "B",
+      "potentialCategory": null,
+      "householdComposition": "spouse_or_partner",
       "reason": "Le conjoint ou partenaire est prioritaire pour l'évaluation de la situation familiale.",
       "decisiveFacts": [
         "1 personne(s) dans le ménage"
@@ -1169,7 +1427,9 @@
         ]
       },
       "resultType": "information_missing",
-      "category": "B",
+      "category": null,
+      "potentialCategory": "B",
+      "householdComposition": "spouse_or_partner",
       "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
       "decisiveFacts": [
         "1 personne(s) dans le ménage"
@@ -1208,6 +1468,8 @@
       },
       "resultType": "information_missing",
       "category": null,
+      "potentialCategory": null,
+      "householdComposition": "spouse_or_partner",
       "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
       "decisiveFacts": [
         "1 personne(s) dans le ménage"
@@ -1245,7 +1507,9 @@
         ]
       },
       "resultType": "information_missing",
-      "category": "B",
+      "category": null,
+      "potentialCategory": "B",
+      "householdComposition": "spouse_or_partner",
       "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
       "decisiveFacts": [
         "1 personne(s) dans le ménage"
@@ -1288,6 +1552,8 @@
       },
       "resultType": "information_missing",
       "category": null,
+      "potentialCategory": null,
+      "householdComposition": "spouse_or_partner",
       "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
       "decisiveFacts": [
         "1 personne(s) dans le ménage"
@@ -1326,7 +1592,9 @@
         ]
       },
       "resultType": "onem_decision_required",
-      "category": "B",
+      "category": null,
+      "potentialCategory": "B",
+      "householdComposition": "spouse_or_partner",
       "reason": "Les éléments déclarés nécessitent une vérification avant de déterminer la catégorie.",
       "decisiveFacts": [
         "1 personne(s) dans le ménage"
@@ -1362,7 +1630,9 @@
         ]
       },
       "resultType": "information_missing",
-      "category": "B",
+      "category": null,
+      "potentialCategory": "B",
+      "householdComposition": "spouse_or_partner",
       "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
       "decisiveFacts": [
         "1 personne(s) dans le ménage"
@@ -1397,6 +1667,8 @@
       },
       "resultType": "information_missing",
       "category": null,
+      "potentialCategory": null,
+      "householdComposition": "spouse_or_partner",
       "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
       "decisiveFacts": [
         "1 personne(s) dans le ménage"
@@ -1432,6 +1704,8 @@
       },
       "resultType": "information_missing",
       "category": null,
+      "potentialCategory": null,
+      "householdComposition": "spouse_or_partner",
       "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
       "decisiveFacts": [
         "1 personne(s) dans le ménage"
@@ -1466,6 +1740,8 @@
       },
       "resultType": "information_missing",
       "category": null,
+      "potentialCategory": null,
+      "householdComposition": "spouse_or_partner",
       "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
       "decisiveFacts": [
         "1 personne(s) dans le ménage"
@@ -1501,6 +1777,8 @@
       },
       "resultType": "information_missing",
       "category": null,
+      "potentialCategory": null,
+      "householdComposition": "spouse_or_partner",
       "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
       "decisiveFacts": [
         "1 personne(s) dans le ménage"
@@ -1536,6 +1814,8 @@
       },
       "resultType": "decision_determined",
       "category": "A",
+      "potentialCategory": null,
+      "householdComposition": "spouse_or_partner",
       "reason": "Le conjoint ou partenaire est prioritaire pour l'évaluation de la situation familiale.",
       "decisiveFacts": [
         "1 personne(s) dans le ménage"
@@ -1567,7 +1847,9 @@
         ]
       },
       "resultType": "information_missing",
-      "category": "B",
+      "category": null,
+      "potentialCategory": "B",
+      "householdComposition": "spouse_or_partner",
       "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
       "decisiveFacts": [
         "1 personne(s) dans le ménage"
@@ -1606,6 +1888,8 @@
       },
       "resultType": "information_missing",
       "category": null,
+      "potentialCategory": null,
+      "householdComposition": "spouse_or_partner",
       "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
       "decisiveFacts": [
         "1 personne(s) dans le ménage"
@@ -1644,6 +1928,8 @@
       },
       "resultType": "decision_determined",
       "category": "A",
+      "potentialCategory": null,
+      "householdComposition": "spouse_or_partner",
       "reason": "Le conjoint ou partenaire est prioritaire pour l'évaluation de la situation familiale.",
       "decisiveFacts": [
         "1 personne(s) dans le ménage"
@@ -1678,7 +1964,9 @@
         ]
       },
       "resultType": "information_missing",
-      "category": "A",
+      "category": null,
+      "potentialCategory": "A",
+      "householdComposition": "spouse_or_partner",
       "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
       "decisiveFacts": [
         "1 personne(s) dans le ménage"
@@ -1717,6 +2005,8 @@
       },
       "resultType": "information_missing",
       "category": null,
+      "potentialCategory": null,
+      "householdComposition": "spouse_or_partner",
       "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
       "decisiveFacts": [
         "1 personne(s) dans le ménage"
@@ -1755,6 +2045,8 @@
       },
       "resultType": "decision_determined",
       "category": "A",
+      "potentialCategory": null,
+      "householdComposition": "spouse_or_partner",
       "reason": "Le conjoint ou partenaire est prioritaire pour l'évaluation de la situation familiale.",
       "decisiveFacts": [
         "1 personne(s) dans le ménage"
@@ -1789,7 +2081,9 @@
         ]
       },
       "resultType": "information_missing",
-      "category": "A",
+      "category": null,
+      "potentialCategory": "A",
+      "householdComposition": "spouse_or_partner",
       "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
       "decisiveFacts": [
         "1 personne(s) dans le ménage"
@@ -1828,6 +2122,8 @@
       },
       "resultType": "information_missing",
       "category": null,
+      "potentialCategory": null,
+      "householdComposition": "spouse_or_partner",
       "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
       "decisiveFacts": [
         "1 personne(s) dans le ménage"
@@ -1866,6 +2162,8 @@
       },
       "resultType": "decision_determined",
       "category": "B",
+      "potentialCategory": null,
+      "householdComposition": "spouse_or_partner",
       "reason": "Le conjoint ou partenaire est prioritaire pour l'évaluation de la situation familiale.",
       "decisiveFacts": [
         "1 personne(s) dans le ménage"
@@ -1900,7 +2198,9 @@
         ]
       },
       "resultType": "information_missing",
-      "category": "B",
+      "category": null,
+      "potentialCategory": "B",
+      "householdComposition": "spouse_or_partner",
       "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
       "decisiveFacts": [
         "1 personne(s) dans le ménage"
@@ -1940,6 +2240,8 @@
       },
       "resultType": "information_missing",
       "category": null,
+      "potentialCategory": null,
+      "householdComposition": "spouse_or_partner",
       "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
       "decisiveFacts": [
         "1 personne(s) dans le ménage"
@@ -1978,7 +2280,9 @@
         ]
       },
       "resultType": "document_required",
-      "category": "B",
+      "category": null,
+      "potentialCategory": "B",
+      "householdComposition": "spouse_or_partner",
       "reason": "Les éléments déclarés nécessitent une vérification avant de déterminer la catégorie.",
       "decisiveFacts": [
         "1 personne(s) dans le ménage"
@@ -2018,7 +2322,9 @@
         ]
       },
       "resultType": "information_missing",
-      "category": "B",
+      "category": null,
+      "potentialCategory": "B",
+      "householdComposition": "spouse_or_partner",
       "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
       "decisiveFacts": [
         "1 personne(s) dans le ménage"
@@ -2062,6 +2368,8 @@
       },
       "resultType": "information_missing",
       "category": null,
+      "potentialCategory": null,
+      "householdComposition": "spouse_or_partner",
       "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
       "decisiveFacts": [
         "1 personne(s) dans le ménage"
@@ -2101,7 +2409,9 @@
         ]
       },
       "resultType": "onem_decision_required",
-      "category": "B",
+      "category": null,
+      "potentialCategory": "B",
+      "householdComposition": "spouse_or_partner",
       "reason": "Les éléments déclarés nécessitent une vérification avant de déterminer la catégorie.",
       "decisiveFacts": [
         "1 personne(s) dans le ménage"
@@ -2138,7 +2448,9 @@
         ]
       },
       "resultType": "information_missing",
-      "category": "B",
+      "category": null,
+      "potentialCategory": "B",
+      "householdComposition": "spouse_or_partner",
       "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
       "decisiveFacts": [
         "1 personne(s) dans le ménage"
@@ -2183,6 +2495,8 @@
       },
       "resultType": "decision_determined",
       "category": "A",
+      "potentialCategory": null,
+      "householdComposition": "spouse_or_partner",
       "reason": "Le conjoint ou partenaire est prioritaire pour l'évaluation de la situation familiale.",
       "decisiveFacts": [
         "2 personne(s) dans le ménage"
@@ -2222,6 +2536,8 @@
       },
       "resultType": "decision_determined",
       "category": "A",
+      "potentialCategory": null,
+      "householdComposition": "spouse_or_partner",
       "reason": "Le conjoint ou partenaire est prioritaire pour l'évaluation de la situation familiale.",
       "decisiveFacts": [
         "2 personne(s) dans le ménage"
@@ -2262,6 +2578,8 @@
       },
       "resultType": "decision_determined",
       "category": "A",
+      "potentialCategory": null,
+      "householdComposition": "spouse_or_partner",
       "reason": "Le conjoint ou partenaire est prioritaire pour l'évaluation de la situation familiale.",
       "decisiveFacts": [
         "2 personne(s) dans le ménage"
@@ -2317,6 +2635,8 @@
       },
       "resultType": "decision_determined",
       "category": "A",
+      "potentialCategory": null,
+      "householdComposition": "spouse_or_partner",
       "reason": "Le conjoint ou partenaire est prioritaire pour l'évaluation de la situation familiale.",
       "decisiveFacts": [
         "4 personne(s) dans le ménage"
@@ -2349,6 +2669,8 @@
       },
       "resultType": "decision_determined",
       "category": "A",
+      "potentialCategory": null,
+      "householdComposition": "children_only",
       "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
       "decisiveFacts": [
         "1 personne(s) dans le ménage"
@@ -2381,6 +2703,8 @@
       },
       "resultType": "decision_determined",
       "category": "B",
+      "potentialCategory": null,
+      "householdComposition": "children_only",
       "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
       "decisiveFacts": [
         "1 personne(s) dans le ménage"
@@ -2408,7 +2732,9 @@
         ]
       },
       "resultType": "information_missing",
-      "category": "A",
+      "category": null,
+      "potentialCategory": "A",
+      "householdComposition": "children_only",
       "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
       "decisiveFacts": [
         "1 personne(s) dans le ménage"
@@ -2454,6 +2780,8 @@
       },
       "resultType": "decision_determined",
       "category": "A",
+      "potentialCategory": null,
+      "householdComposition": "children_only",
       "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
       "decisiveFacts": [
         "2 personne(s) dans le ménage"
@@ -2493,6 +2821,8 @@
       },
       "resultType": "decision_determined",
       "category": "A",
+      "potentialCategory": null,
+      "householdComposition": "children_only",
       "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
       "decisiveFacts": [
         "2 personne(s) dans le ménage"
@@ -2533,6 +2863,8 @@
       },
       "resultType": "decision_determined",
       "category": "A",
+      "potentialCategory": null,
+      "householdComposition": "children_only",
       "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
       "decisiveFacts": [
         "2 personne(s) dans le ménage"
@@ -2573,6 +2905,8 @@
       },
       "resultType": "decision_determined",
       "category": "A",
+      "potentialCategory": null,
+      "householdComposition": "children_only",
       "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
       "decisiveFacts": [
         "2 personne(s) dans le ménage"
@@ -2608,7 +2942,9 @@
         ]
       },
       "resultType": "information_missing",
-      "category": "A",
+      "category": null,
+      "potentialCategory": "A",
+      "householdComposition": "children_only",
       "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
       "decisiveFacts": [
         "2 personne(s) dans le ménage"
@@ -2654,6 +2990,8 @@
       },
       "resultType": "decision_determined",
       "category": "A",
+      "potentialCategory": null,
+      "householdComposition": "children_only",
       "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
       "decisiveFacts": [
         "2 personne(s) dans le ménage"
@@ -2694,6 +3032,8 @@
       },
       "resultType": "decision_determined",
       "category": "B",
+      "potentialCategory": null,
+      "householdComposition": "children_only",
       "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
       "decisiveFacts": [
         "2 personne(s) dans le ménage"
@@ -2734,6 +3074,8 @@
       },
       "resultType": "decision_determined",
       "category": "B",
+      "potentialCategory": null,
+      "householdComposition": "children_only",
       "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
       "decisiveFacts": [
         "2 personne(s) dans le ménage"
@@ -2769,7 +3111,9 @@
         ]
       },
       "resultType": "information_missing",
-      "category": "A",
+      "category": null,
+      "potentialCategory": "A",
+      "householdComposition": "children_only",
       "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
       "decisiveFacts": [
         "2 personne(s) dans le ménage"
@@ -2817,6 +3161,8 @@
       },
       "resultType": "decision_determined",
       "category": "B",
+      "potentialCategory": null,
+      "householdComposition": "children_only",
       "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
       "decisiveFacts": [
         "2 personne(s) dans le ménage"
@@ -2858,6 +3204,8 @@
       },
       "resultType": "decision_determined",
       "category": "B",
+      "potentialCategory": null,
+      "householdComposition": "children_only",
       "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
       "decisiveFacts": [
         "2 personne(s) dans le ménage"
@@ -2894,7 +3242,9 @@
         ]
       },
       "resultType": "information_missing",
-      "category": "B",
+      "category": null,
+      "potentialCategory": "B",
+      "householdComposition": "children_only",
       "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
       "decisiveFacts": [
         "2 personne(s) dans le ménage"
@@ -2942,6 +3292,8 @@
       },
       "resultType": "decision_determined",
       "category": "B",
+      "potentialCategory": null,
+      "householdComposition": "children_only",
       "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
       "decisiveFacts": [
         "2 personne(s) dans le ménage"
@@ -2978,7 +3330,9 @@
         ]
       },
       "resultType": "information_missing",
-      "category": "B",
+      "category": null,
+      "potentialCategory": "B",
+      "householdComposition": "children_only",
       "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
       "decisiveFacts": [
         "2 personne(s) dans le ménage"
@@ -3017,7 +3371,9 @@
         ]
       },
       "resultType": "information_missing",
-      "category": "A",
+      "category": null,
+      "potentialCategory": "A",
+      "householdComposition": "children_only",
       "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
       "decisiveFacts": [
         "2 personne(s) dans le ménage"
@@ -3074,6 +3430,8 @@
       },
       "resultType": "decision_determined",
       "category": "A",
+      "potentialCategory": null,
+      "householdComposition": "children_only",
       "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
       "decisiveFacts": [
         "3 personne(s) dans le ménage"
@@ -3121,6 +3479,8 @@
       },
       "resultType": "decision_determined",
       "category": "A",
+      "potentialCategory": null,
+      "householdComposition": "children_only",
       "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
       "decisiveFacts": [
         "3 personne(s) dans le ménage"
@@ -3169,6 +3529,8 @@
       },
       "resultType": "decision_determined",
       "category": "A",
+      "potentialCategory": null,
+      "householdComposition": "children_only",
       "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
       "decisiveFacts": [
         "3 personne(s) dans le ménage"
@@ -3217,6 +3579,8 @@
       },
       "resultType": "decision_determined",
       "category": "A",
+      "potentialCategory": null,
+      "householdComposition": "children_only",
       "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
       "decisiveFacts": [
         "3 personne(s) dans le ménage"
@@ -3260,7 +3624,9 @@
         ]
       },
       "resultType": "information_missing",
-      "category": "A",
+      "category": null,
+      "potentialCategory": "A",
+      "householdComposition": "children_only",
       "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
       "decisiveFacts": [
         "3 personne(s) dans le ménage"
@@ -3314,6 +3680,8 @@
       },
       "resultType": "decision_determined",
       "category": "A",
+      "potentialCategory": null,
+      "householdComposition": "children_only",
       "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
       "decisiveFacts": [
         "3 personne(s) dans le ménage"
@@ -3362,6 +3730,8 @@
       },
       "resultType": "decision_determined",
       "category": "A",
+      "potentialCategory": null,
+      "householdComposition": "children_only",
       "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
       "decisiveFacts": [
         "3 personne(s) dans le ménage"
@@ -3410,6 +3780,8 @@
       },
       "resultType": "decision_determined",
       "category": "A",
+      "potentialCategory": null,
+      "householdComposition": "children_only",
       "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
       "decisiveFacts": [
         "3 personne(s) dans le ménage"
@@ -3453,7 +3825,9 @@
         ]
       },
       "resultType": "information_missing",
-      "category": "A",
+      "category": null,
+      "potentialCategory": "A",
+      "householdComposition": "children_only",
       "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
       "decisiveFacts": [
         "3 personne(s) dans le ménage"
@@ -3509,6 +3883,8 @@
       },
       "resultType": "decision_determined",
       "category": "A",
+      "potentialCategory": null,
+      "householdComposition": "children_only",
       "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
       "decisiveFacts": [
         "3 personne(s) dans le ménage"
@@ -3558,6 +3934,8 @@
       },
       "resultType": "decision_determined",
       "category": "A",
+      "potentialCategory": null,
+      "householdComposition": "children_only",
       "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
       "decisiveFacts": [
         "3 personne(s) dans le ménage"
@@ -3602,7 +3980,9 @@
         ]
       },
       "resultType": "information_missing",
-      "category": "A",
+      "category": null,
+      "potentialCategory": "A",
+      "householdComposition": "children_only",
       "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
       "decisiveFacts": [
         "3 personne(s) dans le ménage"
@@ -3658,6 +4038,8 @@
       },
       "resultType": "decision_determined",
       "category": "A",
+      "potentialCategory": null,
+      "householdComposition": "children_only",
       "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
       "decisiveFacts": [
         "3 personne(s) dans le ménage"
@@ -3702,7 +4084,9 @@
         ]
       },
       "resultType": "information_missing",
-      "category": "A",
+      "category": null,
+      "potentialCategory": "A",
+      "householdComposition": "children_only",
       "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
       "decisiveFacts": [
         "3 personne(s) dans le ménage"
@@ -3749,7 +4133,9 @@
         ]
       },
       "resultType": "information_missing",
-      "category": "A",
+      "category": null,
+      "potentialCategory": "A",
+      "householdComposition": "children_only",
       "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
       "decisiveFacts": [
         "3 personne(s) dans le ménage"
@@ -3806,6 +4192,8 @@
       },
       "resultType": "decision_determined",
       "category": "A",
+      "potentialCategory": null,
+      "householdComposition": "children_only",
       "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
       "decisiveFacts": [
         "3 personne(s) dans le ménage"
@@ -3854,6 +4242,8 @@
       },
       "resultType": "decision_determined",
       "category": "B",
+      "potentialCategory": null,
+      "householdComposition": "children_only",
       "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
       "decisiveFacts": [
         "3 personne(s) dans le ménage"
@@ -3902,6 +4292,8 @@
       },
       "resultType": "decision_determined",
       "category": "B",
+      "potentialCategory": null,
+      "householdComposition": "children_only",
       "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
       "decisiveFacts": [
         "3 personne(s) dans le ménage"
@@ -3945,7 +4337,9 @@
         ]
       },
       "resultType": "information_missing",
-      "category": "A",
+      "category": null,
+      "potentialCategory": "A",
+      "householdComposition": "children_only",
       "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
       "decisiveFacts": [
         "3 personne(s) dans le ménage"
@@ -4001,6 +4395,8 @@
       },
       "resultType": "decision_determined",
       "category": "B",
+      "potentialCategory": null,
+      "householdComposition": "children_only",
       "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
       "decisiveFacts": [
         "3 personne(s) dans le ménage"
@@ -4050,6 +4446,8 @@
       },
       "resultType": "decision_determined",
       "category": "B",
+      "potentialCategory": null,
+      "householdComposition": "children_only",
       "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
       "decisiveFacts": [
         "3 personne(s) dans le ménage"
@@ -4094,7 +4492,9 @@
         ]
       },
       "resultType": "information_missing",
-      "category": "B",
+      "category": null,
+      "potentialCategory": "B",
+      "householdComposition": "children_only",
       "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
       "decisiveFacts": [
         "3 personne(s) dans le ménage"
@@ -4150,6 +4550,8 @@
       },
       "resultType": "decision_determined",
       "category": "B",
+      "potentialCategory": null,
+      "householdComposition": "children_only",
       "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
       "decisiveFacts": [
         "3 personne(s) dans le ménage"
@@ -4194,7 +4596,9 @@
         ]
       },
       "resultType": "information_missing",
-      "category": "B",
+      "category": null,
+      "potentialCategory": "B",
+      "householdComposition": "children_only",
       "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
       "decisiveFacts": [
         "3 personne(s) dans le ménage"
@@ -4241,7 +4645,9 @@
         ]
       },
       "resultType": "information_missing",
-      "category": "A",
+      "category": null,
+      "potentialCategory": "A",
+      "householdComposition": "children_only",
       "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
       "decisiveFacts": [
         "3 personne(s) dans le ménage"
@@ -4301,6 +4707,8 @@
       },
       "resultType": "decision_determined",
       "category": "B",
+      "potentialCategory": null,
+      "householdComposition": "children_only",
       "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
       "decisiveFacts": [
         "3 personne(s) dans le ménage"
@@ -4351,6 +4759,8 @@
       },
       "resultType": "decision_determined",
       "category": "B",
+      "potentialCategory": null,
+      "householdComposition": "children_only",
       "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
       "decisiveFacts": [
         "3 personne(s) dans le ménage"
@@ -4396,7 +4806,9 @@
         ]
       },
       "resultType": "information_missing",
-      "category": "B",
+      "category": null,
+      "potentialCategory": "B",
+      "householdComposition": "children_only",
       "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
       "decisiveFacts": [
         "3 personne(s) dans le ménage"
@@ -4453,6 +4865,8 @@
       },
       "resultType": "decision_determined",
       "category": "B",
+      "potentialCategory": null,
+      "householdComposition": "children_only",
       "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
       "decisiveFacts": [
         "3 personne(s) dans le ménage"
@@ -4498,7 +4912,9 @@
         ]
       },
       "resultType": "information_missing",
-      "category": "B",
+      "category": null,
+      "potentialCategory": "B",
+      "householdComposition": "children_only",
       "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
       "decisiveFacts": [
         "3 personne(s) dans le ménage"
@@ -4546,7 +4962,9 @@
         ]
       },
       "resultType": "information_missing",
-      "category": "B",
+      "category": null,
+      "potentialCategory": "B",
+      "householdComposition": "children_only",
       "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
       "decisiveFacts": [
         "3 personne(s) dans le ménage"
@@ -4606,6 +5024,8 @@
       },
       "resultType": "decision_determined",
       "category": "B",
+      "potentialCategory": null,
+      "householdComposition": "children_only",
       "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
       "decisiveFacts": [
         "3 personne(s) dans le ménage"
@@ -4651,7 +5071,9 @@
         ]
       },
       "resultType": "information_missing",
-      "category": "B",
+      "category": null,
+      "potentialCategory": "B",
+      "householdComposition": "children_only",
       "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
       "decisiveFacts": [
         "3 personne(s) dans le ménage"
@@ -4699,7 +5121,9 @@
         ]
       },
       "resultType": "information_missing",
-      "category": "B",
+      "category": null,
+      "potentialCategory": "B",
+      "householdComposition": "children_only",
       "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
       "decisiveFacts": [
         "3 personne(s) dans le ménage"
@@ -4746,7 +5170,9 @@
         ]
       },
       "resultType": "information_missing",
-      "category": "A",
+      "category": null,
+      "potentialCategory": "A",
+      "householdComposition": "children_only",
       "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
       "decisiveFacts": [
         "3 personne(s) dans le ménage"
@@ -4794,6 +5220,8 @@
       },
       "resultType": "decision_determined",
       "category": "B",
+      "potentialCategory": null,
+      "householdComposition": "children_only",
       "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
       "decisiveFacts": [
         "1 personne(s) dans le ménage"
@@ -4831,6 +5259,8 @@
       },
       "resultType": "decision_determined",
       "category": "A",
+      "potentialCategory": null,
+      "householdComposition": "children_only",
       "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
       "decisiveFacts": [
         "1 personne(s) dans le ménage"
@@ -4870,6 +5300,8 @@
       },
       "resultType": "decision_determined",
       "category": "A",
+      "potentialCategory": null,
+      "householdComposition": "children_only",
       "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
       "decisiveFacts": [
         "1 personne(s) dans le ménage"
@@ -4909,6 +5341,8 @@
       },
       "resultType": "decision_determined",
       "category": "A",
+      "potentialCategory": null,
+      "householdComposition": "children_only",
       "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
       "decisiveFacts": [
         "1 personne(s) dans le ménage"
@@ -4948,6 +5382,8 @@
       },
       "resultType": "decision_determined",
       "category": "A",
+      "potentialCategory": null,
+      "householdComposition": "children_only",
       "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
       "decisiveFacts": [
         "1 personne(s) dans le ménage"
@@ -4987,6 +5423,8 @@
       },
       "resultType": "decision_determined",
       "category": "A",
+      "potentialCategory": null,
+      "householdComposition": "children_only",
       "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
       "decisiveFacts": [
         "1 personne(s) dans le ménage"
@@ -5026,6 +5464,8 @@
       },
       "resultType": "decision_determined",
       "category": "A",
+      "potentialCategory": null,
+      "householdComposition": "children_only",
       "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
       "decisiveFacts": [
         "1 personne(s) dans le ménage"
@@ -5058,6 +5498,8 @@
       },
       "resultType": "decision_determined",
       "category": "A",
+      "potentialCategory": null,
+      "householdComposition": "relatives_only",
       "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
       "decisiveFacts": [
         "1 personne(s) dans le ménage"
@@ -5090,6 +5532,8 @@
       },
       "resultType": "decision_determined",
       "category": "B",
+      "potentialCategory": null,
+      "householdComposition": "relatives_only",
       "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
       "decisiveFacts": [
         "1 personne(s) dans le ménage"
@@ -5126,6 +5570,8 @@
       },
       "resultType": "decision_determined",
       "category": "A",
+      "potentialCategory": null,
+      "householdComposition": "relatives_only",
       "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
       "decisiveFacts": [
         "1 personne(s) dans le ménage"
@@ -5162,6 +5608,8 @@
       },
       "resultType": "decision_determined",
       "category": "B",
+      "potentialCategory": null,
+      "householdComposition": "relatives_only",
       "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
       "decisiveFacts": [
         "1 personne(s) dans le ménage"
@@ -5200,6 +5648,8 @@
       },
       "resultType": "decision_determined",
       "category": "A",
+      "potentialCategory": null,
+      "householdComposition": "relatives_only",
       "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
       "decisiveFacts": [
         "1 personne(s) dans le ménage"
@@ -5238,6 +5688,8 @@
       },
       "resultType": "decision_determined",
       "category": "A",
+      "potentialCategory": null,
+      "householdComposition": "relatives_only",
       "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
       "decisiveFacts": [
         "2 personne(s) dans le ménage"
@@ -5277,6 +5729,8 @@
       },
       "resultType": "decision_determined",
       "category": "B",
+      "potentialCategory": null,
+      "householdComposition": "relatives_only",
       "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
       "decisiveFacts": [
         "2 personne(s) dans le ménage"
@@ -5320,6 +5774,8 @@
       },
       "resultType": "decision_determined",
       "category": "A",
+      "potentialCategory": null,
+      "householdComposition": "relatives_only",
       "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
       "decisiveFacts": [
         "2 personne(s) dans le ménage"
@@ -5363,6 +5819,8 @@
       },
       "resultType": "decision_determined",
       "category": "A",
+      "potentialCategory": null,
+      "householdComposition": "relatives_only",
       "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
       "decisiveFacts": [
         "2 personne(s) dans le ménage"
@@ -5406,6 +5864,8 @@
       },
       "resultType": "decision_determined",
       "category": "B",
+      "potentialCategory": null,
+      "householdComposition": "relatives_only",
       "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
       "decisiveFacts": [
         "2 personne(s) dans le ménage"
@@ -5449,6 +5909,8 @@
       },
       "resultType": "document_required",
       "category": null,
+      "potentialCategory": null,
+      "householdComposition": "relatives_only",
       "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
       "decisiveFacts": [
         "2 personne(s) dans le ménage"
@@ -5497,6 +5959,8 @@
       },
       "resultType": "decision_determined",
       "category": "A",
+      "potentialCategory": null,
+      "householdComposition": "relatives_only",
       "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
       "decisiveFacts": [
         "2 personne(s) dans le ménage"
@@ -5537,6 +6001,8 @@
       },
       "resultType": "decision_determined",
       "category": "B",
+      "potentialCategory": null,
+      "householdComposition": "relatives_only",
       "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
       "decisiveFacts": [
         "2 personne(s) dans le ménage"
@@ -5581,6 +6047,8 @@
       },
       "resultType": "decision_determined",
       "category": "B",
+      "potentialCategory": null,
+      "householdComposition": "relatives_only",
       "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
       "decisiveFacts": [
         "2 personne(s) dans le ménage"
@@ -5625,6 +6093,8 @@
       },
       "resultType": "decision_determined",
       "category": "B",
+      "potentialCategory": null,
+      "householdComposition": "relatives_only",
       "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
       "decisiveFacts": [
         "2 personne(s) dans le ménage"
@@ -5669,6 +6139,8 @@
       },
       "resultType": "decision_determined",
       "category": "B",
+      "potentialCategory": null,
+      "householdComposition": "relatives_only",
       "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
       "decisiveFacts": [
         "2 personne(s) dans le ménage"
@@ -5713,6 +6185,8 @@
       },
       "resultType": "decision_determined",
       "category": "B",
+      "potentialCategory": null,
+      "householdComposition": "relatives_only",
       "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
       "decisiveFacts": [
         "2 personne(s) dans le ménage"
@@ -5759,6 +6233,8 @@
       },
       "resultType": "decision_determined",
       "category": "B",
+      "potentialCategory": null,
+      "householdComposition": "relatives_only",
       "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
       "decisiveFacts": [
         "2 personne(s) dans le ménage"
@@ -5807,6 +6283,8 @@
       },
       "resultType": "decision_determined",
       "category": "B",
+      "potentialCategory": null,
+      "householdComposition": "relatives_only",
       "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
       "decisiveFacts": [
         "2 personne(s) dans le ménage"
@@ -5855,6 +6333,8 @@
       },
       "resultType": "decision_determined",
       "category": "B",
+      "potentialCategory": null,
+      "householdComposition": "relatives_only",
       "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
       "decisiveFacts": [
         "2 personne(s) dans le ménage"
@@ -5903,6 +6383,8 @@
       },
       "resultType": "decision_determined",
       "category": "B",
+      "potentialCategory": null,
+      "householdComposition": "relatives_only",
       "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
       "decisiveFacts": [
         "2 personne(s) dans le ménage"
@@ -5951,6 +6433,8 @@
       },
       "resultType": "document_required",
       "category": null,
+      "potentialCategory": null,
+      "householdComposition": "relatives_only",
       "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
       "decisiveFacts": [
         "2 personne(s) dans le ménage"
@@ -6004,6 +6488,8 @@
       },
       "resultType": "decision_determined",
       "category": "B",
+      "potentialCategory": null,
+      "householdComposition": "relatives_only",
       "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
       "decisiveFacts": [
         "2 personne(s) dans le ménage"
@@ -6052,6 +6538,8 @@
       },
       "resultType": "decision_determined",
       "category": "B",
+      "potentialCategory": null,
+      "householdComposition": "relatives_only",
       "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
       "decisiveFacts": [
         "2 personne(s) dans le ménage"
@@ -6100,6 +6588,8 @@
       },
       "resultType": "decision_determined",
       "category": "B",
+      "potentialCategory": null,
+      "householdComposition": "relatives_only",
       "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
       "decisiveFacts": [
         "2 personne(s) dans le ménage"
@@ -6148,6 +6638,8 @@
       },
       "resultType": "document_required",
       "category": null,
+      "potentialCategory": null,
+      "householdComposition": "relatives_only",
       "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
       "decisiveFacts": [
         "2 personne(s) dans le ménage"
@@ -6201,6 +6693,8 @@
       },
       "resultType": "decision_determined",
       "category": "B",
+      "potentialCategory": null,
+      "householdComposition": "relatives_only",
       "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
       "decisiveFacts": [
         "2 personne(s) dans le ménage"
@@ -6249,6 +6743,8 @@
       },
       "resultType": "decision_determined",
       "category": "B",
+      "potentialCategory": null,
+      "householdComposition": "relatives_only",
       "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
       "decisiveFacts": [
         "2 personne(s) dans le ménage"
@@ -6297,6 +6793,8 @@
       },
       "resultType": "document_required",
       "category": null,
+      "potentialCategory": null,
+      "householdComposition": "relatives_only",
       "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
       "decisiveFacts": [
         "2 personne(s) dans le ménage"
@@ -6350,6 +6848,8 @@
       },
       "resultType": "decision_determined",
       "category": "B",
+      "potentialCategory": null,
+      "householdComposition": "relatives_only",
       "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
       "decisiveFacts": [
         "2 personne(s) dans le ménage"
@@ -6398,6 +6898,8 @@
       },
       "resultType": "document_required",
       "category": null,
+      "potentialCategory": null,
+      "householdComposition": "relatives_only",
       "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
       "decisiveFacts": [
         "2 personne(s) dans le ménage"
@@ -6451,6 +6953,8 @@
       },
       "resultType": "document_required",
       "category": null,
+      "potentialCategory": null,
+      "householdComposition": "relatives_only",
       "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
       "decisiveFacts": [
         "2 personne(s) dans le ménage"
@@ -6506,6 +7010,8 @@
       },
       "resultType": "decision_determined",
       "category": "B",
+      "potentialCategory": null,
+      "householdComposition": "relatives_only",
       "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
       "decisiveFacts": [
         "2 personne(s) dans le ménage"
@@ -6521,7 +7027,7 @@
       ]
     },
     {
-      "id": "comb-composition-third",
+      "id": "comb-composition-third-no-income",
       "label": "Composition croisée",
       "branch": "mixed_or_unsupported",
       "facts": {
@@ -6537,6 +7043,8 @@
       },
       "resultType": "not_automated",
       "category": null,
+      "potentialCategory": null,
+      "householdComposition": "mixed_or_unsupported",
       "reason": "Les éléments déclarés nécessitent une vérification avant de déterminer la catégorie.",
       "decisiveFacts": [
         "1 personne(s) dans le ménage"
@@ -6547,6 +7055,145 @@
       "declarationRequired": true,
       "sourceRuleIds": [
         "situation_familiale_composition_priorities"
+      ]
+    },
+    {
+      "id": "comb-composition-third-professional-income",
+      "label": "Composition croisée",
+      "branch": "mixed_or_unsupported",
+      "facts": {
+        "people": [
+          {
+            "id": "third",
+            "label": "Ami",
+            "relation": "third_party",
+            "hasProfessionalIncome": true,
+            "professionalIncomeAmount": 1000,
+            "hasReplacementIncome": false
+          }
+        ]
+      },
+      "resultType": "not_automated",
+      "category": null,
+      "potentialCategory": null,
+      "householdComposition": "mixed_or_unsupported",
+      "reason": "Les éléments déclarés nécessitent une vérification avant de déterminer la catégorie.",
+      "decisiveFacts": [
+        "1 personne(s) dans le ménage"
+      ],
+      "missingFacts": [],
+      "missingDocuments": [],
+      "actions": [],
+      "declarationRequired": true,
+      "sourceRuleIds": [
+        "situation_familiale_composition_priorities"
+      ]
+    },
+    {
+      "id": "comb-composition-third-replacement-income",
+      "label": "Composition croisée",
+      "branch": "mixed_or_unsupported",
+      "facts": {
+        "people": [
+          {
+            "id": "third",
+            "label": "Ami",
+            "relation": "third_party",
+            "hasProfessionalIncome": false,
+            "hasReplacementIncome": true,
+            "replacementIncomeAmount": 1000
+          }
+        ]
+      },
+      "resultType": "not_automated",
+      "category": null,
+      "potentialCategory": null,
+      "householdComposition": "mixed_or_unsupported",
+      "reason": "Les éléments déclarés nécessitent une vérification avant de déterminer la catégorie.",
+      "decisiveFacts": [
+        "1 personne(s) dans le ménage"
+      ],
+      "missingFacts": [],
+      "missingDocuments": [],
+      "actions": [],
+      "declarationRequired": true,
+      "sourceRuleIds": [
+        "situation_familiale_composition_priorities"
+      ]
+    },
+    {
+      "id": "comb-composition-third-income-unknown",
+      "label": "Composition croisée",
+      "branch": "mixed_or_unsupported",
+      "facts": {
+        "people": [
+          {
+            "id": "third",
+            "label": "Ami",
+            "relation": "third_party"
+          }
+        ]
+      },
+      "resultType": "not_automated",
+      "category": null,
+      "potentialCategory": null,
+      "householdComposition": "mixed_or_unsupported",
+      "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
+      "decisiveFacts": [
+        "1 personne(s) dans le ménage"
+      ],
+      "missingFacts": [
+        "Indiquer si cette personne dispose d'un revenu professionnel.",
+        "Indiquer si cette personne perçoit un revenu de remplacement."
+      ],
+      "missingDocuments": [],
+      "actions": [
+        "Compléter les informations"
+      ],
+      "declarationRequired": true,
+      "sourceRuleIds": [
+        "situation_familiale_composition_priorities"
+      ]
+    },
+    {
+      "id": "comb-composition-child-relative",
+      "label": "Composition croisée",
+      "branch": "children_and_relatives",
+      "facts": {
+        "people": [
+          {
+            "id": "child",
+            "label": "Enfant",
+            "relation": "child",
+            "hasProfessionalIncome": false,
+            "hasReplacementIncome": false,
+            "receivesFamilyAllowances": true
+          },
+          {
+            "id": "parent",
+            "label": "Père",
+            "relation": "relative",
+            "hasProfessionalIncome": false,
+            "hasReplacementIncome": false
+          }
+        ]
+      },
+      "resultType": "decision_determined",
+      "category": "A",
+      "potentialCategory": null,
+      "householdComposition": "children_and_relatives",
+      "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
+      "decisiveFacts": [
+        "2 personne(s) dans le ménage"
+      ],
+      "missingFacts": [],
+      "missingDocuments": [],
+      "actions": [],
+      "potentialOutcome": "Travailleur ayant charge de famille",
+      "declarationRequired": true,
+      "sourceRuleIds": [
+        "situation_familiale_composition_priorities",
+        "situation_familiale_ascendants_pensions"
       ]
     },
     {
@@ -6574,6 +7221,8 @@
       },
       "resultType": "decision_determined",
       "category": "A",
+      "potentialCategory": null,
+      "householdComposition": "children_and_third_parties",
       "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
       "decisiveFacts": [
         "2 personne(s) dans le ménage"
@@ -6612,6 +7261,8 @@
       },
       "resultType": "decision_determined",
       "category": "A",
+      "potentialCategory": null,
+      "householdComposition": "relatives_and_third_parties",
       "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
       "decisiveFacts": [
         "2 personne(s) dans le ménage"
@@ -6659,6 +7310,8 @@
       },
       "resultType": "decision_determined",
       "category": "A",
+      "potentialCategory": null,
+      "householdComposition": "children_relatives_and_third_parties",
       "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
       "decisiveFacts": [
         "3 personne(s) dans le ménage"
@@ -6690,6 +7343,8 @@
       },
       "resultType": "not_automated",
       "category": null,
+      "potentialCategory": null,
+      "householdComposition": "mixed_or_unsupported",
       "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
       "decisiveFacts": [
         "1 personne(s) dans le ménage"
@@ -6723,6 +7378,8 @@
       },
       "resultType": "onem_decision_required",
       "category": null,
+      "potentialCategory": null,
+      "householdComposition": "alone",
       "reason": "La situation de co-housing est appréciée par l’ONEM sur la situation réelle.\n\nLe Bureau du chômage peut effectuer une enquête avant de décider si le chômeur peut être considéré comme isolé.",
       "decisiveFacts": [
         "Le chômeur a déclaré vivre seul"
@@ -6763,6 +7420,8 @@
       },
       "resultType": "onem_decision_required",
       "category": null,
+      "potentialCategory": null,
+      "householdComposition": "alone",
       "reason": "La situation de co-housing est appréciée par l’ONEM sur la situation réelle.\n\nLe Bureau du chômage peut effectuer une enquête avant de décider si le chômeur peut être considéré comme isolé.",
       "decisiveFacts": [
         "Le chômeur a déclaré vivre seul"
@@ -6801,6 +7460,8 @@
       },
       "resultType": "onem_decision_required",
       "category": null,
+      "potentialCategory": null,
+      "householdComposition": "alone",
       "reason": "La situation de co-housing est appréciée par l’ONEM sur la situation réelle.\n\nLe Bureau du chômage peut effectuer une enquête avant de décider si le chômeur peut être considéré comme isolé.",
       "decisiveFacts": [
         "Le chômeur a déclaré vivre seul"
@@ -6839,6 +7500,8 @@
       },
       "resultType": "onem_decision_required",
       "category": null,
+      "potentialCategory": null,
+      "householdComposition": "alone",
       "reason": "La situation de co-housing est appréciée par l’ONEM sur la situation réelle.\n\nLe Bureau du chômage peut effectuer une enquête avant de décider si le chômeur peut être considéré comme isolé.",
       "decisiveFacts": [
         "Le chômeur a déclaré vivre seul"
@@ -6875,6 +7538,8 @@
       },
       "resultType": "onem_decision_required",
       "category": null,
+      "potentialCategory": null,
+      "householdComposition": "alone",
       "reason": "La situation de co-housing est appréciée par l’ONEM sur la situation réelle.\n\nLe Bureau du chômage peut effectuer une enquête avant de décider si le chômeur peut être considéré comme isolé.",
       "decisiveFacts": [
         "Le chômeur a déclaré vivre seul"
@@ -6913,6 +7578,8 @@
       },
       "resultType": "onem_decision_required",
       "category": null,
+      "potentialCategory": null,
+      "householdComposition": "alone",
       "reason": "La situation de co-housing est appréciée par l’ONEM sur la situation réelle.\n\nLe Bureau du chômage peut effectuer une enquête avant de décider si le chômeur peut être considéré comme isolé.",
       "decisiveFacts": [
         "Le chômeur a déclaré vivre seul"
@@ -6949,6 +7616,8 @@
       },
       "resultType": "onem_decision_required",
       "category": null,
+      "potentialCategory": null,
+      "householdComposition": "alone",
       "reason": "La situation de co-housing est appréciée par l’ONEM sur la situation réelle.\n\nLe Bureau du chômage peut effectuer une enquête avant de décider si le chômeur peut être considéré comme isolé.",
       "decisiveFacts": [
         "Le chômeur a déclaré vivre seul"

@@ -29,6 +29,19 @@ describe("Article 110 scenario matrix", () => {
     expect(report.coverage.enfants).toContain("nombre : 1/2/3");
   });
 
+  it("keeps principal result types and determined categories mutually exclusive", () => {
+    expect(Object.values(report.byResultType).reduce((sum, count) => sum + count, 0)).toBe(report.total);
+    expect(Object.values(report.byCategory).reduce((sum, count) => sum + count, 0)).toBe(report.byResultType.decision_determined);
+    expect(report.assertions).toMatchObject({ resultTypesTotal: true, categoriesTotal: true, incoherent: true, withoutReason: true, atLeastOneA: true, atLeastOneB: true });
+  });
+
+  it("records the explicit isolated baseline and reports the absence of N without changing a rule", () => {
+    const alone = report.scenarios.find((scenario) => scenario.id === "alone-no-special-situation");
+    expect(alone).toMatchObject({ householdComposition: "alone", category: null, potentialCategory: null });
+    expect(report.assertions.atLeastOneN).toBe(false);
+    expect(report.anomalies[0]).toContain("ne renvoie pas N");
+  });
+
   it("keeps every generated contract justified and internally coherent", () => {
     expect(report.incoherent).toEqual([]);
     expect(report.withoutReason).toEqual([]);

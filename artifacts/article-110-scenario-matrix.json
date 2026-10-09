@@ -235,7 +235,7 @@
     "atLeastOneN": true
   },
   "anomalies": [],
-  "durationMs": 36.32,
+  "durationMs": 32.42,
   "scenarios": [
     {
       "id": "composition-missing",

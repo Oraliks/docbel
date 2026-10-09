@@ -106,7 +106,7 @@ function canonicalScenarioSignature(input: Article110Scenario["input"]): string 
   return stable({ ...input, people });
 }
 
-function combinations<T>(values: T[], size: number, start = 0, chosen: T[] = []): T[][] {
+function combinations<T>(values: readonly T[], size: number, start = 0, chosen: T[] = []): T[][] {
   if (chosen.length === size) return [chosen];
   return values.flatMap((value, index) => combinations(values, size, index + start, [...chosen, value]));
 }

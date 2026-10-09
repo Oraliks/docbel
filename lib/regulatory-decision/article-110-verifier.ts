@@ -43,6 +43,7 @@ export type Article110VerifierPerson = Omit<HouseholdMemberFact, "factKey" | "re
 
 export type Article110VerifierInput = {
   people: Article110VerifierPerson[];
+  isAloneExplicit?: boolean;
   officialOnemCode?: string;
   assessedAt?: Date;
   thresholds: C1BaremeThresholds;
@@ -68,7 +69,8 @@ export type Article110MissingFact = {
  */
 export type Article110VerifierFormSection = "partner" | "children" | "relatives" | "third_parties" | "isolated";
 
-export function getArticle110VerifierFormSections(input: Pick<Article110VerifierInput, "people">): Article110VerifierFormSection[] {
+export function getArticle110VerifierFormSections(input: Pick<Article110VerifierInput, "people" | "isAloneExplicit">): Article110VerifierFormSection[] {
+  if (input.people.length === 0) return input.isAloneExplicit ? ["isolated"] : [];
   const composition = classifyHouseholdComposition(input.people.map((person) => ({ ...person, factKey: `verifier.${person.id}` })));
   switch (composition.kind) {
     case "alone": return ["isolated"];
@@ -103,12 +105,12 @@ function getMissingFacts(input: Article110VerifierInput, sections: Article110Ver
       : person.relation === "child" ? sections.includes("children")
       : person.relation === "relative" ? sections.includes("relatives") : sections.includes("third_parties");
     if (!inSection) continue;
-    if (person.relation === "partner") add(person, "partnerEstablished", "Qualité de partenaire établie", person.partnerEstablished);
-    add(person, "hasProfessionalIncome", `Revenu professionnel — ${person.label}`, person.hasProfessionalIncome);
-    add(person, "hasReplacementIncome", `Revenu de remplacement — ${person.label}`, person.hasReplacementIncome);
-    if (person.relation === "child") add(person, "receivesFamilyAllowances", `Allocations familiales — ${person.label}`, person.receivesFamilyAllowances);
-    if (person.hasProfessionalIncome === true) add(person, "professionalIncomeAmount", `Montant brut mensuel du ${person.label.toLowerCase()}`, person.professionalIncomeAmount);
-    if (person.hasReplacementIncome === true) add(person, "replacementIncomeAmount", `Montant brut mensuel du ${person.label.toLowerCase()}`, person.replacementIncomeAmount);
+    const label = ({ partner: "partenaire", conjoint: "conjoint", mother: "mère", father: "père", child: "enfant", sibling: "frère ou sœur", grandparent: "grand-parent", uncle_aunt: "oncle ou tante", nephew_niece: "neveu ou nièce", cousin: "cousin ou cousine", friend: "ami ou tiers", other: "autre personne" } as Record<string, string>)[person.label.toLowerCase()] ?? "cette personne";
+    add(person, "hasProfessionalIncome", `Indiquer si ${label} dispose d'un revenu professionnel.`, person.hasProfessionalIncome);
+    add(person, "hasReplacementIncome", `Indiquer si ${label} perçoit un revenu de remplacement.`, person.hasReplacementIncome);
+    if (person.relation === "child") add(person, "receivesFamilyAllowances", `Indiquer si ${label} perçoit des allocations familiales.`, person.receivesFamilyAllowances);
+    if (person.hasProfessionalIncome === true) add(person, "professionalIncomeAmount", `Indiquer le montant brut mensuel du revenu professionnel de ${label}.`, person.professionalIncomeAmount);
+    if (person.hasReplacementIncome === true) add(person, "replacementIncomeAmount", `Indiquer le montant brut mensuel du revenu de remplacement de ${label}.`, person.replacementIncomeAmount);
   }
   return missing;
 }
@@ -169,15 +171,17 @@ export function evaluateArticle110Verifier(input: Article110VerifierInput) {
       cohousingAttestationHonneur: input.cohousingDocuments?.swornStatement ? "oui" : "non",
     } : {}),
   };
-  const isolatedAssessment = assessIsolatedHouseholdClaim(isolatedPayload, composition, input.officialOnemCode, { regisCompleted: input.cohousingDocuments?.regis });
-  const expectedCategory = isolatedAssessment ? isolatedAssessment.expectedCategory : householdAssessment.expectedCategory;
+  const isolatedSituationProvided = input.isAloneExplicit || input.cohousingClaim === true || input.alimony?.enabled === true || input.alternatingCare?.enabled === true;
+  const isolatedAssessment = isolatedSituationProvided ? assessIsolatedHouseholdClaim(isolatedPayload, composition, input.officialOnemCode, { regisCompleted: input.cohousingDocuments?.regis }) : undefined;
+  const compositionKnown = isolatedSituationProvided || input.people.length > 0;
+  const expectedCategory = compositionKnown ? (isolatedAssessment ? isolatedAssessment.expectedCategory : householdAssessment.expectedCategory) : null;
   return {
     composition,
     householdAssessment,
     article110Decision,
     cohousing: isolatedAssessment?.branch === "cohousing" ? isolatedAssessment : undefined,
     expectedCategory,
-    level: isolatedAssessment?.status === "needs_review" || isolatedAssessment?.status === "pending_judgment" || householdAssessment.status === "needs_review" ? "review" as const
+    level: !compositionKnown ? "information" as const : isolatedAssessment?.status === "needs_review" || isolatedAssessment?.status === "pending_judgment" || householdAssessment.status === "needs_review" ? "review" as const
       : isolatedAssessment?.status === "needs_information" || householdAssessment.status === "needs_information" ? "information" as const : "confirmed" as const,
     declarationRequired: input.people.length > 0,
     sourceRuleIds: [...new Set([
@@ -192,7 +196,7 @@ export function evaluateArticle110Verifier(input: Article110VerifierInput) {
       ...(householdAssessment.recommendedAction === "declaration_required" ? ["Introduire ou mettre à jour le C1"] : []),
       ...(householdAssessment.recommendedAction === "review_required" || isolatedAssessment?.recommendedAction === "onem_review" ? ["Revue ONEM / organisme de paiement nécessaire"] : []),
     ],
-    missingFacts,
+    missingFacts: compositionKnown ? missingFacts : [{ factKey: "composition", label: "Indiquer si le chômeur vit seul ou ajouter une personne au ménage.", step: 1 as const }],
     isolatedAssessment,
   };
 }

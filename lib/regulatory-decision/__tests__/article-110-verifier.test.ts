@@ -21,8 +21,9 @@ describe("Article 110 verifier adapter", () => {
     ] })).toEqual(["partner"]);
   });
 
-  it("returns to the isolated questions as soon as the last member is removed", () => {
-    expect(getArticle110VerifierFormSections({ people: [] })).toEqual(["isolated"]);
+  it("does not assume an isolated household before it is explicitly selected", () => {
+    expect(getArticle110VerifierFormSections({ people: [] })).toEqual([]);
+    expect(getArticle110VerifierFormSections({ people: [], isAloneExplicit: true })).toEqual(["isolated"]);
   });
 
   it("keeps child and ascendant questions visible for their actual mixed composition", () => {
@@ -102,6 +103,7 @@ describe("Article 110 verifier adapter", () => {
   it("lists unanswered partner income facts as information missing", () => {
     const result = evaluateArticle110Verifier({ thresholds, people: [{ id: "partner", label: "Conjoint", relation: "spouse" }] });
     expect(result.missingFacts.map((fact) => fact.factKey)).toEqual(["partner.hasProfessionalIncome", "partner.hasReplacementIncome"]);
+    expect(result.missingFacts[0]?.label).toContain("conjoint");
   });
 
   it("removes a missing income fact after an explicit no", () => {
@@ -111,7 +113,7 @@ describe("Article 110 verifier adapter", () => {
 
   it("requires the gross amount only after an explicit yes", () => {
     const result = evaluateArticle110Verifier({ thresholds, people: [{ id: "partner", label: "Conjoint", relation: "spouse", hasProfessionalIncome: true, hasReplacementIncome: false }] });
-    expect(result.missingFacts).toContainEqual(expect.objectContaining({ factKey: "partner.professionalIncomeAmount", label: "Montant brut mensuel du conjoint" }));
+    expect(result.missingFacts).toContainEqual(expect.objectContaining({ factKey: "partner.professionalIncomeAmount", label: expect.stringContaining("montant brut mensuel") }));
   });
 
   it("surfaces C110A as an action without turning 60B into A", () => {

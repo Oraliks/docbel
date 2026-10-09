@@ -54,6 +54,13 @@ export type Article110VerifierInput = {
 
 export type Article110VerifierResult = ReturnType<typeof evaluateArticle110Verifier>;
 
+export type Article110MissingFact = {
+  factKey: string;
+  personId?: string;
+  label: string;
+  step: 2;
+};
+
 /**
  * UI-only projection of the composition already established by the engine.
  * It deliberately contains no category or income rule: the client uses it
@@ -86,6 +93,26 @@ function documentLabel(document: string) {
   } as Record<string, string>)[document] ?? document;
 }
 
+function getMissingFacts(input: Article110VerifierInput, sections: Article110VerifierFormSection[]): Article110MissingFact[] {
+  const missing: Article110MissingFact[] = [];
+  const add = (person: Article110VerifierPerson, key: string, label: string, value: unknown) => {
+    if (value === undefined) missing.push({ factKey: `${person.id}.${key}`, personId: person.id, label, step: 2 });
+  };
+  for (const person of input.people) {
+    const inSection = (person.relation === "spouse" || person.relation === "partner") ? sections.includes("partner")
+      : person.relation === "child" ? sections.includes("children")
+      : person.relation === "relative" ? sections.includes("relatives") : sections.includes("third_parties");
+    if (!inSection) continue;
+    if (person.relation === "partner") add(person, "partnerEstablished", "Qualité de partenaire établie", person.partnerEstablished);
+    add(person, "hasProfessionalIncome", `Revenu professionnel — ${person.label}`, person.hasProfessionalIncome);
+    add(person, "hasReplacementIncome", `Revenu de remplacement — ${person.label}`, person.hasReplacementIncome);
+    if (person.relation === "child") add(person, "receivesFamilyAllowances", `Allocations familiales — ${person.label}`, person.receivesFamilyAllowances);
+    if (person.hasProfessionalIncome === true) add(person, "professionalIncomeAmount", `Montant brut mensuel du ${person.label.toLowerCase()}`, person.professionalIncomeAmount);
+    if (person.hasReplacementIncome === true) add(person, "replacementIncomeAmount", `Montant brut mensuel du ${person.label.toLowerCase()}`, person.replacementIncomeAmount);
+  }
+  return missing;
+}
+
 /**
  * Thin UI adapter: it only turns professional facts into the contracts already
  * evaluated by the Article 110 engine. It never decides a family category.
@@ -96,6 +123,7 @@ export function evaluateArticle110Verifier(input: Article110VerifierInput) {
     factKey: `verifier.${person.id}`,
   }));
   const composition = classifyHouseholdComposition(people);
+  const missingFacts = getMissingFacts(input, getArticle110VerifierFormSections(input));
   const temporalCandidate = input.people.filter((person) => person.relation === "child" && person.firstProfessionalIncome === true);
   const child = temporalCandidate.length === 1 ? temporalCandidate[0] : undefined;
   const childFacts: RegulatoryFacts | null = child ? {
@@ -164,6 +192,7 @@ export function evaluateArticle110Verifier(input: Article110VerifierInput) {
       ...(householdAssessment.recommendedAction === "declaration_required" ? ["Introduire ou mettre à jour le C1"] : []),
       ...(householdAssessment.recommendedAction === "review_required" || isolatedAssessment?.recommendedAction === "onem_review" ? ["Revue ONEM / organisme de paiement nécessaire"] : []),
     ],
+    missingFacts,
     isolatedAssessment,
   };
 }

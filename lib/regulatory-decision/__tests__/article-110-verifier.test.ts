@@ -99,6 +99,21 @@ describe("Article 110 verifier adapter", () => {
     expect(result).toMatchObject({ expectedCategory: null, level: "review" });
   });
 
+  it("lists unanswered partner income facts as information missing", () => {
+    const result = evaluateArticle110Verifier({ thresholds, people: [{ id: "partner", label: "Conjoint", relation: "spouse" }] });
+    expect(result.missingFacts.map((fact) => fact.factKey)).toEqual(["partner.hasProfessionalIncome", "partner.hasReplacementIncome"]);
+  });
+
+  it("removes a missing income fact after an explicit no", () => {
+    const result = evaluateArticle110Verifier({ thresholds, people: [{ id: "partner", label: "Conjoint", relation: "spouse", hasProfessionalIncome: false, hasReplacementIncome: false }] });
+    expect(result.missingFacts).toEqual([]);
+  });
+
+  it("requires the gross amount only after an explicit yes", () => {
+    const result = evaluateArticle110Verifier({ thresholds, people: [{ id: "partner", label: "Conjoint", relation: "spouse", hasProfessionalIncome: true, hasReplacementIncome: false }] });
+    expect(result.missingFacts).toContainEqual(expect.objectContaining({ factKey: "partner.professionalIncomeAmount", label: "Montant brut mensuel du conjoint" }));
+  });
+
   it("surfaces C110A as an action without turning 60B into A", () => {
     const result = evaluateArticle110Verifier({ thresholds, people: [{
       id: "partner", label: "Partenaire", relation: "partner", partnerEstablished: true,

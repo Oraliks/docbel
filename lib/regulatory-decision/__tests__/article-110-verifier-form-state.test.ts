@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { canAddVerifierMember, createVerifierMember, moveVerifierMember, removeVerifierMember, updateVerifierMember } from "@/app/partenaire/outils/verificateur-situation-familiale/form-state";
+import { addSelectedVerifierMember, canAddVerifierMember, createVerifierMember, moveVerifierMember, removeVerifierMember, updateVerifierMember } from "@/app/partenaire/outils/verificateur-situation-familiale/form-state";
 
 describe("Article 110 verifier household form state", () => {
   it("updates only the intended stable id after adding and reordering partner, child and mother", () => {
@@ -18,5 +18,17 @@ describe("Article 110 verifier household form state", () => {
 
   it("allows only one spouse or partner entry", () => {
     expect(canAddVerifierMember([createVerifierMember("spouse", "spouse")], "partner")).toBe(false);
+  });
+
+  it("adds a selected child on the first click, then clears the selector", () => {
+    const added = addSelectedVerifierMember([], "child", "child-id");
+    expect(added.people).toHaveLength(1);
+    expect(added.people[0]).toMatchObject({ id: "child-id", role: "child" });
+    expect(added.selectedRole).toBe("");
+  });
+
+  it("keeps the selected role when it cannot be added", () => {
+    const people = [createVerifierMember("mother", "mother")];
+    expect(addSelectedVerifierMember(people, "mother", "another")).toEqual({ people, selectedRole: "mother" });
   });
 });

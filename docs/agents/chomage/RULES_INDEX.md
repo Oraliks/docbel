@@ -61,13 +61,24 @@
 |---------|--------------------|--------|
 | `situation_familiale_c1` | active / official | C1 = déclaration situation perso/familiale (impact droit et montant) |
 | `situation_familiale_categories` | active / high | 3 catégories A (charge famille) / N (isolé) / B (cohabitant) |
-| `situation_familiale_definitions` | to_verify / to_verify | Définitions détaillées + seuils non confirmés (page en refonte) |
+| `situation_familiale_definitions` | to_verify / official | T147 actuelle vérifiée ; aucune qualification individuelle implémentée |
 | `situation_familiale_impact_montant` | active / official | 2e période = forfait selon catégorie familiale |
+| `situation_familiale_revenu_enfant_premier_emploi` | active / official | Neutralisation temporaire de 12 mois ; échéance 110&1V à réévaluer |
+| `situation_familiale_composition_priorities` | active / official | Composition complète avant branche ; conjoint/partenaire prioritaire |
+| `situation_familiale_conjoint_revenu_am60` | active / official | AM art. 60 : revenu du conjoint/partenaire, plafond publié et examen 60A/60B |
+| `situation_familiale_third_parties` | active / official | Tiers : revenus pertinents évalués sans assimilation à un partenaire |
+| `situation_familiale_ascendants_pensions` | active / official | Allocation handicap neutralisée ; pensions d'ascendants brutes cumulées et barème daté |
+| `situation_familiale_children_only` | active / official | Enfants seuls : revenus/allocations familiales, déclaration distincte de la catégorie |
+| `situation_familiale_isole_pension_alimentaire` | active / official | Isolé : pension effectivement payée, base juridique et pièce à documenter |
+| `situation_familiale_isole_garde_alternee` | to_verify / official | Garde alternée : possibilité A à faire confirmer, sans seuil pratique |
+| `situation_familiale_cohousing_a_verifier` | to_verify / official | Co-housing : faits et pièces en revue ONEM, jamais déduit de l'adresse |
 
 ## Formulaires — `formulaires-onem.md`
 | rule_id | statut / confiance | résumé |
 |---------|--------------------|--------|
 | `formulaire_c1` | active / official | C1 fourni par l'organisme de paiement, complété par le demandeur |
+| `c1_partenaire_personne_charge` | active / official | C1-Partenaire à joindre lorsqu'une personne est déclarée financièrement à charge |
+| `c1_annexe_regis_difference` | active / official | Annexe REGIS pour expliquer une différence entre le C1 et les registres |
 | `formulaire_c4` | active / official | C4 = certificat de chômage de l'employeur (+ C4-DRS papier) |
 | `chomage_complet_procedure_demande` | active / official | Demande après occupation : C4 + C1 chez un organisme de paiement |
 | `formulaire_c109_36_demande` | active / high | C109/36-demande (versions avant/après 01/03/2026) |

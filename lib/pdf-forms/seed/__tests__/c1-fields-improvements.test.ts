@@ -29,7 +29,35 @@ describe("C1_QUESTIONS — identité", () => {
   });
 });
 
+describe("C1_QUESTIONS — premier revenu professionnel d'un enfant", () => {
+  it("collecte les faits temporels et une demande explicite sans afficher de code ONEM", () => {
+    const cohabitants = C1_QUESTIONS.find((field) => field.id === "cohabitants");
+    const first = cohabitants?.itemFields?.find((field) => field.id === "premierRevenuProfessionnel");
+    expect(first?.visibleIf).toEqual({ fieldId: "lien", op: "equals", value: "enfant" });
+    for (const id of [
+      "dateDebutPremiereActivite",
+      "dateFinEtudes",
+      "demandeNeutralisationPremierRevenu",
+    ]) {
+      const field = cohabitants?.itemFields?.find((item) => item.id === id);
+      expect(field?.pdfFieldName, id).toBe("");
+      expect(field?.label?.fr, id).not.toContain("110&1");
+      expect(field?.visibleIf).toEqual({ fieldId: "premierRevenuProfessionnel", op: "equals", value: "oui" });
+    }
+  });
+});
+
 describe("C1_QUESTIONS — activités et revenus saisis par le citoyen", () => {
+  it("collecte les faits minimaux pour l'examen Article 60 du conjoint ou partenaire", () => {
+    const cohabitants = C1_QUESTIONS.find((field) => field.id === "cohabitants");
+    const byId = new Map(cohabitants?.itemFields?.map((field) => [field.id, field]));
+    expect(byId.get("partenaireConditionsEtablies")?.visibleIf).toEqual({ fieldId: "lien", op: "equals", value: "partenaire" });
+    expect(byId.get("typeContratRevenuPro")?.visibleIf).toEqual({ fieldId: "typeRevenuPro", op: "notEquals", value: "aucun" });
+    expect(byId.get("revenuProfessionnelVariable")?.visibleIf).toEqual({ fieldId: "typeRevenuPro", op: "notEquals", value: "aucun" });
+    expect(byId.get("c110aStatut")?.visibleIf).toEqual({ fieldId: "revenuProfessionnelVariable", op: "equals", value: "oui" });
+    expect(byId.get("montantMensuelC110a")?.visibleIf).toEqual({ fieldId: "c110aStatut", op: "equals", value: "recu" });
+  });
+
   it("affiche les 15 déclarations officielles avec Non modifiable par défaut", () => {
     expect(C1_QUESTIONS.find((f) => f.id === "aExerceActivite")).toBeUndefined();
     expect(C1_QUESTIONS.find((f) => f.id === "aAutresRevenus")).toBeUndefined();
@@ -107,14 +135,8 @@ describe("C1_QUESTIONS — cohabiteType (router colocation vs ménage commun)", 
     expect(q?.options?.map((o) => o.value)).toEqual(["menage-commun", "colocation"]);
   });
 
-  it("bascule vers isolé + colocation via onSelectSet quand on choisit « colocation »", () => {
-    expect(q?.onSelectSet).toEqual({
-      whenValue: "colocation",
-      set: [
-        { fieldId: "statutFamilial", value: "isole" },
-        { fieldId: "habiteEnColocation", value: "oui" },
-      ],
-    });
+  it("ne transforme pas une colocation déclarée en catégorie familiale", () => {
+    expect(q?.onSelectSet).toBeUndefined();
   });
 
   it("situationCohabitationAmbigue et la grille cohabitants ne s'ouvrent que pour le ménage commun", () => {
@@ -125,20 +147,20 @@ describe("C1_QUESTIONS — cohabiteType (router colocation vs ménage commun)", 
   });
 });
 
-describe("C1_TRIGGERS — colocation → Annexe Regis", () => {
-  it("déclenche c1-regis quand habiteEnColocation = oui", () => {
+describe("C1_TRIGGERS — Annexe Regis", () => {
+  it("ne déclenche pas REGIS à partir d'une colocation seule", () => {
     const t = C1_TRIGGERS.find(
       (trig) => trig.whenFieldId === "habiteEnColocation" && trig.requiresFormSlug === "c1-regis",
     );
-    expect(t).toBeDefined();
-    expect(evaluateTrigger(t!, { habiteEnColocation: "oui" })).toBe(true);
-    expect(evaluateTrigger(t!, { habiteEnColocation: "non" })).toBe(false);
+    expect(t).toBeUndefined();
   });
 
-  it("le trigger existant 'situationCohabitationAmbigue' reste inchangé (autres cas ambigus)", () => {
+  it("ajoute REGIS quand une différence avec les registres est déclarée", () => {
     const t = C1_TRIGGERS.find((trig) => trig.whenFieldId === "situationCohabitationAmbigue");
     expect(t).toBeDefined();
     expect(t?.requiresFormSlug).toBe("c1-regis");
+    expect(evaluateTrigger(t!, { situationCohabitationAmbigue: "oui" })).toBe(true);
+    expect(evaluateTrigger(t!, { situationCohabitationAmbigue: "non" })).toBe(false);
   });
 
   it("les 9 déclencheurs pré-existants sont toujours présents (aucun retiré)", () => {
@@ -564,16 +586,16 @@ describe("applyC1Improvements — restrictMotifTo5Situations (Oraliks, 2026-07-0
     expect(f?.label?.fr).toBe("… comme chômeur temporaire suivant une formation en alternance");
   });
 
-  it("actif : la date de changement est obligatoire et validable dans l'étape Motif", () => {
+  it("actif : les dates spécifiques sont obligatoires et la date commune historique est masquée", () => {
     const result = applyC1Improvements([], { restrictMotifTo5Situations: true });
-    const f = result.find((q) => q.id === "dateModificationEffective");
-    expect(f?.label?.fr).toBe("Date de changement");
-    expect(f?.help?.fr).toContain("Date de la demande");
-    expect(f?.required).toBe(true);
-    // motifIntroduction est autoAnswered et absent du schéma Zod scindé
-    // par étape : la date doit donc être inconditionnelle dans ce parcours.
-    expect(f?.visibleIf).toBeUndefined();
-    expect(f && validateStepFields([f], {}, "fr").dateModificationEffective).toBeTruthy();
+    const legacy = result.find((q) => q.id === "dateModificationEffective");
+    expect(legacy?.hidden).toBe(true);
+    expect(legacy?.required).toBe(false);
+    for (const id of ["dateModificationAdresseEffective", "dateModificationSituationFamilialeEffective", "dateModificationCompteEffective"]) {
+      const f = result.find((q) => q.id === id);
+      expect(f?.required, id).toBe(true);
+      expect(f?.visibleIf, id).toBeDefined();
+    }
   });
 
   it("actif : C1_QUESTIONS partagé reste non muté (labels/visibleIf/hidden d'origine intacts)", () => {

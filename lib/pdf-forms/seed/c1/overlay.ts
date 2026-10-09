@@ -231,6 +231,9 @@ const NO_WEEKEND_DATE_IDS = new Set<string>([
   "dateDemande",
   "dateChangementOrganisme",
   "dateModificationEffective",
+  "dateModificationAdresseEffective",
+  "dateModificationSituationFamilialeEffective",
+  "dateModificationCompteEffective",
   "etudesPleinExerciceDate",
   "apprentissageAlternanceDate",
   "formationStageSyntraDate",
@@ -459,7 +462,8 @@ function applyRestrictedMotifProfile(questions: PdfFormField[]): PdfFormField[] 
       if (q.id === "dateModificationEffective") {
         return {
           ...q,
-          required: true,
+          required: false,
+          hidden: true,
           // Dans ce parcours, motifIntroduction est toujours répondu
           // automatiquement à "modification" puis retiré du schéma Zod
           // de l'étape. Garder ce visibleIf ferait donc considérer la date
@@ -469,7 +473,7 @@ function applyRestrictedMotifProfile(questions: PdfFormField[]): PdfFormField[] 
           label: { ...q.label, fr: "Date de changement" },
           help: {
             ...q.help,
-            fr: "Date de la demande de changement. Une seule date pour l'adresse, la situation personnelle/du ménage et le compte bancaire. Si vos changements n'ont pas tous la même date d'effet, faites une déclaration séparée pour chaque date différente. Ne concerne pas la cotisation syndicale ni le permis de séjour (pas de date sur le formulaire officiel).",
+            fr: "Ancienne date commune, conservée seulement pour relire les dossiers existants.",
           },
         };
       }

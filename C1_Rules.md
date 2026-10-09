@@ -205,6 +205,15 @@ appliquée silencieusement. Le C1 doit pouvoir recueillir au minimum :
 - le revenu mensuel brut normal moyen ;
 - la demande explicite de neutralisation.
 
+Dans le C1 enrichi, ces précisions sont des questions d'aide non imprimées sur une case
+officielle : elles servent à constituer la demande et ne montrent jamais un code ONEM au citoyen.
+L'organisme de paiement reste responsable de confirmer la branche de catégorie A et le code final.
+
+Avant toute indication, DocBel classe la composition complète du ménage. Un conjoint ou
+partenaire déclaré et reconnu est traité avant les enfants, les parents, les alliés et les tiers.
+Une modification de cette composition provoque une nouvelle évaluation ; elle ne remplace pas le
+dernier code officiel connu de l'ONEM.
+
 Si deux enfants travaillent mais qu'un autre enfant ouvre encore le droit aux
 allocations familiales, le code A peut rester applicable via `110&1B` selon la
 composition exacte du ménage. Le code final doit être confirmé par l'organisme

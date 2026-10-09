@@ -74,14 +74,23 @@
 - Thèmes : procédure, C4 + C1, organisme de paiement (CAPAC/CSC/FGTB/SYNOVA)
 - Priorité : 1 · Vérifié : 2026-06-30 ✅ · Statut : confirmé (présence CGSLB = à vérifier)
 
-### ONEM — Quelle est ma catégorie familiale ?
+### ONEM — T147 « Quelle est votre situation familiale ? »
 - Institution : ONEM / RVA
-- URL : https://www.onem.be/fr/quelle-est-ma-categorie-familiale
-- Thèmes : catégories A (charge de famille) / N (isolé) / B (cohabitant)
+- URL : https://www.onem.be/citoyens/chomage-complet/a-combien-seleve-votre-allocation-/quelle-est-votre-situation-familiale-
+- Thèmes : catégories, conjoint/partenaire, enfants, parents/alliés, tiers, cohabitation,
+  revenus, pension alimentaire et allocations familiales
 - Base légale : AR du 25/11/1991, art. 110 (définitions) ; AM du 26/11/1991, art. 59-63
   (cohabitation, revenus) — cf. section « Textes légaux » ci-dessous.
-- Priorité : 1 · Vérifié : 2026-06-30 🟡 · Statut : page pédagogique en refonte ; **définitions
-  légales désormais citées** (AR art. 110), seuils de revenus chiffrés (indexés) à revérifier.
+- Priorité : 1 · Vérifié : 2026-10-08 ✅ · Statut : T147 publiée par l'ONEM, mise à jour le
+  01/09/2026. Les montants indexés restent séparés des règles de qualification.
+
+### ONEM / RioLex — AM du 26/11/1991, article 60
+- Institution : ONEM / RVA
+- URL : https://rvaonemtech.powerappsportals.com/fr-FR/wetsartikel/?id=26_11_1991-1-art_60&GoTo=true&materie=329720005&submaterie=100000000&juraard=0&articlenr=
+- Thèmes : revenu professionnel de l'enfant, premier emploi après les études, neutralisation
+  temporaire de douze mois, réévaluation à l'échéance
+- Priorité : 1 · Vérifié : 2026-10-08 ✅ · Statut : commentaire ONEM du 19/10/2022 conservé
+  par RioLex ; les codes 110&1M et 110&1V sont recoupés avec le Lookup S04/S36.
 
 ---
 

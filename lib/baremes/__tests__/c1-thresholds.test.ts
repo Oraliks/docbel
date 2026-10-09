@@ -26,11 +26,18 @@ describe('C1 barème dynamique', () => {
       { article: 'Art. 60, alinéa 3', amount: 541.21 },
       { article: 'Article 61, al. 2', amount: 839.92 },
       { article: 'Article 62, al. 1', amount: 646.88 },
+      { article: 'Article 62, al. 2', amount: 700 },
+      { article: 'Article 62, al. 3 — ascendant pensionné', amount: 800 },
+      { article: 'Article 62, al. 3 — ascendant pensionné handicapé', amount: 900 },
     ]))
     expect(thresholds.spouseProfessionalMonthly).toBe(1010.63)
     expect(thresholds.childProfessionalMonthly).toBe(541.21)
     expect(thresholds.spouseReplacementMonthly).toBe(839.92)
     expect(thresholds.childReplacementMonthly).toBe(646.88)
+    expect(thresholds.ascendantPensionWithChildMonthly).toBe(700)
+    expect(thresholds.ascendantPensionMonthly).toBe(800)
+    expect(thresholds.ascendantDisabledPensionMonthly).toBe(900)
+    expect(thresholds.source?.validFrom?.toISOString().slice(0, 10)).toBe('2026-04-01')
   })
 
   it('retourne un message et les preuves quand le montant est sous le seuil', () => {

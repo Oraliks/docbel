@@ -35,11 +35,13 @@ describe("Article 110 scenario matrix", () => {
     expect(report.assertions).toMatchObject({ resultTypesTotal: true, categoriesTotal: true, incoherent: true, withoutReason: true, atLeastOneA: true, atLeastOneB: true });
   });
 
-  it("records the explicit isolated baseline and reports the absence of N without changing a rule", () => {
+  it("records the explicit isolated baseline as N without assuming it for an unknown composition", () => {
     const alone = report.scenarios.find((scenario) => scenario.id === "alone-no-special-situation");
-    expect(alone).toMatchObject({ householdComposition: "alone", category: null, potentialCategory: null });
-    expect(report.assertions.atLeastOneN).toBe(false);
-    expect(report.anomalies[0]).toContain("ne renvoie pas N");
+    const unknown = report.scenarios.find((scenario) => scenario.id === "composition-missing");
+    expect(alone).toMatchObject({ householdComposition: "alone", category: "N", potentialCategory: null });
+    expect(unknown).toMatchObject({ resultType: "information_missing", category: null });
+    expect(report.assertions.atLeastOneN).toBe(true);
+    expect(report.anomalies).toEqual([]);
   });
 
   it("keeps every generated contract justified and internally coherent", () => {

@@ -17,11 +17,11 @@ Exclusions explicites : seul_et_conjoint_incompatibles (1), cohousing_avec_famil
 
 ## Résultats
 
-- Décision déterminée : 90
-- Informations manquantes : 52
+- Décision déterminée : 93
+- Informations manquantes : 53
 - Pièce à fournir : 11
 - Décision ONEM requise : 13
-- Non automatisé : 6
+- Non automatisé : 2
 - Incohérents : 0
 - Sans justification : 0
 
@@ -35,10 +35,11 @@ Exclusions explicites : seul_et_conjoint_incompatibles (1), cohousing_avec_famil
 - children_only : 63
 - children_relatives_and_third_parties : 1
 - cohousing : 8
-- mixed_or_unsupported : 6
+- mixed_or_unsupported : 2
 - relatives_and_third_parties : 1
 - relatives_only : 36
 - spouse_or_partner : 48
+- third_parties_only : 4
 
 ## Couverture par dimension
 
@@ -86,10 +87,6 @@ Exclusions explicites : seul_et_conjoint_incompatibles (1), cohousing_avec_famil
 ## mixed_or_unsupported
 
 - 1 scénario(s) — unknown — Le classificateur retourne mixed_or_unsupported lorsqu’une relation est inconnue ou qu’un partenaire n’est pas établi. Diagnostic A.
-- 1 scénario(s) — third_party — Le classificateur retourne mixed_or_unsupported lorsqu’une relation est inconnue ou qu’un partenaire n’est pas établi. Diagnostic A.
-- 1 scénario(s) — third_party — Le classificateur retourne mixed_or_unsupported lorsqu’une relation est inconnue ou qu’un partenaire n’est pas établi. Diagnostic A.
-- 1 scénario(s) — third_party — Le classificateur retourne mixed_or_unsupported lorsqu’une relation est inconnue ou qu’un partenaire n’est pas établi. Diagnostic A.
-- 1 scénario(s) — third_party — Le classificateur retourne mixed_or_unsupported lorsqu’une relation est inconnue ou qu’un partenaire n’est pas établi. Diagnostic A.
 - 1 scénario(s) — partner non établi — Le classificateur retourne mixed_or_unsupported lorsqu’une relation est inconnue ou qu’un partenaire n’est pas établi. Diagnostic A.
 
 ## Co-housing
@@ -106,7 +103,7 @@ Exclusions explicites : seul_et_conjoint_incompatibles (1), cohousing_avec_famil
 | Scénario | Branche | Résultat | Catégorie | Justification |
 | --- | --- | --- | --- | --- |
 | composition-missing | alone | information_missing | — | La composition réelle du ménage n'est pas encore renseignée. |
-| alone-no-special-situation | alone | onem_decision_required | — | Les éléments déclarés nécessitent une vérification avant de déterminer la catégorie. |
+| alone-no-special-situation | alone | decision_determined | N | Le chômeur a déclaré vivre seul, sans autre situation particulière établie. |
 | spouse-missing-income | spouse_or_partner | information_missing | — | Des informations sont nécessaires pour évaluer la situation familiale. |
 | spouse-no-income | spouse_or_partner | decision_determined | A | Le conjoint ou partenaire est prioritaire pour l'évaluation de la situation familiale. |
 | spouse-cdi-below | spouse_or_partner | decision_determined | A | Le conjoint ou partenaire est prioritaire pour l'évaluation de la situation familiale. |
@@ -261,10 +258,10 @@ Exclusions explicites : seul_et_conjoint_incompatibles (1), cohousing_avec_famil
 | comb-relatives-pension-proof-missing-pension-proof-missing | relatives_only | document_required | — | La catégorie résulte de la composition du ménage et des revenus déclarés. |
 | comb-relatives-pension-proof-missing-disability | relatives_only | document_required | — | La catégorie résulte de la composition du ménage et des revenus déclarés. |
 | comb-relatives-disability-disability | relatives_only | decision_determined | B | La catégorie résulte de la composition du ménage et des revenus déclarés. |
-| comb-composition-third-no-income | mixed_or_unsupported | not_automated | — | Les éléments déclarés nécessitent une vérification avant de déterminer la catégorie. |
-| comb-composition-third-professional-income | mixed_or_unsupported | not_automated | — | Les éléments déclarés nécessitent une vérification avant de déterminer la catégorie. |
-| comb-composition-third-replacement-income | mixed_or_unsupported | not_automated | — | Les éléments déclarés nécessitent une vérification avant de déterminer la catégorie. |
-| comb-composition-third-income-unknown | mixed_or_unsupported | not_automated | — | Des informations sont nécessaires pour évaluer la situation familiale. |
+| comb-composition-third-no-income | third_parties_only | onem_decision_required | — | Les éléments déclarés nécessitent une vérification avant de déterminer la catégorie. |
+| comb-composition-third-professional-income | third_parties_only | decision_determined | B | La catégorie résulte de la composition du ménage et des revenus déclarés. |
+| comb-composition-third-replacement-income | third_parties_only | decision_determined | B | La catégorie résulte de la composition du ménage et des revenus déclarés. |
+| comb-composition-third-income-unknown | third_parties_only | information_missing | — | Des informations sont nécessaires pour évaluer la situation familiale. |
 | comb-composition-child-relative | children_and_relatives | decision_determined | A | La catégorie résulte de la composition du ménage et des revenus déclarés. |
 | comb-composition-child-third | children_and_third_parties | decision_determined | A | La catégorie résulte de la composition du ménage et des revenus déclarés. |
 | comb-composition-relative-third | relatives_and_third_parties | decision_determined | A | La catégorie résulte de la composition du ménage et des revenus déclarés. |
@@ -282,30 +279,30 @@ Exclusions explicites : seul_et_conjoint_incompatibles (1), cohousing_avec_famil
 
 ### Types de résultat
 
-- Déterminés : 90
-- Informations manquantes : 52
+- Déterminés : 93
+- Informations manquantes : 53
 - Pièces : 11
 - Décisions ONEM : 13
-- Non automatisés : 6
+- Non automatisés : 2
 - TOTAL : 172
 
 ### Catégories déterminées
 
 - A : 48
-- B : 42
-- N : 0
-- TOTAL : 90
+- B : 44
+- N : 1
+- TOTAL : 93
 
 ### Couverture des compositions
 
 | Composition | Scénarios | Déterminés | Incomplets | Pièces | ONEM | Non automatisés |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| seul | 9 | 0 | 0 | 0 | 9 | 0 |
+| seul | 9 | 1 | 0 | 0 | 8 | 0 |
 | conjoint | 23 | 6 | 15 | 1 | 1 | 0 |
 | partenaire | 22 | 4 | 15 | 1 | 1 | 1 |
 | enfants seuls | 68 | 42 | 22 | 2 | 2 | 0 |
 | parents seuls | 36 | 29 | 0 | 7 | 0 | 0 |
-| tiers seul | 4 | 0 | 0 | 0 | 0 | 4 |
+| tiers seul | 4 | 2 | 1 | 0 | 1 | 0 |
 | enfants + parents | 1 | 1 | 0 | 0 | 0 | 0 |
 | enfants + tiers | 2 | 2 | 0 | 0 | 0 | 0 |
 | parents + tiers | 1 | 1 | 0 | 0 | 0 | 0 |
@@ -315,16 +312,20 @@ Exclusions explicites : seul_et_conjoint_incompatibles (1), cohousing_avec_famil
 ### mixed_or_unsupported
 
 - unknown-relation — composition mixed_or_unsupported; faits : unknown; attendu si précisé : relation à qualifier; Le classificateur retourne mixed_or_unsupported lorsqu’une relation est inconnue ou qu’un partenaire n’est pas établi.
-- comb-composition-third-no-income — composition mixed_or_unsupported; faits : third_party; attendu si précisé : tiers seul : branche non automatisée; Le classificateur retourne mixed_or_unsupported lorsqu’une relation est inconnue ou qu’un partenaire n’est pas établi.
-- comb-composition-third-professional-income — composition mixed_or_unsupported; faits : third_party; attendu si précisé : tiers seul : branche non automatisée; Le classificateur retourne mixed_or_unsupported lorsqu’une relation est inconnue ou qu’un partenaire n’est pas établi.
-- comb-composition-third-replacement-income — composition mixed_or_unsupported; faits : third_party; attendu si précisé : tiers seul : branche non automatisée; Le classificateur retourne mixed_or_unsupported lorsqu’une relation est inconnue ou qu’un partenaire n’est pas établi.
-- comb-composition-third-income-unknown — composition mixed_or_unsupported; faits : third_party; attendu si précisé : tiers seul : branche non automatisée; Le classificateur retourne mixed_or_unsupported lorsqu’une relation est inconnue ou qu’un partenaire n’est pas établi.
 - comb-composition-partner-ambiguous — composition mixed_or_unsupported; faits : partner non établi; attendu si précisé : conjoint ou partenaire établi; Le classificateur retourne mixed_or_unsupported lorsqu’une relation est inconnue ou qu’un partenaire n’est pas établi.
 
 ### Anomalies
 
-- ANOMALIE DE COUVERTURE : le scénario explicite « vit seul sans situation particulière » est généré, mais le moteur actuel ne renvoie pas N ; il renvoie une revue sans catégorie attendue.
+- Aucune.
 
-Assertions : types=true, catégories=true, incohérents=true, justifications=true, A=true, B=true, N=false.
+Assertions : types=true, catégories=true, incohérents=true, justifications=true, A=true, B=true, N=true.
 
-Durée : 33.86 ms
+Durée : 32.75 ms
+
+## Décisions ONEM par branche
+
+- alimony : 1
+- alternating_care : 1
+- cohousing : 8
+- spouse_or_partner : 2
+- third_parties_only : 1

@@ -35,6 +35,7 @@ export type Article110MatrixReport = {
   byResultType: Record<Article110ResultType, number>;
   byCategory: Record<"A" | "B" | "N", number>;
   byBranch: Record<string, number>;
+  onemByBranch: Record<string, number>;
   incoherent: string[];
   withoutReason: string[];
   space: { raw: number; invalid: number; duplicates: number; executed: number; exclusions: Record<string, number> };
@@ -212,6 +213,7 @@ export function evaluateArticle110ScenarioMatrix(thresholds: C1BaremeThresholds,
   const byResultType = Object.fromEntries(resultTypes.map((type) => [type, scenarios.filter((scenario) => scenario.resultType === type).length])) as Record<Article110ResultType, number>;
   const byCategory = Object.fromEntries((["A", "B", "N"] as const).map((category) => [category, scenarios.filter((scenario) => scenario.resultType === "decision_determined" && scenario.category === category).length])) as Record<"A" | "B" | "N", number>;
   const byBranch = Object.fromEntries([...new Set(scenarios.map((scenario) => scenario.branch))].sort().map((branch) => [branch, scenarios.filter((scenario) => scenario.branch === branch).length]));
+  const onemByBranch = Object.fromEntries([...new Set(scenarios.filter((scenario) => scenario.resultType === "onem_decision_required").map((scenario) => scenario.branch))].sort().map((branch) => [branch, scenarios.filter((scenario) => scenario.resultType === "onem_decision_required" && scenario.branch === branch).length]));
   const incoherent = scenarios.filter((scenario) => scenario.resultType === "decision_determined" && scenario.category === null).map((scenario) => scenario.id);
   const withoutReason = scenarios.filter((scenario) => !scenario.reason.trim()).map((scenario) => scenario.id);
   const coverage = {
@@ -272,6 +274,7 @@ export function evaluateArticle110ScenarioMatrix(thresholds: C1BaremeThresholds,
     byResultType,
     byCategory,
     byBranch,
+    onemByBranch,
     incoherent,
     withoutReason,
     space: { raw: space.raw, invalid: space.invalid, duplicates: space.duplicates, executed: scenarios.length, exclusions: space.exclusions },

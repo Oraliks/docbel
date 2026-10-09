@@ -3,16 +3,16 @@
   "method": "Exploration combinatoire déterministe des dimensions réellement lues par le moteur ; les états incompatibles sont écartés avant exécution et les ménages symétriques sont dédupliqués par signature canonique.",
   "total": 172,
   "byResultType": {
-    "decision_determined": 90,
-    "information_missing": 52,
+    "decision_determined": 93,
+    "information_missing": 53,
     "document_required": 11,
     "onem_decision_required": 13,
-    "not_automated": 6
+    "not_automated": 2
   },
   "byCategory": {
     "A": 48,
-    "B": 42,
-    "N": 0
+    "B": 44,
+    "N": 1
   },
   "byBranch": {
     "alimony": 2,
@@ -23,10 +23,18 @@
     "children_only": 63,
     "children_relatives_and_third_parties": 1,
     "cohousing": 8,
-    "mixed_or_unsupported": 6,
+    "mixed_or_unsupported": 2,
     "relatives_and_third_parties": 1,
     "relatives_only": 36,
-    "spouse_or_partner": 48
+    "spouse_or_partner": 48,
+    "third_parties_only": 4
+  },
+  "onemByBranch": {
+    "alimony": 1,
+    "alternating_care": 1,
+    "cohousing": 8,
+    "spouse_or_partner": 2,
+    "third_parties_only": 1
   },
   "incoherent": [],
   "withoutReason": [],
@@ -95,54 +103,6 @@
     },
     {
       "scenarioIds": [
-        "comb-composition-third-no-income"
-      ],
-      "signature": "[{hasProfessionalIncome:false,hasReplacementIncome:false,relation:\"third_party\"}]",
-      "count": 1,
-      "facts": "third_party",
-      "householdComposition": "mixed_or_unsupported",
-      "classifierReason": "Le classificateur retourne mixed_or_unsupported lorsqu’une relation est inconnue ou qu’un partenaire n’est pas établi.",
-      "expectedBranchIfKnown": "tiers seul : branche non automatisée",
-      "diagnosis": "A"
-    },
-    {
-      "scenarioIds": [
-        "comb-composition-third-professional-income"
-      ],
-      "signature": "[{hasProfessionalIncome:true,hasReplacementIncome:false,professionalIncomeAmount:1000,relation:\"third_party\"}]",
-      "count": 1,
-      "facts": "third_party",
-      "householdComposition": "mixed_or_unsupported",
-      "classifierReason": "Le classificateur retourne mixed_or_unsupported lorsqu’une relation est inconnue ou qu’un partenaire n’est pas établi.",
-      "expectedBranchIfKnown": "tiers seul : branche non automatisée",
-      "diagnosis": "A"
-    },
-    {
-      "scenarioIds": [
-        "comb-composition-third-replacement-income"
-      ],
-      "signature": "[{hasProfessionalIncome:false,hasReplacementIncome:true,relation:\"third_party\",replacementIncomeAmount:1000}]",
-      "count": 1,
-      "facts": "third_party",
-      "householdComposition": "mixed_or_unsupported",
-      "classifierReason": "Le classificateur retourne mixed_or_unsupported lorsqu’une relation est inconnue ou qu’un partenaire n’est pas établi.",
-      "expectedBranchIfKnown": "tiers seul : branche non automatisée",
-      "diagnosis": "A"
-    },
-    {
-      "scenarioIds": [
-        "comb-composition-third-income-unknown"
-      ],
-      "signature": "[{relation:\"third_party\"}]",
-      "count": 1,
-      "facts": "third_party",
-      "householdComposition": "mixed_or_unsupported",
-      "classifierReason": "Le classificateur retourne mixed_or_unsupported lorsqu’une relation est inconnue ou qu’un partenaire n’est pas établi.",
-      "expectedBranchIfKnown": "tiers seul : branche non automatisée",
-      "diagnosis": "A"
-    },
-    {
-      "scenarioIds": [
         "comb-composition-partner-ambiguous"
       ],
       "signature": "[{partnerEstablished:false,relation:\"partner\"}]",
@@ -158,10 +118,10 @@
     {
       "composition": "seul",
       "total": 9,
-      "determined": 0,
+      "determined": 1,
       "information": 0,
       "document": 0,
-      "onem": 9,
+      "onem": 8,
       "notAutomated": 0
     },
     {
@@ -203,11 +163,11 @@
     {
       "composition": "tiers seul",
       "total": 4,
-      "determined": 0,
-      "information": 0,
+      "determined": 2,
+      "information": 1,
       "document": 0,
-      "onem": 0,
-      "notAutomated": 4
+      "onem": 1,
+      "notAutomated": 0
     },
     {
       "composition": "enfants + parents",
@@ -262,12 +222,10 @@
     "withoutReason": true,
     "atLeastOneA": true,
     "atLeastOneB": true,
-    "atLeastOneN": false
+    "atLeastOneN": true
   },
-  "anomalies": [
-    "ANOMALIE DE COUVERTURE : le scénario explicite « vit seul sans situation particulière » est généré, mais le moteur actuel ne renvoie pas N ; il renvoie une revue sans catégorie attendue."
-  ],
-  "durationMs": 33.86,
+  "anomalies": [],
+  "durationMs": 32.75,
   "scenarios": [
     {
       "id": "composition-missing",
@@ -309,17 +267,18 @@
         },
         "cohousingClaim": false
       },
-      "resultType": "onem_decision_required",
-      "category": null,
+      "resultType": "decision_determined",
+      "category": "N",
       "potentialCategory": null,
       "householdComposition": "alone",
-      "reason": "Les éléments déclarés nécessitent une vérification avant de déterminer la catégorie.",
+      "reason": "Le chômeur a déclaré vivre seul, sans autre situation particulière établie.",
       "decisiveFacts": [
         "Le chômeur a déclaré vivre seul"
       ],
       "missingFacts": [],
       "missingDocuments": [],
       "actions": [],
+      "potentialOutcome": "Isolé",
       "declarationRequired": false,
       "sourceRuleIds": [
         "situation_familiale_composition_priorities"
@@ -7029,7 +6988,7 @@
     {
       "id": "comb-composition-third-no-income",
       "label": "Composition croisée",
-      "branch": "mixed_or_unsupported",
+      "branch": "third_parties_only",
       "facts": {
         "people": [
           {
@@ -7041,10 +7000,10 @@
           }
         ]
       },
-      "resultType": "not_automated",
+      "resultType": "onem_decision_required",
       "category": null,
       "potentialCategory": null,
-      "householdComposition": "mixed_or_unsupported",
+      "householdComposition": "third_parties_only",
       "reason": "Les éléments déclarés nécessitent une vérification avant de déterminer la catégorie.",
       "decisiveFacts": [
         "1 personne(s) dans le ménage"
@@ -7054,13 +7013,14 @@
       "actions": [],
       "declarationRequired": true,
       "sourceRuleIds": [
-        "situation_familiale_composition_priorities"
+        "situation_familiale_composition_priorities",
+        "situation_familiale_third_parties"
       ]
     },
     {
       "id": "comb-composition-third-professional-income",
       "label": "Composition croisée",
-      "branch": "mixed_or_unsupported",
+      "branch": "third_parties_only",
       "facts": {
         "people": [
           {
@@ -7073,26 +7033,28 @@
           }
         ]
       },
-      "resultType": "not_automated",
-      "category": null,
+      "resultType": "decision_determined",
+      "category": "B",
       "potentialCategory": null,
-      "householdComposition": "mixed_or_unsupported",
-      "reason": "Les éléments déclarés nécessitent une vérification avant de déterminer la catégorie.",
+      "householdComposition": "third_parties_only",
+      "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
       "decisiveFacts": [
         "1 personne(s) dans le ménage"
       ],
       "missingFacts": [],
       "missingDocuments": [],
       "actions": [],
+      "potentialOutcome": "Cohabitant",
       "declarationRequired": true,
       "sourceRuleIds": [
-        "situation_familiale_composition_priorities"
+        "situation_familiale_composition_priorities",
+        "situation_familiale_third_parties"
       ]
     },
     {
       "id": "comb-composition-third-replacement-income",
       "label": "Composition croisée",
-      "branch": "mixed_or_unsupported",
+      "branch": "third_parties_only",
       "facts": {
         "people": [
           {
@@ -7105,26 +7067,28 @@
           }
         ]
       },
-      "resultType": "not_automated",
-      "category": null,
+      "resultType": "decision_determined",
+      "category": "B",
       "potentialCategory": null,
-      "householdComposition": "mixed_or_unsupported",
-      "reason": "Les éléments déclarés nécessitent une vérification avant de déterminer la catégorie.",
+      "householdComposition": "third_parties_only",
+      "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
       "decisiveFacts": [
         "1 personne(s) dans le ménage"
       ],
       "missingFacts": [],
       "missingDocuments": [],
       "actions": [],
+      "potentialOutcome": "Cohabitant",
       "declarationRequired": true,
       "sourceRuleIds": [
-        "situation_familiale_composition_priorities"
+        "situation_familiale_composition_priorities",
+        "situation_familiale_third_parties"
       ]
     },
     {
       "id": "comb-composition-third-income-unknown",
       "label": "Composition croisée",
-      "branch": "mixed_or_unsupported",
+      "branch": "third_parties_only",
       "facts": {
         "people": [
           {
@@ -7134,10 +7098,10 @@
           }
         ]
       },
-      "resultType": "not_automated",
+      "resultType": "information_missing",
       "category": null,
       "potentialCategory": null,
-      "householdComposition": "mixed_or_unsupported",
+      "householdComposition": "third_parties_only",
       "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
       "decisiveFacts": [
         "1 personne(s) dans le ménage"
@@ -7152,7 +7116,8 @@
       ],
       "declarationRequired": true,
       "sourceRuleIds": [
-        "situation_familiale_composition_priorities"
+        "situation_familiale_composition_priorities",
+        "situation_familiale_third_parties"
       ]
     },
     {

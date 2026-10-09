@@ -4,6 +4,7 @@ export type HouseholdCompositionKind =
   | "children_only"
   | "children_and_relatives"
   | "relatives_only"
+  | "third_parties_only"
   | "children_and_third_parties"
   | "relatives_and_third_parties"
   | "children_relatives_and_third_parties"
@@ -95,6 +96,7 @@ export function classifyHouseholdComposition(members: HouseholdMemberFact[]): Ho
   if (children && !relatives && !thirdParties) return { kind: "children_only", members, factKeys, needsReview: false };
   if (children && relatives && !thirdParties) return { kind: "children_and_relatives", members, factKeys, needsReview: true };
   if (!children && relatives && !thirdParties) return { kind: "relatives_only", members, factKeys, needsReview: true };
+  if (!children && !relatives && thirdParties) return { kind: "third_parties_only", members, factKeys, needsReview: true };
   if (children && !relatives && thirdParties) return { kind: "children_and_third_parties", members, factKeys, needsReview: true };
   if (!children && relatives && thirdParties) return { kind: "relatives_and_third_parties", members, factKeys, needsReview: true };
   if (children && relatives && thirdParties) return { kind: "children_relatives_and_third_parties", members, factKeys, needsReview: true };
@@ -251,7 +253,7 @@ export function assessHouseholdBranch(input: {
       : { ...relativeBase, status: "probable", expectedCategory: "B", operationalArticle: "none", incomeAssessment: "relevant", monthlyPaymentAssessment: "B_RATE", recommendedAction: action(officialOnemCode, "declaration_required"), pensionAssessment: { status: "VERIFIED", grossTotal: totalPension, threshold, document: "SPF_PENSIONS_PROOF", proofStatus: "received" } };
   }
 
-  if (composition.kind === "children_and_third_parties" || composition.kind === "relatives_and_third_parties" || composition.kind === "children_relatives_and_third_parties") {
+  if (composition.kind === "third_parties_only" || composition.kind === "children_and_third_parties" || composition.kind === "relatives_and_third_parties" || composition.kind === "children_relatives_and_third_parties") {
     const thirdParties = composition.members.filter((member) => member.relation === "third_party");
     const unknownIncome = thirdParties.some((member) => member.hasProfessionalIncome === undefined && hasRelevantReplacementIncome(member) === undefined);
     const relevantThirdIncome = thirdParties.some((member) => member.hasProfessionalIncome === true || hasRelevantReplacementIncome(member) === true);

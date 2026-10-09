@@ -89,6 +89,7 @@ export function getArticle110VerifierFormSections(input: Pick<Article110Verifier
     case "children_only": return ["children"];
     case "children_and_relatives": return ["children", "relatives"];
     case "relatives_only": return ["relatives"];
+    case "third_parties_only": return ["third_parties"];
     case "children_and_third_parties": return ["children", "third_parties"];
     case "relatives_and_third_parties": return ["relatives", "third_parties"];
     case "children_relatives_and_third_parties": return ["children", "relatives", "third_parties"];
@@ -114,6 +115,7 @@ function resultReason(input: Article110VerifierInput, compositionKnown: boolean,
   if (!compositionKnown) return "La composition réelle du ménage n'est pas encore renseignée.";
   if (missingFacts.length > 0) return "Des informations sont nécessaires pour évaluer la situation familiale.";
   if (cohousing) return "La situation de co-housing est appréciée par l’ONEM sur la situation réelle.\n\nLe Bureau du chômage peut effectuer une enquête avant de décider si le chômeur peut être considéré comme isolé.";
+  if (input.isAloneExplicit && input.people.length === 0 && input.alimony?.enabled !== true && input.alternatingCare?.enabled !== true) return "Le chômeur a déclaré vivre seul, sans autre situation particulière établie.";
   if (householdStatus === "needs_review") return "Les éléments déclarés nécessitent une vérification avant de déterminer la catégorie.";
   if (input.people.some((person) => person.relation === "spouse" || person.relation === "partner")) return "Le conjoint ou partenaire est prioritaire pour l'évaluation de la situation familiale.";
   if (input.isAloneExplicit) return "Le chômeur a déclaré vivre seul et aucune autre situation particulière n'est établie.";
@@ -126,12 +128,14 @@ function resultTypeFor(input: {
   missingFacts: Article110MissingFact[];
   missingDocuments: string[];
   cohousing: boolean;
+  explicitMinimalAlone: boolean;
   householdStatus: string;
   isolatedStatus?: string;
   expectedCategory: "A" | "B" | "N" | null;
 }): Article110ResultType {
   if (input.composition.kind === "mixed_or_unsupported") return "not_automated";
   if (!input.compositionKnown || input.missingFacts.length > 0) return "information_missing";
+  if (input.explicitMinimalAlone) return "decision_determined";
   if (input.cohousing) return "onem_decision_required";
   if (input.missingDocuments.length > 0) return "document_required";
   if (input.householdStatus === "needs_review" || input.isolatedStatus === "needs_review" || input.isolatedStatus === "pending_judgment") return "onem_decision_required";
@@ -217,8 +221,9 @@ export function evaluateArticle110Verifier(input: Article110VerifierInput) {
   const isolatedSituationProvided = input.isAloneExplicit || input.cohousingClaim === true || input.alimony?.enabled === true || input.alternatingCare?.enabled === true;
   const isolatedAssessment = isolatedSituationProvided ? assessIsolatedHouseholdClaim(isolatedPayload, composition, input.officialOnemCode, { regisCompleted: input.cohousingDocuments?.regis }) : undefined;
   const compositionKnown = isolatedSituationProvided || input.people.length > 0;
+  const explicitMinimalAlone = input.isAloneExplicit === true && input.people.length === 0 && !isolatedAssessment;
   const effectiveMissingFacts = compositionKnown ? missingFacts : [{ factKey: "composition", label: "Indiquer si le chômeur vit seul ou ajouter une personne au ménage.", step: 1 as const }];
-  const expectedCategory = compositionKnown ? (isolatedAssessment ? isolatedAssessment.expectedCategory : householdAssessment.expectedCategory) : null;
+  const expectedCategory = compositionKnown ? (isolatedAssessment ? isolatedAssessment.expectedCategory : explicitMinimalAlone ? "N" : householdAssessment.expectedCategory) : null;
   const missingDocuments = [
     ...(householdAssessment.requiredExternalDocument?.status === "required" ? ["C110A du mois concerné"] : []),
     ...(householdAssessment.pensionAssessment?.status === "NEEDS_DOCUMENT" ? ["Preuve SPF Pensions du mois concerné"] : []),
@@ -227,6 +232,7 @@ export function evaluateArticle110Verifier(input: Article110VerifierInput) {
   const isCohousing = isolatedAssessment?.branch === "cohousing";
   const reason = resultReason(input, compositionKnown, effectiveMissingFacts, householdAssessment.status, isCohousing);
   const status = !compositionKnown || effectiveMissingFacts.length > 0 ? "incomplete" as const
+    : explicitMinimalAlone ? "complete" as const
     : isCohousing || householdAssessment.status === "needs_review" || isolatedAssessment?.status === "needs_review" || isolatedAssessment?.status === "pending_judgment" ? "review" as const
     : missingDocuments.length > 0 ? "document" as const : "complete" as const;
   const resultType = resultTypeFor({
@@ -235,6 +241,7 @@ export function evaluateArticle110Verifier(input: Article110VerifierInput) {
     missingFacts: effectiveMissingFacts,
     missingDocuments,
     cohousing: isCohousing,
+    explicitMinimalAlone,
     householdStatus: householdAssessment.status,
     isolatedStatus: isolatedAssessment?.status,
     expectedCategory,
@@ -265,7 +272,7 @@ export function evaluateArticle110Verifier(input: Article110VerifierInput) {
     reviewReason: status === "review" ? reason : undefined,
     officialOnemState: input.officialOnemCode,
     expectedOnemState: expectedCategory,
-    level: !compositionKnown ? "information" as const : isolatedAssessment?.status === "needs_review" || isolatedAssessment?.status === "pending_judgment" || householdAssessment.status === "needs_review" ? "review" as const
+    level: !compositionKnown ? "information" as const : explicitMinimalAlone ? "confirmed" as const : isolatedAssessment?.status === "needs_review" || isolatedAssessment?.status === "pending_judgment" || householdAssessment.status === "needs_review" ? "review" as const
       : isolatedAssessment?.status === "needs_information" || householdAssessment.status === "needs_information" ? "information" as const : "confirmed" as const,
     declarationRequired: input.people.length > 0,
     sourceRuleIds: [...new Set([

@@ -200,7 +200,7 @@ export function evaluateArticle110ScenarioMatrix(thresholds: C1BaremeThresholds,
     return {
       id,
       label,
-      branch: result.isolatedAssessment?.branch ?? result.composition.kind,
+      branch: result.cohousing?.branch ?? result.isolatedAssessment?.branch ?? result.composition.kind,
       facts: input,
       officialOnemState: result.officialOnemState,
       resultType: result.resultType,

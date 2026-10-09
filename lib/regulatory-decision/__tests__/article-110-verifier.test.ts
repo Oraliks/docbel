@@ -47,7 +47,7 @@ describe("Article 110 verifier adapter", () => {
     const professionalIncome = evaluateArticle110Verifier({ thresholds, people: [{ id: "third", label: "Ami", relation: "third_party", hasProfessionalIncome: true, professionalIncomeAmount: 1_000, hasReplacementIncome: false }] });
     const replacementIncome = evaluateArticle110Verifier({ thresholds, people: [{ id: "third", label: "Ami", relation: "third_party", hasProfessionalIncome: false, hasReplacementIncome: true, replacementIncomeAmount: 1_000 }] });
     const unknownIncome = evaluateArticle110Verifier({ thresholds, people: [{ id: "third", label: "Ami", relation: "third_party" }] });
-    expect(withoutIncome).toMatchObject({ composition: { kind: "third_parties_only" }, resultType: "onem_decision_required" });
+    expect(withoutIncome).toMatchObject({ composition: { kind: "third_parties_only" }, category: "B", resultType: "not_automated", onemDecisionStatus: "not_required" });
     expect(professionalIncome).toMatchObject({ expectedCategory: "B", resultType: "decision_determined" });
     expect(replacementIncome).toMatchObject({ expectedCategory: "B", resultType: "decision_determined" });
     expect(unknownIncome).toMatchObject({ resultType: "information_missing" });
@@ -190,6 +190,13 @@ describe("Article 110 verifier adapter", () => {
   it("keeps co-housing in B while surfacing an established alimony outcome as potential A", () => {
     const result = evaluateArticle110Verifier({ thresholds, people: [], isAloneExplicit: true, cohousingClaim: true, cohousingDocuments: { lease: true, regis: true, swornStatement: true }, alimony: { enabled: true, beneficiary: "enfant-mineur", paymentEffective: true, legalBasis: "decision-judiciaire", documentStatus: "en-main" } });
     expect(result).toMatchObject({ category: "B", potentialCategory: "A", onemDecisionStatus: "required" });
+  });
+
+  it("does not turn missing facts or documents into an ONEM decision", () => {
+    const information = evaluateArticle110Verifier({ thresholds, people: [] });
+    const document = evaluateArticle110Verifier({ thresholds, people: [], alimony: { enabled: true, documentStatus: "en-cours" } });
+    expect(information).toMatchObject({ informationStatus: "incomplete", onemDecisionStatus: "not_required" });
+    expect(document).toMatchObject({ documentStatus: "required", onemDecisionStatus: "not_required" });
   });
 
   it("never returns an unexplained incomplete result", () => {

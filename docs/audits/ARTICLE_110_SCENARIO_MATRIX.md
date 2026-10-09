@@ -28,8 +28,8 @@ Les catégories A, B et N sont exhaustives ; les états suivants peuvent se cumu
 
 - Informations à compléter : 55
 - Pièces à fournir : 20
-- Décision ONEM nécessaire : 26
-- Automatisation partielle : 79
+- Décision ONEM nécessaire : 9
+- Automatisation partielle : 73
 - Non automatisé : 2
 
 ## Droits plus avantageux potentiels
@@ -40,24 +40,24 @@ Les catégories A, B et N sont exhaustives ; les états suivants peuvent se cumu
 
 ## Résultats techniques historiques
 
-- Décision déterminée : 93
+- Décision déterminée : 97
 - Informations manquantes : 53
 - Pièce à fournir : 11
-- Décision ONEM requise : 15
-- Non automatisé : 2
+- Décision ONEM requise : 10
+- Non automatisé : 3
 - Incohérents : 0
 - Sans justification : 0
 
 ## Couverture par branche
 
-- alimony : 3
+- alimony : 2
 - alone : 2
 - alternating_care : 2
 - children_and_relatives : 1
 - children_and_third_parties : 2
 - children_only : 63
 - children_relatives_and_third_parties : 1
-- cohousing : 9
+- cohousing : 10
 - mixed_or_unsupported : 2
 - relatives_and_third_parties : 1
 - relatives_only : 36
@@ -122,14 +122,14 @@ Sans état ONEM confirmé, la catégorie en l’état est **B** et une décision
 
 | Scénario | Branche | Catégorie | États | Potentiel | Justification |
 | --- | --- | --- | --- | --- | --- |
-| composition-missing | alone | B | info: incomplete, document: complete, ONEM: required | — | La composition réelle du ménage n'est pas encore renseignée. |
-| alone-no-special-situation | alone | N | info: complete, document: complete, ONEM: required | — | Le chômeur a déclaré vivre seul, sans autre situation particulière établie. |
+| composition-missing | alone | B | info: incomplete, document: complete, ONEM: not_required | — | La composition réelle du ménage n'est pas encore renseignée. |
+| alone-no-special-situation | alone | N | info: complete, document: complete, ONEM: not_required | — | Le chômeur a déclaré vivre seul, sans autre situation particulière établie. |
 | spouse-missing-income | spouse_or_partner | B | info: incomplete, document: complete, ONEM: not_required | — | Des informations sont nécessaires pour évaluer la situation familiale. |
 | spouse-no-income | spouse_or_partner | A | info: complete, document: complete, ONEM: not_required | — | Le conjoint ou partenaire est prioritaire pour l'évaluation de la situation familiale. |
 | spouse-cdi-below | spouse_or_partner | A | info: complete, document: complete, ONEM: not_required | — | Le conjoint ou partenaire est prioritaire pour l'évaluation de la situation familiale. |
 | spouse-cdi-at-threshold | spouse_or_partner | A | info: complete, document: complete, ONEM: not_required | — | Le conjoint ou partenaire est prioritaire pour l'évaluation de la situation familiale. |
 | spouse-cdi-above | spouse_or_partner | B | info: complete, document: complete, ONEM: not_required | — | Le conjoint ou partenaire est prioritaire pour l'évaluation de la situation familiale. |
-| spouse-variable-c110a-missing | spouse_or_partner | B | info: complete, document: required, ONEM: required | — | Les éléments déclarés nécessitent une vérification avant de déterminer la catégorie. |
+| spouse-variable-c110a-missing | spouse_or_partner | B | info: complete, document: required, ONEM: not_required | — | Les éléments déclarés nécessitent une vérification avant de déterminer la catégorie. |
 | children-allowances | children_only | A | info: complete, document: complete, ONEM: not_required | — | La catégorie résulte de la composition du ménage et des revenus déclarés. |
 | children-income | children_only | B | info: complete, document: complete, ONEM: not_required | — | La catégorie résulte de la composition du ménage et des revenus déclarés. |
 | children-110-1m | children_only | A | info: complete, document: complete, ONEM: not_required | — | La catégorie résulte de la composition du ménage et des revenus déclarés. |
@@ -137,14 +137,14 @@ Sans état ONEM confirmé, la catégorie en l’état est **B** et une décision
 | relative-pension-at-threshold | relatives_only | A | info: complete, document: complete, ONEM: not_required | — | La catégorie résulte de la composition du ménage et des revenus déclarés. |
 | relative-pension-above | relatives_only | B | info: complete, document: complete, ONEM: not_required | — | La catégorie résulte de la composition du ménage et des revenus déclarés. |
 | child-third-party-income | children_and_third_parties | B | info: complete, document: complete, ONEM: not_required | — | La catégorie résulte de la composition du ménage et des revenus déclarés. |
-| alimony-document-pending | alimony | B | info: complete, document: required, ONEM: required | — | Les éléments déclarés nécessitent une vérification avant de déterminer la catégorie. |
-| alimony-established | alimony | A | info: complete, document: complete, ONEM: required | — | Les éléments déclarés nécessitent une vérification avant de déterminer la catégorie. |
-| alternating-care-pending | alternating_care | B | info: complete, document: required, ONEM: required | — | Les éléments déclarés nécessitent une vérification avant de déterminer la catégorie. |
-| alternating-care-established | alternating_care | A | info: complete, document: complete, ONEM: required | — | Les éléments déclarés nécessitent une vérification avant de déterminer la catégorie. |
+| alimony-document-pending | alimony | B | info: complete, document: required, ONEM: not_required | — | Les éléments déclarés nécessitent une vérification avant de déterminer la catégorie. |
+| alimony-established | alimony | A | info: complete, document: complete, ONEM: not_required | — | Les éléments déclarés nécessitent une vérification avant de déterminer la catégorie. |
+| alternating-care-pending | alternating_care | B | info: complete, document: required, ONEM: not_required | — | Les éléments déclarés nécessitent une vérification avant de déterminer la catégorie. |
+| alternating-care-established | alternating_care | A | info: complete, document: complete, ONEM: not_required | — | Les éléments déclarés nécessitent une vérification avant de déterminer la catégorie. |
 | cohousing-complete | cohousing | B | info: complete, document: complete, ONEM: required | N | La situation de co-housing est appréciée par l’ONEM sur la situation réelle.  Le Bureau du chômage peut effectuer une enquête avant de décider si le chômeur peut être considéré comme isolé. |
-| cohousing-alimony-established | alimony | B | info: complete, document: complete, ONEM: required | A | La situation de co-housing est appréciée par l’ONEM sur la situation réelle.  Le Bureau du chômage peut effectuer une enquête avant de décider si le chômeur peut être considéré comme isolé. |
+| cohousing-alimony-established | cohousing | B | info: complete, document: complete, ONEM: required | A | La situation de co-housing est appréciée par l’ONEM sur la situation réelle.  Le Bureau du chômage peut effectuer une enquête avant de décider si le chômeur peut être considéré comme isolé. |
 | cohousing-onem-isolated-confirmed | cohousing | N | info: complete, document: complete, ONEM: not_required | — | La situation de co-housing est appréciée par l’ONEM sur la situation réelle.  Le Bureau du chômage peut effectuer une enquête avant de décider si le chômeur peut être considéré comme isolé. |
-| unknown-relation | mixed_or_unsupported | B | info: incomplete, document: complete, ONEM: required | — | Des informations sont nécessaires pour évaluer la situation familiale. |
+| unknown-relation | mixed_or_unsupported | B | info: incomplete, document: complete, ONEM: not_required | — | Des informations sont nécessaires pour évaluer la situation familiale. |
 | comb-partner-spouse-unknown-no | spouse_or_partner | B | info: incomplete, document: complete, ONEM: not_required | — | Des informations sont nécessaires pour évaluer la situation familiale. |
 | comb-partner-spouse-unknown-yes | spouse_or_partner | B | info: incomplete, document: complete, ONEM: not_required | — | Des informations sont nécessaires pour évaluer la situation familiale. |
 | comb-partner-spouse-none-unknown | spouse_or_partner | B | info: incomplete, document: complete, ONEM: not_required | — | Des informations sont nécessaires pour évaluer la situation familiale. |
@@ -158,10 +158,10 @@ Sans état ONEM confirmé, la catégorie en l’état est **B** et une décision
 | comb-partner-spouse-above-no | spouse_or_partner | B | info: complete, document: complete, ONEM: not_required | — | Le conjoint ou partenaire est prioritaire pour l'évaluation de la situation familiale. |
 | comb-partner-spouse-above-yes | spouse_or_partner | B | info: incomplete, document: complete, ONEM: not_required | — | Des informations sont nécessaires pour évaluer la situation familiale. |
 | comb-partner-spouse-variable-c110a-missing-unknown | spouse_or_partner | B | info: incomplete, document: complete, ONEM: not_required | — | Des informations sont nécessaires pour évaluer la situation familiale. |
-| comb-partner-spouse-variable-c110a-missing-yes | spouse_or_partner | B | info: incomplete, document: required, ONEM: required | — | Des informations sont nécessaires pour évaluer la situation familiale. |
+| comb-partner-spouse-variable-c110a-missing-yes | spouse_or_partner | B | info: incomplete, document: required, ONEM: not_required | — | Des informations sont nécessaires pour évaluer la situation familiale. |
 | comb-partner-spouse-variable-c110a-present-unknown | spouse_or_partner | B | info: incomplete, document: complete, ONEM: not_required | — | Des informations sont nécessaires pour évaluer la situation familiale. |
-| comb-partner-spouse-variable-c110a-present-no | spouse_or_partner | B | info: complete, document: complete, ONEM: required | — | Les éléments déclarés nécessitent une vérification avant de déterminer la catégorie. |
-| comb-partner-spouse-variable-c110a-present-yes | spouse_or_partner | B | info: incomplete, document: complete, ONEM: required | — | Des informations sont nécessaires pour évaluer la situation familiale. |
+| comb-partner-spouse-variable-c110a-present-no | spouse_or_partner | B | info: complete, document: complete, ONEM: not_required | — | Les éléments déclarés nécessitent une vérification avant de déterminer la catégorie. |
+| comb-partner-spouse-variable-c110a-present-yes | spouse_or_partner | B | info: incomplete, document: complete, ONEM: not_required | — | Des informations sont nécessaires pour évaluer la situation familiale. |
 | comb-partner-partner-unknown-unknown | spouse_or_partner | B | info: incomplete, document: complete, ONEM: not_required | — | Des informations sont nécessaires pour évaluer la situation familiale. |
 | comb-partner-partner-unknown-no | spouse_or_partner | B | info: incomplete, document: complete, ONEM: not_required | — | Des informations sont nécessaires pour évaluer la situation familiale. |
 | comb-partner-partner-unknown-yes | spouse_or_partner | B | info: incomplete, document: complete, ONEM: not_required | — | Des informations sont nécessaires pour évaluer la situation familiale. |
@@ -178,11 +178,11 @@ Sans état ONEM confirmé, la catégorie en l’état est **B** et une décision
 | comb-partner-partner-above-no | spouse_or_partner | B | info: complete, document: complete, ONEM: not_required | — | Le conjoint ou partenaire est prioritaire pour l'évaluation de la situation familiale. |
 | comb-partner-partner-above-yes | spouse_or_partner | B | info: incomplete, document: complete, ONEM: not_required | — | Des informations sont nécessaires pour évaluer la situation familiale. |
 | comb-partner-partner-variable-c110a-missing-unknown | spouse_or_partner | B | info: incomplete, document: complete, ONEM: not_required | — | Des informations sont nécessaires pour évaluer la situation familiale. |
-| comb-partner-partner-variable-c110a-missing-no | spouse_or_partner | B | info: complete, document: required, ONEM: required | — | Les éléments déclarés nécessitent une vérification avant de déterminer la catégorie. |
-| comb-partner-partner-variable-c110a-missing-yes | spouse_or_partner | B | info: incomplete, document: required, ONEM: required | — | Des informations sont nécessaires pour évaluer la situation familiale. |
+| comb-partner-partner-variable-c110a-missing-no | spouse_or_partner | B | info: complete, document: required, ONEM: not_required | — | Les éléments déclarés nécessitent une vérification avant de déterminer la catégorie. |
+| comb-partner-partner-variable-c110a-missing-yes | spouse_or_partner | B | info: incomplete, document: required, ONEM: not_required | — | Des informations sont nécessaires pour évaluer la situation familiale. |
 | comb-partner-partner-variable-c110a-present-unknown | spouse_or_partner | B | info: incomplete, document: complete, ONEM: not_required | — | Des informations sont nécessaires pour évaluer la situation familiale. |
-| comb-partner-partner-variable-c110a-present-no | spouse_or_partner | B | info: complete, document: complete, ONEM: required | — | Les éléments déclarés nécessitent une vérification avant de déterminer la catégorie. |
-| comb-partner-partner-variable-c110a-present-yes | spouse_or_partner | B | info: incomplete, document: complete, ONEM: required | — | Des informations sont nécessaires pour évaluer la situation familiale. |
+| comb-partner-partner-variable-c110a-present-no | spouse_or_partner | B | info: complete, document: complete, ONEM: not_required | — | Les éléments déclarés nécessitent une vérification avant de déterminer la catégorie. |
+| comb-partner-partner-variable-c110a-present-yes | spouse_or_partner | B | info: incomplete, document: complete, ONEM: not_required | — | Des informations sont nécessaires pour évaluer la situation familiale. |
 | comb-partner-priority-1 | spouse_or_partner | A | info: complete, document: complete, ONEM: not_required | — | Le conjoint ou partenaire est prioritaire pour l'évaluation de la situation familiale. |
 | comb-partner-priority-2 | spouse_or_partner | A | info: complete, document: complete, ONEM: not_required | — | Le conjoint ou partenaire est prioritaire pour l'évaluation de la situation familiale. |
 | comb-partner-priority-3 | spouse_or_partner | A | info: complete, document: complete, ONEM: not_required | — | Le conjoint ou partenaire est prioritaire pour l'évaluation de la situation familiale. |
@@ -280,7 +280,7 @@ Sans état ONEM confirmé, la catégorie en l’état est **B** et une décision
 | comb-relatives-pension-proof-missing-pension-proof-missing | relatives_only | B | info: complete, document: required, ONEM: not_required | — | La catégorie résulte de la composition du ménage et des revenus déclarés. |
 | comb-relatives-pension-proof-missing-disability | relatives_only | B | info: complete, document: required, ONEM: not_required | — | La catégorie résulte de la composition du ménage et des revenus déclarés. |
 | comb-relatives-disability-disability | relatives_only | B | info: complete, document: complete, ONEM: not_required | — | La catégorie résulte de la composition du ménage et des revenus déclarés. |
-| comb-composition-third-no-income | third_parties_only | B | info: complete, document: complete, ONEM: required | — | Les éléments déclarés nécessitent une vérification avant de déterminer la catégorie. |
+| comb-composition-third-no-income | third_parties_only | B | info: complete, document: complete, ONEM: not_required | — | Les éléments déclarés nécessitent une vérification avant de déterminer la catégorie. |
 | comb-composition-third-professional-income | third_parties_only | B | info: complete, document: complete, ONEM: not_required | — | La catégorie résulte de la composition du ménage et des revenus déclarés. |
 | comb-composition-third-replacement-income | third_parties_only | B | info: complete, document: complete, ONEM: not_required | — | La catégorie résulte de la composition du ménage et des revenus déclarés. |
 | comb-composition-third-income-unknown | third_parties_only | B | info: incomplete, document: complete, ONEM: not_required | — | Des informations sont nécessaires pour évaluer la situation familiale. |
@@ -288,7 +288,7 @@ Sans état ONEM confirmé, la catégorie en l’état est **B** et une décision
 | comb-composition-child-third | children_and_third_parties | A | info: complete, document: complete, ONEM: not_required | — | La catégorie résulte de la composition du ménage et des revenus déclarés. |
 | comb-composition-relative-third | relatives_and_third_parties | A | info: complete, document: complete, ONEM: not_required | — | La catégorie résulte de la composition du ménage et des revenus déclarés. |
 | comb-composition-child-relative-third | children_relatives_and_third_parties | A | info: complete, document: complete, ONEM: not_required | — | La catégorie résulte de la composition du ménage et des revenus déclarés. |
-| comb-composition-partner-ambiguous | mixed_or_unsupported | B | info: incomplete, document: complete, ONEM: required | — | Des informations sont nécessaires pour évaluer la situation familiale. |
+| comb-composition-partner-ambiguous | mixed_or_unsupported | B | info: incomplete, document: complete, ONEM: not_required | — | Des informations sont nécessaires pour évaluer la situation familiale. |
 | comb-cohousing-000 | cohousing | B | info: complete, document: required, ONEM: required | — | La situation de co-housing est appréciée par l’ONEM sur la situation réelle.  Le Bureau du chômage peut effectuer une enquête avant de décider si le chômeur peut être considéré comme isolé. |
 | comb-cohousing-001 | cohousing | B | info: complete, document: required, ONEM: required | — | La situation de co-housing est appréciée par l’ONEM sur la situation réelle.  Le Bureau du chômage peut effectuer une enquête avant de décider si le chômeur peut être considéré comme isolé. |
 | comb-cohousing-010 | cohousing | B | info: complete, document: required, ONEM: required | — | La situation de co-housing est appréciée par l’ONEM sur la situation réelle.  Le Bureau du chômage peut effectuer une enquête avant de décider si le chômeur peut être considéré comme isolé. |
@@ -301,11 +301,11 @@ Sans état ONEM confirmé, la catégorie en l’état est **B** et une décision
 
 ### Types de résultat historiques
 
-- Déterminés : 93
+- Déterminés : 97
 - Informations manquantes : 53
 - Pièces : 11
-- Décisions ONEM : 15
-- Non automatisés : 2
+- Décisions ONEM : 10
+- Non automatisés : 3
 - TOTAL : 174
 
 ### Catégories opérationnelles exhaustives
@@ -319,7 +319,7 @@ Sans état ONEM confirmé, la catégorie en l’état est **B** et une décision
 
 - Informations à compléter : 55
 - Pièces à fournir : 20
-- Décision ONEM nécessaire : 26
+- Décision ONEM nécessaire : 9
 
 ### Droits plus avantageux potentiels
 
@@ -332,11 +332,11 @@ Sans état ONEM confirmé, la catégorie en l’état est **B** et une décision
 | Composition | Scénarios | Déterminés | Incomplets | Pièces | ONEM | Non automatisés |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
 | seul | 11 | 1 | 0 | 0 | 10 | 0 |
-| conjoint | 23 | 6 | 15 | 1 | 1 | 0 |
-| partenaire | 22 | 4 | 15 | 1 | 1 | 1 |
-| enfants seuls | 68 | 42 | 22 | 2 | 2 | 0 |
+| conjoint | 23 | 7 | 15 | 1 | 0 | 0 |
+| partenaire | 22 | 5 | 15 | 1 | 0 | 1 |
+| enfants seuls | 68 | 44 | 22 | 2 | 0 | 0 |
 | parents seuls | 36 | 29 | 0 | 7 | 0 | 0 |
-| tiers seul | 4 | 2 | 1 | 0 | 1 | 0 |
+| tiers seul | 4 | 2 | 1 | 0 | 0 | 1 |
 | enfants + parents | 1 | 1 | 0 | 0 | 0 | 0 |
 | enfants + tiers | 2 | 2 | 0 | 0 | 0 | 0 |
 | parents + tiers | 1 | 1 | 0 | 0 | 0 | 0 |
@@ -354,14 +354,8 @@ Sans état ONEM confirmé, la catégorie en l’état est **B** et une décision
 
 Assertions : types=true, catégories=true, incohérents=true, justifications=true, A=true, B=true, N=true.
 
-Durée : 35.55 ms
+Durée : 36.32 ms
 
 ## Décisions ONEM par branche
 
-- alimony : 3
-- alone : 2
-- alternating_care : 2
-- cohousing : 8
-- mixed_or_unsupported : 2
-- spouse_or_partner : 8
-- third_parties_only : 1
+- cohousing : 9

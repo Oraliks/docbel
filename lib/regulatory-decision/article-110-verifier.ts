@@ -149,10 +149,9 @@ function resultTypeFor(input: {
 }): Article110ResultType {
   if (input.composition.kind === "mixed_or_unsupported") return "not_automated";
   if (!input.compositionKnown || input.missingFacts.length > 0) return "information_missing";
-  if (input.explicitMinimalAlone) return "decision_determined";
   if (input.cohousing) return "onem_decision_required";
   if (input.missingDocuments.length > 0) return "document_required";
-  if (input.householdStatus === "needs_review" || input.isolatedStatus === "needs_review" || input.isolatedStatus === "pending_judgment") return "onem_decision_required";
+  if (input.explicitMinimalAlone) return "decision_determined";
   return input.expectedCategory ? "decision_determined" : "not_automated";
 }
 
@@ -286,12 +285,10 @@ export function evaluateArticle110Verifier(input: Article110VerifierInput) {
   });
   const informationStatus: Article110InformationStatus = effectiveMissingFacts.length > 0 ? "incomplete" : "complete";
   const documentStatus: Article110DocumentStatus = uniqueMissingDocuments.length > 0 ? "required" : "complete";
-  const onemDecisionRequired = officialCategory === undefined && (
-    isCohousing
-    || householdAssessment.status === "needs_review"
-    || isolatedAssessment?.status === "needs_review"
-    || isolatedAssessment?.status === "pending_judgment"
-  );
+  // A missing fact, a missing document, or an incomplete automation branch is
+  // not an ONEM decision by itself. Co-housing is the factual assessment that
+  // remains reserved to the ONEM in this verifier.
+  const onemDecisionRequired = isCohousing && officialCategory === undefined;
   const onemDecisionStatus: Article110OnemDecisionStatus = onemDecisionRequired ? "required" : "not_required";
   const automationStatus: Article110AutomationStatus = composition.kind === "mixed_or_unsupported" ? "not_automated"
     : informationStatus === "incomplete" || documentStatus === "required" || onemDecisionStatus === "required" ? "partial" : "automated";

@@ -1115,6 +1115,9 @@ model BundleRun {
   /// Permet de reprendre orientation + dossier avec un seul code BELDOC.
   /// Forme : { [nodeId]: { value: string | string[] } } — typage Zod côté `lib/decision-builder/schema.ts`.
   orientationAnswers   Json?
+  /// Décision réglementaire appliquée au démarrage (règle, sources, faits et bundle).
+  /// Snapshot autonome : une évolution ultérieure des règles ne réécrit jamais l'historique.
+  regulatoryDecisionSnapshot Json?
   /// Reprise fine (Lot 3, migration 58). Dernier formulaire actif du dossier.
   lastFormId           String?
   /// Identifiant STABLE de la dernière étape vue (`MacroStep.id`/`CoreStep.id`) —

@@ -22,6 +22,15 @@ export function canAddVerifierMember(people: VerifierMember[], role: HouseholdRo
   return !uniqueRoles.has(role) || !people.some((person) => person.role === role);
 }
 
+/**
+ * Keeps the composition selector controlled until the person is actually added.
+ * The UI must never require selecting the same role twice.
+ */
+export function addSelectedVerifierMember(people: VerifierMember[], role: HouseholdRole | "", id: string) {
+  if (!role || !canAddVerifierMember(people, role)) return { people, selectedRole: role } as const;
+  return { people: [...people, createVerifierMember(id, role)], selectedRole: "" } as const;
+}
+
 export function updateVerifierMember(people: VerifierMember[], id: string, patch: Partial<VerifierMember>) {
   return people.map((person) => person.id === id ? { ...person, ...patch } : person);
 }

@@ -181,10 +181,15 @@ describe("Article 110 verifier adapter", () => {
 
   it("exposes a complete, actionable contract for a cohousing review", () => {
     const result = evaluateArticle110Verifier({ thresholds, people: [], isAloneExplicit: true, cohousingClaim: true });
-    expect(result).toMatchObject({ status: "review", resultType: "onem_decision_required", reason: expect.stringContaining("situation de co-housing"), reviewReason: expect.any(String) });
+    expect(result).toMatchObject({ category: "B", onemDecisionStatus: "required", status: "review", resultType: "onem_decision_required", reason: expect.stringContaining("situation de co-housing"), reviewReason: expect.any(String) });
     expect(result.missingDocuments).toEqual(expect.arrayContaining(["Bail", "Annexe REGIS"]));
     expect(result.nextActions).toContain("Transmettre pour vérification au Bureau du chômage");
-    expect(result.potentialOutcome).toContain("N ou A");
+    expect(result.potentialOutcome).toBeUndefined();
+  });
+
+  it("keeps co-housing in B while surfacing an established alimony outcome as potential A", () => {
+    const result = evaluateArticle110Verifier({ thresholds, people: [], isAloneExplicit: true, cohousingClaim: true, cohousingDocuments: { lease: true, regis: true, swornStatement: true }, alimony: { enabled: true, beneficiary: "enfant-mineur", paymentEffective: true, legalBasis: "decision-judiciaire", documentStatus: "en-main" } });
+    expect(result).toMatchObject({ category: "B", potentialCategory: "A", onemDecisionStatus: "required" });
   });
 
   it("never returns an unexplained incomplete result", () => {

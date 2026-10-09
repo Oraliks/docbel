@@ -1,6 +1,6 @@
 import type { C1BaremeThresholds } from "@/lib/baremes/c1-thresholds";
 
-import { evaluateArticle110Verifier, type Article110ResultType, type Article110VerifierInput } from "./article-110-verifier";
+import { evaluateArticle110Verifier, type Article110Category, type Article110ResultType, type Article110VerifierInput } from "./article-110-verifier";
 
 export type Article110Scenario = {
   id: string;
@@ -15,8 +15,12 @@ export type Article110ScenarioContract = {
   facts: Omit<Article110VerifierInput, "thresholds">;
   officialOnemState?: string;
   resultType: Article110ResultType;
-  category: "A" | "B" | "N" | null;
-  potentialCategory: "A" | "B" | "N" | null;
+  category: Article110Category;
+  potentialCategory?: Article110Category;
+  informationStatus: "complete" | "incomplete";
+  documentStatus: "complete" | "required";
+  onemDecisionStatus: "not_required" | "required";
+  automationStatus: "automated" | "partial" | "not_automated";
   householdComposition: string;
   reason: string;
   decisiveFacts: string[];
@@ -34,6 +38,8 @@ export type Article110MatrixReport = {
   total: number;
   byResultType: Record<Article110ResultType, number>;
   byCategory: Record<"A" | "B" | "N", number>;
+  supplementalStatuses: { informationIncomplete: number; documentsRequired: number; onemDecisionRequired: number; automationPartial: number; notAutomated: number };
+  potentialTransitions: { B_to_N: number; B_to_A: number; N_to_A: number };
   byBranch: Record<string, number>;
   onemByBranch: Record<string, number>;
   incoherent: string[];
@@ -81,6 +87,8 @@ export function generateRepresentativeArticle110Scenarios(thresholds: C1BaremeTh
     { id: "alternating-care-pending", label: "Hébergement alterné : acte en attente", input: { people: [], alternatingCare: { enabled: true, documentStatus: "en-cours" } } },
     { id: "alternating-care-established", label: "Hébergement alterné documenté", input: { people: [], alternatingCare: { enabled: true, regular: true, familyAllowances: true, documentStatus: "jugement" } } },
     { id: "cohousing-complete", label: "Co-housing documenté", input: { people: [], isAloneExplicit: true, cohousingClaim: true, cohousingDocuments: { lease: true, regis: true, swornStatement: true } } },
+    { id: "cohousing-alimony-established", label: "Co-housing avec pension alimentaire documentée", input: { people: [], isAloneExplicit: true, cohousingClaim: true, cohousingDocuments: { lease: true, regis: true, swornStatement: true }, alimony: { enabled: true, beneficiary: "enfant-mineur", paymentEffective: true, legalBasis: "decision-judiciaire", documentStatus: "en-main" } } },
+    { id: "cohousing-onem-isolated-confirmed", label: "Co-housing avec situation ONEM isolé confirmée", input: { people: [], isAloneExplicit: true, officialOnemCode: "110&2", cohousingClaim: true, cohousingDocuments: { lease: true, regis: true, swornStatement: true } } },
     { id: "unknown-relation", label: "Relation hors périmètre", input: { people: [member("unknown", "Autre", "unknown")] } },
   ];
 }
@@ -196,8 +204,12 @@ export function evaluateArticle110ScenarioMatrix(thresholds: C1BaremeThresholds,
       facts: input,
       officialOnemState: result.officialOnemState,
       resultType: result.resultType,
-      category: result.resultType === "decision_determined" ? result.expectedCategory : null,
-      potentialCategory: result.resultType === "decision_determined" ? null : result.expectedCategory,
+      category: result.category,
+      potentialCategory: result.potentialCategory,
+      informationStatus: result.informationStatus,
+      documentStatus: result.documentStatus,
+      onemDecisionStatus: result.onemDecisionStatus,
+      automationStatus: result.automationStatus,
       householdComposition: result.composition.kind,
       reason: result.reason,
       decisiveFacts: result.decisiveFacts,
@@ -211,17 +223,29 @@ export function evaluateArticle110ScenarioMatrix(thresholds: C1BaremeThresholds,
   });
   const resultTypes: Article110ResultType[] = ["decision_determined", "information_missing", "document_required", "onem_decision_required", "not_automated"];
   const byResultType = Object.fromEntries(resultTypes.map((type) => [type, scenarios.filter((scenario) => scenario.resultType === type).length])) as Record<Article110ResultType, number>;
-  const byCategory = Object.fromEntries((["A", "B", "N"] as const).map((category) => [category, scenarios.filter((scenario) => scenario.resultType === "decision_determined" && scenario.category === category).length])) as Record<"A" | "B" | "N", number>;
+  const byCategory = Object.fromEntries((["A", "B", "N"] as const).map((category) => [category, scenarios.filter((scenario) => scenario.category === category).length])) as Record<"A" | "B" | "N", number>;
+  const supplementalStatuses = {
+    informationIncomplete: scenarios.filter((scenario) => scenario.informationStatus === "incomplete").length,
+    documentsRequired: scenarios.filter((scenario) => scenario.documentStatus === "required").length,
+    onemDecisionRequired: scenarios.filter((scenario) => scenario.onemDecisionStatus === "required").length,
+    automationPartial: scenarios.filter((scenario) => scenario.automationStatus === "partial").length,
+    notAutomated: scenarios.filter((scenario) => scenario.automationStatus === "not_automated").length,
+  };
+  const potentialTransitions = {
+    B_to_N: scenarios.filter((scenario) => scenario.category === "B" && scenario.potentialCategory === "N").length,
+    B_to_A: scenarios.filter((scenario) => scenario.category === "B" && scenario.potentialCategory === "A").length,
+    N_to_A: scenarios.filter((scenario) => scenario.category === "N" && scenario.potentialCategory === "A").length,
+  };
   const byBranch = Object.fromEntries([...new Set(scenarios.map((scenario) => scenario.branch))].sort().map((branch) => [branch, scenarios.filter((scenario) => scenario.branch === branch).length]));
-  const onemByBranch = Object.fromEntries([...new Set(scenarios.filter((scenario) => scenario.resultType === "onem_decision_required").map((scenario) => scenario.branch))].sort().map((branch) => [branch, scenarios.filter((scenario) => scenario.resultType === "onem_decision_required" && scenario.branch === branch).length]));
-  const incoherent = scenarios.filter((scenario) => scenario.resultType === "decision_determined" && scenario.category === null).map((scenario) => scenario.id);
+  const onemByBranch = Object.fromEntries([...new Set(scenarios.filter((scenario) => scenario.onemDecisionStatus === "required").map((scenario) => scenario.branch))].sort().map((branch) => [branch, scenarios.filter((scenario) => scenario.onemDecisionStatus === "required" && scenario.branch === branch).length]));
+  const incoherent = scenarios.filter((scenario) => !scenario.category).map((scenario) => scenario.id);
   const withoutReason = scenarios.filter((scenario) => !scenario.reason.trim()).map((scenario) => scenario.id);
   const coverage = {
     partenaire: ["conjoint", "partenaire établi", "revenu pro : inconnu/non/sous seuil/seuil/au-dessus/variable", "revenu de remplacement : inconnu/non/oui", "C110A : présent/absent", "priorité avec enfant/parent/tiers"],
     enfants: ["nombre : 1/2/3", "allocations familiales : oui/non/inconnu", "revenu pro : oui/non/inconnu", "revenu de remplacement : oui/non/inconnu", "110&1M : date manquante/début/période/veille/échéance/lendemain/fin de mois/bissextile"],
     parents: ["nombre : 1/2", "revenu pro : oui/non", "pension : sous seuil/seuil/au-dessus", "preuve SPF : présente/absente", "handicap : documenté"],
     compositions: ["seul", "tiers", "enfant + tiers", "parent + tiers", "enfant + parent + tiers", "partenaire + autres", "relations ambiguës"],
-    situations_isolees: ["pension alimentaire : disponible/en attente", "hébergement alterné : disponible/en attente", "co-housing : 8 états documentaires"],
+    situations_isolees: ["pension alimentaire : disponible/en attente", "hébergement alterné : disponible/en attente", "co-housing : 8 états documentaires", "co-housing + pension alimentaire documentée", "co-housing + état ONEM isolé confirmé"],
   };
   const mixedGroups = new Map<string, Article110ScenarioContract[]>();
   for (const scenario of scenarios.filter((scenario) => scenario.branch === "mixed_or_unsupported")) {
@@ -259,7 +283,7 @@ export function evaluateArticle110ScenarioMatrix(thresholds: C1BaremeThresholds,
   });
   const assertions = {
     resultTypesTotal: Object.values(byResultType).reduce((sum, count) => sum + count, 0) === scenarios.length,
-    categoriesTotal: Object.values(byCategory).reduce((sum, count) => sum + count, 0) === byResultType.decision_determined,
+    categoriesTotal: Object.values(byCategory).reduce((sum, count) => sum + count, 0) === scenarios.length,
     incoherent: incoherent.length === 0,
     withoutReason: withoutReason.length === 0,
     atLeastOneA: byCategory.A > 0,
@@ -273,6 +297,8 @@ export function evaluateArticle110ScenarioMatrix(thresholds: C1BaremeThresholds,
     total: scenarios.length,
     byResultType,
     byCategory,
+    supplementalStatuses,
+    potentialTransitions,
     byBranch,
     onemByBranch,
     incoherent,
@@ -290,8 +316,10 @@ export function evaluateArticle110ScenarioMatrix(thresholds: C1BaremeThresholds,
 
 export function formatArticle110MatrixMarkdown(report: Article110MatrixReport): string {
   const types = report.byResultType;
+  const statuses = report.supplementalStatuses;
+  const transitions = report.potentialTransitions;
   const branches = Object.entries(report.byBranch).map(([branch, count]) => `- ${branch} : ${count}`).join("\n");
   const coverage = Object.entries(report.coverage).map(([branch, values]) => `### ${branch}\n\n${values.map((value) => `- ${value}`).join("\n")}`).join("\n\n");
   const mixed = report.mixedOrUnsupported.length ? report.mixedOrUnsupported.map((group) => `- ${group.count} scénario(s) — ${group.facts} — ${group.classifierReason} Diagnostic ${group.diagnosis}.`).join("\n") : "- Aucun.";
-  return `# Article 110 — exploration combinatoire\n\nGénéré le ${report.generatedAt}.\n\n## Méthode\n\n${report.method}\n\n## Espace exploré\n\n- Combinaisons brutes : ${report.space.raw}\n- Combinaisons invalides éliminées : ${report.space.invalid}\n- Doublons métier éliminés : ${report.space.duplicates}\n- Scénarios uniques exécutés : ${report.space.executed}\n\nExclusions explicites : ${Object.entries(report.space.exclusions).map(([reason, count]) => `${reason} (${count})`).join(", ") || "aucune"}.\n\n## Résultats\n\n- Décision déterminée : ${types.decision_determined}\n- Informations manquantes : ${types.information_missing}\n- Pièce à fournir : ${types.document_required}\n- Décision ONEM requise : ${types.onem_decision_required}\n- Non automatisé : ${types.not_automated}\n- Incohérents : ${report.incoherent.length}\n- Sans justification : ${report.withoutReason.length}\n\n## Couverture par branche\n\n${branches}\n\n## Couverture par dimension\n\n${coverage}\n\n## mixed_or_unsupported\n\n${mixed}\n\n## Co-housing\n\nÉtat : **Décision ONEM requise**. Le Bureau du chômage peut effectuer une enquête sur la situation réelle avant de décider si le chômeur peut être considéré comme isolé.\n\n## Trous du moteur\n\n- Les compositions mixed_or_unsupported restent explicitement non automatisées ; aucune catégorie n’est devinée.\n- Les catégories issues d’une appréciation de fait (dont le co-housing) restent soumises à la décision ONEM.\n\n## Contrats\n\n| Scénario | Branche | Résultat | Catégorie | Justification |\n| --- | --- | --- | --- | --- |\n${report.scenarios.map((scenario) => `| ${scenario.id} | ${scenario.branch} | ${scenario.resultType} | ${scenario.category ?? "—"} | ${scenario.reason.replace(/\n/g, " ")} |`).join("\n")}\n`;
+  return `# Article 110 — exploration combinatoire\n\nGénéré le ${report.generatedAt}.\n\n## Méthode\n\n${report.method}\n\n## Espace exploré\n\n- Combinaisons brutes : ${report.space.raw}\n- Combinaisons invalides éliminées : ${report.space.invalid}\n- Doublons métier éliminés : ${report.space.duplicates}\n- Scénarios uniques exécutés : ${report.space.executed}\n\nExclusions explicites : ${Object.entries(report.space.exclusions).map(([reason, count]) => `${reason} (${count})`).join(", ") || "aucune"}.\n\n## Catégories opérationnelles\n\n- A : ${report.byCategory.A}\n- B : ${report.byCategory.B}\n- N : ${report.byCategory.N}\n- Total : ${report.total}\n\nLes catégories A, B et N sont exhaustives ; les états suivants peuvent se cumuler avec elles.\n\n## États complémentaires\n\n- Informations à compléter : ${statuses.informationIncomplete}\n- Pièces à fournir : ${statuses.documentsRequired}\n- Décision ONEM nécessaire : ${statuses.onemDecisionRequired}\n- Automatisation partielle : ${statuses.automationPartial}\n- Non automatisé : ${statuses.notAutomated}\n\n## Droits plus avantageux potentiels\n\n- B → N : ${transitions.B_to_N}\n- B → A : ${transitions.B_to_A}\n- N → A : ${transitions.N_to_A}\n\n## Résultats techniques historiques\n\n- Décision déterminée : ${types.decision_determined}\n- Informations manquantes : ${types.information_missing}\n- Pièce à fournir : ${types.document_required}\n- Décision ONEM requise : ${types.onem_decision_required}\n- Non automatisé : ${types.not_automated}\n- Incohérents : ${report.incoherent.length}\n- Sans justification : ${report.withoutReason.length}\n\n## Couverture par branche\n\n${branches}\n\n## Couverture par dimension\n\n${coverage}\n\n## mixed_or_unsupported\n\n${mixed}\n\n## Co-housing\n\nSans état ONEM confirmé, la catégorie en l’état est **B** et une décision ONEM reste nécessaire. Le moteur met en évidence N ou A uniquement comme possibilité fondée sur les faits déjà établis, sans la présenter comme appliquée.\n\n## Contrats\n\n| Scénario | Branche | Catégorie | États | Potentiel | Justification |\n| --- | --- | --- | --- | --- | --- |\n${report.scenarios.map((scenario) => `| ${scenario.id} | ${scenario.branch} | ${scenario.category} | info: ${scenario.informationStatus}, document: ${scenario.documentStatus}, ONEM: ${scenario.onemDecisionStatus} | ${scenario.potentialCategory ?? "—"} | ${scenario.reason.replace(/\n/g, " ")} |`).join("\n")}\n`;
 }

@@ -36,7 +36,7 @@ describe("Article 110 verifier adapter", () => {
   it("does not assign N when an explicit isolated claim activates another branch", () => {
     const alimony = evaluateArticle110Verifier({ thresholds, people: [], isAloneExplicit: true, alimony: { enabled: true, beneficiary: "enfant-mineur", paymentEffective: true, legalBasis: "decision-judiciaire", documentStatus: "en-main" } });
     const care = evaluateArticle110Verifier({ thresholds, people: [], isAloneExplicit: true, alternatingCare: { enabled: true, regular: true, familyAllowances: true, documentStatus: "jugement" } });
-    const cohousing = evaluateArticle110Verifier({ thresholds, people: [], isAloneExplicit: true, cohousingClaim: true, cohousingDocuments: { lease: true, regis: true, swornStatement: true } });
+    const cohousing = evaluateArticle110Verifier({ thresholds, people: [], isAloneExplicit: true, cohousingClaim: true, cohousingOnemRecognition: "no", cohousingDocuments: { lease: true, regis: true, swornStatement: true } });
     expect(alimony.isolatedAssessment?.branch).toBe("alimony");
     expect(care.isolatedAssessment?.branch).toBe("alternating_care");
     expect(cohousing).toMatchObject({ resultType: "onem_decision_required", expectedCategory: null });
@@ -154,7 +154,7 @@ describe("Article 110 verifier adapter", () => {
   });
 
   it("makes an explicit cohousing claim a documented review", () => {
-    const result = evaluateArticle110Verifier({ thresholds, cohousingClaim: true, people: [] });
+    const result = evaluateArticle110Verifier({ thresholds, cohousingClaim: true, cohousingOnemRecognition: "no", people: [] });
     expect(result).toMatchObject({ expectedCategory: null, level: "review", resultType: "onem_decision_required" });
     expect(result.actions).toContain("Annexe REGIS");
   });
@@ -180,15 +180,15 @@ describe("Article 110 verifier adapter", () => {
   });
 
   it("exposes a complete, actionable contract for a cohousing review", () => {
-    const result = evaluateArticle110Verifier({ thresholds, people: [], isAloneExplicit: true, cohousingClaim: true });
+    const result = evaluateArticle110Verifier({ thresholds, people: [], isAloneExplicit: true, cohousingClaim: true, cohousingOnemRecognition: "no" });
     expect(result).toMatchObject({ category: "B", onemDecisionStatus: "required", status: "review", resultType: "onem_decision_required", reason: expect.stringContaining("situation de co-housing"), reviewReason: expect.any(String) });
     expect(result.missingDocuments).toEqual(expect.arrayContaining(["Bail", "Annexe REGIS"]));
     expect(result.nextActions).toContain("Transmettre pour vérification au Bureau du chômage");
-    expect(result.potentialOutcome).toBeUndefined();
+    expect(result.potentialOutcome).toBe("Isolé");
   });
 
   it("keeps co-housing in B while surfacing an established alimony outcome as potential A", () => {
-    const result = evaluateArticle110Verifier({ thresholds, people: [], isAloneExplicit: true, cohousingClaim: true, cohousingDocuments: { lease: true, regis: true, swornStatement: true }, alimony: { enabled: true, beneficiary: "enfant-mineur", paymentEffective: true, legalBasis: "decision-judiciaire", documentStatus: "en-main" } });
+    const result = evaluateArticle110Verifier({ thresholds, people: [], isAloneExplicit: true, cohousingClaim: true, cohousingOnemRecognition: "no", cohousingDocuments: { lease: true, regis: true, swornStatement: true }, alimony: { enabled: true, beneficiary: "enfant-mineur", paymentEffective: true, legalBasis: "decision-judiciaire", documentStatus: "en-main" } });
     expect(result).toMatchObject({ category: "B", potentialCategory: "A", onemDecisionStatus: "required" });
   });
 
@@ -203,7 +203,7 @@ describe("Article 110 verifier adapter", () => {
     const cases = [
       evaluateArticle110Verifier({ thresholds, people: [] }),
       evaluateArticle110Verifier({ thresholds, people: [{ id: "friend", label: "friend", relation: "third_party" }] }),
-      evaluateArticle110Verifier({ thresholds, people: [], isAloneExplicit: true, cohousingClaim: true }),
+      evaluateArticle110Verifier({ thresholds, people: [], isAloneExplicit: true, cohousingClaim: true, cohousingOnemRecognition: "no" }),
     ];
     for (const result of cases.filter((result) => result.status !== "complete")) {
       expect(result.reason).not.toBe("");
@@ -214,5 +214,42 @@ describe("Article 110 verifier adapter", () => {
   it("identifies a genuinely unsupported composition without pretending it is an ONEM decision", () => {
     const result = evaluateArticle110Verifier({ thresholds, people: [{ id: "unknown", label: "Autre", relation: "unknown" }] });
     expect(result.resultType).toBe("not_automated");
+  });
+
+  it("keeps the theoretical pension category when the known gross amount is missing only its proof", () => {
+    const result = evaluateArticle110Verifier({ thresholds, people: [{
+      id: "mother", label: "Mère", relation: "relative", isAscendant: true,
+      hasProfessionalIncome: false, hasReplacementIncome: true, replacementIncomeType: "pension",
+      replacementIncomeAmount: 500, pensionGrossAmountConfirmed: true, pensionProofAvailable: false,
+    }] });
+    expect(result).toMatchObject({ category: "A", documentStatus: "required" });
+    expect(result.missingDocuments).toContain("Preuve SPF Pensions du mois concerné");
+  });
+
+  it("separates an established legal condition from the missing copy of its supporting document", () => {
+    const result = evaluateArticle110Verifier({ thresholds, people: [], alimony: {
+      enabled: true, legalConditionEstablished: true, documentStatus: "en-cours",
+    } });
+    expect(result).toMatchObject({ category: "A", documentStatus: "required" });
+    expect(result.missingDocuments).toContain("Jugement ou acte notarié");
+  });
+
+  it("keeps 60B distinct from the monthly C110A rate", () => {
+    const result = evaluateArticle110Verifier({ thresholds, people: [{
+      id: "partner", label: "Partenaire", relation: "partner", partnerEstablished: true,
+      hasProfessionalIncome: true, professionalIncomeAmount: 900, professionalIncomeContract: "cdd", professionalIncomeVariable: true,
+      hasReplacementIncome: false, c110aReceived: true, c110aMonthlyDeclaredIncome: 800,
+    }] });
+    expect(result).toMatchObject({ category: "B", treatment: "60B", monthlyRate: "A_RATE" });
+  });
+
+  it("uses an ONEM recognition at the same address without an extra ONEM review", () => {
+    const result = evaluateArticle110Verifier({ thresholds, people: [], isAloneExplicit: true, cohousingClaim: true, cohousingOnemRecognition: "yes" });
+    expect(result).toMatchObject({ category: "N", onemDecisionStatus: "not_required" });
+  });
+
+  it("keeps an unrecognised cohousing in B and exposes its potential N outcome", () => {
+    const result = evaluateArticle110Verifier({ thresholds, people: [], isAloneExplicit: true, cohousingClaim: true, cohousingOnemRecognition: "no" });
+    expect(result).toMatchObject({ category: "B", potentialCategory: "N", onemDecisionStatus: "required" });
   });
 });

@@ -17,6 +17,8 @@ export type HouseholdMemberFact = {
   partnerEstablished?: boolean;
   /** Income actually received by the household member, before Article 60 treatment. */
   hasProfessionalIncome?: boolean;
+  /** Qualification of an activity actually exercised; registration alone is not enough. */
+  professionalIncomeType?: "employee" | "independent" | "other";
   professionalIncomeAmount?: number;
   professionalIncomeContract?: "cdi" | "cdd" | "other";
   professionalIncomeVariable?: boolean;
@@ -26,7 +28,7 @@ export type HouseholdMemberFact = {
   hasReplacementIncome?: boolean;
   /** The income exists, but an SPF disability allowance is neutral for this decision. */
   replacementIncomeRelevantForFamilyStatus?: boolean;
-  replacementIncomeType?: "pension" | "disability_allowance" | "other";
+  replacementIncomeType?: "unemployment" | "mutuality" | "pension" | "disability_allowance" | "other";
   replacementIncomeAmount?: number;
   pensionProofAvailable?: boolean;
   pensionGrossAmountConfirmed?: boolean;
@@ -152,7 +154,9 @@ export function assessHouseholdBranch(input: {
     const withoutIncome = recognised.some((member) => member.hasProfessionalIncome === false && hasRelevantReplacementIncome(member) === false);
     if (withoutIncome) return { ...spouseBase, status: "probable", expectedCategory: "A", operationalArticle: "none", incomeAssessment: "no_income", monthlyPaymentAssessment: "A_RATE", recommendedAction: action(officialOnemCode, "declaration_required") };
 
-    const salaried = recognised.filter((member) => member.hasProfessionalIncome === true && member.professionalIncomeContract !== "other");
+    const independentOrOtherProfessionalIncome = recognised.some((member) => member.hasProfessionalIncome === true && (member.professionalIncomeType === "independent" || member.professionalIncomeType === "other"));
+    if (independentOrOtherProfessionalIncome) return { ...spouseBase, status: "probable", expectedCategory: "B", operationalArticle: "none", incomeAssessment: "relevant", monthlyPaymentAssessment: "B_RATE", recommendedAction: action(officialOnemCode, "declaration_required") };
+    const salaried = recognised.filter((member) => member.hasProfessionalIncome === true && member.professionalIncomeType !== "independent" && member.professionalIncomeType !== "other");
     if (salaried.length === 0) return { ...spouseBase, status: "probable", expectedCategory: "B", operationalArticle: "none", incomeAssessment: "relevant", monthlyPaymentAssessment: "B_RATE", recommendedAction: action(officialOnemCode, "declaration_required") };
     const incompleteSalaryFacts = salaried.some((member) =>
       !Number.isFinite(member.professionalIncomeAmount) || !member.professionalIncomeContract || member.professionalIncomeVariable === undefined,
@@ -173,16 +177,6 @@ export function assessHouseholdBranch(input: {
         status: c110aReceived ? "received" as const : "required" as const,
         url: "https://www.onem.be/formulaires-attestations/c110a",
       };
-      if (!c110aReceived) return {
-        ...spouseBase,
-        status: "needs_review",
-        expectedCategory: "B",
-        operationalArticle: "60B",
-        incomeAssessment: "relevant",
-        monthlyPaymentAssessment: "NEEDS_C110A",
-        requiredExternalDocument: { ...document, reason: "Le revenu est variable : le C110A officiel est requis pour apprécier le taux du mois." },
-        recommendedAction: action(officialOnemCode, "review_required"),
-      };
       if (!Number.isFinite(c110aIncome)) return {
         ...spouseBase,
         status: "needs_review",
@@ -190,7 +184,7 @@ export function assessHouseholdBranch(input: {
         operationalArticle: "60B",
         incomeAssessment: "relevant",
         monthlyPaymentAssessment: "NEEDS_REVIEW",
-        requiredExternalDocument: { ...document, reason: "Le C110A est indiqué comme reçu, mais son revenu mensuel doit être vérifié." },
+        requiredExternalDocument: { ...document, reason: "Le revenu brut du mois est nécessaire pour apprécier le taux mensuel ; le C110A officiel reste une pièce de gestion." },
         recommendedAction: action(officialOnemCode, "review_required"),
       };
       const assessedC110aIncome = c110aIncome as number;
@@ -204,7 +198,7 @@ export function assessHouseholdBranch(input: {
         monthlyC110aIncome: assessedC110aIncome,
         requiredExternalDocument: {
           ...document,
-          reason: "Le C110A permet d'apprécier le taux applicable pour ce mois sans modifier le traitement de base B / 60B.",
+          reason: "Le revenu brut du mois permet d'apprécier le taux applicable sans modifier le traitement de base B / 60B.",
         },
         recommendedAction: action(officialOnemCode, "review_required"),
       };

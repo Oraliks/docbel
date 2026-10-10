@@ -124,7 +124,9 @@ function categoryLabel(category: Article110Category) {
 function resultReason(input: Article110VerifierInput, composition: ReturnType<typeof classifyHouseholdComposition>, compositionKnown: boolean, missingFacts: Article110MissingFact[], householdAssessment: ReturnType<typeof assessHouseholdBranch>, cohousing: boolean) {
   if (!compositionKnown) return "La composition réelle du ménage n'est pas encore renseignée.";
   if (missingFacts.length > 0) return "Des informations sont nécessaires pour évaluer la situation familiale.";
-  if (cohousing) return "La situation de co-housing est appréciée par l’ONEM sur la situation réelle.\n\nLe Bureau du chômage peut effectuer une enquête avant de décider si le chômeur peut être considéré comme isolé.";
+  if (cohousing) return input.cohousingOnemRecognition === "yes"
+    ? "Le co-housing a déjà été reconnu par l’ONEM à cette même adresse. En l’absence de changement pertinent, la catégorie N peut être conservée."
+    : "La situation de co-housing est appréciée par l’ONEM sur la situation réelle.\n\nLe Bureau du chômage peut effectuer une enquête avant de décider si le chômeur peut être considéré comme isolé.";
   if (input.isAloneExplicit && input.people.length === 0 && input.alimony?.enabled !== true && input.alternatingCare?.enabled !== true) return "Le chômeur a déclaré vivre seul, sans autre situation particulière établie.";
   const childWithAllowances = input.people.some((person) => person.relation === "child" && person.receivesFamilyAllowances === true);
   const relativeWithProfessionalIncome = input.people.some((person) => person.relation === "relative" && person.hasProfessionalIncome === true);
@@ -132,6 +134,10 @@ function resultReason(input: Article110VerifierInput, composition: ReturnType<ty
   const pension = householdAssessment.pensionAssessment;
   if (pension?.grossTotal !== undefined && pension.threshold !== undefined) return `La pension brute déclarée est de ${pension.grossTotal} €, à comparer au plafond applicable de ${pension.threshold} €. ${pension.grossTotal <= pension.threshold ? "Elle reste dans le plafond : la catégorie A est retenue." : "Elle dépasse le plafond : la catégorie B est retenue."}`;
   if (composition.kind === "spouse_or_partner") {
+    const independent = input.people.find((person) => person.hasProfessionalIncome === true && person.professionalIncomeType === "independent");
+    if (independent) return `${independent.label} exerce une activité indépendante effectivement renseignée. Cette activité constitue un revenu professionnel pertinent dans cette branche : la catégorie B est retenue sans comparaison à un plafond salarial.`;
+    const otherProfessional = input.people.find((person) => person.hasProfessionalIncome === true && person.professionalIncomeType === "other");
+    if (otherProfessional) return `Une autre activité professionnelle est déclarée pour ${otherProfessional.label}. Sa qualification doit être confirmée avant tout traitement salarial : la catégorie B est conservée en l’état.`;
     if (householdAssessment.operationalArticle === "60A") return "Le conjoint ou partenaire a un revenu professionnel fixe sous le plafond applicable. Le traitement 60A permet de retenir la catégorie A.";
     if (householdAssessment.operationalArticle === "60B") return "Le conjoint ou partenaire a un revenu professionnel variable. Le traitement 60B s’applique ; le taux du mois est déterminé séparément par le C110A, sans modifier la catégorie B.";
     return householdAssessment.expectedCategory === "A" ? "Le conjoint ou partenaire établi ne dispose pas d’un revenu pertinent dans les faits renseignés : la catégorie A est retenue." : "Le conjoint ou partenaire établi dispose d’un revenu pertinent dans les faits renseignés : la catégorie B est retenue.";
@@ -150,7 +156,7 @@ function decisiveFactsFor(input: Article110VerifierInput, composition: ReturnTyp
     input.people.length > 0 ? `Composition pertinente : ${composition.kind}` : undefined,
     ...input.people.flatMap((person) => [
       person.receivesFamilyAllowances ? `${person.label} ouvre le droit aux allocations familiales` : undefined,
-      person.hasProfessionalIncome ? `${person.label} a un revenu professionnel${typeof person.professionalIncomeAmount === "number" ? ` de ${person.professionalIncomeAmount} €` : ""}` : undefined,
+      person.hasProfessionalIncome ? `${person.label} a un revenu professionnel${person.professionalIncomeType === "independent" ? " indépendant" : typeof person.professionalIncomeAmount === "number" ? ` de ${person.professionalIncomeAmount} €` : ""}` : undefined,
       person.replacementIncomeType === "pension" && typeof person.replacementIncomeAmount === "number" ? `${person.label} a une pension brute de ${person.replacementIncomeAmount} €` : undefined,
     ]),
     householdAssessment.operationalArticle === "60A" ? "Traitement 60A applicable" : undefined,
@@ -192,8 +198,11 @@ function getMissingFacts(input: Article110VerifierInput, sections: Article110Ver
     add(person, "hasProfessionalIncome", `Indiquer si ${label} dispose d'un revenu professionnel.`, person.hasProfessionalIncome);
     add(person, "hasReplacementIncome", `Indiquer si ${label} perçoit un revenu de remplacement.`, person.hasReplacementIncome);
     if (person.relation === "child") add(person, "receivesFamilyAllowances", `Indiquer si ${label} perçoit des allocations familiales.`, person.receivesFamilyAllowances);
-    if (person.hasProfessionalIncome === true && (person.relation === "spouse" || person.relation === "partner")) add(person, "professionalIncomeAmount", `Indiquer le montant brut mensuel du revenu professionnel de ${label}.`, person.professionalIncomeAmount);
-    if (person.hasReplacementIncome === true && person.relation === "relative") add(person, "replacementIncomeAmount", `Indiquer le montant brut mensuel du revenu de remplacement de ${label}.`, person.replacementIncomeAmount);
+    if (person.hasProfessionalIncome === true) add(person, "professionalIncomeType", `Indiquer le type d’activité professionnelle de ${label}.`, person.professionalIncomeType ?? (person.professionalIncomeContract ? "employee" : undefined));
+    if (person.hasProfessionalIncome === true && (person.relation === "spouse" || person.relation === "partner") && person.professionalIncomeType !== "independent" && person.professionalIncomeType !== "other") add(person, "professionalIncomeAmount", `Indiquer le montant brut mensuel du revenu professionnel de ${label}.`, person.professionalIncomeAmount);
+    if (person.hasReplacementIncome === true) add(person, "replacementIncomeType", `Indiquer la nature du revenu de remplacement de ${label}.`, person.replacementIncomeType);
+    if (person.hasReplacementIncome === true && person.replacementIncomeType === "other") missing.push({ factKey: `${person.id}.replacementIncomeDetails`, personId: person.id, label: `Préciser la nature de l’autre prestation perçue par ${label}.`, step: 2 });
+    if (person.hasReplacementIncome === true && person.replacementIncomeType === "pension" && person.relation === "relative") add(person, "replacementIncomeAmount", `Indiquer le montant brut mensuel de la pension de ${label}.`, person.replacementIncomeAmount);
   }
   if (input.cohousingClaim && (input.cohousingOnemRecognition === undefined || input.cohousingOnemRecognition === "unknown")) {
     missing.push({ factKey: "cohousing.onemRecognition", label: "Indiquer si ce co-housing a déjà été reconnu par l’ONEM à cette même adresse.", step: 2 });
@@ -205,10 +214,10 @@ function getMissingFacts(input: Article110VerifierInput, sections: Article110Ver
     missing.push({ factKey: "care.legalCondition", label: "Indiquer si le jugement ou l’acte notarié existe déjà.", step: 2 });
   }
   const variablePartnerWithoutMonthlyC110a = input.people.some((person) => (person.relation === "spouse" || person.relation === "partner")
-    && person.hasProfessionalIncome === true && person.professionalIncomeVariable === true
-    && person.c110aReceived === true && !Number.isFinite(person.c110aMonthlyDeclaredIncome));
+    && person.hasProfessionalIncome === true && person.professionalIncomeType === "employee" && person.professionalIncomeVariable === true
+    && !Number.isFinite(person.c110aMonthlyDeclaredIncome));
   if (variablePartnerWithoutMonthlyC110a) {
-    missing.push({ factKey: "partner.c110aMonthlyDeclaredIncome", label: "Indiquer le montant mensuel repris sur le C110A.", step: 2 });
+    missing.push({ factKey: "partner.c110aMonthlyDeclaredIncome", label: "Indiquer le revenu brut du mois concerné.", step: 2 });
   }
   return missing;
 }

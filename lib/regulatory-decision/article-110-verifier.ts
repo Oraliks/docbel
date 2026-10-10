@@ -121,15 +121,42 @@ function categoryLabel(category: Article110Category) {
   return category === "A" ? "Travailleur ayant charge de famille" : category === "B" ? "Cohabitant" : category === "N" ? "Isolé" : "À vérifier";
 }
 
-function resultReason(input: Article110VerifierInput, compositionKnown: boolean, missingFacts: Article110MissingFact[], householdStatus: string, cohousing: boolean) {
+function resultReason(input: Article110VerifierInput, composition: ReturnType<typeof classifyHouseholdComposition>, compositionKnown: boolean, missingFacts: Article110MissingFact[], householdAssessment: ReturnType<typeof assessHouseholdBranch>, cohousing: boolean) {
   if (!compositionKnown) return "La composition réelle du ménage n'est pas encore renseignée.";
   if (missingFacts.length > 0) return "Des informations sont nécessaires pour évaluer la situation familiale.";
   if (cohousing) return "La situation de co-housing est appréciée par l’ONEM sur la situation réelle.\n\nLe Bureau du chômage peut effectuer une enquête avant de décider si le chômeur peut être considéré comme isolé.";
   if (input.isAloneExplicit && input.people.length === 0 && input.alimony?.enabled !== true && input.alternatingCare?.enabled !== true) return "Le chômeur a déclaré vivre seul, sans autre situation particulière établie.";
-  if (householdStatus === "needs_review") return "Les éléments déclarés nécessitent une vérification avant de déterminer la catégorie.";
-  if (input.people.some((person) => person.relation === "spouse" || person.relation === "partner")) return "Le conjoint ou partenaire est prioritaire pour l'évaluation de la situation familiale.";
+  const childWithAllowances = input.people.some((person) => person.relation === "child" && person.receivesFamilyAllowances === true);
+  const relativeWithProfessionalIncome = input.people.some((person) => person.relation === "relative" && person.hasProfessionalIncome === true);
+  if (composition.kind === "children_and_relatives" && childWithAllowances && relativeWithProfessionalIncome) return "L’enfant ouvre le droit aux allocations familiales. Le père ou la mère fait aussi partie du ménage et son revenu professionnel pertinent ne permet pas de retenir la catégorie A dans cette branche : la catégorie B est retenue.";
+  const pension = householdAssessment.pensionAssessment;
+  if (pension?.grossTotal !== undefined && pension.threshold !== undefined) return `La pension brute déclarée est de ${pension.grossTotal} €, à comparer au plafond applicable de ${pension.threshold} €. ${pension.grossTotal <= pension.threshold ? "Elle reste dans le plafond : la catégorie A est retenue." : "Elle dépasse le plafond : la catégorie B est retenue."}`;
+  if (composition.kind === "spouse_or_partner") {
+    if (householdAssessment.operationalArticle === "60A") return "Le conjoint ou partenaire a un revenu professionnel fixe sous le plafond applicable. Le traitement 60A permet de retenir la catégorie A.";
+    if (householdAssessment.operationalArticle === "60B") return "Le conjoint ou partenaire a un revenu professionnel variable. Le traitement 60B s’applique ; le taux du mois est déterminé séparément par le C110A, sans modifier la catégorie B.";
+    return householdAssessment.expectedCategory === "A" ? "Le conjoint ou partenaire établi ne dispose pas d’un revenu pertinent dans les faits renseignés : la catégorie A est retenue." : "Le conjoint ou partenaire établi dispose d’un revenu pertinent dans les faits renseignés : la catégorie B est retenue.";
+  }
+  if (composition.kind === "children_only") return childWithAllowances ? "Au moins un enfant ouvre le droit aux allocations familiales : la catégorie A est retenue." : householdAssessment.expectedCategory === "B" ? "Un revenu pertinent d’un enfant est renseigné : la catégorie B est retenue." : "Les enfants renseignés ne présentent pas de revenu pertinent : la catégorie A est retenue.";
+  if (composition.members.some((member) => member.relation === "relative")) return householdAssessment.expectedCategory === "B" ? "Un parent ou allié du ménage a un revenu pertinent : la catégorie B est retenue." : "Les parents ou alliés renseignés ne présentent pas de revenu pertinent : la catégorie A est retenue.";
+  if (composition.members.some((member) => member.relation === "third_party")) return householdAssessment.expectedCategory === "B" ? "Un tiers du ménage a un revenu pertinent : la catégorie B est retenue." : "Les faits renseignés pour le tiers ne permettent pas de retenir un revenu pertinent.";
+  if (householdAssessment.status === "needs_review") return "Les faits renseignés nécessitent une vérification avant de confirmer la catégorie.";
   if (input.isAloneExplicit) return "Le chômeur a déclaré vivre seul et aucune autre situation particulière n'est établie.";
-  return "La catégorie résulte de la composition du ménage et des revenus déclarés.";
+  return householdAssessment.expectedCategory === "A" ? "Les faits établis pour cette composition permettent de retenir la catégorie A." : "Les faits établis pour cette composition conduisent à retenir la catégorie B.";
+}
+
+function decisiveFactsFor(input: Article110VerifierInput, composition: ReturnType<typeof classifyHouseholdComposition>, householdAssessment: ReturnType<typeof assessHouseholdBranch>) {
+  const facts = [
+    input.isAloneExplicit ? "Le chômeur a déclaré vivre seul" : undefined,
+    input.people.length > 0 ? `Composition pertinente : ${composition.kind}` : undefined,
+    ...input.people.flatMap((person) => [
+      person.receivesFamilyAllowances ? `${person.label} ouvre le droit aux allocations familiales` : undefined,
+      person.hasProfessionalIncome ? `${person.label} a un revenu professionnel${typeof person.professionalIncomeAmount === "number" ? ` de ${person.professionalIncomeAmount} €` : ""}` : undefined,
+      person.replacementIncomeType === "pension" && typeof person.replacementIncomeAmount === "number" ? `${person.label} a une pension brute de ${person.replacementIncomeAmount} €` : undefined,
+    ]),
+    householdAssessment.operationalArticle === "60A" ? "Traitement 60A applicable" : undefined,
+    householdAssessment.operationalArticle === "60B" ? "Traitement 60B applicable" : undefined,
+  ];
+  return facts.filter((fact): fact is string => Boolean(fact));
 }
 
 function resultTypeFor(input: {
@@ -165,8 +192,8 @@ function getMissingFacts(input: Article110VerifierInput, sections: Article110Ver
     add(person, "hasProfessionalIncome", `Indiquer si ${label} dispose d'un revenu professionnel.`, person.hasProfessionalIncome);
     add(person, "hasReplacementIncome", `Indiquer si ${label} perçoit un revenu de remplacement.`, person.hasReplacementIncome);
     if (person.relation === "child") add(person, "receivesFamilyAllowances", `Indiquer si ${label} perçoit des allocations familiales.`, person.receivesFamilyAllowances);
-    if (person.hasProfessionalIncome === true) add(person, "professionalIncomeAmount", `Indiquer le montant brut mensuel du revenu professionnel de ${label}.`, person.professionalIncomeAmount);
-    if (person.hasReplacementIncome === true) add(person, "replacementIncomeAmount", `Indiquer le montant brut mensuel du revenu de remplacement de ${label}.`, person.replacementIncomeAmount);
+    if (person.hasProfessionalIncome === true && (person.relation === "spouse" || person.relation === "partner")) add(person, "professionalIncomeAmount", `Indiquer le montant brut mensuel du revenu professionnel de ${label}.`, person.professionalIncomeAmount);
+    if (person.hasReplacementIncome === true && person.relation === "relative") add(person, "replacementIncomeAmount", `Indiquer le montant brut mensuel du revenu de remplacement de ${label}.`, person.replacementIncomeAmount);
   }
   if (input.cohousingClaim && (input.cohousingOnemRecognition === undefined || input.cohousingOnemRecognition === "unknown")) {
     missing.push({ factKey: "cohousing.onemRecognition", label: "Indiquer si ce co-housing a déjà été reconnu par l’ONEM à cette même adresse.", step: 2 });
@@ -276,7 +303,14 @@ export function evaluateArticle110Verifier(input: Article110VerifierInput) {
     ...[isolatedAssessment, cohousingAssessment].flatMap((assessment) => assessment?.documents.filter((document) => document.status === "required" || document.status === "pending").map((document) => documentLabel(document.document)) ?? []),
   ];
   const uniqueMissingDocuments = [...new Set(missingDocuments)];
-  const reason = resultReason(input, compositionKnown, effectiveMissingFacts, householdAssessment.status, isCohousing);
+  const reason = resultReason(input, composition, compositionKnown, effectiveMissingFacts, householdAssessment, isCohousing);
+  const decisiveFacts = decisiveFactsFor(input, composition, householdAssessment);
+  const pensionComparison = householdAssessment.pensionAssessment?.grossTotal !== undefined && householdAssessment.pensionAssessment.threshold !== undefined
+    ? { amount: householdAssessment.pensionAssessment.grossTotal, threshold: householdAssessment.pensionAssessment.threshold, relation: householdAssessment.pensionAssessment.grossTotal <= householdAssessment.pensionAssessment.threshold ? "within" as const : "above" as const }
+    : undefined;
+  const favorableCategoryNotApplied = category === "B" && potentialCategory === undefined
+    ? "Les faits déterminants renseignés ne permettent pas de retenir une catégorie plus favorable."
+    : undefined;
   const status = !compositionKnown || effectiveMissingFacts.length > 0 ? "incomplete" as const
     : explicitMinimalAlone ? "complete" as const
     : isCohousing || householdAssessment.status === "needs_review" || isolatedAssessment?.status === "needs_review" || isolatedAssessment?.status === "pending_judgment" ? "review" as const
@@ -328,11 +362,17 @@ export function evaluateArticle110Verifier(input: Article110VerifierInput) {
     resultType,
     categoryLabel: categoryLabel(category),
     reason,
-    decisiveFacts: [
-      input.isAloneExplicit ? "Le chômeur a déclaré vivre seul" : undefined,
-      input.people.length > 0 ? `${input.people.length} personne(s) dans le ménage` : undefined,
-      input.officialOnemCode ? `Situation ONEM actuelle : ${input.officialOnemCode}` : undefined,
-    ].filter((fact): fact is string => Boolean(fact)),
+    decisiveFacts: [...decisiveFacts, ...(input.officialOnemCode ? [`Situation ONEM actuelle : ${input.officialOnemCode}`] : [])],
+    explanation: {
+      relevantComposition: composition.kind,
+      decisiveFacts,
+      appliedRules: householdAssessment.sourceRuleIds,
+      reason,
+      favorableCategoryNotApplied,
+      pensionComparison,
+      treatment: householdAssessment.operationalArticle,
+      monthlyRate: householdAssessment.monthlyPaymentAssessment,
+    },
     missingDocuments: uniqueMissingDocuments,
     nextActions,
     potentialOutcome: potentialCategory ? categoryLabel(potentialCategory) : undefined,

@@ -138,9 +138,11 @@ describe("Article 110 verifier adapter", () => {
     expect(result.missingFacts).toEqual([]);
   });
 
-  it("requires the gross amount only after an explicit yes", () => {
+  it("requires the gross amount only in a branch where it changes the result", () => {
     const result = evaluateArticle110Verifier({ thresholds, people: [{ id: "partner", label: "Conjoint", relation: "spouse", hasProfessionalIncome: true, hasReplacementIncome: false }] });
     expect(result.missingFacts).toContainEqual(expect.objectContaining({ factKey: "partner.professionalIncomeAmount", label: expect.stringContaining("montant brut mensuel") }));
+    const child = evaluateArticle110Verifier({ thresholds, people: [{ id: "child", label: "Enfant", relation: "child", hasProfessionalIncome: true, hasReplacementIncome: false, receivesFamilyAllowances: false }] });
+    expect(child.missingFacts.map((fact) => fact.factKey)).not.toContain("child.professionalIncomeAmount");
   });
 
   it("surfaces C110A as an action without turning 60B into A", () => {
@@ -251,5 +253,27 @@ describe("Article 110 verifier adapter", () => {
   it("keeps an unrecognised cohousing in B and exposes its potential N outcome", () => {
     const result = evaluateArticle110Verifier({ thresholds, people: [], isAloneExplicit: true, cohousingClaim: true, cohousingOnemRecognition: "no" });
     expect(result).toMatchObject({ category: "B", potentialCategory: "N", onemDecisionStatus: "required" });
+  });
+
+  it("explains the child-and-parent branch with the decisive facts rather than a generic summary", () => {
+    const result = evaluateArticle110Verifier({ thresholds, people: [
+      { id: "child", label: "Enfant", relation: "child", receivesFamilyAllowances: true, hasProfessionalIncome: false, hasReplacementIncome: false },
+      { id: "father", label: "Père", relation: "relative", hasProfessionalIncome: true, hasReplacementIncome: false },
+    ] });
+    expect(result).toMatchObject({ category: "B" });
+    expect(result.reason).toContain("allocations familiales");
+    expect(result.reason).toContain("revenu professionnel pertinent");
+    expect(result.explanation.decisiveFacts).toEqual(expect.arrayContaining(["Enfant ouvre le droit aux allocations familiales", "Père a un revenu professionnel"]));
+  });
+
+  it("exposes the pension comparison only when an applicable amount and ceiling exist", () => {
+    const result = evaluateArticle110Verifier({ thresholds, people: [{
+      id: "father", label: "Père", relation: "relative", isAscendant: true,
+      hasProfessionalIncome: false, hasReplacementIncome: true, replacementIncomeType: "pension",
+      replacementIncomeAmount: 500, pensionProofAvailable: true, pensionGrossAmountConfirmed: true,
+    }] });
+    expect(result.explanation.pensionComparison).toEqual({ amount: 500, threshold: 1_000, relation: "within" });
+    expect(result.reason).toContain("500 €");
+    expect(result.reason).toContain("1000 €");
   });
 });

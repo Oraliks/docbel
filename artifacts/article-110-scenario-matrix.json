@@ -3,9 +3,9 @@
   "method": "Exploration combinatoire déterministe des dimensions réellement lues par le moteur ; les états incompatibles sont écartés avant exécution et les ménages symétriques sont dédupliqués par signature canonique.",
   "total": 196,
   "byResultType": {
-    "decision_determined": 95,
-    "information_missing": 72,
-    "document_required": 9,
+    "decision_determined": 105,
+    "information_missing": 60,
+    "document_required": 11,
     "onem_decision_required": 9,
     "not_automated": 11
   },
@@ -15,10 +15,10 @@
     "N": 9
   },
   "supplementalStatuses": {
-    "informationIncomplete": 74,
+    "informationIncomplete": 62,
     "documentsRequired": 28,
     "onemDecisionRequired": 18,
-    "automationPartial": 90,
+    "automationPartial": 80,
     "notAutomated": 2
   },
   "potentialTransitions": {
@@ -145,18 +145,18 @@
     {
       "composition": "conjoint",
       "total": 26,
-      "determined": 7,
-      "information": 18,
-      "document": 1,
+      "determined": 12,
+      "information": 12,
+      "document": 2,
       "onem": 0,
       "notAutomated": 0
     },
     {
       "composition": "partenaire",
       "total": 25,
-      "determined": 5,
-      "information": 18,
-      "document": 1,
+      "determined": 10,
+      "information": 12,
+      "document": 2,
       "onem": 0,
       "notAutomated": 1
     },
@@ -243,7 +243,7 @@
     "atLeastOneN": true
   },
   "anomalies": [],
-  "durationMs": 29.33,
+  "durationMs": 28.91,
   "scenarios": [
     {
       "id": "composition-missing",
@@ -335,7 +335,7 @@
       "householdComposition": "spouse_or_partner",
       "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
       "decisiveFacts": [
-        "1 personne(s) dans le ménage"
+        "Composition pertinente : spouse_or_partner"
       ],
       "missingFacts": [
         "Indiquer si conjoint dispose d'un revenu professionnel.",
@@ -375,9 +375,9 @@
       "onemDecisionStatus": "not_required",
       "automationStatus": "automated",
       "householdComposition": "spouse_or_partner",
-      "reason": "Le conjoint ou partenaire est prioritaire pour l'évaluation de la situation familiale.",
+      "reason": "Le conjoint ou partenaire établi ne dispose pas d’un revenu pertinent dans les faits renseignés : la catégorie A est retenue.",
       "decisiveFacts": [
-        "1 personne(s) dans le ménage"
+        "Composition pertinente : spouse_or_partner"
       ],
       "missingFacts": [],
       "missingDocuments": [],
@@ -415,9 +415,11 @@
       "onemDecisionStatus": "not_required",
       "automationStatus": "automated",
       "householdComposition": "spouse_or_partner",
-      "reason": "Le conjoint ou partenaire est prioritaire pour l'évaluation de la situation familiale.",
+      "reason": "Le conjoint ou partenaire a un revenu professionnel fixe sous le plafond applicable. Le traitement 60A permet de retenir la catégorie A.",
       "decisiveFacts": [
-        "1 personne(s) dans le ménage"
+        "Composition pertinente : spouse_or_partner",
+        "Conjoint a un revenu professionnel de 999 €",
+        "Traitement 60A applicable"
       ],
       "missingFacts": [],
       "missingDocuments": [],
@@ -455,9 +457,11 @@
       "onemDecisionStatus": "not_required",
       "automationStatus": "automated",
       "householdComposition": "spouse_or_partner",
-      "reason": "Le conjoint ou partenaire est prioritaire pour l'évaluation de la situation familiale.",
+      "reason": "Le conjoint ou partenaire a un revenu professionnel fixe sous le plafond applicable. Le traitement 60A permet de retenir la catégorie A.",
       "decisiveFacts": [
-        "1 personne(s) dans le ménage"
+        "Composition pertinente : spouse_or_partner",
+        "Conjoint a un revenu professionnel de 1000 €",
+        "Traitement 60A applicable"
       ],
       "missingFacts": [],
       "missingDocuments": [],
@@ -495,9 +499,10 @@
       "onemDecisionStatus": "not_required",
       "automationStatus": "automated",
       "householdComposition": "spouse_or_partner",
-      "reason": "Le conjoint ou partenaire est prioritaire pour l'évaluation de la situation familiale.",
+      "reason": "Le conjoint ou partenaire établi dispose d’un revenu pertinent dans les faits renseignés : la catégorie B est retenue.",
       "decisiveFacts": [
-        "1 personne(s) dans le ménage"
+        "Composition pertinente : spouse_or_partner",
+        "Conjoint a un revenu professionnel de 1001 €"
       ],
       "missingFacts": [],
       "missingDocuments": [],
@@ -536,9 +541,11 @@
       "onemDecisionStatus": "not_required",
       "automationStatus": "partial",
       "householdComposition": "spouse_or_partner",
-      "reason": "Les éléments déclarés nécessitent une vérification avant de déterminer la catégorie.",
+      "reason": "Le conjoint ou partenaire a un revenu professionnel variable. Le traitement 60B s’applique ; le taux du mois est déterminé séparément par le C110A, sans modifier la catégorie B.",
       "decisiveFacts": [
-        "1 personne(s) dans le ménage"
+        "Composition pertinente : spouse_or_partner",
+        "Conjoint a un revenu professionnel de 1000 €",
+        "Traitement 60B applicable"
       ],
       "missingFacts": [],
       "missingDocuments": [
@@ -578,9 +585,10 @@
       "onemDecisionStatus": "not_required",
       "automationStatus": "automated",
       "householdComposition": "children_only",
-      "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
+      "reason": "Au moins un enfant ouvre le droit aux allocations familiales : la catégorie A est retenue.",
       "decisiveFacts": [
-        "1 personne(s) dans le ménage"
+        "Composition pertinente : children_only",
+        "Enfant ouvre le droit aux allocations familiales"
       ],
       "missingFacts": [],
       "missingDocuments": [],
@@ -616,9 +624,10 @@
       "onemDecisionStatus": "not_required",
       "automationStatus": "automated",
       "householdComposition": "children_only",
-      "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
+      "reason": "Un revenu pertinent d’un enfant est renseigné : la catégorie B est retenue.",
       "decisiveFacts": [
-        "1 personne(s) dans le ménage"
+        "Composition pertinente : children_only",
+        "Enfant a un revenu professionnel de 1000 €"
       ],
       "missingFacts": [],
       "missingDocuments": [],
@@ -659,9 +668,10 @@
       "onemDecisionStatus": "not_required",
       "automationStatus": "automated",
       "householdComposition": "children_only",
-      "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
+      "reason": "Les enfants renseignés ne présentent pas de revenu pertinent : la catégorie A est retenue.",
       "decisiveFacts": [
-        "1 personne(s) dans le ménage"
+        "Composition pertinente : children_only",
+        "Enfant a un revenu professionnel de 1000 €"
       ],
       "missingFacts": [],
       "missingDocuments": [],
@@ -702,9 +712,10 @@
       "onemDecisionStatus": "not_required",
       "automationStatus": "automated",
       "householdComposition": "relatives_only",
-      "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
+      "reason": "Les parents ou alliés renseignés ne présentent pas de revenu pertinent : la catégorie A est retenue.",
       "decisiveFacts": [
-        "1 personne(s) dans le ménage"
+        "Composition pertinente : relatives_only",
+        "Père a une pension brute de 1000 €"
       ],
       "missingFacts": [],
       "missingDocuments": [],
@@ -744,9 +755,10 @@
       "onemDecisionStatus": "not_required",
       "automationStatus": "automated",
       "householdComposition": "relatives_only",
-      "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
+      "reason": "La pension brute déclarée est de 1000 €, à comparer au plafond applicable de 1000 €. Elle reste dans le plafond : la catégorie A est retenue.",
       "decisiveFacts": [
-        "1 personne(s) dans le ménage"
+        "Composition pertinente : relatives_only",
+        "Père a une pension brute de 1000 €"
       ],
       "missingFacts": [],
       "missingDocuments": [],
@@ -786,9 +798,10 @@
       "onemDecisionStatus": "not_required",
       "automationStatus": "automated",
       "householdComposition": "relatives_only",
-      "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
+      "reason": "La pension brute déclarée est de 1001 €, à comparer au plafond applicable de 1000 €. Elle dépasse le plafond : la catégorie B est retenue.",
       "decisiveFacts": [
-        "1 personne(s) dans le ménage"
+        "Composition pertinente : relatives_only",
+        "Père a une pension brute de 1001 €"
       ],
       "missingFacts": [],
       "missingDocuments": [],
@@ -832,9 +845,11 @@
       "onemDecisionStatus": "not_required",
       "automationStatus": "automated",
       "householdComposition": "children_and_third_parties",
-      "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
+      "reason": "Un tiers du ménage a un revenu pertinent : la catégorie B est retenue.",
       "decisiveFacts": [
-        "2 personne(s) dans le ménage"
+        "Composition pertinente : children_and_third_parties",
+        "Enfant ouvre le droit aux allocations familiales",
+        "Ami a un revenu professionnel de 1000 €"
       ],
       "missingFacts": [],
       "missingDocuments": [],
@@ -1197,7 +1212,7 @@
       "householdComposition": "mixed_or_unsupported",
       "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
       "decisiveFacts": [
-        "1 personne(s) dans le ménage"
+        "Composition pertinente : mixed_or_unsupported"
       ],
       "missingFacts": [
         "Indiquer si cette personne dispose d'un revenu professionnel.",
@@ -1237,7 +1252,7 @@
       "householdComposition": "spouse_or_partner",
       "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
       "decisiveFacts": [
-        "1 personne(s) dans le ménage"
+        "Composition pertinente : spouse_or_partner"
       ],
       "missingFacts": [
         "Indiquer si cette personne dispose d'un revenu professionnel."
@@ -1277,11 +1292,10 @@
       "householdComposition": "spouse_or_partner",
       "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
       "decisiveFacts": [
-        "1 personne(s) dans le ménage"
+        "Composition pertinente : spouse_or_partner"
       ],
       "missingFacts": [
-        "Indiquer si cette personne dispose d'un revenu professionnel.",
-        "Indiquer le montant brut mensuel du revenu de remplacement de cette personne."
+        "Indiquer si cette personne dispose d'un revenu professionnel."
       ],
       "missingDocuments": [],
       "actions": [
@@ -1318,7 +1332,7 @@
       "householdComposition": "spouse_or_partner",
       "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
       "decisiveFacts": [
-        "1 personne(s) dans le ménage"
+        "Composition pertinente : spouse_or_partner"
       ],
       "missingFacts": [
         "Indiquer si cette personne perçoit un revenu de remplacement."
@@ -1348,26 +1362,22 @@
           }
         ]
       },
-      "resultType": "information_missing",
+      "resultType": "decision_determined",
       "category": "B",
       "treatment": "none",
       "monthlyRate": "B_RATE",
-      "informationStatus": "incomplete",
+      "informationStatus": "complete",
       "documentStatus": "complete",
       "onemDecisionStatus": "not_required",
-      "automationStatus": "partial",
+      "automationStatus": "automated",
       "householdComposition": "spouse_or_partner",
-      "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
+      "reason": "Le conjoint ou partenaire établi dispose d’un revenu pertinent dans les faits renseignés : la catégorie B est retenue.",
       "decisiveFacts": [
-        "1 personne(s) dans le ménage"
+        "Composition pertinente : spouse_or_partner"
       ],
-      "missingFacts": [
-        "Indiquer le montant brut mensuel du revenu de remplacement de cette personne."
-      ],
+      "missingFacts": [],
       "missingDocuments": [],
-      "actions": [
-        "Compléter les informations"
-      ],
+      "actions": [],
       "declarationRequired": true,
       "sourceRuleIds": [
         "situation_familiale_composition_priorities",
@@ -1402,7 +1412,8 @@
       "householdComposition": "spouse_or_partner",
       "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
       "decisiveFacts": [
-        "1 personne(s) dans le ménage"
+        "Composition pertinente : spouse_or_partner",
+        "Partenaire a un revenu professionnel de 999.99 €"
       ],
       "missingFacts": [
         "Indiquer si cette personne perçoit un revenu de remplacement."
@@ -1444,9 +1455,11 @@
       "onemDecisionStatus": "not_required",
       "automationStatus": "automated",
       "householdComposition": "spouse_or_partner",
-      "reason": "Le conjoint ou partenaire est prioritaire pour l'évaluation de la situation familiale.",
+      "reason": "Le conjoint ou partenaire a un revenu professionnel fixe sous le plafond applicable. Le traitement 60A permet de retenir la catégorie A.",
       "decisiveFacts": [
-        "1 personne(s) dans le ménage"
+        "Composition pertinente : spouse_or_partner",
+        "Partenaire a un revenu professionnel de 999.99 €",
+        "Traitement 60A applicable"
       ],
       "missingFacts": [],
       "missingDocuments": [],
@@ -1475,26 +1488,24 @@
           }
         ]
       },
-      "resultType": "information_missing",
+      "resultType": "decision_determined",
       "category": "A",
       "treatment": "60A",
       "monthlyRate": "A_RATE",
-      "informationStatus": "incomplete",
+      "informationStatus": "complete",
       "documentStatus": "complete",
       "onemDecisionStatus": "not_required",
-      "automationStatus": "partial",
+      "automationStatus": "automated",
       "householdComposition": "spouse_or_partner",
-      "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
+      "reason": "Le conjoint ou partenaire a un revenu professionnel fixe sous le plafond applicable. Le traitement 60A permet de retenir la catégorie A.",
       "decisiveFacts": [
-        "1 personne(s) dans le ménage"
+        "Composition pertinente : spouse_or_partner",
+        "Partenaire a un revenu professionnel de 999.99 €",
+        "Traitement 60A applicable"
       ],
-      "missingFacts": [
-        "Indiquer le montant brut mensuel du revenu de remplacement de cette personne."
-      ],
+      "missingFacts": [],
       "missingDocuments": [],
-      "actions": [
-        "Compléter les informations"
-      ],
+      "actions": [],
       "declarationRequired": true,
       "sourceRuleIds": [
         "situation_familiale_composition_priorities",
@@ -1529,7 +1540,8 @@
       "householdComposition": "spouse_or_partner",
       "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
       "decisiveFacts": [
-        "1 personne(s) dans le ménage"
+        "Composition pertinente : spouse_or_partner",
+        "Partenaire a un revenu professionnel de 1000 €"
       ],
       "missingFacts": [
         "Indiquer si cette personne perçoit un revenu de remplacement."
@@ -1562,26 +1574,24 @@
           }
         ]
       },
-      "resultType": "information_missing",
+      "resultType": "decision_determined",
       "category": "A",
       "treatment": "60A",
       "monthlyRate": "A_RATE",
-      "informationStatus": "incomplete",
+      "informationStatus": "complete",
       "documentStatus": "complete",
       "onemDecisionStatus": "not_required",
-      "automationStatus": "partial",
+      "automationStatus": "automated",
       "householdComposition": "spouse_or_partner",
-      "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
+      "reason": "Le conjoint ou partenaire a un revenu professionnel fixe sous le plafond applicable. Le traitement 60A permet de retenir la catégorie A.",
       "decisiveFacts": [
-        "1 personne(s) dans le ménage"
+        "Composition pertinente : spouse_or_partner",
+        "Partenaire a un revenu professionnel de 1000 €",
+        "Traitement 60A applicable"
       ],
-      "missingFacts": [
-        "Indiquer le montant brut mensuel du revenu de remplacement de cette personne."
-      ],
+      "missingFacts": [],
       "missingDocuments": [],
-      "actions": [
-        "Compléter les informations"
-      ],
+      "actions": [],
       "declarationRequired": true,
       "sourceRuleIds": [
         "situation_familiale_composition_priorities",
@@ -1616,7 +1626,8 @@
       "householdComposition": "spouse_or_partner",
       "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
       "decisiveFacts": [
-        "1 personne(s) dans le ménage"
+        "Composition pertinente : spouse_or_partner",
+        "Partenaire a un revenu professionnel de 1000.01 €"
       ],
       "missingFacts": [
         "Indiquer si cette personne perçoit un revenu de remplacement."
@@ -1658,9 +1669,10 @@
       "onemDecisionStatus": "not_required",
       "automationStatus": "automated",
       "householdComposition": "spouse_or_partner",
-      "reason": "Le conjoint ou partenaire est prioritaire pour l'évaluation de la situation familiale.",
+      "reason": "Le conjoint ou partenaire établi dispose d’un revenu pertinent dans les faits renseignés : la catégorie B est retenue.",
       "decisiveFacts": [
-        "1 personne(s) dans le ménage"
+        "Composition pertinente : spouse_or_partner",
+        "Partenaire a un revenu professionnel de 1000.01 €"
       ],
       "missingFacts": [],
       "missingDocuments": [],
@@ -1689,26 +1701,23 @@
           }
         ]
       },
-      "resultType": "information_missing",
+      "resultType": "decision_determined",
       "category": "B",
       "treatment": "none",
       "monthlyRate": "B_RATE",
-      "informationStatus": "incomplete",
+      "informationStatus": "complete",
       "documentStatus": "complete",
       "onemDecisionStatus": "not_required",
-      "automationStatus": "partial",
+      "automationStatus": "automated",
       "householdComposition": "spouse_or_partner",
-      "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
+      "reason": "Le conjoint ou partenaire établi dispose d’un revenu pertinent dans les faits renseignés : la catégorie B est retenue.",
       "decisiveFacts": [
-        "1 personne(s) dans le ménage"
+        "Composition pertinente : spouse_or_partner",
+        "Partenaire a un revenu professionnel de 1000.01 €"
       ],
-      "missingFacts": [
-        "Indiquer le montant brut mensuel du revenu de remplacement de cette personne."
-      ],
+      "missingFacts": [],
       "missingDocuments": [],
-      "actions": [
-        "Compléter les informations"
-      ],
+      "actions": [],
       "declarationRequired": true,
       "sourceRuleIds": [
         "situation_familiale_composition_priorities",
@@ -1744,7 +1753,8 @@
       "householdComposition": "spouse_or_partner",
       "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
       "decisiveFacts": [
-        "1 personne(s) dans le ménage"
+        "Composition pertinente : spouse_or_partner",
+        "Partenaire a un revenu professionnel de 1000 €"
       ],
       "missingFacts": [
         "Indiquer si cette personne perçoit un revenu de remplacement."
@@ -1778,27 +1788,26 @@
           }
         ]
       },
-      "resultType": "information_missing",
+      "resultType": "document_required",
       "category": "B",
       "treatment": "60B",
       "monthlyRate": "NEEDS_C110A",
-      "informationStatus": "incomplete",
+      "informationStatus": "complete",
       "documentStatus": "required",
       "onemDecisionStatus": "not_required",
       "automationStatus": "partial",
       "householdComposition": "spouse_or_partner",
-      "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
+      "reason": "Le conjoint ou partenaire a un revenu professionnel variable. Le traitement 60B s’applique ; le taux du mois est déterminé séparément par le C110A, sans modifier la catégorie B.",
       "decisiveFacts": [
-        "1 personne(s) dans le ménage"
+        "Composition pertinente : spouse_or_partner",
+        "Partenaire a un revenu professionnel de 1000 €",
+        "Traitement 60B applicable"
       ],
-      "missingFacts": [
-        "Indiquer le montant brut mensuel du revenu de remplacement de cette personne."
-      ],
+      "missingFacts": [],
       "missingDocuments": [
         "C110A du mois concerné"
       ],
       "actions": [
-        "Compléter les informations",
         "Obtenir : C110A du mois concerné"
       ],
       "declarationRequired": true,
@@ -1836,7 +1845,8 @@
       "householdComposition": "spouse_or_partner",
       "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
       "decisiveFacts": [
-        "1 personne(s) dans le ménage"
+        "Composition pertinente : spouse_or_partner",
+        "Partenaire a un revenu professionnel de 1000 €"
       ],
       "missingFacts": [
         "Indiquer si cette personne perçoit un revenu de remplacement.",
@@ -1882,7 +1892,9 @@
       "householdComposition": "spouse_or_partner",
       "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
       "decisiveFacts": [
-        "1 personne(s) dans le ménage"
+        "Composition pertinente : spouse_or_partner",
+        "Partenaire a un revenu professionnel de 1000 €",
+        "Traitement 60B applicable"
       ],
       "missingFacts": [
         "Indiquer le montant mensuel repris sur le C110A."
@@ -1927,10 +1939,11 @@
       "householdComposition": "spouse_or_partner",
       "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
       "decisiveFacts": [
-        "1 personne(s) dans le ménage"
+        "Composition pertinente : spouse_or_partner",
+        "Partenaire a un revenu professionnel de 1000 €",
+        "Traitement 60B applicable"
       ],
       "missingFacts": [
-        "Indiquer le montant brut mensuel du revenu de remplacement de cette personne.",
         "Indiquer le montant mensuel repris sur le C110A."
       ],
       "missingDocuments": [],
@@ -1973,7 +1986,8 @@
       "householdComposition": "spouse_or_partner",
       "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
       "decisiveFacts": [
-        "1 personne(s) dans le ménage"
+        "Composition pertinente : spouse_or_partner",
+        "Partenaire a un revenu professionnel de 1000 €"
       ],
       "missingFacts": [
         "Indiquer si cette personne perçoit un revenu de remplacement."
@@ -2017,9 +2031,11 @@
       "onemDecisionStatus": "not_required",
       "automationStatus": "automated",
       "householdComposition": "spouse_or_partner",
-      "reason": "Les éléments déclarés nécessitent une vérification avant de déterminer la catégorie.",
+      "reason": "Le conjoint ou partenaire a un revenu professionnel variable. Le traitement 60B s’applique ; le taux du mois est déterminé séparément par le C110A, sans modifier la catégorie B.",
       "decisiveFacts": [
-        "1 personne(s) dans le ménage"
+        "Composition pertinente : spouse_or_partner",
+        "Partenaire a un revenu professionnel de 1000 €",
+        "Traitement 60B applicable"
       ],
       "missingFacts": [],
       "missingDocuments": [],
@@ -2050,26 +2066,24 @@
           }
         ]
       },
-      "resultType": "information_missing",
+      "resultType": "decision_determined",
       "category": "B",
       "treatment": "60B",
       "monthlyRate": "A_RATE",
-      "informationStatus": "incomplete",
+      "informationStatus": "complete",
       "documentStatus": "complete",
       "onemDecisionStatus": "not_required",
-      "automationStatus": "partial",
+      "automationStatus": "automated",
       "householdComposition": "spouse_or_partner",
-      "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
+      "reason": "Le conjoint ou partenaire a un revenu professionnel variable. Le traitement 60B s’applique ; le taux du mois est déterminé séparément par le C110A, sans modifier la catégorie B.",
       "decisiveFacts": [
-        "1 personne(s) dans le ménage"
+        "Composition pertinente : spouse_or_partner",
+        "Partenaire a un revenu professionnel de 1000 €",
+        "Traitement 60B applicable"
       ],
-      "missingFacts": [
-        "Indiquer le montant brut mensuel du revenu de remplacement de cette personne."
-      ],
+      "missingFacts": [],
       "missingDocuments": [],
-      "actions": [
-        "Compléter les informations"
-      ],
+      "actions": [],
       "declarationRequired": true,
       "sourceRuleIds": [
         "situation_familiale_composition_priorities",
@@ -2101,7 +2115,7 @@
       "householdComposition": "spouse_or_partner",
       "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
       "decisiveFacts": [
-        "1 personne(s) dans le ménage"
+        "Composition pertinente : spouse_or_partner"
       ],
       "missingFacts": [
         "Indiquer si cette personne dispose d'un revenu professionnel.",
@@ -2143,7 +2157,7 @@
       "householdComposition": "spouse_or_partner",
       "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
       "decisiveFacts": [
-        "1 personne(s) dans le ménage"
+        "Composition pertinente : spouse_or_partner"
       ],
       "missingFacts": [
         "Indiquer si cette personne dispose d'un revenu professionnel."
@@ -2184,11 +2198,10 @@
       "householdComposition": "spouse_or_partner",
       "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
       "decisiveFacts": [
-        "1 personne(s) dans le ménage"
+        "Composition pertinente : spouse_or_partner"
       ],
       "missingFacts": [
-        "Indiquer si cette personne dispose d'un revenu professionnel.",
-        "Indiquer le montant brut mensuel du revenu de remplacement de cette personne."
+        "Indiquer si cette personne dispose d'un revenu professionnel."
       ],
       "missingDocuments": [],
       "actions": [
@@ -2226,7 +2239,7 @@
       "householdComposition": "spouse_or_partner",
       "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
       "decisiveFacts": [
-        "1 personne(s) dans le ménage"
+        "Composition pertinente : spouse_or_partner"
       ],
       "missingFacts": [
         "Indiquer si cette personne perçoit un revenu de remplacement."
@@ -2266,9 +2279,9 @@
       "onemDecisionStatus": "not_required",
       "automationStatus": "automated",
       "householdComposition": "spouse_or_partner",
-      "reason": "Le conjoint ou partenaire est prioritaire pour l'évaluation de la situation familiale.",
+      "reason": "Le conjoint ou partenaire établi ne dispose pas d’un revenu pertinent dans les faits renseignés : la catégorie A est retenue.",
       "decisiveFacts": [
-        "1 personne(s) dans le ménage"
+        "Composition pertinente : spouse_or_partner"
       ],
       "missingFacts": [],
       "missingDocuments": [],
@@ -2295,26 +2308,22 @@
           }
         ]
       },
-      "resultType": "information_missing",
+      "resultType": "decision_determined",
       "category": "B",
       "treatment": "none",
       "monthlyRate": "B_RATE",
-      "informationStatus": "incomplete",
+      "informationStatus": "complete",
       "documentStatus": "complete",
       "onemDecisionStatus": "not_required",
-      "automationStatus": "partial",
+      "automationStatus": "automated",
       "householdComposition": "spouse_or_partner",
-      "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
+      "reason": "Le conjoint ou partenaire établi dispose d’un revenu pertinent dans les faits renseignés : la catégorie B est retenue.",
       "decisiveFacts": [
-        "1 personne(s) dans le ménage"
+        "Composition pertinente : spouse_or_partner"
       ],
-      "missingFacts": [
-        "Indiquer le montant brut mensuel du revenu de remplacement de cette personne."
-      ],
+      "missingFacts": [],
       "missingDocuments": [],
-      "actions": [
-        "Compléter les informations"
-      ],
+      "actions": [],
       "declarationRequired": true,
       "sourceRuleIds": [
         "situation_familiale_composition_priorities",
@@ -2350,7 +2359,8 @@
       "householdComposition": "spouse_or_partner",
       "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
       "decisiveFacts": [
-        "1 personne(s) dans le ménage"
+        "Composition pertinente : spouse_or_partner",
+        "Partenaire a un revenu professionnel de 999.99 €"
       ],
       "missingFacts": [
         "Indiquer si cette personne perçoit un revenu de remplacement."
@@ -2393,9 +2403,11 @@
       "onemDecisionStatus": "not_required",
       "automationStatus": "automated",
       "householdComposition": "spouse_or_partner",
-      "reason": "Le conjoint ou partenaire est prioritaire pour l'évaluation de la situation familiale.",
+      "reason": "Le conjoint ou partenaire a un revenu professionnel fixe sous le plafond applicable. Le traitement 60A permet de retenir la catégorie A.",
       "decisiveFacts": [
-        "1 personne(s) dans le ménage"
+        "Composition pertinente : spouse_or_partner",
+        "Partenaire a un revenu professionnel de 999.99 €",
+        "Traitement 60A applicable"
       ],
       "missingFacts": [],
       "missingDocuments": [],
@@ -2425,26 +2437,24 @@
           }
         ]
       },
-      "resultType": "information_missing",
+      "resultType": "decision_determined",
       "category": "A",
       "treatment": "60A",
       "monthlyRate": "A_RATE",
-      "informationStatus": "incomplete",
+      "informationStatus": "complete",
       "documentStatus": "complete",
       "onemDecisionStatus": "not_required",
-      "automationStatus": "partial",
+      "automationStatus": "automated",
       "householdComposition": "spouse_or_partner",
-      "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
+      "reason": "Le conjoint ou partenaire a un revenu professionnel fixe sous le plafond applicable. Le traitement 60A permet de retenir la catégorie A.",
       "decisiveFacts": [
-        "1 personne(s) dans le ménage"
+        "Composition pertinente : spouse_or_partner",
+        "Partenaire a un revenu professionnel de 999.99 €",
+        "Traitement 60A applicable"
       ],
-      "missingFacts": [
-        "Indiquer le montant brut mensuel du revenu de remplacement de cette personne."
-      ],
+      "missingFacts": [],
       "missingDocuments": [],
-      "actions": [
-        "Compléter les informations"
-      ],
+      "actions": [],
       "declarationRequired": true,
       "sourceRuleIds": [
         "situation_familiale_composition_priorities",
@@ -2480,7 +2490,8 @@
       "householdComposition": "spouse_or_partner",
       "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
       "decisiveFacts": [
-        "1 personne(s) dans le ménage"
+        "Composition pertinente : spouse_or_partner",
+        "Partenaire a un revenu professionnel de 1000 €"
       ],
       "missingFacts": [
         "Indiquer si cette personne perçoit un revenu de remplacement."
@@ -2523,9 +2534,11 @@
       "onemDecisionStatus": "not_required",
       "automationStatus": "automated",
       "householdComposition": "spouse_or_partner",
-      "reason": "Le conjoint ou partenaire est prioritaire pour l'évaluation de la situation familiale.",
+      "reason": "Le conjoint ou partenaire a un revenu professionnel fixe sous le plafond applicable. Le traitement 60A permet de retenir la catégorie A.",
       "decisiveFacts": [
-        "1 personne(s) dans le ménage"
+        "Composition pertinente : spouse_or_partner",
+        "Partenaire a un revenu professionnel de 1000 €",
+        "Traitement 60A applicable"
       ],
       "missingFacts": [],
       "missingDocuments": [],
@@ -2555,26 +2568,24 @@
           }
         ]
       },
-      "resultType": "information_missing",
+      "resultType": "decision_determined",
       "category": "A",
       "treatment": "60A",
       "monthlyRate": "A_RATE",
-      "informationStatus": "incomplete",
+      "informationStatus": "complete",
       "documentStatus": "complete",
       "onemDecisionStatus": "not_required",
-      "automationStatus": "partial",
+      "automationStatus": "automated",
       "householdComposition": "spouse_or_partner",
-      "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
+      "reason": "Le conjoint ou partenaire a un revenu professionnel fixe sous le plafond applicable. Le traitement 60A permet de retenir la catégorie A.",
       "decisiveFacts": [
-        "1 personne(s) dans le ménage"
+        "Composition pertinente : spouse_or_partner",
+        "Partenaire a un revenu professionnel de 1000 €",
+        "Traitement 60A applicable"
       ],
-      "missingFacts": [
-        "Indiquer le montant brut mensuel du revenu de remplacement de cette personne."
-      ],
+      "missingFacts": [],
       "missingDocuments": [],
-      "actions": [
-        "Compléter les informations"
-      ],
+      "actions": [],
       "declarationRequired": true,
       "sourceRuleIds": [
         "situation_familiale_composition_priorities",
@@ -2610,7 +2621,8 @@
       "householdComposition": "spouse_or_partner",
       "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
       "decisiveFacts": [
-        "1 personne(s) dans le ménage"
+        "Composition pertinente : spouse_or_partner",
+        "Partenaire a un revenu professionnel de 1000.01 €"
       ],
       "missingFacts": [
         "Indiquer si cette personne perçoit un revenu de remplacement."
@@ -2653,9 +2665,10 @@
       "onemDecisionStatus": "not_required",
       "automationStatus": "automated",
       "householdComposition": "spouse_or_partner",
-      "reason": "Le conjoint ou partenaire est prioritaire pour l'évaluation de la situation familiale.",
+      "reason": "Le conjoint ou partenaire établi dispose d’un revenu pertinent dans les faits renseignés : la catégorie B est retenue.",
       "decisiveFacts": [
-        "1 personne(s) dans le ménage"
+        "Composition pertinente : spouse_or_partner",
+        "Partenaire a un revenu professionnel de 1000.01 €"
       ],
       "missingFacts": [],
       "missingDocuments": [],
@@ -2685,26 +2698,23 @@
           }
         ]
       },
-      "resultType": "information_missing",
+      "resultType": "decision_determined",
       "category": "B",
       "treatment": "none",
       "monthlyRate": "B_RATE",
-      "informationStatus": "incomplete",
+      "informationStatus": "complete",
       "documentStatus": "complete",
       "onemDecisionStatus": "not_required",
-      "automationStatus": "partial",
+      "automationStatus": "automated",
       "householdComposition": "spouse_or_partner",
-      "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
+      "reason": "Le conjoint ou partenaire établi dispose d’un revenu pertinent dans les faits renseignés : la catégorie B est retenue.",
       "decisiveFacts": [
-        "1 personne(s) dans le ménage"
+        "Composition pertinente : spouse_or_partner",
+        "Partenaire a un revenu professionnel de 1000.01 €"
       ],
-      "missingFacts": [
-        "Indiquer le montant brut mensuel du revenu de remplacement de cette personne."
-      ],
+      "missingFacts": [],
       "missingDocuments": [],
-      "actions": [
-        "Compléter les informations"
-      ],
+      "actions": [],
       "declarationRequired": true,
       "sourceRuleIds": [
         "situation_familiale_composition_priorities",
@@ -2741,7 +2751,8 @@
       "householdComposition": "spouse_or_partner",
       "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
       "decisiveFacts": [
-        "1 personne(s) dans le ménage"
+        "Composition pertinente : spouse_or_partner",
+        "Partenaire a un revenu professionnel de 1000 €"
       ],
       "missingFacts": [
         "Indiquer si cette personne perçoit un revenu de remplacement."
@@ -2785,9 +2796,11 @@
       "onemDecisionStatus": "not_required",
       "automationStatus": "partial",
       "householdComposition": "spouse_or_partner",
-      "reason": "Les éléments déclarés nécessitent une vérification avant de déterminer la catégorie.",
+      "reason": "Le conjoint ou partenaire a un revenu professionnel variable. Le traitement 60B s’applique ; le taux du mois est déterminé séparément par le C110A, sans modifier la catégorie B.",
       "decisiveFacts": [
-        "1 personne(s) dans le ménage"
+        "Composition pertinente : spouse_or_partner",
+        "Partenaire a un revenu professionnel de 1000 €",
+        "Traitement 60B applicable"
       ],
       "missingFacts": [],
       "missingDocuments": [
@@ -2822,27 +2835,26 @@
           }
         ]
       },
-      "resultType": "information_missing",
+      "resultType": "document_required",
       "category": "B",
       "treatment": "60B",
       "monthlyRate": "NEEDS_C110A",
-      "informationStatus": "incomplete",
+      "informationStatus": "complete",
       "documentStatus": "required",
       "onemDecisionStatus": "not_required",
       "automationStatus": "partial",
       "householdComposition": "spouse_or_partner",
-      "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
+      "reason": "Le conjoint ou partenaire a un revenu professionnel variable. Le traitement 60B s’applique ; le taux du mois est déterminé séparément par le C110A, sans modifier la catégorie B.",
       "decisiveFacts": [
-        "1 personne(s) dans le ménage"
+        "Composition pertinente : spouse_or_partner",
+        "Partenaire a un revenu professionnel de 1000 €",
+        "Traitement 60B applicable"
       ],
-      "missingFacts": [
-        "Indiquer le montant brut mensuel du revenu de remplacement de cette personne."
-      ],
+      "missingFacts": [],
       "missingDocuments": [
         "C110A du mois concerné"
       ],
       "actions": [
-        "Compléter les informations",
         "Obtenir : C110A du mois concerné"
       ],
       "declarationRequired": true,
@@ -2881,7 +2893,8 @@
       "householdComposition": "spouse_or_partner",
       "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
       "decisiveFacts": [
-        "1 personne(s) dans le ménage"
+        "Composition pertinente : spouse_or_partner",
+        "Partenaire a un revenu professionnel de 1000 €"
       ],
       "missingFacts": [
         "Indiquer si cette personne perçoit un revenu de remplacement.",
@@ -2928,7 +2941,9 @@
       "householdComposition": "spouse_or_partner",
       "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
       "decisiveFacts": [
-        "1 personne(s) dans le ménage"
+        "Composition pertinente : spouse_or_partner",
+        "Partenaire a un revenu professionnel de 1000 €",
+        "Traitement 60B applicable"
       ],
       "missingFacts": [
         "Indiquer le montant mensuel repris sur le C110A."
@@ -2974,10 +2989,11 @@
       "householdComposition": "spouse_or_partner",
       "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
       "decisiveFacts": [
-        "1 personne(s) dans le ménage"
+        "Composition pertinente : spouse_or_partner",
+        "Partenaire a un revenu professionnel de 1000 €",
+        "Traitement 60B applicable"
       ],
       "missingFacts": [
-        "Indiquer le montant brut mensuel du revenu de remplacement de cette personne.",
         "Indiquer le montant mensuel repris sur le C110A."
       ],
       "missingDocuments": [],
@@ -3021,7 +3037,8 @@
       "householdComposition": "spouse_or_partner",
       "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
       "decisiveFacts": [
-        "1 personne(s) dans le ménage"
+        "Composition pertinente : spouse_or_partner",
+        "Partenaire a un revenu professionnel de 1000 €"
       ],
       "missingFacts": [
         "Indiquer si cette personne perçoit un revenu de remplacement."
@@ -3066,9 +3083,11 @@
       "onemDecisionStatus": "not_required",
       "automationStatus": "automated",
       "householdComposition": "spouse_or_partner",
-      "reason": "Les éléments déclarés nécessitent une vérification avant de déterminer la catégorie.",
+      "reason": "Le conjoint ou partenaire a un revenu professionnel variable. Le traitement 60B s’applique ; le taux du mois est déterminé séparément par le C110A, sans modifier la catégorie B.",
       "decisiveFacts": [
-        "1 personne(s) dans le ménage"
+        "Composition pertinente : spouse_or_partner",
+        "Partenaire a un revenu professionnel de 1000 €",
+        "Traitement 60B applicable"
       ],
       "missingFacts": [],
       "missingDocuments": [],
@@ -3100,26 +3119,24 @@
           }
         ]
       },
-      "resultType": "information_missing",
+      "resultType": "decision_determined",
       "category": "B",
       "treatment": "60B",
       "monthlyRate": "A_RATE",
-      "informationStatus": "incomplete",
+      "informationStatus": "complete",
       "documentStatus": "complete",
       "onemDecisionStatus": "not_required",
-      "automationStatus": "partial",
+      "automationStatus": "automated",
       "householdComposition": "spouse_or_partner",
-      "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
+      "reason": "Le conjoint ou partenaire a un revenu professionnel variable. Le traitement 60B s’applique ; le taux du mois est déterminé séparément par le C110A, sans modifier la catégorie B.",
       "decisiveFacts": [
-        "1 personne(s) dans le ménage"
+        "Composition pertinente : spouse_or_partner",
+        "Partenaire a un revenu professionnel de 1000 €",
+        "Traitement 60B applicable"
       ],
-      "missingFacts": [
-        "Indiquer le montant brut mensuel du revenu de remplacement de cette personne."
-      ],
+      "missingFacts": [],
       "missingDocuments": [],
-      "actions": [
-        "Compléter les informations"
-      ],
+      "actions": [],
       "declarationRequired": true,
       "sourceRuleIds": [
         "situation_familiale_composition_priorities",
@@ -3159,9 +3176,10 @@
       "onemDecisionStatus": "not_required",
       "automationStatus": "automated",
       "householdComposition": "spouse_or_partner",
-      "reason": "Le conjoint ou partenaire est prioritaire pour l'évaluation de la situation familiale.",
+      "reason": "Le conjoint ou partenaire établi ne dispose pas d’un revenu pertinent dans les faits renseignés : la catégorie A est retenue.",
       "decisiveFacts": [
-        "2 personne(s) dans le ménage"
+        "Composition pertinente : spouse_or_partner",
+        "Enfant ouvre le droit aux allocations familiales"
       ],
       "missingFacts": [],
       "missingDocuments": [],
@@ -3204,9 +3222,10 @@
       "onemDecisionStatus": "not_required",
       "automationStatus": "automated",
       "householdComposition": "spouse_or_partner",
-      "reason": "Le conjoint ou partenaire est prioritaire pour l'évaluation de la situation familiale.",
+      "reason": "Le conjoint ou partenaire établi ne dispose pas d’un revenu pertinent dans les faits renseignés : la catégorie A est retenue.",
       "decisiveFacts": [
-        "2 personne(s) dans le ménage"
+        "Composition pertinente : spouse_or_partner",
+        "Père a un revenu professionnel"
       ],
       "missingFacts": [],
       "missingDocuments": [],
@@ -3250,9 +3269,10 @@
       "onemDecisionStatus": "not_required",
       "automationStatus": "automated",
       "householdComposition": "spouse_or_partner",
-      "reason": "Le conjoint ou partenaire est prioritaire pour l'évaluation de la situation familiale.",
+      "reason": "Le conjoint ou partenaire établi ne dispose pas d’un revenu pertinent dans les faits renseignés : la catégorie A est retenue.",
       "decisiveFacts": [
-        "2 personne(s) dans le ménage"
+        "Composition pertinente : spouse_or_partner",
+        "Ami a un revenu professionnel de 1000 €"
       ],
       "missingFacts": [],
       "missingDocuments": [],
@@ -3311,9 +3331,12 @@
       "onemDecisionStatus": "not_required",
       "automationStatus": "automated",
       "householdComposition": "spouse_or_partner",
-      "reason": "Le conjoint ou partenaire est prioritaire pour l'évaluation de la situation familiale.",
+      "reason": "Le conjoint ou partenaire établi ne dispose pas d’un revenu pertinent dans les faits renseignés : la catégorie A est retenue.",
       "decisiveFacts": [
-        "4 personne(s) dans le ménage"
+        "Composition pertinente : spouse_or_partner",
+        "Enfant ouvre le droit aux allocations familiales",
+        "Père a un revenu professionnel",
+        "Ami a un revenu professionnel de 1000 €"
       ],
       "missingFacts": [],
       "missingDocuments": [],
@@ -3349,9 +3372,9 @@
       "onemDecisionStatus": "not_required",
       "automationStatus": "automated",
       "householdComposition": "children_only",
-      "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
+      "reason": "Les enfants renseignés ne présentent pas de revenu pertinent : la catégorie A est retenue.",
       "decisiveFacts": [
-        "1 personne(s) dans le ménage"
+        "Composition pertinente : children_only"
       ],
       "missingFacts": [],
       "missingDocuments": [],
@@ -3387,9 +3410,9 @@
       "onemDecisionStatus": "not_required",
       "automationStatus": "automated",
       "householdComposition": "children_only",
-      "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
+      "reason": "Un revenu pertinent d’un enfant est renseigné : la catégorie B est retenue.",
       "decisiveFacts": [
-        "1 personne(s) dans le ménage"
+        "Composition pertinente : children_only"
       ],
       "missingFacts": [],
       "missingDocuments": [],
@@ -3423,7 +3446,7 @@
       "householdComposition": "children_only",
       "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
       "decisiveFacts": [
-        "1 personne(s) dans le ménage"
+        "Composition pertinente : children_only"
       ],
       "missingFacts": [
         "Indiquer si cette personne dispose d'un revenu professionnel.",
@@ -3472,9 +3495,11 @@
       "onemDecisionStatus": "not_required",
       "automationStatus": "automated",
       "householdComposition": "children_only",
-      "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
+      "reason": "Au moins un enfant ouvre le droit aux allocations familiales : la catégorie A est retenue.",
       "decisiveFacts": [
-        "2 personne(s) dans le ménage"
+        "Composition pertinente : children_only",
+        "Enfant af ouvre le droit aux allocations familiales",
+        "Enfant af ouvre le droit aux allocations familiales"
       ],
       "missingFacts": [],
       "missingDocuments": [],
@@ -3517,9 +3542,10 @@
       "onemDecisionStatus": "not_required",
       "automationStatus": "automated",
       "householdComposition": "children_only",
-      "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
+      "reason": "Au moins un enfant ouvre le droit aux allocations familiales : la catégorie A est retenue.",
       "decisiveFacts": [
-        "2 personne(s) dans le ménage"
+        "Composition pertinente : children_only",
+        "Enfant af ouvre le droit aux allocations familiales"
       ],
       "missingFacts": [],
       "missingDocuments": [],
@@ -3563,9 +3589,11 @@
       "onemDecisionStatus": "not_required",
       "automationStatus": "automated",
       "householdComposition": "children_only",
-      "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
+      "reason": "Au moins un enfant ouvre le droit aux allocations familiales : la catégorie A est retenue.",
       "decisiveFacts": [
-        "2 personne(s) dans le ménage"
+        "Composition pertinente : children_only",
+        "Enfant af ouvre le droit aux allocations familiales",
+        "Enfant professional a un revenu professionnel de 1000 €"
       ],
       "missingFacts": [],
       "missingDocuments": [],
@@ -3609,9 +3637,10 @@
       "onemDecisionStatus": "not_required",
       "automationStatus": "automated",
       "householdComposition": "children_only",
-      "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
+      "reason": "Au moins un enfant ouvre le droit aux allocations familiales : la catégorie A est retenue.",
       "decisiveFacts": [
-        "2 personne(s) dans le ménage"
+        "Composition pertinente : children_only",
+        "Enfant af ouvre le droit aux allocations familiales"
       ],
       "missingFacts": [],
       "missingDocuments": [],
@@ -3653,7 +3682,8 @@
       "householdComposition": "children_only",
       "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
       "decisiveFacts": [
-        "2 personne(s) dans le ménage"
+        "Composition pertinente : children_only",
+        "Enfant af ouvre le droit aux allocations familiales"
       ],
       "missingFacts": [
         "Indiquer si cette personne dispose d'un revenu professionnel.",
@@ -3702,9 +3732,9 @@
       "onemDecisionStatus": "not_required",
       "automationStatus": "automated",
       "householdComposition": "children_only",
-      "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
+      "reason": "Les enfants renseignés ne présentent pas de revenu pertinent : la catégorie A est retenue.",
       "decisiveFacts": [
-        "2 personne(s) dans le ménage"
+        "Composition pertinente : children_only"
       ],
       "missingFacts": [],
       "missingDocuments": [],
@@ -3748,9 +3778,10 @@
       "onemDecisionStatus": "not_required",
       "automationStatus": "automated",
       "householdComposition": "children_only",
-      "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
+      "reason": "Un revenu pertinent d’un enfant est renseigné : la catégorie B est retenue.",
       "decisiveFacts": [
-        "2 personne(s) dans le ménage"
+        "Composition pertinente : children_only",
+        "Enfant professional a un revenu professionnel de 1000 €"
       ],
       "missingFacts": [],
       "missingDocuments": [],
@@ -3794,9 +3825,9 @@
       "onemDecisionStatus": "not_required",
       "automationStatus": "automated",
       "householdComposition": "children_only",
-      "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
+      "reason": "Un revenu pertinent d’un enfant est renseigné : la catégorie B est retenue.",
       "decisiveFacts": [
-        "2 personne(s) dans le ménage"
+        "Composition pertinente : children_only"
       ],
       "missingFacts": [],
       "missingDocuments": [],
@@ -3838,7 +3869,7 @@
       "householdComposition": "children_only",
       "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
       "decisiveFacts": [
-        "2 personne(s) dans le ménage"
+        "Composition pertinente : children_only"
       ],
       "missingFacts": [
         "Indiquer si cette personne dispose d'un revenu professionnel.",
@@ -3889,9 +3920,11 @@
       "onemDecisionStatus": "not_required",
       "automationStatus": "automated",
       "householdComposition": "children_only",
-      "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
+      "reason": "Un revenu pertinent d’un enfant est renseigné : la catégorie B est retenue.",
       "decisiveFacts": [
-        "2 personne(s) dans le ménage"
+        "Composition pertinente : children_only",
+        "Enfant professional a un revenu professionnel de 1000 €",
+        "Enfant professional a un revenu professionnel de 1000 €"
       ],
       "missingFacts": [],
       "missingDocuments": [],
@@ -3936,9 +3969,10 @@
       "onemDecisionStatus": "not_required",
       "automationStatus": "automated",
       "householdComposition": "children_only",
-      "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
+      "reason": "Un revenu pertinent d’un enfant est renseigné : la catégorie B est retenue.",
       "decisiveFacts": [
-        "2 personne(s) dans le ménage"
+        "Composition pertinente : children_only",
+        "Enfant professional a un revenu professionnel de 1000 €"
       ],
       "missingFacts": [],
       "missingDocuments": [],
@@ -3981,7 +4015,8 @@
       "householdComposition": "children_only",
       "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
       "decisiveFacts": [
-        "2 personne(s) dans le ménage"
+        "Composition pertinente : children_only",
+        "Enfant professional a un revenu professionnel de 1000 €"
       ],
       "missingFacts": [
         "Indiquer si cette personne dispose d'un revenu professionnel.",
@@ -4032,9 +4067,9 @@
       "onemDecisionStatus": "not_required",
       "automationStatus": "automated",
       "householdComposition": "children_only",
-      "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
+      "reason": "Un revenu pertinent d’un enfant est renseigné : la catégorie B est retenue.",
       "decisiveFacts": [
-        "2 personne(s) dans le ménage"
+        "Composition pertinente : children_only"
       ],
       "missingFacts": [],
       "missingDocuments": [],
@@ -4077,7 +4112,7 @@
       "householdComposition": "children_only",
       "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
       "decisiveFacts": [
-        "2 personne(s) dans le ménage"
+        "Composition pertinente : children_only"
       ],
       "missingFacts": [
         "Indiquer si cette personne dispose d'un revenu professionnel.",
@@ -4122,7 +4157,7 @@
       "householdComposition": "children_only",
       "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
       "decisiveFacts": [
-        "2 personne(s) dans le ménage"
+        "Composition pertinente : children_only"
       ],
       "missingFacts": [
         "Indiquer si cette personne dispose d'un revenu professionnel.",
@@ -4182,9 +4217,12 @@
       "onemDecisionStatus": "not_required",
       "automationStatus": "automated",
       "householdComposition": "children_only",
-      "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
+      "reason": "Au moins un enfant ouvre le droit aux allocations familiales : la catégorie A est retenue.",
       "decisiveFacts": [
-        "3 personne(s) dans le ménage"
+        "Composition pertinente : children_only",
+        "Enfant af ouvre le droit aux allocations familiales",
+        "Enfant af ouvre le droit aux allocations familiales",
+        "Enfant af ouvre le droit aux allocations familiales"
       ],
       "missingFacts": [],
       "missingDocuments": [],
@@ -4235,9 +4273,11 @@
       "onemDecisionStatus": "not_required",
       "automationStatus": "automated",
       "householdComposition": "children_only",
-      "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
+      "reason": "Au moins un enfant ouvre le droit aux allocations familiales : la catégorie A est retenue.",
       "decisiveFacts": [
-        "3 personne(s) dans le ménage"
+        "Composition pertinente : children_only",
+        "Enfant af ouvre le droit aux allocations familiales",
+        "Enfant af ouvre le droit aux allocations familiales"
       ],
       "missingFacts": [],
       "missingDocuments": [],
@@ -4289,9 +4329,12 @@
       "onemDecisionStatus": "not_required",
       "automationStatus": "automated",
       "householdComposition": "children_only",
-      "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
+      "reason": "Au moins un enfant ouvre le droit aux allocations familiales : la catégorie A est retenue.",
       "decisiveFacts": [
-        "3 personne(s) dans le ménage"
+        "Composition pertinente : children_only",
+        "Enfant af ouvre le droit aux allocations familiales",
+        "Enfant af ouvre le droit aux allocations familiales",
+        "Enfant professional a un revenu professionnel de 1000 €"
       ],
       "missingFacts": [],
       "missingDocuments": [],
@@ -4343,9 +4386,11 @@
       "onemDecisionStatus": "not_required",
       "automationStatus": "automated",
       "householdComposition": "children_only",
-      "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
+      "reason": "Au moins un enfant ouvre le droit aux allocations familiales : la catégorie A est retenue.",
       "decisiveFacts": [
-        "3 personne(s) dans le ménage"
+        "Composition pertinente : children_only",
+        "Enfant af ouvre le droit aux allocations familiales",
+        "Enfant af ouvre le droit aux allocations familiales"
       ],
       "missingFacts": [],
       "missingDocuments": [],
@@ -4395,7 +4440,9 @@
       "householdComposition": "children_only",
       "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
       "decisiveFacts": [
-        "3 personne(s) dans le ménage"
+        "Composition pertinente : children_only",
+        "Enfant af ouvre le droit aux allocations familiales",
+        "Enfant af ouvre le droit aux allocations familiales"
       ],
       "missingFacts": [
         "Indiquer si cette personne dispose d'un revenu professionnel.",
@@ -4452,9 +4499,10 @@
       "onemDecisionStatus": "not_required",
       "automationStatus": "automated",
       "householdComposition": "children_only",
-      "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
+      "reason": "Au moins un enfant ouvre le droit aux allocations familiales : la catégorie A est retenue.",
       "decisiveFacts": [
-        "3 personne(s) dans le ménage"
+        "Composition pertinente : children_only",
+        "Enfant af ouvre le droit aux allocations familiales"
       ],
       "missingFacts": [],
       "missingDocuments": [],
@@ -4506,9 +4554,11 @@
       "onemDecisionStatus": "not_required",
       "automationStatus": "automated",
       "householdComposition": "children_only",
-      "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
+      "reason": "Au moins un enfant ouvre le droit aux allocations familiales : la catégorie A est retenue.",
       "decisiveFacts": [
-        "3 personne(s) dans le ménage"
+        "Composition pertinente : children_only",
+        "Enfant af ouvre le droit aux allocations familiales",
+        "Enfant professional a un revenu professionnel de 1000 €"
       ],
       "missingFacts": [],
       "missingDocuments": [],
@@ -4560,9 +4610,10 @@
       "onemDecisionStatus": "not_required",
       "automationStatus": "automated",
       "householdComposition": "children_only",
-      "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
+      "reason": "Au moins un enfant ouvre le droit aux allocations familiales : la catégorie A est retenue.",
       "decisiveFacts": [
-        "3 personne(s) dans le ménage"
+        "Composition pertinente : children_only",
+        "Enfant af ouvre le droit aux allocations familiales"
       ],
       "missingFacts": [],
       "missingDocuments": [],
@@ -4612,7 +4663,8 @@
       "householdComposition": "children_only",
       "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
       "decisiveFacts": [
-        "3 personne(s) dans le ménage"
+        "Composition pertinente : children_only",
+        "Enfant af ouvre le droit aux allocations familiales"
       ],
       "missingFacts": [
         "Indiquer si cette personne dispose d'un revenu professionnel.",
@@ -4671,9 +4723,12 @@
       "onemDecisionStatus": "not_required",
       "automationStatus": "automated",
       "householdComposition": "children_only",
-      "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
+      "reason": "Au moins un enfant ouvre le droit aux allocations familiales : la catégorie A est retenue.",
       "decisiveFacts": [
-        "3 personne(s) dans le ménage"
+        "Composition pertinente : children_only",
+        "Enfant af ouvre le droit aux allocations familiales",
+        "Enfant professional a un revenu professionnel de 1000 €",
+        "Enfant professional a un revenu professionnel de 1000 €"
       ],
       "missingFacts": [],
       "missingDocuments": [],
@@ -4726,9 +4781,11 @@
       "onemDecisionStatus": "not_required",
       "automationStatus": "automated",
       "householdComposition": "children_only",
-      "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
+      "reason": "Au moins un enfant ouvre le droit aux allocations familiales : la catégorie A est retenue.",
       "decisiveFacts": [
-        "3 personne(s) dans le ménage"
+        "Composition pertinente : children_only",
+        "Enfant af ouvre le droit aux allocations familiales",
+        "Enfant professional a un revenu professionnel de 1000 €"
       ],
       "missingFacts": [],
       "missingDocuments": [],
@@ -4779,7 +4836,9 @@
       "householdComposition": "children_only",
       "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
       "decisiveFacts": [
-        "3 personne(s) dans le ménage"
+        "Composition pertinente : children_only",
+        "Enfant af ouvre le droit aux allocations familiales",
+        "Enfant professional a un revenu professionnel de 1000 €"
       ],
       "missingFacts": [
         "Indiquer si cette personne dispose d'un revenu professionnel.",
@@ -4838,9 +4897,10 @@
       "onemDecisionStatus": "not_required",
       "automationStatus": "automated",
       "householdComposition": "children_only",
-      "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
+      "reason": "Au moins un enfant ouvre le droit aux allocations familiales : la catégorie A est retenue.",
       "decisiveFacts": [
-        "3 personne(s) dans le ménage"
+        "Composition pertinente : children_only",
+        "Enfant af ouvre le droit aux allocations familiales"
       ],
       "missingFacts": [],
       "missingDocuments": [],
@@ -4891,7 +4951,8 @@
       "householdComposition": "children_only",
       "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
       "decisiveFacts": [
-        "3 personne(s) dans le ménage"
+        "Composition pertinente : children_only",
+        "Enfant af ouvre le droit aux allocations familiales"
       ],
       "missingFacts": [
         "Indiquer si cette personne dispose d'un revenu professionnel.",
@@ -4944,7 +5005,8 @@
       "householdComposition": "children_only",
       "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
       "decisiveFacts": [
-        "3 personne(s) dans le ménage"
+        "Composition pertinente : children_only",
+        "Enfant af ouvre le droit aux allocations familiales"
       ],
       "missingFacts": [
         "Indiquer si cette personne dispose d'un revenu professionnel.",
@@ -5004,9 +5066,9 @@
       "onemDecisionStatus": "not_required",
       "automationStatus": "automated",
       "householdComposition": "children_only",
-      "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
+      "reason": "Les enfants renseignés ne présentent pas de revenu pertinent : la catégorie A est retenue.",
       "decisiveFacts": [
-        "3 personne(s) dans le ménage"
+        "Composition pertinente : children_only"
       ],
       "missingFacts": [],
       "missingDocuments": [],
@@ -5058,9 +5120,10 @@
       "onemDecisionStatus": "not_required",
       "automationStatus": "automated",
       "householdComposition": "children_only",
-      "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
+      "reason": "Un revenu pertinent d’un enfant est renseigné : la catégorie B est retenue.",
       "decisiveFacts": [
-        "3 personne(s) dans le ménage"
+        "Composition pertinente : children_only",
+        "Enfant professional a un revenu professionnel de 1000 €"
       ],
       "missingFacts": [],
       "missingDocuments": [],
@@ -5112,9 +5175,9 @@
       "onemDecisionStatus": "not_required",
       "automationStatus": "automated",
       "householdComposition": "children_only",
-      "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
+      "reason": "Un revenu pertinent d’un enfant est renseigné : la catégorie B est retenue.",
       "decisiveFacts": [
-        "3 personne(s) dans le ménage"
+        "Composition pertinente : children_only"
       ],
       "missingFacts": [],
       "missingDocuments": [],
@@ -5164,7 +5227,7 @@
       "householdComposition": "children_only",
       "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
       "decisiveFacts": [
-        "3 personne(s) dans le ménage"
+        "Composition pertinente : children_only"
       ],
       "missingFacts": [
         "Indiquer si cette personne dispose d'un revenu professionnel.",
@@ -5223,9 +5286,11 @@
       "onemDecisionStatus": "not_required",
       "automationStatus": "automated",
       "householdComposition": "children_only",
-      "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
+      "reason": "Un revenu pertinent d’un enfant est renseigné : la catégorie B est retenue.",
       "decisiveFacts": [
-        "3 personne(s) dans le ménage"
+        "Composition pertinente : children_only",
+        "Enfant professional a un revenu professionnel de 1000 €",
+        "Enfant professional a un revenu professionnel de 1000 €"
       ],
       "missingFacts": [],
       "missingDocuments": [],
@@ -5278,9 +5343,10 @@
       "onemDecisionStatus": "not_required",
       "automationStatus": "automated",
       "householdComposition": "children_only",
-      "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
+      "reason": "Un revenu pertinent d’un enfant est renseigné : la catégorie B est retenue.",
       "decisiveFacts": [
-        "3 personne(s) dans le ménage"
+        "Composition pertinente : children_only",
+        "Enfant professional a un revenu professionnel de 1000 €"
       ],
       "missingFacts": [],
       "missingDocuments": [],
@@ -5331,7 +5397,8 @@
       "householdComposition": "children_only",
       "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
       "decisiveFacts": [
-        "3 personne(s) dans le ménage"
+        "Composition pertinente : children_only",
+        "Enfant professional a un revenu professionnel de 1000 €"
       ],
       "missingFacts": [
         "Indiquer si cette personne dispose d'un revenu professionnel.",
@@ -5390,9 +5457,9 @@
       "onemDecisionStatus": "not_required",
       "automationStatus": "automated",
       "householdComposition": "children_only",
-      "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
+      "reason": "Un revenu pertinent d’un enfant est renseigné : la catégorie B est retenue.",
       "decisiveFacts": [
-        "3 personne(s) dans le ménage"
+        "Composition pertinente : children_only"
       ],
       "missingFacts": [],
       "missingDocuments": [],
@@ -5443,7 +5510,7 @@
       "householdComposition": "children_only",
       "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
       "decisiveFacts": [
-        "3 personne(s) dans le ménage"
+        "Composition pertinente : children_only"
       ],
       "missingFacts": [
         "Indiquer si cette personne dispose d'un revenu professionnel.",
@@ -5496,7 +5563,7 @@
       "householdComposition": "children_only",
       "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
       "decisiveFacts": [
-        "3 personne(s) dans le ménage"
+        "Composition pertinente : children_only"
       ],
       "missingFacts": [
         "Indiquer si cette personne dispose d'un revenu professionnel.",
@@ -5559,9 +5626,12 @@
       "onemDecisionStatus": "not_required",
       "automationStatus": "automated",
       "householdComposition": "children_only",
-      "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
+      "reason": "Un revenu pertinent d’un enfant est renseigné : la catégorie B est retenue.",
       "decisiveFacts": [
-        "3 personne(s) dans le ménage"
+        "Composition pertinente : children_only",
+        "Enfant professional a un revenu professionnel de 1000 €",
+        "Enfant professional a un revenu professionnel de 1000 €",
+        "Enfant professional a un revenu professionnel de 1000 €"
       ],
       "missingFacts": [],
       "missingDocuments": [],
@@ -5615,9 +5685,11 @@
       "onemDecisionStatus": "not_required",
       "automationStatus": "automated",
       "householdComposition": "children_only",
-      "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
+      "reason": "Un revenu pertinent d’un enfant est renseigné : la catégorie B est retenue.",
       "decisiveFacts": [
-        "3 personne(s) dans le ménage"
+        "Composition pertinente : children_only",
+        "Enfant professional a un revenu professionnel de 1000 €",
+        "Enfant professional a un revenu professionnel de 1000 €"
       ],
       "missingFacts": [],
       "missingDocuments": [],
@@ -5669,7 +5741,9 @@
       "householdComposition": "children_only",
       "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
       "decisiveFacts": [
-        "3 personne(s) dans le ménage"
+        "Composition pertinente : children_only",
+        "Enfant professional a un revenu professionnel de 1000 €",
+        "Enfant professional a un revenu professionnel de 1000 €"
       ],
       "missingFacts": [
         "Indiquer si cette personne dispose d'un revenu professionnel.",
@@ -5729,9 +5803,10 @@
       "onemDecisionStatus": "not_required",
       "automationStatus": "automated",
       "householdComposition": "children_only",
-      "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
+      "reason": "Un revenu pertinent d’un enfant est renseigné : la catégorie B est retenue.",
       "decisiveFacts": [
-        "3 personne(s) dans le ménage"
+        "Composition pertinente : children_only",
+        "Enfant professional a un revenu professionnel de 1000 €"
       ],
       "missingFacts": [],
       "missingDocuments": [],
@@ -5783,7 +5858,8 @@
       "householdComposition": "children_only",
       "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
       "decisiveFacts": [
-        "3 personne(s) dans le ménage"
+        "Composition pertinente : children_only",
+        "Enfant professional a un revenu professionnel de 1000 €"
       ],
       "missingFacts": [
         "Indiquer si cette personne dispose d'un revenu professionnel.",
@@ -5837,7 +5913,8 @@
       "householdComposition": "children_only",
       "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
       "decisiveFacts": [
-        "3 personne(s) dans le ménage"
+        "Composition pertinente : children_only",
+        "Enfant professional a un revenu professionnel de 1000 €"
       ],
       "missingFacts": [
         "Indiquer si cette personne dispose d'un revenu professionnel.",
@@ -5900,9 +5977,9 @@
       "onemDecisionStatus": "not_required",
       "automationStatus": "automated",
       "householdComposition": "children_only",
-      "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
+      "reason": "Un revenu pertinent d’un enfant est renseigné : la catégorie B est retenue.",
       "decisiveFacts": [
-        "3 personne(s) dans le ménage"
+        "Composition pertinente : children_only"
       ],
       "missingFacts": [],
       "missingDocuments": [],
@@ -5954,7 +6031,7 @@
       "householdComposition": "children_only",
       "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
       "decisiveFacts": [
-        "3 personne(s) dans le ménage"
+        "Composition pertinente : children_only"
       ],
       "missingFacts": [
         "Indiquer si cette personne dispose d'un revenu professionnel.",
@@ -6008,7 +6085,7 @@
       "householdComposition": "children_only",
       "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
       "decisiveFacts": [
-        "3 personne(s) dans le ménage"
+        "Composition pertinente : children_only"
       ],
       "missingFacts": [
         "Indiquer si cette personne dispose d'un revenu professionnel.",
@@ -6061,7 +6138,7 @@
       "householdComposition": "children_only",
       "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
       "decisiveFacts": [
-        "3 personne(s) dans le ménage"
+        "Composition pertinente : children_only"
       ],
       "missingFacts": [
         "Indiquer si cette personne dispose d'un revenu professionnel.",
@@ -6112,9 +6189,10 @@
       "onemDecisionStatus": "not_required",
       "automationStatus": "automated",
       "householdComposition": "children_only",
-      "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
+      "reason": "Un revenu pertinent d’un enfant est renseigné : la catégorie B est retenue.",
       "decisiveFacts": [
-        "1 personne(s) dans le ménage"
+        "Composition pertinente : children_only",
+        "Enfant a un revenu professionnel de 1000 €"
       ],
       "missingFacts": [],
       "missingDocuments": [],
@@ -6155,9 +6233,10 @@
       "onemDecisionStatus": "not_required",
       "automationStatus": "automated",
       "householdComposition": "children_only",
-      "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
+      "reason": "Les enfants renseignés ne présentent pas de revenu pertinent : la catégorie A est retenue.",
       "decisiveFacts": [
-        "1 personne(s) dans le ménage"
+        "Composition pertinente : children_only",
+        "Enfant a un revenu professionnel de 1000 €"
       ],
       "missingFacts": [],
       "missingDocuments": [],
@@ -6200,9 +6279,10 @@
       "onemDecisionStatus": "not_required",
       "automationStatus": "automated",
       "householdComposition": "children_only",
-      "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
+      "reason": "Les enfants renseignés ne présentent pas de revenu pertinent : la catégorie A est retenue.",
       "decisiveFacts": [
-        "1 personne(s) dans le ménage"
+        "Composition pertinente : children_only",
+        "Enfant a un revenu professionnel de 1000 €"
       ],
       "missingFacts": [],
       "missingDocuments": [],
@@ -6245,9 +6325,10 @@
       "onemDecisionStatus": "not_required",
       "automationStatus": "automated",
       "householdComposition": "children_only",
-      "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
+      "reason": "Les enfants renseignés ne présentent pas de revenu pertinent : la catégorie A est retenue.",
       "decisiveFacts": [
-        "1 personne(s) dans le ménage"
+        "Composition pertinente : children_only",
+        "Enfant a un revenu professionnel de 1000 €"
       ],
       "missingFacts": [],
       "missingDocuments": [],
@@ -6290,9 +6371,10 @@
       "onemDecisionStatus": "not_required",
       "automationStatus": "automated",
       "householdComposition": "children_only",
-      "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
+      "reason": "Les enfants renseignés ne présentent pas de revenu pertinent : la catégorie A est retenue.",
       "decisiveFacts": [
-        "1 personne(s) dans le ménage"
+        "Composition pertinente : children_only",
+        "Enfant a un revenu professionnel de 1000 €"
       ],
       "missingFacts": [],
       "missingDocuments": [],
@@ -6335,9 +6417,10 @@
       "onemDecisionStatus": "not_required",
       "automationStatus": "automated",
       "householdComposition": "children_only",
-      "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
+      "reason": "Les enfants renseignés ne présentent pas de revenu pertinent : la catégorie A est retenue.",
       "decisiveFacts": [
-        "1 personne(s) dans le ménage"
+        "Composition pertinente : children_only",
+        "Enfant a un revenu professionnel de 1000 €"
       ],
       "missingFacts": [],
       "missingDocuments": [],
@@ -6380,9 +6463,10 @@
       "onemDecisionStatus": "not_required",
       "automationStatus": "automated",
       "householdComposition": "children_only",
-      "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
+      "reason": "Les enfants renseignés ne présentent pas de revenu pertinent : la catégorie A est retenue.",
       "decisiveFacts": [
-        "1 personne(s) dans le ménage"
+        "Composition pertinente : children_only",
+        "Enfant a un revenu professionnel de 1000 €"
       ],
       "missingFacts": [],
       "missingDocuments": [],
@@ -6418,9 +6502,9 @@
       "onemDecisionStatus": "not_required",
       "automationStatus": "automated",
       "householdComposition": "relatives_only",
-      "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
+      "reason": "Les parents ou alliés renseignés ne présentent pas de revenu pertinent : la catégorie A est retenue.",
       "decisiveFacts": [
-        "1 personne(s) dans le ménage"
+        "Composition pertinente : relatives_only"
       ],
       "missingFacts": [],
       "missingDocuments": [],
@@ -6456,9 +6540,10 @@
       "onemDecisionStatus": "not_required",
       "automationStatus": "automated",
       "householdComposition": "relatives_only",
-      "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
+      "reason": "Un parent ou allié du ménage a un revenu pertinent : la catégorie B est retenue.",
       "decisiveFacts": [
-        "1 personne(s) dans le ménage"
+        "Composition pertinente : relatives_only",
+        "Père professional a un revenu professionnel de 1000 €"
       ],
       "missingFacts": [],
       "missingDocuments": [],
@@ -6498,9 +6583,10 @@
       "onemDecisionStatus": "not_required",
       "automationStatus": "automated",
       "householdComposition": "relatives_only",
-      "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
+      "reason": "La pension brute déclarée est de 999.99 €, à comparer au plafond applicable de 1000 €. Elle reste dans le plafond : la catégorie A est retenue.",
       "decisiveFacts": [
-        "1 personne(s) dans le ménage"
+        "Composition pertinente : relatives_only",
+        "Père pension-below a une pension brute de 999.99 €"
       ],
       "missingFacts": [],
       "missingDocuments": [],
@@ -6540,9 +6626,10 @@
       "onemDecisionStatus": "not_required",
       "automationStatus": "automated",
       "householdComposition": "relatives_only",
-      "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
+      "reason": "La pension brute déclarée est de 1000.01 €, à comparer au plafond applicable de 1000 €. Elle dépasse le plafond : la catégorie B est retenue.",
       "decisiveFacts": [
-        "1 personne(s) dans le ménage"
+        "Composition pertinente : relatives_only",
+        "Père pension-above a une pension brute de 1000.01 €"
       ],
       "missingFacts": [],
       "missingDocuments": [],
@@ -6584,9 +6671,10 @@
       "onemDecisionStatus": "not_required",
       "automationStatus": "automated",
       "householdComposition": "relatives_only",
-      "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
+      "reason": "La pension brute déclarée est de 1000 €, à comparer au plafond applicable de 1200 €. Elle reste dans le plafond : la catégorie A est retenue.",
       "decisiveFacts": [
-        "1 personne(s) dans le ménage"
+        "Composition pertinente : relatives_only",
+        "Père disability a une pension brute de 1000 €"
       ],
       "missingFacts": [],
       "missingDocuments": [],
@@ -6628,9 +6716,9 @@
       "onemDecisionStatus": "not_required",
       "automationStatus": "automated",
       "householdComposition": "relatives_only",
-      "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
+      "reason": "Les parents ou alliés renseignés ne présentent pas de revenu pertinent : la catégorie A est retenue.",
       "decisiveFacts": [
-        "2 personne(s) dans le ménage"
+        "Composition pertinente : relatives_only"
       ],
       "missingFacts": [],
       "missingDocuments": [],
@@ -6673,9 +6761,10 @@
       "onemDecisionStatus": "not_required",
       "automationStatus": "automated",
       "householdComposition": "relatives_only",
-      "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
+      "reason": "Un parent ou allié du ménage a un revenu pertinent : la catégorie B est retenue.",
       "decisiveFacts": [
-        "2 personne(s) dans le ménage"
+        "Composition pertinente : relatives_only",
+        "Mère professional a un revenu professionnel de 1000 €"
       ],
       "missingFacts": [],
       "missingDocuments": [],
@@ -6722,9 +6811,10 @@
       "onemDecisionStatus": "not_required",
       "automationStatus": "automated",
       "householdComposition": "relatives_only",
-      "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
+      "reason": "La pension brute déclarée est de 999.99 €, à comparer au plafond applicable de 1000 €. Elle reste dans le plafond : la catégorie A est retenue.",
       "decisiveFacts": [
-        "2 personne(s) dans le ménage"
+        "Composition pertinente : relatives_only",
+        "Mère pension-below a une pension brute de 999.99 €"
       ],
       "missingFacts": [],
       "missingDocuments": [],
@@ -6771,9 +6861,10 @@
       "onemDecisionStatus": "not_required",
       "automationStatus": "automated",
       "householdComposition": "relatives_only",
-      "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
+      "reason": "La pension brute déclarée est de 1000 €, à comparer au plafond applicable de 1000 €. Elle reste dans le plafond : la catégorie A est retenue.",
       "decisiveFacts": [
-        "2 personne(s) dans le ménage"
+        "Composition pertinente : relatives_only",
+        "Mère pension-exact a une pension brute de 1000 €"
       ],
       "missingFacts": [],
       "missingDocuments": [],
@@ -6820,9 +6911,10 @@
       "onemDecisionStatus": "not_required",
       "automationStatus": "automated",
       "householdComposition": "relatives_only",
-      "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
+      "reason": "La pension brute déclarée est de 1000.01 €, à comparer au plafond applicable de 1000 €. Elle dépasse le plafond : la catégorie B est retenue.",
       "decisiveFacts": [
-        "2 personne(s) dans le ménage"
+        "Composition pertinente : relatives_only",
+        "Mère pension-above a une pension brute de 1000.01 €"
       ],
       "missingFacts": [],
       "missingDocuments": [],
@@ -6869,9 +6961,10 @@
       "onemDecisionStatus": "not_required",
       "automationStatus": "automated",
       "householdComposition": "relatives_only",
-      "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
+      "reason": "Les parents ou alliés renseignés ne présentent pas de revenu pertinent : la catégorie A est retenue.",
       "decisiveFacts": [
-        "2 personne(s) dans le ménage"
+        "Composition pertinente : relatives_only",
+        "Mère pension-proof-missing a une pension brute de 1000 €"
       ],
       "missingFacts": [],
       "missingDocuments": [],
@@ -6920,9 +7013,10 @@
       "onemDecisionStatus": "not_required",
       "automationStatus": "automated",
       "householdComposition": "relatives_only",
-      "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
+      "reason": "La pension brute déclarée est de 1000 €, à comparer au plafond applicable de 1200 €. Elle reste dans le plafond : la catégorie A est retenue.",
       "decisiveFacts": [
-        "2 personne(s) dans le ménage"
+        "Composition pertinente : relatives_only",
+        "Mère disability a une pension brute de 1000 €"
       ],
       "missingFacts": [],
       "missingDocuments": [],
@@ -6966,9 +7060,11 @@
       "onemDecisionStatus": "not_required",
       "automationStatus": "automated",
       "householdComposition": "relatives_only",
-      "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
+      "reason": "Un parent ou allié du ménage a un revenu pertinent : la catégorie B est retenue.",
       "decisiveFacts": [
-        "2 personne(s) dans le ménage"
+        "Composition pertinente : relatives_only",
+        "Père professional a un revenu professionnel de 1000 €",
+        "Mère professional a un revenu professionnel de 1000 €"
       ],
       "missingFacts": [],
       "missingDocuments": [],
@@ -7016,9 +7112,11 @@
       "onemDecisionStatus": "not_required",
       "automationStatus": "automated",
       "householdComposition": "relatives_only",
-      "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
+      "reason": "Un parent ou allié du ménage a un revenu pertinent : la catégorie B est retenue.",
       "decisiveFacts": [
-        "2 personne(s) dans le ménage"
+        "Composition pertinente : relatives_only",
+        "Père professional a un revenu professionnel de 1000 €",
+        "Mère pension-below a une pension brute de 999.99 €"
       ],
       "missingFacts": [],
       "missingDocuments": [],
@@ -7066,9 +7164,11 @@
       "onemDecisionStatus": "not_required",
       "automationStatus": "automated",
       "householdComposition": "relatives_only",
-      "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
+      "reason": "Un parent ou allié du ménage a un revenu pertinent : la catégorie B est retenue.",
       "decisiveFacts": [
-        "2 personne(s) dans le ménage"
+        "Composition pertinente : relatives_only",
+        "Père professional a un revenu professionnel de 1000 €",
+        "Mère pension-exact a une pension brute de 1000 €"
       ],
       "missingFacts": [],
       "missingDocuments": [],
@@ -7116,9 +7216,11 @@
       "onemDecisionStatus": "not_required",
       "automationStatus": "automated",
       "householdComposition": "relatives_only",
-      "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
+      "reason": "Un parent ou allié du ménage a un revenu pertinent : la catégorie B est retenue.",
       "decisiveFacts": [
-        "2 personne(s) dans le ménage"
+        "Composition pertinente : relatives_only",
+        "Père professional a un revenu professionnel de 1000 €",
+        "Mère pension-above a une pension brute de 1000.01 €"
       ],
       "missingFacts": [],
       "missingDocuments": [],
@@ -7166,9 +7268,11 @@
       "onemDecisionStatus": "not_required",
       "automationStatus": "automated",
       "householdComposition": "relatives_only",
-      "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
+      "reason": "Un parent ou allié du ménage a un revenu pertinent : la catégorie B est retenue.",
       "decisiveFacts": [
-        "2 personne(s) dans le ménage"
+        "Composition pertinente : relatives_only",
+        "Père professional a un revenu professionnel de 1000 €",
+        "Mère pension-proof-missing a une pension brute de 1000 €"
       ],
       "missingFacts": [],
       "missingDocuments": [],
@@ -7218,9 +7322,11 @@
       "onemDecisionStatus": "not_required",
       "automationStatus": "automated",
       "householdComposition": "relatives_only",
-      "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
+      "reason": "Un parent ou allié du ménage a un revenu pertinent : la catégorie B est retenue.",
       "decisiveFacts": [
-        "2 personne(s) dans le ménage"
+        "Composition pertinente : relatives_only",
+        "Père professional a un revenu professionnel de 1000 €",
+        "Mère disability a une pension brute de 1000 €"
       ],
       "missingFacts": [],
       "missingDocuments": [],
@@ -7272,9 +7378,11 @@
       "onemDecisionStatus": "not_required",
       "automationStatus": "automated",
       "householdComposition": "relatives_only",
-      "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
+      "reason": "La pension brute déclarée est de 1999.98 €, à comparer au plafond applicable de 1000 €. Elle dépasse le plafond : la catégorie B est retenue.",
       "decisiveFacts": [
-        "2 personne(s) dans le ménage"
+        "Composition pertinente : relatives_only",
+        "Père pension-below a une pension brute de 999.99 €",
+        "Mère pension-below a une pension brute de 999.99 €"
       ],
       "missingFacts": [],
       "missingDocuments": [],
@@ -7326,9 +7434,11 @@
       "onemDecisionStatus": "not_required",
       "automationStatus": "automated",
       "householdComposition": "relatives_only",
-      "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
+      "reason": "La pension brute déclarée est de 1999.99 €, à comparer au plafond applicable de 1000 €. Elle dépasse le plafond : la catégorie B est retenue.",
       "decisiveFacts": [
-        "2 personne(s) dans le ménage"
+        "Composition pertinente : relatives_only",
+        "Père pension-below a une pension brute de 999.99 €",
+        "Mère pension-exact a une pension brute de 1000 €"
       ],
       "missingFacts": [],
       "missingDocuments": [],
@@ -7380,9 +7490,11 @@
       "onemDecisionStatus": "not_required",
       "automationStatus": "automated",
       "householdComposition": "relatives_only",
-      "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
+      "reason": "La pension brute déclarée est de 2000 €, à comparer au plafond applicable de 1000 €. Elle dépasse le plafond : la catégorie B est retenue.",
       "decisiveFacts": [
-        "2 personne(s) dans le ménage"
+        "Composition pertinente : relatives_only",
+        "Père pension-below a une pension brute de 999.99 €",
+        "Mère pension-above a une pension brute de 1000.01 €"
       ],
       "missingFacts": [],
       "missingDocuments": [],
@@ -7434,9 +7546,11 @@
       "onemDecisionStatus": "not_required",
       "automationStatus": "automated",
       "householdComposition": "relatives_only",
-      "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
+      "reason": "Les parents ou alliés renseignés ne présentent pas de revenu pertinent : la catégorie A est retenue.",
       "decisiveFacts": [
-        "2 personne(s) dans le ménage"
+        "Composition pertinente : relatives_only",
+        "Père pension-below a une pension brute de 999.99 €",
+        "Mère pension-proof-missing a une pension brute de 1000 €"
       ],
       "missingFacts": [],
       "missingDocuments": [],
@@ -7490,9 +7604,11 @@
       "onemDecisionStatus": "not_required",
       "automationStatus": "automated",
       "householdComposition": "relatives_only",
-      "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
+      "reason": "La pension brute déclarée est de 1999.99 €, à comparer au plafond applicable de 1200 €. Elle dépasse le plafond : la catégorie B est retenue.",
       "decisiveFacts": [
-        "2 personne(s) dans le ménage"
+        "Composition pertinente : relatives_only",
+        "Père pension-below a une pension brute de 999.99 €",
+        "Mère disability a une pension brute de 1000 €"
       ],
       "missingFacts": [],
       "missingDocuments": [],
@@ -7544,9 +7660,11 @@
       "onemDecisionStatus": "not_required",
       "automationStatus": "automated",
       "householdComposition": "relatives_only",
-      "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
+      "reason": "La pension brute déclarée est de 2000 €, à comparer au plafond applicable de 1000 €. Elle dépasse le plafond : la catégorie B est retenue.",
       "decisiveFacts": [
-        "2 personne(s) dans le ménage"
+        "Composition pertinente : relatives_only",
+        "Père pension-exact a une pension brute de 1000 €",
+        "Mère pension-exact a une pension brute de 1000 €"
       ],
       "missingFacts": [],
       "missingDocuments": [],
@@ -7598,9 +7716,11 @@
       "onemDecisionStatus": "not_required",
       "automationStatus": "automated",
       "householdComposition": "relatives_only",
-      "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
+      "reason": "La pension brute déclarée est de 2000.01 €, à comparer au plafond applicable de 1000 €. Elle dépasse le plafond : la catégorie B est retenue.",
       "decisiveFacts": [
-        "2 personne(s) dans le ménage"
+        "Composition pertinente : relatives_only",
+        "Père pension-exact a une pension brute de 1000 €",
+        "Mère pension-above a une pension brute de 1000.01 €"
       ],
       "missingFacts": [],
       "missingDocuments": [],
@@ -7652,9 +7772,11 @@
       "onemDecisionStatus": "not_required",
       "automationStatus": "automated",
       "householdComposition": "relatives_only",
-      "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
+      "reason": "Les parents ou alliés renseignés ne présentent pas de revenu pertinent : la catégorie A est retenue.",
       "decisiveFacts": [
-        "2 personne(s) dans le ménage"
+        "Composition pertinente : relatives_only",
+        "Père pension-exact a une pension brute de 1000 €",
+        "Mère pension-proof-missing a une pension brute de 1000 €"
       ],
       "missingFacts": [],
       "missingDocuments": [],
@@ -7708,9 +7830,11 @@
       "onemDecisionStatus": "not_required",
       "automationStatus": "automated",
       "householdComposition": "relatives_only",
-      "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
+      "reason": "La pension brute déclarée est de 2000 €, à comparer au plafond applicable de 1200 €. Elle dépasse le plafond : la catégorie B est retenue.",
       "decisiveFacts": [
-        "2 personne(s) dans le ménage"
+        "Composition pertinente : relatives_only",
+        "Père pension-exact a une pension brute de 1000 €",
+        "Mère disability a une pension brute de 1000 €"
       ],
       "missingFacts": [],
       "missingDocuments": [],
@@ -7762,9 +7886,11 @@
       "onemDecisionStatus": "not_required",
       "automationStatus": "automated",
       "householdComposition": "relatives_only",
-      "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
+      "reason": "La pension brute déclarée est de 2000.02 €, à comparer au plafond applicable de 1000 €. Elle dépasse le plafond : la catégorie B est retenue.",
       "decisiveFacts": [
-        "2 personne(s) dans le ménage"
+        "Composition pertinente : relatives_only",
+        "Père pension-above a une pension brute de 1000.01 €",
+        "Mère pension-above a une pension brute de 1000.01 €"
       ],
       "missingFacts": [],
       "missingDocuments": [],
@@ -7816,9 +7942,11 @@
       "onemDecisionStatus": "not_required",
       "automationStatus": "automated",
       "householdComposition": "relatives_only",
-      "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
+      "reason": "Les parents ou alliés renseignés ne présentent pas de revenu pertinent : la catégorie A est retenue.",
       "decisiveFacts": [
-        "2 personne(s) dans le ménage"
+        "Composition pertinente : relatives_only",
+        "Père pension-above a une pension brute de 1000.01 €",
+        "Mère pension-proof-missing a une pension brute de 1000 €"
       ],
       "missingFacts": [],
       "missingDocuments": [],
@@ -7872,9 +8000,11 @@
       "onemDecisionStatus": "not_required",
       "automationStatus": "automated",
       "householdComposition": "relatives_only",
-      "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
+      "reason": "La pension brute déclarée est de 2000.01 €, à comparer au plafond applicable de 1200 €. Elle dépasse le plafond : la catégorie B est retenue.",
       "decisiveFacts": [
-        "2 personne(s) dans le ménage"
+        "Composition pertinente : relatives_only",
+        "Père pension-above a une pension brute de 1000.01 €",
+        "Mère disability a une pension brute de 1000 €"
       ],
       "missingFacts": [],
       "missingDocuments": [],
@@ -7926,9 +8056,11 @@
       "onemDecisionStatus": "not_required",
       "automationStatus": "automated",
       "householdComposition": "relatives_only",
-      "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
+      "reason": "Les parents ou alliés renseignés ne présentent pas de revenu pertinent : la catégorie A est retenue.",
       "decisiveFacts": [
-        "2 personne(s) dans le ménage"
+        "Composition pertinente : relatives_only",
+        "Père pension-proof-missing a une pension brute de 1000 €",
+        "Mère pension-proof-missing a une pension brute de 1000 €"
       ],
       "missingFacts": [],
       "missingDocuments": [],
@@ -7982,9 +8114,11 @@
       "onemDecisionStatus": "not_required",
       "automationStatus": "automated",
       "householdComposition": "relatives_only",
-      "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
+      "reason": "Les parents ou alliés renseignés ne présentent pas de revenu pertinent : la catégorie A est retenue.",
       "decisiveFacts": [
-        "2 personne(s) dans le ménage"
+        "Composition pertinente : relatives_only",
+        "Père pension-proof-missing a une pension brute de 1000 €",
+        "Mère disability a une pension brute de 1000 €"
       ],
       "missingFacts": [],
       "missingDocuments": [],
@@ -8040,9 +8174,11 @@
       "onemDecisionStatus": "not_required",
       "automationStatus": "automated",
       "householdComposition": "relatives_only",
-      "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
+      "reason": "La pension brute déclarée est de 2000 €, à comparer au plafond applicable de 1200 €. Elle dépasse le plafond : la catégorie B est retenue.",
       "decisiveFacts": [
-        "2 personne(s) dans le ménage"
+        "Composition pertinente : relatives_only",
+        "Père disability a une pension brute de 1000 €",
+        "Mère disability a une pension brute de 1000 €"
       ],
       "missingFacts": [],
       "missingDocuments": [],
@@ -8077,9 +8213,9 @@
       "onemDecisionStatus": "not_required",
       "automationStatus": "automated",
       "householdComposition": "third_parties_only",
-      "reason": "Les éléments déclarés nécessitent une vérification avant de déterminer la catégorie.",
+      "reason": "Les faits renseignés pour le tiers ne permettent pas de retenir un revenu pertinent.",
       "decisiveFacts": [
-        "1 personne(s) dans le ménage"
+        "Composition pertinente : third_parties_only"
       ],
       "missingFacts": [],
       "missingDocuments": [],
@@ -8115,9 +8251,10 @@
       "onemDecisionStatus": "not_required",
       "automationStatus": "automated",
       "householdComposition": "third_parties_only",
-      "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
+      "reason": "Un tiers du ménage a un revenu pertinent : la catégorie B est retenue.",
       "decisiveFacts": [
-        "1 personne(s) dans le ménage"
+        "Composition pertinente : third_parties_only",
+        "Ami a un revenu professionnel de 1000 €"
       ],
       "missingFacts": [],
       "missingDocuments": [],
@@ -8153,9 +8290,9 @@
       "onemDecisionStatus": "not_required",
       "automationStatus": "automated",
       "householdComposition": "third_parties_only",
-      "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
+      "reason": "Un tiers du ménage a un revenu pertinent : la catégorie B est retenue.",
       "decisiveFacts": [
-        "1 personne(s) dans le ménage"
+        "Composition pertinente : third_parties_only"
       ],
       "missingFacts": [],
       "missingDocuments": [],
@@ -8190,7 +8327,7 @@
       "householdComposition": "third_parties_only",
       "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
       "decisiveFacts": [
-        "1 personne(s) dans le ménage"
+        "Composition pertinente : third_parties_only"
       ],
       "missingFacts": [
         "Indiquer si cette personne dispose d'un revenu professionnel.",
@@ -8238,9 +8375,10 @@
       "onemDecisionStatus": "not_required",
       "automationStatus": "automated",
       "householdComposition": "children_and_relatives",
-      "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
+      "reason": "Les parents ou alliés renseignés ne présentent pas de revenu pertinent : la catégorie A est retenue.",
       "decisiveFacts": [
-        "2 personne(s) dans le ménage"
+        "Composition pertinente : children_and_relatives",
+        "Enfant ouvre le droit aux allocations familiales"
       ],
       "missingFacts": [],
       "missingDocuments": [],
@@ -8283,9 +8421,10 @@
       "onemDecisionStatus": "not_required",
       "automationStatus": "automated",
       "householdComposition": "children_and_third_parties",
-      "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
+      "reason": "Les faits renseignés pour le tiers ne permettent pas de retenir un revenu pertinent.",
       "decisiveFacts": [
-        "2 personne(s) dans le ménage"
+        "Composition pertinente : children_and_third_parties",
+        "Enfant ouvre le droit aux allocations familiales"
       ],
       "missingFacts": [],
       "missingDocuments": [],
@@ -8327,9 +8466,9 @@
       "onemDecisionStatus": "not_required",
       "automationStatus": "automated",
       "householdComposition": "relatives_and_third_parties",
-      "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
+      "reason": "Les parents ou alliés renseignés ne présentent pas de revenu pertinent : la catégorie A est retenue.",
       "decisiveFacts": [
-        "2 personne(s) dans le ménage"
+        "Composition pertinente : relatives_and_third_parties"
       ],
       "missingFacts": [],
       "missingDocuments": [],
@@ -8380,9 +8519,10 @@
       "onemDecisionStatus": "not_required",
       "automationStatus": "automated",
       "householdComposition": "children_relatives_and_third_parties",
-      "reason": "La catégorie résulte de la composition du ménage et des revenus déclarés.",
+      "reason": "Les parents ou alliés renseignés ne présentent pas de revenu pertinent : la catégorie A est retenue.",
       "decisiveFacts": [
-        "3 personne(s) dans le ménage"
+        "Composition pertinente : children_relatives_and_third_parties",
+        "Enfant ouvre le droit aux allocations familiales"
       ],
       "missingFacts": [],
       "missingDocuments": [],
@@ -8419,7 +8559,7 @@
       "householdComposition": "mixed_or_unsupported",
       "reason": "Des informations sont nécessaires pour évaluer la situation familiale.",
       "decisiveFacts": [
-        "1 personne(s) dans le ménage"
+        "Composition pertinente : mixed_or_unsupported"
       ],
       "missingFacts": [
         "Indiquer si cette personne dispose d'un revenu professionnel.",

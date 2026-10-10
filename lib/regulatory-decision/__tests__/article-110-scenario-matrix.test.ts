@@ -56,15 +56,28 @@ describe("Article 110 scenario matrix", () => {
   });
 
   it("keeps co-housing in B pending ONEM, surfaces supported potential outcomes, and accepts confirmed ONEM isolation", () => {
-    const cohousing = report.scenarios.find((scenario) => scenario.id === "cohousing-complete");
+    const cohousing = report.scenarios.find((scenario) => scenario.id === "cohousing-never-recognized");
     const alimony = report.scenarios.find((scenario) => scenario.id === "cohousing-alimony-established");
-    const confirmed = report.scenarios.find((scenario) => scenario.id === "cohousing-onem-isolated-confirmed");
+    const confirmed = report.scenarios.find((scenario) => scenario.id === "cohousing-recognized-same-address");
     expect(cohousing).toMatchObject({ resultType: "onem_decision_required", category: "B", potentialCategory: "N", onemDecisionStatus: "required" });
     expect(alimony).toMatchObject({ category: "B", potentialCategory: "A", onemDecisionStatus: "required" });
     expect(confirmed).toMatchObject({ category: "N", onemDecisionStatus: "not_required" });
     expect(cohousing?.reason).toContain("Bureau du chômage");
     expect(report.potentialTransitions.B_to_N).toBeGreaterThan(0);
     expect(report.potentialTransitions.B_to_A).toBeGreaterThan(0);
+  });
+
+  it("keeps the cohousing category invariant across its documentary states", () => {
+    const noRecognition = report.scenarios.filter((scenario) => scenario.id.startsWith("comb-cohousing-no-"));
+    const recognition = report.scenarios.filter((scenario) => scenario.id.startsWith("comb-cohousing-yes-"));
+    expect(new Set(noRecognition.map((scenario) => scenario.category))).toEqual(new Set(["B"]));
+    expect(new Set(recognition.map((scenario) => scenario.category))).toEqual(new Set(["N"]));
+    expect(noRecognition.some((scenario) => scenario.documentStatus === "required")).toBe(true);
+  });
+
+  it("keeps treatment 60B when its monthly C110A rate is A", () => {
+    const scenario = report.scenarios.find((item) => item.id === "comb-partner-spouse-variable-c110a-present-no");
+    expect(scenario).toMatchObject({ category: "B", treatment: "60B", monthlyRate: "A_RATE" });
   });
 
   it("documents every mixed or unsupported composition instead of silently dropping it", () => {

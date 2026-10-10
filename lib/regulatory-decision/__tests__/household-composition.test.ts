@@ -218,9 +218,9 @@ describe("household composition before Article 110 branch evaluation", () => {
     expect(assessHouseholdBranch({ composition, activeChildIncomeNeutralisation: false, ascendantPensionMonthlyThreshold: 800, ascendantDisabledPensionMonthlyThreshold: 900 })).toMatchObject({ status: "needs_information", expectedCategory: null });
   });
 
-  it("requires the SPF Pensions proof before deciding from a declared pension", () => {
+  it("keeps the theoretical category while requesting the missing SPF Pensions proof", () => {
     const composition = classifyHouseholdComposition([member("relative", { hasProfessionalIncome: false, hasReplacementIncome: true, replacementIncomeType: "pension", replacementIncomeAmount: 500, pensionGrossAmountConfirmed: true, isAscendant: true })]);
-    expect(assessHouseholdBranch({ composition, activeChildIncomeNeutralisation: false, ascendantPensionMonthlyThreshold: 800 })).toMatchObject({ expectedCategory: null, pensionAssessment: { status: "NEEDS_DOCUMENT", document: "SPF_PENSIONS_PROOF" } });
+    expect(assessHouseholdBranch({ composition, activeChildIncomeNeutralisation: false, ascendantPensionMonthlyThreshold: 800 })).toMatchObject({ expectedCategory: "A", pensionAssessment: { status: "NEEDS_DOCUMENT", document: "SPF_PENSIONS_PROOF" } });
   });
 
   it("safe-fails a net pension amount without treating it as a gross amount", () => {

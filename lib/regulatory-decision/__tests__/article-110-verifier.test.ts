@@ -44,8 +44,8 @@ describe("Article 110 verifier adapter", () => {
 
   it("routes a third party alone through the existing third-party assessment", () => {
     const withoutIncome = evaluateArticle110Verifier({ thresholds, people: [{ id: "third", label: "Ami", relation: "third_party", hasProfessionalIncome: false, hasReplacementIncome: false }] });
-    const professionalIncome = evaluateArticle110Verifier({ thresholds, people: [{ id: "third", label: "Ami", relation: "third_party", hasProfessionalIncome: true, professionalIncomeAmount: 1_000, hasReplacementIncome: false }] });
-    const replacementIncome = evaluateArticle110Verifier({ thresholds, people: [{ id: "third", label: "Ami", relation: "third_party", hasProfessionalIncome: false, hasReplacementIncome: true, replacementIncomeAmount: 1_000 }] });
+    const professionalIncome = evaluateArticle110Verifier({ thresholds, people: [{ id: "third", label: "Ami", relation: "third_party", hasProfessionalIncome: true, professionalIncomeType: "employee", professionalIncomeAmount: 1_000, hasReplacementIncome: false }] });
+    const replacementIncome = evaluateArticle110Verifier({ thresholds, people: [{ id: "third", label: "Ami", relation: "third_party", hasProfessionalIncome: false, hasReplacementIncome: true, replacementIncomeType: "unemployment", replacementIncomeAmount: 1_000 }] });
     const unknownIncome = evaluateArticle110Verifier({ thresholds, people: [{ id: "third", label: "Ami", relation: "third_party" }] });
     expect(withoutIncome).toMatchObject({ composition: { kind: "third_parties_only" }, category: "B", resultType: "not_automated", onemDecisionStatus: "not_required" });
     expect(professionalIncome).toMatchObject({ expectedCategory: "B", resultType: "decision_determined" });
@@ -148,10 +148,10 @@ describe("Article 110 verifier adapter", () => {
   it("surfaces C110A as an action without turning 60B into A", () => {
     const result = evaluateArticle110Verifier({ thresholds, people: [{
       id: "partner", label: "Partenaire", relation: "partner", partnerEstablished: true,
-      hasProfessionalIncome: true, professionalIncomeAmount: 900, professionalIncomeContract: "cdd", professionalIncomeVariable: true,
+      hasProfessionalIncome: true, professionalIncomeType: "employee", professionalIncomeAmount: 900, professionalIncomeContract: "cdd", professionalIncomeVariable: true,
       hasReplacementIncome: false, c110aReceived: false,
     }] });
-    expect(result.householdAssessment).toMatchObject({ operationalArticle: "60B", expectedCategory: "B", monthlyPaymentAssessment: "NEEDS_C110A" });
+    expect(result.householdAssessment).toMatchObject({ operationalArticle: "60B", expectedCategory: "B", monthlyPaymentAssessment: "NEEDS_REVIEW" });
     expect(result.actions).toContain("Fournir le C110A officiel");
   });
 
@@ -239,7 +239,7 @@ describe("Article 110 verifier adapter", () => {
   it("keeps 60B distinct from the monthly C110A rate", () => {
     const result = evaluateArticle110Verifier({ thresholds, people: [{
       id: "partner", label: "Partenaire", relation: "partner", partnerEstablished: true,
-      hasProfessionalIncome: true, professionalIncomeAmount: 900, professionalIncomeContract: "cdd", professionalIncomeVariable: true,
+      hasProfessionalIncome: true, professionalIncomeType: "employee", professionalIncomeAmount: 900, professionalIncomeContract: "cdd", professionalIncomeVariable: true,
       hasReplacementIncome: false, c110aReceived: true, c110aMonthlyDeclaredIncome: 800,
     }] });
     expect(result).toMatchObject({ category: "B", treatment: "60B", monthlyRate: "A_RATE" });
@@ -248,6 +248,8 @@ describe("Article 110 verifier adapter", () => {
   it("uses an ONEM recognition at the same address without an extra ONEM review", () => {
     const result = evaluateArticle110Verifier({ thresholds, people: [], isAloneExplicit: true, cohousingClaim: true, cohousingOnemRecognition: "yes" });
     expect(result).toMatchObject({ category: "N", onemDecisionStatus: "not_required" });
+    expect(result.reason).toContain("déjà été reconnu");
+    expect(result.reason).not.toContain("Bureau du chômage");
   });
 
   it("keeps an unrecognised cohousing in B and exposes its potential N outcome", () => {
@@ -258,12 +260,12 @@ describe("Article 110 verifier adapter", () => {
   it("explains the child-and-parent branch with the decisive facts rather than a generic summary", () => {
     const result = evaluateArticle110Verifier({ thresholds, people: [
       { id: "child", label: "Enfant", relation: "child", receivesFamilyAllowances: true, hasProfessionalIncome: false, hasReplacementIncome: false },
-      { id: "father", label: "Père", relation: "relative", hasProfessionalIncome: true, hasReplacementIncome: false },
+      { id: "father", label: "Père", relation: "relative", hasProfessionalIncome: true, professionalIncomeType: "independent", hasReplacementIncome: false },
     ] });
     expect(result).toMatchObject({ category: "B" });
     expect(result.reason).toContain("allocations familiales");
     expect(result.reason).toContain("revenu professionnel pertinent");
-    expect(result.explanation.decisiveFacts).toEqual(expect.arrayContaining(["Enfant ouvre le droit aux allocations familiales", "Père a un revenu professionnel"]));
+    expect(result.explanation.decisiveFacts).toEqual(expect.arrayContaining(["Enfant ouvre le droit aux allocations familiales", "Père a un revenu professionnel indépendant"]));
   });
 
   it("exposes the pension comparison only when an applicable amount and ceiling exist", () => {
@@ -275,5 +277,40 @@ describe("Article 110 verifier adapter", () => {
     expect(result.explanation.pensionComparison).toEqual({ amount: 500, threshold: 1_000, relation: "within" });
     expect(result.reason).toContain("500 €");
     expect(result.reason).toContain("1000 €");
+  });
+
+  it("keeps an effectively exercised independent activity distinct from salaried income", () => {
+    const result = evaluateArticle110Verifier({ thresholds, people: [{
+      id: "partner", label: "Partenaire", relation: "partner", partnerEstablished: true,
+      hasProfessionalIncome: true, professionalIncomeType: "independent", professionalIncomeAmount: 0,
+      hasReplacementIncome: false,
+    }] });
+    expect(result).toMatchObject({ category: "B", treatment: "none", monthlyRate: "B_RATE" });
+    expect(result.missingFacts.map((fact) => fact.factKey)).not.toContain("partner.professionalIncomeAmount");
+    expect(result.reason).toContain("activité indépendante");
+    expect(result.reason).not.toContain("0 €");
+  });
+
+  it("uses the monthly income for 60B even before the C110A document is received", () => {
+    const result = evaluateArticle110Verifier({ thresholds, people: [{
+      id: "partner", label: "Partenaire", relation: "partner", partnerEstablished: true,
+      hasProfessionalIncome: true, professionalIncomeType: "employee", professionalIncomeAmount: 900, professionalIncomeContract: "cdd", professionalIncomeVariable: true,
+      hasReplacementIncome: false, c110aReceived: false, c110aMonthlyDeclaredIncome: 800,
+    }] });
+    expect(result).toMatchObject({ category: "B", treatment: "60B", monthlyRate: "A_RATE", documentStatus: "required" });
+    expect(result.missingDocuments).toContain("C110A du mois concerné");
+  });
+
+  it("keeps disability assistance neutral and asks to clarify another benefit", () => {
+    const disability = evaluateArticle110Verifier({ thresholds, people: [{
+      id: "parent", label: "Père", relation: "relative", isAscendant: true, hasProfessionalIncome: false,
+      hasReplacementIncome: true, replacementIncomeType: "disability_allowance", replacementIncomeRelevantForFamilyStatus: false,
+    }] });
+    const other = evaluateArticle110Verifier({ thresholds, people: [{
+      id: "parent", label: "Père", relation: "relative", isAscendant: true, hasProfessionalIncome: false,
+      hasReplacementIncome: true, replacementIncomeType: "other",
+    }] });
+    expect(disability.expectedCategory).toBe("A");
+    expect(other.missingFacts.map((fact) => fact.factKey)).toContain("parent.replacementIncomeDetails");
   });
 });

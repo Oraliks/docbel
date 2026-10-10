@@ -63,6 +63,8 @@ describe("Article 110 scenario matrix", () => {
     expect(alimony).toMatchObject({ category: "B", potentialCategory: "A", onemDecisionStatus: "required" });
     expect(confirmed).toMatchObject({ category: "N", onemDecisionStatus: "not_required" });
     expect(cohousing?.reason).toContain("Bureau du chômage");
+    expect(confirmed?.reason).toContain("déjà été reconnu");
+    expect(confirmed?.reason).not.toContain("Bureau du chômage");
     expect(report.potentialTransitions.B_to_N).toBeGreaterThan(0);
     expect(report.potentialTransitions.B_to_A).toBeGreaterThan(0);
   });

@@ -17,9 +17,31 @@ describe("Article 110 scenario matrix", () => {
   const report = evaluateArticle110ScenarioMatrix(thresholds);
 
   it("covers every meaningful evaluator branch and result family", () => {
-    expect(report.total).toBeGreaterThanOrEqual(20);
+    expect(report.total).toBeGreaterThan(100);
     expect(Object.keys(report.byBranch)).toEqual(expect.arrayContaining(["spouse_or_partner", "children_only", "relatives_only", "cohousing", "alimony", "alternating_care", "mixed_or_unsupported"]));
     expect(Object.values(report.byResultType).filter(Boolean)).toHaveLength(5);
+  });
+
+  it("accounts for every generated combination before execution", () => {
+    expect(report.space.raw).toBe(report.space.executed + report.space.invalid + report.space.duplicates);
+    expect(report.space.invalid).toBeGreaterThan(0);
+    expect(report.space.duplicates).toBeGreaterThan(0);
+    expect(report.coverage.enfants).toContain("nombre : 1/2/3");
+  });
+
+  it("keeps principal result types exclusive while assigning A, B or N to every scenario", () => {
+    expect(Object.values(report.byResultType).reduce((sum, count) => sum + count, 0)).toBe(report.total);
+    expect(Object.values(report.byCategory).reduce((sum, count) => sum + count, 0)).toBe(report.total);
+    expect(report.assertions).toMatchObject({ resultTypesTotal: true, categoriesTotal: true, incoherent: true, withoutReason: true, atLeastOneA: true, atLeastOneB: true, atLeastOneN: true });
+  });
+
+  it("records the explicit isolated baseline as N without assuming it for an unknown composition", () => {
+    const alone = report.scenarios.find((scenario) => scenario.id === "alone-no-special-situation");
+    const unknown = report.scenarios.find((scenario) => scenario.id === "composition-missing");
+    expect(alone).toMatchObject({ householdComposition: "alone", category: "N" });
+    expect(unknown).toMatchObject({ resultType: "information_missing", category: "B", informationStatus: "incomplete" });
+    expect(report.assertions.atLeastOneN).toBe(true);
+    expect(report.anomalies).toEqual([]);
   });
 
   it("keeps every generated contract justified and internally coherent", () => {
@@ -33,9 +55,20 @@ describe("Article 110 scenario matrix", () => {
     }
   });
 
-  it("classifies documented cohousing as an ONEM decision, never as a generic check", () => {
+  it("keeps co-housing in B pending ONEM, surfaces supported potential outcomes, and accepts confirmed ONEM isolation", () => {
     const cohousing = report.scenarios.find((scenario) => scenario.id === "cohousing-complete");
-    expect(cohousing).toMatchObject({ resultType: "onem_decision_required", category: null });
+    const alimony = report.scenarios.find((scenario) => scenario.id === "cohousing-alimony-established");
+    const confirmed = report.scenarios.find((scenario) => scenario.id === "cohousing-onem-isolated-confirmed");
+    expect(cohousing).toMatchObject({ resultType: "onem_decision_required", category: "B", potentialCategory: "N", onemDecisionStatus: "required" });
+    expect(alimony).toMatchObject({ category: "B", potentialCategory: "A", onemDecisionStatus: "required" });
+    expect(confirmed).toMatchObject({ category: "N", onemDecisionStatus: "not_required" });
     expect(cohousing?.reason).toContain("Bureau du chômage");
+    expect(report.potentialTransitions.B_to_N).toBeGreaterThan(0);
+    expect(report.potentialTransitions.B_to_A).toBeGreaterThan(0);
+  });
+
+  it("documents every mixed or unsupported composition instead of silently dropping it", () => {
+    expect(report.mixedOrUnsupported.length).toBeGreaterThan(0);
+    expect(report.mixedOrUnsupported.every((group) => group.count > 0 && group.classifierReason.length > 0)).toBe(true);
   });
 });

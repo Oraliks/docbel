@@ -146,11 +146,12 @@ describe("household composition before Article 110 branch evaluation", () => {
     });
   });
 
-  it("does not invent a category when the complete branch is not covered", () => {
+  it("routes a third party alone through the existing third-party income rule", () => {
     const composition = classifyHouseholdComposition([member("third_party", { hasProfessionalIncome: true })]);
     expect(assessHouseholdBranch({ composition, activeChildIncomeNeutralisation: false })).toMatchObject({
-      expectedCategory: null,
-      status: "needs_review",
+      composition: "third_parties_only",
+      expectedCategory: "B",
+      status: "probable",
     });
   });
 

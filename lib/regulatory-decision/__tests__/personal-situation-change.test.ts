@@ -97,8 +97,8 @@ describe("personal situation change trace", () => {
     expect(composition.factKeys.join(" ")).not.toContain("prenom");
   });
 
-  it("keeps a cousin outside the relatives branch and sends an unknown relation to review", () => {
-    expect(deriveHouseholdCompositionFromC1({ cohabitants: [{ lien: "cousin" }] }).kind).toBe("mixed_or_unsupported");
+  it("keeps a cousin outside the relatives branch while preserving the dedicated third-party branch", () => {
+    expect(deriveHouseholdCompositionFromC1({ cohabitants: [{ lien: "cousin" }] }).kind).toBe("third_parties_only");
     expect(deriveHouseholdCompositionFromC1({ cohabitants: [{ lien: "inconnu" }] })).toMatchObject({ needsReview: true });
   });
 

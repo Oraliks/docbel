@@ -26,6 +26,33 @@ describe("Article 110 verifier adapter", () => {
     expect(getArticle110VerifierFormSections({ people: [], isAloneExplicit: true })).toEqual(["isolated"]);
   });
 
+  it("distinguishes an unknown composition from an explicitly isolated household", () => {
+    const unknown = evaluateArticle110Verifier({ thresholds, people: [] });
+    const alone = evaluateArticle110Verifier({ thresholds, people: [], isAloneExplicit: true, alimony: { enabled: false }, alternatingCare: { enabled: false }, cohousingClaim: false });
+    expect(unknown).toMatchObject({ resultType: "information_missing", expectedCategory: null });
+    expect(alone).toMatchObject({ resultType: "decision_determined", expectedCategory: "N", level: "confirmed" });
+  });
+
+  it("does not assign N when an explicit isolated claim activates another branch", () => {
+    const alimony = evaluateArticle110Verifier({ thresholds, people: [], isAloneExplicit: true, alimony: { enabled: true, beneficiary: "enfant-mineur", paymentEffective: true, legalBasis: "decision-judiciaire", documentStatus: "en-main" } });
+    const care = evaluateArticle110Verifier({ thresholds, people: [], isAloneExplicit: true, alternatingCare: { enabled: true, regular: true, familyAllowances: true, documentStatus: "jugement" } });
+    const cohousing = evaluateArticle110Verifier({ thresholds, people: [], isAloneExplicit: true, cohousingClaim: true, cohousingDocuments: { lease: true, regis: true, swornStatement: true } });
+    expect(alimony.isolatedAssessment?.branch).toBe("alimony");
+    expect(care.isolatedAssessment?.branch).toBe("alternating_care");
+    expect(cohousing).toMatchObject({ resultType: "onem_decision_required", expectedCategory: null });
+  });
+
+  it("routes a third party alone through the existing third-party assessment", () => {
+    const withoutIncome = evaluateArticle110Verifier({ thresholds, people: [{ id: "third", label: "Ami", relation: "third_party", hasProfessionalIncome: false, hasReplacementIncome: false }] });
+    const professionalIncome = evaluateArticle110Verifier({ thresholds, people: [{ id: "third", label: "Ami", relation: "third_party", hasProfessionalIncome: true, professionalIncomeAmount: 1_000, hasReplacementIncome: false }] });
+    const replacementIncome = evaluateArticle110Verifier({ thresholds, people: [{ id: "third", label: "Ami", relation: "third_party", hasProfessionalIncome: false, hasReplacementIncome: true, replacementIncomeAmount: 1_000 }] });
+    const unknownIncome = evaluateArticle110Verifier({ thresholds, people: [{ id: "third", label: "Ami", relation: "third_party" }] });
+    expect(withoutIncome).toMatchObject({ composition: { kind: "third_parties_only" }, category: "B", resultType: "not_automated", onemDecisionStatus: "not_required" });
+    expect(professionalIncome).toMatchObject({ expectedCategory: "B", resultType: "decision_determined" });
+    expect(replacementIncome).toMatchObject({ expectedCategory: "B", resultType: "decision_determined" });
+    expect(unknownIncome).toMatchObject({ resultType: "information_missing" });
+  });
+
   it("keeps child and ascendant questions visible for their actual mixed composition", () => {
     expect(getArticle110VerifierFormSections({ people: [
       { id: "child", label: "Enfant", relation: "child" },
@@ -154,10 +181,22 @@ describe("Article 110 verifier adapter", () => {
 
   it("exposes a complete, actionable contract for a cohousing review", () => {
     const result = evaluateArticle110Verifier({ thresholds, people: [], isAloneExplicit: true, cohousingClaim: true });
-    expect(result).toMatchObject({ status: "review", resultType: "onem_decision_required", reason: expect.stringContaining("situation de co-housing"), reviewReason: expect.any(String) });
+    expect(result).toMatchObject({ category: "B", onemDecisionStatus: "required", status: "review", resultType: "onem_decision_required", reason: expect.stringContaining("situation de co-housing"), reviewReason: expect.any(String) });
     expect(result.missingDocuments).toEqual(expect.arrayContaining(["Bail", "Annexe REGIS"]));
     expect(result.nextActions).toContain("Transmettre pour vérification au Bureau du chômage");
-    expect(result.potentialOutcome).toContain("N ou A");
+    expect(result.potentialOutcome).toBeUndefined();
+  });
+
+  it("keeps co-housing in B while surfacing an established alimony outcome as potential A", () => {
+    const result = evaluateArticle110Verifier({ thresholds, people: [], isAloneExplicit: true, cohousingClaim: true, cohousingDocuments: { lease: true, regis: true, swornStatement: true }, alimony: { enabled: true, beneficiary: "enfant-mineur", paymentEffective: true, legalBasis: "decision-judiciaire", documentStatus: "en-main" } });
+    expect(result).toMatchObject({ category: "B", potentialCategory: "A", onemDecisionStatus: "required" });
+  });
+
+  it("does not turn missing facts or documents into an ONEM decision", () => {
+    const information = evaluateArticle110Verifier({ thresholds, people: [] });
+    const document = evaluateArticle110Verifier({ thresholds, people: [], alimony: { enabled: true, documentStatus: "en-cours" } });
+    expect(information).toMatchObject({ informationStatus: "incomplete", onemDecisionStatus: "not_required" });
+    expect(document).toMatchObject({ documentStatus: "required", onemDecisionStatus: "not_required" });
   });
 
   it("never returns an unexplained incomplete result", () => {

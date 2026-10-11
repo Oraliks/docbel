@@ -1,7 +1,8 @@
-# Situation familiale (catégories) & formulaire C1
+# Situation familiale (catégories) — référentiel métier commun
 
 > **Thème :** `situation_familiale`. La situation familiale **influence la catégorie et le
-> montant** des allocations. Elle est déclarée via le **C1**.
+> montant** des allocations. Les formulaires peuvent recueillir des faits, mais
+> ne portent pas la logique de qualification.
 >
 > **Source pratique actuelle.** L'ONEM publie la feuille info **T147 — « Quelle est votre
 > situation familiale ? »**, mise à jour le **01/09/2026**. Elle couvre les catégories, les
@@ -23,11 +24,16 @@ donc directement ce que la personne perçoit.
 Le calcul théorique Article 110 est effectué à partir d'un contrat commun de
 faits familiaux : personnes identifiées, relation effective, revenus (qui
 peuvent être multiples), date d'évaluation et barèmes applicables. Les
-adaptateurs C1 et les consommateurs futurs traduisent leurs réponses vers ces
-faits ; ils ne déterminent pas eux-mêmes une catégorie. Le C1 utilise ce point
-d'entrée pour ses sauvegardes et téléchargements. Les pièces reçues, les
-démarches et une décision ONEM enregistrée restent des informations séparées :
-elles ne changent pas le résultat théorique issu des faits déclarés.
+adaptateurs, dont le Vérificateur, traduisent leurs réponses vers ces faits ;
+ils ne déterminent pas eux-mêmes une catégorie. Le contrat `FamilyFacts` et le
+calcul `evaluateFamilySituation` constituent la source de vérité réutilisable.
+Les pièces reçues, les démarches et une décision ONEM enregistrée restent des
+informations séparées : elles ne changent pas le résultat théorique issu des
+faits déclarés.
+
+> **Périmètre actif.** Le chantier familial couvre le référentiel, le contrat
+> de faits, le calcul, les explications et le Vérificateur théorique. Les
+> parcours C1/PDF/bundles ne font pas partie de son développement courant.
 
 Une évaluation produit A, N ou B seulement lorsque les faits le permettent ;
 sinon elle reste à compléter ou à vérifier. Le code ONEM reçu n'est jamais

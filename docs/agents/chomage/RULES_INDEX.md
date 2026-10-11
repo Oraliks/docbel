@@ -61,7 +61,7 @@
 |---------|--------------------|--------|
 | `situation_familiale_c1` | active / official | C1 = déclaration situation perso/familiale (impact droit et montant) |
 | `situation_familiale_categories` | active / high | 3 catégories A (charge famille) / N (isolé) / B (cohabitant) |
-| `situation_familiale_definitions` | to_verify / official | T147 actuelle vérifiée ; aucune qualification individuelle implémentée |
+| `situation_familiale_definitions` | active / high | Référentiel commun : qualification théorique structurée A/N/B ou faits à compléter/revue ; jamais une décision ONEM |
 | `situation_familiale_impact_montant` | active / official | 2e période = forfait selon catégorie familiale |
 | `situation_familiale_revenu_enfant_premier_emploi` | active / official | Neutralisation temporaire de 12 mois ; échéance 110&1V à réévaluer |
 | `situation_familiale_composition_priorities` | active / official | Composition complète avant branche ; conjoint/partenaire prioritaire |
@@ -115,7 +115,6 @@
 
 ## Règles `to_verify` (à ne pas utiliser pour conclure)
 - `reforme_2026_fin_de_droit_a_verifier`
-- `situation_familiale_definitions`
 - `formulaire_c109_seul`
 
 Ces règles servent à **cadrer** un `a_verifier`, jamais à fonder une conclusion ferme.

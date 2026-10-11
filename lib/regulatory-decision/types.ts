@@ -75,7 +75,7 @@ export interface RegulatoryDecision {
   householdAssessment?: {
     composition: "alone" | "spouse_or_partner" | "children_only" | "children_and_relatives" | "relatives_only" | "children_and_third_parties" | "relatives_and_third_parties" | "children_relatives_and_third_parties" | "mixed_or_unsupported";
     status: "probable" | "needs_information" | "needs_review";
-    expectedCategory: "A" | "B" | null;
+    expectedCategory: "A" | "N" | "B" | null;
     operationalArticle: "60A" | "60B" | "none" | "needs_review";
     incomeAssessment: "no_income" | "not_relevant" | "relevant" | "needs_review";
     monthlyPaymentAssessment: "A_RATE" | "B_RATE" | "NEEDS_C110A" | "NEEDS_REVIEW";
@@ -87,6 +87,10 @@ export interface RegulatoryDecision {
     trigger: "c1_household_update";
     factKeys: string[];
     sourceRuleIds: string[];
+    explanation?: string;
+    missingFacts?: string[];
+    evaluatedAt?: string;
+    appliesAllWeek?: boolean;
     pensionAssessment?: { status: "VERIFIED" | "NEEDS_DOCUMENT" | "NEEDS_INFORMATION"; grossTotal?: number; threshold?: number; document: "SPF_PENSIONS_PROOF"; proofStatus: "received" | "required" };
   };
   /** Narrow C1 claims for a person declaring an isolated household. Never an ONEM decision. */

@@ -70,7 +70,7 @@
 | `situation_familiale_ascendants_pensions` | active / official | Allocation handicap neutralisée ; pensions d'ascendants brutes cumulées et barème daté |
 | `situation_familiale_children_only` | active / official | Enfants seuls : revenus/allocations familiales, déclaration distincte de la catégorie |
 | `situation_familiale_isole_pension_alimentaire` | active / official | Isolé : pension effectivement payée, base juridique et pièce à documenter |
-| `situation_familiale_isole_garde_alternee` | to_verify / official | Garde alternée : possibilité A à faire confirmer, sans seuil pratique |
+| `situation_familiale_isole_garde_alternee` | active / high | Hébergement alterné : présence moyenne ≥ 2 jours calendrier/semaine sur le cycle réel, condition AF ou absence de revenu pertinent ; A toute la semaine |
 | `situation_familiale_cohousing_a_verifier` | to_verify / official | Co-housing : faits et pièces en revue ONEM, jamais déduit de l'adresse |
 
 ## Formulaires — `formulaires-onem.md`

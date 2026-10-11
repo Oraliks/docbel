@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { assessHouseholdBranch, classifyHouseholdComposition } from "../household-composition";
+import { assessHouseholdBranch, classifyHouseholdComposition, evaluateFamilySituation } from "../household-composition";
 
 const member = (relation: Parameters<typeof classifyHouseholdComposition>[0][number]["relation"], extra = {}) => ({
   relation,
@@ -8,6 +8,95 @@ const member = (relation: Parameters<typeof classifyHouseholdComposition>[0][num
 });
 
 describe("household composition before Article 110 branch evaluation", () => {
+  const alternatingCare = (facts: { averageDaysPerWeek?: number; cycle?: "monthly" | "quarterly" | "semiannual" | "annual"; familyAllowances?: boolean; childHasRelevantIncome?: boolean; children?: Array<{ id: string; familyAllowances?: boolean; hasRelevantIncome?: boolean }> }) => evaluateFamilySituation({
+    facts: { asOf: "2026-10-10", people: [], isolated: { alternatingCare: facts } },
+    activeChildIncomeNeutralisation: false,
+  });
+
+  it("uses the average calendar presence threshold for alternating care", () => {
+    expect(alternatingCare({ averageDaysPerWeek: 1.99, cycle: "monthly", familyAllowances: true }).expectedCategory).toBe("N");
+    expect(alternatingCare({ averageDaysPerWeek: 2, cycle: "monthly", familyAllowances: true })).toMatchObject({ expectedCategory: "A", monthlyPaymentAssessment: "A_RATE", appliesAllWeek: true });
+    expect(alternatingCare({ averageDaysPerWeek: 3.5, cycle: "annual", familyAllowances: true }).expectedCategory).toBe("A");
+  });
+
+  it("accepts an irregular cycle when its declared monthly average reaches two days", () => {
+    expect(alternatingCare({ averageDaysPerWeek: 2, cycle: "monthly", childHasRelevantIncome: false })).toMatchObject({ expectedCategory: "A", status: "probable" });
+  });
+
+  it("uses family allowances or the absence of relevant child income, and otherwise applies B", () => {
+    expect(alternatingCare({ averageDaysPerWeek: 2, cycle: "annual", familyAllowances: true, childHasRelevantIncome: true }).expectedCategory).toBe("A");
+    expect(alternatingCare({ averageDaysPerWeek: 2, cycle: "quarterly", familyAllowances: false, childHasRelevantIncome: false }).expectedCategory).toBe("A");
+    expect(alternatingCare({ averageDaysPerWeek: 2, cycle: "semiannual", familyAllowances: false, childHasRelevantIncome: true })).toMatchObject({ expectedCategory: "B", incomeAssessment: "relevant" });
+  });
+
+  it("assesses several alternating-care children as one family situation", () => {
+    const base = { averageDaysPerWeek: 2, cycle: "annual" as const };
+    expect(alternatingCare({ ...base, children: [{ id: "first", familyAllowances: false, hasRelevantIncome: true }, { id: "second", familyAllowances: true, hasRelevantIncome: false }] }).expectedCategory).toBe("A");
+    expect(alternatingCare({ ...base, children: [{ id: "first", familyAllowances: false, hasRelevantIncome: false }, { id: "second", familyAllowances: false, hasRelevantIncome: false }] }).expectedCategory).toBe("A");
+    expect(alternatingCare({ ...base, children: [{ id: "first", familyAllowances: false, hasRelevantIncome: true }, { id: "second", familyAllowances: false, hasRelevantIncome: false }] }).expectedCategory).toBe("B");
+  });
+
+  it("keeps the spouse or partner branch ahead of alternating-care facts", () => {
+    const assessment = evaluateFamilySituation({
+      facts: {
+        asOf: "2026-10-10",
+        people: [{ id: "spouse", relation: "spouse", incomes: [] }],
+        isolated: { alternatingCare: { averageDaysPerWeek: 2, cycle: "annual", familyAllowances: false, childHasRelevantIncome: true } },
+      },
+      activeChildIncomeNeutralisation: false,
+    });
+    expect(assessment).toMatchObject({ composition: "spouse_or_partner", expectedCategory: "A", status: "probable" });
+  });
+
+  it("asks only for the alternating-care fact that is missing and retains an established alimony basis", () => {
+    expect(alternatingCare({ familyAllowances: true })).toMatchObject({ status: "needs_information", factKeys: ["isolated.alternatingCare.averageDaysPerWeek", "isolated.alternatingCare.cycle"] });
+    const withAlimony = evaluateFamilySituation({
+      facts: { asOf: "2026-10-10", people: [], isolated: { alimony: { paid: true, admissibleBasis: true, beneficiary: "minor_child" }, alternatingCare: { familyAllowances: true } } },
+      activeChildIncomeNeutralisation: false,
+    });
+    expect(withAlimony).toMatchObject({ expectedCategory: "A", sourceRuleIds: ["situation_familiale_isole_pension_alimentaire"] });
+  });
+
+  it("evaluates the shared fact contract, preserving false, zero and multiple incomes", () => {
+    const assessment = evaluateFamilySituation({
+      facts: {
+        asOf: "2026-10-10",
+        people: [{
+          id: "partner-1",
+          relation: "spouse",
+          incomes: [
+            { kind: "professional", active: true, amount: 0, contract: "cdi", variable: false },
+            { kind: "spf_disability", active: true },
+          ],
+        }],
+      },
+      activeChildIncomeNeutralisation: false,
+      spouseProfessionalMonthlyThreshold: 1000,
+    });
+    expect(assessment).toMatchObject({ expectedCategory: "A", operationalArticle: "60A", factKeys: ["partner-1"], evaluatedAt: "2026-10-10" });
+    expect(assessment.explanation).toContain("charge de famille");
+  });
+
+  it("does not neutralise every child's income when only one Article 110 period is active", () => {
+    const composition = classifyHouseholdComposition([
+      member("child", { factKey: "child-1", hasProfessionalIncome: true, firstProfessionalIncome: true }),
+      member("child", { factKey: "child-2", hasProfessionalIncome: true }),
+    ]);
+    expect(assessHouseholdBranch({
+      composition,
+      activeChildIncomeNeutralisation: true,
+      neutralisedChildFactKeys: ["child-1"],
+    })).toMatchObject({ expectedCategory: "B" });
+  });
+
+  it("requires family allowances in the children-and-relatives branch", () => {
+    const composition = classifyHouseholdComposition([
+      member("child", { receivesFamilyAllowances: false, hasProfessionalIncome: false, hasReplacementIncome: false }),
+      member("relative", { hasProfessionalIncome: false, hasReplacementIncome: false }),
+    ]);
+    expect(assessHouseholdBranch({ composition, activeChildIncomeNeutralisation: false })).toMatchObject({ expectedCategory: "B" });
+  });
+
   it("expects B when a parent or ally has relevant professional income", () => {
     const composition = classifyHouseholdComposition([
       member("relative", { hasProfessionalIncome: true }),
@@ -107,8 +196,8 @@ describe("household composition before Article 110 branch evaluation", () => {
   });
 
   it("evaluates an active 110&1M in the children-only branch without locking A elsewhere", () => {
-    const childrenOnly = classifyHouseholdComposition([member("child", { hasProfessionalIncome: true })]);
-    expect(assessHouseholdBranch({ composition: childrenOnly, activeChildIncomeNeutralisation: true })).toMatchObject({
+    const childrenOnly = classifyHouseholdComposition([member("child", { factKey: "child-110", hasProfessionalIncome: true })]);
+    expect(assessHouseholdBranch({ composition: childrenOnly, activeChildIncomeNeutralisation: true, neutralisedChildFactKeys: ["child-110"] })).toMatchObject({
       expectedCategory: "A",
       composition: "children_only",
     });

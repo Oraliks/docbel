@@ -1,0 +1,38 @@
+import { describe, expect, it } from "vitest";
+import { evaluateArticle110Verifier } from "../article-110-verifier";
+
+const thresholds = {
+  spouseProfessionalMonthly: 1000,
+  childProfessionalMonthly: null,
+  spouseReplacementMonthly: null,
+  childReplacementMonthly: null,
+  source: null,
+};
+
+describe("Article 110 theoretical verifier", () => {
+  it("uses the shared family evaluation for a spouse income", () => {
+    const result = evaluateArticle110Verifier({
+      thresholds,
+      people: [{ id: "spouse", relation: "spouse", hasProfessionalIncome: true, professionalIncomeAmount: 900, professionalIncomeType: "employee", professionalIncomeContract: "cdi", professionalIncomeVariable: false }],
+    });
+    expect(result.householdAssessment).toMatchObject({ expectedCategory: "A", operationalArticle: "60A" });
+    expect(result.category).toBe("A");
+  });
+
+  it("uses the same alternating-care result as the common calculation", () => {
+    const result = evaluateArticle110Verifier({
+      thresholds,
+      isAloneExplicit: true,
+      people: [],
+      alternatingCare: { enabled: true, averageDaysPerWeek: 2, cycle: "monthly", familyAllowances: true },
+    });
+    expect(result).toMatchObject({ category: "A", onemDecisionStatus: "not_required" });
+    expect(result.missingFacts).toEqual([]);
+  });
+
+  it("asks for missing alternating-care facts without a generic ONEM waiting state", () => {
+    const result = evaluateArticle110Verifier({ thresholds, isAloneExplicit: true, people: [], alternatingCare: { enabled: true, familyAllowances: true } });
+    expect(result).toMatchObject({ category: null, onemDecisionStatus: "not_required" });
+    expect(result.missingFacts.map((fact) => fact.factKey)).toEqual(["isolated.alternatingCare.averageDaysPerWeek", "isolated.alternatingCare.cycle"]);
+  });
+});

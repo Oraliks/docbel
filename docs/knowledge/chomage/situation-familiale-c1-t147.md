@@ -18,6 +18,26 @@
 et dépend de la **catégorie familiale** (et non plus du dernier salaire). La catégorie influence
 donc directement ce que la personne perçoit.
 
+## Implémentation DocBel
+
+Le calcul théorique Article 110 est effectué à partir d'un contrat commun de
+faits familiaux : personnes identifiées, relation effective, revenus (qui
+peuvent être multiples), date d'évaluation et barèmes applicables. Les
+adaptateurs C1 et les consommateurs futurs traduisent leurs réponses vers ces
+faits ; ils ne déterminent pas eux-mêmes une catégorie. Le C1 utilise ce point
+d'entrée pour ses sauvegardes et téléchargements. Les pièces reçues, les
+démarches et une décision ONEM enregistrée restent des informations séparées :
+elles ne changent pas le résultat théorique issu des faits déclarés.
+
+Une évaluation produit A, N ou B seulement lorsque les faits le permettent ;
+sinon elle reste à compléter ou à vérifier. Le code ONEM reçu n'est jamais
+écrasé par cette simulation. Les effets temporaires (dont Article 110) et le
+taux éventuel du mois sont conservés distinctement de la catégorie.
+
+Les anciens snapshots documentaires restent lisibles dans l'historique d'un
+dossier, mais une nouvelle sauvegarde ne les réemploie pas pour décider la
+catégorie théorique.
+
 ## Catégories à documenter avec prudence
 Trois grandes catégories (codes ONEM **A / N / B**), hiérarchie de montant **A > N > B** :
 
@@ -348,18 +368,24 @@ related_topics:
 rule_id: situation_familiale_isole_garde_alternee
 theme: situation_familiale
 effective_from: unknown
-source_name: ONEM — feuille info C1 et T147
+source_name: CSC — Formation « Situation familiale niveau 2 », diapositives 16 à 18
 source_url: https://www.onem.be/citoyens/chomage-complet/a-combien-seleve-votre-allocation-/quelle-est-votre-situation-familiale-
-last_verified: 2026-10-08
-confidence: to_verify
-status: to_verify
+source_file: private/docs/formations/csc/Niveau 2/Situation Familiale/26. Situation familiale (niv.2).pptx
+last_verified: 2026-10-12
+confidence: high
+status: active
 summary: >
-  Une garde alternée requiert l'examen de la réalité et de la régularité de l'hébergement,
-  des allocations familiales ou de l'absence de revenu pertinent de l'enfant. La source
-  actuelle consultée ne permet pas de qualifier automatiquement un dossier individuel.
+  Pour une personne qui vit seule avec un enfant en hébergement alterné, la présence doit
+  atteindre deux jours calendrier par semaine en moyenne, calculée sur le cycle réel
+  mensuel, trimestriel, semestriel ou annuel. La condition enfant est satisfaite par le
+  droit aux allocations familiales ou l'absence de revenu professionnel et de remplacement
+  pertinent. La catégorie A vaut alors pour tous les jours de la semaine.
 agent_instruction: >
-  Ne proposer qu'une possibilité de catégorie A à confirmer ; toute information absente ou
-  contradictoire reste en revue ONEM, sans seuil pratique ni code officiel.
+  Évaluer les faits déclarés dans le calcul familial commun. À partir de deux jours de
+  présence moyenne, conclure A si la condition enfant est satisfaite, B si elle est
+  explicitement en échec, et demander seulement le fait manquant si nécessaire. En dessous
+  de deux jours, poursuivre les autres fondements de la personne vivant seule. Ne jamais
+  faire dépendre ce résultat théorique d'une copie de jugement ou d'une convention.
 related_forms:
   - C1
 related_topics:

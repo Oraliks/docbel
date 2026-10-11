@@ -3,12 +3,91 @@ import {
   deriveArticle110FactsFromC1,
   deriveHouseholdCompositionFromC1,
   derivePersonalSituationTrace,
-  assessIsolatedHouseholdClaim,
+  deriveFamilyFactsFromC1,
   withPersonalSituationTrace,
 } from "../personal-situation-change";
 import { decidePersonalSituation } from "../personal-situation";
+import { evaluateArticle110Verifier } from "../article-110-verifier";
 
 describe("personal situation change trace", () => {
+  it("keeps C1 person identifiers stable when rows are reordered", () => {
+    const rows = [
+      { prenom: "Anne", nom: "Martin", dateNaissance: "1980-01-01", lien: "enfant", allocationsFamiliales: "oui", typeRevenuPro: "aucun" },
+      { prenom: "Benoît", nom: "Martin", dateNaissance: "2004-01-01", lien: "enfant", allocationsFamiliales: "non", typeRevenuPro: "aucun" },
+    ];
+    const first = deriveFamilyFactsFromC1({ cohabitants: rows });
+    const reordered = deriveFamilyFactsFromC1({ cohabitants: [...rows].reverse() });
+    expect(reordered.people.map((person) => person.id).sort()).toEqual(first.people.map((person) => person.id).sort());
+  });
+
+  it("does not let C110A availability change a result based on the declared monthly amount", () => {
+    const decision = () => decidePersonalSituation({ "entry.dossier": { value: "changement-situation-personnelle", origin: "system" } });
+    const payload = (c110aStatut: string) => ({ cohabitants: [{ lien: "epoux", typeRevenuPro: "salarie-employe", montantRevenuPro: 900, typeContratRevenuPro: "cdi", revenuProfessionnelVariable: "oui", c110aStatut, montantMensuelC110a: 900, revenuRemplacement: "aucun" }] });
+    const thresholds = { spouseProfessionalMonthly: 1000, childProfessionalMonthly: null, spouseReplacementMonthly: null, childReplacementMonthly: null, source: null };
+    expect(withPersonalSituationTrace(decision(), payload("recu"), new Date("2026-10-08T00:00:00Z"), thresholds)?.householdAssessment)
+      .toEqual(withPersonalSituationTrace(decision(), payload("non-recu"), new Date("2026-10-08T00:00:00Z"), thresholds)?.householdAssessment);
+  });
+
+  it("uses alimony facts, not a judgment-copy status, in the common calculation", () => {
+    const decision = decidePersonalSituation({ "entry.dossier": { value: "changement-situation-personnelle", origin: "system" } });
+    const result = withPersonalSituationTrace(decision, {
+      statutFamilial: "isole",
+      pensionAlimentaire: "oui",
+      pensionAlimentairePaiementEffectif: "oui",
+      pensionAlimentaireBaseJuridique: "decision-judiciaire",
+      pensionAlimentaireBeneficiaire: "enfant-mineur",
+      statutJugementPensionAlimentaire: "pas-encore-recu",
+    });
+    expect(result?.householdAssessment).toMatchObject({ expectedCategory: "A", sourceRuleIds: ["situation_familiale_isole_pension_alimentaire"] });
+    expect(result?.isolatedHouseholdAssessment).toBeUndefined();
+  });
+
+  it("maps the C1 alternating-care average and cycle into the shared family facts", () => {
+    const facts = deriveFamilyFactsFromC1({
+      statutFamilial: "isole",
+      hebergementAlterneEnfant: "oui",
+      hebergementAlterneJoursMoyensSemaine: 2,
+      hebergementAlterneCycle: "trimestriel",
+      hebergementAlterneAllocationsFamiliales: "non",
+      hebergementAlterneEnfantRevenuPertinent: "non",
+      hebergementAlternePieceStatut: "en-cours",
+    });
+    expect(facts.isolated?.alternatingCare).toEqual({
+      averageDaysPerWeek: 2,
+      cycle: "quarterly",
+      familyAllowances: false,
+      childHasRelevantIncome: false,
+    });
+  });
+
+  it("returns the same family category for equivalent C1 and verifier alternating-care facts", () => {
+    const payload = {
+      statutFamilial: "isole",
+      hebergementAlterneEnfant: "oui",
+      hebergementAlterneJoursMoyensSemaine: 2,
+      hebergementAlterneCycle: "trimestriel",
+      hebergementAlterneAllocationsFamiliales: "non",
+      hebergementAlterneEnfantRevenuPertinent: "non",
+    };
+    const c1 = withPersonalSituationTrace(
+      decidePersonalSituation({ "entry.dossier": { value: "changement-situation-personnelle", origin: "system" } }),
+      payload,
+    );
+    const verifier = evaluateArticle110Verifier({
+      thresholds: { spouseProfessionalMonthly: null, childProfessionalMonthly: null, spouseReplacementMonthly: null, childReplacementMonthly: null, source: null },
+      isAloneExplicit: true,
+      people: [],
+      alternatingCare: {
+        enabled: true,
+        averageDaysPerWeek: 2,
+        cycle: "quarterly",
+        familyAllowances: false,
+        childHasRelevantIncome: false,
+      },
+    });
+    expect(c1?.householdAssessment?.expectedCategory).toBe(verifier.category);
+    expect(c1?.householdAssessment?.expectedCategory).toBe("A");
+  });
   it("keeps a previous family status, current status and its own effective date", () => {
     const trace = derivePersonalSituationTrace({
       modificationSituationFamiliale: true,
@@ -140,11 +219,6 @@ describe("personal situation change trace", () => {
     expect(after?.thirdPartyHouseholdAssessment).toMatchObject({ composition: "none", declarationRequired: true, changes: expect.arrayContaining([expect.objectContaining({ reason: "THIRD_PARTY_LEFT" })]) });
   });
 
-  it("keeps a declared autonomous co-housing claim in its dedicated review path, not the tier conclusion", () => {
-    const composition = deriveHouseholdCompositionFromC1({ cohabitants: [{ lien: "cousin", typeRevenuPro: "aucun", revenuRemplacement: "aucun" }] });
-    expect(assessIsolatedHouseholdClaim({ cohousingVieAutonomeRevendiquee: "oui" }, composition)).toMatchObject({ branch: "cohousing", status: "needs_review", claimState: "ISOLATED_CLAIM" });
-  });
-
   it("does not treat a merely declared non-married partner as established", () => {
     expect(deriveHouseholdCompositionFromC1({
       cohabitants: [{ lien: "partenaire", typeRevenuPro: "aucun", revenuRemplacement: "aucun" }],
@@ -206,67 +280,6 @@ describe("personal situation change trace", () => {
   });
 });
 
-describe("isolated household branches", () => {
-  const alone = (payload: Record<string, unknown>) => assessIsolatedHouseholdClaim({ statutFamilial: "isole", ...payload }, deriveHouseholdCompositionFromC1({}));
-
-  it("1. expects A only for a declared, paid alimony obligation with an admissible received act", () => {
-    expect(alone({ pensionAlimentaire: "oui", statutJugementPensionAlimentaire: "en-main", pensionAlimentairePaiementEffectif: "oui", pensionAlimentaireBaseJuridique: "decision-judiciaire", pensionAlimentaireBeneficiaire: "enfant-mineur" })).toMatchObject({ branch: "alimony", expectedCategory: "A", status: "probable" });
-  });
-
-  it("2. keeps an adult-child alimony obligation pending when its relevance is not declared", () => {
-    expect(alone({ pensionAlimentaire: "oui", statutJugementPensionAlimentaire: "en-main", pensionAlimentairePaiementEffectif: "oui", pensionAlimentaireBaseJuridique: "acte-notarie-enfant", pensionAlimentaireBeneficiaire: "enfant-majeur" })).toMatchObject({ expectedCategory: null, status: "needs_information" });
-  });
-
-  it("3. records a pending judgment without immediately expecting A", () => {
-    expect(alone({ pensionAlimentaire: "oui", statutJugementPensionAlimentaire: "en-cours", pensionAlimentairePaiementEffectif: "oui" })).toMatchObject({ claimState: "PENDING_JUDGMENT", expectedCategory: null, recommendedAction: "provide_judgment" });
-  });
-
-  it("4. marks supplied historical dates for human retroactive review without a deadline", () => {
-    expect(alone({ pensionAlimentaire: "oui", statutJugementPensionAlimentaire: "en-cours", dateDemandePensionAlimentaire: "2026-01-01", dateActePensionAlimentaire: "2026-02-01", dateEffetRevendiquePensionAlimentaire: "2025-12-01" })?.retroactivity).toMatchObject({ status: "RETROACTIVE_REVIEW_REQUIRED", claimedEffectiveDate: "2025-12-01" });
-  });
-
-  it("5. recalculates from the declared stop date rather than retaining A", () => {
-    expect(alone({ pensionAlimentaire: "oui", statutJugementPensionAlimentaire: "en-main", pensionAlimentairePaiementEffectif: "non", dateArretPensionAlimentaire: "2026-10-01" })).toMatchObject({ expectedCategory: null, recommendedAction: "reassess_from_effective_date", recalculationEffectiveAt: "2026-10-01" });
-  });
-
-  it("6. makes alternating care A-eligible only with regular actual accommodation and family allowances", () => {
-    expect(alone({ hebergementAlterneEnfant: "oui", hebergementAlterneRegulier: "oui", hebergementAlterneAllocationsFamiliales: "oui", hebergementAlterneEnfantRevenuPertinent: "oui", hebergementAlternePieceStatut: "jugement" })).toMatchObject({ branch: "alternating_care", expectedCategory: "A" });
-  });
-
-  it("7. safe-fails alternating care when regular accommodation is not established", () => {
-    expect(alone({ hebergementAlterneEnfant: "oui", hebergementAlterneRegulier: "non" })).toMatchObject({ expectedCategory: null, status: "needs_review" });
-  });
-
-  it("8. keeps an explicit co-housing claim in ONEM review and requires the existing REGIS route", () => {
-    expect(alone({ cohousingVieAutonomeRevendiquee: "oui", cohousingBailDisponible: "oui", cohousingAttestationHonneur: "oui", cohousingGestionMenageSeparee: "oui" })).toMatchObject({ branch: "cohousing", claimState: "ISOLATED_CLAIM", expectedCategory: null, documents: expect.arrayContaining([expect.objectContaining({ document: "c1-regis", status: "required" })]) });
-  });
-
-  it("shows the existing REGIS document as completed when the BundleRun confirms it", () => {
-    expect(assessIsolatedHouseholdClaim({ statutFamilial: "isole", cohousingVieAutonomeRevendiquee: "oui" }, deriveHouseholdCompositionFromC1({}), undefined, { regisCompleted: true })).toMatchObject({ documents: expect.arrayContaining([expect.objectContaining({ document: "c1-regis", status: "completed" })]) });
-  });
-
-  it("9. does not infer a co-housing category from an address or a bare colocation", () => {
-    expect(assessIsolatedHouseholdClaim({ statutFamilial: "isole", habiteEnColocation: "oui" }, deriveHouseholdCompositionFromC1({}))).toBeUndefined();
-  });
-
-  it("10. exits the co-housing path when a family or couple relation is declared", () => {
-    const composition = deriveHouseholdCompositionFromC1({ cohabitants: [{ lien: "epoux" }] });
-    expect(assessIsolatedHouseholdClaim({ cohousingVieAutonomeRevendiquee: "oui" }, composition)).toBeUndefined();
-  });
-
-  it("keeps the claim and its previous version in the BundleRun decision snapshot", () => {
-    const base = {
-      ...decidePersonalSituation({ "entry.dossier": { value: "changement-situation-personnelle", origin: "system" } }),
-      isolatedHouseholdAssessment: alone({ pensionAlimentaire: "oui", statutJugementPensionAlimentaire: "en-main", pensionAlimentairePaiementEffectif: "oui", pensionAlimentaireBaseJuridique: "decision-judiciaire", pensionAlimentaireBeneficiaire: "enfant-mineur" }),
-    };
-    const snapshot = withPersonalSituationTrace(base, {
-      statutFamilial: "isole", pensionAlimentaire: "oui", statutJugementPensionAlimentaire: "en-main", pensionAlimentairePaiementEffectif: "non", dateArretPensionAlimentaire: "2026-10-01",
-    });
-    expect(snapshot?.isolatedHouseholdAssessment).toMatchObject({ recalculationEffectiveAt: "2026-10-01" });
-    expect(snapshot?.isolatedHouseholdAssessmentHistory).toHaveLength(1);
-  });
-});
-
 describe("children-only branch and declaration events", () => {
   const decision = () => decidePersonalSituation({ "entry.dossier": { value: "changement-situation-personnelle", origin: "system" } });
   const children = (rows: Record<string, unknown>[]) => ({ cohabitants: rows.map((row) => ({ lien: "enfant", revenuRemplacement: "aucun", ...row })) });
@@ -323,22 +336,4 @@ describe("children-only branch and declaration events", () => {
     expect(snapshot?.householdAssessment?.composition).not.toBe("children_only");
   });
 
-  it("8. expects A for documented regular alternating care with its conditions established", () => {
-    expect(assessIsolatedHouseholdClaim({ statutFamilial: "isole", hebergementAlterneEnfant: "oui", hebergementAlterneRegulier: "oui", hebergementAlterneAllocationsFamiliales: "oui", hebergementAlternePieceStatut: "jugement" }, deriveHouseholdCompositionFromC1({}))).toMatchObject({ expectedCategory: "A", documents: [expect.objectContaining({ status: "received" })] });
-  });
-
-  it("9. holds alternating care as pending while the judgment or act is awaited", () => {
-    expect(assessIsolatedHouseholdClaim({ statutFamilial: "isole", hebergementAlterneEnfant: "oui", hebergementAlternePieceStatut: "en-cours" }, deriveHouseholdCompositionFromC1({}))).toMatchObject({ claimState: "PENDING_JUDGMENT", expectedCategory: null, documents: [expect.objectContaining({ status: "pending" })] });
-  });
-
-  it("10. preserves pending alternating-care history when the judgment arrives", () => {
-    const pending = assessIsolatedHouseholdClaim({ statutFamilial: "isole", hebergementAlterneEnfant: "oui", hebergementAlternePieceStatut: "en-cours" }, deriveHouseholdCompositionFromC1({}));
-    const snapshot = withPersonalSituationTrace({ ...decision(), isolatedHouseholdAssessment: pending }, { statutFamilial: "isole", hebergementAlterneEnfant: "oui", hebergementAlterneRegulier: "oui", hebergementAlterneAllocationsFamiliales: "oui", hebergementAlternePieceStatut: "jugement", dateEffetRevendiqueHebergementAlterne: "2026-01-01" });
-    expect(snapshot?.isolatedHouseholdAssessmentHistory).toHaveLength(1);
-    expect(snapshot?.isolatedHouseholdAssessment?.retroactivity).toMatchObject({ status: "RETROACTIVE_REVIEW_REQUIRED" });
-  });
-
-  it("11. sends insufficiently established alternating care to review", () => {
-    expect(assessIsolatedHouseholdClaim({ statutFamilial: "isole", hebergementAlterneEnfant: "oui", hebergementAlterneRegulier: "non", hebergementAlternePieceStatut: "jugement" }, deriveHouseholdCompositionFromC1({}))).toMatchObject({ expectedCategory: null, status: "needs_review" });
-  });
 });

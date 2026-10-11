@@ -7,6 +7,7 @@ export type HouseholdCompositionKind =
   | "children_and_third_parties"
   | "relatives_and_third_parties"
   | "children_relatives_and_third_parties"
+  | "third_parties_only"
   | "mixed_or_unsupported";
 
 export type HouseholdRelation = "spouse" | "partner" | "child" | "relative" | "third_party" | "unknown";
@@ -45,6 +46,8 @@ export type FamilyPerson = {
 export type FamilyFacts = {
   asOf: string;
   people: FamilyPerson[];
+  /** Explicit distinction for a household made exclusively of third parties. */
+  cohousing?: { declared?: boolean };
   isolated?: {
     alimony?: { paid?: boolean; admissibleBasis?: boolean; beneficiary?: "minor_child" | "adult_child" | "other"; adultChildInNeed?: boolean };
     alternatingCare?: {
@@ -122,7 +125,13 @@ export type HouseholdAssessment = {
 };
 
 function explainAssessment(assessment: HouseholdAssessment, evaluatedAt: string): HouseholdAssessment {
-  const explanation = assessment.expectedCategory === "A"
+  const explanation = assessment.sourceRuleIds.includes("situation_familiale_cohousing")
+    ? assessment.expectedCategory === "N"
+      ? "Le co-housing déclaré correspond, dans cette évaluation théorique, à une personne isolée."
+      : assessment.expectedCategory === "B"
+        ? "La cohabitation ordinaire déclarée correspond, dans cette évaluation théorique, à un cohabitant."
+        : "Indiquez si le ménage composé de tiers est une situation de co-housing."
+    : assessment.expectedCategory === "A"
     ? "Les faits déclarés correspondent à une situation théorique de charge de famille."
     : assessment.expectedCategory === "N"
       ? "Les faits déclarés correspondent à une situation théorique de personne isolée."
@@ -256,6 +265,7 @@ export function evaluateFamilySituation(input: {
     ascendantDisabledPensionMonthlyThreshold: input.ascendantDisabledPensionMonthlyThreshold,
     baremeSource: input.baremeSource,
     neutralisedChildFactKeys: input.neutralisedChildIds,
+    cohousingDeclared: input.facts.cohousing?.declared,
   });
   const theoreticalAssessment = { ...assessment };
   delete theoreticalAssessment.requiredExternalDocument;
@@ -294,6 +304,7 @@ export function classifyHouseholdComposition(members: HouseholdMemberFact[]): Ho
   if (children && !relatives && thirdParties) return { kind: "children_and_third_parties", members, factKeys, needsReview: true };
   if (!children && relatives && thirdParties) return { kind: "relatives_and_third_parties", members, factKeys, needsReview: true };
   if (children && relatives && thirdParties) return { kind: "children_relatives_and_third_parties", members, factKeys, needsReview: true };
+  if (thirdParties) return { kind: "third_parties_only", members, factKeys, needsReview: false };
   return { kind: "mixed_or_unsupported", members, factKeys, needsReview: true };
 }
 
@@ -316,8 +327,9 @@ export function assessHouseholdBranch(input: {
   ascendantDisabledPensionMonthlyThreshold?: number | null;
   baremeSource?: { fileId: string; fileName: string; validFrom: Date | null } | null;
   neutralisedChildFactKeys?: string[];
+  cohousingDeclared?: boolean;
 }): HouseholdAssessment {
-  const { composition, activeChildIncomeNeutralisation, officialOnemCode, spouseProfessionalMonthlyThreshold, baremeSource, neutralisedChildFactKeys = [], ascendantPensionWithChildMonthlyThreshold, ascendantPensionMonthlyThreshold, ascendantDisabledPensionMonthlyThreshold } = input;
+  const { composition, activeChildIncomeNeutralisation, officialOnemCode, spouseProfessionalMonthlyThreshold, baremeSource, neutralisedChildFactKeys = [], ascendantPensionWithChildMonthlyThreshold, ascendantPensionMonthlyThreshold, ascendantDisabledPensionMonthlyThreshold, cohousingDeclared } = input;
   const base = {
     composition: composition.kind,
     officialOnemCode,
@@ -332,6 +344,14 @@ export function assessHouseholdBranch(input: {
       },
     } : {}),
   };
+
+  if (composition.kind === "third_parties_only") {
+    const cohousingBase = { ...base, sourceRuleIds: [...base.sourceRuleIds, "situation_familiale_cohousing"] };
+    if (cohousingDeclared === undefined) return { ...cohousingBase, status: "needs_information", expectedCategory: null, operationalArticle: "needs_review", incomeAssessment: "needs_review", monthlyPaymentAssessment: "NEEDS_REVIEW", recommendedAction: action(officialOnemCode, "information_required"), factKeys: ["cohousing.declared"] };
+    return cohousingDeclared
+      ? { ...cohousingBase, status: "probable", expectedCategory: "N", operationalArticle: "none", incomeAssessment: "not_relevant", monthlyPaymentAssessment: "NEEDS_REVIEW", recommendedAction: action(officialOnemCode, "declaration_required") }
+      : { ...cohousingBase, status: "probable", expectedCategory: "B", operationalArticle: "none", incomeAssessment: "not_relevant", monthlyPaymentAssessment: "B_RATE", recommendedAction: action(officialOnemCode, "declaration_required") };
+  }
 
   if (composition.kind === "spouse_or_partner") {
     const spouseBase = {

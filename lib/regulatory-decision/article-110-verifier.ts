@@ -37,6 +37,8 @@ export type Article110VerifierInput = {
   asOf?: string;
   isAloneExplicit?: boolean;
   officialOnemCode?: string;
+  /** Asked only for a household composed exclusively of third parties. */
+  cohousing?: boolean;
   alimony?: { enabled?: boolean; legalConditionEstablished?: boolean; beneficiary?: "minor_child" | "adult_child" | "other"; adultChildInNeed?: boolean };
   alternatingCare?: { enabled?: boolean; averageDaysPerWeek?: number; cycle?: "monthly" | "quarterly" | "semiannual" | "annual"; familyAllowances?: boolean; childHasRelevantIncome?: boolean; children?: Array<{ id: string; familyAllowances?: boolean; hasRelevantIncome?: boolean }> };
 };
@@ -65,6 +67,7 @@ export function article110VerifierFacts(input: Article110VerifierInput): FamilyF
       isAscendant: person.isAscendant, receivesFamilyAllowances: person.receivesFamilyAllowances,
       incomes: toIncome(person),
     })),
+    cohousing: input.cohousing === undefined ? undefined : { declared: input.cohousing },
     isolated: {
       alimony: input.alimony?.enabled === undefined ? undefined : {
         paid: input.alimony.enabled, admissibleBasis: input.alimony.legalConditionEstablished,
@@ -87,6 +90,7 @@ function labelForFact(factKey: string) {
   if (factKey === "isolated.alternatingCare.familyAllowances") return "Précisez si vous pouvez prétendre aux allocations familiales pour l’enfant.";
   if (factKey === "isolated.alternatingCare.childHasRelevantIncome") return "Précisez si l’enfant dispose de revenus professionnels ou de remplacement pertinents.";
   if (factKey === "isolated.alimony") return "Les conditions de la pension alimentaire doivent être précisées.";
+  if (factKey === "cohousing.declared") return "Indiquez si vous vivez en co-housing plutôt qu’en cohabitation ordinaire.";
   return "Des informations sur la composition ou les revenus du ménage doivent être précisées.";
 }
 

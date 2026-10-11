@@ -73,7 +73,7 @@ export interface RegulatoryDecision {
   officialOnemState?: { onemCode: string; recordedAt?: string };
   /** Composition-first assessment; the known ONEM code is never overwritten by it. */
   householdAssessment?: {
-    composition: "alone" | "spouse_or_partner" | "children_only" | "children_and_relatives" | "relatives_only" | "children_and_third_parties" | "relatives_and_third_parties" | "children_relatives_and_third_parties" | "mixed_or_unsupported";
+    composition: "alone" | "spouse_or_partner" | "children_only" | "children_and_relatives" | "relatives_only" | "children_and_third_parties" | "relatives_and_third_parties" | "children_relatives_and_third_parties" | "third_parties_only" | "mixed_or_unsupported";
     status: "probable" | "needs_information" | "needs_review";
     expectedCategory: "A" | "N" | "B" | null;
     operationalArticle: "60A" | "60B" | "none" | "needs_review";

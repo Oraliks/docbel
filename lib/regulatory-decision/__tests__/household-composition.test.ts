@@ -77,6 +77,20 @@ describe("household composition before Article 110 branch evaluation", () => {
     expect(assessment.explanation).toContain("charge de famille");
   });
 
+  it("decides the third-parties-only branch from the explicit co-housing fact", () => {
+    const facts = { asOf: "2026-10-10", people: [{ id: "roommate", relation: "third_party" as const, incomes: [] }] };
+    expect(evaluateFamilySituation({ facts: { ...facts, cohousing: { declared: true } }, activeChildIncomeNeutralisation: false })).toMatchObject({ composition: "third_parties_only", expectedCategory: "N", status: "probable", sourceRuleIds: expect.arrayContaining(["situation_familiale_cohousing"]) });
+    expect(evaluateFamilySituation({ facts: { ...facts, cohousing: { declared: false } }, activeChildIncomeNeutralisation: false })).toMatchObject({ composition: "third_parties_only", expectedCategory: "B", status: "probable" });
+    expect(evaluateFamilySituation({ facts, activeChildIncomeNeutralisation: false })).toMatchObject({ expectedCategory: null, status: "needs_information", factKeys: ["cohousing.declared"] });
+  });
+
+  it("keeps the spouse priority ahead of a co-housing declaration", () => {
+    expect(evaluateFamilySituation({
+      facts: { asOf: "2026-10-10", cohousing: { declared: true }, people: [{ id: "spouse", relation: "spouse", incomes: [] }, { id: "roommate", relation: "third_party", incomes: [] }] },
+      activeChildIncomeNeutralisation: false,
+    })).toMatchObject({ composition: "spouse_or_partner", expectedCategory: "A" });
+  });
+
   it("does not neutralise every child's income when only one Article 110 period is active", () => {
     const composition = classifyHouseholdComposition([
       member("child", { factKey: "child-1", hasProfessionalIncome: true, firstProfessionalIncome: true }),
@@ -235,11 +249,12 @@ describe("household composition before Article 110 branch evaluation", () => {
     });
   });
 
-  it("does not invent a category when the complete branch is not covered", () => {
+  it("asks the co-housing question before deciding the third-parties-only branch", () => {
     const composition = classifyHouseholdComposition([member("third_party", { hasProfessionalIncome: true })]);
     expect(assessHouseholdBranch({ composition, activeChildIncomeNeutralisation: false })).toMatchObject({
       expectedCategory: null,
-      status: "needs_review",
+      status: "needs_information",
+      factKeys: ["cohousing.declared"],
     });
   });
 
@@ -249,12 +264,12 @@ describe("household composition before Article 110 branch evaluation", () => {
     expect(assessHouseholdBranch({ composition, activeChildIncomeNeutralisation: false }).status).toBe("needs_review");
   });
 
-  it("accepts a non-married partner only after its conditions are established, while a friend stays outside that branch", () => {
+  it("accepts a non-married partner only after its conditions are established, while a friend uses the co-housing branch", () => {
     const established = classifyHouseholdComposition([member("partner", { partnerEstablished: true, hasProfessionalIncome: false, hasReplacementIncome: false })]);
     expect(assessHouseholdBranch({ composition: established, activeChildIncomeNeutralisation: false })).toMatchObject({ expectedCategory: "A" });
     const friend = classifyHouseholdComposition([member("third_party", { hasProfessionalIncome: false })]);
     expect(friend.kind).not.toBe("spouse_or_partner");
-    expect(assessHouseholdBranch({ composition: friend, activeChildIncomeNeutralisation: false }).status).toBe("needs_review");
+    expect(assessHouseholdBranch({ composition: friend, activeChildIncomeNeutralisation: false, cohousingDeclared: false })).toMatchObject({ expectedCategory: "B", status: "probable" });
   });
 
   it("keeps an official ONEM code separate from the calculated state", () => {

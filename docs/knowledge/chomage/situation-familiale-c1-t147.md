@@ -287,8 +287,9 @@ summary: >
   possède de revenu professionnel ou de remplacement pertinent. Les tiers sans revenu pertinent
   n'empêchent pas à eux seuls l'examen de la branche enfant ou parent/allié.
 agent_instruction: >
-  Ne jamais assimiler un tiers à un partenaire. Une relation ou un revenu ambigu, ou une possible
-  vie autonome en co-housing, impose une revue plutôt qu'une catégorie calculée.
+  Ne jamais assimiler un tiers à un partenaire. Une relation ou un revenu ambigu impose une
+  revue. Pour un ménage composé uniquement de tiers, poser la question explicite de co-housing
+  et appliquer la règle dédiée.
 related_forms:
   - C1
 related_topics:
@@ -406,17 +407,34 @@ source_name: ONEM — T147 et Annexe REGIS
 source_url: https://www.onem.be/citoyens/chomage-complet/a-combien-seleve-votre-allocation-/quelle-est-votre-situation-familiale-
 last_verified: 2026-10-08
 confidence: to_verify
-status: to_verify
+status: deprecated
 summary: >
-  Une même adresse ou une colocation ne suffit pas à qualifier une catégorie familiale.
-  Les faits de vie autonome et la différence éventuelle avec les registres doivent être
-  documentés et examinés par l'ONEM ou l'organisme de paiement.
+  Ancienne instruction : ne plus utiliser pour qualifier le co-housing.
 agent_instruction: >
-  Conserver la demande comme ISOLATED_CLAIM / NEEDS_ONEM_REVIEW, réutiliser l'Annexe REGIS
-  lorsqu'elle est requise et reclasser hors du co-housing si un lien familial ou de couple est déclaré.
-related_forms:
-  - C1
-  - C1-Annexe REGIS
+  Remplacée par situation_familiale_cohousing. Ne pas produire de needs_review sur la seule
+  réponse de co-housing.
+related_topics:
+  - chomage_complet
+```
+
+```yaml
+rule_id: situation_familiale_cohousing
+theme: situation_familiale
+effective_from: unknown
+source_name: Cadrage métier Oraliks — co-housing
+source_url: https://www.onem.be/citoyens/chomage-complet/a-combien-seleve-votre-allocation-/quelle-est-votre-situation-familiale-
+last_verified: 2026-10-12
+confidence: high
+status: active
+summary: >
+  Dans un ménage composé uniquement de tiers, le co-housing déclaré correspond à la catégorie
+  théorique N — isolé. Si le co-housing n'est pas déclaré, cette branche correspond à la
+  catégorie théorique B — cohabitant.
+agent_instruction: >
+  Poser une seule question explicite pour distinguer co-housing et cohabitation ordinaire.
+  Une fois la réponse donnée, calculer N ou B sans demander de preuve, de pièce, ni de
+  reconnaissance administrative. Cette règle ne remplace pas les priorités conjoint/partenaire,
+  enfant ou parent/allié.
 related_topics:
   - chomage_complet
 ```
@@ -426,8 +444,8 @@ related_topics:
 - **Demande de montant exact** liée à la catégorie → `rf_demande_montant_exact`.
 
 ## Situations ambiguës (exemples)
-- Colocation où chacun a ses revenus : cohabitant ? isolé ? → demander la composition réelle,
-  renvoyer à l'organisme de paiement.
+- Colocation sans réponse à la question de co-housing → demander cette réponse ; une fois donnée,
+  appliquer N (co-housing) ou B (cohabitation ordinaire).
 - Parent séparé versant une pension alimentaire : possible « charge de famille » → à confirmer.
 - Personne hébergée temporairement : statut variable → `a_verifier`.
 

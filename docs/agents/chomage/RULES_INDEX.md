@@ -71,7 +71,8 @@
 | `situation_familiale_children_only` | active / official | Enfants seuls : revenus/allocations familiales, déclaration distincte de la catégorie |
 | `situation_familiale_isole_pension_alimentaire` | active / official | Isolé : pension effectivement payée, base juridique et pièce à documenter |
 | `situation_familiale_isole_garde_alternee` | active / high | Hébergement alterné : présence moyenne ≥ 2 jours calendrier/semaine sur le cycle réel, condition AF ou absence de revenu pertinent ; A toute la semaine |
-| `situation_familiale_cohousing_a_verifier` | to_verify / official | Co-housing : faits et pièces en revue ONEM, jamais déduit de l'adresse |
+| `situation_familiale_cohousing` | active / high | Ménage composé uniquement de tiers : co-housing déclaré = N ; cohabitation ordinaire déclarée = B |
+| `situation_familiale_cohousing_a_verifier` | deprecated / to_verify | Ancienne règle remplacée par `situation_familiale_cohousing` ; ne plus appliquer |
 
 ## Formulaires — `formulaires-onem.md`
 | rule_id | statut / confiance | résumé |

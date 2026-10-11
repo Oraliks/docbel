@@ -35,4 +35,14 @@ describe("Article 110 theoretical verifier", () => {
     expect(result).toMatchObject({ category: null, onemDecisionStatus: "not_required" });
     expect(result.missingFacts.map((fact) => fact.factKey)).toEqual(["isolated.alternatingCare.averageDaysPerWeek", "isolated.alternatingCare.cycle"]);
   });
+
+  it("recalculates co-housing and ordinary cohabitation without an ONEM review", () => {
+    const base = { thresholds, people: [{ id: "roommate", relation: "third_party" as const }] };
+    const cohousing = evaluateArticle110Verifier({ ...base, cohousing: true });
+    const ordinaryCohabitation = evaluateArticle110Verifier({ ...base, cohousing: false });
+    expect(cohousing).toMatchObject({ category: "N", onemDecisionStatus: "not_required" });
+    expect(cohousing.reason).toContain("co-housing déclaré");
+    expect(ordinaryCohabitation).toMatchObject({ category: "B", onemDecisionStatus: "not_required" });
+    expect(ordinaryCohabitation.reason).toContain("cohabitation ordinaire");
+  });
 });

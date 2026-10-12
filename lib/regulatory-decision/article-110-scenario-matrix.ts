@@ -38,7 +38,7 @@ export type Article110ScenarioContract = {
   id: string;
   label: string;
   branch: string;
-  facts: Omit<Article110VerifierInput, "thresholds">;
+  facts: LegacyScenarioInput;
   officialOnemState?: string;
   resultType: Article110ResultType;
   category: Article110Category;

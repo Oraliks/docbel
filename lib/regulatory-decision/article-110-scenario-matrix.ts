@@ -249,7 +249,7 @@ function resultTypeFor(status: ReturnType<typeof evaluateArticle110Verifier>["ho
 export function evaluateArticle110ScenarioMatrix(thresholds: C1BaremeThresholds, generatedAt = "2026-10-10"): Article110MatrixReport {
   const startedAt = performance.now();
   const space = generateArticle110ScenarioSpace(thresholds);
-  const scenarios = space.scenarios.map(({ id, label, input }) => {
+  const scenarios: Article110ScenarioContract[] = space.scenarios.map(({ id, label, input }) => {
     const result = evaluateArticle110Verifier({ ...inputForUnifiedVerifier(input), thresholds });
     const assessment = result.householdAssessment;
     const compositionMissing = input.people.length === 0 && input.isAloneExplicit !== true && input.cohousingClaim !== true;

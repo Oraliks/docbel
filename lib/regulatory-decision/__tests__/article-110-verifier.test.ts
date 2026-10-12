@@ -19,6 +19,18 @@ describe("Article 110 theoretical verifier", () => {
     expect(result.category).toBe("A");
   });
 
+  it("forwards a received C110A monthly amount to the shared assessment", () => {
+    const result = evaluateArticle110Verifier({
+      thresholds,
+      people: [{ id: "spouse", relation: "spouse", hasProfessionalIncome: true, professionalIncomeAmount: 900, professionalIncomeType: "employee", professionalIncomeContract: "cdi", professionalIncomeVariable: true, c110aReceived: true, c110aMonthlyDeclaredIncome: 900 }],
+    });
+    expect(result.householdAssessment).toMatchObject({
+      expectedCategory: "B",
+      monthlyPaymentAssessment: "A_RATE",
+      monthlyC110aIncome: 900,
+    });
+  });
+
   it("uses the same alternating-care result as the common calculation", () => {
     const result = evaluateArticle110Verifier({
       thresholds,

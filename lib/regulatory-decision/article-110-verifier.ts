@@ -22,6 +22,9 @@ export type Article110VerifierPerson = {
   professionalIncomeType?: "employee" | "independent" | "other";
   professionalIncomeContract?: "cdi" | "cdd" | "other";
   professionalIncomeVariable?: boolean;
+  /** Availability and amount declared on the C110A for the assessed month. */
+  c110aReceived?: boolean;
+  c110aMonthlyDeclaredIncome?: number;
   firstProfessionalIncome?: boolean;
   neutralisationRequested?: boolean;
   firstProfessionalIncomeStartedAt?: string;
@@ -51,6 +54,7 @@ function toIncome(person: Article110VerifierPerson): FamilyIncome[] {
     variable: person.professionalIncomeVariable, firstProfessionalIncome: person.firstProfessionalIncome,
     neutralisationRequested: person.neutralisationRequested, startedAt: person.firstProfessionalIncomeStartedAt,
     studiesEndedAt: person.studiesEndedAt,
+    monthlyAmount: person.c110aMonthlyDeclaredIncome,
   });
   if (person.hasReplacementIncome === true) incomes.push({
     kind: person.replacementIncomeType === "pension" ? "pension" : person.replacementIncomeType === "disability_allowance" ? "spf_disability" : "replacement",

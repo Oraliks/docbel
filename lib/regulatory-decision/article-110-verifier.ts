@@ -54,6 +54,7 @@ function toIncome(person: Article110VerifierPerson): FamilyIncome[] {
     variable: person.professionalIncomeVariable, firstProfessionalIncome: person.firstProfessionalIncome,
     neutralisationRequested: person.neutralisationRequested, startedAt: person.firstProfessionalIncomeStartedAt,
     studiesEndedAt: person.studiesEndedAt,
+    c110aReceived: person.c110aReceived,
     monthlyAmount: person.c110aMonthlyDeclaredIncome,
   });
   if (person.hasReplacementIncome === true) incomes.push({

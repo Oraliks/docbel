@@ -4822,6 +4822,7 @@
         "partnerTitle": "Revenus du conjoint ou partenaire",
         "partnerDescription": "Plusieurs revenus peuvent être renseignés simultanément.",
         "partnerRelation": "Quel est le lien avec cette personne ?",
+        "partnerEstablishedQuestion": "Votre partenaire remplit-il les conditions pour être pris en compte dans votre ménage ?",
         "spouseLabel": "Conjoint",
         "partnerLabel": "Partenaire",
         "relationLabel": "Lien avec cette personne",

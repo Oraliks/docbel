@@ -31,6 +31,20 @@ describe("Article 110 theoretical verifier", () => {
     });
   });
 
+  it("uses a declared variable monthly amount without inferring that the C110A is available", () => {
+    const result = evaluateArticle110Verifier({
+      thresholds,
+      people: [{ id: "spouse", relation: "spouse", hasProfessionalIncome: true, professionalIncomeAmount: 900, professionalIncomeType: "employee", professionalIncomeContract: "cdi", professionalIncomeVariable: true, c110aReceived: false, c110aMonthlyDeclaredIncome: 900 }],
+    });
+    expect(result.householdAssessment).toMatchObject({
+      status: "probable",
+      expectedCategory: "B",
+      operationalArticle: "60B",
+      monthlyPaymentAssessment: "A_RATE",
+      monthlyC110aIncome: 900,
+    });
+  });
+
   it("uses the same alternating-care result as the common calculation", () => {
     const result = evaluateArticle110Verifier({
       thresholds,

@@ -1,0 +1,69 @@
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { NextIntlClientProvider } from "next-intl";
+import { describe, expect, it } from "vitest";
+
+import messages from "@/messages/fr.json";
+import { FamilySituationTree } from "@/app/partenaire/outils/arbre-situation-familiale/family-situation-tree";
+
+const thresholds = {
+  spouseProfessionalMonthly: 1000,
+  childProfessionalMonthly: null,
+  spouseReplacementMonthly: null,
+  childReplacementMonthly: null,
+  source: null,
+};
+
+function renderTree(initialState?: Parameters<typeof FamilySituationTree>[0]["initialState"]) {
+  return renderToStaticMarkup(
+    // eslint-disable-next-line react/no-children-prop
+    createElement(NextIntlClientProvider, {
+      locale: "fr",
+      messages,
+      children: createElement(FamilySituationTree, { thresholds, initialState }),
+    }),
+  );
+}
+
+describe("FamilySituationTree — rendu i18n réel", () => {
+  it("renders the French start choices without exposing an i18n key", () => {
+    const html = renderTree();
+
+    expect(html).toContain("Quelle est votre situation de vie ?");
+    expect(html).toContain("Avec mon conjoint / partenaire");
+    expect(html).not.toContain("public.pro.");
+  });
+
+  it("renders the unanswered partner question as an accessible choice, not a review panel", () => {
+    const html = renderTree({ branch: "partner", people: [{ id: "partner", relation: "partner", label: "partner" }] });
+
+    expect(html).toContain("Votre partenaire remplit-il les conditions pour être pris en compte dans votre ménage ?");
+    expect(html).toContain('role="radiogroup"');
+    expect(html).not.toContain("Situation à examiner");
+    expect(html).not.toContain("Une précision est nécessaire");
+    expect(html).not.toContain("public.pro.");
+  });
+
+  it("renders the variable-income amount before the separate C110A availability choice", () => {
+    const html = renderTree({
+      branch: "partner",
+      people: [{
+        id: "spouse",
+        relation: "spouse",
+        label: "spouse",
+        hasProfessionalIncome: true,
+        hasReplacementIncome: false,
+        professionalIncomeType: "employee",
+        professionalIncomeAmount: 900,
+        professionalIncomeContract: "cdi",
+        professionalIncomeVariable: true,
+      }],
+    });
+
+    const monthlyIncome = html.indexOf("Revenu brut du mois concerné");
+    const c110a = html.indexOf("Le C110A est-il disponible ?");
+    expect(monthlyIncome).toBeGreaterThan(-1);
+    expect(c110a).toBeGreaterThan(monthlyIncome);
+    expect(html).not.toContain("public.pro.");
+  });
+});

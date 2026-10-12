@@ -4,7 +4,17 @@ import { evaluateArticle110Verifier, type Article110VerifierInput } from "./arti
 
 type Article110ResultType = "decision_determined" | "information_missing" | "document_required" | "onem_decision_required" | "not_automated";
 type Article110Category = "A" | "B" | "N" | null;
-type LegacyScenarioInput = Omit<Article110VerifierInput, "thresholds"> & {
+type LegacyVerifierPerson = Article110VerifierInput["people"][number] & {
+  pensionProofAvailable?: boolean;
+  pensionGrossAmountConfirmed?: boolean;
+  disabilityDeclared?: boolean;
+  disabilityProofAvailable?: boolean;
+};
+
+type LegacyScenarioInput = Omit<Article110VerifierInput, "thresholds" | "people" | "alimony" | "alternatingCare"> & {
+  people: LegacyVerifierPerson[];
+  alimony?: Article110VerifierInput["alimony"] & { documentStatus?: "en-cours" | "en-main"; paymentEffective?: boolean; legalBasis?: "decision-judiciaire" };
+  alternatingCare?: Article110VerifierInput["alternatingCare"] & { documentStatus?: "en-cours" | "jugement"; regular?: boolean };
   assessedAt?: Date;
   cohousingClaim?: boolean;
   cohousingOnemRecognition?: "yes" | "no" | "unknown";
@@ -67,7 +77,7 @@ export type Article110MatrixReport = {
   scenarios: Article110ScenarioContract[];
 };
 
-const member = (id: string, label: string, relation: Article110VerifierInput["people"][number]["relation"], facts: Partial<Article110VerifierInput["people"][number]> = {}) => ({ id, label, relation, ...facts });
+const member = (id: string, label: string, relation: Article110VerifierInput["people"][number]["relation"], facts: Partial<LegacyVerifierPerson> = {}): LegacyVerifierPerson & { label: string } => ({ id, label, relation, ...facts });
 
 /**
  * Meaningful equivalence classes, deliberately not a cartesian product. Each

@@ -55,6 +55,26 @@ export function addCalendarMonths(date: string, months: number): string {
   return new Date(Date.UTC(targetYear, normalisedMonth, Math.min(day, lastDay))).toISOString().slice(0, 10);
 }
 
+/**
+ * Returns every child whose own first-professional-income period is active.
+ * This deliberately works per person: one child's expiry never reactivates
+ * another child's income or ends that other child's neutralisation.
+ */
+export function activeFirstProfessionalIncomePersonIds(
+  people: Array<{ id: string; relation: string; incomes: Array<{ kind: string; firstProfessionalIncome?: boolean; neutralisationRequested?: boolean; startedAt?: string; studiesEndedAt?: string }> }>,
+  asOf: string,
+): string[] {
+  if (!isoDate(asOf)) return [];
+  return people.flatMap((person) => person.relation === "child" ? person.incomes.flatMap((income) => {
+    if (income.kind !== "professional" || income.firstProfessionalIncome !== true || income.neutralisationRequested !== true) return [];
+    const startedAt = isoDate(income.startedAt);
+    const studiesEndedAt = isoDate(income.studiesEndedAt);
+    if (!startedAt || !studiesEndedAt) return [];
+    const effectiveFrom = startedAt > studiesEndedAt ? startedAt : plusDays(studiesEndedAt, 1);
+    return asOf >= effectiveFrom && asOf < addCalendarMonths(effectiveFrom, 12) ? [person.id] : [];
+  }) : []);
+}
+
 function temporalHistoryEntry(decision: RegulatoryDecision) {
   const effect = decision.temporalEffect!;
   return {

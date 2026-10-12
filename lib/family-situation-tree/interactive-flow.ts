@@ -6,8 +6,16 @@ export type FamilyTreeState = {
   branch?: FamilyTreeBranch;
   people: Article110VerifierPerson[];
   alimony?: boolean;
+  alimonyLegalCondition?: boolean;
+  alimonyBeneficiary?: "minor_child" | "adult_child" | "other";
+  alimonyAdultChildInNeed?: boolean;
   alternatingCare?: boolean;
+  alternatingCareDaysPerWeek?: number;
+  alternatingCareCycle?: "monthly" | "quarterly" | "semiannual" | "annual";
+  alternatingCareFamilyAllowances?: boolean;
+  alternatingCareChildHasRelevantIncome?: boolean;
   cohousing?: boolean;
+  cohousingRecognition?: boolean;
 };
 
 /** UI-only state transitions. Categories and thresholds always remain in the shared verifier. */
@@ -15,7 +23,7 @@ export function chooseFamilyTreeBranch(branch: FamilyTreeBranch): FamilyTreeStat
   if (branch === "partner") {
     return {
       branch,
-      people: [{ id: "partner", relation: "partner", label: "partner", partnerEstablished: true }],
+      people: [{ id: "partner", relation: "partner", label: "partner" }],
     };
   }
   if (branch === "others") return { branch, people: [] };
@@ -33,4 +41,23 @@ export function updateTreePerson(
   patch: Partial<Article110VerifierPerson>,
 ): FamilyTreeState {
   return { ...state, people: state.people.map((person) => person.id === id ? { ...person, ...patch } : person) };
+}
+
+/** Removing a household member also removes every fact attached to that person. */
+export function removeTreePerson(state: FamilyTreeState, id: string): FamilyTreeState {
+  return { ...state, people: state.people.filter((person) => person.id !== id) };
+}
+
+/** Changing the relation is a composition change: retain only the identity, not income facts. */
+export function changeTreePersonRelation(
+  state: FamilyTreeState,
+  id: string,
+  relation: Exclude<Article110VerifierPerson["relation"], "spouse" | "partner" | "unknown">,
+): FamilyTreeState {
+  return {
+    ...state,
+    people: state.people.map((person) => person.id === id
+      ? { id: person.id, relation, label: relation }
+      : person),
+  };
 }

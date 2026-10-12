@@ -23,7 +23,7 @@ describe("C1_IMPROVEMENT_TARGETS — c1-changement-situation", () => {
     expect(C1_IMPROVEMENT_TARGETS.map((target) => target.slug)).not.toContain("c1-insertion");
   });
 
-  it("retire les anciens workarounds techniques sans toucher aux champs du Runner", () => {
+  it("retire les anciens workarounds techniques et préserve la date agrégée facultative", () => {
     const target = C1_IMPROVEMENT_TARGETS.find((t) => t.slug === "c1-changement-situation");
     const fields: PdfFormField[] = [
       {
@@ -47,6 +47,10 @@ describe("C1_IMPROVEMENT_TARGETS — c1-changement-situation", () => {
     const improved = target!.improve(fields, { technicalSchema: technical });
     expect(improved.map((field) => field.id)).not.toContain("ibanPart1");
     expect(improved.map((field) => field.id)).not.toContain("obsoleteHidden");
-    expect(improved.find((field) => field.id === "dateModificationEffective")?.required).toBe(true);
+    // Les dates propres à chaque modification restent requises lorsqu'un chip
+    // concerné est coché. Cette date agrégée, elle, couvre aussi les
+    // modifications sans date sur le formulaire officiel : elle doit donc
+    // rester facultative.
+    expect(improved.find((field) => field.id === "dateModificationEffective")?.required).toBe(false);
   });
 });

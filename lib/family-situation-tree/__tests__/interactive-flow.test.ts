@@ -91,7 +91,7 @@ describe("interactive family tree state", () => {
     expect(evaluateTree(state).householdAssessment).toMatchObject({ expectedCategory, operationalArticle, monthlyPaymentAssessment });
   });
 
-  it("keeps the 60B base treatment distinct from the unresolved monthly rate", () => {
+  it("keeps the 60B base treatment distinct from a missing monthly declaration", () => {
     const state = updateTreePerson(chooseFamilyTreeBranch("partner"), "partner", {
       partnerEstablished: true,
       hasProfessionalIncome: true,
@@ -104,7 +104,7 @@ describe("interactive family tree state", () => {
     expect(evaluateTree(state).householdAssessment).toMatchObject({
       expectedCategory: "B",
       operationalArticle: "60B",
-      monthlyPaymentAssessment: "NEEDS_C110A",
+      monthlyPaymentAssessment: "NEEDS_REVIEW",
     });
   });
 

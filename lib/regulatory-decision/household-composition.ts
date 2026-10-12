@@ -23,6 +23,8 @@ export type FamilyIncome = {
   amount?: number;
   /** Declared amount for the evaluated month; it is a fact, not proof availability. */
   monthlyAmount?: number;
+  /** Availability of the supporting C110A is independent from a declared monthly amount. */
+  c110aReceived?: boolean;
   amountKind?: "gross" | "net";
   active?: boolean;
   contract?: "cdi" | "cdd" | "independent" | "other";
@@ -166,7 +168,7 @@ export function householdCompositionFromFamilyFacts(facts: FamilyFacts): Househo
       disabilityProofAvailable: person.disabilityRelevant,
       hasProfessionalIncome: professional.length > 0,
       professionalIncomeAmount: professionalAmount,
-      c110aReceived: typeof primaryProfessional?.monthlyAmount === "number" && Number.isFinite(primaryProfessional.monthlyAmount),
+      c110aReceived: primaryProfessional?.c110aReceived,
       c110aMonthlyDeclaredIncome: primaryProfessional?.monthlyAmount,
       professionalIncomeContract: professional.length === 1 && primaryProfessional?.contract !== "independent" ? primaryProfessional?.contract : professional.length > 1 || primaryProfessional?.contract === "independent" ? "other" : undefined,
       professionalIncomeVariable: primaryProfessional?.variable,
@@ -383,30 +385,20 @@ export function assessHouseholdBranch(input: {
         status: c110aReceived ? "received" as const : "required" as const,
         url: "https://www.onem.be/formulaires-attestations/c110a",
       };
-      if (!c110aReceived) return {
-        ...spouseBase,
-        status: "needs_review",
-        expectedCategory: "B",
-        operationalArticle: "60B",
-        incomeAssessment: "relevant",
-        monthlyPaymentAssessment: "NEEDS_C110A",
-        requiredExternalDocument: { ...document, reason: "Le revenu est variable : le C110A officiel est requis pour apprécier le taux du mois." },
-        recommendedAction: action(officialOnemCode, "review_required"),
-      };
       if (!Number.isFinite(c110aIncome)) return {
         ...spouseBase,
-        status: "needs_review",
+        status: "needs_information",
         expectedCategory: "B",
         operationalArticle: "60B",
         incomeAssessment: "relevant",
         monthlyPaymentAssessment: "NEEDS_REVIEW",
-        requiredExternalDocument: { ...document, reason: "Le C110A est indiqué comme reçu, mais son revenu mensuel doit être vérifié." },
-        recommendedAction: action(officialOnemCode, "review_required"),
+        requiredExternalDocument: { ...document, reason: "Indiquez le revenu brut du mois concerné pour apprécier le taux mensuel." },
+        recommendedAction: action(officialOnemCode, "information_required"),
       };
       const assessedC110aIncome = c110aIncome as number;
       return {
         ...spouseBase,
-        status: "needs_review",
+        status: "probable",
         expectedCategory: "B",
         operationalArticle: "60B",
         incomeAssessment: "relevant",
@@ -414,9 +406,9 @@ export function assessHouseholdBranch(input: {
         monthlyC110aIncome: assessedC110aIncome,
         requiredExternalDocument: {
           ...document,
-          reason: "Le C110A permet d'apprécier le taux applicable pour ce mois sans modifier le traitement de base B / 60B.",
+          reason: "Le montant déclaré permet d'apprécier le taux applicable pour ce mois sans modifier le traitement de base B / 60B. Le C110A reste une pièce administrative distincte.",
         },
-        recommendedAction: action(officialOnemCode, "review_required"),
+        recommendedAction: action(officialOnemCode, "declaration_required"),
       };
     }
     return { ...spouseBase, status: "needs_review", expectedCategory: null, operationalArticle: "needs_review", incomeAssessment: "needs_review", monthlyPaymentAssessment: "NEEDS_REVIEW", recommendedAction: action(officialOnemCode, "review_required") };

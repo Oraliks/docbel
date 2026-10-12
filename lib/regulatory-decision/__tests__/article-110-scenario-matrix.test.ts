@@ -75,9 +75,9 @@ describe("Article 110 scenario matrix", () => {
     expect(noRecognition.every((scenario) => scenario.documentStatus === "complete")).toBe(true);
   });
 
-  it("keeps treatment 60B separate from an unavailable C110A monthly rate", () => {
-    const scenario = report.scenarios.find((item) => item.id === "spouse-variable-c110a-missing");
-    expect(scenario).toMatchObject({ category: "B", treatment: "60B", monthlyRate: "NEEDS_C110A" });
+  it("keeps treatment 60B separate from a missing monthly declaration", () => {
+    const scenario = report.scenarios.find((item) => item.id === "spouse-variable-monthly-declaration-missing");
+    expect(scenario).toMatchObject({ category: "B", treatment: "60B", monthlyRate: "NEEDS_REVIEW" });
   });
 
   it("documents every mixed or unsupported composition instead of silently dropping it", () => {

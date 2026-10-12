@@ -154,11 +154,11 @@ describe("household composition before Article 110 branch evaluation", () => {
     expect(assessHouseholdBranch({ composition, activeChildIncomeNeutralisation: false, spouseProfessionalMonthlyThreshold: 1000 })).toMatchObject({ expectedCategory: "B", operationalArticle: "none", incomeAssessment: "relevant" });
   });
 
-  it("keeps 60B as the base B treatment while a missing C110A leaves the monthly rate unresolved", () => {
+  it("keeps 60B as the base B treatment while a missing monthly declaration leaves the rate unresolved", () => {
     const composition = classifyHouseholdComposition([
       member("spouse", { hasProfessionalIncome: true, hasReplacementIncome: false, professionalIncomeAmount: 900, professionalIncomeContract: "cdi", professionalIncomeVariable: true }),
     ]);
-    expect(assessHouseholdBranch({ composition, activeChildIncomeNeutralisation: false, spouseProfessionalMonthlyThreshold: 1000 })).toMatchObject({ expectedCategory: "B", operationalArticle: "60B", monthlyPaymentAssessment: "NEEDS_C110A", requiredExternalDocument: { document: "C110A", status: "required" } });
+    expect(assessHouseholdBranch({ composition, activeChildIncomeNeutralisation: false, spouseProfessionalMonthlyThreshold: 1000 })).toMatchObject({ expectedCategory: "B", operationalArticle: "60B", monthlyPaymentAssessment: "NEEDS_REVIEW", requiredExternalDocument: { document: "C110A", status: "required" } });
   });
 
   it("uses received C110A evidence only for the monthly rate, never for the base category", () => {

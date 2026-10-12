@@ -11,9 +11,16 @@ type LegacyVerifierPerson = Article110VerifierInput["people"][number] & {
   disabilityProofAvailable?: boolean;
 };
 
+type LegacyAlimony = Omit<NonNullable<Article110VerifierInput["alimony"]>, "beneficiary"> & {
+  beneficiary?: "minor_child" | "adult_child" | "other" | "enfant-mineur";
+  documentStatus?: "en-cours" | "en-main";
+  paymentEffective?: boolean;
+  legalBasis?: "decision-judiciaire";
+};
+
 type LegacyScenarioInput = Omit<Article110VerifierInput, "thresholds" | "people" | "alimony" | "alternatingCare"> & {
   people: LegacyVerifierPerson[];
-  alimony?: Article110VerifierInput["alimony"] & { documentStatus?: "en-cours" | "en-main"; paymentEffective?: boolean; legalBasis?: "decision-judiciaire" };
+  alimony?: LegacyAlimony;
   alternatingCare?: Article110VerifierInput["alternatingCare"] & { documentStatus?: "en-cours" | "jugement"; regular?: boolean };
   assessedAt?: Date;
   cohousingClaim?: boolean;

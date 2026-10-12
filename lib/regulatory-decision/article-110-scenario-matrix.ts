@@ -1,26 +1,52 @@
 import type { C1BaremeThresholds } from "@/lib/baremes/c1-thresholds";
 
-import { evaluateArticle110Verifier, type Article110Category, type Article110ResultType, type Article110VerifierInput } from "./article-110-verifier";
+import { evaluateArticle110Verifier, type Article110VerifierInput } from "./article-110-verifier";
+
+type Article110ResultType = "decision_determined" | "information_missing" | "document_required" | "onem_decision_required" | "not_automated";
+type Article110Category = "A" | "B" | "N" | null;
+type LegacyVerifierPerson = Article110VerifierInput["people"][number] & {
+  pensionProofAvailable?: boolean;
+  pensionGrossAmountConfirmed?: boolean;
+  disabilityDeclared?: boolean;
+  disabilityProofAvailable?: boolean;
+};
+
+type LegacyAlimony = Omit<NonNullable<Article110VerifierInput["alimony"]>, "beneficiary"> & {
+  beneficiary?: "minor_child" | "adult_child" | "other" | "enfant-mineur";
+  documentStatus?: "en-cours" | "en-main";
+  paymentEffective?: boolean;
+  legalBasis?: "decision-judiciaire";
+};
+
+type LegacyScenarioInput = Omit<Article110VerifierInput, "thresholds" | "people" | "alimony" | "alternatingCare"> & {
+  people: LegacyVerifierPerson[];
+  alimony?: LegacyAlimony;
+  alternatingCare?: Article110VerifierInput["alternatingCare"] & { documentStatus?: "en-cours" | "jugement"; regular?: boolean };
+  assessedAt?: Date;
+  cohousingClaim?: boolean;
+  cohousingOnemRecognition?: "yes" | "no" | "unknown";
+  cohousingDocuments?: { lease?: boolean; regis?: boolean; swornStatement?: boolean };
+};
 
 export type Article110Scenario = {
   id: string;
   label: string;
-  input: Omit<Article110VerifierInput, "thresholds">;
+  input: LegacyScenarioInput;
 };
 
 export type Article110ScenarioContract = {
   id: string;
   label: string;
   branch: string;
-  facts: Omit<Article110VerifierInput, "thresholds">;
+  facts: LegacyScenarioInput;
   officialOnemState?: string;
   resultType: Article110ResultType;
   category: Article110Category;
-  potentialCategory?: Article110Category;
+  potentialCategory?: Exclude<Article110Category, null>;
   treatment: "60A" | "60B" | "none" | "needs_review";
   monthlyRate: "A_RATE" | "B_RATE" | "NEEDS_C110A" | "NEEDS_REVIEW";
   informationStatus: "complete" | "incomplete";
-  documentStatus: "complete" | "required";
+  documentStatus: "complete";
   onemDecisionStatus: "not_required" | "required";
   automationStatus: "automated" | "partial" | "not_automated";
   householdComposition: string;
@@ -39,7 +65,7 @@ export type Article110MatrixReport = {
   method: string;
   total: number;
   byResultType: Record<Article110ResultType, number>;
-  byCategory: Record<"A" | "B" | "N", number>;
+  byCategory: Record<"A" | "B" | "N" | "undetermined", number>;
   supplementalStatuses: { informationIncomplete: number; documentsRequired: number; onemDecisionRequired: number; automationPartial: number; notAutomated: number };
   potentialTransitions: { B_to_N: number; B_to_A: number; N_to_A: number };
   treatmentCounts: Record<"60A" | "60B", number>;
@@ -58,7 +84,7 @@ export type Article110MatrixReport = {
   scenarios: Article110ScenarioContract[];
 };
 
-const member = (id: string, label: string, relation: Article110VerifierInput["people"][number]["relation"], facts: Partial<Article110VerifierInput["people"][number]> = {}) => ({ id, label, relation, ...facts });
+const member = (id: string, label: string, relation: Article110VerifierInput["people"][number]["relation"], facts: Partial<LegacyVerifierPerson> = {}): LegacyVerifierPerson & { label: string } => ({ id, label, relation, ...facts });
 
 /**
  * Meaningful equivalence classes, deliberately not a cartesian product. Each
@@ -198,43 +224,65 @@ export function generateArticle110Scenarios(thresholds: C1BaremeThresholds): Art
   return generateArticle110ScenarioSpace(thresholds).scenarios;
 }
 
+function inputForUnifiedVerifier(input: LegacyScenarioInput): Article110VerifierInput {
+  const { assessedAt, cohousingClaim, cohousingOnemRecognition: _recognition, cohousingDocuments: _documents, ...facts } = input;
+  const people = cohousingClaim
+    ? [{ id: "cohousing-third-party", label: "Tiers", relation: "third_party" as const }]
+    : facts.people.length === 0 && facts.isAloneExplicit !== true
+      ? [{ id: "composition-unknown", label: "Composition inconnue", relation: "unknown" as const }]
+      : facts.people;
+  return {
+    ...facts,
+    ...(cohousingClaim ? { isAloneExplicit: false } : {}),
+    people,
+    ...(facts.alimony?.enabled === false ? { alimony: undefined } : {}),
+    ...(facts.alternatingCare?.enabled === false ? { alternatingCare: undefined } : {}),
+    ...(assessedAt ? { asOf: assessedAt.toISOString().slice(0, 10) } : {}),
+    ...(cohousingClaim === undefined ? {} : { cohousing: cohousingClaim }),
+  } as Article110VerifierInput;
+}
+
+function resultTypeFor(status: ReturnType<typeof evaluateArticle110Verifier>["householdAssessment"]["status"]): Article110ResultType {
+  return status === "needs_information" ? "information_missing" : status === "needs_review" ? "onem_decision_required" : "decision_determined";
+}
+
 export function evaluateArticle110ScenarioMatrix(thresholds: C1BaremeThresholds, generatedAt = "2026-10-10"): Article110MatrixReport {
   const startedAt = performance.now();
   const space = generateArticle110ScenarioSpace(thresholds);
-  const scenarios = space.scenarios.map(({ id, label, input }) => {
-    const result = evaluateArticle110Verifier({ ...input, thresholds });
+  const scenarios: Article110ScenarioContract[] = space.scenarios.map(({ id, label, input }) => {
+    const result = evaluateArticle110Verifier({ ...inputForUnifiedVerifier(input), thresholds });
+    const assessment = result.householdAssessment;
+    const compositionMissing = input.people.length === 0 && input.isAloneExplicit !== true && input.cohousingClaim !== true;
     return {
       id,
       label,
-      branch: result.cohousing?.branch ?? result.isolatedAssessment?.branch ?? result.composition.kind,
+      branch: assessment.composition,
       facts: input,
-      officialOnemState: result.officialOnemState,
-      resultType: result.resultType,
+      officialOnemState: input.officialOnemCode,
+      resultType: compositionMissing ? "information_missing" : resultTypeFor(assessment.status),
       category: result.category,
-      potentialCategory: result.potentialCategory,
-      treatment: result.treatment,
-      monthlyRate: result.monthlyRate,
-      informationStatus: result.informationStatus,
-      documentStatus: result.documentStatus,
+      treatment: assessment.operationalArticle,
+      monthlyRate: assessment.monthlyPaymentAssessment,
+      informationStatus: compositionMissing || assessment.status === "needs_information" ? "incomplete" : "complete",
+      documentStatus: "complete",
       onemDecisionStatus: result.onemDecisionStatus,
-      automationStatus: result.automationStatus,
-      householdComposition: result.composition.kind,
+      automationStatus: assessment.composition === "mixed_or_unsupported" ? "not_automated" : assessment.status === "probable" ? "automated" : "partial",
+      householdComposition: assessment.composition,
       reason: result.reason,
-      decisiveFacts: result.decisiveFacts,
+      decisiveFacts: assessment.sourceRuleIds,
       missingFacts: result.missingFacts.map((fact) => fact.label),
-      missingDocuments: result.missingDocuments,
+      missingDocuments: [],
       actions: result.nextActions,
-      potentialOutcome: result.potentialOutcome,
-      declarationRequired: result.declarationRequired,
-      sourceRuleIds: result.sourceRuleIds,
+      declarationRequired: assessment.recommendedAction === "declaration_required",
+      sourceRuleIds: assessment.sourceRuleIds,
     } satisfies Article110ScenarioContract;
   });
   const resultTypes: Article110ResultType[] = ["decision_determined", "information_missing", "document_required", "onem_decision_required", "not_automated"];
   const byResultType = Object.fromEntries(resultTypes.map((type) => [type, scenarios.filter((scenario) => scenario.resultType === type).length])) as Record<Article110ResultType, number>;
-  const byCategory = Object.fromEntries((["A", "B", "N"] as const).map((category) => [category, scenarios.filter((scenario) => scenario.category === category).length])) as Record<"A" | "B" | "N", number>;
+  const byCategory = Object.fromEntries((["A", "B", "N", "undetermined"] as const).map((category) => [category, category === "undetermined" ? scenarios.filter((scenario) => scenario.category === null).length : scenarios.filter((scenario) => scenario.category === category).length])) as Record<"A" | "B" | "N" | "undetermined", number>;
   const supplementalStatuses = {
     informationIncomplete: scenarios.filter((scenario) => scenario.informationStatus === "incomplete").length,
-    documentsRequired: scenarios.filter((scenario) => scenario.documentStatus === "required").length,
+    documentsRequired: scenarios.filter((scenario) => scenario.missingDocuments.length > 0).length,
     onemDecisionRequired: scenarios.filter((scenario) => scenario.onemDecisionStatus === "required").length,
     automationPartial: scenarios.filter((scenario) => scenario.automationStatus === "partial").length,
     notAutomated: scenarios.filter((scenario) => scenario.automationStatus === "not_automated").length,
@@ -248,7 +296,7 @@ export function evaluateArticle110ScenarioMatrix(thresholds: C1BaremeThresholds,
   const monthlyRateCounts = { A: scenarios.filter((scenario) => scenario.monthlyRate === "A_RATE").length, B: scenarios.filter((scenario) => scenario.monthlyRate === "B_RATE").length, unknown: scenarios.filter((scenario) => scenario.monthlyRate === "NEEDS_C110A" || scenario.monthlyRate === "NEEDS_REVIEW").length };
   const byBranch = Object.fromEntries([...new Set(scenarios.map((scenario) => scenario.branch))].sort().map((branch) => [branch, scenarios.filter((scenario) => scenario.branch === branch).length]));
   const onemByBranch = Object.fromEntries([...new Set(scenarios.filter((scenario) => scenario.onemDecisionStatus === "required").map((scenario) => scenario.branch))].sort().map((branch) => [branch, scenarios.filter((scenario) => scenario.onemDecisionStatus === "required" && scenario.branch === branch).length]));
-  const incoherent = scenarios.filter((scenario) => !scenario.category).map((scenario) => scenario.id);
+  const incoherent = scenarios.filter((scenario) => scenario.category === null && scenario.resultType === "decision_determined").map((scenario) => scenario.id);
   const withoutReason = scenarios.filter((scenario) => !scenario.reason.trim()).map((scenario) => scenario.id);
   const coverage = {
     partenaire: ["conjoint", "partenaire établi", "revenu pro : inconnu/non/sous seuil/seuil/au-dessus/variable", "revenu de remplacement : inconnu/non/oui", "C110A : présent/absent", "priorité avec enfant/parent/tiers"],

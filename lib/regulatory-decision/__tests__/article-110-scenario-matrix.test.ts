@@ -18,8 +18,8 @@ describe("Article 110 scenario matrix", () => {
 
   it("covers every meaningful evaluator branch and result family", () => {
     expect(report.total).toBeGreaterThan(100);
-    expect(Object.keys(report.byBranch)).toEqual(expect.arrayContaining(["spouse_or_partner", "children_only", "relatives_only", "cohousing", "alimony", "alternating_care", "mixed_or_unsupported"]));
-    expect(Object.values(report.byResultType).filter(Boolean)).toHaveLength(5);
+    expect(Object.keys(report.byBranch)).toEqual(expect.arrayContaining(["spouse_or_partner", "children_only", "relatives_only", "third_parties_only", "mixed_or_unsupported"]));
+    expect(Object.values(report.byResultType).filter(Boolean)).toHaveLength(3);
   });
 
   it("accounts for every generated combination before execution", () => {
@@ -29,7 +29,7 @@ describe("Article 110 scenario matrix", () => {
     expect(report.coverage.enfants).toContain("nombre : 1/2/3");
   });
 
-  it("keeps principal result types exclusive while assigning A, B or N to every scenario", () => {
+  it("keeps principal result types exclusive while recording an undetermined category when review is required", () => {
     expect(Object.values(report.byResultType).reduce((sum, count) => sum + count, 0)).toBe(report.total);
     expect(Object.values(report.byCategory).reduce((sum, count) => sum + count, 0)).toBe(report.total);
     expect(report.assertions).toMatchObject({ resultTypesTotal: true, categoriesTotal: true, incoherent: true, withoutReason: true, atLeastOneA: true, atLeastOneB: true, atLeastOneN: true });
@@ -39,7 +39,7 @@ describe("Article 110 scenario matrix", () => {
     const alone = report.scenarios.find((scenario) => scenario.id === "alone-no-special-situation");
     const unknown = report.scenarios.find((scenario) => scenario.id === "composition-missing");
     expect(alone).toMatchObject({ householdComposition: "alone", category: "N" });
-    expect(unknown).toMatchObject({ resultType: "information_missing", category: "B", informationStatus: "incomplete" });
+    expect(unknown).toMatchObject({ resultType: "information_missing", category: null, informationStatus: "incomplete" });
     expect(report.assertions.atLeastOneN).toBe(true);
     expect(report.anomalies).toEqual([]);
   });
@@ -55,31 +55,29 @@ describe("Article 110 scenario matrix", () => {
     }
   });
 
-  it("keeps co-housing in B pending ONEM, surfaces supported potential outcomes, and accepts confirmed ONEM isolation", () => {
+  it("keeps every co-housing declaration in review without determining a category", () => {
     const cohousing = report.scenarios.find((scenario) => scenario.id === "cohousing-never-recognized");
     const alimony = report.scenarios.find((scenario) => scenario.id === "cohousing-alimony-established");
     const confirmed = report.scenarios.find((scenario) => scenario.id === "cohousing-recognized-same-address");
-    expect(cohousing).toMatchObject({ resultType: "onem_decision_required", category: "B", potentialCategory: "N", onemDecisionStatus: "required" });
-    expect(alimony).toMatchObject({ category: "B", potentialCategory: "A", onemDecisionStatus: "required" });
-    expect(confirmed).toMatchObject({ category: "N", onemDecisionStatus: "not_required" });
-    expect(cohousing?.reason).toContain("Bureau du chômage");
-    expect(confirmed?.reason).toContain("déjà été reconnu");
-    expect(confirmed?.reason).not.toContain("Bureau du chômage");
-    expect(report.potentialTransitions.B_to_N).toBeGreaterThan(0);
-    expect(report.potentialTransitions.B_to_A).toBeGreaterThan(0);
+    expect(cohousing).toMatchObject({ resultType: "onem_decision_required", category: null, onemDecisionStatus: "required" });
+    expect(alimony).toMatchObject({ category: null, onemDecisionStatus: "required" });
+    expect(confirmed).toMatchObject({ category: null, onemDecisionStatus: "required" });
+    expect(cohousing?.reason).toContain("doit être examinée");
+    expect(confirmed?.reason).toContain("doit être examinée");
+    expect(report.potentialTransitions).toEqual({ B_to_N: 0, B_to_A: 0, N_to_A: 0 });
   });
 
-  it("keeps the cohousing category invariant across its documentary states", () => {
+  it("keeps the cohousing result invariant across obsolete documentary states", () => {
     const noRecognition = report.scenarios.filter((scenario) => scenario.id.startsWith("comb-cohousing-no-"));
     const recognition = report.scenarios.filter((scenario) => scenario.id.startsWith("comb-cohousing-yes-"));
-    expect(new Set(noRecognition.map((scenario) => scenario.category))).toEqual(new Set(["B"]));
-    expect(new Set(recognition.map((scenario) => scenario.category))).toEqual(new Set(["N"]));
-    expect(noRecognition.some((scenario) => scenario.documentStatus === "required")).toBe(true);
+    expect(new Set(noRecognition.map((scenario) => scenario.category))).toEqual(new Set([null]));
+    expect(new Set(recognition.map((scenario) => scenario.category))).toEqual(new Set([null]));
+    expect(noRecognition.every((scenario) => scenario.documentStatus === "complete")).toBe(true);
   });
 
-  it("keeps treatment 60B when its monthly C110A rate is A", () => {
-    const scenario = report.scenarios.find((item) => item.id === "comb-partner-spouse-variable-c110a-present-no");
-    expect(scenario).toMatchObject({ category: "B", treatment: "60B", monthlyRate: "A_RATE" });
+  it("keeps treatment 60B separate from an unavailable C110A monthly rate", () => {
+    const scenario = report.scenarios.find((item) => item.id === "spouse-variable-c110a-missing");
+    expect(scenario).toMatchObject({ category: "B", treatment: "60B", monthlyRate: "NEEDS_C110A" });
   });
 
   it("documents every mixed or unsupported composition instead of silently dropping it", () => {

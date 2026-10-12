@@ -1,12 +1,15 @@
 import type { FormPayload } from "@/lib/pdf-forms/types";
 import {
   decideArticle110ChildFirstProfessionalIncome,
+  activeFirstProfessionalIncomePersonIds,
   preserveArticle110TemporalHistory,
 } from "./article-110-child-income";
 import {
-  assessHouseholdBranch,
-  classifyHouseholdComposition,
-  type HouseholdMemberFact,
+  evaluateFamilySituation,
+  householdCompositionFromFamilyFacts,
+  type FamilyFacts,
+  type FamilyIncome,
+  type FamilyPerson,
 } from "./household-composition";
 import type { RegulatoryDecision } from "./types";
 import type { C1BaremeThresholds } from "@/lib/baremes/c1-thresholds";
@@ -54,108 +57,6 @@ function dateFor(payload: FormPayload, key: string): string | undefined {
   return text(payload, key) ?? text(payload, "dateModificationEffective");
 }
 
-type IsolatedAssessment = NonNullable<RegulatoryDecision["isolatedHouseholdAssessment"]>;
-
-function isolatedFactKeys(payload: FormPayload, keys: string[]) {
-  return keys.filter((key) => payload[key] !== undefined);
-}
-
-function retroactivity(payload: FormPayload): IsolatedAssessment["retroactivity"] | undefined {
-  const requestDate = text(payload, "dateDemandePensionAlimentaire");
-  const legalDocumentDate = text(payload, "dateActePensionAlimentaire");
-  const receivedDate = text(payload, "dateReceptionPensionAlimentaire");
-  const claimedEffectiveDate = text(payload, "dateEffetRevendiquePensionAlimentaire");
-  if (!requestDate && !legalDocumentDate && !receivedDate && !claimedEffectiveDate) return undefined;
-  return { status: "RETROACTIVE_REVIEW_REQUIRED", requestDate, legalDocumentDate, receivedDate, claimedEffectiveDate };
-}
-
-/**
- * This covers only the declared isolated-household claims. It deliberately
- * produces an expected category, never an official ONEM state or code.
- */
-export function assessIsolatedHouseholdClaim(payload: FormPayload, composition: ReturnType<typeof deriveHouseholdCompositionFromC1>, officialOnemCode?: string, options?: { regisCompleted?: boolean }): IsolatedAssessment | undefined {
-  const officialAction = <T extends IsolatedAssessment["recommendedAction"]>(fallback: T) =>
-    officialOnemCode ? "await_onem_decision" as const : fallback;
-
-  if (text(payload, "pensionAlimentaire") === "oui" && text(payload, "statutFamilial") === "isole") {
-    const judgment = text(payload, "statutJugementPensionAlimentaire");
-    const payment = text(payload, "pensionAlimentairePaiementEffectif");
-    const basis = text(payload, "pensionAlimentaireBaseJuridique");
-    const beneficiary = text(payload, "pensionAlimentaireBeneficiaire");
-    const adultChildRelevant = text(payload, "pensionAlimentaireEnfantMajeurBesoin");
-    const factKeys = isolatedFactKeys(payload, ["statutFamilial", "pensionAlimentaire", "statutJugementPensionAlimentaire", "pensionAlimentairePaiementEffectif", "pensionAlimentaireBaseJuridique", "pensionAlimentaireBeneficiaire", "pensionAlimentaireEnfantMajeurBesoin", "dateArretPensionAlimentaire", "dateDemandePensionAlimentaire", "dateActePensionAlimentaire", "dateReceptionPensionAlimentaire", "dateEffetRevendiquePensionAlimentaire"]);
-    const history = retroactivity(payload);
-    const base = { branch: "alimony" as const, factKeys, sourceRuleIds: ["situation_familiale_isole_pension_alimentaire"] };
-    if (judgment === "en-cours" || judgment === "pas-encore-recu") return {
-      ...base, status: "pending_judgment", expectedCategory: null, claimState: "PENDING_JUDGMENT",
-      documents: [{ document: "judgment_or_admissible_act", status: "pending" }, { document: "payment_proof", status: payment === "oui" ? "declared" : "required" }],
-      recommendedAction: officialAction("provide_judgment"), ...(history ? { retroactivity: history } : {}),
-    };
-    if (payment === "non") return {
-      ...base, status: "needs_review", expectedCategory: null,
-      documents: [{ document: "judgment_or_admissible_act", status: judgment === "en-main" || judgment === "deja-introduit" ? "received" : "required" }],
-      recommendedAction: officialAction("reassess_from_effective_date"),
-      ...(text(payload, "dateArretPensionAlimentaire") ? { recalculationEffectiveAt: text(payload, "dateArretPensionAlimentaire") } : {}),
-      ...(history ? { retroactivity: history } : {}),
-    };
-    const admissibleBasis = basis === "decision-judiciaire" || basis === "acte-notarie-divorce" || basis === "acte-notarie-enfant";
-    const documentReceived = judgment === "en-main" || judgment === "deja-introduit";
-    const adultChildUnclear = beneficiary === "enfant-majeur" && adultChildRelevant !== "oui";
-    if (payment === "oui" && admissibleBasis && documentReceived && beneficiary && !adultChildUnclear) return {
-      ...base, status: "probable", expectedCategory: "A",
-      documents: [{ document: "judgment_or_admissible_act", status: "received" }, { document: "payment_proof", status: "declared" }],
-      recommendedAction: officialAction("onem_review"), ...(history ? { retroactivity: history } : {}),
-    };
-    return {
-      ...base, status: "needs_information", expectedCategory: null,
-      documents: [{ document: "judgment_or_admissible_act", status: documentReceived ? "received" : "required" }, { document: "payment_proof", status: payment === "oui" ? "declared" : "required" }],
-      recommendedAction: officialAction("provide_information"), ...(history ? { retroactivity: history } : {}),
-    };
-  }
-
-  if (text(payload, "hebergementAlterneEnfant") === "oui" && text(payload, "statutFamilial") === "isole") {
-    const regular = text(payload, "hebergementAlterneRegulier");
-    const allowances = text(payload, "hebergementAlterneAllocationsFamiliales");
-    const relevantIncome = text(payload, "hebergementAlterneEnfantRevenuPertinent");
-    const documentStatus = text(payload, "hebergementAlternePieceStatut");
-    const careHistory = (() => {
-      const requestDate = text(payload, "dateDemandeHebergementAlterne");
-      const legalDocumentDate = text(payload, "datePieceHebergementAlterne");
-      const receivedDate = text(payload, "dateReceptionHebergementAlterne");
-      const claimedEffectiveDate = text(payload, "dateEffetRevendiqueHebergementAlterne");
-      return requestDate || legalDocumentDate || receivedDate || claimedEffectiveDate
-        ? { status: "RETROACTIVE_REVIEW_REQUIRED" as const, requestDate, legalDocumentDate, receivedDate, claimedEffectiveDate }
-        : undefined;
-    })();
-    const base = { branch: "alternating_care" as const, factKeys: isolatedFactKeys(payload, ["statutFamilial", "hebergementAlterneEnfant", "hebergementAlterneRegulier", "hebergementAlterneAllocationsFamiliales", "hebergementAlterneEnfantRevenuPertinent", "hebergementAlternePieceStatut", "dateDemandeHebergementAlterne", "datePieceHebergementAlterne", "dateReceptionHebergementAlterne", "dateEffetRevendiqueHebergementAlterne"]), sourceRuleIds: ["situation_familiale_isole_garde_alternee"] };
-    if (documentStatus === "en-cours") return { ...base, status: "pending_judgment", expectedCategory: null, claimState: "PENDING_JUDGMENT", documents: [{ document: "judgment_or_admissible_act", status: "pending" }], recommendedAction: officialAction("provide_judgment"), ...(careHistory ? { retroactivity: careHistory } : {}) };
-    const documentReceived = documentStatus === "jugement" || documentStatus === "acte-notarie";
-    if (regular === "oui" && (allowances === "oui" || relevantIncome === "non") && documentReceived) return { ...base, status: "probable", expectedCategory: "A", documents: [{ document: "judgment_or_admissible_act", status: "received" }], recommendedAction: officialAction("onem_review"), ...(careHistory ? { retroactivity: careHistory } : {}) };
-    return { ...base, status: regular === "non" ? "needs_review" : "needs_information", expectedCategory: null, documents: [{ document: "judgment_or_admissible_act", status: documentReceived ? "received" : "required" }], recommendedAction: officialAction(regular === "non" ? "onem_review" : "provide_information"), ...(careHistory ? { retroactivity: careHistory } : {}) };
-  }
-
-  if (text(payload, "cohousingVieAutonomeRevendiquee") === "oui") {
-    const familyOrCouple = composition.members.some((member) => member.relation === "spouse" || member.relation === "partner" || member.relation === "child" || member.relation === "relative");
-    if (familyOrCouple) return undefined;
-    const document = (key: string, name: IsolatedAssessment["documents"][number]["document"]) => ({ document: name, status: text(payload, key) === "oui" ? "declared" as const : "required" as const });
-    return {
-      branch: "cohousing", status: "needs_review", expectedCategory: null, claimState: "ISOLATED_CLAIM",
-      documents: [document("cohousingBailDisponible", "lease"), document("cohousingAttestationHonneur", "sworn_statement"), { document: "c1-regis", status: options?.regisCompleted ? "completed" : "required" }],
-      recommendedAction: officialAction("onem_review"),
-      factKeys: isolatedFactKeys(payload, ["cohousingVieAutonomeRevendiquee", "cohousingBailDisponible", "cohousingEspacePrivatif", "cohousingAttestationHonneur", "cohousingGestionMenageSeparee", "cohousingExplicationVieAutonome"]),
-      sourceRuleIds: ["c1_annexe_regis_difference", "situation_familiale_cohousing_a_verifier"],
-    };
-  }
-  return undefined;
-}
-
-function preserveIsolatedAssessmentHistory(previous: IsolatedAssessment | undefined, next: IsolatedAssessment | undefined): IsolatedAssessment[] | undefined {
-  if (!previous) return undefined;
-  if (!next) return [previous];
-  const signature = (assessment: IsolatedAssessment) => JSON.stringify({ branch: assessment.branch, status: assessment.status, expectedCategory: assessment.expectedCategory, recalculationEffectiveAt: assessment.recalculationEffectiveAt, retroactivity: assessment.retroactivity });
-  return signature(previous) === signature(next) ? undefined : [previous];
-}
-
 /**
  * C1 provides the temporal facts but cannot establish the remaining category-A
  * branch on its own. That fact is intentionally left absent here: a later
@@ -195,7 +96,7 @@ export function deriveArticle110FactsFromC1(payload: FormPayload) {
   };
 }
 
-const RELATION_BY_C1_VALUE: Record<string, HouseholdMemberFact["relation"]> = {
+const RELATION_BY_C1_VALUE: Record<string, FamilyPerson["relation"]> = {
   epoux: "spouse",
   partenaire: "partner",
   enfant: "child",
@@ -214,58 +115,82 @@ const RELATION_BY_C1_VALUE: Record<string, HouseholdMemberFact["relation"]> = {
   NFAC: "unknown",
 };
 
-/** Converts the existing C1 cohabitants array into non-identifying household facts. */
-export function deriveHouseholdCompositionFromC1(payload: FormPayload) {
+function stableC1PersonId(person: Record<string, unknown>, relation: FamilyPerson["relation"], index: number): string {
+  for (const key of ["id", "personId", "niss"]) {
+    const value = person[key];
+    if (typeof value === "string" && value.trim()) return `c1:${key}:${value.trim()}`;
+  }
+  const name = [person.prenom, person.nom, person.dateNaissance]
+    .filter((value): value is string => typeof value === "string" && value.trim().length > 0)
+    .map((value) => value.trim().toLowerCase())
+    .join("|");
+  return name ? `c1:person:${relation}:${name}` : `c1:row:${index}:${relation}`;
+}
+
+/** C1 adapter: maps declarations to the common family contract, never to a category. */
+export function deriveFamilyFactsFromC1(payload: FormPayload, asOf = new Date().toISOString().slice(0, 10)): FamilyFacts {
   const cohabitants = Array.isArray(payload.cohabitants) ? payload.cohabitants : [];
-  const members = cohabitants.flatMap((entry, index): HouseholdMemberFact[] => {
-    if (!entry || typeof entry !== "object") return [{ relation: "unknown", factKey: `cohabitants[${index}]` }];
-    const person = entry as Record<string, unknown>;
-    const lien = typeof person.lien === "string" ? person.lien : "";
-    const relation = RELATION_BY_C1_VALUE[lien] ?? "unknown";
-    const professional = typeof person.typeRevenuPro === "string"
-      ? person.typeRevenuPro !== "aucun"
-      : undefined;
-    const replacementType = typeof person.revenuRemplacement === "string" ? person.revenuRemplacement : undefined;
-    const replacement = typeof replacementType === "string"
-      ? replacementType !== "aucun"
-      : undefined;
-    return [{
-      relation,
-      ...(relation === "partner" && person.partenaireConditionsEtablies === "oui" ? { partnerEstablished: true } : {}),
-      ...(professional !== undefined ? { hasProfessionalIncome: professional } : {}),
-      ...(typeof person.montantRevenuPro === "number" ? { professionalIncomeAmount: person.montantRevenuPro } : {}),
-      ...(person.typeContratRevenuPro === "cdi" || person.typeContratRevenuPro === "cdd" || person.typeContratRevenuPro === "other"
-        ? { professionalIncomeContract: person.typeContratRevenuPro }
-        : {}),
-      ...(person.revenuProfessionnelVariable === "oui" ? { professionalIncomeVariable: true }
-        : person.revenuProfessionnelVariable === "non" ? { professionalIncomeVariable: false }
-        : {}),
-      ...(person.c110aStatut === "recu" ? { c110aReceived: true }
-        : person.c110aStatut === "non-recu" ? { c110aReceived: false }
-        : {}),
-      ...(typeof person.montantMensuelC110a === "number" ? { c110aMonthlyDeclaredIncome: person.montantMensuelC110a } : {}),
-      ...(replacement !== undefined ? { hasReplacementIncome: replacement } : {}),
-      ...(replacementType === "allocation-handicap" ? { replacementIncomeRelevantForFamilyStatus: false } : {}),
-      ...(replacementType === "pension" ? { replacementIncomeType: "pension" as const } : replacementType === "allocation-handicap" ? { replacementIncomeType: "disability_allowance" as const } : replacement ? { replacementIncomeType: "other" as const } : {}),
-      ...(typeof person.montantRevenuRemplacement === "number" ? { replacementIncomeAmount: person.montantRevenuRemplacement } : {}),
-      ...(person.preuvePension === "recu" ? { pensionProofAvailable: true } : person.preuvePension === "manquante" ? { pensionProofAvailable: false } : {}),
-      ...(person.montantPensionNature === "brut" ? { pensionGrossAmountConfirmed: true } : person.montantPensionNature === "net" ? { pensionGrossAmountConfirmed: false } : {}),
-      ...(lien === "pere" || lien === "mere" ? { isAscendant: true } : {}),
-      ...(person.handicapReconnu === "oui" ? { disabilityDeclared: true } : {}),
-      ...(person.preuveHandicap === "oui" ? { disabilityProofAvailable: true } : {}),
-      ...(person.allocationsFamiliales === "oui" ? { receivesFamilyAllowances: true } : {}),
-      ...(person.premierRevenuProfessionnel === "oui" ? { firstProfessionalIncome: true } : {}),
-      ...(typeof person.dateFinEtudes === "string" && person.dateFinEtudes ? { studiesEndedAt: person.dateFinEtudes } : {}),
-      factKey: `cohabitants[${index}].${relation}`,
-    }];
-  });
-  return classifyHouseholdComposition(members);
+  return {
+    asOf,
+    people: cohabitants.flatMap((entry, index) => {
+      if (!entry || typeof entry !== "object") return [{ id: `c1:row:${index}:unknown`, relation: "unknown" as const, incomes: [] }];
+      const person = entry as Record<string, unknown>;
+      const relation = RELATION_BY_C1_VALUE[typeof person.lien === "string" ? person.lien : ""] ?? "unknown";
+      const professional = typeof person.typeRevenuPro === "string" && person.typeRevenuPro !== "aucun";
+      const replacement = typeof person.revenuRemplacement === "string" && person.revenuRemplacement !== "aucun";
+      const replacementType = typeof person.revenuRemplacement === "string" ? person.revenuRemplacement : undefined;
+      const incomeAmount = typeof person.montantRevenuPro === "number" ? person.montantRevenuPro : undefined;
+      const replacementAmount = typeof person.montantRevenuRemplacement === "number" ? person.montantRevenuRemplacement : undefined;
+      const professionalContract: FamilyIncome["contract"] = person.typeContratRevenuPro === "cdi" || person.typeContratRevenuPro === "cdd"
+        ? person.typeContratRevenuPro
+        : person.typeRevenuPro === "independant" ? "independent" : "other";
+      return [{
+        id: stableC1PersonId(person, relation, index),
+        relation,
+        ...(relation === "partner" ? { partnerEstablished: person.partenaireConditionsEtablies === "oui" } : {}),
+        ...(person.allocationsFamiliales === "oui" || person.allocationsFamiliales === "non" ? { receivesFamilyAllowances: person.allocationsFamiliales === "oui" } : {}),
+        ...(person.handicapReconnu === "oui" || person.handicapReconnu === "non" ? { disabilityRelevant: person.handicapReconnu === "oui" } : {}),
+        ...(person.lien === "pere" || person.lien === "mere" ? { isAscendant: true } : {}),
+        incomes: [
+          ...(professional ? [{ kind: "professional" as const, active: true, amount: incomeAmount, monthlyAmount: typeof person.montantMensuelC110a === "number" ? person.montantMensuelC110a : undefined, contract: professionalContract, variable: person.revenuProfessionnelVariable === "oui" ? true : person.revenuProfessionnelVariable === "non" ? false : undefined, firstProfessionalIncome: person.premierRevenuProfessionnel === "oui", neutralisationRequested: person.demandeNeutralisationPremierRevenu === "oui", startedAt: typeof person.dateDebutPremiereActivite === "string" ? person.dateDebutPremiereActivite : undefined, studiesEndedAt: typeof person.dateFinEtudes === "string" ? person.dateFinEtudes : undefined }] : []),
+          ...(replacementType === "allocation-handicap" ? [{ kind: "spf_disability" as const, active: true }] : []),
+          ...(replacementType === "pension" ? [{ kind: "pension" as const, active: true, amount: replacementAmount, amountKind: person.montantPensionNature === "brut" ? "gross" as const : person.montantPensionNature === "net" ? "net" as const : undefined }] : []),
+          ...(replacement && replacementType !== "pension" && replacementType !== "allocation-handicap" ? [{ kind: "replacement" as const, active: true, amount: replacementAmount }] : []),
+        ],
+      }];
+    }),
+    ...(text(payload, "statutFamilial") === "isole" ? {
+      isolated: {
+        ...(text(payload, "pensionAlimentaire") === "oui" ? {
+          alimony: {
+            paid: text(payload, "pensionAlimentairePaiementEffectif") === "oui" ? true : text(payload, "pensionAlimentairePaiementEffectif") === "non" ? false : undefined,
+            admissibleBasis: ["decision-judiciaire", "acte-notarie-divorce", "acte-notarie-enfant"].includes(text(payload, "pensionAlimentaireBaseJuridique") ?? "") || undefined,
+            beneficiary: text(payload, "pensionAlimentaireBeneficiaire") === "enfant-mineur" ? "minor_child" : text(payload, "pensionAlimentaireBeneficiaire") === "enfant-majeur" ? "adult_child" : text(payload, "pensionAlimentaireBeneficiaire") ? "other" : undefined,
+            adultChildInNeed: text(payload, "pensionAlimentaireEnfantMajeurBesoin") === "oui" ? true : text(payload, "pensionAlimentaireEnfantMajeurBesoin") === "non" ? false : undefined,
+          },
+        } : {}),
+        ...(text(payload, "hebergementAlterneEnfant") === "oui" ? {
+          alternatingCare: {
+            averageDaysPerWeek: typeof payload.hebergementAlterneJoursMoyensSemaine === "number" ? payload.hebergementAlterneJoursMoyensSemaine : undefined,
+            cycle: text(payload, "hebergementAlterneCycle") === "mensuel" ? "monthly" : text(payload, "hebergementAlterneCycle") === "trimestriel" ? "quarterly" : text(payload, "hebergementAlterneCycle") === "semestriel" ? "semiannual" : text(payload, "hebergementAlterneCycle") === "annuel" ? "annual" : undefined,
+            familyAllowances: text(payload, "hebergementAlterneAllocationsFamiliales") === "oui" ? true : text(payload, "hebergementAlterneAllocationsFamiliales") === "non" ? false : undefined,
+            childHasRelevantIncome: text(payload, "hebergementAlterneEnfantRevenuPertinent") === "oui" ? true : text(payload, "hebergementAlterneEnfantRevenuPertinent") === "non" ? false : undefined,
+          },
+        } : {}),
+      },
+    } : {}),
+  };
+}
+
+/** Compatibility reader for traces: category-relevant C1 data has one mapping only. */
+export function deriveHouseholdCompositionFromC1(payload: FormPayload) {
+  return householdCompositionFromFamilyFacts(deriveFamilyFactsFromC1(payload));
 }
 
 function deriveChildrenOnlyAssessment(
   previous: RegulatoryDecision["childrenOnlyAssessment"] | undefined,
   composition: ReturnType<typeof deriveHouseholdCompositionFromC1>,
-  householdAssessment: ReturnType<typeof assessHouseholdBranch>,
+  householdAssessment: ReturnType<typeof evaluateFamilySituation>,
   payload: FormPayload,
   neutralisedChildFactKeys: string[],
 ): RegulatoryDecision["childrenOnlyAssessment"] | undefined {
@@ -311,7 +236,7 @@ function deriveChildrenOnlyAssessment(
 function deriveRelativeHouseholdAssessment(
   previous: RegulatoryDecision["relativeHouseholdAssessment"] | undefined,
   composition: ReturnType<typeof deriveHouseholdCompositionFromC1>,
-  householdAssessment: ReturnType<typeof assessHouseholdBranch>,
+  householdAssessment: ReturnType<typeof evaluateFamilySituation>,
   payload: FormPayload,
 ): RegulatoryDecision["relativeHouseholdAssessment"] | undefined {
   if ((composition.kind !== "relatives_only" && composition.kind !== "children_and_relatives") || (householdAssessment.expectedCategory !== "A" && householdAssessment.expectedCategory !== "B")) return undefined;
@@ -347,7 +272,7 @@ function deriveThirdPartyHouseholdAssessment(
   previous: RegulatoryDecision["thirdPartyHouseholdAssessment"] | undefined,
   previousComposition: RegulatoryDecision["householdAssessment"] | undefined,
   composition: ReturnType<typeof deriveHouseholdCompositionFromC1>,
-  householdAssessment: ReturnType<typeof assessHouseholdBranch>,
+  householdAssessment: ReturnType<typeof evaluateFamilySituation>,
   payload: FormPayload,
 ): RegulatoryDecision["thirdPartyHouseholdAssessment"] | undefined {
   const supported = composition.kind === "children_and_third_parties" || composition.kind === "relatives_and_third_parties" || composition.kind === "children_relatives_and_third_parties";
@@ -370,8 +295,8 @@ function deriveThirdPartyHouseholdAssessment(
     : "none";
   return {
     composition: thirdComposition,
-    expectedCategory: supported ? householdAssessment.expectedCategory : null,
-    categoryChanged: previous ? previous.expectedCategory !== (supported ? householdAssessment.expectedCategory : null) : false,
+    expectedCategory: supported && (householdAssessment.expectedCategory === "A" || householdAssessment.expectedCategory === "B") ? householdAssessment.expectedCategory : null,
+    categoryChanged: previous ? previous.expectedCategory !== (supported && (householdAssessment.expectedCategory === "A" || householdAssessment.expectedCategory === "B") ? householdAssessment.expectedCategory : null) : false,
     declarationRequired: changes.length > 0,
     facts,
     changes,
@@ -460,6 +385,13 @@ export function withPersonalSituationTrace(
   options?: { regisCompleted?: boolean },
 ): RegulatoryDecision | (RegulatoryDecision & { personalSituationTrace: PersonalSituationTrace }) | null | undefined {
   if (!decision) return decision;
+  // Bundle document completion is intentionally outside the theoretical family result.
+  void options;
+  const {
+    isolatedHouseholdAssessment: legacyIsolatedAssessment,
+    isolatedHouseholdAssessmentHistory: legacyIsolatedHistory,
+    ...currentDecision
+  } = decision;
   const article110Facts = deriveArticle110FactsFromC1(payload);
   const article110Decision = article110Facts
     ? preserveArticle110TemporalHistory(
@@ -467,37 +399,32 @@ export function withPersonalSituationTrace(
         decideArticle110ChildFirstProfessionalIncome(article110Facts, now),
       )
     : undefined;
+  const familyFacts = deriveFamilyFactsFromC1(payload, now.toISOString().slice(0, 10));
   const composition = deriveHouseholdCompositionFromC1(payload);
-  const neutralisedChildFactKeys = article110Decision?.temporalEffect?.onemCode === "110&1M"
-    ? composition.members.filter((member) => member.relation === "child" && member.firstProfessionalIncome).map((member) => member.factKey)
-    : [];
-  const householdAssessment = assessHouseholdBranch({
-    composition,
-    activeChildIncomeNeutralisation: article110Decision?.temporalEffect?.onemCode === "110&1M",
-    officialOnemCode: decision.officialOnemState?.onemCode,
+  const neutralisedChildFactKeys = activeFirstProfessionalIncomePersonIds(familyFacts.people, familyFacts.asOf);
+  const householdAssessment = evaluateFamilySituation({
+    facts: familyFacts,
+    activeChildIncomeNeutralisation: neutralisedChildFactKeys.length > 0,
     spouseProfessionalMonthlyThreshold: thresholds?.spouseProfessionalMonthly,
     ascendantPensionWithChildMonthlyThreshold: thresholds?.ascendantPensionWithChildMonthly,
     ascendantPensionMonthlyThreshold: thresholds?.ascendantPensionMonthly,
     ascendantDisabledPensionMonthlyThreshold: thresholds?.ascendantDisabledPensionMonthly,
     baremeSource: thresholds?.source,
-    neutralisedChildFactKeys,
+    neutralisedChildIds: neutralisedChildFactKeys,
   });
   const childrenOnlyAssessment = deriveChildrenOnlyAssessment(decision.childrenOnlyAssessment, composition, householdAssessment, payload, neutralisedChildFactKeys);
   const relativeHouseholdAssessment = deriveRelativeHouseholdAssessment(decision.relativeHouseholdAssessment, composition, householdAssessment, payload);
   const thirdPartyHouseholdAssessment = deriveThirdPartyHouseholdAssessment(decision.thirdPartyHouseholdAssessment, decision.householdAssessment, composition, householdAssessment, payload);
-  const isolatedHouseholdAssessment = assessIsolatedHouseholdClaim(payload, composition, decision.officialOnemState?.onemCode, options);
-  const priorIsolatedHistory = preserveIsolatedAssessmentHistory(decision.isolatedHouseholdAssessment, isolatedHouseholdAssessment);
   return {
-    ...decision,
+    ...currentDecision,
     personalSituationTrace: derivePersonalSituationTrace(payload),
     ...(article110Decision ? { article110Decision } : {}),
     householdAssessment,
     ...(childrenOnlyAssessment ? { childrenOnlyAssessment } : {}),
     ...(relativeHouseholdAssessment ? { relativeHouseholdAssessment } : {}),
     ...(thirdPartyHouseholdAssessment ? { thirdPartyHouseholdAssessment } : {}),
-    isolatedHouseholdAssessment,
-    ...(priorIsolatedHistory || decision.isolatedHouseholdAssessmentHistory
-      ? { isolatedHouseholdAssessmentHistory: [...(decision.isolatedHouseholdAssessmentHistory ?? []), ...(priorIsolatedHistory ?? [])] }
+    ...(legacyIsolatedAssessment || legacyIsolatedHistory
+      ? { isolatedHouseholdAssessmentHistory: [...(legacyIsolatedHistory ?? []), ...(legacyIsolatedAssessment ? [legacyIsolatedAssessment] : [])] }
       : {}),
   };
 }

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   addCalendarMonths,
+  activeFirstProfessionalIncomePersonIds,
   decideArticle110ChildFirstProfessionalIncome,
   preserveArticle110TemporalHistory,
 } from "../article-110-child-income";
@@ -17,6 +18,15 @@ const facts = (overrides: RegulatoryFacts = {}): RegulatoryFacts => ({
 });
 
 describe("Article 110 — premier revenu professionnel d'un enfant", () => {
+  it("evaluates each child's temporary period independently", () => {
+    const people = [
+      { id: "child-a", relation: "child", incomes: [{ kind: "professional", firstProfessionalIncome: true, neutralisationRequested: true, startedAt: "2026-01-01", studiesEndedAt: "2025-12-31" }] },
+      { id: "child-b", relation: "child", incomes: [{ kind: "professional", firstProfessionalIncome: true, neutralisationRequested: true, startedAt: "2026-07-01", studiesEndedAt: "2026-06-30" }] },
+    ];
+    expect(activeFirstProfessionalIncomePersonIds(people, "2026-10-01")).toEqual(["child-a", "child-b"]);
+    expect(activeFirstProfessionalIncomePersonIds(people, "2027-02-01")).toEqual(["child-b"]);
+  });
+
   it("neutralises the child income with 110&1M without locking a family category", () => {
     const decision = decideArticle110ChildFirstProfessionalIncome(facts(), new Date("2027-03-31T12:00:00Z"));
     expect(decision).toMatchObject({

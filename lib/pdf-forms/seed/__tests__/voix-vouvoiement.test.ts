@@ -63,7 +63,7 @@ const PAS_UN_ORDRE = new Set([
   "je", "j", "il", "elle", "on", "qui", "que",
   "le", "la", "les", "un", "une", "du", "des", "de", "d",
   "ce", "cette", "ces", "mon", "ma", "mes", "son", "sa", "ses",
-  "votre", "vos", "notre", "nos", "leur", "leurs", "au", "aux", "est",
+  "votre", "vos", "notre", "nos", "leur", "leurs", "au", "aux", "est", "onem", "l'onem",
 ]);
 
 export function tutoie(texte: string): boolean {
@@ -110,6 +110,9 @@ describe("voix des seeds — vouvoiement sur les 8 documents", () => {
       // Verbatim officiel à la 1ʳᵉ personne : ne doit JAMAIS être signalé.
       "Je joins : décision(s) d'octroi d'institutions belges",
       "Je joins en annexe(s)", "si je ne le fais pas je peux être sanctionné",
+      // « vérifie » est ici un indicatif, avec l'ONEM comme sujet, pas un
+      // impératif adressé au citoyen.
+      "L'ONEM vérifie la situation et la pièce",
     ]) {
       expect(tutoie(sain), sain).toBe(false);
     }

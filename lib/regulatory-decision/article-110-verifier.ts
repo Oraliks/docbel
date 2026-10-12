@@ -124,11 +124,13 @@ export function evaluateArticle110Verifier(input: Article110VerifierInput) {
   };
 }
 
+export type Article110VerifierFormSection = "partner" | "children" | "relatives" | "third_parties" | "isolated";
+
 /** The UI layout follows the composition determined by the shared evaluator. */
-export function getArticle110VerifierFormSections(input: Article110VerifierInput) {
+export function getArticle110VerifierFormSections(input: Article110VerifierInput): Article110VerifierFormSection[] {
   const kind = householdCompositionFromFamilyFacts(article110VerifierFacts(input)).kind;
-  if (kind === "alone") return ["isolated"] as const;
-  const sections = [] as Array<"partner" | "children" | "relatives" | "third_parties">;
+  if (kind === "alone") return ["isolated"];
+  const sections: Article110VerifierFormSection[] = [];
   if (input.people.some((person) => person.relation === "spouse" || person.relation === "partner")) sections.push("partner");
   if (input.people.some((person) => person.relation === "child")) sections.push("children");
   if (input.people.some((person) => person.relation === "relative")) sections.push("relatives");

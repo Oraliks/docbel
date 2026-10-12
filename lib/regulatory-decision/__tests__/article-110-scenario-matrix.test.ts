@@ -76,7 +76,7 @@ describe("Article 110 scenario matrix", () => {
   });
 
   it("keeps treatment 60B separate from an unavailable C110A monthly rate", () => {
-    const scenario = report.scenarios.find((item) => item.id === "comb-partner-spouse-variable-c110a-present-no");
+    const scenario = report.scenarios.find((item) => item.id === "spouse-variable-c110a-missing");
     expect(scenario).toMatchObject({ category: "B", treatment: "60B", monthlyRate: "NEEDS_C110A" });
   });
 

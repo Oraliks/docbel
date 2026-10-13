@@ -34,6 +34,26 @@ describe("Article 110 theoretical verifier", () => {
     });
   });
 
+  it("requires the family-allowance fact even when a child has explicitly no income", () => {
+    const base = {
+      thresholds,
+      people: [{ id: "child", relation: "child" as const, hasProfessionalIncome: false, hasReplacementIncome: false }],
+    };
+
+    expect(evaluateArticle110Verifier(base)).toMatchObject({
+      category: null,
+      householdAssessment: {
+        status: "needs_information",
+        expectedCategory: null,
+        factKeys: ["child.receivesFamilyAllowances"],
+      },
+    });
+    expect(evaluateArticle110Verifier({ ...base, anyChildReceivesFamilyAllowances: false })).toMatchObject({
+      category: "A",
+      householdAssessment: { status: "probable", expectedCategory: "A" },
+    });
+  });
+
   it("uses the dated child threshold and asks for a declared child-income amount", () => {
     const childThresholds = { ...thresholds, childProfessionalMonthly: 100, childReplacementMonthly: 200 };
     const base = { thresholds: childThresholds, anyChildReceivesFamilyAllowances: false };

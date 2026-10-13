@@ -72,6 +72,19 @@ describe("Article 110 theoretical verifier", () => {
     expect(result.missingFacts).toEqual([]);
   });
 
+  it.each([
+    ["alternating_care", "situation_familiale_isole_garde_alternee"],
+    ["alimony", "situation_familiale_isole_pension_alimentaire"],
+  ] as const)("returns an A orientation for a qualified isolated declaration: %s", (isolatedDeclaration, sourceRuleId) => {
+    const result = evaluateArticle110Verifier({ thresholds, isAloneExplicit: true, people: [], isolatedDeclaration });
+
+    expect(result).toMatchObject({
+      category: "A",
+      householdAssessment: { status: "probable", expectedCategory: "A", declaredQualifiedBasis: isolatedDeclaration, sourceRuleIds: [sourceRuleId] },
+    });
+    expect(result.missingFacts).toEqual([]);
+  });
+
   it("asks for missing alternating-care facts without a generic ONEM waiting state", () => {
     const result = evaluateArticle110Verifier({ thresholds, isAloneExplicit: true, people: [], alternatingCare: { enabled: true, familyAllowances: true } });
     expect(result).toMatchObject({ category: null, onemDecisionStatus: "not_required" });

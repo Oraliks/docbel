@@ -1,10 +1,13 @@
 import type { Article110VerifierPerson } from "@/lib/regulatory-decision/article-110-verifier";
 
 export type FamilyTreeBranch = "alone" | "partner" | "others";
+export type DeclaredAloneSituation = "none" | "alternating_care" | "alimony";
 
 export type FamilyTreeState = {
   branch?: FamilyTreeBranch;
   people: Article110VerifierPerson[];
+  /** A qualified declaration used only by the short isolated-person orientation. */
+  declaredAloneSituation?: DeclaredAloneSituation;
   alimony?: boolean;
   alimonyLegalCondition?: boolean;
   alimonyBeneficiary?: "minor_child" | "adult_child" | "other";
@@ -33,6 +36,23 @@ export function chooseFamilyTreeBranch(branch: FamilyTreeBranch): FamilyTreeStat
 /** A branch change intentionally drops facts that cannot describe the new household. */
 export function resetFamilyTreeBranch(state: FamilyTreeState, branch: FamilyTreeBranch): FamilyTreeState {
   return state.branch === branch ? state : chooseFamilyTreeBranch(branch);
+}
+
+/** Selecting a short isolated-person path must not turn the other path into a negative fact. */
+export function setDeclaredAloneSituation(state: FamilyTreeState, declaredAloneSituation: DeclaredAloneSituation): FamilyTreeState {
+  return {
+    ...state,
+    declaredAloneSituation,
+    alimony: undefined,
+    alimonyLegalCondition: undefined,
+    alimonyBeneficiary: undefined,
+    alimonyAdultChildInNeed: undefined,
+    alternatingCare: undefined,
+    alternatingCareDaysPerWeek: undefined,
+    alternatingCareCycle: undefined,
+    alternatingCareFamilyAllowances: undefined,
+    alternatingCareChildHasRelevantIncome: undefined,
+  };
 }
 
 export function updateTreePerson(

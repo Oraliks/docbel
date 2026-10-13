@@ -51,6 +51,8 @@ export type FamilyFacts = {
   /** Explicit distinction for a household made exclusively of third parties. */
   cohousing?: { declared?: boolean };
   isolated?: {
+    /** Qualified declaration for a short orientation; it is not a substitute for C1 facts. */
+    declaredQualifiedBasis?: "alternating_care" | "alimony";
     alimony?: { paid?: boolean; admissibleBasis?: boolean; beneficiary?: "minor_child" | "adult_child" | "other"; adultChildInNeed?: boolean };
     alternatingCare?: {
       /** Average calendar days of actual presence per week, measured over the declared cycle. */
@@ -123,6 +125,8 @@ export type HouseholdAssessment = {
   evaluatedAt?: string;
   /** Alternating care fulfilling its conditions applies to every day of the week. */
   appliesAllWeek?: boolean;
+  /** Basis declared in a short isolated-person orientation, without asserted verification. */
+  declaredQualifiedBasis?: "alternating_care" | "alimony";
   pensionAssessment?: { status: "VERIFIED" | "NEEDS_DOCUMENT" | "NEEDS_INFORMATION"; grossTotal?: number; threshold?: number; document: "SPF_PENSIONS_PROOF"; proofStatus: "received" | "required" };
 };
 
@@ -198,6 +202,22 @@ export function evaluateFamilySituation(input: {
   neutralisedChildIds?: string[];
 }): HouseholdAssessment {
   if (input.facts.people.length === 0) {
+    const declaredQualifiedBasis = input.facts.isolated?.declaredQualifiedBasis;
+    if (declaredQualifiedBasis) {
+      return explainAssessment({
+        composition: "alone",
+        status: "probable",
+        expectedCategory: "A",
+        operationalArticle: "none",
+        incomeAssessment: "not_relevant",
+        monthlyPaymentAssessment: declaredQualifiedBasis === "alternating_care" ? "A_RATE" : "NEEDS_REVIEW",
+        recommendedAction: "declaration_required",
+        trigger: "c1_household_update",
+        factKeys: [],
+        sourceRuleIds: [declaredQualifiedBasis === "alternating_care" ? "situation_familiale_isole_garde_alternee" : "situation_familiale_isole_pension_alimentaire"],
+        declaredQualifiedBasis,
+      }, input.facts.asOf);
+    }
     const alimony = input.facts.isolated?.alimony;
     const alimonyAssessment = alimony?.paid === true ? ((): HouseholdAssessment => {
       const adultChildUnclear = alimony.beneficiary === "adult_child" && alimony.adultChildInNeed !== true;

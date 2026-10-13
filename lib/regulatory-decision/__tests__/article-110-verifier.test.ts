@@ -56,6 +56,22 @@ describe("Article 110 theoretical verifier", () => {
     expect(result.missingFacts).toEqual([]);
   });
 
+  it("keeps the isolated result when alternating care is explicitly declined", () => {
+    const result = evaluateArticle110Verifier({
+      thresholds,
+      isAloneExplicit: true,
+      people: [],
+      alimony: { enabled: false },
+      alternatingCare: { enabled: false },
+    });
+
+    expect(result).toMatchObject({
+      category: "N",
+      householdAssessment: { status: "probable", expectedCategory: "N", operationalArticle: "none" },
+    });
+    expect(result.missingFacts).toEqual([]);
+  });
+
   it("asks for missing alternating-care facts without a generic ONEM waiting state", () => {
     const result = evaluateArticle110Verifier({ thresholds, isAloneExplicit: true, people: [], alternatingCare: { enabled: true, familyAllowances: true } });
     expect(result).toMatchObject({ category: null, onemDecisionStatus: "not_required" });

@@ -78,13 +78,13 @@ export function article110VerifierFacts(input: Article110VerifierInput): FamilyF
         paid: input.alimony.enabled, admissibleBasis: input.alimony.legalConditionEstablished,
         beneficiary: input.alimony.beneficiary, adultChildInNeed: input.alimony.adultChildInNeed,
       },
-      alternatingCare: input.alternatingCare?.enabled === undefined ? undefined : {
+      alternatingCare: input.alternatingCare?.enabled === true ? {
         averageDaysPerWeek: input.alternatingCare.enabled ? input.alternatingCare.averageDaysPerWeek : undefined,
         cycle: input.alternatingCare.cycle,
         familyAllowances: input.alternatingCare.familyAllowances,
         childHasRelevantIncome: input.alternatingCare.childHasRelevantIncome,
         children: input.alternatingCare.children,
-      },
+      } : undefined,
     },
   };
 }

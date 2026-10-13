@@ -76,6 +76,8 @@ describe("FamilySituationTree — rendu i18n réel", () => {
     });
 
     expect(html).toContain("Au moins un enfant ouvre-t-il encore droit aux allocations familiales ?");
+    expect(html).toContain("Une précision est nécessaire");
+    expect(html).not.toContain("A — Avec charge de famille");
   });
 
   it("renders the shared ONEM review for an answered third-party household", () => {

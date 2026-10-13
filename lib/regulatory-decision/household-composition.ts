@@ -488,12 +488,12 @@ export function assessHouseholdBranch(input: {
     if (!hasRelevantIncome && activeChildIncomeNeutralisation) {
       return { ...childrenBase, status: "probable", expectedCategory: "A", operationalArticle: "none", incomeAssessment: "no_income", monthlyPaymentAssessment: "NEEDS_REVIEW", recommendedAction: action(officialOnemCode, "declaration_required") };
     }
+    if (composition.members.some((member) => member.relation === "child" && member.receivesFamilyAllowances === undefined)) {
+      return { ...childrenBase, status: "needs_information", expectedCategory: null, operationalArticle: "needs_review", incomeAssessment: "needs_review", monthlyPaymentAssessment: "NEEDS_REVIEW", recommendedAction: action(officialOnemCode, "information_required"), factKeys: composition.members.filter((member) => member.relation === "child" && member.receivesFamilyAllowances === undefined).map((member) => `${member.factKey}.receivesFamilyAllowances`) };
+    }
     if (!hasRelevantIncome) return { ...childrenBase, status: "probable", expectedCategory: "A", operationalArticle: "none", incomeAssessment: "no_income", monthlyPaymentAssessment: "NEEDS_REVIEW", recommendedAction: action(officialOnemCode, "declaration_required") };
     if (composition.members.some((member) => member.relation === "child" && member.unqualifiedProfessionalActivity)) {
       return { ...childrenBase, status: "needs_information", expectedCategory: null, operationalArticle: "needs_review", incomeAssessment: "needs_review", monthlyPaymentAssessment: "NEEDS_REVIEW", recommendedAction: action(officialOnemCode, "information_required"), factKeys: composition.members.filter((member) => member.relation === "child" && member.unqualifiedProfessionalActivity).map((member) => `${member.factKey}.professionalActivityDescription`), explanation: "L’activité indiquée pour un enfant ne permet pas encore de déterminer quels revenus doivent être retenus. Précisez sa nature." };
-    }
-    if (composition.members.some((member) => member.relation === "child" && member.receivesFamilyAllowances === undefined)) {
-      return { ...childrenBase, status: "needs_information", expectedCategory: null, operationalArticle: "needs_review", incomeAssessment: "needs_review", monthlyPaymentAssessment: "NEEDS_REVIEW", recommendedAction: action(officialOnemCode, "information_required"), factKeys: composition.members.filter((member) => member.relation === "child" && member.receivesFamilyAllowances === undefined).map((member) => `${member.factKey}.receivesFamilyAllowances`) };
     }
     return { ...childrenBase, status: "probable", expectedCategory: "B", operationalArticle: "none", incomeAssessment: "relevant", monthlyPaymentAssessment: "B_RATE", recommendedAction: action(officialOnemCode, "declaration_required") };
   }

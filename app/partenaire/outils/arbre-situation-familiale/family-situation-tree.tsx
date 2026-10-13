@@ -15,19 +15,19 @@ import { formatDate } from "@/lib/i18n/format";
 import { evaluateArticle110Verifier, type Article110VerifierInput, type Article110VerifierPerson } from "@/lib/regulatory-decision/article-110-verifier";
 import { changeTreePersonRelation, removeTreePerson, resetFamilyTreeBranch, setDeclaredAloneSituation, updateTreePerson, type FamilyTreeBranch, type FamilyTreeState } from "@/lib/family-situation-tree/interactive-flow";
 
-type Props = { thresholds: C1BaremeThresholds; initialState?: FamilyTreeState };
+type Props = { thresholds: C1BaremeThresholds; initialState?: FamilyTreeState; initialAsOf?: string };
 type T = ReturnType<typeof useTranslations>;
 type Copy = { tree: T; family: T };
 const EMPTY: FamilyTreeState = { people: [] };
 const amount = (raw: string) => { const normalized = raw.replace(/\s/g, "").replace(",", "."); const value = Number(normalized); return normalized === "" || normalized.endsWith(".") || !Number.isFinite(value) || value < 0 ? undefined : value; };
 
-export function FamilySituationTree({ thresholds, initialState = EMPTY }: Props) {
+export function FamilySituationTree({ thresholds, initialState = EMPTY, initialAsOf }: Props) {
   const t = useTranslations("public.pro.familySituationTree");
   const tFamily = useTranslations("public.pro");
   const locale = useLocale();
   const focusRef = useRef<HTMLHeadingElement>(null);
   const [state, setState] = useState<FamilyTreeState>(initialState);
-  const [asOf, setAsOf] = useState(() => new Date().toISOString().slice(0, 10));
+  const [asOf, setAsOf] = useState(() => initialAsOf ?? new Date().toISOString().slice(0, 10));
   const input = useMemo<Article110VerifierInput>(() => ({
     people: state.people, thresholds, asOf,
     isAloneExplicit: state.branch === "alone",
@@ -50,7 +50,7 @@ export function FamilySituationTree({ thresholds, initialState = EMPTY }: Props)
       {state.branch === "partner" && <Partner copy={{ tree: t, family: tFamily }} person={state.people[0]!} update={(patch) => setState((current) => updateTreePerson(current, "partner", patch))} />}
       {state.branch === "others" && <Others copy={{ tree: t, family: tFamily }} state={state} setState={setState} />}
       {result.missingFacts.length === 0 && result.householdAssessment.status !== "needs_review" && <Result t={t} locale={locale} result={result} thresholds={thresholds} />}
-      {state.branch === "others" && result.householdAssessment.status === "needs_information" && <Card className="border-amber-300"><CardHeader><CardTitle>{t("continueTitle")}</CardTitle><CardDescription>{result.reason}</CardDescription></CardHeader></Card>}
+      {(state.branch === "others" || result.missingFacts.some((fact) => fact.factKey === "bareme.coverage")) && result.householdAssessment.status === "needs_information" && <Card className="border-amber-300"><CardHeader><CardTitle>{t("continueTitle")}</CardTitle><CardDescription>{result.reason}</CardDescription></CardHeader></Card>}
       {result.householdAssessment.status === "needs_review" && !(state.branch === "partner" && state.people[0]?.relation === "partner" && state.people[0]?.partnerEstablished === undefined) && <Card className="border-amber-300"><CardHeader><CardTitle>{t("reviewTitle")}</CardTitle><CardDescription>{result.reason}</CardDescription></CardHeader></Card>}
     </>}
   </section>;

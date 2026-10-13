@@ -14,13 +14,13 @@ const thresholds = {
   source: null,
 };
 
-function renderTree(initialState?: Parameters<typeof FamilySituationTree>[0]["initialState"]) {
+function renderTree(initialState?: Parameters<typeof FamilySituationTree>[0]["initialState"], initialAsOf?: string) {
   return renderToStaticMarkup(
     // eslint-disable-next-line react/no-children-prop
     createElement(NextIntlClientProvider, {
       locale: "fr",
       messages,
-      children: createElement(FamilySituationTree, { thresholds, initialState }),
+      children: createElement(FamilySituationTree, { thresholds, initialState, initialAsOf }),
     }),
   );
 }
@@ -95,6 +95,25 @@ describe("FamilySituationTree — rendu i18n réel", () => {
 
     expect(html).toContain("Situation à examiner");
     expect(html).toContain("doit être examinée par l’ONEM");
+  });
+
+  it("explains when the selected date predates the published barème", () => {
+    const datedThresholds = { ...thresholds, source: { fileId: "april", fileName: "bareme-04-2026.xlsx", validFrom: new Date("2026-04-01") } };
+    const html = renderToStaticMarkup(
+      createElement(NextIntlClientProvider, {
+        locale: "fr",
+        messages,
+        children: createElement(FamilySituationTree, {
+          thresholds: datedThresholds,
+          initialAsOf: "2026-01-31",
+          initialState: { branch: "partner", people: [{ id: "partner", relation: "spouse", hasProfessionalIncome: true, professionalIncomeType: "employee", professionalIncomeContract: "cdi", professionalIncomeVariable: false, professionalIncomeAmount: 900, hasReplacementIncome: false }] },
+        }),
+      }),
+    );
+
+    expect(html).toContain("Une précision est nécessaire");
+    expect(html).toContain("barème publié disponible commence après la date d’évaluation choisie");
+    expect(html).not.toContain("A — Avec charge de famille");
   });
 
   it("renders the two distinct partner amounts without a C110A availability question", () => {

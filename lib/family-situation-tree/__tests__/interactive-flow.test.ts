@@ -23,6 +23,7 @@ function evaluateTree(state: FamilyTreeState, extra: Partial<Article110VerifierI
     thresholds,
     asOf: "2026-10-12",
     isAloneExplicit: state.branch === "alone",
+    multiPersonHouseholdSelected: state.branch === "others",
     isolatedDeclaration: state.declaredAloneSituation === "none" ? undefined : state.declaredAloneSituation,
     anyChildReceivesFamilyAllowances: state.anyChildReceivesFamilyAllowances,
     ...extra,
@@ -51,6 +52,16 @@ describe("interactive family tree state", () => {
       householdAssessment: { expectedCategory: "N", operationalArticle: "none" },
       missingFacts: [],
     });
+  });
+
+  it("does not turn an empty selected multi-person branch into an isolated situation", () => {
+    const result = evaluateTree(chooseFamilyTreeBranch("others"));
+
+    expect(result).toMatchObject({
+      category: null,
+      householdAssessment: { status: "needs_information", expectedCategory: null },
+    });
+    expect(result.missingFacts.map((fact) => fact.factKey)).toContain("household.people");
   });
 
   it("turns an incomplete alimony or alternating-care declaration into the next factual question", () => {
@@ -181,7 +192,7 @@ describe("interactive family tree state", () => {
     expect(withThirdIncome.householdAssessment).toMatchObject({ composition: "children_relatives_and_third_parties", expectedCategory: "B" });
   });
 
-  it("preserves a declared student occupation amount without using it as a child professional income", () => {
+  it("applies the dated child-income ceiling to a declared student occupation amount", () => {
     const state = {
       ...chooseFamilyTreeBranch("others"),
       anyChildReceivesFamilyAllowances: false,
@@ -190,7 +201,6 @@ describe("interactive family tree state", () => {
 
     expect(evaluateTree(state).householdAssessment).toMatchObject({
       expectedCategory: "A",
-      excludedStudentOccupationIncome: true,
     });
   });
 

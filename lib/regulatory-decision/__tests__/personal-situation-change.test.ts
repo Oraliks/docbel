@@ -10,6 +10,64 @@ import { decidePersonalSituation } from "../personal-situation";
 import { evaluateArticle110Verifier } from "../article-110-verifier";
 
 describe("personal situation change trace", () => {
+  it("keeps an absent C1 household inventory unknown instead of treating it as an isolated declaration", () => {
+    const facts = deriveFamilyFactsFromC1({});
+
+    expect(facts).toMatchObject({ people: [], householdDeclared: true });
+  });
+
+  it("does not calculate an isolated category from an unfinished C1 household", () => {
+    const decision = decidePersonalSituation({ "entry.dossier": { value: "changement-situation-personnelle", origin: "system" } });
+
+    expect(withPersonalSituationTrace(decision, {})?.householdAssessment).toMatchObject({
+      expectedCategory: null,
+      status: "needs_information",
+      factKeys: ["household.people"],
+    });
+  });
+
+  it("distinguishes an incomplete income inventory from explicit negative C1 answers", () => {
+    const partial = deriveFamilyFactsFromC1({
+      cohabitants: [{ lien: "epoux", typeRevenuPro: "salarie-employe", montantRevenuPro: 900 }],
+    }).people?.[0];
+    const empty = deriveFamilyFactsFromC1({
+      cohabitants: [{ lien: "epoux", typeRevenuPro: "aucun", revenuRemplacement: "aucun" }],
+    }).people?.[0];
+
+    expect(partial).toMatchObject({ incomeInventoryComplete: false });
+    expect(partial?.incomes).toEqual([expect.objectContaining({ kind: "professional", amount: 900 })]);
+    expect(empty).toMatchObject({ incomeInventoryComplete: true, incomes: [] });
+  });
+
+  it("preserves declared professional and replacement incomes without turning document statuses into facts", () => {
+    const person = deriveFamilyFactsFromC1({
+      cohabitants: [{
+        lien: "epoux",
+        typeRevenuPro: "salarie-employe",
+        montantRevenuPro: 900,
+        revenuRemplacement: "pension",
+        montantRevenuRemplacement: 500,
+        montantPensionNature: "brut",
+        preuvePension: "manquante",
+        handicapReconnu: "oui",
+        preuveHandicap: "non",
+        revenuProfessionnelVariable: "oui",
+        c110aStatut: "non-recu",
+        montantMensuelC110a: 850,
+      }],
+    }).people?.[0];
+
+    expect(person?.incomes).toEqual(expect.arrayContaining([
+      expect.objectContaining({ kind: "professional", amount: 900, monthlyAmount: 850 }),
+      expect.objectContaining({ kind: "pension", amount: 500, amountKind: "gross" }),
+    ]));
+    for (const income of person?.incomes ?? []) {
+      expect(income).not.toHaveProperty("c110aReceived");
+      expect(income).not.toHaveProperty("pensionProofAvailable");
+      expect(income).not.toHaveProperty("disabilityProofAvailable");
+    }
+  });
+
   it("keeps C1 person identifiers stable when rows are reordered", () => {
     const rows = [
       { prenom: "Anne", nom: "Martin", dateNaissance: "1980-01-01", lien: "enfant", allocationsFamiliales: "oui", typeRevenuPro: "aucun" },
@@ -87,6 +145,33 @@ describe("personal situation change trace", () => {
     });
     expect(c1?.householdAssessment?.expectedCategory).toBe(verifier.category);
     expect(c1?.householdAssessment?.expectedCategory).toBe("A");
+  });
+
+  it("returns the same spouse result for equivalent declared C1 and verifier income facts", () => {
+    const thresholds = {
+      spouseProfessionalMonthly: 1_000,
+      childProfessionalMonthly: 1_000,
+      spouseReplacementMonthly: null,
+      childReplacementMonthly: null,
+      source: null,
+    };
+    const c1 = withPersonalSituationTrace(
+      decidePersonalSituation({ "entry.dossier": { value: "changement-situation-personnelle", origin: "system" } }),
+      { cohabitants: [{ lien: "epoux", typeRevenuPro: "salarie-employe", montantRevenuPro: 900, typeContratRevenuPro: "cdi", revenuProfessionnelVariable: "non", revenuRemplacement: "aucun" }] },
+      new Date("2026-10-13T00:00:00Z"),
+      thresholds,
+    );
+    const verifier = evaluateArticle110Verifier({
+      thresholds,
+      asOf: "2026-10-13",
+      people: [{ id: "spouse", relation: "spouse", hasProfessionalIncome: true, professionalIncomeType: "employee", professionalIncomeAmount: 900, professionalIncomeContract: "cdi", professionalIncomeVariable: false, hasReplacementIncome: false }],
+    });
+
+    expect(c1?.householdAssessment).toMatchObject({
+      expectedCategory: verifier.category,
+      operationalArticle: verifier.householdAssessment.operationalArticle,
+      monthlyPaymentAssessment: verifier.householdAssessment.monthlyPaymentAssessment,
+    });
   });
   it("keeps a previous family status, current status and its own effective date", () => {
     const trace = derivePersonalSituationTrace({
@@ -306,8 +391,14 @@ describe("children-only branch and declaration events", () => {
     expect(withPersonalSituationTrace(decision(), children([{ allocationsFamiliales: "non", typeRevenuPro: "aucun" }, { allocationsFamiliales: "non", typeRevenuPro: "aucun" }]))?.householdAssessment).toMatchObject({ expectedCategory: "A" });
   });
 
-  it("4. expects B when no child has family allowances and one has relevant income", () => {
-    expect(withPersonalSituationTrace(decision(), children([{ allocationsFamiliales: "non", typeRevenuPro: "salarie-employe" }]))?.householdAssessment).toMatchObject({ expectedCategory: "B" });
+  it("4. expects B when no child has family allowances and one has an above-threshold declared income", () => {
+    expect(withPersonalSituationTrace(decision(), children([{ allocationsFamiliales: "non", typeRevenuPro: "salarie-employe", montantRevenuPro: 1_001 }]), new Date(), {
+      spouseProfessionalMonthly: null,
+      childProfessionalMonthly: 1_000,
+      spouseReplacementMonthly: null,
+      childReplacementMonthly: null,
+      source: null,
+    })?.householdAssessment).toMatchObject({ expectedCategory: "B" });
   });
 
   it("5. traces 110&1M and the declaration while another child independently keeps A", () => {

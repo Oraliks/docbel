@@ -61,11 +61,11 @@ export function addCalendarMonths(date: string, months: number): string {
  * another child's income or ends that other child's neutralisation.
  */
 export function activeFirstProfessionalIncomePersonIds(
-  people: Array<{ id: string; relation: string; incomes: Array<{ kind: string; firstProfessionalIncome?: boolean; neutralisationRequested?: boolean; startedAt?: string; studiesEndedAt?: string }> }>,
+  people: Array<{ id: string; relation: string; incomes?: Array<{ kind: string; firstProfessionalIncome?: boolean; neutralisationRequested?: boolean; startedAt?: string; studiesEndedAt?: string }> }>,
   asOf: string,
 ): string[] {
   if (!isoDate(asOf)) return [];
-  return people.flatMap((person) => person.relation === "child" ? person.incomes.flatMap((income) => {
+  return people.flatMap((person) => person.relation === "child" ? (person.incomes ?? []).flatMap((income) => {
     if (income.kind !== "professional" || income.firstProfessionalIncome !== true || income.neutralisationRequested !== true) return [];
     const startedAt = isoDate(income.startedAt);
     const studiesEndedAt = isoDate(income.studiesEndedAt);

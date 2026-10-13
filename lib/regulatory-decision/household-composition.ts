@@ -46,12 +46,17 @@ export type FamilyPerson = {
   receivesFamilyAllowances?: boolean;
   disabilityRelevant?: boolean;
   isAscendant?: boolean;
-  incomes: FamilyIncome[];
+  /** Undefined means no inventory was completed; [] is an explicit complete empty inventory. */
+  incomes?: FamilyIncome[];
+  /** False means that declared income items are partial and cannot prove an absence of other income. */
+  incomeInventoryComplete?: boolean;
 };
 
 export type FamilyFacts = {
   asOf: string;
   people: FamilyPerson[];
+  /** The user selected a multi-person household but has not declared any member yet. */
+  householdDeclared?: boolean;
   /** Explicit distinction for a household made exclusively of third parties. */
   cohousing?: { declared?: boolean };
   isolated?: {
@@ -76,16 +81,19 @@ export type HouseholdMemberFact = {
   /** Income actually received by the household member, before Article 60 treatment. */
   hasProfessionalIncome?: boolean;
   professionalIncomeAmount?: number;
+  professionalIncomeAmounts?: Array<number | undefined>;
   professionalIncomeContract?: "cdi" | "cdd" | "other";
   professionalIncomeVariable?: boolean;
   /** Evidence carried by the external ONEM C110A for the assessed month. */
   c110aReceived?: boolean;
   c110aMonthlyDeclaredIncome?: number;
   hasReplacementIncome?: boolean;
+  incomeInventoryComplete?: boolean;
   /** The income exists, but an SPF disability allowance is neutral for this decision. */
   replacementIncomeRelevantForFamilyStatus?: boolean;
   replacementIncomeType?: "pension" | "disability_allowance" | "other";
   replacementIncomeAmount?: number;
+  replacementIncomeAmounts?: Array<number | undefined>;
   pensionProofAvailable?: boolean;
   pensionGrossAmountConfirmed?: boolean;
   isAscendant?: boolean;
@@ -163,11 +171,13 @@ function explainAssessment(assessment: HouseholdAssessment, evaluatedAt: string)
 /** Turns the shared fact contract into the evaluator's compact working facts. */
 export function householdCompositionFromFamilyFacts(facts: FamilyFacts): HouseholdComposition {
   return classifyHouseholdComposition(facts.people.map((person) => {
-    const professional = person.incomes.filter((income) => income.kind === "professional" && income.active !== false);
+    const incomeInventoryComplete = person.incomeInventoryComplete !== false && person.incomes !== undefined;
+    const incomes = person.incomes ?? [];
+    const professional = incomes.filter((income) => income.kind === "professional" && income.active !== false);
     const relevantProfessional = professional.filter((income) => !income.excludedFromChildProfessionalAssessment);
-    const replacement = person.incomes.filter((income) => income.kind === "replacement" && income.active !== false);
-    const pensions = person.incomes.filter((income) => income.kind === "pension" && income.active !== false);
-    const disability = person.incomes.some((income) => income.kind === "spf_disability" && income.active !== false);
+    const replacement = incomes.filter((income) => income.kind === "replacement" && income.active !== false);
+    const pensions = incomes.filter((income) => income.kind === "pension" && income.active !== false);
+    const disability = incomes.some((income) => income.kind === "spf_disability" && income.active !== false);
     const primaryProfessional = relevantProfessional[0];
     const professionalAmount = relevantProfessional.length > 0 && relevantProfessional.every((income) => Number.isFinite(income.amount))
       ? relevantProfessional.reduce((total, income) => total + (income.amount ?? 0), 0)
@@ -180,20 +190,18 @@ export function householdCompositionFromFamilyFacts(facts: FamilyFacts): Househo
       receivesFamilyAllowances: person.receivesFamilyAllowances,
       isAscendant: person.isAscendant,
       disabilityDeclared: person.disabilityRelevant,
-      disabilityProofAvailable: person.disabilityRelevant,
-      hasProfessionalIncome: relevantProfessional.length > 0,
+      incomeInventoryComplete,
+      hasProfessionalIncome: person.incomes === undefined ? undefined : relevantProfessional.length > 0 ? true : incomeInventoryComplete ? false : undefined,
       professionalIncomeAmount: professionalAmount,
-      c110aReceived: primaryProfessional?.c110aReceived,
+      professionalIncomeAmounts: relevantProfessional.map((income) => income.amount),
       c110aMonthlyDeclaredIncome: primaryProfessional?.monthlyAmount,
       professionalIncomeContract: relevantProfessional.length === 1 && primaryProfessional?.contract !== "independent" ? primaryProfessional?.contract : relevantProfessional.length > 1 || primaryProfessional?.contract === "independent" ? "other" : undefined,
       professionalIncomeVariable: primaryProfessional?.variable,
-      hasReplacementIncome: replacement.length > 0 || pensions.length > 0 || disability,
+      hasReplacementIncome: person.incomes === undefined ? undefined : replacement.length > 0 || pensions.length > 0 || disability ? true : incomeInventoryComplete ? false : undefined,
       replacementIncomeRelevantForFamilyStatus: disability && replacement.length === 0 && pensions.length === 0 ? false : undefined,
       replacementIncomeType: pensions.length > 0 ? "pension" : disability ? "disability_allowance" : replacement.length > 0 ? "other" : undefined,
       replacementIncomeAmount: pensions.length > 0 ? pensionAmount : replacement[0]?.amount,
-      // A declared gross amount is a calculation fact. Availability of a copy is
-      // handled by the document flow and must not change the theoretical branch.
-      pensionProofAvailable: pensions.length > 0 ? true : undefined,
+      replacementIncomeAmounts: replacement.map((income) => income.amount),
       pensionGrossAmountConfirmed: pensions.length > 0 ? pensions.every((income) => income.amountKind === "gross") : undefined,
       firstProfessionalIncome: relevantProfessional.some((income) => income.firstProfessionalIncome),
       excludedStudentOccupationIncome: professional.some((income) => income.excludedFromChildProfessionalAssessment),
@@ -208,6 +216,8 @@ export function evaluateFamilySituation(input: {
   facts: FamilyFacts;
   activeChildIncomeNeutralisation: boolean;
   spouseProfessionalMonthlyThreshold?: number | null;
+  childProfessionalMonthlyThreshold?: number | null;
+  childReplacementMonthlyThreshold?: number | null;
   ascendantPensionWithChildMonthlyThreshold?: number | null;
   ascendantPensionMonthlyThreshold?: number | null;
   ascendantDisabledPensionMonthlyThreshold?: number | null;
@@ -215,6 +225,9 @@ export function evaluateFamilySituation(input: {
   neutralisedChildIds?: string[];
 }): HouseholdAssessment {
   if (input.facts.people.length === 0) {
+    if (input.facts.householdDeclared === true) {
+      return explainAssessment({ composition: "mixed_or_unsupported", status: "needs_information", expectedCategory: null, operationalArticle: "needs_review", incomeAssessment: "needs_review", monthlyPaymentAssessment: "NEEDS_REVIEW", recommendedAction: "information_required", trigger: "c1_household_update", factKeys: ["household.people"], sourceRuleIds: ["situation_familiale_composition_priorities"] }, input.facts.asOf);
+    }
     const declaredQualifiedBasis = input.facts.isolated?.declaredQualifiedBasis;
     if (declaredQualifiedBasis) {
       return explainAssessment({
@@ -293,6 +306,8 @@ export function evaluateFamilySituation(input: {
     composition: householdCompositionFromFamilyFacts(input.facts),
     activeChildIncomeNeutralisation: input.activeChildIncomeNeutralisation,
     spouseProfessionalMonthlyThreshold: input.spouseProfessionalMonthlyThreshold,
+    childProfessionalMonthlyThreshold: input.childProfessionalMonthlyThreshold,
+    childReplacementMonthlyThreshold: input.childReplacementMonthlyThreshold,
     ascendantPensionWithChildMonthlyThreshold: input.ascendantPensionWithChildMonthlyThreshold,
     ascendantPensionMonthlyThreshold: input.ascendantPensionMonthlyThreshold,
     ascendantDisabledPensionMonthlyThreshold: input.ascendantDisabledPensionMonthlyThreshold,
@@ -355,6 +370,8 @@ export function assessHouseholdBranch(input: {
   activeChildIncomeNeutralisation: boolean;
   officialOnemCode?: string;
   spouseProfessionalMonthlyThreshold?: number | null;
+  childProfessionalMonthlyThreshold?: number | null;
+  childReplacementMonthlyThreshold?: number | null;
   ascendantPensionWithChildMonthlyThreshold?: number | null;
   ascendantPensionMonthlyThreshold?: number | null;
   ascendantDisabledPensionMonthlyThreshold?: number | null;
@@ -362,7 +379,7 @@ export function assessHouseholdBranch(input: {
   neutralisedChildFactKeys?: string[];
   cohousingDeclared?: boolean;
 }): HouseholdAssessment {
-  const { composition, activeChildIncomeNeutralisation, officialOnemCode, spouseProfessionalMonthlyThreshold, baremeSource, neutralisedChildFactKeys = [], ascendantPensionWithChildMonthlyThreshold, ascendantPensionMonthlyThreshold, ascendantDisabledPensionMonthlyThreshold, cohousingDeclared } = input;
+  const { composition, activeChildIncomeNeutralisation, officialOnemCode, spouseProfessionalMonthlyThreshold, childProfessionalMonthlyThreshold, childReplacementMonthlyThreshold, baremeSource, neutralisedChildFactKeys = [], ascendantPensionWithChildMonthlyThreshold, ascendantPensionMonthlyThreshold, ascendantDisabledPensionMonthlyThreshold, cohousingDeclared } = input;
   const base = {
     composition: composition.kind,
     officialOnemCode,
@@ -411,13 +428,7 @@ export function assessHouseholdBranch(input: {
     if (fixedCdi) return { ...spouseBase, status: "probable", expectedCategory: "A", operationalArticle: "60A", incomeAssessment: "not_relevant", monthlyPaymentAssessment: "A_RATE", recommendedAction: action(officialOnemCode, "declaration_required") };
     const variableIncome = salaried.some((member) => member.professionalIncomeVariable === true);
     if (variableIncome) {
-      const c110aReceived = salaried.every((member) => member.c110aReceived === true);
       const c110aIncome = salaried.length === 1 ? salaried[0].c110aMonthlyDeclaredIncome : undefined;
-      const document = {
-        document: "C110A" as const,
-        status: c110aReceived ? "received" as const : "required" as const,
-        url: "https://www.onem.be/formulaires-attestations/c110a",
-      };
       if (!Number.isFinite(c110aIncome)) return {
         ...spouseBase,
         status: "needs_information",
@@ -425,7 +436,6 @@ export function assessHouseholdBranch(input: {
         operationalArticle: "60B",
         incomeAssessment: "relevant",
         monthlyPaymentAssessment: "NEEDS_REVIEW",
-        requiredExternalDocument: { ...document, reason: "Indiquez le revenu brut du mois concerné pour apprécier le taux mensuel." },
         recommendedAction: action(officialOnemCode, "information_required"),
       };
       const assessedC110aIncome = c110aIncome as number;
@@ -437,10 +447,6 @@ export function assessHouseholdBranch(input: {
         incomeAssessment: "relevant",
         monthlyPaymentAssessment: assessedC110aIncome <= spouseProfessionalMonthlyThreshold ? "A_RATE" : "B_RATE",
         monthlyC110aIncome: assessedC110aIncome,
-        requiredExternalDocument: {
-          ...document,
-          reason: "Le montant déclaré permet d'apprécier le taux applicable pour ce mois sans modifier le traitement de base B / 60B. Le C110A reste une pièce administrative distincte.",
-        },
         recommendedAction: action(officialOnemCode, "declaration_required"),
       };
     }
@@ -458,12 +464,28 @@ export function assessHouseholdBranch(input: {
       excludedStudentOccupationIncome: composition.members.some((member) => member.excludedStudentOccupationIncome),
     };
     const familyAllowanceChild = composition.members.some((member) => member.relation === "child" && member.receivesFamilyAllowances === true);
-    const hasRelevantIncome = composition.members.some((member) =>
-      member.relation === "child"
-      && (member.hasProfessionalIncome === true || hasRelevantReplacementIncome(member) === true)
-      && !neutralisedChildFactKeys.includes(member.factKey)
-    );
-    if (familyAllowanceChild || (!hasRelevantIncome && activeChildIncomeNeutralisation)) {
+    const children = composition.members.filter((member) => member.relation === "child");
+    const incompleteInventory = children.some((member) => !neutralisedChildFactKeys.includes(member.factKey) && (member.incomeInventoryComplete === false || member.hasProfessionalIncome === undefined || hasRelevantReplacementIncome(member) === undefined));
+    const childIncomeAssessment = children.map((member) => {
+      const professionalAmounts = neutralisedChildFactKeys.includes(member.factKey)
+        ? []
+        : member.professionalIncomeAmounts ?? (member.hasProfessionalIncome ? [member.professionalIncomeAmount] : []);
+      const replacementAmounts = member.replacementIncomeAmounts ?? (hasRelevantReplacementIncome(member) ? [member.replacementIncomeAmount] : []);
+      if (professionalAmounts.some((amount) => !Number.isFinite(amount)) || replacementAmounts.some((amount) => !Number.isFinite(amount))) return "missing" as const;
+      if (professionalAmounts.some((amount) => childProfessionalMonthlyThreshold !== null && childProfessionalMonthlyThreshold !== undefined && (amount as number) > childProfessionalMonthlyThreshold)) return "relevant" as const;
+      if (replacementAmounts.some((amount) => childReplacementMonthlyThreshold !== null && childReplacementMonthlyThreshold !== undefined && (amount as number) > childReplacementMonthlyThreshold)) return "relevant" as const;
+      if ((professionalAmounts.length > 0 && childProfessionalMonthlyThreshold === null) || (replacementAmounts.length > 0 && childReplacementMonthlyThreshold === null)) return "missing" as const;
+      // Direct legacy callers without dated child thresholds keep their former conservative result.
+      if ((professionalAmounts.length > 0 && childProfessionalMonthlyThreshold === undefined) || (replacementAmounts.length > 0 && childReplacementMonthlyThreshold === undefined)) return "relevant" as const;
+      return "not_relevant" as const;
+    });
+    const hasRelevantIncome = childIncomeAssessment.includes("relevant");
+    const missingIncomeAmount = childIncomeAssessment.includes("missing");
+    if (familyAllowanceChild) {
+      return { ...childrenBase, status: "probable", expectedCategory: "A", operationalArticle: "none", incomeAssessment: "no_income", monthlyPaymentAssessment: "NEEDS_REVIEW", recommendedAction: action(officialOnemCode, "declaration_required") };
+    }
+    if (incompleteInventory || missingIncomeAmount) return { ...childrenBase, status: "needs_information", expectedCategory: null, operationalArticle: "needs_review", incomeAssessment: "needs_review", monthlyPaymentAssessment: "NEEDS_REVIEW", recommendedAction: action(officialOnemCode, "information_required") };
+    if (!hasRelevantIncome && activeChildIncomeNeutralisation) {
       return { ...childrenBase, status: "probable", expectedCategory: "A", operationalArticle: "none", incomeAssessment: "no_income", monthlyPaymentAssessment: "NEEDS_REVIEW", recommendedAction: action(officialOnemCode, "declaration_required") };
     }
     if (!hasRelevantIncome) return { ...childrenBase, status: "probable", expectedCategory: "A", operationalArticle: "none", incomeAssessment: "no_income", monthlyPaymentAssessment: "NEEDS_REVIEW", recommendedAction: action(officialOnemCode, "declaration_required") };
@@ -493,15 +515,11 @@ export function assessHouseholdBranch(input: {
     const pensions = relatives.filter((member) => member.replacementIncomeType === "pension");
     if (pensions.length === 0) return { ...relativeBase, status: "probable", expectedCategory: "A", operationalArticle: "none", incomeAssessment: "no_income", monthlyPaymentAssessment: "A_RATE", recommendedAction: action(officialOnemCode, "declaration_required") };
     if (pensions.some((member) => member.isAscendant !== true)) return { ...relativeBase, status: "needs_review", expectedCategory: null, operationalArticle: "needs_review", incomeAssessment: "needs_review", monthlyPaymentAssessment: "NEEDS_REVIEW", recommendedAction: action(officialOnemCode, "review_required") };
-    const declaredDisabilityWithoutProof = pensions.some((member) => member.disabilityDeclared === true && member.disabilityProofAvailable !== true);
-    if (declaredDisabilityWithoutProof) return { ...relativeBase, status: "needs_information", expectedCategory: null, operationalArticle: "needs_review", incomeAssessment: "needs_review", monthlyPaymentAssessment: "NEEDS_REVIEW", recommendedAction: action(officialOnemCode, "information_required") };
     const threshold = composition.kind === "children_and_relatives"
       ? ascendantPensionWithChildMonthlyThreshold
-      : pensions.some((member) => member.disabilityProofAvailable === true)
+      : pensions.some((member) => member.disabilityDeclared === true)
         ? ascendantDisabledPensionMonthlyThreshold
         : ascendantPensionMonthlyThreshold;
-    const proofMissing = pensions.some((member) => member.pensionProofAvailable !== true);
-    if (proofMissing) return { ...relativeBase, status: "needs_information", expectedCategory: null, operationalArticle: "needs_review", incomeAssessment: "needs_review", monthlyPaymentAssessment: "NEEDS_REVIEW", recommendedAction: action(officialOnemCode, "information_required"), pensionAssessment: { status: "NEEDS_DOCUMENT", document: "SPF_PENSIONS_PROOF", proofStatus: "required" } };
     const grossAmountMissing = pensions.some((member) => member.pensionGrossAmountConfirmed !== true);
     const totalPension = pensions.reduce((sum, member) => sum + (member.replacementIncomeAmount ?? Number.NaN), 0);
     if (grossAmountMissing || !Number.isFinite(totalPension) || threshold === null || threshold === undefined) return { ...relativeBase, status: "needs_information", expectedCategory: null, operationalArticle: "needs_review", incomeAssessment: "needs_review", monthlyPaymentAssessment: "NEEDS_REVIEW", recommendedAction: action(officialOnemCode, "information_required"), pensionAssessment: { status: "NEEDS_INFORMATION", document: "SPF_PENSIONS_PROOF", proofStatus: "received" } };

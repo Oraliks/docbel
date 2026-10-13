@@ -62,6 +62,13 @@ describe("FamilySituationTree — rendu i18n réel", () => {
     expect(html).not.toContain("public.pro.");
   });
 
+  it("asks for a person after the multi-person path is selected instead of concluding isolated", () => {
+    const html = renderTree({ branch: "others", people: [] });
+
+    expect(html).toContain("Une précision est nécessaire");
+    expect(html).not.toContain("N — Isolé");
+  });
+
   it("renders the shared ONEM review for an answered third-party household", () => {
     const html = renderTree({
       branch: "others",

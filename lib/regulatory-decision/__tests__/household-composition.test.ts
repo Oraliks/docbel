@@ -94,12 +94,13 @@ describe("household composition before Article 110 branch evaluation", () => {
   it("does not neutralise every child's income when only one Article 110 period is active", () => {
     const composition = classifyHouseholdComposition([
       member("child", { factKey: "child-1", hasProfessionalIncome: true, firstProfessionalIncome: true, receivesFamilyAllowances: false }),
-      member("child", { factKey: "child-2", hasProfessionalIncome: true, receivesFamilyAllowances: false }),
+      member("child", { factKey: "child-2", hasProfessionalIncome: true, hasReplacementIncome: false, professionalIncomeAmount: 101, receivesFamilyAllowances: false }),
     ]);
     expect(assessHouseholdBranch({
       composition,
       activeChildIncomeNeutralisation: true,
       neutralisedChildFactKeys: ["child-1"],
+      childProfessionalMonthlyThreshold: 100,
     })).toMatchObject({ expectedCategory: "B" });
   });
 
@@ -158,14 +159,14 @@ describe("household composition before Article 110 branch evaluation", () => {
     const composition = classifyHouseholdComposition([
       member("spouse", { hasProfessionalIncome: true, hasReplacementIncome: false, professionalIncomeAmount: 900, professionalIncomeContract: "cdi", professionalIncomeVariable: true }),
     ]);
-    expect(assessHouseholdBranch({ composition, activeChildIncomeNeutralisation: false, spouseProfessionalMonthlyThreshold: 1000 })).toMatchObject({ expectedCategory: "B", operationalArticle: "60B", monthlyPaymentAssessment: "NEEDS_REVIEW", requiredExternalDocument: { document: "C110A", status: "required" } });
+    expect(assessHouseholdBranch({ composition, activeChildIncomeNeutralisation: false, spouseProfessionalMonthlyThreshold: 1000 })).toMatchObject({ expectedCategory: "B", operationalArticle: "60B", monthlyPaymentAssessment: "NEEDS_REVIEW" });
   });
 
-  it("uses received C110A evidence only for the monthly rate, never for the base category", () => {
-    const base = { hasProfessionalIncome: true, hasReplacementIncome: false, professionalIncomeAmount: 900, professionalIncomeContract: "cdi" as const, professionalIncomeVariable: true, c110aReceived: true };
+  it("uses the declared monthly amount only for the monthly rate, never for the base category", () => {
+    const base = { hasProfessionalIncome: true, hasReplacementIncome: false, professionalIncomeAmount: 900, professionalIncomeContract: "cdi" as const, professionalIncomeVariable: true };
     const under = classifyHouseholdComposition([member("spouse", { ...base, c110aMonthlyDeclaredIncome: 900 })]);
     const over = classifyHouseholdComposition([member("spouse", { ...base, c110aMonthlyDeclaredIncome: 1001 })]);
-    expect(assessHouseholdBranch({ composition: under, activeChildIncomeNeutralisation: false, spouseProfessionalMonthlyThreshold: 1000 })).toMatchObject({ expectedCategory: "B", operationalArticle: "60B", monthlyPaymentAssessment: "A_RATE", monthlyC110aIncome: 900, requiredExternalDocument: { status: "received" } });
+    expect(assessHouseholdBranch({ composition: under, activeChildIncomeNeutralisation: false, spouseProfessionalMonthlyThreshold: 1000 })).toMatchObject({ expectedCategory: "B", operationalArticle: "60B", monthlyPaymentAssessment: "A_RATE", monthlyC110aIncome: 900 });
     expect(assessHouseholdBranch({ composition: over, activeChildIncomeNeutralisation: false, spouseProfessionalMonthlyThreshold: 1000 })).toMatchObject({ expectedCategory: "B", operationalArticle: "60B", monthlyPaymentAssessment: "B_RATE", monthlyC110aIncome: 1001 });
   });
 
@@ -311,19 +312,19 @@ describe("household composition before Article 110 branch evaluation", () => {
     expect(assessHouseholdBranch({ composition, activeChildIncomeNeutralisation: false, ascendantPensionMonthlyThreshold: 800 })).toMatchObject({ expectedCategory: "B" });
   });
 
-  it("C. uses the special pension threshold only with official disability proof", () => {
-    const composition = classifyHouseholdComposition([member("relative", { hasProfessionalIncome: false, hasReplacementIncome: true, replacementIncomeType: "pension", replacementIncomeAmount: 850, pensionProofAvailable: true, pensionGrossAmountConfirmed: true, isAscendant: true, disabilityDeclared: true, disabilityProofAvailable: true })]);
+  it("C. uses the special pension threshold from the declared situation, not the availability of an attestation", () => {
+    const composition = classifyHouseholdComposition([member("relative", { hasProfessionalIncome: false, hasReplacementIncome: true, replacementIncomeType: "pension", replacementIncomeAmount: 850, pensionGrossAmountConfirmed: true, isAscendant: true, disabilityDeclared: true })]);
     expect(assessHouseholdBranch({ composition, activeChildIncomeNeutralisation: false, ascendantPensionMonthlyThreshold: 800, ascendantDisabledPensionMonthlyThreshold: 900 })).toMatchObject({ expectedCategory: "A" });
   });
 
-  it("D. requires review rather than applying the special threshold from a declaration alone", () => {
-    const composition = classifyHouseholdComposition([member("relative", { hasProfessionalIncome: false, hasReplacementIncome: true, replacementIncomeType: "pension", replacementIncomeAmount: 850, isAscendant: true, disabilityDeclared: true })]);
-    expect(assessHouseholdBranch({ composition, activeChildIncomeNeutralisation: false, ascendantPensionMonthlyThreshold: 800, ascendantDisabledPensionMonthlyThreshold: 900 })).toMatchObject({ status: "needs_information", expectedCategory: null });
+  it("D. does not require a disability document to apply the declared situation", () => {
+    const composition = classifyHouseholdComposition([member("relative", { hasProfessionalIncome: false, hasReplacementIncome: true, replacementIncomeType: "pension", replacementIncomeAmount: 850, pensionGrossAmountConfirmed: true, isAscendant: true, disabilityDeclared: true })]);
+    expect(assessHouseholdBranch({ composition, activeChildIncomeNeutralisation: false, ascendantPensionMonthlyThreshold: 800, ascendantDisabledPensionMonthlyThreshold: 900 })).toMatchObject({ status: "probable", expectedCategory: "A" });
   });
 
-  it("requires the SPF Pensions proof before deciding from a declared pension", () => {
+  it("uses a declared gross pension without making a document available a condition of the simulation", () => {
     const composition = classifyHouseholdComposition([member("relative", { hasProfessionalIncome: false, hasReplacementIncome: true, replacementIncomeType: "pension", replacementIncomeAmount: 500, pensionGrossAmountConfirmed: true, isAscendant: true })]);
-    expect(assessHouseholdBranch({ composition, activeChildIncomeNeutralisation: false, ascendantPensionMonthlyThreshold: 800 })).toMatchObject({ expectedCategory: null, pensionAssessment: { status: "NEEDS_DOCUMENT", document: "SPF_PENSIONS_PROOF" } });
+    expect(assessHouseholdBranch({ composition, activeChildIncomeNeutralisation: false, ascendantPensionMonthlyThreshold: 800 })).toMatchObject({ expectedCategory: "A", pensionAssessment: { status: "VERIFIED", grossTotal: 500 } });
   });
 
   it("safe-fails a net pension amount without treating it as a gross amount", () => {

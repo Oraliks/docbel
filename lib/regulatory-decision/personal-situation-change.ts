@@ -129,21 +129,31 @@ function stableC1PersonId(person: Record<string, unknown>, relation: FamilyPerso
 
 /** C1 adapter: maps declarations to the common family contract, never to a category. */
 export function deriveFamilyFactsFromC1(payload: FormPayload, asOf = new Date().toISOString().slice(0, 10)): FamilyFacts {
+  const hasCohabitantInventory = Array.isArray(payload.cohabitants);
+  const explicitlyAlone = text(payload, "statutFamilial") === "isole";
   const cohabitants = Array.isArray(payload.cohabitants) ? payload.cohabitants : [];
   return {
     asOf,
-    people: cohabitants.flatMap((entry, index) => {
-      if (!entry || typeof entry !== "object") return [{ id: `c1:row:${index}:unknown`, relation: "unknown" as const, incomes: [] }];
+    people: cohabitants.flatMap<FamilyPerson>((entry, index): FamilyPerson[] => {
+      if (!entry || typeof entry !== "object") return [{ id: `c1:row:${index}:unknown`, relation: "unknown" as const, incomeInventoryComplete: false }];
       const person = entry as Record<string, unknown>;
       const relation = RELATION_BY_C1_VALUE[typeof person.lien === "string" ? person.lien : ""] ?? "unknown";
-      const professional = typeof person.typeRevenuPro === "string" && person.typeRevenuPro !== "aucun";
-      const replacement = typeof person.revenuRemplacement === "string" && person.revenuRemplacement !== "aucun";
+      const professionalAnswer = typeof person.typeRevenuPro === "string" ? person.typeRevenuPro : undefined;
+      const replacementAnswer = typeof person.revenuRemplacement === "string" ? person.revenuRemplacement : undefined;
+      const professional = professionalAnswer !== undefined && professionalAnswer !== "aucun";
+      const replacement = replacementAnswer !== undefined && replacementAnswer !== "aucun";
       const replacementType = typeof person.revenuRemplacement === "string" ? person.revenuRemplacement : undefined;
       const incomeAmount = typeof person.montantRevenuPro === "number" ? person.montantRevenuPro : undefined;
       const replacementAmount = typeof person.montantRevenuRemplacement === "number" ? person.montantRevenuRemplacement : undefined;
       const professionalContract: FamilyIncome["contract"] = person.typeContratRevenuPro === "cdi" || person.typeContratRevenuPro === "cdd"
         ? person.typeContratRevenuPro
         : person.typeRevenuPro === "independant" ? "independent" : "other";
+      const incomes: FamilyIncome[] = [
+        ...(professional ? [{ kind: "professional" as const, active: true, amount: incomeAmount, monthlyAmount: typeof person.montantMensuelC110a === "number" ? person.montantMensuelC110a : undefined, contract: professionalContract, variable: person.revenuProfessionnelVariable === "oui" ? true : person.revenuProfessionnelVariable === "non" ? false : undefined, firstProfessionalIncome: person.premierRevenuProfessionnel === "oui", neutralisationRequested: person.demandeNeutralisationPremierRevenu === "oui", startedAt: typeof person.dateDebutPremiereActivite === "string" ? person.dateDebutPremiereActivite : undefined, studiesEndedAt: typeof person.dateFinEtudes === "string" ? person.dateFinEtudes : undefined }] : []),
+        ...(replacementType === "allocation-handicap" ? [{ kind: "spf_disability" as const, active: true }] : []),
+        ...(replacementType === "pension" ? [{ kind: "pension" as const, active: true, amount: replacementAmount, amountKind: person.montantPensionNature === "brut" ? "gross" as const : person.montantPensionNature === "net" ? "net" as const : undefined }] : []),
+        ...(replacement && replacementType !== "pension" && replacementType !== "allocation-handicap" ? [{ kind: "replacement" as const, active: true, amount: replacementAmount }] : []),
+      ];
       return [{
         id: stableC1PersonId(person, relation, index),
         relation,
@@ -151,15 +161,15 @@ export function deriveFamilyFactsFromC1(payload: FormPayload, asOf = new Date().
         ...(person.allocationsFamiliales === "oui" || person.allocationsFamiliales === "non" ? { receivesFamilyAllowances: person.allocationsFamiliales === "oui" } : {}),
         ...(person.handicapReconnu === "oui" || person.handicapReconnu === "non" ? { disabilityRelevant: person.handicapReconnu === "oui" } : {}),
         ...(person.lien === "pere" || person.lien === "mere" ? { isAscendant: true } : {}),
-        incomes: [
-          ...(professional ? [{ kind: "professional" as const, active: true, amount: incomeAmount, monthlyAmount: typeof person.montantMensuelC110a === "number" ? person.montantMensuelC110a : undefined, contract: professionalContract, variable: person.revenuProfessionnelVariable === "oui" ? true : person.revenuProfessionnelVariable === "non" ? false : undefined, firstProfessionalIncome: person.premierRevenuProfessionnel === "oui", neutralisationRequested: person.demandeNeutralisationPremierRevenu === "oui", startedAt: typeof person.dateDebutPremiereActivite === "string" ? person.dateDebutPremiereActivite : undefined, studiesEndedAt: typeof person.dateFinEtudes === "string" ? person.dateFinEtudes : undefined }] : []),
-          ...(replacementType === "allocation-handicap" ? [{ kind: "spf_disability" as const, active: true }] : []),
-          ...(replacementType === "pension" ? [{ kind: "pension" as const, active: true, amount: replacementAmount, amountKind: person.montantPensionNature === "brut" ? "gross" as const : person.montantPensionNature === "net" ? "net" as const : undefined }] : []),
-          ...(replacement && replacementType !== "pension" && replacementType !== "allocation-handicap" ? [{ kind: "replacement" as const, active: true, amount: replacementAmount }] : []),
-        ],
+        // An omitted answer is not an explicit absence of income. Keep declared
+        // items, but mark the inventory partial so the common calculation never
+        // turns an unfinished C1 line into a no-income household.
+        incomeInventoryComplete: professionalAnswer !== undefined && replacementAnswer !== undefined,
+        incomes,
       }];
     }),
-    ...(text(payload, "statutFamilial") === "isole" ? {
+    ...(!hasCohabitantInventory && !explicitlyAlone ? { householdDeclared: true } : {}),
+    ...(explicitlyAlone ? {
       isolated: {
         ...(text(payload, "pensionAlimentaire") === "oui" ? {
           alimony: {

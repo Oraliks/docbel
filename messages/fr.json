@@ -4863,7 +4863,7 @@
         "summaryToComplete": "Informations à compléter",
         "childrenFamilyAllowanceQuestion": "Au moins un enfant ouvre-t-il encore droit aux allocations familiales ?",
         "studentOccupationContract": "Job étudiant — contrat d’occupation d’étudiant",
-        "studentOccupationHelp": "Le montant reste déclaré, mais ce contrat d’occupation d’étudiant n’est pas retenu comme revenu professionnel de l’enfant dans cette orientation. Cela ne détermine pas le droit aux allocations familiales ni le régime social ou fiscal.",
+          "studentOccupationHelp": "Le montant est pris en compte dans l’orientation lorsque le plafond applicable aux revenus de l’enfant est dépassé. Cela ne détermine pas le droit aux allocations familiales ni le régime social ou fiscal.",
         "childProfessionalAmount": "Revenu professionnel brut pour le mois évalué (€)",
         "otherActivityDescription": "Précisez l’activité",
         "otherActivityAmount": "Revenu professionnel brut pour le mois évalué (€)",

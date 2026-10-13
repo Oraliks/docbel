@@ -44,6 +44,8 @@ export type Article110VerifierInput = {
   officialOnemCode?: string;
   /** Asked only for a household composed exclusively of third parties. */
   cohousing?: boolean;
+  /** The multi-person branch was selected even though no person has been declared yet. */
+  multiPersonHouseholdSelected?: boolean;
   /** One declared household-level fact: at least one child still opens family-allowance rights. */
   anyChildReceivesFamilyAllowances?: boolean;
   /** A short-path declaration; detailed C1 facts remain available independently. */
@@ -52,7 +54,7 @@ export type Article110VerifierInput = {
   alternatingCare?: { enabled?: boolean; averageDaysPerWeek?: number; cycle?: "monthly" | "quarterly" | "semiannual" | "annual"; familyAllowances?: boolean; childHasRelevantIncome?: boolean; children?: Array<{ id: string; familyAllowances?: boolean; hasRelevantIncome?: boolean }> };
 };
 
-function toIncome(person: Article110VerifierPerson): FamilyIncome[] {
+function toIncome(person: Article110VerifierPerson): { incomes?: FamilyIncome[]; incomeInventoryComplete: boolean } {
   const incomes: FamilyIncome[] = [];
   if (person.hasProfessionalIncome === true) incomes.push({
     kind: "professional", amount: person.professionalIncomeAmount, active: true,
@@ -60,9 +62,7 @@ function toIncome(person: Article110VerifierPerson): FamilyIncome[] {
     variable: person.professionalIncomeVariable, firstProfessionalIncome: person.firstProfessionalIncome,
     neutralisationRequested: person.neutralisationRequested, startedAt: person.firstProfessionalIncomeStartedAt,
     studiesEndedAt: person.studiesEndedAt,
-    c110aReceived: person.c110aReceived,
     monthlyAmount: person.c110aMonthlyDeclaredIncome,
-    excludedFromChildProfessionalAssessment: person.relation === "child" && person.professionalIncomeType === "student_occupation_contract",
     professionalActivityType: person.professionalIncomeType,
     professionalActivityDescription: person.professionalIncomeOtherDescription,
   });
@@ -70,20 +70,22 @@ function toIncome(person: Article110VerifierPerson): FamilyIncome[] {
     kind: person.replacementIncomeType === "pension" ? "pension" : person.replacementIncomeType === "disability_allowance" ? "spf_disability" : "replacement",
     amount: person.replacementIncomeAmount, amountKind: person.replacementIncomeType === "pension" ? "gross" : undefined, active: true,
   });
-  return incomes;
+  const incomeInventoryComplete = person.hasProfessionalIncome !== undefined && person.hasReplacementIncome !== undefined;
+  return { ...(incomes.length > 0 ? { incomes } : incomeInventoryComplete ? { incomes } : {}), incomeInventoryComplete };
 }
 
 export function article110VerifierFacts(input: Article110VerifierInput): FamilyFacts {
   const firstChildId = input.people.find((person) => person.relation === "child")?.id;
   return {
     asOf: input.asOf ?? new Date().toISOString().slice(0, 10),
+    householdDeclared: input.isAloneExplicit ? undefined : input.multiPersonHouseholdSelected,
     people: input.isAloneExplicit ? [] : input.people.map((person): FamilyPerson => ({
       id: person.id, relation: person.relation, partnerEstablished: person.partnerEstablished,
       isAscendant: person.isAscendant,
       receivesFamilyAllowances: person.id === firstChildId && input.anyChildReceivesFamilyAllowances !== undefined
         ? input.anyChildReceivesFamilyAllowances
         : person.receivesFamilyAllowances,
-      incomes: toIncome(person),
+      ...toIncome(person),
     })),
     cohousing: input.cohousing === undefined ? undefined : { declared: input.cohousing },
     isolated: {
@@ -121,6 +123,8 @@ export function evaluateArticle110Verifier(input: Article110VerifierInput) {
     activeChildIncomeNeutralisation: activeFirstProfessionalIncomePersonIds(facts.people, facts.asOf).length > 0,
     neutralisedChildIds: activeFirstProfessionalIncomePersonIds(facts.people, facts.asOf),
     spouseProfessionalMonthlyThreshold: input.thresholds.spouseProfessionalMonthly,
+    childProfessionalMonthlyThreshold: input.thresholds.childProfessionalMonthly,
+    childReplacementMonthlyThreshold: input.thresholds.childReplacementMonthly,
     ascendantPensionWithChildMonthlyThreshold: input.thresholds.ascendantPensionWithChildMonthly,
     ascendantPensionMonthlyThreshold: input.thresholds.ascendantPensionMonthly,
     ascendantDisabledPensionMonthlyThreshold: input.thresholds.ascendantDisabledPensionMonthly,

@@ -69,6 +69,15 @@ describe("FamilySituationTree — rendu i18n réel", () => {
     expect(html).not.toContain("N — Isolé");
   });
 
+  it("keeps the family-allowance question available for a child with an explicit absence of income", () => {
+    const html = renderTree({
+      branch: "others",
+      people: [{ id: "child", relation: "child", hasProfessionalIncome: false, hasReplacementIncome: false }],
+    });
+
+    expect(html).toContain("Au moins un enfant ouvre-t-il encore droit aux allocations familiales ?");
+  });
+
   it("renders the shared ONEM review for an answered third-party household", () => {
     const html = renderTree({
       branch: "others",

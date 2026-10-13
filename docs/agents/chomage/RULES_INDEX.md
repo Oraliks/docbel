@@ -64,6 +64,7 @@
 | `situation_familiale_definitions` | to_verify / official | T147 actuelle vérifiée ; aucune qualification individuelle implémentée |
 | `situation_familiale_impact_montant` | active / official | 2e période = forfait selon catégorie familiale |
 | `situation_familiale_revenu_enfant_premier_emploi` | active / official | Neutralisation temporaire de 12 mois ; échéance 110&1V à réévaluer |
+| `situation_familiale_revenu_enfant_contrat_etudiant` | active / official | Contrat d'occupation d'étudiant déclaré : montant conservé, exclu uniquement de l'examen du revenu de l'enfant |
 | `situation_familiale_composition_priorities` | active / official | Composition complète avant branche ; conjoint/partenaire prioritaire |
 | `situation_familiale_conjoint_revenu_am60` | active / official | AM art. 60 : revenu du conjoint/partenaire, plafond publié et examen 60A/60B |
 | `situation_familiale_third_parties` | active / official | Tiers : revenus pertinents évalués sans assimilation à un partenaire |

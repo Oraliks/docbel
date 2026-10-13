@@ -3,7 +3,7 @@ import type { Article110VerifierInput } from "@/lib/regulatory-decision/article-
 import { article110VerifierFacts, evaluateArticle110Verifier } from "@/lib/regulatory-decision/article-110-verifier";
 import type { C1BaremeThresholds } from "@/lib/baremes/c1-thresholds";
 import { evaluateFamilySituation } from "@/lib/regulatory-decision/household-composition";
-import { chooseFamilyTreeBranch, resetFamilyTreeBranch, setDeclaredAloneSituation, updateTreePerson, type FamilyTreeState } from "../interactive-flow";
+import { chooseFamilyTreeBranch, resetFamilyTreeBranch, setDeclaredAloneSituation, setTreeProfessionalIncomeType, updateTreePerson, type FamilyTreeState } from "../interactive-flow";
 
 const thresholds: C1BaremeThresholds = {
   spouseProfessionalMonthly: 1_000,
@@ -24,6 +24,7 @@ function evaluateTree(state: FamilyTreeState, extra: Partial<Article110VerifierI
     asOf: "2026-10-12",
     isAloneExplicit: state.branch === "alone",
     isolatedDeclaration: state.declaredAloneSituation === "none" ? undefined : state.declaredAloneSituation,
+    anyChildReceivesFamilyAllowances: state.anyChildReceivesFamilyAllowances,
     ...extra,
   });
 }
@@ -178,6 +179,31 @@ describe("interactive family tree state", () => {
     const withThirdIncome = evaluateTree({ ...base, people: people.map((person) => person.id === "friend" ? { ...person, hasProfessionalIncome: true } : person) });
     expect(withoutThirdIncome.householdAssessment).toMatchObject({ composition: "children_relatives_and_third_parties", expectedCategory: "A" });
     expect(withThirdIncome.householdAssessment).toMatchObject({ composition: "children_relatives_and_third_parties", expectedCategory: "B" });
+  });
+
+  it("preserves a declared student occupation amount without using it as a child professional income", () => {
+    const state = {
+      ...chooseFamilyTreeBranch("others"),
+      anyChildReceivesFamilyAllowances: false,
+      people: [{ id: "child", relation: "child" as const, hasProfessionalIncome: true, professionalIncomeType: "student_occupation_contract" as const, professionalIncomeAmount: 450, hasReplacementIncome: false }],
+    };
+
+    expect(evaluateTree(state).householdAssessment).toMatchObject({
+      expectedCategory: "A",
+      excludedStudentOccupationIncome: true,
+    });
+  });
+
+  it("clears incompatible professional facts when the activity changes", () => {
+    const state = updateTreePerson({
+      ...chooseFamilyTreeBranch("others"),
+      people: [{ id: "child", relation: "child" as const, hasProfessionalIncome: true, professionalIncomeType: "employee" as const, professionalIncomeAmount: 500, professionalIncomeContract: "cdi", professionalIncomeVariable: true, c110aMonthlyDeclaredIncome: 480 }],
+    }, "child", {});
+
+    expect(setTreeProfessionalIncomeType(state, "child", "student_occupation_contract").people[0]).toMatchObject({
+      professionalIncomeType: "student_occupation_contract",
+    });
+    expect(setTreeProfessionalIncomeType(state, "child", "student_occupation_contract").people[0]).toMatchObject({ professionalIncomeAmount: undefined, professionalIncomeContract: undefined, professionalIncomeVariable: undefined, c110aMonthlyDeclaredIncome: undefined });
   });
 
   it("uses the shared co-housing fact rather than an isolated UI rule", () => {

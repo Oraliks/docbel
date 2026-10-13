@@ -19,7 +19,9 @@ export type Article110VerifierPerson = {
   receivesFamilyAllowances?: boolean;
   hasProfessionalIncome?: boolean;
   professionalIncomeAmount?: number;
-  professionalIncomeType?: "employee" | "independent" | "other";
+  professionalIncomeType?: "employee" | "independent" | "student_occupation_contract" | "other";
+  /** Free-text detail required when the declared professional activity is "other". */
+  professionalIncomeOtherDescription?: string;
   professionalIncomeContract?: "cdi" | "cdd" | "other";
   professionalIncomeVariable?: boolean;
   /** Availability and amount declared on the C110A for the assessed month. */
@@ -42,6 +44,8 @@ export type Article110VerifierInput = {
   officialOnemCode?: string;
   /** Asked only for a household composed exclusively of third parties. */
   cohousing?: boolean;
+  /** One declared household-level fact: at least one child still opens family-allowance rights. */
+  anyChildReceivesFamilyAllowances?: boolean;
   /** A short-path declaration; detailed C1 facts remain available independently. */
   isolatedDeclaration?: "alternating_care" | "alimony";
   alimony?: { enabled?: boolean; legalConditionEstablished?: boolean; beneficiary?: "minor_child" | "adult_child" | "other"; adultChildInNeed?: boolean };
@@ -58,6 +62,9 @@ function toIncome(person: Article110VerifierPerson): FamilyIncome[] {
     studiesEndedAt: person.studiesEndedAt,
     c110aReceived: person.c110aReceived,
     monthlyAmount: person.c110aMonthlyDeclaredIncome,
+    excludedFromChildProfessionalAssessment: person.relation === "child" && person.professionalIncomeType === "student_occupation_contract",
+    professionalActivityType: person.professionalIncomeType,
+    professionalActivityDescription: person.professionalIncomeOtherDescription,
   });
   if (person.hasReplacementIncome === true) incomes.push({
     kind: person.replacementIncomeType === "pension" ? "pension" : person.replacementIncomeType === "disability_allowance" ? "spf_disability" : "replacement",
@@ -67,11 +74,15 @@ function toIncome(person: Article110VerifierPerson): FamilyIncome[] {
 }
 
 export function article110VerifierFacts(input: Article110VerifierInput): FamilyFacts {
+  const firstChildId = input.people.find((person) => person.relation === "child")?.id;
   return {
     asOf: input.asOf ?? new Date().toISOString().slice(0, 10),
     people: input.isAloneExplicit ? [] : input.people.map((person): FamilyPerson => ({
       id: person.id, relation: person.relation, partnerEstablished: person.partnerEstablished,
-      isAscendant: person.isAscendant, receivesFamilyAllowances: person.receivesFamilyAllowances,
+      isAscendant: person.isAscendant,
+      receivesFamilyAllowances: person.id === firstChildId && input.anyChildReceivesFamilyAllowances !== undefined
+        ? input.anyChildReceivesFamilyAllowances
+        : person.receivesFamilyAllowances,
       incomes: toIncome(person),
     })),
     cohousing: input.cohousing === undefined ? undefined : { declared: input.cohousing },

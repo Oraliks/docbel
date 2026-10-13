@@ -3,7 +3,7 @@ import type { Article110VerifierInput } from "@/lib/regulatory-decision/article-
 import { article110VerifierFacts, evaluateArticle110Verifier } from "@/lib/regulatory-decision/article-110-verifier";
 import type { C1BaremeThresholds } from "@/lib/baremes/c1-thresholds";
 import { evaluateFamilySituation } from "@/lib/regulatory-decision/household-composition";
-import { chooseFamilyTreeBranch, resetFamilyTreeBranch, updateTreePerson, type FamilyTreeState } from "../interactive-flow";
+import { chooseFamilyTreeBranch, resetFamilyTreeBranch, setDeclaredAloneSituation, updateTreePerson, type FamilyTreeState } from "../interactive-flow";
 
 const thresholds: C1BaremeThresholds = {
   spouseProfessionalMonthly: 1_000,
@@ -23,6 +23,7 @@ function evaluateTree(state: FamilyTreeState, extra: Partial<Article110VerifierI
     thresholds,
     asOf: "2026-10-12",
     isAloneExplicit: state.branch === "alone",
+    isolatedDeclaration: state.declaredAloneSituation === "none" ? undefined : state.declaredAloneSituation,
     ...extra,
   });
 }
@@ -60,6 +61,24 @@ describe("interactive family tree state", () => {
       "isolated.alternatingCare.averageDaysPerWeek",
       "isolated.alternatingCare.cycle",
     ]));
+  });
+
+  it("keeps only the selected qualified isolated declaration in the simulation", () => {
+    const care = setDeclaredAloneSituation({
+      ...chooseFamilyTreeBranch("alone"),
+      alimony: true,
+      alimonyLegalCondition: true,
+      alternatingCare: true,
+      alternatingCareDaysPerWeek: 2,
+    }, "alternating_care");
+    const alimony = setDeclaredAloneSituation(care, "alimony");
+
+    expect(care).toMatchObject({ declaredAloneSituation: "alternating_care" });
+    expect(care.alimony).toBeUndefined();
+    expect(care.alternatingCare).toBeUndefined();
+    expect(evaluateTree(care)).toMatchObject({ category: "A", householdAssessment: { declaredQualifiedBasis: "alternating_care" } });
+    expect(alimony).toMatchObject({ declaredAloneSituation: "alimony" });
+    expect(evaluateTree(alimony)).toMatchObject({ category: "A", householdAssessment: { declaredQualifiedBasis: "alimony" } });
   });
 
   it("delegates a partner without income to the shared A result", () => {

@@ -42,6 +42,8 @@ export type Article110VerifierInput = {
   officialOnemCode?: string;
   /** Asked only for a household composed exclusively of third parties. */
   cohousing?: boolean;
+  /** A short-path declaration; detailed C1 facts remain available independently. */
+  isolatedDeclaration?: "alternating_care" | "alimony";
   alimony?: { enabled?: boolean; legalConditionEstablished?: boolean; beneficiary?: "minor_child" | "adult_child" | "other"; adultChildInNeed?: boolean };
   alternatingCare?: { enabled?: boolean; averageDaysPerWeek?: number; cycle?: "monthly" | "quarterly" | "semiannual" | "annual"; familyAllowances?: boolean; childHasRelevantIncome?: boolean; children?: Array<{ id: string; familyAllowances?: boolean; hasRelevantIncome?: boolean }> };
 };
@@ -74,6 +76,7 @@ export function article110VerifierFacts(input: Article110VerifierInput): FamilyF
     })),
     cohousing: input.cohousing === undefined ? undefined : { declared: input.cohousing },
     isolated: {
+      declaredQualifiedBasis: input.isolatedDeclaration,
       alimony: input.alimony?.enabled === undefined ? undefined : {
         paid: input.alimony.enabled, admissibleBasis: input.alimony.legalConditionEstablished,
         beneficiary: input.alimony.beneficiary, adultChildInNeed: input.alimony.adultChildInNeed,

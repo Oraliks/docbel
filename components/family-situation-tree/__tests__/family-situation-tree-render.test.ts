@@ -34,6 +34,24 @@ describe("FamilySituationTree — rendu i18n réel", () => {
     expect(html).not.toContain("public.pro.");
   });
 
+  it("renders one qualified declaration choice for a person living alone", () => {
+    const html = renderTree({ branch: "alone", people: [] });
+
+    expect(html).toContain("Une situation particulière s’applique-t-elle ?");
+    expect(html).toContain("Garde / hébergement alterné répondant aux conditions");
+    expect(html).toContain("Pension alimentaire versée sur une base juridique applicable");
+    expect(html).not.toContain("Nombre moyen de jours calendrier par semaine");
+    expect(html).not.toContain("Bénéficiaire");
+  });
+
+  it("renders the declared-condition explanation for the selected isolated basis", () => {
+    const html = renderTree({ branch: "alone", people: [], declaredAloneSituation: "alternating_care" });
+
+    expect(html).toContain("Selon votre déclaration d’hébergement alterné répondant aux conditions");
+    expect(html).not.toContain("Vous déclarez payer effectivement une pension alimentaire");
+    expect(html).not.toContain("Taux du mois renvoyé par le socle");
+  });
+
   it("renders the unanswered partner question as an accessible choice, not a review panel", () => {
     const html = renderTree({ branch: "partner", people: [{ id: "partner", relation: "partner", label: "partner" }] });
 

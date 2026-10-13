@@ -79,7 +79,7 @@ describe("FamilySituationTree — rendu i18n réel", () => {
     expect(html).toContain("doit être examinée par l’ONEM");
   });
 
-  it("renders the variable-income amount before the separate C110A availability choice", () => {
+  it("renders the two distinct partner amounts without a C110A availability question", () => {
     const html = renderTree({
       branch: "partner",
       people: [{
@@ -95,10 +95,9 @@ describe("FamilySituationTree — rendu i18n réel", () => {
       }],
     });
 
-    const monthlyIncome = html.indexOf("Revenu brut du mois concerné");
-    const c110a = html.indexOf("Le C110A est-il disponible ?");
-    expect(monthlyIncome).toBeGreaterThan(-1);
-    expect(c110a).toBeGreaterThan(monthlyIncome);
+    expect(html).toContain("Revenu professionnel brut de référence (€)");
+    expect(html).toContain("Revenu professionnel brut du mois évalué (€)");
+    expect(html).not.toContain("Le C110A est-il disponible ?");
     expect(html).not.toContain("public.pro.");
   });
 });

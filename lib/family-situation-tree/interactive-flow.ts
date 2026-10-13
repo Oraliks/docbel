@@ -19,6 +19,8 @@ export type FamilyTreeState = {
   alternatingCareChildHasRelevantIncome?: boolean;
   cohousing?: boolean;
   cohousingRecognition?: boolean;
+  /** Declared once for the whole children branch when it can change the result. */
+  anyChildReceivesFamilyAllowances?: boolean;
 };
 
 /** UI-only state transitions. Categories and thresholds always remain in the shared verifier. */
@@ -61,6 +63,23 @@ export function updateTreePerson(
   patch: Partial<Article110VerifierPerson>,
 ): FamilyTreeState {
   return { ...state, people: state.people.map((person) => person.id === id ? { ...person, ...patch } : person) };
+}
+
+/** An activity-type change drops details that belong only to the former activity. */
+export function setTreeProfessionalIncomeType(
+  state: FamilyTreeState,
+  id: string,
+  professionalIncomeType: NonNullable<Article110VerifierPerson["professionalIncomeType"]>,
+): FamilyTreeState {
+  return updateTreePerson(state, id, {
+    professionalIncomeType,
+    professionalIncomeOtherDescription: undefined,
+    professionalIncomeAmount: undefined,
+    professionalIncomeContract: undefined,
+    professionalIncomeVariable: undefined,
+    c110aReceived: undefined,
+    c110aMonthlyDeclaredIncome: undefined,
+  });
 }
 
 /** Removing a household member also removes every fact attached to that person. */

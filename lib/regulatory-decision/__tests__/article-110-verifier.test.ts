@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { evaluateArticle110Verifier } from "../article-110-verifier";
+import { article110VerifierFacts, evaluateArticle110Verifier } from "../article-110-verifier";
 
 const thresholds = {
   spouseProfessionalMonthly: 1000,
@@ -43,6 +43,24 @@ describe("Article 110 theoretical verifier", () => {
       monthlyPaymentAssessment: "A_RATE",
       monthlyC110aIncome: 900,
     });
+  });
+
+  it("keeps a declared student occupation amount while excluding it from the child's professional-income assessment", () => {
+    const result = evaluateArticle110Verifier({
+      thresholds,
+      anyChildReceivesFamilyAllowances: false,
+      people: [{ id: "child", relation: "child", hasProfessionalIncome: true, professionalIncomeType: "student_occupation_contract", professionalIncomeAmount: 450, hasReplacementIncome: false }],
+    });
+
+    expect(result.householdAssessment).toMatchObject({
+      expectedCategory: "A",
+      excludedStudentOccupationIncome: true,
+      sourceRuleIds: expect.arrayContaining(["situation_familiale_revenu_enfant_contrat_etudiant"]),
+    });
+    expect(article110VerifierFacts({
+      thresholds,
+      people: [{ id: "child", relation: "child", hasProfessionalIncome: true, professionalIncomeType: "student_occupation_contract", professionalIncomeAmount: 450 }],
+    }).people[0].incomes).toMatchObject([{ amount: 450, excludedFromChildProfessionalAssessment: true }]);
   });
 
   it("uses the same alternating-care result as the common calculation", () => {

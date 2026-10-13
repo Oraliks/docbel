@@ -93,8 +93,8 @@ describe("household composition before Article 110 branch evaluation", () => {
 
   it("does not neutralise every child's income when only one Article 110 period is active", () => {
     const composition = classifyHouseholdComposition([
-      member("child", { factKey: "child-1", hasProfessionalIncome: true, firstProfessionalIncome: true }),
-      member("child", { factKey: "child-2", hasProfessionalIncome: true }),
+      member("child", { factKey: "child-1", hasProfessionalIncome: true, firstProfessionalIncome: true, receivesFamilyAllowances: false }),
+      member("child", { factKey: "child-2", hasProfessionalIncome: true, receivesFamilyAllowances: false }),
     ]);
     expect(assessHouseholdBranch({
       composition,

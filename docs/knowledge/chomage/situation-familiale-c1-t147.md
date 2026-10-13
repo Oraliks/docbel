@@ -189,6 +189,36 @@ related_topics:
 ```
 
 ```yaml
+rule_id: situation_familiale_revenu_enfant_contrat_etudiant
+theme: situation_familiale
+effective_from: unknown
+source_name: ONEM — formulaire C1 crédit-temps, rubrique « situation familiale »
+source_url: https://www.onem.be/file/cc73d96153bbd5448a56f19d925d05b1379c7f21/577956c3877236b0c91fa85d6bc06caa6b31bdd9/c1-ct-cct103ter-06-17-2024-05-24-fr.pdf
+base_legale: >
+  Portée limitée de la mention administrative ONEM : pour l'enfant concerné, le revenu brut
+  professionnel à déclarer exclut le travail d'étudiant. Cette orientation ne permet pas de
+  statuer sur les allocations familiales ni sur des plafonds sociaux ou fiscaux.
+last_verified: 2026-10-13
+confidence: official
+status: active
+summary: >
+  Lorsqu'un utilisateur déclare explicitement un contrat d'occupation d'étudiant pour un enfant,
+  le montant est conservé mais n'est pas retenu pour l'examen du revenu professionnel de cet
+  enfant au titre de l'article 110. Cette exception ne s'étend pas à une simple qualité
+  d'étudiant ou à une autre forme de contrat.
+agent_instruction: >
+  Ne jamais déduire les allocations familiales, un quota d'heures, une qualification sociale ou
+  fiscale, ni une catégorie familiale à partir du seul contrat. Conserver le montant déclaré et
+  demander une précision pour toute autre activité.
+red_flags:
+  - rf_situation_familiale_ambigue
+related_forms:
+  - C1
+related_topics:
+  - chomage_complet
+```
+
+```yaml
 rule_id: situation_familiale_composition_priorities
 theme: situation_familiale
 effective_from: unknown

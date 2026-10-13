@@ -184,6 +184,29 @@ describe("household composition before Article 110 branch evaluation", () => {
     expect(assessHouseholdBranch({ composition, activeChildIncomeNeutralisation: false })).toMatchObject({ expectedCategory: null, operationalArticle: "needs_review", status: "needs_information" });
   });
 
+  it("does not apply a later barème to a threshold-dependent historical income", () => {
+    const assessment = evaluateFamilySituation({
+      facts: {
+        asOf: "2026-01-31",
+        people: [{
+          id: "spouse",
+          relation: "spouse",
+          incomes: [{ kind: "professional", active: true, amount: 900, contract: "cdi", variable: false }],
+        }],
+      },
+      activeChildIncomeNeutralisation: false,
+      spouseProfessionalMonthlyThreshold: 1_000,
+      baremeSource: { fileId: "april", fileName: "bareme-04-2026.xlsx", validFrom: new Date("2026-04-01") },
+    });
+
+    expect(assessment).toMatchObject({
+      status: "needs_information",
+      expectedCategory: null,
+      factKeys: ["bareme.coverage"],
+      sourceRuleIds: ["bareme_date_not_covered"],
+    });
+  });
+
   it("recomputes when the declared contract or income changes", () => {
     const fixed = classifyHouseholdComposition([
       member("spouse", { hasProfessionalIncome: true, hasReplacementIncome: false, professionalIncomeAmount: 900, professionalIncomeContract: "cdi", professionalIncomeVariable: false }),

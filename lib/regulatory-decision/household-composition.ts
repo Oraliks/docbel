@@ -224,6 +224,32 @@ export function evaluateFamilySituation(input: {
   baremeSource?: { fileId: string; fileName: string; validFrom: Date | null } | null;
   neutralisedChildIds?: string[];
 }): HouseholdAssessment {
+  const baremeValidFrom = input.baremeSource?.validFrom?.toISOString().slice(0, 10);
+  const hasIncomeRequiringADatedThreshold = input.facts.people.some((person) => person.incomes?.some((income) => (
+    income.active !== false && (income.kind === "professional" || income.kind === "replacement" || income.kind === "pension")
+  )));
+  const hasIndependentChildBasis = input.facts.people.some((person) => person.relation === "child" && person.receivesFamilyAllowances === true)
+    || input.activeChildIncomeNeutralisation;
+  if (
+    baremeValidFrom !== undefined
+    && input.facts.asOf < baremeValidFrom
+    && hasIncomeRequiringADatedThreshold
+    && !hasIndependentChildBasis
+  ) {
+    return explainAssessment({
+      composition: householdCompositionFromFamilyFacts(input.facts).kind,
+      status: "needs_information",
+      expectedCategory: null,
+      operationalArticle: "needs_review",
+      incomeAssessment: "needs_review",
+      monthlyPaymentAssessment: "NEEDS_REVIEW",
+      recommendedAction: "information_required",
+      trigger: "c1_household_update",
+      factKeys: ["bareme.coverage"],
+      sourceRuleIds: ["bareme_date_not_covered"],
+      explanation: "Le barème publié disponible commence après la date d’évaluation choisie. Une qualification fondée sur ce revenu nécessite le barème applicable à cette date.",
+    }, input.facts.asOf);
+  }
   if (input.facts.people.length === 0) {
     if (input.facts.householdDeclared === true) {
       return explainAssessment({ composition: "mixed_or_unsupported", status: "needs_information", expectedCategory: null, operationalArticle: "needs_review", incomeAssessment: "needs_review", monthlyPaymentAssessment: "NEEDS_REVIEW", recommendedAction: "information_required", trigger: "c1_household_update", factKeys: ["household.people"], sourceRuleIds: ["situation_familiale_composition_priorities"] }, input.facts.asOf);

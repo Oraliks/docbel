@@ -47,7 +47,7 @@ export function FamilySituationTree({ thresholds, initialState = EMPTY }: Props)
       {state.branch === "partner" && <Partner copy={{ tree: t, family: tFamily }} person={state.people[0]!} update={(patch) => setState((current) => updateTreePerson(current, "partner", patch))} />}
       {state.branch === "others" && <Others copy={{ tree: t, family: tFamily }} state={state} setState={setState} add={add} />}
       {result.missingFacts.length === 0 && result.householdAssessment.status !== "needs_review" && <Result t={t} locale={locale} result={result} thresholds={thresholds} />}
-      {result.missingFacts.length === 0 && result.householdAssessment.status === "needs_review" && !(state.branch === "partner" && state.people[0]?.relation === "partner" && state.people[0]?.partnerEstablished === undefined) && <Card className="border-amber-300"><CardHeader><CardTitle>{t("reviewTitle")}</CardTitle><CardDescription>{result.reason}</CardDescription></CardHeader></Card>}
+      {result.householdAssessment.status === "needs_review" && !(state.branch === "partner" && state.people[0]?.relation === "partner" && state.people[0]?.partnerEstablished === undefined) && <Card className="border-amber-300"><CardHeader><CardTitle>{t("reviewTitle")}</CardTitle><CardDescription>{result.reason}</CardDescription></CardHeader></Card>}
     </>}
   </section>;
 }

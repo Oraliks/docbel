@@ -44,6 +44,23 @@ describe("FamilySituationTree — rendu i18n réel", () => {
     expect(html).not.toContain("public.pro.");
   });
 
+  it("renders the shared ONEM review for an answered third-party household", () => {
+    const html = renderTree({
+      branch: "others",
+      cohousing: false,
+      people: [{
+        id: "third-party",
+        relation: "third_party",
+        label: "third_party",
+        hasProfessionalIncome: false,
+        hasReplacementIncome: false,
+      }],
+    });
+
+    expect(html).toContain("Situation à examiner");
+    expect(html).toContain("doit être examinée par l’ONEM");
+  });
+
   it("renders the variable-income amount before the separate C110A availability choice", () => {
     const html = renderTree({
       branch: "partner",

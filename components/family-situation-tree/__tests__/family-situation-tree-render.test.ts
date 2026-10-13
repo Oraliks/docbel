@@ -100,15 +100,15 @@ describe("FamilySituationTree — rendu i18n réel", () => {
   it("explains when the selected date predates the published barème", () => {
     const datedThresholds = { ...thresholds, source: { fileId: "april", fileName: "bareme-04-2026.xlsx", validFrom: new Date("2026-04-01") } };
     const html = renderToStaticMarkup(
-      createElement(NextIntlClientProvider, {
-        locale: "fr",
-        messages,
-        children: createElement(FamilySituationTree, {
+      createElement(
+        NextIntlClientProvider,
+        { locale: "fr", messages },
+        createElement(FamilySituationTree, {
           thresholds: datedThresholds,
           initialAsOf: "2026-01-31",
           initialState: { branch: "partner", people: [{ id: "partner", relation: "spouse", hasProfessionalIncome: true, professionalIncomeType: "employee", professionalIncomeContract: "cdi", professionalIncomeVariable: false, professionalIncomeAmount: 900, hasReplacementIncome: false }] },
         }),
-      }),
+      ),
     );
 
     expect(html).toContain("Une précision est nécessaire");

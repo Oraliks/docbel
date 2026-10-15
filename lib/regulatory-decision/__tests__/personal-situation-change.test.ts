@@ -177,7 +177,7 @@ describe("personal situation change trace", () => {
   });
 
   it("keeps a cousin outside the relatives branch and sends an unknown relation to review", () => {
-    expect(deriveHouseholdCompositionFromC1({ cohabitants: [{ lien: "cousin" }] }).kind).toBe("mixed_or_unsupported");
+    expect(deriveHouseholdCompositionFromC1({ cohabitants: [{ lien: "cousin" }] }).kind).toBe("third_parties_only");
     expect(deriveHouseholdCompositionFromC1({ cohabitants: [{ lien: "inconnu" }] })).toMatchObject({ needsReview: true });
   });
 

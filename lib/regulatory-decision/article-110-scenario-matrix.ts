@@ -18,7 +18,7 @@ type LegacyAlimony = Omit<NonNullable<Article110VerifierInput["alimony"]>, "bene
   legalBasis?: "decision-judiciaire";
 };
 
-type LegacyScenarioInput = Omit<Article110VerifierInput, "thresholds" | "people" | "alimony" | "alternatingCare"> & {
+export type LegacyScenarioInput = Omit<Article110VerifierInput, "thresholds" | "people" | "alimony" | "alternatingCare"> & {
   people: LegacyVerifierPerson[];
   alimony?: LegacyAlimony;
   alternatingCare?: Article110VerifierInput["alternatingCare"] & { documentStatus?: "en-cours" | "jugement"; regular?: boolean };
@@ -225,7 +225,8 @@ export function generateArticle110Scenarios(thresholds: C1BaremeThresholds): Art
   return generateArticle110ScenarioSpace(thresholds).scenarios;
 }
 
-function inputForUnifiedVerifier(input: LegacyScenarioInput): Article110VerifierInput {
+/** Normalizes a matrix scenario before passing it to the single Article 110 evaluator. */
+export function article110ScenarioToVerifierInput(input: LegacyScenarioInput): Article110VerifierInput {
   const { assessedAt, cohousingClaim, cohousingOnemRecognition, cohousingDocuments: _documents, ...facts } = input;
   const people = cohousingClaim
     ? [{ id: "cohousing-third-party", label: "Tiers", relation: "third_party" as const }]
@@ -254,7 +255,7 @@ export function evaluateArticle110ScenarioMatrix(thresholds: C1BaremeThresholds,
   const startedAt = performance.now();
   const space = generateArticle110ScenarioSpace(thresholds);
   const scenarios: Article110ScenarioContract[] = space.scenarios.map(({ id, label, input }) => {
-    const result = evaluateArticle110Verifier({ ...inputForUnifiedVerifier(input), thresholds });
+    const result = evaluateArticle110Verifier({ ...article110ScenarioToVerifierInput(input), thresholds });
     const assessment = result.householdAssessment;
     const compositionMissing = input.people.length === 0 && input.isAloneExplicit !== true && input.cohousingClaim !== true;
     return {

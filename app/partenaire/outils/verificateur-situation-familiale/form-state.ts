@@ -47,3 +47,15 @@ export function moveVerifierMember(people: VerifierMember[], id: string, directi
   [next[index], next[target]] = [next[target], next[index]];
   return next;
 }
+
+/** Retains Article 110 facts while choosing an existing UI-only relation label. */
+export function verifierMembersFromArticle110People(people: Article110VerifierPerson[]): VerifierMember[] {
+  return people.map((person) => {
+    const role: HouseholdRole = person.relation === "spouse" ? "spouse"
+      : person.relation === "partner" ? "partner"
+        : person.relation === "child" ? "child"
+          : person.relation === "relative" ? person.isAscendant ? "father" : "sibling"
+            : person.relation === "third_party" ? "friend" : "other";
+    return { ...person, role };
+  });
+}

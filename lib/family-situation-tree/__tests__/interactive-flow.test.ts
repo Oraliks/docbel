@@ -3,7 +3,7 @@ import type { Article110VerifierInput } from "@/lib/regulatory-decision/article-
 import { article110VerifierFacts, evaluateArticle110Verifier } from "@/lib/regulatory-decision/article-110-verifier";
 import type { C1BaremeThresholds } from "@/lib/baremes/c1-thresholds";
 import { evaluateFamilySituation } from "@/lib/regulatory-decision/household-composition";
-import { chooseFamilyTreeBranch, resetFamilyTreeBranch, setDeclaredAloneSituation, setTreeProfessionalIncomeType, updateTreePerson, type FamilyTreeState } from "../interactive-flow";
+import { article110VerifierInputToFamilyTreeState, chooseFamilyTreeBranch, resetFamilyTreeBranch, setDeclaredAloneSituation, setTreeProfessionalIncomeType, updateTreePerson, type FamilyTreeState } from "../interactive-flow";
 
 const thresholds: C1BaremeThresholds = {
   spouseProfessionalMonthly: 1_000,
@@ -35,6 +35,21 @@ function evaluateTree(state: FamilyTreeState, extra: Partial<Article110VerifierI
 }
 
 describe("interactive family tree state", () => {
+  it("prefills a representable matrix household without changing its facts", () => {
+    const state = article110VerifierInputToFamilyTreeState({
+      thresholds,
+      people: [{ id: "child", relation: "child", receivesFamilyAllowances: true, hasProfessionalIncome: false, hasReplacementIncome: false }],
+      anyChildReceivesFamilyAllowances: true,
+    });
+
+    expect(state).toMatchObject({ branch: "others", anyChildReceivesFamilyAllowances: true, people: [{ id: "child", relation: "child" }] });
+  });
+
+  it("refuses a tree prefill when the interactive path cannot preserve the legal fact", () => {
+    expect(article110VerifierInputToFamilyTreeState({ thresholds, people: [], alternatingCare: { enabled: true } })).toBeUndefined();
+    expect(article110VerifierInputToFamilyTreeState({ thresholds, people: [{ id: "third", relation: "third_party" }], cohousing: true, cohousingRecognition: "not_recognised" })).toBeUndefined();
+  });
+
   it("starts a partner branch without assuming either qualification or income", () => {
     const state = chooseFamilyTreeBranch("partner");
     expect(state.people).toMatchObject([{ relation: "partner" }]);

@@ -102,12 +102,15 @@ describe("FamilySituationTree — rendu i18n réel", () => {
     const html = renderToStaticMarkup(
       createElement(
         NextIntlClientProvider,
-        { locale: "fr", messages },
-        createElement(FamilySituationTree, {
-          thresholds: datedThresholds,
-          initialAsOf: "2026-01-31",
-          initialState: { branch: "partner", people: [{ id: "partner", relation: "spouse", hasProfessionalIncome: true, professionalIncomeType: "employee", professionalIncomeContract: "cdi", professionalIncomeVariable: false, professionalIncomeAmount: 900, hasReplacementIncome: false }] },
-        }),
+        {
+          locale: "fr",
+          messages,
+          children: createElement(FamilySituationTree, {
+            thresholds: datedThresholds,
+            initialAsOf: "2026-01-31",
+            initialState: { branch: "partner", people: [{ id: "partner", relation: "spouse", hasProfessionalIncome: true, professionalIncomeType: "employee", professionalIncomeContract: "cdi", professionalIncomeVariable: false, professionalIncomeAmount: 900, hasReplacementIncome: false }] },
+          }),
+        },
       ),
     );
 

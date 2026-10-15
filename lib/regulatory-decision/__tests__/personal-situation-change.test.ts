@@ -219,10 +219,10 @@ describe("personal situation change trace", () => {
     expect(after?.thirdPartyHouseholdAssessment).toMatchObject({ composition: "none", declarationRequired: true, changes: expect.arrayContaining([expect.objectContaining({ reason: "THIRD_PARTY_LEFT" })]) });
   });
 
-  it("does not treat a merely declared non-married partner as established", () => {
+  it("uses a declared non-married partner as the theoretical partner branch", () => {
     expect(deriveHouseholdCompositionFromC1({
       cohabitants: [{ lien: "partenaire", typeRevenuPro: "aucun", revenuRemplacement: "aucun" }],
-    })).toMatchObject({ kind: "mixed_or_unsupported", needsReview: true });
+    })).toMatchObject({ kind: "spouse_or_partner", needsReview: false });
   });
 
   it("persists the temporal effect beside a recomputed household branch", () => {

@@ -15,13 +15,17 @@ export type Article110VerifierPerson = {
   relation: HouseholdRelation;
   label?: string;
   partnerEstablished?: boolean;
+  partnerFacts?: FamilyFacts["people"][number]["partnerFacts"];
   isAscendant?: boolean;
   receivesFamilyAllowances?: boolean;
   hasProfessionalIncome?: boolean;
   professionalIncomeAmount?: number;
-  professionalIncomeType?: "employee" | "independent" | "other";
+  professionalIncomeType?: "employee" | "independent" | "student_occupation_contract" | "other";
+  professionalIncomeOtherDescription?: string;
   professionalIncomeContract?: "cdi" | "cdd" | "other";
   professionalIncomeVariable?: boolean;
+  c110aReceived?: boolean;
+  c110aMonthlyDeclaredIncome?: number;
   firstProfessionalIncome?: boolean;
   neutralisationRequested?: boolean;
   firstProfessionalIncomeStartedAt?: string;
@@ -36,10 +40,18 @@ export type Article110VerifierInput = {
   thresholds: C1BaremeThresholds;
   asOf?: string;
   isAloneExplicit?: boolean;
+  /** The municipal/registry composition confirms the explicit declaration. */
+  registryLivesAlone?: boolean;
+  relevantHouseholdDiscordance?: boolean;
+  /** The user selected a multi-person path but has not yet added a member. */
+  householdMembersPending?: boolean;
   officialOnemCode?: string;
   /** Asked only for a household composed exclusively of third parties. */
   cohousing?: boolean;
-  alimony?: { enabled?: boolean; legalConditionEstablished?: boolean; beneficiary?: "minor_child" | "adult_child" | "other"; adultChildInNeed?: boolean };
+  cohousingAutonomousLiving?: boolean;
+  cohousingRecognition?: "recognised_same_address" | "pending" | "not_recognised";
+  cohousingRelevantAddressChanged?: boolean;
+  alimony?: { enabled?: boolean; legalConditionEstablished?: boolean; legalBasis?: "established" | "pending" | "not_established" | "unknown"; proofAvailable?: boolean; beneficiary?: "minor_child" | "adult_child" | "other"; adultChildInNeed?: boolean };
   alternatingCare?: { enabled?: boolean; averageDaysPerWeek?: number; cycle?: "monthly" | "quarterly" | "semiannual" | "annual"; familyAllowances?: boolean; childHasRelevantIncome?: boolean; children?: Array<{ id: string; familyAllowances?: boolean; hasRelevantIncome?: boolean }> };
 };
 
@@ -50,7 +62,7 @@ function toIncome(person: Article110VerifierPerson): FamilyIncome[] {
     contract: person.professionalIncomeType === "independent" ? "independent" : person.professionalIncomeContract,
     variable: person.professionalIncomeVariable, firstProfessionalIncome: person.firstProfessionalIncome,
     neutralisationRequested: person.neutralisationRequested, startedAt: person.firstProfessionalIncomeStartedAt,
-    studiesEndedAt: person.studiesEndedAt,
+    studiesEndedAt: person.studiesEndedAt, monthlyAmount: person.c110aMonthlyDeclaredIncome,
   });
   if (person.hasReplacementIncome === true) incomes.push({
     kind: person.replacementIncomeType === "pension" ? "pension" : person.replacementIncomeType === "disability_allowance" ? "spf_disability" : "replacement",
@@ -62,18 +74,32 @@ function toIncome(person: Article110VerifierPerson): FamilyIncome[] {
 export function article110VerifierFacts(input: Article110VerifierInput): FamilyFacts {
   return {
     asOf: input.asOf ?? new Date().toISOString().slice(0, 10),
+    household: {
+      declaration: input.isAloneExplicit ? "alone_declared" : input.people.length > 0 ? "members_declared" : "unknown",
+      registryLivesAlone: input.registryLivesAlone,
+      relevantDiscordance: input.relevantHouseholdDiscordance,
+    },
     people: input.isAloneExplicit ? [] : input.people.map((person): FamilyPerson => ({
-      id: person.id, relation: person.relation, partnerEstablished: person.partnerEstablished,
+      id: person.id, relation: person.relation, partnerFacts: person.partnerFacts,
       isAscendant: person.isAscendant, receivesFamilyAllowances: person.receivesFamilyAllowances,
+      incomeDeclaration: { professional: person.hasProfessionalIncome, replacement: person.hasReplacementIncome },
       incomes: toIncome(person),
     })),
-    cohousing: input.cohousing === undefined ? undefined : { declared: input.cohousing },
+    cohousing: input.cohousing === undefined ? undefined : {
+      declared: input.cohousing,
+      autonomousLiving: input.cohousingAutonomousLiving,
+      recognition: input.cohousingRecognition,
+      relevantAddressChanged: input.cohousingRelevantAddressChanged,
+    },
     isolated: {
       alimony: input.alimony?.enabled === undefined ? undefined : {
         paid: input.alimony.enabled, admissibleBasis: input.alimony.legalConditionEstablished,
+        legalBasis: input.alimony.legalBasis,
+        proofAvailable: input.alimony.proofAvailable,
         beneficiary: input.alimony.beneficiary, adultChildInNeed: input.alimony.adultChildInNeed,
       },
       alternatingCare: input.alternatingCare?.enabled === undefined ? undefined : {
+        enabled: input.alternatingCare.enabled,
         averageDaysPerWeek: input.alternatingCare.enabled ? input.alternatingCare.averageDaysPerWeek : undefined,
         cycle: input.alternatingCare.cycle,
         familyAllowances: input.alternatingCare.familyAllowances,
@@ -90,7 +116,12 @@ function labelForFact(factKey: string) {
   if (factKey === "isolated.alternatingCare.familyAllowances") return "Précisez si vous pouvez prétendre aux allocations familiales pour l’enfant.";
   if (factKey === "isolated.alternatingCare.childHasRelevantIncome") return "Précisez si l’enfant dispose de revenus professionnels ou de remplacement pertinents.";
   if (factKey === "isolated.alimony") return "Les conditions de la pension alimentaire doivent être précisées.";
+  if (factKey === "isolated.alimony.legalBasis") return "Précisez si la base juridique est établie, en attente ou inexistante.";
+  if (factKey === "household.declaration") return "Indiquez si vous vivez seul ou avec d’autres personnes.";
+  if (factKey === "household.registryLivesAlone") return "Précisez si la composition communale ou le Registre national confirme que vous vivez seul.";
+  if (factKey === "household.relevantDiscordance") return "Indiquez s’il existe une discordance pertinente avec votre composition déclarée.";
   if (factKey === "cohousing.declared") return "Indiquez si vous vivez en co-housing plutôt qu’en cohabitation ordinaire.";
+  if (factKey === "cohousing.autonomousLiving") return "Précisez si les conditions de vie autonome du co-housing sont réellement réunies.";
   return "Des informations sur la composition ou les revenus du ménage doivent être précisées.";
 }
 
@@ -106,6 +137,7 @@ export function evaluateArticle110Verifier(input: Article110VerifierInput) {
     ascendantPensionMonthlyThreshold: input.thresholds.ascendantPensionMonthly,
     ascendantDisabledPensionMonthlyThreshold: input.thresholds.ascendantDisabledPensionMonthly,
     baremeSource: input.thresholds.source,
+    officialOnemCode: input.officialOnemCode,
   });
   const missingFacts = (assessment.missingFacts ?? []).map((factKey) => ({ factKey, label: labelForFact(factKey) }));
   const needsInformation = assessment.status === "needs_information";
@@ -115,7 +147,7 @@ export function evaluateArticle110Verifier(input: Article110VerifierInput) {
     reason: assessment.explanation ?? "Une évaluation théorique est en cours.",
     missingFacts,
     nextActions: needsInformation ? ["Compléter les faits manquants pour poursuivre l’évaluation théorique."] : assessment.status === "needs_review" ? ["Faire examiner la situation par l’ONEM avant toute décision."] : [],
-    onemDecisionStatus: assessment.status === "needs_review" ? "required" as const : "not_required" as const,
+    onemDecisionStatus: assessment.status === "needs_review" || assessment.administrativeTreatment?.decisionNeeded ? "required" as const : "not_required" as const,
     legalWarning: "Résultat théorique : seule l’ONEM détermine la catégorie officielle.",
   };
 }

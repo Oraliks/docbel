@@ -36,21 +36,54 @@ export type FamilyIncome = {
 export type FamilyPerson = {
   id: string;
   relation: HouseholdRelation;
+  /** Concrete Article 110 facts for an unmarried partner. */
+  partnerFacts?: {
+    livesTogether?: boolean;
+    formsHouseholdOfFact?: boolean;
+    relatedWithinThirdDegree?: boolean;
+    receivesFamilyAllowances?: boolean;
+    receivesSocialIntegration?: boolean;
+    alreadyDependentElsewhere?: boolean;
+    marriedOrCohabitsWithSpouse?: boolean;
+  };
+  /** @deprecated Legacy technical flag. It must never decide a qualification. */
   partnerEstablished?: boolean;
   receivesFamilyAllowances?: boolean;
   disabilityRelevant?: boolean;
   isAscendant?: boolean;
+  /** Whether the corresponding C1/verifier question was answered. */
+  incomeDeclaration?: { professional?: boolean; replacement?: boolean };
   incomes: FamilyIncome[];
 };
 
 export type FamilyFacts = {
   asOf: string;
   people: FamilyPerson[];
+  /** A missing people array never proves that the claimant lives alone. */
+  household?: {
+    declaration: "unknown" | "alone_declared" | "members_declared";
+    registryLivesAlone?: boolean;
+    relevantDiscordance?: boolean;
+  };
   /** Explicit distinction for a household made exclusively of third parties. */
-  cohousing?: { declared?: boolean };
+  cohousing?: {
+    declared?: boolean;
+    autonomousLiving?: boolean;
+    recognition?: "recognised_same_address" | "pending" | "not_recognised";
+    relevantAddressChanged?: boolean;
+  };
   isolated?: {
-    alimony?: { paid?: boolean; admissibleBasis?: boolean; beneficiary?: "minor_child" | "adult_child" | "other"; adultChildInNeed?: boolean };
+    alimony?: {
+      paid?: boolean;
+      /** Kept for historical C1 adapters. New adapters use `legalBasis`. */
+      admissibleBasis?: boolean;
+      legalBasis?: "established" | "pending" | "not_established" | "unknown";
+      proofAvailable?: boolean;
+      beneficiary?: "minor_child" | "adult_child" | "other";
+      adultChildInNeed?: boolean;
+    };
     alternatingCare?: {
+      enabled?: boolean;
       /** Average calendar days of actual presence per week, measured over the declared cycle. */
       averageDaysPerWeek?: number;
       cycle?: "monthly" | "quarterly" | "semiannual" | "annual";
@@ -64,6 +97,7 @@ export type FamilyFacts = {
 
 export type HouseholdMemberFact = {
   relation: HouseholdRelation;
+  partnerFacts?: FamilyPerson["partnerFacts"];
   partnerEstablished?: boolean;
   /** Income actually received by the household member, before Article 60 treatment. */
   hasProfessionalIncome?: boolean;
@@ -121,6 +155,18 @@ export type HouseholdAssessment = {
   evaluatedAt?: string;
   /** Alternating care fulfilling its conditions applies to every day of the week. */
   appliesAllWeek?: boolean;
+  declaredQualifiedBasis?: "alimony" | "alternating_care";
+  /** Never replaces the theoretical category. */
+  administrativeTreatment?: {
+    knownOnemCode?: string;
+    provisionalCategory?: "B";
+    recognition?: "recognised_same_address" | "pending" | "not_recognised";
+    decisionNeeded?: boolean;
+  };
+  /** Structured common explanation consumed by the Tree and Verifier. */
+  decisiveFacts?: string[];
+  excludedFavourableCategoryReason?: string;
+  comparisons?: Array<{ label: string; amount?: number; threshold?: number }>;
   pensionAssessment?: { status: "VERIFIED" | "NEEDS_DOCUMENT" | "NEEDS_INFORMATION"; grossTotal?: number; threshold?: number; document: "SPF_PENSIONS_PROOF"; proofStatus: "received" | "required" };
 };
 
@@ -158,21 +204,28 @@ export function householdCompositionFromFamilyFacts(facts: FamilyFacts): Househo
       ? professional.reduce((total, income) => total + (income.amount ?? 0), 0)
       : undefined;
     const pensionAmount = pensions.reduce((total, income) => total + (income.amount ?? 0), 0);
+    const declaredProfessional = person.incomeDeclaration && "professional" in person.incomeDeclaration
+      ? person.incomeDeclaration.professional
+      : professional.length > 0;
+    const declaredReplacement = person.incomeDeclaration && "replacement" in person.incomeDeclaration
+      ? person.incomeDeclaration.replacement
+      : replacement.length > 0 || pensions.length > 0 || disability;
     return {
       factKey: person.id,
       relation: person.relation,
+      partnerFacts: person.partnerFacts,
       partnerEstablished: person.partnerEstablished,
       receivesFamilyAllowances: person.receivesFamilyAllowances,
       isAscendant: person.isAscendant,
       disabilityDeclared: person.disabilityRelevant,
       disabilityProofAvailable: person.disabilityRelevant,
-      hasProfessionalIncome: professional.length > 0,
+      hasProfessionalIncome: declaredProfessional,
       professionalIncomeAmount: professionalAmount,
       c110aReceived: typeof primaryProfessional?.monthlyAmount === "number" && Number.isFinite(primaryProfessional.monthlyAmount),
       c110aMonthlyDeclaredIncome: primaryProfessional?.monthlyAmount,
       professionalIncomeContract: professional.length === 1 && primaryProfessional?.contract !== "independent" ? primaryProfessional?.contract : professional.length > 1 || primaryProfessional?.contract === "independent" ? "other" : undefined,
       professionalIncomeVariable: primaryProfessional?.variable,
-      hasReplacementIncome: replacement.length > 0 || pensions.length > 0 || disability,
+      hasReplacementIncome: declaredReplacement,
       replacementIncomeRelevantForFamilyStatus: disability && replacement.length === 0 && pensions.length === 0 ? false : undefined,
       replacementIncomeType: pensions.length > 0 ? "pension" : disability ? "disability_allowance" : replacement.length > 0 ? "other" : undefined,
       replacementIncomeAmount: pensions.length > 0 ? pensionAmount : replacement[0]?.amount,
@@ -181,7 +234,7 @@ export function householdCompositionFromFamilyFacts(facts: FamilyFacts): Househo
       pensionProofAvailable: pensions.length > 0 ? true : undefined,
       pensionGrossAmountConfirmed: pensions.length > 0 ? pensions.every((income) => income.amountKind === "gross") : undefined,
       firstProfessionalIncome: professional.some((income) => income.firstProfessionalIncome),
-      studiesEndedAt: undefined,
+      studiesEndedAt: primaryProfessional?.studiesEndedAt,
     };
   }));
 }
@@ -196,25 +249,43 @@ export function evaluateFamilySituation(input: {
   ascendantDisabledPensionMonthlyThreshold?: number | null;
   baremeSource?: { fileId: string; fileName: string; validFrom: Date | null } | null;
   neutralisedChildIds?: string[];
+  officialOnemCode?: string;
 }): HouseholdAssessment {
+  if (input.facts.household?.declaration === "unknown") {
+    return explainAssessment({ composition: "mixed_or_unsupported", status: "needs_information", expectedCategory: null, operationalArticle: "needs_review", incomeAssessment: "needs_review", monthlyPaymentAssessment: "NEEDS_REVIEW", recommendedAction: "information_required", trigger: "c1_household_update", factKeys: ["household.declaration"], sourceRuleIds: ["situation_familiale_composition_priorities"] }, input.facts.asOf);
+  }
   if (input.facts.people.length === 0) {
+    const household = input.facts.household;
+    if (household?.declaration === "alone_declared") {
+      const missingAloneFacts = [
+        ...(household.registryLivesAlone === undefined ? ["household.registryLivesAlone"] : []),
+        ...(household.relevantDiscordance === undefined ? ["household.relevantDiscordance"] : []),
+      ];
+      if (missingAloneFacts.length > 0) return explainAssessment({ composition: "alone", status: "needs_information", expectedCategory: null, operationalArticle: "needs_review", incomeAssessment: "needs_review", monthlyPaymentAssessment: "NEEDS_REVIEW", recommendedAction: "information_required", trigger: "c1_household_update", factKeys: missingAloneFacts, sourceRuleIds: ["situation_familiale_categories"] }, input.facts.asOf);
+      if (household.registryLivesAlone !== true || household.relevantDiscordance === true) return explainAssessment({ composition: "alone", status: "needs_review", expectedCategory: null, operationalArticle: "needs_review", incomeAssessment: "needs_review", monthlyPaymentAssessment: "NEEDS_REVIEW", recommendedAction: "review_required", trigger: "c1_household_update", factKeys: ["household.registryLivesAlone", "household.relevantDiscordance"], sourceRuleIds: ["situation_familiale_categories"] }, input.facts.asOf);
+    }
     const alimony = input.facts.isolated?.alimony;
     const alimonyAssessment = alimony?.paid === true ? ((): HouseholdAssessment => {
       const adultChildUnclear = alimony.beneficiary === "adult_child" && alimony.adultChildInNeed !== true;
-      if (alimony.admissibleBasis === true && alimony.beneficiary && !adultChildUnclear) {
-        return { composition: "alone", status: "probable", expectedCategory: "A", operationalArticle: "none", incomeAssessment: "not_relevant", monthlyPaymentAssessment: "NEEDS_REVIEW", recommendedAction: "declaration_required", trigger: "c1_household_update", factKeys: [], sourceRuleIds: ["situation_familiale_isole_pension_alimentaire"] };
+      const legalBasis = alimony.legalBasis ?? (alimony.admissibleBasis === true ? "established" : alimony.admissibleBasis === false ? "not_established" : "unknown");
+      if (legalBasis === "established" && alimony.beneficiary && !adultChildUnclear) {
+        return { composition: "alone", status: "probable", expectedCategory: "A", operationalArticle: "none", incomeAssessment: "not_relevant", monthlyPaymentAssessment: "NEEDS_REVIEW", recommendedAction: "declaration_required", trigger: "c1_household_update", factKeys: [], sourceRuleIds: ["situation_familiale_isole_pension_alimentaire"], declaredQualifiedBasis: "alimony", decisiveFacts: ["isolated.alimony.paid", "isolated.alimony.legalBasis"] };
       }
-      return { composition: "alone", status: "needs_information", expectedCategory: null, operationalArticle: "needs_review", incomeAssessment: "needs_review", monthlyPaymentAssessment: "NEEDS_REVIEW", recommendedAction: "information_required", trigger: "c1_household_update", factKeys: ["isolated.alimony"], sourceRuleIds: ["situation_familiale_isole_pension_alimentaire"] };
+      if (legalBasis === "pending" || legalBasis === "not_established") return { composition: "alone", status: "probable", expectedCategory: "N", operationalArticle: "none", incomeAssessment: "not_relevant", monthlyPaymentAssessment: "NEEDS_REVIEW", recommendedAction: "declaration_required", trigger: "c1_household_update", factKeys: [], sourceRuleIds: ["situation_familiale_isole_pension_alimentaire"], decisiveFacts: ["isolated.alimony.paid", "isolated.alimony.legalBasis"], excludedFavourableCategoryReason: "La condition juridique de la pension alimentaire n’est pas établie." };
+      return { composition: "alone", status: "needs_information", expectedCategory: null, operationalArticle: "needs_review", incomeAssessment: "needs_review", monthlyPaymentAssessment: "NEEDS_REVIEW", recommendedAction: "information_required", trigger: "c1_household_update", factKeys: ["isolated.alimony.legalBasis", "isolated.alimony.beneficiary"], sourceRuleIds: ["situation_familiale_isole_pension_alimentaire"] };
     })() : null;
+    // Pension is a terminal isolated-person route. Care is not a fallback branch.
+    if (alimony?.paid === true && alimonyAssessment) return explainAssessment(alimonyAssessment, input.facts.asOf);
     const care = input.facts.isolated?.alternatingCare;
-    if (care) {
+    // `enabled` was added after the first C1 adapter. An existing object without
+    // that flag remains an asserted alternating-care branch; explicit false does not.
+    if (care && care.enabled !== false) {
       const averageDaysPerWeek = care.averageDaysPerWeek;
       const missingCareFacts = [
         ...(typeof averageDaysPerWeek !== "number" || !Number.isFinite(averageDaysPerWeek) || averageDaysPerWeek < 0 ? ["isolated.alternatingCare.averageDaysPerWeek"] : []),
         ...(!care.cycle ? ["isolated.alternatingCare.cycle"] : []),
       ];
       if (missingCareFacts.length > 0) {
-        if (alimonyAssessment?.expectedCategory === "A") return explainAssessment(alimonyAssessment, input.facts.asOf);
         return explainAssessment({ composition: "alone", status: "needs_information", expectedCategory: null, operationalArticle: "needs_review", incomeAssessment: "needs_review", monthlyPaymentAssessment: "NEEDS_REVIEW", recommendedAction: "information_required", trigger: "c1_household_update", factKeys: missingCareFacts, sourceRuleIds: ["situation_familiale_isole_garde_alternee"] }, input.facts.asOf);
       }
       if (averageDaysPerWeek !== undefined && averageDaysPerWeek >= 2) {
@@ -234,7 +305,6 @@ export function evaluateFamilySituation(input: {
         if (familyAllowances === false && childHasRelevantIncome === true) {
           return explainAssessment({ composition: "children_only", status: "probable", expectedCategory: "B", operationalArticle: "none", incomeAssessment: "relevant", monthlyPaymentAssessment: "B_RATE", recommendedAction: "declaration_required", trigger: "c1_household_update", factKeys: [], sourceRuleIds: ["situation_familiale_isole_garde_alternee"] }, input.facts.asOf);
         }
-        if (alimonyAssessment?.expectedCategory === "A") return explainAssessment(alimonyAssessment, input.facts.asOf);
         const missingChildFacts = [
           ...(familyAllowances === undefined ? ["isolated.alternatingCare.familyAllowances"] : []),
           ...(childHasRelevantIncome === undefined ? ["isolated.alternatingCare.childHasRelevantIncome"] : []),
@@ -242,7 +312,6 @@ export function evaluateFamilySituation(input: {
         return explainAssessment({ composition: "alone", status: "needs_information", expectedCategory: null, operationalArticle: "needs_review", incomeAssessment: "needs_review", monthlyPaymentAssessment: "NEEDS_REVIEW", recommendedAction: "information_required", trigger: "c1_household_update", factKeys: missingChildFacts, sourceRuleIds: ["situation_familiale_isole_garde_alternee"] }, input.facts.asOf);
       }
     }
-    if (alimonyAssessment) return explainAssessment(alimonyAssessment, input.facts.asOf);
     return explainAssessment({
       composition: "alone",
       status: "probable",
@@ -265,7 +334,8 @@ export function evaluateFamilySituation(input: {
     ascendantDisabledPensionMonthlyThreshold: input.ascendantDisabledPensionMonthlyThreshold,
     baremeSource: input.baremeSource,
     neutralisedChildFactKeys: input.neutralisedChildIds,
-    cohousingDeclared: input.facts.cohousing?.declared,
+    cohousing: input.facts.cohousing,
+    officialOnemCode: input.officialOnemCode,
   });
   const theoreticalAssessment = { ...assessment };
   delete theoreticalAssessment.requiredExternalDocument;
@@ -287,11 +357,11 @@ export function classifyHouseholdComposition(members: HouseholdMemberFact[]): Ho
   if (members.length === 0) return { kind: "alone", members, factKeys, needsReview: false };
 
   const spouseOrEstablishedPartner = members.some(
-    (member) => member.relation === "spouse" || (member.relation === "partner" && member.partnerEstablished === true),
+    (member) => member.relation === "spouse" || (member.relation === "partner" && partnerQualification(member) === true),
   );
   if (spouseOrEstablishedPartner) return { kind: "spouse_or_partner", members, factKeys, needsReview: false };
 
-  const ambiguousPartner = members.some((member) => member.relation === "partner" && member.partnerEstablished !== true);
+  const ambiguousPartner = members.some((member) => member.relation === "partner" && partnerQualification(member) !== true);
   const unknown = members.some((member) => member.relation === "unknown");
   if (ambiguousPartner || unknown) return { kind: "mixed_or_unsupported", members, factKeys, needsReview: true };
 
@@ -306,6 +376,37 @@ export function classifyHouseholdComposition(members: HouseholdMemberFact[]): Ho
   if (children && relatives && thirdParties) return { kind: "children_relatives_and_third_parties", members, factKeys, needsReview: true };
   if (thirdParties) return { kind: "third_parties_only", members, factKeys, needsReview: false };
   return { kind: "mixed_or_unsupported", members, factKeys, needsReview: true };
+}
+
+function partnerQualification(member: HouseholdMemberFact): boolean | undefined {
+  if (member.relation !== "partner") return undefined;
+  const facts = member.partnerFacts;
+  if (!facts) return undefined;
+  const requiredPositive = [facts.livesTogether, facts.formsHouseholdOfFact];
+  const requiredNegative = [
+    facts.relatedWithinThirdDegree,
+    facts.receivesFamilyAllowances,
+    facts.receivesSocialIntegration,
+    facts.alreadyDependentElsewhere,
+    facts.marriedOrCohabitsWithSpouse,
+  ];
+  if (requiredPositive.includes(false) || requiredNegative.includes(true)) return false;
+  if (requiredPositive.every((value) => value === true) && requiredNegative.every((value) => value === false)) return true;
+  return undefined;
+}
+
+function missingPartnerFacts(member: HouseholdMemberFact): string[] {
+  const facts = member.partnerFacts;
+  if (!facts) return ["partner.livesTogether", "partner.formsHouseholdOfFact", "partner.relatedWithinThirdDegree", "partner.receivesFamilyAllowances", "partner.receivesSocialIntegration", "partner.alreadyDependentElsewhere", "partner.marriedOrCohabitsWithSpouse"];
+  return [
+    ["livesTogether", facts.livesTogether],
+    ["formsHouseholdOfFact", facts.formsHouseholdOfFact],
+    ["relatedWithinThirdDegree", facts.relatedWithinThirdDegree],
+    ["receivesFamilyAllowances", facts.receivesFamilyAllowances],
+    ["receivesSocialIntegration", facts.receivesSocialIntegration],
+    ["alreadyDependentElsewhere", facts.alreadyDependentElsewhere],
+    ["marriedOrCohabitsWithSpouse", facts.marriedOrCohabitsWithSpouse],
+  ].flatMap(([key, value]) => value === undefined ? [`partner.${key}`] : []);
 }
 
 function action(officialOnemCode: string | undefined, fallback: HouseholdAssessment["recommendedAction"]): HouseholdAssessment["recommendedAction"] {
@@ -327,9 +428,9 @@ export function assessHouseholdBranch(input: {
   ascendantDisabledPensionMonthlyThreshold?: number | null;
   baremeSource?: { fileId: string; fileName: string; validFrom: Date | null } | null;
   neutralisedChildFactKeys?: string[];
-  cohousingDeclared?: boolean;
+  cohousing?: FamilyFacts["cohousing"];
 }): HouseholdAssessment {
-  const { composition, activeChildIncomeNeutralisation, officialOnemCode, spouseProfessionalMonthlyThreshold, baremeSource, neutralisedChildFactKeys = [], ascendantPensionWithChildMonthlyThreshold, ascendantPensionMonthlyThreshold, ascendantDisabledPensionMonthlyThreshold, cohousingDeclared } = input;
+  const { composition, activeChildIncomeNeutralisation, officialOnemCode, spouseProfessionalMonthlyThreshold, baremeSource, neutralisedChildFactKeys = [], ascendantPensionWithChildMonthlyThreshold, ascendantPensionMonthlyThreshold, ascendantDisabledPensionMonthlyThreshold, cohousing } = input;
   const base = {
     composition: composition.kind,
     officialOnemCode,
@@ -345,12 +446,22 @@ export function assessHouseholdBranch(input: {
     } : {}),
   };
 
+  const partners = composition.members.filter((member) => member.relation === "partner");
+  if (partners.length > 0 && partners.some((member) => partnerQualification(member) !== true)) {
+    const missingFacts = partners.flatMap(missingPartnerFacts);
+    return missingFacts.length > 0
+      ? { ...base, status: "needs_information", expectedCategory: null, operationalArticle: "needs_review", incomeAssessment: "needs_review", monthlyPaymentAssessment: "NEEDS_REVIEW", recommendedAction: action(officialOnemCode, "information_required"), factKeys: missingFacts }
+      : { ...base, status: "needs_review", expectedCategory: null, operationalArticle: "needs_review", incomeAssessment: "needs_review", monthlyPaymentAssessment: "NEEDS_REVIEW", recommendedAction: action(officialOnemCode, "review_required") };
+  }
+
   if (composition.kind === "third_parties_only") {
     const cohousingBase = { ...base, sourceRuleIds: [...base.sourceRuleIds, "situation_familiale_cohousing"] };
-    if (cohousingDeclared === undefined) return { ...cohousingBase, status: "needs_information", expectedCategory: null, operationalArticle: "needs_review", incomeAssessment: "needs_review", monthlyPaymentAssessment: "NEEDS_REVIEW", recommendedAction: action(officialOnemCode, "information_required"), factKeys: ["cohousing.declared"] };
-    return cohousingDeclared
-      ? { ...cohousingBase, status: "probable", expectedCategory: "N", operationalArticle: "none", incomeAssessment: "not_relevant", monthlyPaymentAssessment: "NEEDS_REVIEW", recommendedAction: action(officialOnemCode, "declaration_required") }
-      : { ...cohousingBase, status: "probable", expectedCategory: "B", operationalArticle: "none", incomeAssessment: "not_relevant", monthlyPaymentAssessment: "B_RATE", recommendedAction: action(officialOnemCode, "declaration_required") };
+    if (cohousing?.declared === undefined) return { ...cohousingBase, status: "needs_information", expectedCategory: null, operationalArticle: "needs_review", incomeAssessment: "needs_review", monthlyPaymentAssessment: "NEEDS_REVIEW", recommendedAction: action(officialOnemCode, "information_required"), factKeys: ["cohousing.declared"] };
+    if (!cohousing.declared) return { ...cohousingBase, status: "probable", expectedCategory: "B", operationalArticle: "none", incomeAssessment: "not_relevant", monthlyPaymentAssessment: "B_RATE", recommendedAction: action(officialOnemCode, "declaration_required") };
+    if (cohousing.autonomousLiving === undefined) return { ...cohousingBase, status: "needs_information", expectedCategory: null, operationalArticle: "needs_review", incomeAssessment: "needs_review", monthlyPaymentAssessment: "NEEDS_REVIEW", recommendedAction: action(officialOnemCode, "information_required"), factKeys: ["cohousing.autonomousLiving"] };
+    if (cohousing.autonomousLiving !== true) return { ...cohousingBase, status: "needs_review", expectedCategory: null, operationalArticle: "needs_review", incomeAssessment: "needs_review", monthlyPaymentAssessment: "NEEDS_REVIEW", recommendedAction: action(officialOnemCode, "review_required"), factKeys: ["cohousing.autonomousLiving"] };
+    if (cohousing.recognition === "recognised_same_address" && cohousing.relevantAddressChanged !== true) return { ...cohousingBase, status: "probable", expectedCategory: "N", operationalArticle: "none", incomeAssessment: "not_relevant", monthlyPaymentAssessment: "NEEDS_REVIEW", recommendedAction: action(officialOnemCode, "declaration_required"), administrativeTreatment: { knownOnemCode: officialOnemCode, recognition: "recognised_same_address", decisionNeeded: false }, decisiveFacts: ["cohousing.autonomousLiving", "cohousing.recognition"] };
+    return { ...cohousingBase, status: "probable", expectedCategory: "N", operationalArticle: "none", incomeAssessment: "not_relevant", monthlyPaymentAssessment: "NEEDS_REVIEW", recommendedAction: action(officialOnemCode, "await_onem_decision"), administrativeTreatment: { knownOnemCode: officialOnemCode, provisionalCategory: "B", recognition: cohousing.recognition ?? "pending", decisionNeeded: true }, decisiveFacts: ["cohousing.autonomousLiving"] };
   }
 
   if (composition.kind === "spouse_or_partner") {
@@ -359,12 +470,15 @@ export function assessHouseholdBranch(input: {
       sourceRuleIds: [...base.sourceRuleIds, "situation_familiale_conjoint_revenu_am60"],
     };
     const recognised = composition.members.filter(
-      (member) => member.relation === "spouse" || (member.relation === "partner" && member.partnerEstablished === true),
+      (member) => member.relation === "spouse" || (member.relation === "partner" && partnerQualification(member) === true),
     );
     const missingIncome = recognised.some((member) => member.hasProfessionalIncome === undefined || hasRelevantReplacementIncome(member) === undefined);
     if (missingIncome) return { ...spouseBase, status: "needs_information", expectedCategory: null, operationalArticle: "needs_review", incomeAssessment: "needs_review", monthlyPaymentAssessment: "NEEDS_REVIEW", recommendedAction: action(officialOnemCode, "information_required") };
     const withoutIncome = recognised.some((member) => member.hasProfessionalIncome === false && hasRelevantReplacementIncome(member) === false);
     if (withoutIncome) return { ...spouseBase, status: "probable", expectedCategory: "A", operationalArticle: "none", incomeAssessment: "no_income", monthlyPaymentAssessment: "A_RATE", recommendedAction: action(officialOnemCode, "declaration_required") };
+    if (recognised.some((member) => hasRelevantReplacementIncome(member) === true)) {
+      return { ...spouseBase, status: "probable", expectedCategory: "B", operationalArticle: "none", incomeAssessment: "relevant", monthlyPaymentAssessment: "B_RATE", recommendedAction: action(officialOnemCode, "declaration_required") };
+    }
 
     const salaried = recognised.filter((member) => member.hasProfessionalIncome === true && member.professionalIncomeContract !== "other");
     if (salaried.length === 0) return { ...spouseBase, status: "probable", expectedCategory: "B", operationalArticle: "none", incomeAssessment: "relevant", monthlyPaymentAssessment: "B_RATE", recommendedAction: action(officialOnemCode, "declaration_required") };
@@ -476,8 +590,8 @@ export function assessHouseholdBranch(input: {
 
   if (composition.kind === "children_and_third_parties" || composition.kind === "relatives_and_third_parties" || composition.kind === "children_relatives_and_third_parties") {
     const thirdParties = composition.members.filter((member) => member.relation === "third_party");
-    const unknownIncome = thirdParties.some((member) => member.hasProfessionalIncome === undefined && hasRelevantReplacementIncome(member) === undefined);
     const relevantThirdIncome = thirdParties.some((member) => member.hasProfessionalIncome === true || hasRelevantReplacementIncome(member) === true);
+    const unknownIncome = !relevantThirdIncome && thirdParties.some((member) => member.hasProfessionalIncome === undefined || hasRelevantReplacementIncome(member) === undefined);
     const thirdBase = { ...base, sourceRuleIds: [...base.sourceRuleIds, "situation_familiale_third_parties"] };
     if (unknownIncome) return { ...thirdBase, status: "needs_information", expectedCategory: null, operationalArticle: "needs_review", incomeAssessment: "needs_review", monthlyPaymentAssessment: "NEEDS_REVIEW", recommendedAction: action(officialOnemCode, "information_required") };
     if (relevantThirdIncome) return { ...thirdBase, status: "probable", expectedCategory: "B", operationalArticle: "none", incomeAssessment: "relevant", monthlyPaymentAssessment: "B_RATE", recommendedAction: action(officialOnemCode, "declaration_required") };

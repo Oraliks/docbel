@@ -55,23 +55,25 @@ describe("Article 110 scenario matrix", () => {
     }
   });
 
-  it("keeps every co-housing declaration in review without determining a category", () => {
+  it("distinguishes missing co-housing facts, autonomous living and the administrative follow-up", () => {
+    const missingAutonomy = report.scenarios.find((scenario) => scenario.id === "cohousing-autonomy-missing");
     const cohousing = report.scenarios.find((scenario) => scenario.id === "cohousing-never-recognized");
     const alimony = report.scenarios.find((scenario) => scenario.id === "cohousing-alimony-established");
     const confirmed = report.scenarios.find((scenario) => scenario.id === "cohousing-recognized-same-address");
-    expect(cohousing).toMatchObject({ resultType: "onem_decision_required", category: null, onemDecisionStatus: "required" });
-    expect(alimony).toMatchObject({ category: null, onemDecisionStatus: "required" });
-    expect(confirmed).toMatchObject({ category: null, onemDecisionStatus: "required" });
-    expect(cohousing?.reason).toContain("doit être examinée");
-    expect(confirmed?.reason).toContain("doit être examinée");
+    expect(missingAutonomy).toMatchObject({ resultType: "information_missing", category: null });
+    expect(cohousing).toMatchObject({ resultType: "decision_determined", category: "N", onemDecisionStatus: "required" });
+    expect(alimony).toMatchObject({ category: "N", onemDecisionStatus: "required" });
+    expect(confirmed).toMatchObject({ resultType: "decision_determined", category: "N", onemDecisionStatus: "not_required" });
+    expect(cohousing?.reason).toContain("vie autonome");
+    expect(confirmed?.reason).toContain("vie autonome");
     expect(report.potentialTransitions).toEqual({ B_to_N: 0, B_to_A: 0, N_to_A: 0 });
   });
 
-  it("keeps the cohousing result invariant across obsolete documentary states", () => {
+  it("keeps autonomous co-housing independent from obsolete documentary states", () => {
     const noRecognition = report.scenarios.filter((scenario) => scenario.id.startsWith("comb-cohousing-no-"));
     const recognition = report.scenarios.filter((scenario) => scenario.id.startsWith("comb-cohousing-yes-"));
-    expect(new Set(noRecognition.map((scenario) => scenario.category))).toEqual(new Set([null]));
-    expect(new Set(recognition.map((scenario) => scenario.category))).toEqual(new Set([null]));
+    expect(new Set(noRecognition.map((scenario) => scenario.category))).toEqual(new Set(["N"]));
+    expect(new Set(recognition.map((scenario) => scenario.category))).toEqual(new Set(["N"]));
     expect(noRecognition.every((scenario) => scenario.documentStatus === "complete")).toBe(true);
   });
 

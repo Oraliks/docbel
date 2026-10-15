@@ -139,13 +139,14 @@ export function evaluateArticle110Verifier(input: Article110VerifierInput) {
   });
   const missingFacts = (assessment.missingFacts ?? []).map((factKey) => ({ factKey, label: labelForFact(factKey) }));
   const needsInformation = assessment.status === "needs_information";
+  const onemDecisionRequired = assessment.status === "needs_review" || assessment.administrativeTreatment?.decisionNeeded === true;
   return {
     category: assessment.expectedCategory,
     householdAssessment: assessment,
     reason: assessment.explanation ?? "Une évaluation théorique est en cours.",
     missingFacts,
-    nextActions: needsInformation ? ["Compléter les faits manquants pour poursuivre l’évaluation théorique."] : assessment.status === "needs_review" ? ["Faire examiner la situation par l’ONEM avant toute décision."] : [],
-    onemDecisionStatus: assessment.status === "needs_review" ? "required" as const : "not_required" as const,
+    nextActions: needsInformation ? ["Compléter les faits manquants pour poursuivre l’évaluation théorique."] : onemDecisionRequired ? ["Faire examiner la situation par l’ONEM avant toute décision."] : [],
+    onemDecisionStatus: onemDecisionRequired ? "required" as const : "not_required" as const,
     legalWarning: "Résultat théorique : seule l’ONEM détermine la catégorie officielle.",
   };
 }

@@ -183,7 +183,7 @@ describe("Article 110 theoretical verifier", () => {
     const base = { thresholds, people: [{ id: "roommate", relation: "third_party" as const }] };
     const cohousing = evaluateArticle110Verifier({ ...base, cohousing: true, cohousingAutonomousLiving: true, cohousingRecognition: "pending" });
     const ordinaryCohabitation = evaluateArticle110Verifier({ ...base, cohousing: false });
-    expect(cohousing).toMatchObject({ category: "N", householdAssessment: { administrativeTreatment: { provisionalCategory: "B", decisionNeeded: true } } });
+    expect(cohousing).toMatchObject({ category: "N", onemDecisionStatus: "required", householdAssessment: { administrativeTreatment: { provisionalCategory: "B", decisionNeeded: true } } });
     expect(ordinaryCohabitation).toMatchObject({ category: "B", onemDecisionStatus: "not_required" });
   });
 });

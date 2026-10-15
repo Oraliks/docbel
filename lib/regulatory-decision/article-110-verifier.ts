@@ -44,6 +44,8 @@ export type Article110VerifierInput = {
   officialOnemCode?: string;
   /** Asked only for a household composed exclusively of third parties. */
   cohousing?: boolean;
+  cohousingAutonomousLiving?: boolean;
+  cohousingRecognition?: "recognised_same_address" | "pending" | "not_recognised";
   /** The multi-person branch was selected even though no person has been declared yet. */
   multiPersonHouseholdSelected?: boolean;
   /** One declared household-level fact: at least one child still opens family-allowance rights. */
@@ -87,7 +89,11 @@ export function article110VerifierFacts(input: Article110VerifierInput): FamilyF
         : person.receivesFamilyAllowances,
       ...toIncome(person),
     })),
-    cohousing: input.cohousing === undefined ? undefined : { declared: input.cohousing },
+    cohousing: input.cohousing === undefined ? undefined : {
+      declared: input.cohousing,
+      autonomousLiving: input.cohousingAutonomousLiving,
+      recognition: input.cohousingRecognition,
+    },
     isolated: {
       declaredQualifiedBasis: input.isolatedDeclaration,
       alimony: input.alimony?.enabled === undefined ? undefined : {
@@ -112,6 +118,7 @@ function labelForFact(factKey: string) {
   if (factKey === "isolated.alternatingCare.childHasRelevantIncome") return "Précisez si l’enfant dispose de revenus professionnels ou de remplacement pertinents.";
   if (factKey === "isolated.alimony") return "Les conditions de la pension alimentaire doivent être précisées.";
   if (factKey === "cohousing.declared") return "Indiquez si vous vivez en co-housing plutôt qu’en cohabitation ordinaire.";
+  if (factKey === "cohousing.autonomousLiving") return "Précisez si les faits établissent réellement une vie autonome en co-housing.";
   return "Des informations sur la composition ou les revenus du ménage doivent être précisées.";
 }
 
@@ -132,13 +139,14 @@ export function evaluateArticle110Verifier(input: Article110VerifierInput) {
   });
   const missingFacts = (assessment.missingFacts ?? []).map((factKey) => ({ factKey, label: labelForFact(factKey) }));
   const needsInformation = assessment.status === "needs_information";
+  const onemDecisionRequired = assessment.status === "needs_review" || assessment.administrativeTreatment?.decisionNeeded === true;
   return {
     category: assessment.expectedCategory,
     householdAssessment: assessment,
     reason: assessment.explanation ?? "Une évaluation théorique est en cours.",
     missingFacts,
-    nextActions: needsInformation ? ["Compléter les faits manquants pour poursuivre l’évaluation théorique."] : assessment.status === "needs_review" ? ["Faire examiner la situation par l’ONEM avant toute décision."] : [],
-    onemDecisionStatus: assessment.status === "needs_review" ? "required" as const : "not_required" as const,
+    nextActions: needsInformation ? ["Compléter les faits manquants pour poursuivre l’évaluation théorique."] : onemDecisionRequired ? ["Faire examiner la situation par l’ONEM avant toute décision."] : [],
+    onemDecisionStatus: onemDecisionRequired ? "required" as const : "not_required" as const,
     legalWarning: "Résultat théorique : seule l’ONEM détermine la catégorie officielle.",
   };
 }

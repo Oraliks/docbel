@@ -19,6 +19,7 @@ export type FamilyTreeState = {
   alternatingCareChildHasRelevantIncome?: boolean;
   cohousing?: boolean;
   cohousingRecognition?: boolean;
+  cohousingAutonomousLiving?: boolean;
   /** Declared once for the whole children branch when it can change the result. */
   anyChildReceivesFamilyAllowances?: boolean;
 };

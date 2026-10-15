@@ -116,10 +116,11 @@ export function generateRepresentativeArticle110Scenarios(thresholds: C1BaremeTh
     { id: "alimony-established", label: "Pension alimentaire documentée", input: { people: [], alimony: { enabled: true, beneficiary: "enfant-mineur", paymentEffective: true, legalBasis: "decision-judiciaire", documentStatus: "en-main" } } },
     { id: "alternating-care-pending", label: "Hébergement alterné : acte en attente", input: { people: [], alternatingCare: { enabled: true, documentStatus: "en-cours" } } },
     { id: "alternating-care-established", label: "Hébergement alterné documenté", input: { people: [], alternatingCare: { enabled: true, regular: true, familyAllowances: true, documentStatus: "jugement" } } },
-    { id: "cohousing-never-recognized", label: "Co-housing jamais reconnu", input: { people: [], isAloneExplicit: true, cohousingClaim: true, cohousingOnemRecognition: "no", cohousingDocuments: { lease: true, regis: true, swornStatement: true } } },
-    { id: "cohousing-alimony-established", label: "Co-housing avec pension alimentaire établie", input: { people: [], isAloneExplicit: true, cohousingClaim: true, cohousingOnemRecognition: "no", cohousingDocuments: { lease: true, regis: true, swornStatement: true }, alimony: { enabled: true, legalConditionEstablished: true, documentStatus: "en-main" } } },
-    { id: "cohousing-recognized-same-address", label: "Co-housing reconnu à la même adresse", input: { people: [], isAloneExplicit: true, cohousingClaim: true, cohousingOnemRecognition: "yes", cohousingDocuments: { lease: true, regis: true, swornStatement: true } } },
-    { id: "cohousing-recognition-unknown", label: "Reconnaissance ONEM inconnue", input: { people: [], isAloneExplicit: true, cohousingClaim: true, cohousingOnemRecognition: "unknown" } },
+    { id: "cohousing-autonomy-missing", label: "Co-housing sans faits sur la vie autonome", input: { people: [], isAloneExplicit: true, cohousingClaim: true, cohousingOnemRecognition: "no" } },
+    { id: "cohousing-never-recognized", label: "Co-housing autonome jamais reconnu", input: { people: [], isAloneExplicit: true, cohousingClaim: true, cohousingAutonomousLiving: true, cohousingOnemRecognition: "no", cohousingDocuments: { lease: true, regis: true, swornStatement: true } } },
+    { id: "cohousing-alimony-established", label: "Co-housing autonome avec pension alimentaire établie", input: { people: [], isAloneExplicit: true, cohousingClaim: true, cohousingAutonomousLiving: true, cohousingOnemRecognition: "no", cohousingDocuments: { lease: true, regis: true, swornStatement: true }, alimony: { enabled: true, legalConditionEstablished: true, documentStatus: "en-main" } } },
+    { id: "cohousing-recognized-same-address", label: "Co-housing autonome reconnu à la même adresse", input: { people: [], isAloneExplicit: true, cohousingClaim: true, cohousingAutonomousLiving: true, cohousingOnemRecognition: "yes", cohousingDocuments: { lease: true, regis: true, swornStatement: true } } },
+    { id: "cohousing-recognition-unknown", label: "Co-housing autonome : reconnaissance ONEM inconnue", input: { people: [], isAloneExplicit: true, cohousingClaim: true, cohousingAutonomousLiving: true, cohousingOnemRecognition: "unknown" } },
     { id: "unknown-relation", label: "Relation hors périmètre", input: { people: [member("unknown", "Autre", "unknown")] } },
   ];
 }
@@ -199,7 +200,7 @@ function combinatorialCandidates(thresholds: C1BaremeThresholds): ScenarioCandid
   for (const [id, people] of compositions) candidates.push(scenario(`comb-composition-${id}`, "Composition croisée", { people: [...people] }));
   for (const [id, alimony] of [["pending", { enabled: true, documentStatus: "en-cours" as const }], ["available", { enabled: true, beneficiary: "enfant-mineur" as const, paymentEffective: true, legalBasis: "decision-judiciaire" as const, documentStatus: "en-main" as const }]] as const) candidates.push(scenario(`comb-alimony-${id}`, "Pension alimentaire", { people: [], alimony }));
   for (const [id, alternatingCare] of [["pending", { enabled: true, documentStatus: "en-cours" as const }], ["available", { enabled: true, regular: true, familyAllowances: true, documentStatus: "jugement" as const }]] as const) candidates.push(scenario(`comb-care-${id}`, "Hébergement alterné", { people: [], alternatingCare }));
-  for (const recognition of ["yes", "no", "unknown"] as const) for (const lease of [false, true]) for (const regis of [false, true]) for (const swornStatement of [false, true]) candidates.push(scenario(`comb-cohousing-${recognition}-${Number(lease)}${Number(regis)}${Number(swornStatement)}`, "Co-housing", { people: [], isAloneExplicit: true, cohousingClaim: true, cohousingOnemRecognition: recognition, cohousingDocuments: { lease, regis, swornStatement } }));
+  for (const recognition of ["yes", "no", "unknown"] as const) for (const lease of [false, true]) for (const regis of [false, true]) for (const swornStatement of [false, true]) candidates.push(scenario(`comb-cohousing-${recognition}-${Number(lease)}${Number(regis)}${Number(swornStatement)}`, "Co-housing autonome", { people: [], isAloneExplicit: true, cohousingClaim: true, cohousingAutonomousLiving: true, cohousingOnemRecognition: recognition, cohousingDocuments: { lease, regis, swornStatement } }));
   candidates.push({ exclusion: "seul_et_conjoint_incompatibles" }, { exclusion: "cohousing_avec_famille_incompatible" }, { exclusion: "document_sur_branche_non_concernee" }, { exclusion: "doublon_symetrique_normalise_avant_execution" });
   return candidates;
 }
@@ -225,7 +226,7 @@ export function generateArticle110Scenarios(thresholds: C1BaremeThresholds): Art
 }
 
 function inputForUnifiedVerifier(input: LegacyScenarioInput): Article110VerifierInput {
-  const { assessedAt, cohousingClaim, cohousingOnemRecognition: _recognition, cohousingDocuments: _documents, ...facts } = input;
+  const { assessedAt, cohousingClaim, cohousingOnemRecognition, cohousingDocuments: _documents, ...facts } = input;
   const people = cohousingClaim
     ? [{ id: "cohousing-third-party", label: "Tiers", relation: "third_party" as const }]
     : facts.people.length === 0 && facts.isAloneExplicit !== true
@@ -238,7 +239,10 @@ function inputForUnifiedVerifier(input: LegacyScenarioInput): Article110Verifier
     ...(facts.alimony?.enabled === false ? { alimony: undefined } : {}),
     ...(facts.alternatingCare?.enabled === false ? { alternatingCare: undefined } : {}),
     ...(assessedAt ? { asOf: assessedAt.toISOString().slice(0, 10) } : {}),
-    ...(cohousingClaim === undefined ? {} : { cohousing: cohousingClaim }),
+    ...(cohousingClaim === undefined ? {} : {
+      cohousing: cohousingClaim,
+      cohousingRecognition: cohousingOnemRecognition === "yes" ? "recognised_same_address" : cohousingOnemRecognition === "no" ? "not_recognised" : "pending",
+    }),
   } as Article110VerifierInput;
 }
 
@@ -299,11 +303,11 @@ export function evaluateArticle110ScenarioMatrix(thresholds: C1BaremeThresholds,
   const incoherent = scenarios.filter((scenario) => scenario.category === null && scenario.resultType === "decision_determined").map((scenario) => scenario.id);
   const withoutReason = scenarios.filter((scenario) => !scenario.reason.trim()).map((scenario) => scenario.id);
   const coverage = {
-    partenaire: ["conjoint", "partenaire établi", "revenu pro : inconnu/non/sous seuil/seuil/au-dessus/variable", "revenu de remplacement : inconnu/non/oui", "C110A : présent/absent", "priorité avec enfant/parent/tiers"],
+    partenaire: ["conjoint", "partenaire déclaré", "revenu pro : inconnu/non/sous seuil/seuil/au-dessus/variable", "revenu de remplacement : inconnu/non/oui", "C110A : présent/absent", "priorité avec enfant/parent/tiers"],
     enfants: ["nombre : 1/2/3", "allocations familiales : oui/non/inconnu", "revenu pro : oui/non/inconnu", "revenu de remplacement : oui/non/inconnu", "110&1M : date manquante/début/période/veille/échéance/lendemain/fin de mois/bissextile"],
     parents: ["nombre : 1/2", "revenu pro : oui/non", "pension : sous seuil/seuil/au-dessus", "preuve SPF : présente/absente", "handicap : documenté"],
     compositions: ["seul", "tiers", "enfant + tiers", "parent + tiers", "enfant + parent + tiers", "partenaire + autres", "relations ambiguës"],
-    situations_isolees: ["pension alimentaire : condition établie/en attente, pièce disponible/manquante", "hébergement alterné : condition établie/en attente, pièce disponible/manquante", "co-housing : reconnaissance ONEM oui/non/inconnue × pièces", "co-housing + pension alimentaire établie"],
+    situations_isolees: ["pension alimentaire : condition établie/en attente, pièce disponible/manquante", "hébergement alterné : condition établie/en attente, pièce disponible/manquante", "co-housing : vie autonome établie/non renseignée + reconnaissance ONEM oui/non/inconnue", "co-housing + pension alimentaire établie"],
   };
   const mixedGroups = new Map<string, Article110ScenarioContract[]>();
   for (const scenario of scenarios.filter((scenario) => scenario.branch === "mixed_or_unsupported")) {
@@ -316,8 +320,8 @@ export function evaluateArticle110ScenarioMatrix(thresholds: C1BaremeThresholds,
     count: group.length,
     facts: group[0].facts.people.map((person) => `${person.relation}${person.partnerEstablished === false ? " non établi" : ""}`).join(", "),
     householdComposition: group[0].householdComposition,
-    classifierReason: "Le classificateur retourne mixed_or_unsupported lorsqu’une relation est inconnue ou qu’un partenaire n’est pas établi.",
-    expectedBranchIfKnown: group[0].facts.people.some((person) => person.relation === "third_party") ? "tiers seul : branche non automatisée" : group[0].facts.people.some((person) => person.relation === "partner") ? "conjoint ou partenaire établi" : "relation à qualifier",
+    classifierReason: "Le classificateur retourne mixed_or_unsupported lorsqu’une relation est inconnue.",
+    expectedBranchIfKnown: group[0].facts.people.some((person) => person.relation === "third_party") ? "tiers seul : branche non automatisée" : group[0].facts.people.some((person) => person.relation === "partner") ? "conjoint ou partenaire déclaré" : "relation à qualifier",
     diagnosis: "A" as const,
   }));
   const compositionName = (scenario: Article110ScenarioContract) => {

@@ -24,8 +24,12 @@ function evaluateTree(state: FamilyTreeState, extra: Partial<Article110VerifierI
     asOf: "2026-10-12",
     isAloneExplicit: state.branch === "alone",
     multiPersonHouseholdSelected: state.branch === "others",
-    isolatedDeclaration: state.declaredAloneSituation === "none" ? undefined : state.declaredAloneSituation,
+    isolatedDeclaration: state.declaredAloneSituation === "alternating_care" ? "alternating_care" : undefined,
+    alimony: state.declaredAloneSituation === "alimony" ? { enabled: true, legalConditionEstablished: state.alimonyLegalCondition, beneficiary: "minor_child" } : undefined,
     anyChildReceivesFamilyAllowances: state.anyChildReceivesFamilyAllowances,
+    cohousing: state.cohousing,
+    cohousingAutonomousLiving: state.cohousingAutonomousLiving,
+    cohousingRecognition: state.cohousingRecognition === true ? "recognised_same_address" : state.cohousingRecognition === false ? "pending" : undefined,
     ...extra,
   });
 }
@@ -83,14 +87,14 @@ describe("interactive family tree state", () => {
       alternatingCare: true,
       alternatingCareDaysPerWeek: 2,
     }, "alternating_care");
-    const alimony = setDeclaredAloneSituation(care, "alimony");
+    const alimony = { ...setDeclaredAloneSituation(care, "alimony"), alimonyLegalCondition: true };
 
     expect(care).toMatchObject({ declaredAloneSituation: "alternating_care" });
     expect(care.alimony).toBeUndefined();
     expect(care.alternatingCare).toBeUndefined();
     expect(evaluateTree(care)).toMatchObject({ category: "A", householdAssessment: { declaredQualifiedBasis: "alternating_care" } });
     expect(alimony).toMatchObject({ declaredAloneSituation: "alimony" });
-    expect(evaluateTree(alimony)).toMatchObject({ category: "A", householdAssessment: { declaredQualifiedBasis: "alimony" } });
+    expect(evaluateTree(alimony)).toMatchObject({ category: "A", householdAssessment: { sourceRuleIds: ["situation_familiale_isole_pension_alimentaire"] } });
   });
 
   it("delegates a partner without income to the shared A result", () => {
@@ -221,15 +225,16 @@ describe("interactive family tree state", () => {
       ...chooseFamilyTreeBranch("others"),
       people: [{ id: "friend", label: "Ami", relation: "third_party" as const, hasProfessionalIncome: false, hasReplacementIncome: false }],
     };
-    expect(evaluateTree(state, { cohousing: true }).householdAssessment).toMatchObject({
+    expect(evaluateTree(state, { cohousing: true, cohousingAutonomousLiving: true, cohousingRecognition: "pending" }).householdAssessment).toMatchObject({
       composition: "third_parties_only",
-      expectedCategory: null,
-      status: "needs_review",
+      expectedCategory: "N",
+      status: "probable",
+      administrativeTreatment: { provisionalCategory: "B" },
     });
     expect(evaluateTree(state, { cohousing: false }).householdAssessment).toMatchObject({
       composition: "third_parties_only",
-      expectedCategory: null,
-      status: "needs_review",
+      expectedCategory: "B",
+      status: "probable",
     });
   });
 

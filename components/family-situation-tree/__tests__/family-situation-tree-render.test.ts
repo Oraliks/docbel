@@ -52,10 +52,10 @@ describe("FamilySituationTree — rendu i18n réel", () => {
     expect(html).not.toContain("Taux du mois renvoyé par le socle");
   });
 
-  it("renders the unanswered partner question as an accessible choice, not a review panel", () => {
+  it("uses the declared partner branch and asks for the income facts", () => {
     const html = renderTree({ branch: "partner", people: [{ id: "partner", relation: "partner", label: "partner" }] });
 
-    expect(html).toContain("Votre partenaire remplit-il les conditions pour être pris en compte dans votre ménage ?");
+    expect(html).toContain("Revenus du conjoint ou partenaire");
     expect(html).toContain('role="radiogroup"');
     expect(html).not.toContain("Situation à examiner");
     expect(html).not.toContain("Une précision est nécessaire");
@@ -80,7 +80,7 @@ describe("FamilySituationTree — rendu i18n réel", () => {
     expect(html).not.toContain("A — Avec charge de famille");
   });
 
-  it("renders the shared ONEM review for an answered third-party household", () => {
+  it("returns B for an answered ordinary third-party household", () => {
     const html = renderTree({
       branch: "others",
       cohousing: false,
@@ -93,8 +93,8 @@ describe("FamilySituationTree — rendu i18n réel", () => {
       }],
     });
 
-    expect(html).toContain("Situation à examiner");
-    expect(html).toContain("doit être examinée par l’ONEM");
+    expect(html).toContain("B — Cohabitant sans charge de famille");
+    expect(html).toContain("cohabitation ordinaire");
   });
 
   it("explains when the selected date predates the published barème", () => {
@@ -102,7 +102,7 @@ describe("FamilySituationTree — rendu i18n réel", () => {
     const html = renderToStaticMarkup(
       createElement(
         NextIntlClientProvider,
-        { locale: "fr", messages },
+        { locale: "fr", messages } as Parameters<typeof NextIntlClientProvider>[0],
         createElement(FamilySituationTree, {
           thresholds: datedThresholds,
           initialAsOf: "2026-01-31",

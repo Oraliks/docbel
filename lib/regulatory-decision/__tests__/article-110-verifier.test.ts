@@ -141,15 +141,13 @@ describe("Article 110 theoretical verifier", () => {
     expect(result.missingFacts).toEqual([]);
   });
 
-  it.each([
-    ["alternating_care", "situation_familiale_isole_garde_alternee"],
-    ["alimony", "situation_familiale_isole_pension_alimentaire"],
-  ] as const)("returns an A orientation for a qualified isolated declaration: %s", (isolatedDeclaration, sourceRuleId) => {
+  it("returns an A orientation for a qualified alternating-care declaration", () => {
+    const isolatedDeclaration = "alternating_care";
     const result = evaluateArticle110Verifier({ thresholds, isAloneExplicit: true, people: [], isolatedDeclaration });
 
     expect(result).toMatchObject({
       category: "A",
-      householdAssessment: { status: "probable", expectedCategory: "A", declaredQualifiedBasis: isolatedDeclaration, sourceRuleIds: [sourceRuleId] },
+      householdAssessment: { status: "probable", expectedCategory: "A", declaredQualifiedBasis: isolatedDeclaration, sourceRuleIds: ["situation_familiale_isole_garde_alternee"] },
     });
     expect(result.missingFacts).toEqual([]);
   });
@@ -160,13 +158,32 @@ describe("Article 110 theoretical verifier", () => {
     expect(result.missingFacts.map((fact) => fact.factKey)).toEqual(["isolated.alternatingCare.averageDaysPerWeek", "isolated.alternatingCare.cycle"]);
   });
 
-  it("sends an answered co-housing or ordinary cohabitation fact to ONEM review", () => {
+  it("preserves the theoretical A when the alimony basis exists even if its copy is pending", () => {
+    const result = evaluateArticle110Verifier({
+      thresholds,
+      isAloneExplicit: true,
+      people: [],
+      alimony: { enabled: true, legalConditionEstablished: true, beneficiary: "minor_child" },
+      alternatingCare: { enabled: true, averageDaysPerWeek: 2, cycle: "monthly", familyAllowances: true },
+    });
+    expect(result).toMatchObject({ category: "A", householdAssessment: { sourceRuleIds: ["situation_familiale_isole_pension_alimentaire"] } });
+  });
+
+  it("keeps N when an alimony judgment is not yet legally established", () => {
+    const result = evaluateArticle110Verifier({
+      thresholds,
+      isAloneExplicit: true,
+      people: [],
+      alimony: { enabled: true, legalConditionEstablished: false, beneficiary: "minor_child" },
+    });
+    expect(result).toMatchObject({ category: "N", householdAssessment: { sourceRuleIds: ["situation_familiale_isole_pension_alimentaire"] } });
+  });
+
+  it("distinguishes established autonomous co-housing from the administrative pending state", () => {
     const base = { thresholds, people: [{ id: "roommate", relation: "third_party" as const }] };
-    const cohousing = evaluateArticle110Verifier({ ...base, cohousing: true });
+    const cohousing = evaluateArticle110Verifier({ ...base, cohousing: true, cohousingAutonomousLiving: true, cohousingRecognition: "pending" });
     const ordinaryCohabitation = evaluateArticle110Verifier({ ...base, cohousing: false });
-    expect(cohousing).toMatchObject({ category: null, onemDecisionStatus: "required" });
-    expect(cohousing.reason).toContain("doit être examinée");
-    expect(ordinaryCohabitation).toMatchObject({ category: null, onemDecisionStatus: "required" });
-    expect(ordinaryCohabitation.reason).toContain("doit être examinée");
+    expect(cohousing).toMatchObject({ category: "N", onemDecisionStatus: "required", householdAssessment: { administrativeTreatment: { provisionalCategory: "B", decisionNeeded: true } } });
+    expect(ordinaryCohabitation).toMatchObject({ category: "B", onemDecisionStatus: "not_required" });
   });
 });

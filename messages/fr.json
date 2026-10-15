@@ -4701,6 +4701,7 @@
         "categoryBLabel": "B — Cohabitant sans charge de famille",
         "resultPending": "Situation à préciser",
         "cohousingAdministrativePending": "La catégorie théorique reste N. Le taux B provisoire décrit uniquement le traitement administratif pendant l’examen par l’ONEM.",
+        "householdDiscordanceNotice": "Une discordance administrative est signalée. Elle ne modifie pas ce résultat théorique fondé sur votre déclaration.",
         "treatment60A": "Le traitement applicable est celui d’un revenu fixe sous le plafond daté.",
         "treatment60B": "Le traitement de base reste celui d’un revenu variable ou à vérifier pour le mois évalué.",
         "monthlyRateA": "Le montant déclaré pour le mois évalué permet une orientation au taux A.",
@@ -4835,7 +4836,8 @@
       "article110VerifierCategoryN": "N — isolé",
       "article110VerifierCategoryUndetermined": "À vérifier",
       "article110VerifierOnemReview": "Cette branche ne permet pas de conclure à une catégorie : une vérification par l’ONEM reste nécessaire.",
-      "article110VerifierCohousingAdministrativePending": "La catégorie théorique reste N. Le taux B provisoire décrit uniquement le traitement administratif pendant l’examen par l’ONEM."
+      "article110VerifierCohousingAdministrativePending": "La catégorie théorique reste N. Le taux B provisoire décrit uniquement le traitement administratif pendant l’examen par l’ONEM.",
+      "article110VerifierHouseholdDiscordanceNotice": "Une discordance administrative est signalée. Elle ne modifie pas ce résultat théorique fondé sur votre déclaration."
     },
     "auth": {
       "title": "Connexion",

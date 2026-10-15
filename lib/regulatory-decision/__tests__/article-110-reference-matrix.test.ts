@@ -9,13 +9,14 @@ const thresholds = {
   ascendantDisabledPensionMonthly: 1_200, source: null,
 };
 
-const alone: Pick<Article110VerifierInput, "isAloneExplicit" | "registryLivesAlone" | "relevantHouseholdDiscordance" | "people"> = { isAloneExplicit: true, registryLivesAlone: true, relevantHouseholdDiscordance: false, people: [] };
+const alone: Pick<Article110VerifierInput, "isAloneExplicit" | "people"> = { isAloneExplicit: true, people: [] };
 const spouse = (extra: Omit<Article110VerifierPerson, "id" | "relation">) => ({ people: [{ ...extra, id: "spouse", relation: "spouse" as const }] });
+const partner = (extra: Omit<Article110VerifierPerson, "id" | "relation">) => ({ people: [{ ...extra, id: "partner", relation: "partner" as const }] });
 
 describe("Article 110 reference matrix", () => {
   it.each([
     ["unknown composition", { people: [] }, null],
-    ["declared alone confirmed by registry", alone, "N"],
+    ["declared alone without registry data", alone, "N"],
     ["recognised autonomous co-housing", { people: [{ id: "third", relation: "third_party" as const }], cohousing: true, cohousingAutonomousLiving: true, cohousingRecognition: "recognised_same_address" as const, cohousingRelevantAddressChanged: false }, "N"],
     ["pending autonomous co-housing", { people: [{ id: "third", relation: "third_party" as const }], cohousing: true, cohousingAutonomousLiving: true, cohousingRecognition: "pending" as const }, "N"],
     ["unqualified co-housing", { people: [{ id: "third", relation: "third_party" as const }], cohousing: true }, null],
@@ -24,6 +25,8 @@ describe("Article 110 reference matrix", () => {
     ["alternating care after a negative alimony answer", { ...alone, alimony: { enabled: false }, alternatingCare: { enabled: true, averageDaysPerWeek: 2, cycle: "monthly" as const, familyAllowances: true } }, "A"],
     ["no particular isolated situation", { ...alone, alimony: { enabled: false }, alternatingCare: { enabled: false } }, "N"],
     ["spouse without income", spouse({ hasProfessionalIncome: false, hasReplacementIncome: false }), "A"],
+    ["declared partner without income", partner({ hasProfessionalIncome: false, hasReplacementIncome: false }), "A"],
+    ["declared partner with variable income", partner({ hasProfessionalIncome: true, professionalIncomeType: "employee", professionalIncomeContract: "cdi", professionalIncomeVariable: true, professionalIncomeAmount: 900, hasReplacementIncome: false }), "B"],
     ["independent activity is relevant without an amount", spouse({ hasProfessionalIncome: true, professionalIncomeType: "independent", hasReplacementIncome: false }), "B"],
     ["fixed salary below the dated ceiling", spouse({ hasProfessionalIncome: true, professionalIncomeType: "employee", professionalIncomeContract: "cdi", professionalIncomeVariable: false, professionalIncomeAmount: 1_000, hasReplacementIncome: false }), "A"],
     ["variable salary has a B base treatment", spouse({ hasProfessionalIncome: true, professionalIncomeType: "employee", professionalIncomeContract: "cdi", professionalIncomeVariable: true, professionalIncomeAmount: 900, hasReplacementIncome: false }), "B"],
@@ -36,6 +39,11 @@ describe("Article 110 reference matrix", () => {
     expect(result.householdAssessment.administrativeTreatment).toMatchObject({ provisionalCategory: "B", decisionNeeded: true });
   });
 
+  it("signals a declared-alone registry discordance without replacing N", () => {
+    const result = evaluateArticle110Verifier({ thresholds, ...alone, registryLivesAlone: false, relevantHouseholdDiscordance: true });
+    expect(result).toMatchObject({ category: "N", householdAssessment: { administrativeTreatment: { householdDiscordance: true } } });
+  });
+
   it("keeps the theoretical A category when the legal basis exists but its copy is unavailable", () => {
     const result = evaluateArticle110Verifier({ thresholds, ...alone, alimony: { enabled: true, legalBasis: "established", proofAvailable: false, beneficiary: "minor_child" } });
     expect(result.category).toBe("A");
@@ -44,7 +52,7 @@ describe("Article 110 reference matrix", () => {
 
   it("gives the Tree and Verifier identical outcomes from the same normalised facts", () => {
     const state: FamilyTreeState = {
-      branch: "alone", people: [], registryLivesAlone: true, relevantHouseholdDiscordance: false,
+      branch: "alone", people: [],
       declaredAloneSituation: "alternating_care", alternatingCareDaysPerWeek: 2,
       alternatingCareCycle: "monthly", alternatingCareFamilyAllowances: true,
     };

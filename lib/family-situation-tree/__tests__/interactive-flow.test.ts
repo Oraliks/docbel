@@ -10,7 +10,6 @@ const thresholds: C1BaremeThresholds = {
   ascendantPensionWithChildMonthly: 1_500, ascendantPensionMonthly: 1_000, ascendantDisabledPensionMonthly: 1_200,
   source: { fileId: "family-tree-test", fileName: "bareme-test.xlsx", validFrom: new Date("2026-09-01") },
 };
-const qualifiedPartner = { livesTogether: true, formsHouseholdOfFact: true, relatedWithinThirdDegree: false, receivesFamilyAllowances: false, receivesSocialIntegration: false, alreadyDependentElsewhere: false, marriedOrCohabitsWithSpouse: false };
 function evaluateTree(state: FamilyTreeState, extra: Partial<Article110VerifierInput> = {}) {
   return evaluateArticle110Verifier({ people: state.people, thresholds, asOf: "2026-10-12", isAloneExplicit: state.branch === "alone", ...extra });
 }
@@ -23,15 +22,15 @@ describe("interactive family tree state", () => {
     expect(state.people[0]).not.toHaveProperty("hasProfessionalIncome");
   });
 
-  it("keeps a partner incomplete until the seven concrete facts are declared", () => {
+  it("keeps a declared partner incomplete only until its income facts are declared", () => {
     const incomplete = chooseFamilyTreeBranch("partner");
     expect(evaluateTree(incomplete).householdAssessment).toMatchObject({ status: "needs_information", expectedCategory: null });
-    const complete = updateTreePerson(incomplete, "partner", { partnerFacts: qualifiedPartner, hasProfessionalIncome: false, hasReplacementIncome: false });
+    const complete = updateTreePerson(incomplete, "partner", { hasProfessionalIncome: false, hasReplacementIncome: false });
     expect(evaluateTree(complete).householdAssessment).toMatchObject({ composition: "spouse_or_partner", expectedCategory: "A" });
   });
 
   it("uses the dated ceiling and retains professional and replacement income together", () => {
-    const state = updateTreePerson(chooseFamilyTreeBranch("partner"), "partner", { partnerFacts: qualifiedPartner, hasProfessionalIncome: true, professionalIncomeType: "employee", professionalIncomeAmount: 1_000, professionalIncomeContract: "cdi", professionalIncomeVariable: false, hasReplacementIncome: true, replacementIncomeType: "unemployment" });
+    const state = updateTreePerson(chooseFamilyTreeBranch("partner"), "partner", { hasProfessionalIncome: true, professionalIncomeType: "employee", professionalIncomeAmount: 1_000, professionalIncomeContract: "cdi", professionalIncomeVariable: false, hasReplacementIncome: true, replacementIncomeType: "unemployment" });
     expect(evaluateTree(state).householdAssessment).toMatchObject({ expectedCategory: "B", monthlyPaymentAssessment: "B_RATE" });
   });
 

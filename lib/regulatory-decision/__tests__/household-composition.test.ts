@@ -260,15 +260,15 @@ describe("household composition before Article 110 branch evaluation", () => {
     });
   });
 
-  it("sends an ambiguous partner relationship to review", () => {
+  it("classifies a declared partner before other household relationships", () => {
     const composition = classifyHouseholdComposition([member("partner")]);
-    expect(composition).toMatchObject({ kind: "mixed_or_unsupported", needsReview: true });
+    expect(composition).toMatchObject({ kind: "spouse_or_partner", needsReview: false });
     expect(assessHouseholdBranch({ composition, activeChildIncomeNeutralisation: false }).status).toBe("needs_information");
   });
 
-  it("accepts a non-married partner only after its conditions are established, while a friend uses the co-housing branch", () => {
-    const established = classifyHouseholdComposition([member("partner", { partnerFacts: { livesTogether: true, formsHouseholdOfFact: true, relatedWithinThirdDegree: false, receivesFamilyAllowances: false, receivesSocialIntegration: false, alreadyDependentElsewhere: false, marriedOrCohabitsWithSpouse: false }, hasProfessionalIncome: false, hasReplacementIncome: false })]);
-    expect(assessHouseholdBranch({ composition: established, activeChildIncomeNeutralisation: false })).toMatchObject({ expectedCategory: "A" });
+  it("uses the declared partner branch while a friend uses the co-housing branch", () => {
+    const declaredPartner = classifyHouseholdComposition([member("partner", { hasProfessionalIncome: false, hasReplacementIncome: false })]);
+    expect(assessHouseholdBranch({ composition: declaredPartner, activeChildIncomeNeutralisation: false })).toMatchObject({ expectedCategory: "A" });
     const friend = classifyHouseholdComposition([member("third_party", { hasProfessionalIncome: false })]);
     expect(friend.kind).not.toBe("spouse_or_partner");
     expect(assessHouseholdBranch({ composition: friend, activeChildIncomeNeutralisation: false, cohousing: { declared: false } })).toMatchObject({ expectedCategory: "B", status: "probable" });
@@ -370,9 +370,9 @@ describe("household composition before Article 110 branch evaluation", () => {
     expect(assessHouseholdBranch({ composition: classifyHouseholdComposition([childAf, parentNoIncome, tierIncome]), activeChildIncomeNeutralisation: false })).toMatchObject({ expectedCategory: "B" });
   });
 
-  it("safe-fails a tier with unknown income or a possible unestablished partner", () => {
+  it("safe-fails a tier or declared partner with unknown income", () => {
     expect(assessHouseholdBranch({ composition: classifyHouseholdComposition([member("child", { receivesFamilyAllowances: true }), member("third_party")]), activeChildIncomeNeutralisation: false })).toMatchObject({ status: "needs_information", expectedCategory: null });
-    expect(classifyHouseholdComposition([member("partner"), member("third_party")])).toMatchObject({ needsReview: true });
+    expect(assessHouseholdBranch({ composition: classifyHouseholdComposition([member("partner"), member("third_party")]), activeChildIncomeNeutralisation: false })).toMatchObject({ status: "needs_information", expectedCategory: null });
   });
 
   it("E. uses the threshold supplied by the applicable dated barème", () => {

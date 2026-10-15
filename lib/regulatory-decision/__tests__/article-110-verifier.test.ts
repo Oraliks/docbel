@@ -40,21 +40,19 @@ describe("Article 110 theoretical verifier", () => {
     expect(result.missingFacts).toEqual([]);
   });
 
-  it("does not accept a partner self-qualification in place of the underlying facts", () => {
+  it("uses a declared partner branch and asks only for its income facts", () => {
     const result = evaluateArticle110Verifier({
       thresholds,
       people: [{ id: "partner", relation: "partner", partnerEstablished: true, hasProfessionalIncome: false, hasReplacementIncome: false }],
     });
-    expect(result).toMatchObject({ category: null, onemDecisionStatus: "not_required" });
-    expect(result.missingFacts.map((fact) => fact.factKey)).toContain("partner.formsHouseholdOfFact");
+    expect(result).toMatchObject({ category: "A", onemDecisionStatus: "not_required" });
   });
 
-  it("derives the partner qualification from concrete Article 110 facts", () => {
+  it("does not require legacy partner qualification facts", () => {
     const result = evaluateArticle110Verifier({
       thresholds,
       people: [{
         id: "partner", relation: "partner", hasProfessionalIncome: false, hasReplacementIncome: false,
-        partnerFacts: { livesTogether: true, formsHouseholdOfFact: true, relatedWithinThirdDegree: false, receivesFamilyAllowances: false, receivesSocialIntegration: false, alreadyDependentElsewhere: false, marriedOrCohabitsWithSpouse: false },
       }],
     });
     expect(result).toMatchObject({ category: "A", onemDecisionStatus: "not_required" });

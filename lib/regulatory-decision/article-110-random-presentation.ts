@@ -40,6 +40,13 @@ function personMessage(person: Article110VerifierPerson, reference = false): Per
   if (person.relation === "spouse") return { key: reference ? "article110RandomPersonReferenceSpouse" : "article110RandomPersonSpouse" };
   if (person.relation === "partner") return { key: reference ? "article110RandomPersonReferencePartner" : "article110RandomPersonPartner" };
   if (person.relation === "child") return { key: reference ? "article110RandomPersonReferenceChild" : "article110RandomPersonChild" };
+  if (person.relation === "relative" && person.label?.trim()) {
+    const relation = person.label.trim().toLocaleLowerCase("fr");
+    return {
+      key: reference ? "article110RandomPersonReferenceRelativeNamed" : "article110RandomPersonRelativeNamed",
+      values: { relation },
+    };
+  }
   if (person.relation === "relative") return { key: reference ? "article110RandomPersonReferenceRelative" : "article110RandomPersonRelative" };
   if (person.relation === "third_party") return thirdPartyMessage(person, reference);
   return { key: reference ? "article110RandomPersonReferenceUnknown" : "article110RandomPersonUnknown" };
@@ -89,7 +96,18 @@ export function presentArticle110RandomInput(input: Article110VerifierInput, loc
     } else if (person.hasProfessionalIncome === false) incomes.push({ key: "article110RandomNoProfessionalIncome", person: personRef });
     if (person.hasReplacementIncome === true) {
       const amount = person.replacementIncomeAmount === undefined ? undefined : formatCurrency(person.replacementIncomeAmount, locale);
-      incomes.push({ key: amount ? "article110RandomReplacementIncomeAmount" : "article110RandomReplacementIncomeWithoutAmount", values: amount ? { amount } : undefined, person: personRef });
+      const replacementIncomeKey = person.replacementIncomeType === "pension"
+        ? (amount ? "article110RandomRetirementPensionAmount" : "article110RandomRetirementPensionWithoutAmount")
+        : person.replacementIncomeType === "unemployment"
+          ? (amount ? "article110RandomUnemploymentIncomeAmount" : "article110RandomUnemploymentIncomeWithoutAmount")
+          : person.replacementIncomeType === "mutuality"
+            ? (amount ? "article110RandomMutualityIncomeAmount" : "article110RandomMutualityIncomeWithoutAmount")
+            : person.replacementIncomeType === "disability_allowance"
+              ? (amount ? "article110RandomDisabilityIncomeAmount" : "article110RandomDisabilityIncomeWithoutAmount")
+              : person.replacementIncomeType === "other"
+                ? (amount ? "article110RandomOtherReplacementIncomeAmount" : "article110RandomOtherReplacementIncomeWithoutAmount")
+                : (amount ? "article110RandomReplacementIncomeUnknownNatureAmount" : "article110RandomReplacementIncomeUnknownNatureWithoutAmount");
+      incomes.push({ key: replacementIncomeKey, values: amount ? { amount } : undefined, person: personRef });
     } else if (person.hasReplacementIncome === false) incomes.push({ key: "article110RandomNoReplacementIncome", person: personRef });
   });
 

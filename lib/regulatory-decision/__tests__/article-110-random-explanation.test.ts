@@ -81,6 +81,70 @@ describe("Article 110 random professional explanations", () => {
     expect(keys(disability, evaluateArticle110Verifier(disability))).toEqual(["article110RandomExplanationSpfDisability"]);
   });
 
+  it("keeps the dated ascendant-pension comparison for the operator without carrying document follow-up", () => {
+    const ascendantThresholds = {
+      ...thresholds,
+      ascendantPensionMonthly: 1_779.27,
+      source: { fileId: "t147-2026-09", fileName: "t147-2026-09.xlsx", validFrom: new Date("2026-09-01") },
+    };
+    const inputFor = (amount: number) => ({
+      thresholds: ascendantThresholds,
+      asOf: "2026-10-08",
+      people: [{ id: "father", relation: "relative" as const, label: "Père", isAscendant: true, hasProfessionalIncome: false, hasReplacementIncome: true, replacementIncomeType: "pension" as const, replacementIncomeAmount: amount }],
+    });
+    const below = evaluateArticle110Verifier(inputFor(1_700));
+    const atThreshold = evaluateArticle110Verifier(inputFor(1_779.27));
+    const above = evaluateArticle110Verifier(inputFor(1_779.28));
+
+    expect(below.category).toBe("A");
+    expect(atThreshold.category).toBe("A");
+    expect(above.category).toBe("B");
+    expect(atThreshold.householdAssessment.pensionAssessment).toEqual({
+      status: "VERIFIED",
+      grossTotal: 1_779.27,
+      threshold: 1_779.27,
+    });
+    expect(keys(inputFor(1_779.27), atThreshold)).toEqual(["article110RandomExplanationAscendantPensionA"]);
+    expect(explainArticle110RandomResult(inputFor(1_779.27), atThreshold, "fr").paragraphs[0]?.values).toMatchObject({
+      amount: "1 779,27 €",
+      threshold: "1 779,27 €",
+      date: "01/09/2026",
+    });
+  });
+
+  it("presents declared relationships and income types exactly, without treating an unknown type as a pension", () => {
+    const facts = {
+      thresholds,
+      people: [
+        { id: "father", relation: "relative" as const, label: "Père", isAscendant: true, hasProfessionalIncome: false, hasReplacementIncome: true, replacementIncomeType: "pension" as const, replacementIncomeAmount: 900 },
+        { id: "mother", relation: "relative" as const, label: "Mère", isAscendant: true, hasProfessionalIncome: false, hasReplacementIncome: true, replacementIncomeType: "unemployment" as const, replacementIncomeAmount: 900 },
+        { id: "grandparent", relation: "relative" as const, label: "Grand-parent", isAscendant: true, hasProfessionalIncome: false, hasReplacementIncome: true, replacementIncomeType: "mutuality" as const, replacementIncomeAmount: 900 },
+        { id: "disability", relation: "relative" as const, label: "Autre ascendant", isAscendant: true, hasProfessionalIncome: false, hasReplacementIncome: true, replacementIncomeType: "disability_allowance" as const, replacementIncomeAmount: 900 },
+        { id: "unknown", relation: "relative" as const, label: "Autre ascendant", isAscendant: true, hasProfessionalIncome: false, hasReplacementIncome: true, replacementIncomeAmount: 900 },
+      ],
+    };
+    const presentation = presentArticle110RandomInput(facts, "fr");
+    const unemployment = evaluateArticle110Verifier({ thresholds, people: [facts.people[1]! ] });
+    const mutuality = evaluateArticle110Verifier({ thresholds, people: [facts.people[2]! ] });
+    const unknownType = evaluateArticle110Verifier({ thresholds, people: [facts.people[4]! ] });
+
+    expect(presentation.family).toEqual(expect.arrayContaining([
+      expect.objectContaining({ key: "article110RandomPersonRelativeNamed", values: { relation: "père" } }),
+      expect.objectContaining({ key: "article110RandomPersonRelativeNamed", values: { relation: "grand-parent" } }),
+    ]));
+    expect(presentation.incomes.map((fact) => fact.key)).toEqual(expect.arrayContaining([
+      "article110RandomRetirementPensionAmount",
+      "article110RandomUnemploymentIncomeAmount",
+      "article110RandomMutualityIncomeAmount",
+      "article110RandomDisabilityIncomeAmount",
+      "article110RandomReplacementIncomeUnknownNatureAmount",
+    ]));
+    expect(unemployment.category).toBe("B");
+    expect(mutuality.category).toBe("B");
+    expect(unknownType.category).toBe("B");
+    expect(unknownType.householdAssessment.pensionAssessment).toBeUndefined();
+  });
+
   it("keeps autonomous co-housing theoretical N while describing the distinct provisional B treatment", () => {
     const scenario = article110RandomCases(thresholds).find((candidate) => candidate.id === "cohousing-never-recognized")!;
 

@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import { article110RandomCases, pickArticle110RandomCase } from "../article-110-random-cases";
+import { article110RandomChoiceMatches } from "../article-110-random-comparison";
+import { presentArticle110RandomInput } from "../article-110-random-presentation";
 import { evaluateArticle110Verifier } from "../article-110-verifier";
 
 const thresholds = {
@@ -34,5 +36,41 @@ describe("Article 110 random test cases", () => {
       expect(scenario.result).toEqual(evaluateArticle110Verifier(scenario.input));
       expect(scenario.input.asOf).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     }
+  });
+
+  it("prioritizes a case that the active tool can load faithfully", () => {
+    const selected = pickArticle110RandomCase(thresholds, () => 0, (scenario) => scenario.input.isAloneExplicit === true);
+
+    expect(selected.input.isAloneExplicit).toBe(true);
+  });
+
+  it("presents normalized evaluator facts rather than the legacy matrix payload", () => {
+    const cohousing = article110RandomCases(thresholds).find((scenario) => scenario.id === "cohousing-alimony-established")!;
+    const presentation = presentArticle110RandomInput(cohousing.input, "fr");
+
+    expect(presentation.particulars.map((fact) => fact.key)).toEqual(expect.arrayContaining([
+      "article110RandomCohousingDeclared",
+      "article110RandomCohousingAutonomous",
+      "article110RandomAlimonyPaid",
+      "article110RandomAlimonyLegalBasisEstablished",
+      "article110RandomAlimonyBeneficiaryMissing",
+    ]));
+    expect(presentation.incomplete).toBe(true);
+  });
+
+  it("keeps the cohousing/alimony exercise explicit about its incomplete pension facts", () => {
+    const cohousing = article110RandomCases(thresholds).find((scenario) => scenario.id === "cohousing-alimony-established")!;
+
+    expect(cohousing.input.alimony).toMatchObject({ enabled: true, legalConditionEstablished: true });
+    expect(cohousing.input.alimony?.beneficiary).toBeUndefined();
+    expect(cohousing.input.isAloneExplicit).toBe(false);
+    expect(cohousing.result.category).toBe("N");
+    expect(cohousing.result.householdAssessment.sourceRuleIds).toContain("situation_familiale_cohousing_a_verifier");
+  });
+
+  it("compares an operator choice with DocBel without treating it as an independent expectation", () => {
+    expect(article110RandomChoiceMatches("A", "A")).toBe(true);
+    expect(article110RandomChoiceMatches("B", "A")).toBe(false);
+    expect(article110RandomChoiceMatches("insufficient", null)).toBe(true);
   });
 });

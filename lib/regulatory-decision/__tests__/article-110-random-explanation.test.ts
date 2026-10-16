@@ -47,7 +47,7 @@ describe("Article 110 random professional explanations", () => {
       "article110RandomExplanationPartnerIncomeThreshold",
       "article110RandomExplanation60A",
     ]);
-    expect(explanation.paragraphs[1]?.values).toMatchObject({ amount: "999,00 €", threshold: "1 000,00 €", date: "01/09/2026", comparison: "article110RandomExplanationAtOrBelow" });
+    expect(explanation.paragraphs[1]?.values).toMatchObject({ amount: "999,00 €", threshold: "1 000,00 €", date: "01/09/2026", comparison: "article110RandomExplanationBelow" });
   });
 
   it("mentions 60B only for a variable spouse income and keeps its category distinct from the monthly payment", () => {

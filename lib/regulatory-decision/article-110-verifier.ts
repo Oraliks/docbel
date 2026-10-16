@@ -125,10 +125,11 @@ function labelForFact(factKey: string) {
 /** Thin adapter: all conclusions are produced by evaluateFamilySituation. */
 export function evaluateArticle110Verifier(input: Article110VerifierInput) {
   const facts = article110VerifierFacts(input);
+  const neutralisedChildIds = activeFirstProfessionalIncomePersonIds(facts.people, facts.asOf);
   const assessment = evaluateFamilySituation({
     facts,
-    activeChildIncomeNeutralisation: activeFirstProfessionalIncomePersonIds(facts.people, facts.asOf).length > 0,
-    neutralisedChildIds: activeFirstProfessionalIncomePersonIds(facts.people, facts.asOf),
+    activeChildIncomeNeutralisation: neutralisedChildIds.length > 0,
+    neutralisedChildIds,
     spouseProfessionalMonthlyThreshold: input.thresholds.spouseProfessionalMonthly,
     childProfessionalMonthlyThreshold: input.thresholds.childProfessionalMonthly,
     childReplacementMonthlyThreshold: input.thresholds.childReplacementMonthly,
@@ -148,6 +149,7 @@ export function evaluateArticle110Verifier(input: Article110VerifierInput) {
     nextActions: needsInformation ? ["Compléter les faits manquants pour poursuivre l’évaluation théorique."] : onemDecisionRequired ? ["Faire examiner la situation par l’ONEM avant toute décision."] : [],
     onemDecisionStatus: onemDecisionRequired ? "required" as const : "not_required" as const,
     legalWarning: "Résultat théorique : seule l’ONEM détermine la catégorie officielle.",
+    appliedTreatments: { neutralisedChildIds },
   };
 }
 

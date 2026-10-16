@@ -31,6 +31,7 @@ describe("FamilySituationTree — rendu i18n réel", () => {
 
     expect(html).toContain("Quelle est votre situation de vie ?");
     expect(html).toContain("Avec mon conjoint / partenaire");
+    expect(html).toContain("Tester un cas aléatoire");
     expect(html).not.toContain("public.pro.");
   });
 

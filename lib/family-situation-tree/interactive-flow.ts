@@ -1,4 +1,4 @@
-import type { Article110VerifierPerson } from "@/lib/regulatory-decision/article-110-verifier";
+import type { Article110VerifierInput, Article110VerifierPerson } from "@/lib/regulatory-decision/article-110-verifier";
 
 export type FamilyTreeBranch = "alone" | "partner" | "others";
 export type DeclaredAloneSituation = "none" | "alternating_care" | "alimony";
@@ -100,4 +100,35 @@ export function changeTreePersonRelation(
       ? { id: person.id, relation, label: relation }
       : person),
   };
+}
+
+/**
+ * Converts only facts the interactive tree can represent. Returning undefined
+ * prevents a test case from being loaded as a different household.
+ */
+export function article110VerifierInputToFamilyTreeState(input: Article110VerifierInput): FamilyTreeState | undefined {
+  if (input.alternatingCare?.enabled || input.cohousingRecognition === "not_recognised" || input.people.some((person) => person.relation === "unknown")) return undefined;
+  const people = input.people.map((person) => ({ ...person }));
+  if (input.isAloneExplicit && people.length === 0) {
+    return {
+      branch: "alone",
+      people: [],
+      declaredAloneSituation: input.alimony?.enabled ? "alimony" : "none",
+      alimonyLegalCondition: input.alimony?.legalConditionEstablished,
+    };
+  }
+  if (people.length === 1 && (people[0]?.relation === "spouse" || people[0]?.relation === "partner") && !input.cohousing && !input.alimony?.enabled) {
+    return { branch: "partner", people: [{ ...people[0], id: "partner" }] };
+  }
+  if (people.length > 0 && people.every((person) => person.relation === "child" || person.relation === "relative" || person.relation === "third_party") && !input.alimony?.enabled) {
+    return {
+      branch: "others",
+      people,
+      anyChildReceivesFamilyAllowances: input.anyChildReceivesFamilyAllowances,
+      cohousing: input.cohousing,
+      cohousingAutonomousLiving: input.cohousingAutonomousLiving,
+      cohousingRecognition: input.cohousingRecognition === "recognised_same_address" ? true : input.cohousingRecognition ? false : undefined,
+    };
+  }
+  return undefined;
 }

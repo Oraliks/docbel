@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { addSelectedVerifierMember, canAddVerifierMember, createVerifierMember, moveVerifierMember, removeVerifierMember, updateVerifierMember } from "@/app/partenaire/outils/verificateur-situation-familiale/form-state";
+import { addSelectedVerifierMember, canAddVerifierMember, createVerifierMember, moveVerifierMember, removeVerifierMember, updateVerifierMember, verifierMembersFromArticle110People } from "@/app/partenaire/outils/verificateur-situation-familiale/form-state";
 
 describe("Article 110 verifier household form state", () => {
   it("updates only the intended stable id after adding and reordering partner, child and mother", () => {
@@ -30,5 +30,15 @@ describe("Article 110 verifier household form state", () => {
   it("keeps the selected role when it cannot be added", () => {
     const people = [createVerifierMember("mother", "mother")];
     expect(addSelectedVerifierMember(people, "mother", "another")).toEqual({ people, selectedRole: "mother" });
+  });
+
+  it("preserves Article 110 facts when a random case is loaded into the verifier", () => {
+    const [parent, cousin] = verifierMembersFromArticle110People([
+      { id: "parent", relation: "relative", isAscendant: true, hasReplacementIncome: true, replacementIncomeType: "pension", replacementIncomeAmount: 1_000 },
+      { id: "cousin", relation: "third_party", hasProfessionalIncome: false, hasReplacementIncome: false },
+    ]);
+
+    expect(parent).toMatchObject({ role: "father", relation: "relative", isAscendant: true, replacementIncomeAmount: 1_000 });
+    expect(cousin).toMatchObject({ role: "friend", relation: "third_party", hasProfessionalIncome: false });
   });
 });

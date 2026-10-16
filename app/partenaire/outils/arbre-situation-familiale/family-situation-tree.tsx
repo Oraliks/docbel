@@ -12,8 +12,9 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { C1BaremeThresholds } from "@/lib/baremes/c1-thresholds";
 import { formatDate } from "@/lib/i18n/format";
+import { Article110RandomTestMode } from "@/components/family-situation-tree/article-110-random-test-mode";
 import { evaluateArticle110Verifier, type Article110VerifierInput, type Article110VerifierPerson } from "@/lib/regulatory-decision/article-110-verifier";
-import { changeTreePersonRelation, removeTreePerson, resetFamilyTreeBranch, setDeclaredAloneSituation, updateTreePerson, type FamilyTreeBranch, type FamilyTreeState } from "@/lib/family-situation-tree/interactive-flow";
+import { article110VerifierInputToFamilyTreeState, changeTreePersonRelation, removeTreePerson, resetFamilyTreeBranch, setDeclaredAloneSituation, updateTreePerson, type FamilyTreeBranch, type FamilyTreeState } from "@/lib/family-situation-tree/interactive-flow";
 
 type Props = { thresholds: C1BaremeThresholds; initialState?: FamilyTreeState; initialAsOf?: string };
 type T = ReturnType<typeof useTranslations>;
@@ -45,6 +46,7 @@ export function FamilySituationTree({ thresholds, initialState = EMPTY, initialA
 
   return <section className="flex w-full flex-col gap-5">
     <header className="border-b pb-4"><div className="flex flex-wrap items-start justify-between gap-3"><div><h1 className="text-2xl font-semibold tracking-tight">{t("interactiveTitle")}</h1><p className="mt-1 text-sm text-muted-foreground">{t("interactiveSubtitle")}</p></div><Badge variant="secondary">{t("simulation")}</Badge></div><div className="mt-4 flex items-center gap-2 text-sm"><CalendarDays className="size-4 text-muted-foreground" aria-hidden /><Label htmlFor="family-tree-date">{t("assessmentDate")}</Label><Input id="family-tree-date" type="date" className="w-auto" value={asOf} onChange={(event) => setAsOf(event.target.value)} /></div></header>
+    <Article110RandomTestMode thresholds={thresholds} canLoad={(scenario) => article110VerifierInputToFamilyTreeState(scenario.input) !== undefined} onLoad={(scenario) => { const next = article110VerifierInputToFamilyTreeState(scenario.input); if (!next) return; setState(next); setAsOf(scenario.assessmentDate); requestAnimationFrame(() => focusRef.current?.focus()); }} />
     {!state.branch ? <Start t={t} choose={choose} /> : <>
       <nav aria-label={t("pathLabel")} className="flex flex-wrap items-center gap-2 text-sm"><Badge variant="outline">{state.branch === "alone" ? t("pathAlone") : state.branch === "partner" ? t("pathPartner") : t("pathOthers")}</Badge><Button type="button" variant="ghost" size="sm" onClick={() => setState(EMPTY)}><ArrowLeft aria-hidden />{t("modify")}</Button><Button type="button" variant="ghost" size="sm" onClick={() => setState(EMPTY)}><RotateCcw aria-hidden />{t("restart")}</Button></nav>
       <h2 ref={focusRef} tabIndex={-1} className="text-xl font-semibold focus:outline-none">{t("activeQuestion")}</h2>

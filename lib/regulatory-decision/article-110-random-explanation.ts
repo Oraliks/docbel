@@ -14,6 +14,7 @@ function personReference(person: Article110VerifierPerson): Article110RandomMess
   if (person.relation === "spouse") return { key: "article110RandomPersonReferenceSpouse" };
   if (person.relation === "partner") return { key: "article110RandomPersonReferencePartner" };
   if (person.relation === "child") return { key: "article110RandomPersonReferenceChild" };
+  if (person.relation === "relative" && person.label?.trim()) return { key: "article110RandomPersonReferenceRelativeNamed", values: { relation: person.label.trim().toLocaleLowerCase("fr") } };
   if (person.relation === "relative") return { key: "article110RandomPersonReferenceRelative" };
   if (person.relation === "third_party") return { key: "article110RandomPersonReferenceThirdParty" };
   return { key: "article110RandomPersonReferenceUnknown" };
@@ -25,7 +26,13 @@ function baremeDate(result: Article110VerifierResult, locale: Locale) {
 }
 
 function comparison(amount: number, threshold: number) {
-  return amount <= threshold ? "article110RandomExplanationAtOrBelow" : "article110RandomExplanationAbove";
+  if (amount < threshold) return "article110RandomExplanationBelow";
+  if (amount === threshold) return "article110RandomExplanationEqual";
+  return "article110RandomExplanationAbove";
+}
+
+function categoryChoice(category: Article110VerifierResult["category"]) {
+  return category === "A" ? "article110RandomChoiceA" : category === "N" ? "article110RandomChoiceN" : "article110RandomChoiceB";
 }
 
 /**
@@ -75,6 +82,7 @@ export function explainArticle110RandomResult(
           amount: formatCurrency(amount, locale),
           threshold: formatCurrency(threshold, locale),
           comparison: comparison(amount, threshold),
+          category: categoryChoice(result.category),
           date,
         },
       });
@@ -120,6 +128,7 @@ export function explainArticle110RandomResult(
         amount: formatCurrency(grossTotal, locale),
         threshold: formatCurrency(threshold, locale),
         comparison: comparison(grossTotal, threshold),
+        category: categoryChoice(result.category),
         date: baremeDate(result, locale) ?? formatDate(input.asOf ?? "1970-01-01", locale),
       },
     });

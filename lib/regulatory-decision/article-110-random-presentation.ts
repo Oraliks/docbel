@@ -7,7 +7,7 @@ export type Article110RandomMessage = {
   key: string;
   values?: Record<string, string | number>;
   relationKey?: string;
-  person?: { relationKey: string; index: number };
+  person?: { key: string; values?: Record<string, string | number> };
 };
 
 export type Article110RandomPresentation = {
@@ -17,18 +17,41 @@ export type Article110RandomPresentation = {
   incomplete: boolean;
 };
 
-function personLabel(person: Article110VerifierPerson, index: number): Article110RandomMessage {
-  const relation = person.relation === "spouse" ? "article110RandomRelationSpouse"
-    : person.relation === "partner" ? "article110RandomRelationPartner"
-      : person.relation === "child" ? "article110RandomRelationChild"
-        : person.relation === "relative" ? "article110RandomRelationRelative"
-          : person.relation === "third_party" ? "article110RandomRelationThirdParty"
-            : "article110RandomRelationUnknown";
-  return { key: "article110RandomPerson", values: { index: index + 1 }, relationKey: relation };
+type PersonMessage = { key: string; values?: Record<string, string | number> };
+
+function thirdPartyMessage(person: Article110VerifierPerson, reference: boolean): PersonMessage {
+  const label = person.label?.trim();
+  const normalizedLabel = label?.toLocaleLowerCase("fr");
+  if (normalizedLabel && /\bcousin(e)?\b/.test(normalizedLabel)) {
+    return reference
+      ? { key: "article110RandomPersonReferenceRelatedThirdParty" }
+      : { key: "article110RandomPersonRelatedThirdParty", values: { relation: label! } };
+  }
+  if (normalizedLabel && /\bami(e)?\b/.test(normalizedLabel)) {
+    return { key: reference ? "article110RandomPersonReferenceFriend" : "article110RandomPersonFriend" };
+  }
+  if (label) {
+    return { key: reference ? "article110RandomPersonReferenceNamed" : "article110RandomPersonNamed", values: { name: label } };
+  }
+  return { key: reference ? "article110RandomPersonReferenceThirdParty" : "article110RandomPersonThirdParty" };
 }
 
-function personReference(person: Article110VerifierPerson, index: number): { relationKey: string; index: number } {
-  return { relationKey: personLabel(person, index).relationKey!, index: index + 1 };
+function personMessage(person: Article110VerifierPerson, reference = false): PersonMessage {
+  if (person.relation === "spouse") return { key: reference ? "article110RandomPersonReferenceSpouse" : "article110RandomPersonSpouse" };
+  if (person.relation === "partner") return { key: reference ? "article110RandomPersonReferencePartner" : "article110RandomPersonPartner" };
+  if (person.relation === "child") return { key: reference ? "article110RandomPersonReferenceChild" : "article110RandomPersonChild" };
+  if (person.relation === "relative") return { key: reference ? "article110RandomPersonReferenceRelative" : "article110RandomPersonRelative" };
+  if (person.relation === "third_party") return thirdPartyMessage(person, reference);
+  return { key: reference ? "article110RandomPersonReferenceUnknown" : "article110RandomPersonUnknown" };
+}
+
+function personLabel(person: Article110VerifierPerson): Article110RandomMessage {
+  const message = personMessage(person);
+  return { key: message.key, values: message.values };
+}
+
+function personReference(person: Article110VerifierPerson): { key: string; values?: Record<string, string | number> } {
+  return personMessage(person, true);
 }
 
 /**
@@ -50,9 +73,9 @@ export function presentArticle110RandomInput(input: Article110VerifierInput, loc
     family.push({ key: "article110RandomHouseholdPeople", values: { count: input.people.length } });
   }
 
-  input.people.forEach((person, index) => {
-    const personRef = personReference(person, index);
-    family.push(personLabel(person, index));
+  input.people.forEach((person) => {
+    const personRef = personReference(person);
+    family.push(personLabel(person));
     if (person.relation === "unknown") incomplete = true;
     if (person.receivesFamilyAllowances !== undefined) {
       incomes.push({ key: person.receivesFamilyAllowances ? "article110RandomFamilyAllowancesYes" : "article110RandomFamilyAllowancesNo", person: personRef });

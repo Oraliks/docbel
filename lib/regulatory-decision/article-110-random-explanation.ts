@@ -108,8 +108,13 @@ export function explainArticle110RandomResult(
     const person = input.people.find((candidate) => candidate.relation === "relative");
     const grossTotal = assessment.pensionAssessment.grossTotal as number;
     const threshold = assessment.pensionAssessment.threshold as number;
+    const exclusivelyOneRelative = assessment.composition === "relatives_only" && input.people.length === 1 && person !== undefined;
     paragraphs.push({
-      key: "article110RandomExplanationPensionThreshold",
+      key: exclusivelyOneRelative
+        ? result.category === "A"
+          ? "article110RandomExplanationAscendantPensionA"
+          : "article110RandomExplanationAscendantPensionB"
+        : "article110RandomExplanationPensionThreshold",
       ...(person ? { person: personReference(person) } : {}),
       values: {
         amount: formatCurrency(grossTotal, locale),

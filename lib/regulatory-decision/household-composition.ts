@@ -347,10 +347,20 @@ export function evaluateFamilySituation(input: {
     neutralisedChildFactKeys: input.neutralisedChildIds,
     cohousing: input.facts.cohousing,
   });
-  const theoreticalAssessment = { ...assessment };
-  delete theoreticalAssessment.requiredExternalDocument;
-  delete theoreticalAssessment.pensionAssessment;
-  return explainAssessment(theoreticalAssessment, input.facts.asOf);
+  const { requiredExternalDocument: _requiredExternalDocument, pensionAssessment, ...theoreticalAssessment } = assessment;
+  // The theoretical tools need the dated comparison to explain the outcome, but
+  // must never carry C1/document follow-up into their simulation result.
+  const theoreticalPensionAssessment = pensionAssessment && {
+    status: pensionAssessment.status,
+    grossTotal: pensionAssessment.grossTotal,
+    threshold: pensionAssessment.threshold,
+  };
+  return explainAssessment({
+    ...theoreticalAssessment,
+    ...(theoreticalPensionAssessment
+      ? { pensionAssessment: theoreticalPensionAssessment as HouseholdAssessment["pensionAssessment"] }
+      : {}),
+  }, input.facts.asOf);
 }
 
 function hasRelevantReplacementIncome(member: HouseholdMemberFact): boolean | undefined {

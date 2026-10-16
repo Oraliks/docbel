@@ -46,7 +46,10 @@ export function article110RandomCases(thresholds: C1BaremeThresholds): Article11
 export function pickArticle110RandomCase(
   thresholds: C1BaremeThresholds,
   random: () => number = Math.random,
+  canLoad?: (scenario: Article110RandomCase) => boolean,
 ): Article110RandomCase {
-  const cases = article110RandomCases(thresholds);
+  const allCases = article110RandomCases(thresholds);
+  const compatibleCases = canLoad ? allCases.filter(canLoad) : allCases;
+  const cases = compatibleCases.length > 0 ? compatibleCases : allCases;
   return cases[Math.min(cases.length - 1, Math.floor(Math.max(0, random()) * cases.length))]!;
 }

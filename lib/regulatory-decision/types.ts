@@ -108,9 +108,9 @@ export interface RegulatoryDecision {
   };
   /** Previous isolated-household claims are retained to support a human retroactive review. */
   isolatedHouseholdAssessmentHistory?: Array<NonNullable<RegulatoryDecision["isolatedHouseholdAssessment"]>>;
-  /** Children-only branch: a calculated category plus the C1 declaration event, never an ONEM code. */
+  /** Current children-only facts/events; the theoretical category stays null while unresolved. Never an ONEM code. */
   childrenOnlyAssessment?: {
-    expectedCategory: "A" | "B";
+    expectedCategory: "A" | "B" | null;
     categoryChanged: boolean;
     declarationRequired: boolean;
     facts: Array<{ factKey: string; receivesFamilyAllowances?: boolean; hasProfessionalIncome?: boolean; hasReplacementIncome?: boolean; firstProfessionalIncome?: boolean; studiesEndedAt?: string; neutralisedBy110_1M?: boolean }>;

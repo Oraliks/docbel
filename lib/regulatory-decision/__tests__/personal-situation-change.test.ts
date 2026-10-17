@@ -11,6 +11,8 @@ import { evaluateArticle110Verifier, type Article110VerifierInput, type Article1
 import type { C1BaremeThresholds } from "@/lib/baremes/c1-thresholds";
 import type { FormPayload } from "@/lib/pdf-forms/types";
 import { familyTreeStateToArticle110VerifierInput, type FamilyTreeState } from "@/lib/family-situation-tree/interactive-flow";
+import { decideArticle110ChildFirstProfessionalIncome, preserveArticle110TemporalHistory } from "../article-110-child-income";
+import type { RegulatoryDecision } from "../types";
 
 describe("tree / verifier / C1 adapter parity", () => {
   const asOf = "2026-10-12";
@@ -130,6 +132,124 @@ describe("tree / verifier / C1 adapter parity", () => {
     ]) {
       expect(withPersonalSituationTrace(decision, { cohabitants: [row] }, now)?.householdAssessment).toMatchObject({ expectedCategory: null, status: "needs_information" });
     }
+  });
+});
+
+describe("C1 re-evaluation from an existing snapshot", () => {
+  const now = new Date("2026-10-12T00:00:00Z");
+  const thresholds: C1BaremeThresholds = {
+    spouseProfessionalMonthly: 900, spouseReplacementMonthly: 750,
+    childProfessionalMonthly: 200, childReplacementMonthly: 350,
+    ascendantPensionMonthly: 500, source: null,
+  };
+  const child = { id: "child", lien: "enfant", allocationsFamiliales: "non", typeRevenuPro: "aucun", revenuRemplacement: "aucun" };
+  const parent = { id: "parent", lien: "pere", typeRevenuPro: "aucun", revenuRemplacement: "pension", montantRevenuRemplacement: 400, montantPensionNature: "brut" };
+  const third = { id: "third", lien: "aucun-lien", typeRevenuPro: "aucun", revenuRemplacement: "aucun" };
+  function decision(): RegulatoryDecision {
+    const temporalFacts = deriveArticle110FactsFromC1({ cohabitants: [{
+      lien: "enfant", premierRevenuProfessionnel: "oui", demandeNeutralisationPremierRevenu: "oui",
+      dateDebutPremiereActivite: "2025-04-01", dateFinEtudes: "2025-03-31",
+    }] })!;
+    const article110Decision = preserveArticle110TemporalHistory(
+      decideArticle110ChildFirstProfessionalIncome(temporalFacts, new Date("2025-05-01T00:00:00Z")),
+      decideArticle110ChildFirstProfessionalIncome(temporalFacts, now),
+    );
+    return {
+      ...decidePersonalSituation({ "entry.dossier": { value: "changement-situation-personnelle", origin: "system" } }),
+      officialOnemState: { onemCode: "B / 60B", recordedAt: "2026-10-08" },
+      article110Decision,
+      temporalHistory: article110Decision.temporalHistory,
+      isolatedHouseholdAssessmentHistory: [{
+        branch: "alimony", status: "probable", expectedCategory: "A", documents: [],
+        recommendedAction: "onem_review", factKeys: [], sourceRuleIds: ["situation_familiale_isole_pension_alimentaire"],
+      }],
+    };
+  }
+  function expectPreserved(before: RegulatoryDecision, after: RegulatoryDecision) {
+    expect(after.officialOnemState).toEqual(before.officialOnemState);
+    expect(after.temporalHistory).toEqual(before.temporalHistory);
+    expect(after.article110Decision).toEqual(before.article110Decision);
+    expect(after.isolatedHouseholdAssessmentHistory).toEqual(before.isolatedHouseholdAssessmentHistory);
+  }
+
+  it.each([
+    { kind: "professional", row: { ...child, typeRevenuPro: "salarie-employe", montantRevenuPro: 100 }, unavailable: { childProfessionalMonthly: null }, reason: "CHILD_STARTED_WORK", currentFact: { hasProfessionalIncome: true } },
+    { kind: "replacement", row: { ...child, revenuRemplacement: "chomage", montantRevenuRemplacement: 100 }, unavailable: { childReplacementMonthly: null }, reason: "INCOME_CHANGED", currentFact: { hasReplacementIncome: true } },
+  ])("records the known $kind change while the missing ceiling leaves the current category unresolved", ({ row, unavailable, reason, currentFact }) => {
+    const before = withPersonalSituationTrace(decision(), { cohabitants: [child] }, now, thresholds)!;
+    const savedBefore = structuredClone(before);
+    expect(before.childrenOnlyAssessment).toMatchObject({ expectedCategory: "A", declarationRequired: false });
+    const after = withPersonalSituationTrace(before, {
+      dateModificationSituationFamilialeEffective: "2026-10-10", cohabitants: [row],
+    }, now, { ...thresholds, ...unavailable })!;
+    expect(after.householdAssessment).toMatchObject({ status: "needs_information", expectedCategory: null });
+    expect(after.childrenOnlyAssessment).toMatchObject({
+      expectedCategory: null, declarationRequired: true,
+      facts: [expect.objectContaining({ factKey: "c1:id:child", ...currentFact })],
+      changes: expect.arrayContaining([expect.objectContaining({ reason, effectiveDate: "2026-10-10", current: expect.objectContaining(currentFact) })]),
+    });
+    expectPreserved(before, after);
+    expect(before).toEqual(savedBefore);
+    const resolved = withPersonalSituationTrace(after, { cohabitants: [row] }, now, thresholds)!;
+    expect(resolved.childrenOnlyAssessment).toMatchObject({ expectedCategory: "A", declarationRequired: false, changes: [] });
+    expectPreserved(after, resolved);
+  });
+
+  it("does not turn unknown activity or allowances into an explicit stop or loss", () => {
+    const before = withPersonalSituationTrace(decision(), { cohabitants: [{ ...child, allocationsFamiliales: "oui", typeRevenuPro: "salarie-employe", montantRevenuPro: 100 }] }, now, thresholds)!;
+    const after = withPersonalSituationTrace(before, { cohabitants: [{ ...child, allocationsFamiliales: "", typeRevenuPro: "" }] }, now, thresholds)!;
+    expect(after.childrenOnlyAssessment).toMatchObject({ expectedCategory: null, facts: [expect.objectContaining({ hasProfessionalIncome: undefined, receivesFamilyAllowances: undefined })] });
+    expect(after.childrenOnlyAssessment?.changes.map((change) => change.reason)).not.toEqual(expect.arrayContaining(["CHILD_STOPPED_WORK"]));
+    expect(after.childrenOnlyAssessment?.changes.map((change) => change.reason)).not.toEqual(expect.arrayContaining(["CHILD_LOST_FAMILY_ALLOWANCE"]));
+    expectPreserved(before, after);
+  });
+
+  it("refreshes a pension trace and its known amount change even when its ceiling is unavailable", () => {
+    const before = withPersonalSituationTrace(decision(), { cohabitants: [parent] }, now, thresholds)!;
+    expect(before.relativeHouseholdAssessment).toMatchObject({ expectedCategory: "A" });
+    const after = withPersonalSituationTrace(before, { cohabitants: [{ ...parent, montantRevenuRemplacement: 450 }] }, now, { ...thresholds, ascendantPensionMonthly: null })!;
+    expect(after.householdAssessment).toMatchObject({ status: "needs_information", expectedCategory: null });
+    expect(after.relativeHouseholdAssessment).toMatchObject({
+      expectedCategory: null, declarationRequired: true, facts: [expect.objectContaining({ pensionGrossAmount: 450 })],
+      changes: expect.arrayContaining([expect.objectContaining({ reason: "PENSION_AMOUNT_CHANGED" })]),
+    });
+    expectPreserved(before, after);
+  });
+
+  it.each([
+    { title: "replacement answer", row: { ...parent, revenuRemplacement: "" } },
+    { title: "pension amount", row: { ...parent, montantRevenuRemplacement: undefined } },
+  ])("does not infer a pension stop or amount change from an unknown $title", ({ row }) => {
+    const before = withPersonalSituationTrace(decision(), { cohabitants: [parent] }, now, thresholds)!;
+    const after = withPersonalSituationTrace(before, { cohabitants: [row] }, now, thresholds)!;
+    expect(after.relativeHouseholdAssessment?.facts[0].pensionGrossAmount).toBeUndefined();
+    expect(after.relativeHouseholdAssessment?.changes.map((change) => change.reason)).not.toContain("PENSION_STOPPED");
+    expect(after.relativeHouseholdAssessment?.changes.map((change) => change.reason)).not.toContain("PENSION_AMOUNT_CHANGED");
+    expectPreserved(before, after);
+  });
+
+  it("refreshes a mixed third-party trace when the child's missing ceiling makes its result unresolved", () => {
+    const before = withPersonalSituationTrace(decision(), { cohabitants: [child, third] }, now, thresholds)!;
+    expect(before.thirdPartyHouseholdAssessment).toMatchObject({ expectedCategory: "A" });
+    const after = withPersonalSituationTrace(before, { cohabitants: [{ ...child, typeRevenuPro: "salarie-employe", montantRevenuPro: 100 }, third] }, now, { ...thresholds, childProfessionalMonthly: null })!;
+    expect(after.householdAssessment).toMatchObject({ status: "needs_information", expectedCategory: null });
+    expect(after.thirdPartyHouseholdAssessment).toMatchObject({ expectedCategory: null, facts: [expect.objectContaining({ factKey: "c1:id:third", professional: false, relevantReplacement: false })] });
+    expectPreserved(before, after);
+  });
+
+  it("drops derived children and relative conclusions on a branch change and retains the third-party departure event", () => {
+    const children = withPersonalSituationTrace(decision(), { cohabitants: [child] }, now, thresholds)!;
+    const relatives = withPersonalSituationTrace(children, { cohabitants: [parent] }, now, thresholds)!;
+    expect(relatives).not.toHaveProperty("childrenOnlyAssessment");
+    expect(relatives.relativeHouseholdAssessment).toMatchObject({ expectedCategory: "A" });
+    const mixed = withPersonalSituationTrace(relatives, { cohabitants: [child, third] }, now, thresholds)!;
+    expect(mixed).not.toHaveProperty("relativeHouseholdAssessment");
+    const empty = withPersonalSituationTrace(mixed, { statutFamilial: "cohabite", cohabitants: [] }, now, thresholds)!;
+    expect(empty.householdAssessment).toMatchObject({ status: "needs_information", expectedCategory: null });
+    expect(empty).not.toHaveProperty("childrenOnlyAssessment");
+    expect(empty).not.toHaveProperty("relativeHouseholdAssessment");
+    expect(empty.thirdPartyHouseholdAssessment).toMatchObject({ composition: "none", expectedCategory: null, declarationRequired: true, changes: expect.arrayContaining([expect.objectContaining({ reason: "THIRD_PARTY_LEFT" })]) });
+    expectPreserved(children, empty);
   });
 });
 

@@ -14,8 +14,8 @@ export async function compareBaremeVersions(newFileId: string, previousFileId?: 
   }))
   if (!candidate) throw new Error('Import introuvable')
   const validFrom = candidate.validFrom
-  const resolvedPrevious = previousFileId
-    ? await withDbRetry(() => prisma.baremeFile.findUnique({ where: { id: previousFileId }, select: { id: true, name: true, status: true, fileType: true, validFrom: true } }))
+  const resolvedPrevious = previousFileId !== undefined
+    ? previousFileId === null ? null : await withDbRetry(() => prisma.baremeFile.findUnique({ where: { id: previousFileId }, select: { id: true, name: true, status: true, fileType: true, validFrom: true } }))
     : validFrom
       ? await withDbRetry(() => prisma.baremeFile.findFirst({
           where: { status: 'published', fileType: candidate.fileType, NOT: { id: newFileId }, validFrom: { lte: validFrom } },

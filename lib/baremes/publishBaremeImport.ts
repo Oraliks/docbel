@@ -170,7 +170,11 @@ export async function publishBaremeImport(
           if (!reviewedSnapshot) {
             return { status: 'error', reason: 'comparison_not_reviewed', message: 'La revue explicite de la comparaison est requise avant publication.' }
           }
-          if (reviewedSnapshot.candidate.dataRevision !== snapshot.candidate.dataRevision || reviewedSnapshot.reference?.dataRevision !== snapshot.reference?.dataRevision) {
+          if (reviewedSnapshot.candidate.id !== snapshot.candidate.id
+            || (reviewedSnapshot.reference?.id ?? null) !== (snapshot.reference?.id ?? null)
+            || reviewedSnapshot.computedAt !== snapshot.computedAt
+            || reviewedSnapshot.candidate.dataRevision !== snapshot.candidate.dataRevision
+            || (reviewedSnapshot.reference?.dataRevision ?? null) !== (snapshot.reference?.dataRevision ?? null)) {
             return { status: 'error', reason: 'comparison_stale', message: 'La revue enregistrée ne porte plus sur la révision actuelle de comparaison.' }
           }
 

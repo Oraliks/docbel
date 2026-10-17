@@ -3,6 +3,7 @@ import assert from "node:assert/strict"
 import { createHash, randomUUID } from "node:crypto"
 import { readFile } from "node:fs/promises"
 import { PrismaClient, Prisma, UserStatus } from "@prisma/client"
+import { withVerifiedBaremesIsolation } from "./baremes-recipe-isolation"
 
 const marker = "baremes-concurrency-20261017"
 const name = process.env.DOCBEL_BAREMES_TEST_DATABASE_NAME
@@ -24,20 +25,43 @@ const db = new PrismaClient({ datasources: { db: { url } } })
 const prefix = `baremes-pg-${randomUUID()}`
 const past = new Date("2026-09-01T00:00:00.000Z")
 const results: string[] = []
-const workbookPath = "C:\\Users\\Admin\\AppData\\Local\\Temp\\docbel-onem-barema20260901-new.xlsx"
+const workbookPath = process.env.DOCBEL_BAREMES_TEST_WORKBOOK ?? "C:\\Users\\Admin\\AppData\\Local\\Temp\\docbel-onem-barema20260901-new.xlsx"
 const workbookHash = "a237c1a2a26f05249f8177700844a375ac5508e256e1db82e2279964226151f0"
+const createdFileIds = new Set<string>()
+const objectSuffix = randomUUID().replaceAll("-", "")
+const failureFunction = `baremes_runner_fail_${objectSuffix}`
+const failureTrigger = `baremes_runner_trigger_${objectSuffix}`
+const uniqueIndex = `BaremeFile_runner_unique_${objectSuffix}`
+let functionCreated = false
+let triggerCreated = false
+let indexCreated = false
+function remember<T extends { id: string }>(file: T): T { createdFileIds.add(file.id); return file }
+
+async function prepareComparison(fileId: string) {
+  const { compareBaremeVersions, comparisonSnapshot } = await import("../lib/baremes/compareBaremeVersions")
+  const file = await db.baremeFile.findUniqueOrThrow({ where: { id: fileId }, select: { diagnostics: true } })
+  const snapshot = comparisonSnapshot(await compareBaremeVersions(fileId))
+  await db.baremeFile.update({ where: { id: fileId }, data: { diagnostics: JSON.parse(JSON.stringify({ ...file.diagnostics as Prisma.JsonObject, comparison: snapshot })) as Prisma.InputJsonValue } })
+}
+
+async function review(fileId: string) {
+  const { recordBaremeComparisonReview } = await import("../lib/baremes/comparisonReview")
+  assert.equal((await recordBaremeComparisonReview(fileId, "reviewer@example.test")).status, "reviewed")
+}
 
 async function draft(fileType: string, overrides: Record<string, unknown> = {}) {
-  return db.baremeFile.create({ data: {
+  const file = remember(await db.baremeFile.create({ data: {
     name: `${prefix}-${fileType}.xlsx`, filePath: `test://${prefix}/${fileType}.xlsx`, effectiveDate: "01/09/2026",
     fileType, status: "draft", validFrom: past, fileHash: `${prefix}-${randomUUID()}`, fileSize: 1,
     alerts: [], ...overrides,
-  } })
+  } }))
+  await prepareComparison(file.id)
+  return file
 }
 
 async function installInsertFailure(fileName: string) {
   await db.$executeRawUnsafe(`
-    CREATE OR REPLACE FUNCTION baremes_runner_fail_insert() RETURNS trigger AS $$
+    CREATE OR REPLACE FUNCTION "${failureFunction}"() RETURNS trigger AS $$
     BEGIN
       IF NEW.name = '${fileName.replace(/'/g, "''")}' THEN
         RAISE EXCEPTION 'baremes runner forced PostgreSQL transaction failure';
@@ -46,27 +70,33 @@ async function installInsertFailure(fileName: string) {
     END;
     $$ LANGUAGE plpgsql;
   `)
-  await db.$executeRawUnsafe('DROP TRIGGER IF EXISTS baremes_runner_fail_insert ON "BaremeFile"')
+  functionCreated = true
   await db.$executeRawUnsafe(
-    'CREATE TRIGGER baremes_runner_fail_insert BEFORE INSERT ON "BaremeFile" FOR EACH ROW EXECUTE FUNCTION baremes_runner_fail_insert()'
+    `CREATE TRIGGER "${failureTrigger}" BEFORE INSERT ON "BaremeFile" FOR EACH ROW EXECUTE FUNCTION "${failureFunction}"()`
   )
+  triggerCreated = true
 }
 
 async function removeInsertFailure() {
-  await db.$executeRawUnsafe('DROP TRIGGER IF EXISTS baremes_runner_fail_insert ON "BaremeFile"')
-  await db.$executeRawUnsafe('DROP FUNCTION IF EXISTS baremes_runner_fail_insert()')
+  if (triggerCreated) { await db.$executeRawUnsafe(`DROP TRIGGER IF EXISTS "${failureTrigger}" ON "BaremeFile"`); triggerCreated = false }
+  if (functionCreated) { await db.$executeRawUnsafe(`DROP FUNCTION IF EXISTS "${failureFunction}"()`); functionCreated = false }
 }
 
-async function main() {
+async function verifyIsolation() {
   const identity = await db.$queryRaw<{ database: string; marker: string }[]>`
     SELECT current_database() AS database, purpose AS marker FROM "_DocbelAuditIsolation"
   `
   assert.equal(identity.length, 1)
   assert.equal(identity[0].database, name)
   assert.equal(identity[0].marker, marker)
+  assert.equal(await db.baremeFile.count(), 0, "La recette exige une base de test vide")
+}
+
+async function main() {
 
   const { publishBaremeImport, rollbackToVersion } = await import("../lib/baremes/publishBaremeImport")
   const { approveBaremeImport } = await import("../lib/baremes/approveBaremeImport")
+  const { recordBaremeComparisonReview, refreshBaremeComparison } = await import("../lib/baremes/comparisonReview")
   const { importBaremeFile } = await import("../lib/baremes/importBaremeFile")
   const { getActiveBaremeData } = await import("../lib/baremes/getActiveBaremeData")
   const { withBlobStorageTestAdapter } = await import("../lib/storage/blob-storage")
@@ -169,6 +199,7 @@ async function main() {
   const imported = await importBaremeFile({ buffer: workbook, fileName: "barema20260901-new.xlsx", createdBy: "runner@example.test" })
   assert.equal(imported.status, "created")
   if (imported.status !== "created") throw new Error("Import authentique inattendu")
+  createdFileIds.add(imported.fileId)
   const importedFile = await db.baremeFile.findUniqueOrThrow({ where: { id: imported.fileId }, include: { sheets: { orderBy: { sheetIndex: "asc" } }, amounts: true } })
   assert.equal(importedFile.status, "draft")
   assert.equal(importedFile.fileHash, workbookHash)
@@ -178,6 +209,8 @@ async function main() {
   assert.equal(blobs.get(importedFile.filePath)?.equals(workbook), true)
   assert.equal((await importBaremeFile({ buffer: workbook, fileName: "barema20260901-new.xlsx" })).status, "duplicate")
   assert.equal(await db.baremeFile.count(), baselineFiles + 1)
+  assert.equal((await publishBaremeImport(imported.fileId)).status, "error")
+  await review(imported.fileId)
   assert.equal((await publishBaremeImport(imported.fileId, { publishedBy: "a@example.test" })).status, "published")
   assert.equal((await getActiveBaremeData({ force: true }))?.allAmounts.length, 6600)
   results.push("import nominal authentique : 12 feuilles, 6600 montants, source mémoire et lecture active")
@@ -231,11 +264,13 @@ async function main() {
   const syntheticBytes = Buffer.from("synthetic baremes runner fixture")
   const syntheticPath = `blobs:https://fixture.private.blob.vercel-storage.com/private/baremes/${prefix}-synthetic.xlsx`
   blobs.set(syntheticPath, syntheticBytes)
-  const synthetic = await db.baremeFile.create({ data: {
+  const synthetic = remember(await db.baremeFile.create({ data: {
     name: `${prefix}-synthetic-B.xlsx`, filePath: syntheticPath, effectiveDate: "01/09/2026", fileType: "onem-rates", status: "draft", validFrom: past,
     fileHash: createHash("sha256").update(syntheticBytes).digest("hex"), fileSize: syntheticBytes.byteLength, alerts: [], createdBy: "runner@example.test",
     sheets: { create: { name: "Fixture B", category: "basic", rowCount: 2, colCount: 2, sheetIndex: 0, cellData: JSON.stringify([["Code", "Valeur"], ["B-SYN", "=not-a-formula"]]), searchText: "fixture b" } },
-  }, include: { sheets: true } })
+  }, include: { sheets: true } }))
+  await prepareComparison(synthetic.id)
+  await review(synthetic.id)
   const syntheticExport = await exportBaremes(new NextRequest(`https://docbel.test/api/baremes/export?sheetId=${synthetic.sheets[0].id}`))
   assert((await syntheticExport.text()).includes("'=not-a-formula"))
   results.push("routes export : filtres sheetId/fileId réels, 12 feuilles sans troncature, BOM/échappement et aucune métadonnée Blob")
@@ -259,6 +294,7 @@ async function main() {
   })
 
   const nominal = await draft("nominal")
+  await review(nominal.id)
   assert.equal((await publishBaremeImport(nominal.id, { publishedBy: "a@example.test" })).status, "published")
   assert.equal((await db.baremeFile.count({ where: { fileType: "nominal", status: "published" } })), 1)
   results.push("publication nominale")
@@ -266,26 +302,53 @@ async function main() {
   assert.equal((await approveBaremeImport(approval.id, { approverEmail: "a@example.test" })).status, "recorded")
   const secondApproval = await approveBaremeImport(approval.id, { approverEmail: "b@example.test" })
   assert(secondApproval.status === "recorded", "La seconde approbation doit être enregistrée")
-  assert.equal(secondApproval.autoPublished, true)
+  assert.equal(secondApproval.autoPublished, false)
+  await review(approval.id)
+  const resumedApproval = await approveBaremeImport(approval.id, { approverEmail: "b@example.test" })
+  assert(resumedApproval.status === "recorded")
+  assert.equal(resumedApproval.autoPublished, true)
   assert.equal((await db.baremeFile.findUniqueOrThrow({ where: { id: approval.id } })).status, "published")
   results.push("approbation à deux administrateurs")
+  const original = await draft("renewal")
+  await review(original.id)
+  assert.equal((await publishBaremeImport(original.id)).status, "published")
+  const competing = await draft("renewal")
+  const stale = await draft("renewal")
+  await review(competing.id)
+  await review(stale.id)
+  assert.equal((await publishBaremeImport(competing.id)).status, "published")
+  assert.equal((await recordBaremeComparisonReview(stale.id, "reviewer@example.test")).status, "error")
+  const refreshed = await refreshBaremeComparison(stale.id, "reviewer@example.test")
+  assert(refreshed.status === "refreshed")
+  assert.equal(refreshed.snapshot.reference?.id, competing.id)
+  assert.equal((await publishBaremeImport(stale.id)).status, "error", "Le renouvellement exige une nouvelle revue")
+  await review(stale.id)
+  assert.equal((await publishBaremeImport(stale.id)).status, "published")
+  const refreshEvent = await db.baremePublicationLog.findFirstOrThrow({ where: { fileId: stale.id, action: "comparison_refreshed" } })
+  const previousPair = (refreshEvent.details as { previousComparison?: { reference?: { id: string } } }).previousComparison
+  assert.equal(previousPair?.reference?.id, original.id)
+  results.push("paire périmée : renouvellement sans réimport, ancienne référence conservée, nouvelle revue exigée")
   const future = await draft("future", { validFrom: new Date("2099-01-01T00:00:00.000Z") })
   assert.equal((await publishBaremeImport(future.id)).status, "error")
   assert.equal((await db.baremeFile.findUniqueOrThrow({ where: { id: future.id } })).status, "draft")
   results.push("refus de date future")
-  await db.$executeRawUnsafe('CREATE UNIQUE INDEX "BaremeFile_one_published_per_fileType" ON "BaremeFile" ("fileType") WHERE "status" = \'published\'')
-  const familyA = await db.baremeFile.create({ data: { name: `${prefix}-a`, filePath: "test://a", effectiveDate: "01/09/2026", fileType: "index-a", status: "published", validFrom: past, fileHash: `${prefix}-a`, fileSize: 1 } })
-  await db.baremeFile.create({ data: { name: `${prefix}-b`, filePath: "test://b", effectiveDate: "01/09/2026", fileType: "index-b", status: "published", validFrom: past, fileHash: `${prefix}-b`, fileSize: 1 } })
+  await db.$executeRawUnsafe(`CREATE UNIQUE INDEX "${uniqueIndex}" ON "BaremeFile" ("fileType") WHERE "status" = 'published'`)
+  indexCreated = true
+  const familyA = remember(await db.baremeFile.create({ data: { name: `${prefix}-a`, filePath: "test://a", effectiveDate: "01/09/2026", fileType: "index-a", status: "published", validFrom: past, fileHash: `${prefix}-a`, fileSize: 1 } }))
+  remember(await db.baremeFile.create({ data: { name: `${prefix}-b`, filePath: "test://b", effectiveDate: "01/09/2026", fileType: "index-b", status: "published", validFrom: past, fileHash: `${prefix}-b`, fileSize: 1 } }))
   await assert.rejects(() => db.baremeFile.create({ data: { name: `${prefix}-duplicate`, filePath: "test://d", effectiveDate: "01/09/2026", fileType: familyA.fileType, status: "published", validFrom: past, fileHash: `${prefix}-d`, fileSize: 1 } }), (error: unknown) => error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002")
   results.push("index unique partiel : familles distinctes autorisées, doublon refusé")
   const first = await draft("concurrent")
   const second = await draft("concurrent")
+  await review(first.id)
+  await review(second.id)
   const concurrent = await Promise.allSettled([publishBaremeImport(first.id), publishBaremeImport(second.id)])
   assert.equal(await db.baremeFile.count({ where: { fileType: "concurrent", status: "published" } }), 1)
   assert(concurrent.some((entry) => entry.status === "fulfilled" && entry.value.status === "published"))
   results.push("deux publications concurrentes : un seul publié final")
   const archived = await db.baremeFile.findFirstOrThrow({ where: { fileType: "nominal", status: "published" } })
   const replacement = await draft("nominal")
+  await review(replacement.id)
   assert.equal((await publishBaremeImport(replacement.id)).status, "published")
   assert.equal((await rollbackToVersion(archived.id)).status, "rolled_back")
   assert.equal(await db.baremeFile.count({ where: { fileType: "nominal", status: "published" } }), 1)
@@ -294,11 +357,15 @@ async function main() {
   })
 }
 
-main().finally(async () => {
-  await removeInsertFailure().catch(() => undefined)
-  await db.$executeRawUnsafe('DROP INDEX IF EXISTS "BaremeFile_one_published_per_fileType"')
-  await db.baremeFile.deleteMany({ where: { OR: [{ name: { startsWith: prefix } }, { fileHash: workbookHash }] } })
-  await db.$disconnect()
+withVerifiedBaremesIsolation({
+  verify: verifyIsolation,
+  run: main,
+  cleanup: async () => {
+    await removeInsertFailure()
+    if (indexCreated) await db.$executeRawUnsafe(`DROP INDEX IF EXISTS "${uniqueIndex}"`)
+    if (createdFileIds.size) await db.baremeFile.deleteMany({ where: { id: { in: [...createdFileIds] } } })
+  },
+  disconnect: () => db.$disconnect(),
 }).catch((error: unknown) => {
   console.error(error instanceof Error ? error.message : "Échec de recette PostgreSQL Barèmes")
   process.exitCode = 1

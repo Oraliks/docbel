@@ -71,6 +71,7 @@ const STATUS_INFO: Record<string, { tone: string; order: number }> = {
 }
 
 const STATUS_LABEL_KEY: Record<string, string> = {
+  deleting: 'statusDeleting',
   draft: 'statusDraft',
   published: 'statusPublished',
   archived: 'statusArchived',
@@ -238,7 +239,11 @@ export default function BaremesAdminPage() {
     setActing(id)
     try {
       const res = await fetch(`/api/baremes/${id}`, { method: 'DELETE' })
-      if (!res.ok) throw new Error(t('deleteFailed'))
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}))
+        await load()
+        throw new Error(body.error ?? t('deleteFailed'))
+      }
       toast.success(t('deleteSuccess'))
       await load()
     } catch (err) {

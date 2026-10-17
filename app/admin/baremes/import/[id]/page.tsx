@@ -21,6 +21,7 @@ import { toast } from 'sonner'
 import { useLocale, useTranslations } from 'next-intl'
 import { formatDate, formatDateTime, formatNumber } from '@/lib/i18n/format'
 import type { Locale } from '@/i18n/locales'
+import { comparisonFilterParams } from '@/lib/baremes/comparisonFilters'
 import { AmountsPreviewTab } from '@/components/admin/baremes/amounts-preview-tab'
 import {
   IssuesTab,
@@ -61,6 +62,7 @@ interface FileRecord {
 }
 
 interface ComparisonSnapshot {
+  computedAt: string
   state: 'computed' | 'first_import' | 'reference_unavailable'
   candidate: { id: string; name: string; validFrom: string | null; dataRevision: string }
   reference: { id: string; name: string; validFrom: string | null; dataRevision: string } | null
@@ -174,6 +176,22 @@ export default function BaremeImportPreviewPage() {
     }
   }
 
+  const refreshComparison = async () => {
+    if (!id || !confirm(t('comparisonRefreshConfirm'))) return
+    setActing(true)
+    try {
+      const response = await fetch(`/api/baremes/import/${id}/comparison`, { method: 'POST' })
+      const body = await response.json().catch(() => ({}))
+      if (!response.ok) throw new Error(body.error ?? t('comparisonLoadError'))
+      toast.success(t('comparisonRefreshed'))
+      await load()
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : t('error'))
+    } finally {
+      setActing(false)
+    }
+  }
+
   const reject = async () => {
     if (!id) return
     if (!confirm(t('previewRejectConfirm')))
@@ -214,6 +232,7 @@ export default function BaremeImportPreviewPage() {
       } else {
         toast.success(t('approveRecorded', { count: body.approvalsCount, required: body.requiredCount }))
       }
+      if (body.publicationError) toast.warning(body.publicationError)
       await load()
     } catch (err) {
       toast.error(err instanceof Error ? err.message : t('error'))
@@ -397,6 +416,9 @@ export default function BaremeImportPreviewPage() {
                 <Button variant="outline" onClick={reviewComparison} disabled={acting || !comparison || comparison.state === 'reference_unavailable'} size="sm">
                   {t('comparisonReview')}
                 </Button>
+                <Button variant="outline" onClick={refreshComparison} disabled={acting || !comparison || comparison.state === 'reference_unavailable'} size="sm">
+                  {t('comparisonRefresh')}
+                </Button>
                 <Button
                   variant="outline"
                   onClick={() => reject()}
@@ -487,7 +509,7 @@ export default function BaremeImportPreviewPage() {
         </TabsContent>
 
         <TabsContent value="diff">
-          <DiffPanel fileId={file.id} snapshot={comparison} />
+          <DiffPanel key={comparison?.computedAt} fileId={file.id} snapshot={comparison} />
         </TabsContent>
 
         <TabsContent value="allocations">
@@ -770,11 +792,9 @@ function DiffPanel({ fileId, snapshot }: { fileId: string; snapshot: ComparisonS
   const loadComparison = useCallback(async () => {
     setLoading(true)
     try {
-      const params = new URLSearchParams({ page: String(page), pageSize: '50' })
-      if (state) params.set('state', state)
-      if (q.trim()) params.set('q', q.trim())
-      if (sheet) params.set('sheet', sheet)
-      if (category) params.set('category', category)
+      const params = comparisonFilterParams({ state, q, sheet, category })
+      params.set('page', String(page))
+      params.set('pageSize', '50')
       const response = await fetch(`/api/baremes/import/${fileId}/comparison?${params}`)
       setData(await response.json())
     } catch {
@@ -788,6 +808,12 @@ function DiffPanel({ fileId, snapshot }: { fileId: string; snapshot: ComparisonS
     void loadComparison()
   }, [loadComparison])
   const setFilter = (next: ComparisonRow['type'] | '') => { setPage(1); setState(next) }
+  const exportFiltered = () => {
+    const params = comparisonFilterParams({ state, q, sheet, category })
+    params.set('type', 'comparison')
+    params.set('scope', 'filtered')
+    window.open(`/api/baremes/import/${fileId}/export?${params}`, '_blank')
+  }
   if (!snapshot) return <Card><CardContent className="py-8 text-center text-muted-foreground text-sm">{t('comparisonHistoricUnavailable')}</CardContent></Card>
   if (snapshot.state === 'first_import') return <Card><CardContent className="py-8 text-center text-muted-foreground text-sm">{t('comparisonFirstImport')}</CardContent></Card>
   if (snapshot.state === 'reference_unavailable') return <Card><CardContent className="py-8 text-center text-muted-foreground text-sm">{t('comparisonReferenceUnavailable')}</CardContent></Card>
@@ -800,10 +826,9 @@ function DiffPanel({ fileId, snapshot }: { fileId: string; snapshot: ComparisonS
     <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
       {(['modified', 'unchanged', 'added', 'disappeared', 'ambiguous'] as const).map((kind) => <Button key={kind} type="button" variant={state === kind ? 'default' : 'outline'} className="h-auto justify-between py-3" onClick={() => setFilter(state === kind ? '' : kind)}><span>{t(`comparisonState_${kind}`)}</span><span>{counts?.[kind] ?? '—'}</span></Button>)}
     </div>
-    <div className="flex flex-wrap gap-2"><input className="h-9 min-w-60 flex-1 rounded-md border bg-background px-3 text-sm" value={q} onChange={(event) => { setPage(1); setQ(event.target.value) }} placeholder={t('comparisonSearch')} aria-label={t('comparisonSearch')} /><select className="h-9 rounded-md border bg-background px-2 text-sm" value={sheet} onChange={(event) => { setPage(1); setSheet(event.target.value) }} aria-label={t('comparisonSheet')}><option value="">{t('comparisonAllSheets')}</option>{(data?.facets?.sheets ?? []).map((value) => <option key={value} value={value}>{value}</option>)}</select><select className="h-9 rounded-md border bg-background px-2 text-sm" value={category} onChange={(event) => { setPage(1); setCategory(event.target.value) }} aria-label={t('comparisonCategory')}><option value="">{t('comparisonAllCategories')}</option>{(data?.facets?.categories ?? []).map((value) => <option key={value} value={value}>{value}</option>)}</select><Button type="button" variant="outline" onClick={() => { setPage(1); setQ(''); setState(''); setSheet(''); setCategory('') }}>{t('comparisonReset')}</Button><Button type="button" variant="outline" onClick={() => window.open(`/api/baremes/import/${fileId}/export?type=comparison&scope=all`, '_blank')}>{t('comparisonExportAll')}</Button><Button type="button" variant="outline" disabled={!state && !q.trim() && !sheet && !category} onClick={() => { const params = new URLSearchParams({ type: 'comparison', scope: 'filtered' }); if (state) params.set('state', state); if (q.trim()) params.set('q', q.trim()); window.open(`/api/baremes/import/${fileId}/export?${params}`, '_blank') }}>{t('comparisonExportFiltered')}</Button></div>
+    <div className="flex flex-wrap gap-2"><input className="h-9 min-w-60 flex-1 rounded-md border bg-background px-3 text-sm" value={q} onChange={(event) => { setPage(1); setQ(event.target.value) }} placeholder={t('comparisonSearch')} aria-label={t('comparisonSearch')} /><select className="h-9 rounded-md border bg-background px-2 text-sm" value={sheet} onChange={(event) => { setPage(1); setSheet(event.target.value) }} aria-label={t('comparisonSheet')}><option value="">{t('comparisonAllSheets')}</option>{(data?.facets?.sheets ?? []).map((value) => <option key={value} value={value}>{value}</option>)}</select><select className="h-9 rounded-md border bg-background px-2 text-sm" value={category} onChange={(event) => { setPage(1); setCategory(event.target.value) }} aria-label={t('comparisonCategory')}><option value="">{t('comparisonAllCategories')}</option>{(data?.facets?.categories ?? []).map((value) => <option key={value} value={value}>{value}</option>)}</select><Button type="button" variant="outline" onClick={() => { setPage(1); setQ(''); setState(''); setSheet(''); setCategory('') }}>{t('comparisonReset')}</Button><Button type="button" variant="outline" onClick={() => window.open(`/api/baremes/import/${fileId}/export?type=comparison&scope=all`, '_blank')}>{t('comparisonExportAll')}</Button><Button type="button" variant="outline" disabled={!state && !q.trim() && !sheet && !category} onClick={exportFiltered}>{t('comparisonExportFiltered')}</Button></div>
     {data?.error ? <p className="text-sm text-destructive">{data.error}</p> : null}
-    {/* @ts-expect-error JSX tuple inference widens the compact provenance tuple below. */}
-    <div className="border rounded-md overflow-x-auto"><table className="w-full text-sm"><thead className="bg-muted/50 text-xs text-muted-foreground"><tr><th className="text-left px-3 py-2">{t('diffColKey')}</th><th className="text-left px-3 py-2">{t('diffColSource')}</th><th className="text-right px-3 py-2">{t('diffColOld')}</th><th className="text-right px-3 py-2">{t('diffColNew')}</th><th className="text-right px-3 py-2">Δ</th><th className="text-left px-3 py-2">{t('comparisonProvenance')}</th></tr></thead><tbody>{(data?.items ?? []).map((row, index) => { const delta = row.oldValue != null && row.newValue != null ? row.newValue - row.oldValue : null; const relative = row.oldValue && delta != null ? (delta / row.oldValue) * 100 : null; return <tr key={`${row.key}-${index}`} className="border-t"><td className="px-3 py-2"><div className="font-mono text-xs">{row.key}</div><div className="text-xs text-muted-foreground">{t(`comparisonState_${row.type}`)}{row.changedAttributes?.length ? ` · ${row.changedAttributes.join(', ')}` : ''}</div></td><td className="px-3 py-2 text-xs">{row.sourceSheet ?? row.category ?? '—'}</td><td className="px-3 py-2 text-right font-mono">{row.oldValue ?? '—'}{row.old?.unit ? ` ${row.old.unit}` : ''}</td><td className="px-3 py-2 text-right font-mono">{row.newValue ?? '—'}{row.current?.unit ? ` ${row.current.unit}` : ''}</td><td className="px-3 py-2 text-right font-mono text-xs">{delta == null ? '—' : `${delta > 0 ? '+' : ''}${formatComparisonNumber(delta, locale)}${relative == null ? ` (${t('comparisonRelativeUnavailable')})` : ` (${formatComparisonNumber(relative, locale, 6)}%)`}`}</td><td className="px-3 py-2 text-xs"><details><summary className="cursor-pointer underline">{t('comparisonProvenance')}</summary><div className="mt-2 space-y-1">{[['Avant', row.old?.trace], ['Après', row.current?.trace]].map(([label, trace]) => <p key={String(label)}><strong>{label}</strong>: {trace ? `${trace.sourceCell ?? '—'} · ${trace.rawValue ?? '—'} · ${trace.mappingFile ?? trace.transformTemplate ?? '—'}` : t('comparisonProvenanceUnavailable')}</p>)}</div></details></td></tr> })}</tbody></table></div>
+    <div className="border rounded-md overflow-x-auto"><table className="w-full text-sm"><thead className="bg-muted/50 text-xs text-muted-foreground"><tr><th className="text-left px-3 py-2">{t('diffColKey')}</th><th className="text-left px-3 py-2">{t('diffColSource')}</th><th className="text-right px-3 py-2">{t('diffColOld')}</th><th className="text-right px-3 py-2">{t('diffColNew')}</th><th className="text-right px-3 py-2">Δ</th><th className="text-left px-3 py-2">{t('comparisonProvenance')}</th></tr></thead><tbody>{(data?.items ?? []).map((row, index) => { const delta = row.oldValue != null && row.newValue != null ? row.newValue - row.oldValue : null; const relative = row.oldValue && delta != null ? (delta / row.oldValue) * 100 : null; return <tr key={`${row.key}-${index}`} className="border-t"><td className="px-3 py-2"><div className="font-mono text-xs">{row.key}</div><div className="text-xs text-muted-foreground">{t(`comparisonState_${row.type}`)}{row.changedAttributes?.length ? ` · ${row.changedAttributes.join(', ')}` : ''}</div></td><td className="px-3 py-2 text-xs">{row.sourceSheet ?? row.category ?? '—'}</td><td className="px-3 py-2 text-right font-mono">{row.oldValue ?? '—'}{row.old?.unit ? ` ${row.old.unit}` : ''}</td><td className="px-3 py-2 text-right font-mono">{row.newValue ?? '—'}{row.current?.unit ? ` ${row.current.unit}` : ''}</td><td className="px-3 py-2 text-right font-mono text-xs">{delta == null ? '—' : `${delta > 0 ? '+' : ''}${formatComparisonNumber(delta, locale)}${relative == null ? ` (${t('comparisonRelativeUnavailable')})` : ` (${formatComparisonNumber(relative, locale, 6)}%)`}`}</td><td className="px-3 py-2 text-xs"><details><summary className="cursor-pointer underline">{t('comparisonProvenance')}</summary><div className="mt-2 space-y-1">{([[t('comparisonBefore'), row.old?.trace], [t('comparisonAfter'), row.current?.trace]] as const).map(([label, trace]) => <p key={String(label)}><strong>{label}</strong>: {trace ? `${trace.sourceCell ?? '—'} · ${trace.rawValue ?? '—'} · ${trace.mappingFile ?? trace.transformTemplate ?? '—'}` : t('comparisonProvenanceUnavailable')}</p>)}</div></details></td></tr> })}</tbody></table></div>
     <div className="flex items-center justify-between text-sm"><span>{loading ? t('loading') : t('comparisonRange', { start: data?.range?.start ?? 0, end: data?.range?.end ?? 0, total: data?.filteredTotal ?? 0, global: data?.total ?? 0 })}</span><div className="flex gap-2"><Button type="button" variant="outline" size="sm" disabled={page <= 1 || loading} onClick={() => setPage((value) => value - 1)}>{t('comparisonPrevious')}</Button><Button type="button" variant="outline" size="sm" disabled={loading || !data || (data.range?.end ?? 0) >= (data.filteredTotal ?? 0)} onClick={() => setPage((value) => value + 1)}>{t('comparisonNext')}</Button></div></div>
   </div>
 }

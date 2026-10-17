@@ -289,3 +289,46 @@ signée.
 Cette amélioration ne valide ni Blob réel, ni Neon partagée, ni les changements
 réglementaires attendus. Elle rend les différences observées et les limites de
 couverture traçables avant publication.
+
+### Corrections après revue indépendante (17/10/2026)
+
+- Un premier import sans référence peut être examiné et publié. Une référence
+  explicitement absente reste absente dans la consultation historique, même si
+  une version est publiée ultérieurement.
+- Si le publié a changé, utiliser **Renouveler la comparaison** sur la fiche du
+  brouillon, puis examiner à nouveau le résultat et enregistrer sa revue. Le
+  renouvellement conserve l'ancienne paire dans un événement
+  `comparison_refreshed` ; il ne réimporte pas le fichier et ne réécrit pas les
+  archives. Snapshot et événement sont atomiques, en transaction serializable.
+  Même un renouvellement vers les mêmes données invalide la revue précédente.
+- Deux approbations antérieures à la revue restent conservées. Après la revue,
+  l'un des deux administrateurs peut cliquer à nouveau sur **Approuver** pour
+  retenter la publication, sans troisième approbation. Un refus de publication
+  est affiché avec son motif. Les gardes de publication restent applicables.
+- L'export filtré reprend les quatre filtres visibles : état, recherche, feuille
+  et catégorie. Revue et renouvellement respectent le garde de lecture seule.
+- La suppression est limitée aux brouillons/refusés et aux suppressions à
+  reprendre ; les versions publiées/archivées conservent leur provenance. Une
+  transition durable vers `deleting` précède l'appel au stockage. En cas d'échec
+  Blob ou DB, la fiche garde sa référence et reste non publiable avec le libellé
+  **Suppression à terminer** ; réessayer la suppression après résolution de la
+  panne. Un Blob n'est jamais passé à `unlink`. Les chemins legacy sont bornés
+  aux répertoires de sources Barèmes ; seule l'absence du fichier est tolérée.
+
+Le runner persistant prépare ses snapshots avec le comparateur applicatif et
+enregistre les revues via le service réel. Il couvre aussi les approbations avant
+revue et la reprise d'une paire périmée. Il exige une base locale **vide** avec
+le marqueur exact avant toute écriture, y compris le nettoyage. Ses objets SQL
+portent des noms propres à l'exécution ; seules les fiches créées par celle-ci
+sont retirées, jamais un ensemble trouvé par hash. Un refus d'isolation ne
+démarre ni recette ni nettoyage. Le chemin du classeur peut être fourni via
+`DOCBEL_BAREMES_TEST_WORKBOOK` ; son hash et sa taille restent vérifiés.
+
+Validation ciblée après corrections : 33 fichiers / 172 tests Barèmes verts,
+incluant routes review/comparison/export/delete, garde d'isolation, premier
+import, renouvellement et reprise d'approbation. Recette PostgreSQL réelle sur
+le cluster neuf `127.0.0.1:55434`, base
+`docbel_baremes_test_review_fixes_20261017`, stockage mémoire : succès. Une base
+distincte `docbel_baremes_test_review_refused_20261017` avec marqueur erroné a
+produit le refus attendu (code 1), sans altérer sa fiche sentinelle ni son index.
+Ces preuves n'impliquent ni écriture Neon/Blob réel, ni recette navigateur.

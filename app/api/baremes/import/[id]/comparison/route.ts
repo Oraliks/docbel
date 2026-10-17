@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { prisma, withDbRetry } from '@/lib/prisma'
 import { requireAdminAuth } from '@/lib/auth-check'
+import { ensureWriteAllowed } from '@/lib/admin/readonly-guard'
+import { refreshBaremeComparison } from '@/lib/baremes/comparisonReview'
 import { compareBaremeVersions } from '@/lib/baremes/compareBaremeVersions'
 import type { BaremeComparisonSnapshot, BaremeDiffChange, BaremeDiffChangeType } from '@/lib/baremes/types'
 
@@ -40,7 +42,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     if (!snapshot) {
       return NextResponse.json({ state: 'legacy_unavailable', error: 'Cet import ne conserve pas de paire de comparaison historique.' }, { status: 409, headers: jsonHeaders })
     }
-    const diff = await compareBaremeVersions(id, snapshot.reference?.id)
+    const diff = await compareBaremeVersions(id, snapshot.reference?.id ?? null)
     const currentPublished = await withDbRetry(() => prisma.baremeFile.findFirst({
       where: { status: 'published', fileType: file.fileType, NOT: { id } }, orderBy: [{ validFrom: 'desc' }, { publishedAt: 'desc' }], select: { id: true },
     }))
@@ -48,7 +50,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     // candidate encore publiable devient périmée lorsque le publié courant bouge.
     const reviewingDraft = file.status === 'draft' || file.status === 'pending_approval'
     const stale = snapshot.candidate.dataRevision !== diff.candidateDataRevision
-      || snapshot.reference?.dataRevision !== diff.referenceDataRevision
+      || (snapshot.reference?.dataRevision ?? null) !== diff.referenceDataRevision
       || (reviewingDraft && (snapshot.reference?.id ?? null) !== (currentPublished?.id ?? null))
     const filters = parsed.data
     const filtered = diff.changes.filter((row) => matchesFilters(row, filters))
@@ -68,6 +70,19 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     console.error('[baremes/import/[id]/comparison] error:', error)
     return NextResponse.json({ error: error instanceof Error ? error.message : 'Erreur de comparaison' }, { status: 500, headers: jsonHeaders })
   }
+}
+
+export async function POST(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const auth = await requireAdminAuth()
+  if (!auth.isAuthorized) return auth.error
+  const guard = await ensureWriteAllowed()
+  if (guard) return guard
+  const { id } = await params
+  const result = await refreshBaremeComparison(id, auth.user.email)
+  if (result.status === 'error') {
+    return NextResponse.json({ error: result.message, reason: result.reason }, { status: result.reason === 'not_found' ? 404 : result.reason === 'unavailable' ? 422 : 409, headers: jsonHeaders })
+  }
+  return NextResponse.json({ status: result.status, comparison: result.snapshot }, { headers: jsonHeaders })
 }
 
 function readSnapshot(diagnostics: unknown): BaremeComparisonSnapshot | null {

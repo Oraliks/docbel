@@ -108,7 +108,7 @@ export async function GET(
     if (type === 'comparison') {
       const snapshot = readSnapshot(file.diagnostics)
       if (!snapshot) return NextResponse.json({ error: 'Aucune paire de comparaison historique pour cet import.' }, { status: 409, headers: jsonHeaders })
-      const diff = await compareBaremeVersions(id, snapshot.reference?.id)
+      const diff = await compareBaremeVersions(id, snapshot.reference?.id ?? null)
       const q = parsed.data.q?.toLocaleLowerCase()
       const rows = diff.changes.filter((row) => {
         if (parsed.data.scope === 'filtered' && parsed.data.state && row.type !== parsed.data.state) return false

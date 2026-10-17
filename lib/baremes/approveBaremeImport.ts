@@ -12,7 +12,7 @@ export interface ApproveBaremeOptions {
 }
 
 export type ApproveResult =
-  | { status: 'recorded'; approvalsCount: number; requiredCount: number; autoPublished: boolean }
+  | { status: 'recorded'; approvalsCount: number; requiredCount: number; autoPublished: boolean; publicationError?: string }
   | { status: 'already_approved'; approvalsCount: number }
   | { status: 'error'; message: string }
 
@@ -22,6 +22,7 @@ type RecordedApproval = {
   previousStatus: string
   requiresApproval: boolean
   submittedForApproval: boolean
+  alreadyApproved: boolean
 }
 
 class ApprovalStateChangedError extends Error {}
@@ -56,6 +57,10 @@ export async function approveBaremeImport(
           })
           if (existing) {
             const approvalsCount = await tx.baremeApproval.count({ where: { fileId } })
+            if (file.requiresApproval && approvalsCount >= REQUIRED_APPROVALS_COUNT) {
+              // Réessai après revue/renouvellement, sans créer une troisième approbation.
+              return { status: 'recorded', approvalsCount, previousStatus: file.status, requiresApproval: true, submittedForApproval: false, alreadyApproved: true }
+            }
             return { status: 'already_approved', approvalsCount }
           }
 
@@ -89,6 +94,7 @@ export async function approveBaremeImport(
             previousStatus: file.status,
             requiresApproval: file.requiresApproval,
             submittedForApproval,
+            alreadyApproved: false,
           }
         },
         {
@@ -114,7 +120,7 @@ export async function approveBaremeImport(
 
   if (result.status !== 'recorded') return result
 
-  await logPublicationEvent({
+  if (!result.alreadyApproved) await logPublicationEvent({
     fileId,
     action: 'approved',
     fromStatus: result.previousStatus,
@@ -150,5 +156,6 @@ export async function approveBaremeImport(
     approvalsCount: result.approvalsCount,
     requiredCount: REQUIRED_APPROVALS_COUNT,
     autoPublished: published.status === 'published',
+    ...(published.status === 'error' ? { publicationError: published.message } : {}),
   }
 }

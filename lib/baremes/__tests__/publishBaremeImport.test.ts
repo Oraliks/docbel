@@ -119,6 +119,25 @@ describe('publishBaremeImport', () => {
     expect(mocks.updateMany).not.toHaveBeenCalled()
   })
 
+  it('publie un premier import revu sans référence', async () => {
+    const file = candidate()
+    const comparison = { ...file.diagnostics.comparison, state: 'first_import', reference: null }
+    mocks.findUnique.mockResolvedValue({ ...file, diagnostics: { comparison } })
+    mocks.findFirst.mockResolvedValue(null)
+    mocks.findReview.mockResolvedValue({ details: { comparison } })
+    mocks.updateMany.mockResolvedValue({ count: 1 })
+    await expect(publishBaremeImport('draft-1')).resolves.toMatchObject({ status: 'published', archivedPreviousId: null })
+  })
+
+  it('exige une nouvelle revue après renouvellement, même avec les mêmes empreintes', async () => {
+    const file = candidate()
+    file.diagnostics.comparison.computedAt = '2026-01-02T00:00:00.000Z'
+    mocks.findUnique.mockResolvedValue(file)
+    mocks.findFirst.mockResolvedValue({ id: 'previous-1' })
+    await expect(publishBaremeImport('draft-1')).resolves.toMatchObject({ reason: 'comparison_stale' })
+    expect(mocks.updateMany).not.toHaveBeenCalled()
+  })
+
   it('signale un conflit au double appel au lieu de confirmer deux publications', async () => {
     mocks.findUnique.mockResolvedValue(candidate())
     mocks.findFirst.mockResolvedValue({ id: 'previous-1' })

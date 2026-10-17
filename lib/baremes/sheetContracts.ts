@@ -49,10 +49,10 @@ export const BAREME_CONTRACTS: SheetContract[] = [
   {
     sheetName: 'A_N_B_half_demi',
     category: 'half_unemployment',
-    expectedCount: 1501,
-    minCount: denseFloor(1501),
+    expectedCount: 1500,
+    minCount: denseFloor(1500),
     requiredCodes: ['AA1', 'AA2', 'AA3', 'AB', 'AX', 'NA1', 'NA2', 'NA3', 'NB', 'NX', 'BA1', 'BA2', 'BA3', 'BX', 'BB'],
-    notes: '= vol_plein/2. +1 vs plein : half:AFoud:MIN=0 (résidu colonne #REF!).',
+    notes: '= vol_plein/2. Même matrice 15 × (MIN + tranches 1..99) ; AFoud = #REF! est ignoré.',
   },
   {
     sheetName: 'TW-CT_JS',

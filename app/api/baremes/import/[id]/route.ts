@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma, withDbRetry } from '@/lib/prisma'
 import { requireAdminAuth } from '@/lib/auth-check'
-import { compareBaremeVersions } from '@/lib/baremes/compareBaremeVersions'
 import { getPublicationHistory } from '@/lib/baremes/publicationLog'
 import { isBlockingIssue, type BaremeAlert } from '@/lib/baremes/types'
+import { canResumeComparison } from '@/lib/baremes/comparisonReview'
 
 export const runtime = 'nodejs'
 const jsonHeaders = { 'Content-Type': 'application/json; charset=utf-8' }
@@ -53,9 +53,9 @@ export async function GET(
       )
     }
 
-    // Comparaison vs dernier published (uniquement pertinent pour les drafts)
-    const diff =
-      file.status === 'draft' ? await compareBaremeVersions(id) : null
+    // Le détail complet est servi par la route paginée /comparison : ne jamais
+    // transférer tout le classeur dans cette fiche pour le filtrer en React.
+    const comparison = (file.diagnostics as { comparison?: unknown } | null)?.comparison ?? null
 
     // Échantillon de montants pour aperçu (les 200 premiers)
     const [amounts, totalAmounts, history, approvals] = await Promise.all([
@@ -72,26 +72,31 @@ export async function GET(
         prisma.baremeApproval.findMany({
           where: { fileId: id },
           orderBy: { createdAt: 'asc' },
+          take: 100,
         })
       ),
     ])
 
     const alerts = (file.alerts ?? []) as unknown as BaremeAlert[]
     const exportAllowed = !alerts.some(isBlockingIssue)
+    const { filePath, ...fileWithoutPath } = file
 
     return NextResponse.json(
       {
         file: {
-          ...file,
-          // Le fichier source n'est plus servi statiquement : la page admin
-          // passe par /api/baremes/import/[id]/source (auth + privé).
-          filePath: file.filePath,
+          ...fileWithoutPath,
+          // Le fichier source n'est jamais servi statiquement : l'admin passe
+          // par /api/baremes/import/[id]/source (auth + stockage privé). Les
+          // imports historiques sans original doivent rester explicitement
+          // identifiables, sans exposer leur référence de stockage.
+          sourceAvailable: Boolean(filePath),
         },
         exportAllowed,
         amountsPreview: amounts.map(serializeAmount),
         totalAmounts,
         amountsPreviewLimit: PREVIEW_AMOUNTS_LIMIT,
-        diff,
+        comparison,
+        comparisonRecoverable: !comparison && canResumeComparison(file) && ['draft', 'pending_approval'].includes(file.status),
         history,
         approvals,
       },

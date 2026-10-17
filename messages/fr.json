@@ -1271,6 +1271,7 @@
       "statusAll": "Tous les statuts",
       "statusRejectedPlural": "Rejetés",
       "fileCount": "{shown} / {total} fichiers",
+      "loadMore": "Afficher les imports suivants",
       "colFile": "Fichier",
       "colStatus": "Statut",
       "colValidFrom": "Valide à partir du",
@@ -1359,6 +1360,7 @@
       "rollbackFailed": "Rollback échoué",
       "rollbackSuccess": "Version restaurée et publiée",
       "sourceXlsx": "Source .xlsx",
+      "sourceUnavailable": "Original source indisponible (import historique)",
       "validSince": "Valide depuis {date}",
       "rawDate": "Date brute : {date}",
       "hashLabel": "Hash : {hash}",
@@ -1531,7 +1533,46 @@
       "diagDuplicates": "Doublons de clés",
       "diagOccurrences": "Occurrences",
       "diagDroppedCells": "Cellules écartées",
-      "paginationTotal": "{total} lignes"
+      "paginationTotal": "{total} lignes",
+      "comparisonHistoricUnavailable": "Aucune paire de comparaison historique n’a été conservée pour cet import ancien.",
+      "comparisonFirstImport": "Premier import : aucune version publiée applicable n’existait. La revue porte explicitement sur la source et sa couverture, sans pourcentage avant/après.",
+      "comparisonReferenceUnavailable": "La référence applicable est indisponible : aucune conclusion de comparaison ne peut être tirée.",
+      "comparisonLoadError": "Chargement de la comparaison impossible.",
+      "comparisonReference": "Référence",
+      "comparisonCandidate": "Candidat",
+      "comparisonStale": "Cette revue est périmée : la référence publiée ou les données normalisées ont changé. Renouvelez la comparaison puis examinez-la à nouveau avant publication.",
+      "comparisonRefresh": "Renouveler la comparaison",
+      "comparisonPending": "L’import est conservé, mais sa comparaison n’a pas abouti. Utilisez Renouveler la comparaison pour la reprendre après vérification de la source privée exacte.",
+      "comparisonResumeConfirm": "Vérifier la source privée exacte et reprendre la comparaison de cet import ? Vous devrez ensuite examiner le résultat et enregistrer sa revue.",
+      "comparisonDisplayChanged": "La comparaison a changé dans une autre session. Actualisez la fiche et examinez la nouvelle paire avant de la marquer comme revue.",
+      "statusDeleting": "Suppression à terminer",
+      "comparisonRefreshConfirm": "Recalculer la comparaison avec la version publiée actuelle ? L’ancienne paire restera au journal et une nouvelle revue sera obligatoire.",
+      "comparisonRefreshed": "Comparaison renouvelée. Examinez-la puis enregistrez une nouvelle revue.",
+      "comparisonScope": "Comparaison observée des données normalisées ; elle ne certifie pas des changements réglementaires attendus.",
+      "comparisonState_modified": "Modifiées",
+      "comparisonState_unchanged": "Inchangées",
+      "comparisonState_added": "Ajoutées",
+      "comparisonState_disappeared": "Disparues",
+      "comparisonState_ambiguous": "Identité ambiguë",
+      "comparisonSearch": "Rechercher par code, article, libellé ou clé…",
+      "comparisonReset": "Réinitialiser",
+      "comparisonProvenance": "Provenance",
+      "comparisonProvenanceUnavailable": "Indisponible",
+      "comparisonRelativeUnavailable": "variation relative non calculable",
+      "comparisonRange": "{start} à {end} sur {total} résultats filtrés ({global} au total)",
+      "comparisonPrevious": "Précédent",
+      "comparisonNext": "Suivant",
+      "comparisonBefore": "Avant",
+      "comparisonAfter": "Après"
+      ,"comparisonReview": "Marquer la revue examinée"
+      ,"comparisonReviewRecorded": "Revue de comparaison enregistrée"
+      ,"comparisonReviewFailed": "Revue de comparaison impossible"
+      ,"comparisonExportAll": "Exporter la comparaison complète"
+      ,"comparisonExportFiltered": "Exporter le résultat filtré"
+      ,"comparisonSheet": "Feuille"
+      ,"comparisonAllSheets": "Toutes les feuilles"
+      ,"comparisonCategory": "Catégorie"
+      ,"comparisonAllCategories": "Toutes les catégories"
     },
     "formations": {
       "title": "Formations",

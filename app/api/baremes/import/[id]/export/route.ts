@@ -10,6 +10,8 @@ import {
   type BaremeCategory,
   type BaremeDiagnostics,
 } from '@/lib/baremes/types'
+import { compareBaremeVersions } from '@/lib/baremes/compareBaremeVersions'
+import { readSnapshot } from '@/lib/baremes/comparisonReview'
 
 export const runtime = 'nodejs'
 const jsonHeaders = { 'Content-Type': 'application/json; charset=utf-8' }
@@ -24,7 +26,13 @@ const querySchema = z.object({
     'ignored-rows',
     'unsupported-sheets',
     'raw-preview',
+    'comparison',
   ]),
+  scope: z.enum(['all', 'filtered']).default('all'),
+  state: z.enum(['modified', 'unchanged', 'added', 'disappeared', 'ambiguous']).optional(),
+  q: z.string().trim().max(500).optional(),
+  sheet: z.string().trim().max(200).optional(),
+  category: z.string().trim().max(100).optional(),
 })
 
 // Les CSV de données sont bloqués si l'import contient des erreurs bloquantes ;
@@ -41,7 +49,11 @@ export async function GET(
   try {
     const { id } = await params
     const { searchParams } = new URL(req.url)
-    const parsed = querySchema.safeParse({ type: searchParams.get('type') })
+    const parsed = querySchema.safeParse({
+      type: searchParams.get('type'), scope: searchParams.get('scope') ?? undefined,
+      state: searchParams.get('state') ?? undefined, q: searchParams.get('q') ?? undefined,
+      sheet: searchParams.get('sheet') ?? undefined, category: searchParams.get('category') ?? undefined,
+    })
     if (!parsed.success) {
       return NextResponse.json(
         { error: 'type invalide (allocations|tranches|montants-base|report|unknown-codes|ignored-rows|unsupported-sheets|raw-preview)' },
@@ -91,6 +103,34 @@ export async function GET(
         },
         { status: 409, headers: jsonHeaders }
       )
+    }
+
+    if (type === 'comparison') {
+      const snapshot = readSnapshot(file.diagnostics)
+      if (!snapshot) return NextResponse.json({ error: 'Aucune paire de comparaison historique pour cet import.' }, { status: 409, headers: jsonHeaders })
+      const diff = await compareBaremeVersions(id, snapshot.reference?.id ?? null)
+      const q = parsed.data.q?.toLocaleLowerCase()
+      const rows = diff.changes.filter((row) => {
+        if (parsed.data.scope === 'filtered' && parsed.data.state && row.type !== parsed.data.state) return false
+        const source = row.current ?? row.old
+        if (parsed.data.scope === 'filtered' && parsed.data.sheet && source?.sourceSheet !== parsed.data.sheet) return false
+        if (parsed.data.scope === 'filtered' && parsed.data.category && source?.category !== parsed.data.category) return false
+        if (!q || parsed.data.scope !== 'filtered') return true
+        return [row.key, source?.allocationCode, source?.salaryCode, source?.article, source?.labelFr, source?.labelNl, source?.sourceSheet]
+          .filter(Boolean).join(' ').toLocaleLowerCase().includes(q)
+      })
+      const csv = buildCsv(
+        ['etat', 'cle_comparaison', 'categorie', 'feuille', 'code_allocation', 'code_tranche', 'article', 'libelle_fr', 'unite_avant', 'montant_avant', 'unite_apres', 'montant_apres', 'ecart_absolu', 'variation_relative_pct', 'attributs_modifies', 'cellule_avant', 'valeur_source_avant', 'cellule_apres', 'valeur_source_apres', 'fichier_reference_id', 'fichier_candidat_id', 'revision_reference', 'revision_candidat'],
+        rows.map((row) => {
+          const oldValue = row.oldValue ?? null
+          const newValue = row.newValue ?? null
+          const delta = oldValue != null && newValue != null ? newValue - oldValue : null
+          const relative = oldValue != null && oldValue !== 0 && delta != null ? (delta / oldValue) * 100 : null
+          const source = row.current ?? row.old
+          return [row.type, row.key, source?.category ?? null, source?.sourceSheet ?? null, source?.allocationCode ?? null, source?.salaryCode ?? null, source?.article ?? null, source?.labelFr ?? null, row.old?.unit ?? null, oldValue, row.current?.unit ?? null, newValue, delta, relative, row.changedAttributes?.join('|') ?? null, row.old?.trace?.sourceCell ?? null, row.old?.trace?.rawValue ?? null, row.current?.trace?.sourceCell ?? null, row.current?.trace?.rawValue ?? null, snapshot.reference?.id ?? null, snapshot.candidate.id, snapshot.reference?.dataRevision ?? null, snapshot.candidate.dataRevision]
+        })
+      )
+      return csvResponse(csv, `comparison-${baseName}-${parsed.data.scope}.csv`)
     }
 
     // — CSV de données normalisées —

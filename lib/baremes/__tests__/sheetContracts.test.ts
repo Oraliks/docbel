@@ -33,6 +33,15 @@ function buildConformingAmounts(sheetName: string): { sheets: ParsedSheet[]; amo
 }
 
 describe('verifySheetContracts', () => {
+  it('calibre la matrice mi-temps ONEM à 1 500 montants, comme la matrice plein temps', () => {
+    const full = BAREME_CONTRACTS.find((contract) => contract.sheetName === 'A_N_B_vol_plein')
+    const half = BAREME_CONTRACTS.find((contract) => contract.sheetName === 'A_N_B_half_demi')
+
+    expect(full?.expectedCount).toBe(1500)
+    expect(half?.expectedCount).toBe(1500)
+    expect(half?.minCount).toBe(1425)
+  })
+
   it('aucune alerte quand une feuille est conforme (compte + codes)', () => {
     const { sheets, amounts } = buildConformingAmounts('Activering_Activation')
     const res = verifySheetContracts(sheets, amounts)

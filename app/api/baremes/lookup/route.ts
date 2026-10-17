@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createHash } from 'node:crypto'
 import { getActiveBaremeData } from '@/lib/baremes/getActiveBaremeData'
 import type { BaremeCategory } from '@/lib/baremes/types'
 
@@ -9,8 +10,15 @@ export const dynamic = 'force-dynamic'
 
 const jsonHeaders = {
   'Content-Type': 'application/json; charset=utf-8',
-  // Côté client/CDN : 5 min de cache "vivant" + 1h de stale-while-revalidate
-  'Cache-Control': 'public, max-age=300, stale-while-revalidate=3600',
+  // Chaque réponse est revalidée : un changement de publication/rollback ne
+  // peut pas rester servi par un CDN pendant une fenêtre stale arbitraire.
+  'Cache-Control': 'no-cache, max-age=0, must-revalidate',
+}
+
+function etagForRepresentation(fileId: string, filters: Record<string, string | null>): string {
+  const representation = JSON.stringify(filters)
+  const fingerprint = createHash('sha256').update(representation).digest('base64url').slice(0, 16)
+  return `"bareme-${fileId}-${fingerprint}"`
 }
 
 /**
@@ -30,21 +38,14 @@ const jsonHeaders = {
  * Implémente ETag basé sur fileId pour permettre 304 Not Modified.
  */
 export async function GET(req: NextRequest) {
-  const data = await getActiveBaremeData()
+  // La route publique ne réutilise pas le cache mémoire d'une autre instance :
+  // l'ETag permet la revalidation HTTP sans servir une ancienne publication.
+  const data = await getActiveBaremeData({ force: true })
   if (!data) {
     return NextResponse.json(
       { error: 'Aucune version publiée', amounts: [] },
       { status: 404, headers: jsonHeaders }
     )
-  }
-
-  const etag = `"bareme-${data.fileId}"`
-  const ifNoneMatch = req.headers.get('if-none-match')
-  if (ifNoneMatch === etag) {
-    return new NextResponse(null, {
-      status: 304,
-      headers: { ...jsonHeaders, ETag: etag },
-    })
   }
 
   const { searchParams } = new URL(req.url)
@@ -53,6 +54,20 @@ export async function GET(req: NextRequest) {
   const allocationCode = searchParams.get('allocationCode')
   const salaryCode = searchParams.get('salaryCode')
   const article = searchParams.get('article')
+  const etag = etagForRepresentation(data.fileId, {
+    key,
+    category,
+    allocationCode,
+    salaryCode,
+    article,
+  })
+  const ifNoneMatch = req.headers.get('if-none-match')
+  if (ifNoneMatch === etag) {
+    return new NextResponse(null, {
+      status: 304,
+      headers: { ...jsonHeaders, ETag: etag },
+    })
+  }
 
   let amounts = data.allAmounts
 

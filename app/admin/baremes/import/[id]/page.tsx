@@ -22,6 +22,8 @@ import { useLocale, useTranslations } from 'next-intl'
 import { formatDate, formatDateTime, formatNumber } from '@/lib/i18n/format'
 import type { Locale } from '@/i18n/locales'
 import { comparisonFilterParams } from '@/lib/baremes/comparisonFilters'
+import { sameComparisonSnapshot } from '@/lib/baremes/comparisonIdentity'
+import type { BaremeComparisonSnapshot } from '@/lib/baremes/types'
 import { AmountsPreviewTab } from '@/components/admin/baremes/amounts-preview-tab'
 import {
   IssuesTab,
@@ -61,12 +63,7 @@ interface FileRecord {
   alerts: IssueItem[] | null
 }
 
-interface ComparisonSnapshot {
-  computedAt: string
-  state: 'computed' | 'first_import' | 'reference_unavailable'
-  candidate: { id: string; name: string; validFrom: string | null; dataRevision: string }
-  reference: { id: string; name: string; validFrom: string | null; dataRevision: string } | null
-}
+type ComparisonSnapshot = BaremeComparisonSnapshot
 
 interface Approval {
   id: string
@@ -100,6 +97,7 @@ interface PreviewData {
   exportAllowed: boolean
   totalAmounts: number
   comparison: ComparisonSnapshot | null
+  comparisonRecoverable: boolean
   history?: HistoryEntry[]
   approvals?: Approval[]
   amountsPreview?: PreviewAmount[]
@@ -160,11 +158,13 @@ export default function BaremeImportPreviewPage() {
     }
   }
 
-  const reviewComparison = async () => {
+  const reviewComparison = async (displayedComparison: ComparisonSnapshot) => {
     if (!id) return
     setActing(true)
     try {
-      const res = await fetch(`/api/baremes/import/${id}/review`, { method: 'POST' })
+      const res = await fetch(`/api/baremes/import/${id}/review`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ comparison: displayedComparison }),
+      })
       const body = await res.json().catch(() => ({}))
       if (!res.ok) throw new Error(body.error ?? t('comparisonReviewFailed'))
       toast.success(t('comparisonReviewRecorded'))
@@ -177,7 +177,7 @@ export default function BaremeImportPreviewPage() {
   }
 
   const refreshComparison = async () => {
-    if (!id || !confirm(t('comparisonRefreshConfirm'))) return
+    if (!id || !confirm(t(data?.comparisonRecoverable ? 'comparisonResumeConfirm' : 'comparisonRefreshConfirm'))) return
     setActing(true)
     try {
       const response = await fetch(`/api/baremes/import/${id}/comparison`, { method: 'POST' })
@@ -413,10 +413,7 @@ export default function BaremeImportPreviewPage() {
             )}
             {isDraftOrPending && (
               <>
-                <Button variant="outline" onClick={reviewComparison} disabled={acting || !comparison || comparison.state === 'reference_unavailable'} size="sm">
-                  {t('comparisonReview')}
-                </Button>
-                <Button variant="outline" onClick={refreshComparison} disabled={acting || !comparison || comparison.state === 'reference_unavailable'} size="sm">
+                <Button variant="outline" onClick={refreshComparison} disabled={acting || (!comparison && !data.comparisonRecoverable) || comparison?.state === 'reference_unavailable'} size="sm">
                   {t('comparisonRefresh')}
                 </Button>
                 <Button
@@ -509,7 +506,7 @@ export default function BaremeImportPreviewPage() {
         </TabsContent>
 
         <TabsContent value="diff">
-          <DiffPanel key={comparison?.computedAt} fileId={file.id} snapshot={comparison} />
+          <DiffPanel key={comparison?.computedAt} fileId={file.id} snapshot={comparison} recoverable={data.comparisonRecoverable} acting={acting} onReview={isDraftOrPending ? reviewComparison : undefined} />
         </TabsContent>
 
         <TabsContent value="allocations">
@@ -779,7 +776,7 @@ interface ComparisonData {
   error?: string
 }
 
-function DiffPanel({ fileId, snapshot }: { fileId: string; snapshot: ComparisonSnapshot | null }) {
+function DiffPanel({ fileId, snapshot, recoverable, acting, onReview }: { fileId: string; snapshot: ComparisonSnapshot | null; recoverable: boolean; acting: boolean; onReview?: (snapshot: ComparisonSnapshot) => Promise<void> }) {
   const t = useTranslations('admin.baremes')
   const locale = useLocale()
   const [state, setState] = useState<ComparisonRow['type'] | ''>('')
@@ -796,13 +793,18 @@ function DiffPanel({ fileId, snapshot }: { fileId: string; snapshot: ComparisonS
       params.set('page', String(page))
       params.set('pageSize', '50')
       const response = await fetch(`/api/baremes/import/${fileId}/comparison?${params}`)
-      setData(await response.json())
+      const result: ComparisonData = await response.json()
+      // Ne pas mélanger les compteurs d'une nouvelle paire avec l'en-tête de
+      // l'ancienne, ni attester une réponse reçue mais jamais affichée.
+      if (snapshot && result.comparison && !sameComparisonSnapshot(snapshot, result.comparison)) {
+        setData({ state: 'stale', error: t('comparisonDisplayChanged') })
+      } else setData(result)
     } catch {
       setData({ state: 'legacy_unavailable', error: t('comparisonLoadError') })
     } finally {
       setLoading(false)
     }
-  }, [category, fileId, page, q, sheet, state, t])
+  }, [category, fileId, page, q, sheet, state, t, snapshot])
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     void loadComparison()
@@ -814,14 +816,16 @@ function DiffPanel({ fileId, snapshot }: { fileId: string; snapshot: ComparisonS
     params.set('scope', 'filtered')
     window.open(`/api/baremes/import/${fileId}/export?${params}`, '_blank')
   }
-  if (!snapshot) return <Card><CardContent className="py-8 text-center text-muted-foreground text-sm">{t('comparisonHistoricUnavailable')}</CardContent></Card>
-  if (snapshot.state === 'first_import') return <Card><CardContent className="py-8 text-center text-muted-foreground text-sm">{t('comparisonFirstImport')}</CardContent></Card>
+  const reviewAction = snapshot && onReview ? <Button type="button" onClick={() => void onReview(snapshot)} disabled={acting || loading || data?.state !== 'ready'}>{t('comparisonReview')}</Button> : null
+  if (!snapshot) return <Card><CardContent className="py-8 text-center text-muted-foreground text-sm">{t(recoverable ? 'comparisonPending' : 'comparisonHistoricUnavailable')}</CardContent></Card>
+  if (snapshot.state === 'first_import') return <Card><CardContent className="py-8 space-y-4 text-sm"><p>{t('comparisonFirstImport')}</p><p>{snapshot.candidate.name} · {snapshot.candidate.id}</p>{data?.error ? <p role="alert">{data.error}</p> : null}{reviewAction}</CardContent></Card>
   if (snapshot.state === 'reference_unavailable') return <Card><CardContent className="py-8 text-center text-muted-foreground text-sm">{t('comparisonReferenceUnavailable')}</CardContent></Card>
   const counts = data?.counts
   return <div className="space-y-4">
     <Card><CardContent className="py-4 space-y-2 text-sm">
       <div className="grid gap-2 md:grid-cols-2"><div><strong>{t('comparisonReference')}</strong> {snapshot.reference?.name} · {snapshot.reference?.id}</div><div><strong>{t('comparisonCandidate')}</strong> {snapshot.candidate.name} · {snapshot.candidate.id}</div></div>
       <p className="text-xs text-muted-foreground">{data?.state === 'stale' ? t('comparisonStale') : t('comparisonScope')}</p>
+      {reviewAction}
     </CardContent></Card>
     <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
       {(['modified', 'unchanged', 'added', 'disappeared', 'ambiguous'] as const).map((kind) => <Button key={kind} type="button" variant={state === kind ? 'default' : 'outline'} className="h-auto justify-between py-3" onClick={() => setFilter(state === kind ? '' : kind)}><span>{t(`comparisonState_${kind}`)}</span><span>{counts?.[kind] ?? '—'}</span></Button>)}

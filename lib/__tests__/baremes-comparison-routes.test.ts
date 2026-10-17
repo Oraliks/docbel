@@ -41,6 +41,23 @@ describe('routes de comparaison Barèmes', () => {
     expect((await refresh(new Request('https://docbel.test', { method: 'POST' }), params())).status).toBe(200)
     expect(mocks.refresh).toHaveBeenCalledWith('C', 'admin@test')
   })
+  it('exige le snapshot affiché et le transmet sans le remplacer par une lecture serveur', async () => {
+    const comparison = { version: 1, state: 'first_import', computedAt: '2026-01-01T00:00:00.000Z', candidate: { id: 'C', name: 'C.xlsx', status: 'draft', fileType: 'test', validFrom: null, dataRevision: 'C-data' }, reference: null }
+    mocks.review.mockResolvedValue({ status: 'error', reason: 'stale', message: 'Comparaison remplacée' })
+    const response = await review(new Request('https://docbel.test', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ comparison }) }), params())
+    expect(response.status).toBe(409)
+    expect(mocks.review).toHaveBeenCalledWith('C', 'admin@test', comparison)
+    expect(mocks.file).not.toHaveBeenCalled()
+  })
+  it('refuse le clic sans révision attendue', async () => {
+    expect((await review(new Request('https://docbel.test', { method: 'POST' }), params())).status).toBe(400)
+    expect(mocks.review).not.toHaveBeenCalled()
+  })
+  it('refuse une identité partielle au lieu de compléter la paire côté serveur', async () => {
+    const response = await review(new Request('https://docbel.test', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ comparison: { candidate: { id: 'C' }, reference: { id: 'A' } } }) }), params())
+    expect(response.status).toBe(400)
+    expect(mocks.review).not.toHaveBeenCalled()
+  })
   it('exporte le même sous-ensemble feuille/catégorie que le tableau', async () => {
     const row = (key: string, sourceSheet: string, category: string) => ({ type: 'added', key, newValue: 1, sourceSheet, category, current: { sourceSheet, category, amount: 1, unit: 'daily', trace: null } })
     mocks.compare.mockResolvedValue({ changes: [row('included', 'F1', 'basic'), row('wrong-sheet', 'F2', 'basic'), row('wrong-category', 'F1', 'other')] })

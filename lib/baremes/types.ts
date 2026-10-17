@@ -252,6 +252,10 @@ export interface BaremeDiagnostics {
   }[]
   /** Périmètre figé de la comparaison, sans migration des imports historiques. */
   comparison?: BaremeComparisonSnapshot
+  /** Marque un nouvel import dont la comparaison peut être reprise après panne. */
+  comparisonPending?: { version: 1; fileHash: string; fileSize: number }
+  structuralAlerts?: BaremeAlert[]
+  comparisonAlerts?: BaremeAlert[]
 }
 
 // Résumé global de l'import (stocké dans BaremeFile.summary)

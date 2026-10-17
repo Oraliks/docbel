@@ -113,8 +113,8 @@ export function detectAnomaliesFromDiff(diff: BaremeDiff): BaremeAlert[] {
     if (pct >= ANOMALY_ERROR_THRESHOLD_PCT) critical.push(change as AmountChange); else if (pct >= ANOMALY_THRESHOLD_PCT) suspects.push(change as AmountChange)
   }
   const alerts: BaremeAlert[] = []
-  if (critical.length) alerts.push({ level: 'error', message: `${critical.length} variation(s) >${ANOMALY_ERROR_THRESHOLD_PCT}% détectée(s) — ${critical.slice(0, 5).map(formatChange).join(', ')}${critical.length > 5 ? '…' : ''}` })
-  if (suspects.length) alerts.push({ level: 'warn', message: `${suspects.length} variation(s) >${ANOMALY_THRESHOLD_PCT}% à vérifier — ${suspects.slice(0, 5).map((c) => `${formatChange(c)}, ${String(pctDelta(c))}%`).join(', ')}${suspects.length > 5 ? '…' : ''}` })
+  if (critical.length) alerts.push({ level: 'error', kind: 'anomaly', severity: 'error', message: `${critical.length} variation(s) >${ANOMALY_ERROR_THRESHOLD_PCT}% détectée(s) — ${critical.slice(0, 5).map(formatChange).join(', ')}${critical.length > 5 ? '…' : ''}` })
+  if (suspects.length) alerts.push({ level: 'warn', kind: 'anomaly', severity: 'warning', message: `${suspects.length} variation(s) >${ANOMALY_THRESHOLD_PCT}% à vérifier — ${suspects.slice(0, 5).map((c) => `${formatChange(c)}, ${String(pctDelta(c))}%`).join(', ')}${suspects.length > 5 ? '…' : ''}` })
   return alerts
 }
 function formatChange(c: AmountChange) { return `${c.key} (${String(c.oldValue)} → ${String(c.newValue)})` }

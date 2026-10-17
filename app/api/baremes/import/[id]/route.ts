@@ -3,6 +3,7 @@ import { prisma, withDbRetry } from '@/lib/prisma'
 import { requireAdminAuth } from '@/lib/auth-check'
 import { getPublicationHistory } from '@/lib/baremes/publicationLog'
 import { isBlockingIssue, type BaremeAlert } from '@/lib/baremes/types'
+import { canResumeComparison } from '@/lib/baremes/comparisonReview'
 
 export const runtime = 'nodejs'
 const jsonHeaders = { 'Content-Type': 'application/json; charset=utf-8' }
@@ -71,6 +72,7 @@ export async function GET(
         prisma.baremeApproval.findMany({
           where: { fileId: id },
           orderBy: { createdAt: 'asc' },
+          take: 100,
         })
       ),
     ])
@@ -94,6 +96,7 @@ export async function GET(
         totalAmounts,
         amountsPreviewLimit: PREVIEW_AMOUNTS_LIMIT,
         comparison,
+        comparisonRecoverable: !comparison && canResumeComparison(file) && ['draft', 'pending_approval'].includes(file.status),
         history,
         approvals,
       },

@@ -1,7 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { Prisma } from '@prisma/client'
 
 const mocks = vi.hoisted(() => ({
   findUnique: vi.fn(),
+  findFirst: vi.fn(),
   create: vi.fn(),
   createSheets: vi.fn(),
   createAmounts: vi.fn(),
@@ -25,7 +27,8 @@ vi.mock('@/lib/prisma', () => ({
   prisma: {
     baremeFile: {
       findUnique: mocks.findUnique,
-      update: mocks.update,
+      findFirst: mocks.findFirst,
+      updateMany: mocks.update,
     },
     $transaction: mocks.transaction,
   },
@@ -57,6 +60,7 @@ const storedPath = 'blobs:https://fixture.private.blob.vercel-storage.com/privat
 beforeEach(() => {
   vi.resetAllMocks()
   mocks.findUnique.mockResolvedValue(null)
+  mocks.findFirst.mockResolvedValue(null)
   mocks.saveBlob.mockResolvedValue(storedPath)
   mocks.deleteBlob.mockResolvedValue(undefined)
   mocks.parse.mockReturnValue({
@@ -91,7 +95,7 @@ beforeEach(() => {
   mocks.create.mockResolvedValue({ id: 'bareme-new' })
   mocks.createSheets.mockResolvedValue({ count: 0 })
   mocks.createAmounts.mockResolvedValue({ count: 0 })
-  mocks.update.mockResolvedValue(undefined)
+  mocks.update.mockResolvedValue({ count: 1 })
   mocks.transaction.mockImplementation(async (callback: (tx: unknown) => Promise<unknown>) =>
     callback({
       baremeFile: { create: mocks.create },
@@ -143,11 +147,30 @@ describe('importBaremeFile — conservation de la source', () => {
   })
 
   it('nettoie seulement le Blob créé si la transaction DB échoue', async () => {
-    mocks.transaction.mockRejectedValueOnce(new Error('database unavailable'))
+    mocks.transaction.mockRejectedValueOnce(new Prisma.PrismaClientKnownRequestError('transaction rejected', { code: 'P2004', clientVersion: '5.22' }))
 
     await expect(importBaremeFile({ buffer: sourceBytes, fileName: 'barema-new-01042026.xlsx' }))
-      .rejects.toThrow('database unavailable')
+      .rejects.toThrow('transaction rejected')
 
     expect(mocks.deleteBlob).toHaveBeenCalledWith(storedPath)
+  })
+
+  it('préserve les octets quand l’issue du commit ou la lecture de références est incertaine', async () => {
+    mocks.transaction.mockRejectedValueOnce(new Error('connection closed after commit'))
+    await expect(importBaremeFile({ buffer: sourceBytes, fileName: 'barema-new-01042026.xlsx' })).rejects.toThrow('connection closed')
+    expect(mocks.deleteBlob).not.toHaveBeenCalled()
+    mocks.transaction.mockRejectedValueOnce(new Prisma.PrismaClientKnownRequestError('transaction rejected', { code: 'P2004', clientVersion: '5.22' }))
+    mocks.findFirst.mockRejectedValueOnce(new Error('reference lookup failed'))
+    await expect(importBaremeFile({ buffer: sourceBytes, fileName: 'barema-new-01042026.xlsx' })).rejects.toThrow('transaction rejected')
+    expect(mocks.deleteBlob).not.toHaveBeenCalled()
+  })
+
+  it('conserve un reçu de reprise si la comparaison échoue après import', async () => {
+    mocks.compare.mockRejectedValueOnce(new Error('comparison unavailable'))
+    const result = await importBaremeFile({ buffer: sourceBytes, fileName: 'C.xlsx' })
+    expect(result).toMatchObject({ status: 'created', comparisonPending: true })
+    expect(mocks.create).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ diagnostics: expect.objectContaining({ comparisonPending: expect.objectContaining({ version: 1, fileSize: sourceBytes.length }) }) }) }))
+    expect(mocks.update).not.toHaveBeenCalled()
+    expect(mocks.deleteBlob).not.toHaveBeenCalled()
   })
 })

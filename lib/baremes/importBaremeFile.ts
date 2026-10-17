@@ -10,7 +10,8 @@ import { verifySheetContracts } from './sheetContracts'
 import { verifyCoverage } from './verifyCoverage'
 import { verifyInvariants } from './verifyInvariants'
 import { extractValidFromFileName } from './normalize'
-import { comparisonSnapshot, compareBaremeVersions, detectAnomaliesFromDiff } from './compareBaremeVersions'
+import { compareBaremeVersions } from './compareBaremeVersions'
+import { comparisonEnrichment } from './comparisonEnrichment'
 import { loadSheetMappingOverrides } from './loadSheetMappings'
 import { logPublicationEvent } from './publicationLog'
 import {
@@ -49,6 +50,7 @@ export type ImportBaremeResult =
       validFrom: Date | null
       /** Export CSV/publication autorisés (aucune issue error/critical). */
       exportAllowed: boolean
+      comparisonPending?: boolean
     }
   | {
       status: 'duplicate'
@@ -178,6 +180,8 @@ export async function importBaremeFile(
   }
 
   const diagnostics: BaremeDiagnostics = {
+    comparisonPending: { version: 1, fileHash, fileSize },
+    structuralAlerts: normalized.alerts,
     fileSize,
     ...normalized.diagnostics,
     roundTrip: {
@@ -233,9 +237,11 @@ export async function importBaremeFile(
 
   // 6) Insertion DB (transaction atomique, timeout élargi pour la DB Neon distante).
   let fileId: string
+  let commitUncertain = false
   try {
-    fileId = await withDbRetry(() =>
-      prisma.$transaction(
+    fileId = await withDbRetry(async () => {
+      try {
+        return await prisma.$transaction(
         async (tx) => {
           const created = await tx.baremeFile.create({
             data: {
@@ -272,18 +278,39 @@ export async function importBaremeFile(
           return created.id
         },
         { timeout: 30_000, maxWait: 10_000 }
-      )
-    )
+        )
+      } catch (error) {
+        // Le dernier essai peut échouer proprement alors qu'un essai précédent
+        // a perdu son accusé. Garder cette incertitude à travers tous les retries.
+        if (!isConfirmedRollback(error)) commitUncertain = true
+        throw error
+      }
+    })
   } catch (err) {
-    // Le Blob vient d'être créé par CET import et n'est référencé par aucune
-    // ligne si la transaction a échoué. Ne jamais supprimer une source existante.
+    // Un accusé perdu peut masquer un COMMIT réussi. Le retry peut alors lever
+    // P2002. Une erreur de transaction n'est donc jamais une preuve d'orphelin.
     try {
-      await sourceStorage.delete(storedPath)
-    } catch (cleanupErr) {
-      console.error(
-        '[importBaremeFile] impossible de nettoyer le Blob orphelin après échec DB:',
-        cleanupErr
-      )
+      const referenced = await withDbRetry(() => prisma.baremeFile.findFirst({
+        where: { filePath: storedPath }, select: { id: true, fileHash: true, fileSize: true, name: true },
+      }))
+      if (referenced) {
+        if (referenced.fileHash === fileHash && referenced.fileSize === fileSize) {
+          return { status: 'duplicate', fileId: referenced.id, message: 'Import déjà conservé ; ouvrir sa fiche pour vérifier et reprendre la comparaison.' }
+        }
+        throw new Error('La source est référencée : compensation refusée')
+      }
+      // Seuls les échecs connus comme annulés autorisent la compensation.
+      // Timeout/connexion/P2028 : garder les octets pour réconciliation, même
+      // si une lecture ponctuelle ne voit encore aucune référence.
+      if (!commitUncertain && isConfirmedRollback(err)) {
+        try { await sourceStorage.delete(storedPath) } catch (cleanupErr) {
+          console.error('[importBaremeFile] impossible de nettoyer le Blob orphelin après échec DB:', cleanupErr)
+        }
+      } else {
+        console.error('[importBaremeFile] résultat transactionnel incertain : source conservée pour réconciliation')
+      }
+    } catch (checkError) {
+      console.error('[importBaremeFile] référence non vérifiable : source conservée pour réconciliation', checkError)
     }
     throw err
   }
@@ -322,28 +349,29 @@ export async function importBaremeFile(
   // Si ça échoue (ex: pas de version précédente), on log mais on n'invalide pas l'import.
   let enrichedSummary = normalized.summary
   let enrichedAlerts = normalized.alerts
+  let comparisonPending = true
   try {
     const diff = await compareBaremeVersions(fileId)
-    const anomalies = detectAnomaliesFromDiff(diff)
-    enrichedAlerts = [...anomalies, ...normalized.alerts]
-    enrichedSummary = {
-      ...normalized.summary,
-      newEntries: diff.countsByType.added,
-      modifiedEntries: diff.countsByType.modified,
-      removedEntries: diff.countsByType.disappeared,
-    }
+    const enriched = comparisonEnrichment(diff, { diagnostics, summary: normalized.summary, alerts: normalized.alerts })
 
     // Mettre à jour la fiche avec les enrichissements
-    await withDbRetry(() =>
-      prisma.baremeFile.update({
-        where: { id: fileId },
+    const updated = await withDbRetry(() =>
+      prisma.baremeFile.updateMany({
+        where: { id: fileId, status: 'draft', diagnostics: { equals: diagnostics as unknown as Prisma.InputJsonValue } },
         data: {
-          summary: enrichedSummary as unknown as Prisma.InputJsonValue,
-          alerts: enrichedAlerts as unknown as Prisma.InputJsonValue,
-          diagnostics: { ...diagnostics, comparison: comparisonSnapshot(diff) } as unknown as Prisma.InputJsonValue,
+          summary: enriched.summary as unknown as Prisma.InputJsonValue,
+          alerts: enriched.alerts as unknown as Prisma.InputJsonValue,
+          diagnostics: enriched.diagnostics as unknown as Prisma.InputJsonValue,
         },
       })
     )
+    // Le snapshot ne remplace pas une reprise concurrente qui l'aurait déjà écrit.
+    // La réponse reste prudente en cas de conflit ; la fiche fait foi.
+    if (updated.count === 1) {
+      enrichedSummary = { ...normalized.summary, ...enriched.summary }
+      enrichedAlerts = enriched.alerts
+      comparisonPending = false
+    }
   } catch (err) {
     // Ne pas casser l'import si la comparaison échoue
     console.warn('[importBaremeFile] compareBaremeVersions failed:', err)
@@ -351,6 +379,7 @@ export async function importBaremeFile(
 
   return {
     status: 'created',
+    comparisonPending,
     fileId,
     summary: enrichedSummary,
     alerts: enrichedAlerts,
@@ -362,4 +391,9 @@ export async function importBaremeFile(
 function sanitizeFileName(name: string): string {
   // Garde une extension .xlsx, remplace les caractères suspects par _
   return name.replace(/[^a-zA-Z0-9._-]/g, '_').slice(-200)
+}
+
+function isConfirmedRollback(error: unknown): boolean {
+  return error instanceof Prisma.PrismaClientKnownRequestError
+    && ['P2002', 'P2003', 'P2004', 'P2005', 'P2011', 'P2012', 'P2013', 'P2014', 'P2025', 'P2034'].includes(error.code)
 }

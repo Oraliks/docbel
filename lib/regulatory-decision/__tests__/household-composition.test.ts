@@ -1,10 +1,116 @@
 import { describe, expect, it } from "vitest";
-import { assessHouseholdBranch, classifyHouseholdComposition, evaluateFamilySituation } from "../household-composition";
+import { assessHouseholdBranch, classifyHouseholdComposition, evaluateFamilySituation, type FamilyPerson, type PartnerQualificationData } from "../household-composition";
 
 const member = (relation: Parameters<typeof classifyHouseholdComposition>[0][number]["relation"], extra = {}) => ({
   relation,
   factKey: `household.${relation}`,
   ...extra,
+});
+
+describe("prepared strict partner qualification", () => {
+  const answer = <T,>(value: T, effectiveAt?: string) => ({ value, origin: "user" as const, sourceField: "test", effectiveAt });
+  const qualified: PartnerQualificationData = {
+    schemaVersion: 2, declarationStatus: "prepared",
+    facts: {
+      sameRoof: answer(true), mainlySharedHousekeeping: answer(true), formsDeFactoHousehold: answer(true),
+      familyRelationship: answer("none"), childWithFamilyAllowanceEntitlement: answer(false),
+      dependentOnParentWithMaintenanceDuty: answer(false), receivesRisOrEquivalent: answer(false),
+      dependentOnAnotherUnemployedCohabitant: answer(false), marriedToAnotherPerson: answer(false),
+    },
+  };
+  const evaluate = (people: FamilyPerson[]) => evaluateFamilySituation({
+    facts: { asOf: "2026-10-10", people }, activeChildIncomeNeutralisation: false,
+    partnerQualificationPolicy: "require_facts",
+  });
+
+  it.each([undefined, true, false])("keeps legacy declaration %s unknown", (partnerEstablished) => {
+    const person: FamilyPerson = { id: "p", relation: "partner", partnerEstablished, incomes: [] };
+    expect(evaluate([person])).toMatchObject({
+      status: "needs_information", expectedCategory: null, composition: "spouse_or_partner",
+      factKeys: ["p"], partnerQualifications: [{ personId: "p", status: "needs_information" }],
+      missingFacts: expect.arrayContaining(["p.partnerQualification.facts.sameRoof"]),
+    });
+    expect(evaluateFamilySituation({ facts: { asOf: "2026-10-10", people: [person] }, activeChildIncomeNeutralisation: false }))
+      .toMatchObject({ status: "probable", expectedCategory: "A" });
+  });
+
+  it("requires a complete empty income inventory after material qualification", () => {
+    expect(evaluate([{ id: "p", relation: "partner", partnerQualification: qualified, incomes: [] }]))
+      .toMatchObject({ status: "probable", expectedCategory: "A", partnerQualifications: [{ status: "eligible_on_facts", declarationStatus: "prepared" }] });
+    expect(evaluate([{ id: "p", relation: "partner", partnerQualification: qualified }]))
+      .toMatchObject({ status: "needs_information", expectedCategory: null, missingFacts: ["p.incomes"] });
+  });
+
+  it("keeps an established spouse priority without demanding partner assimilation facts", () => {
+    expect(evaluate([
+      { id: "spouse", relation: "spouse", incomes: [] },
+      { id: "other", relation: "partner", incomes: [] },
+    ])).toMatchObject({ expectedCategory: "A", status: "probable",
+      partnerQualifications: [{ personId: "other", status: "needs_information" }] });
+  });
+
+  it("preserves an excluded person and asks for the actual relationship", () => {
+    const result = evaluate([
+      { id: "child", relation: "child", receivesFamilyAllowances: true, incomes: [] },
+      { id: "p", relation: "partner", partnerQualification: { ...qualified, facts: { receivesRisOrEquivalent: answer(true) } }, incomes: [] },
+    ]);
+    expect(result).toMatchObject({ expectedCategory: null, composition: "spouse_or_partner", factKeys: ["child", "p"],
+      missingFacts: ["p.actualRelationship"], partnerQualifications: [{ personId: "p", status: "excluded_on_facts", preservePartnerCpasContext: true }] });
+    expect(result.missingFacts).not.toContain("p.partnerQualification.facts.sameRoof");
+  });
+
+  it("does not erase RIS context when another qualified person has no income", () => {
+    expect(evaluate([
+      { id: "qualified", relation: "partner", partnerQualification: qualified, incomes: [] },
+      { id: "ris", relation: "partner", partnerQualification: { ...qualified, facts: { receivesRisOrEquivalent: answer(true) } }, incomes: [] },
+    ])).toMatchObject({ expectedCategory: null, missingFacts: ["ris.actualRelationship"],
+      partnerQualifications: [{ personId: "qualified", status: "eligible_on_facts" },
+        { personId: "ris", status: "excluded_on_facts", preservePartnerCpasContext: true }] });
+  });
+
+  it("retains identity, effective dates, documentary status and all unresolved candidates", () => {
+    const future = { ...qualified, declarationStatus: "submitted" as const, facts: { ...qualified.facts, sameRoof: answer(true, "2026-10-11") } };
+    const people: FamilyPerson[] = [
+      { id: "second", relation: "partner", partnerQualification: future, incomes: [] },
+      { id: "first", relation: "partner", partnerEstablished: false, partnerQualification: { ...qualified, declarationStatus: "submitted" }, incomes: [] },
+    ];
+    const result = evaluate(people);
+    expect(result).toMatchObject({ expectedCategory: null, partnerQualifications: [
+      { personId: "second", status: "needs_information", missingFactKeys: expect.arrayContaining(["sameRoof"]) },
+      { personId: "first", status: "eligible_on_facts", declarationStatus: "submitted" },
+    ] });
+    const unresolved = evaluate(people.map((person) => ({ ...person, partnerQualification: future })));
+    expect(unresolved.expectedCategory).toBeNull();
+    expect(unresolved.missingFacts).toEqual(expect.arrayContaining([
+      "second.partnerQualification.facts.sameRoof", "first.partnerQualification.facts.sameRoof",
+    ]));
+    expect(evaluate(people.map((person) => ({ ...person, partnerQualification: qualified }))))
+      .toMatchObject({ status: "needs_review", expectedCategory: null, missingFacts: ["household.partnerPriority"] });
+  });
+
+  it("does not present an incomplete 60B month as a category", () => {
+    const result = evaluateFamilySituation({
+      facts: { asOf: "2026-10-10", people: [{ id: "p", relation: "partner", partnerQualification: qualified,
+        incomes: [{ kind: "professional", amount: 500, contract: "cdd", variable: true }] }] },
+      activeChildIncomeNeutralisation: false, spouseProfessionalMonthlyThreshold: 1_000,
+      partnerQualificationPolicy: "require_facts",
+    });
+    expect(result).toMatchObject({ status: "needs_information", expectedCategory: null,
+      missingFacts: ["p.incomes.0.monthlyAmount"] });
+  });
+
+  it("does not certify the deprecated 60A shortcut from a fixed salary below the ceiling", () => {
+    const result = evaluateFamilySituation({
+      facts: { asOf: "2026-10-10", people: [{ id: "p", relation: "partner", partnerQualification: qualified,
+        incomes: [{ kind: "professional", amount: 500, contract: "cdi", variable: false }] }] },
+      activeChildIncomeNeutralisation: false, spouseProfessionalMonthlyThreshold: 1_000,
+      partnerQualificationPolicy: "require_facts",
+    });
+    expect(result).toMatchObject({ status: "needs_review", expectedCategory: null,
+      missingFacts: ["partnerIncome.article60Coverage"] });
+    expect(result.sourceRuleIds).toContain("situation_familiale_conjoint_revenus_conditions_am60");
+    expect(result.sourceRuleIds).not.toContain("situation_familiale_conjoint_revenu_am60");
+  });
 });
 
 describe("household composition before Article 110 branch evaluation", () => {

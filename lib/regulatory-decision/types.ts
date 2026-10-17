@@ -1,3 +1,5 @@
+import type { HouseholdAssessment } from "./household-composition";
+
 /** Minimal, typed contract between orientation facts and dossier composition. */
 export type FactValue = string | boolean | number | { kind: "date"; value: string };
 
@@ -72,27 +74,7 @@ export interface RegulatoryDecision {
   /** Last ONEM state received from an official source; never derived from DocBel's calculation. */
   officialOnemState?: { onemCode: string; recordedAt?: string };
   /** Composition-first assessment; the known ONEM code is never overwritten by it. */
-  householdAssessment?: {
-    composition: "alone" | "spouse_or_partner" | "children_only" | "children_and_relatives" | "relatives_only" | "children_and_third_parties" | "relatives_and_third_parties" | "children_relatives_and_third_parties" | "third_parties_only" | "mixed_or_unsupported";
-    status: "probable" | "needs_information" | "needs_review";
-    expectedCategory: "A" | "N" | "B" | null;
-    operationalArticle: "60A" | "60B" | "none" | "needs_review";
-    incomeAssessment: "no_income" | "not_relevant" | "relevant" | "needs_review";
-    monthlyPaymentAssessment: "A_RATE" | "B_RATE" | "NEEDS_C110A" | "NEEDS_REVIEW";
-    baremeSource?: { fileId: string; fileName: string; validFrom?: string };
-    requiredExternalDocument?: { document: "C110A"; status: "required" | "received"; url: string; reason: string };
-    monthlyC110aIncome?: number;
-    recommendedAction: "none" | "declaration_required" | "information_required" | "review_required" | "await_onem_decision";
-    officialOnemCode?: string;
-    trigger: "c1_household_update";
-    factKeys: string[];
-    sourceRuleIds: string[];
-    explanation?: string;
-    missingFacts?: string[];
-    evaluatedAt?: string;
-    appliesAllWeek?: boolean;
-    pensionAssessment?: { status: "VERIFIED" | "NEEDS_DOCUMENT" | "NEEDS_INFORMATION"; grossTotal?: number; threshold?: number; document: "SPF_PENSIONS_PROOF"; proofStatus: "received" | "required" };
-  };
+  householdAssessment?: HouseholdAssessment;
   /** Narrow C1 claims for a person declaring an isolated household. Never an ONEM decision. */
   isolatedHouseholdAssessment?: {
     branch: "alimony" | "alternating_care" | "cohousing";

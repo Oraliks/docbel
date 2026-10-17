@@ -95,7 +95,9 @@ export async function POST(
   // exclut ces champs de son schéma et `z.object` strippe les clés inconnues —
   // les injecter avant `safeParse` (comme avant le 2026-07-11) les faisait
   // disparaître de `result.data`, d'où un PDF sans date ni signature.
-  const validated = applyServerAutoFields(fields, result.data as FormPayload, today);
+  // One transitive visibility filter for persistence, C1 assessment and PDF output.
+  // A hidden parent can otherwise leave a formerly visible household answer behind.
+  const validated = visiblePayload(fields, applyServerAutoFields(fields, result.data as FormPayload, today));
 
   // Propriété du run (même logique que app/api/documents/bundles/[id]/run/route.ts) :
   // userId de session si connecté, sinon cookie de session anonyme.

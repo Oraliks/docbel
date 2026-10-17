@@ -77,6 +77,31 @@ describe("household composition before Article 110 branch evaluation", () => {
     expect(assessment.explanation).toContain("charge de famille");
   });
 
+  it("does not equate unknown alimony payment with an explicitly stopped payment", () => {
+    const assess = (paid?: boolean) => evaluateFamilySituation({
+      facts: { asOf: "2026-10-17", people: [], isolated: { alimony: { paid } } },
+      activeChildIncomeNeutralisation: false,
+    });
+    expect(assess()).toMatchObject({ status: "needs_information", expectedCategory: null,
+      missingFacts: expect.arrayContaining(["isolated.alimony.paid"]) });
+    expect(assess(false)).toMatchObject({ status: "probable", expectedCategory: "N" });
+    expect(assess(true)).toMatchObject({ status: "needs_information", expectedCategory: null });
+  });
+
+  it.each([{}, { paid: true }, { paid: true, admissibleBasis: true }])(
+    "retains the existing alternating-care A result with incomplete alimony facts %j", (alimony) => {
+    const facts = { asOf: "2026-10-17", people: [], isolated: {
+      alimony, alternatingCare: { averageDaysPerWeek: 2, cycle: "monthly" as const, familyAllowances: true },
+    } };
+    expect(evaluateFamilySituation({ facts, activeChildIncomeNeutralisation: false })).toMatchObject({
+      status: "probable", expectedCategory: "A", sourceRuleIds: ["situation_familiale_isole_garde_alternee"],
+    });
+    facts.isolated.alternatingCare.familyAllowances = false;
+    expect(evaluateFamilySituation({ facts: { ...facts, isolated: { ...facts.isolated,
+      alternatingCare: { ...facts.isolated.alternatingCare, childHasRelevantIncome: true },
+    } }, activeChildIncomeNeutralisation: false })).toMatchObject({ status: "needs_information", expectedCategory: null });
+  });
+
   it("uses N only for an established autonomous co-housing and keeps pending B administrative", () => {
     const facts = { asOf: "2026-10-10", people: [{ id: "roommate", relation: "third_party" as const, incomes: [] }] };
     expect(evaluateFamilySituation({ facts: { ...facts, cohousing: { declared: true } }, activeChildIncomeNeutralisation: false })).toMatchObject({ expectedCategory: null, status: "needs_information", factKeys: ["cohousing.autonomousLiving"] });

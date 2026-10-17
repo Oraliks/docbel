@@ -295,15 +295,20 @@
   §4 : preuve de ménage ; §5 : délégation et disposition distincte sur le montant mensuel.
   Assimilation issue de l'AR du 04/08/1996, art. 4, effet 01/09/1996 ; preuve du §4 dans la
   rédaction AR du 10/11/2005, art. 2, effet 01/01/2006.
-- AM art. 59, alinéa 1 : faits de cohabitation ; alinéa 2 : absences assimilées ; alinéa 3,
+- AM art. 59, alinéa 1 : faits de cohabitation ; alinéa 2, 2° : membres du ménage emprisonnés,
+  internés ou placés dans un établissement pour malades mentaux pendant les douze premiers
+  mois ; ne pas étendre ce passage à l'hospitalisation ordinaire ou à la maison de repos.
+  Les autres absences sont à examiner selon les faits. Alinéa 3,
   1°–3° : déclaration des deux personnes, aide sociale/entretien parental, autre chômeur
   cohabitant (AM du 20/06/1997, art. 2, effet 01/07/1997). Alinéa 4 : exclusion mariage **et**
   cohabitation avec le conjoint (AM du 05/08/1996, art. 1, effet 01/09/1996).
 - AM art. 60, alinéa 2 : déclaration, salaire, plafond et absence de revenu de remplacement,
   sauf incapacité/chômage temporaire dans l'occupation neutralisée avec cumul sous plafond
-  (AM du 26/06/2008, art. 1, effet 01/07/2008). Alinéa 4 : rémunération réelle et contractuelle
-  pour un mois complet (CDI ou CDD successifs d'au moins un mois au total) ; alinéa 5 : période
-  sous contrat (AM du 27/04/2001, art. 1, effet 01/04/2001). Dernier alinéa : montant journalier
+  (AM du 26/06/2008, art. 1, effet 01/07/2008). Alinéa 4 : rémunération réelle du mois concerné ;
+  condition de rémunération contractuelle pour un mois complet applicable au CDI, au CDD unique
+  d'au moins un mois ou à plusieurs CDD successifs dont la durée totale atteint au moins un mois.
+  Alinéa 5 : période sous contrat (AM du 27/04/2001, art. 1, effet 01/04/2001).
+  Dernier alinéa : montant journalier
   après la première période lorsque la charge de famille liée au revenu irrégulier ne se
   détermine qu'en fin de mois (effet 01/11/2012 ; renvoi modifié au 01/03/2026).
 - AM art. 61–62 : nature et exceptions des revenus de remplacement ; art. 63 : parents

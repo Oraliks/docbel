@@ -214,8 +214,9 @@ source_name: SPF Justice — AM du 26/11/1991, art. 59, alinéas 1 et 2 ; ONEM T
 source_url: https://www.ejustice.just.fgov.be/cgi_loi/change_lg.pl?language=fr&la=F&cn=1991112630&table_name=loi
 base_legale: >
   AM art. 59 : même toit et questions ménagères principalement communes ; résidence principale
-  présumée jusqu'à preuve contraire (ajout en vigueur le 01/04/2003). Absences institutionnelles
-  assimilées pendant les douze premiers mois. T147 traite aussi les absences professionnelles.
+  présumée jusqu'à preuve contraire (ajout en vigueur le 01/04/2003). L'alinéa 2, 2° vise les
+  membres du ménage emprisonnés, internés ou placés dans un établissement pour malades mentaux,
+  pendant les douze premiers mois. T147 traite aussi les absences professionnelles.
 last_verified: 2026-10-17
 confidence: official
 status: active
@@ -224,6 +225,8 @@ summary: >
   L'absence physique ne prouve pas à elle seule la sortie du ménage.
 agent_instruction: >
   Demander les faits de vie commune et les dates/motifs d'absence lorsqu'ils sont décisifs.
+  Ne pas étendre l'assimilation de l'alinéa 2, 2° à une hospitalisation ordinaire ou à un séjour
+  en maison de repos ; les autres absences restent à examiner selon les faits.
   Une autonomie contestée ou une absence non couverte reste a_verifier, sans N automatique.
   Ce lot ne livre pas de qualification individuelle dans le moteur.
 red_flags:
@@ -317,7 +320,8 @@ summary: >
   applicable. Aucun revenu de remplacement pour le mois, sauf incapacité de travail ou chômage
   temporaire durant l'occupation dont le revenu est neutralisé, avec cumul salaire/remplacement
   sous la limite. Vérifier la rémunération réelle du mois et celle prévue pour un mois complet ;
-  cette dernière condition s'applique au CDI ou aux CDD successifs totalisant au moins un mois.
+  cette dernière condition s'applique au CDI, à un CDD d'au moins un mois ou à plusieurs CDD
+  successifs dont la durée totale atteint au moins un mois.
   Les revenus salariés sont rattachés à la période sous contrat.
 agent_instruction: >
   Examiner tous les revenus et leur nature ; un salaire fixe sous seuil ne suffit pas.

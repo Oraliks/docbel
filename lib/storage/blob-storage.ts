@@ -1,7 +1,31 @@
 import { put, del, get } from "@vercel/blob";
+import { AsyncLocalStorage } from "node:async_hooks";
 
 const BLOB_PREFIX = "blobs:";
 type BlobAccess = "public" | "private";
+
+/**
+ * Frontière strictement réservée aux recettes serveur. Elle n'est jamais
+ * sélectionnée par une requête HTTP : sans installation explicite par du code
+ * exécuté sous NODE_ENV=test, les fonctions ci-dessous utilisent Vercel Blob.
+ */
+export interface BlobStorageTestAdapter {
+  save(buffer: Buffer, key: string, isPrivate: boolean): Promise<string>;
+  get(filePath: string): Promise<Buffer | null>;
+  delete(filePath: string): Promise<void>;
+}
+
+const testAdapters = new AsyncLocalStorage<BlobStorageTestAdapter>();
+
+export async function withBlobStorageTestAdapter<T>(
+  adapter: BlobStorageTestAdapter,
+  callback: () => Promise<T>
+): Promise<T> {
+  if (process.env.NODE_ENV !== "test") {
+    throw new Error("Blob storage test adapter is only available under NODE_ENV=test");
+  }
+  return testAdapters.run(adapter, callback);
+}
 
 export function isBlobsEnabled(): boolean {
   return !!(process.env.BLOB_READ_WRITE_TOKEN || process.env.BLOB_PRIVATE_READ_WRITE_TOKEN);
@@ -38,6 +62,8 @@ function blobToken(access: BlobAccess): string {
 }
 
 export async function saveBlob(buffer: Buffer, key: string, isPrivate = false): Promise<string> {
+  const testAdapter = testAdapters.getStore();
+  if (testAdapter) return testAdapter.save(buffer, key, isPrivate);
   const access = isPrivate ? "private" : "public";
   const token = blobToken(access);
   const { url } = await put(key, buffer, { access, token, addRandomSuffix: true });
@@ -52,6 +78,8 @@ export async function saveBlob(buffer: Buffer, key: string, isPrivate = false): 
 /** Caller must authorize private reads. Legacy private/ keys in a PUBLIC store
  * stay readable until migration; the hostname, never the key, identifies access. */
 export async function getBlob(filePath: string): Promise<Buffer | null> {
+  const testAdapter = testAdapters.getStore();
+  if (testAdapter) return testAdapter.get(filePath);
   const { url, access } = blobLocation(filePath);
   if (access === "public") {
     const response = await fetch(url, { cache: "no-store", redirect: "error" });
@@ -63,6 +91,8 @@ export async function getBlob(filePath: string): Promise<Buffer | null> {
 }
 
 export async function deleteBlob(filePath: string): Promise<void> {
+  const testAdapter = testAdapters.getStore();
+  if (testAdapter) return testAdapter.delete(filePath);
   const { url, access } = blobLocation(filePath);
   await del(url, { token: blobToken(access) });
 }

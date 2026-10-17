@@ -1,4 +1,5 @@
 import { headers } from "next/headers";
+import { AsyncLocalStorage } from "node:async_hooks";
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma, withDbRetry } from "@/lib/prisma";
@@ -18,6 +19,25 @@ export type AdminAuthResult =
   | { isAuthorized: true; user: AuthorizedUser; error?: undefined }
   | { isAuthorized: false; error: NextResponse; user?: undefined };
 
+type AdminAuthTestOverride = () => Promise<AdminAuthResult>;
+const adminAuthTestOverrides = new AsyncLocalStorage<AdminAuthTestOverride>();
+
+/**
+ * Couture de recette hors HTTP. Les handlers appellent toujours
+ * requireAdminAuth ; aucune route, query string ou payload ne peut installer
+ * cet override. Les suites habituelles peuvent ainsi simuler une session tout
+ * en exerçant le handler réel.
+ */
+export async function withAdminAuthTestOverride<T>(
+  override: AdminAuthTestOverride,
+  callback: () => Promise<T>
+): Promise<T> {
+  if (process.env.NODE_ENV !== "test") {
+    throw new Error("Admin auth test override is only available under NODE_ENV=test");
+  }
+  return adminAuthTestOverrides.run(override, callback);
+}
+
 export type PartnerAuthorizedUser = AuthorizedUser & {
   partnerOrganization: string | null;
   isAdmin: boolean;
@@ -28,6 +48,8 @@ export type PartnerAuthResult =
   | { isAuthorized: false; error: NextResponse; user?: undefined };
 
 export async function requireAdminAuth(): Promise<AdminAuthResult> {
+  const testOverride = adminAuthTestOverrides.getStore();
+  if (testOverride) return testOverride();
   const headerList = await headers();
   const session = await withDbRetry(() =>
     auth.api.getSession({ headers: headerList })

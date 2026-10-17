@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import * as XLSX from 'xlsx'
 import {
   diffXlsxBuffers,
+  compareWithPublishedOnem,
   extractLatestBaremeRefFromHtml,
   checkOnemForNewBareme,
   type XlsxDiff,
@@ -250,5 +251,37 @@ describe('checkOnemForNewBareme (logique, fetch stubbé)', () => {
     expect(r.reason).toBe('fetch_failed')
     expect(r.hasNew).toBe(false)
     expect(r.latest).toBeNull()
+  })
+})
+
+describe('compareWithPublishedOnem — téléchargement contrôlé', () => {
+  it('refuse un contenu externe avec un MIME ou une signature incompatible', async () => {
+    const ours = makeXlsx(BASE_SHEETS)
+    const fetchImpl = (async (url: string) => {
+      if (url === 'https://www.onem.be/documentation/montants') {
+        return new Response('<a href="https://www.onem.be/barema-new-01072026.xlsx">xlsx</a>', {
+          headers: { 'content-type': 'text/html' },
+        })
+      }
+      return new Response('not an xlsx', { headers: { 'content-type': 'text/plain' } })
+    }) as unknown as typeof fetch
+
+    await expect(compareWithPublishedOnem(ours, fetchImpl)).resolves.toBeNull()
+  })
+
+  it('refuse aussi un octet-stream qui ne porte pas la signature ZIP d’un XLSX', async () => {
+    const ours = makeXlsx(BASE_SHEETS)
+    const fetchImpl = (async (url: string) => {
+      if (url === 'https://www.onem.be/documentation/montants') {
+        return new Response('<a href="https://www.onem.be/barema-new-01072026.xlsx">xlsx</a>', {
+          headers: { 'content-type': 'text/html' },
+        })
+      }
+      return new Response('not an xlsx', {
+        headers: { 'content-type': 'application/octet-stream' },
+      })
+    }) as unknown as typeof fetch
+
+    await expect(compareWithPublishedOnem(ours, fetchImpl)).resolves.toBeNull()
   })
 })

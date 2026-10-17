@@ -35,8 +35,8 @@ export function parseCellNumber(value: string | undefined | null): number | null
       cleaned = cleaned.replace(/,/g, '')
     }
   } else if (hasComma) {
-    // Soit décimal BE (62,0788), soit séparateur de milliers US sans décimales (2,189)
-    // Heuristique : si exactement une virgule suivie de 1-4 chiffres, c'est décimal
+    // Une virgule seule suivie de 1-4 chiffres est interprétée comme décimale
+    // (ex. 62,0788 et, de manière ambiguë, 2,189 → 2.189).
     if (/^-?\d+,\d{1,4}$/.test(cleaned)) {
       cleaned = cleaned.replace(',', '.')
     } else {
@@ -133,7 +133,8 @@ export function parseBelgianDate(value: string | undefined | null): Date | null 
 
 /**
  * Extrait une date de validité (validFrom) à partir d'un nom de fichier type
- * "barema-new-01042026.xlsx" ou "barema-01-04-2026.xlsx".
+ * "barema-new-01042026.xlsx", "barema20260901-new.xlsx" ou
+ * "barema-01-04-2026.xlsx".
  *
  * Important : on exige un séparateur (- ou _) ou le début de chaîne juste
  * avant le groupe DDMMYYYY, ET l'extension `.xlsx` ou un séparateur juste
@@ -141,6 +142,29 @@ export function parseBelgianDate(value: string | undefined | null): Date | null 
  * serait capté à tort comme une date.
  */
 export function extractValidFromFileName(filename: string): Date | null {
+  // Format actuellement publié par l'ONEM : baremaYYYYMMDD-new.xlsx (ou -old).
+  // Le séparateur avant `barema` garde le motif indépendant d'un éventuel
+  // préfixe ajouté par le navigateur lors du téléchargement.
+  const onemCurrent = filename.match(
+    /(?:^|[-_])barema(\d{4})(\d{2})(\d{2})-(?:new|old)\.xlsx$/i
+  )
+  if (onemCurrent) {
+    const year = Number(onemCurrent[1])
+    const month = Number(onemCurrent[2])
+    const day = Number(onemCurrent[3])
+    const date = new Date(Date.UTC(year, month - 1, day))
+    if (
+      year >= 1970 &&
+      month >= 1 && month <= 12 &&
+      day >= 1 && day <= 31 &&
+      date.getUTCFullYear() === year &&
+      date.getUTCMonth() === month - 1 &&
+      date.getUTCDate() === day
+    ) {
+      return date
+    }
+  }
+
   // Pattern DDMMYYYY isolé : (début|séparateur) puis 8 chiffres suivis de .xlsx,
   // d'un séparateur, ou d'un suffixe navigateur type " (1)" (re-téléchargement).
   const m1 = filename.match(/(?:^|[-_])(\d{2})(\d{2})(\d{4})(?=\.xlsx|[-_.\s(]|$)/i)

@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { getTranslations } from 'next-intl/server'
+import { getLocale, getTranslations } from 'next-intl/server'
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -10,6 +10,7 @@ import {
   BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb'
 import { getActiveBaremeData } from '@/lib/baremes/getActiveBaremeData'
+import { formatDate, formatNumber } from '@/lib/i18n/format'
 import { BAREME_SHEETS, sheetHref, type SheetEntry } from '@/lib/baremes/sheetRegistry'
 import { ArrowRight, Calendar, FileSpreadsheet, Home } from 'lucide-react'
 
@@ -19,16 +20,14 @@ export const metadata: Metadata = {
     "Consultez les barèmes officiels de l'ONEM : allocations de chômage complet, mi-temps, temporaire, catégories spéciales et salaires horaires. Montants en vigueur par code et tranche.",
 }
 
-export const revalidate = 300
-
-function formatDate(d: Date | null): string {
-  if (!d) return '—'
-  return d.toLocaleDateString('fr-BE')
-}
+// La publication ou le rollback doit être visible sans attendre l'ISR d'une
+// ancienne page. La lecture force la requête DB de la version applicable.
+export const dynamic = 'force-dynamic'
 
 export default async function BaremeHubPage() {
   const t = await getTranslations('public.outils')
-  const data = await getActiveBaremeData()
+  const locale = await getLocale()
+  const data = await getActiveBaremeData({ force: true })
 
   // Métadonnées par feuille (date + nombre de montants) depuis les données publiées.
   const meta = new Map<string, { count: number; validFrom: Date | null }>()
@@ -79,13 +78,13 @@ export default async function BaremeHubPage() {
           <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-1 text-xs text-muted-foreground">
             <span className="inline-flex items-center gap-1.5">
               <Calendar className="size-3.5" />
-              {t('baremePublishedAt', { date: formatDate(data.publishedAt) })}
+              {t('baremePublishedAt', { date: data.publishedAt ? formatDate(data.publishedAt, locale) : '—' })}
             </span>
             {data.multiplicateur != null && (
               <span>
                 {t('baremeMultiplier')}{' '}
                 <span className="font-semibold text-primary">
-                  {data.multiplicateur.toLocaleString('fr-BE', { minimumFractionDigits: 4, maximumFractionDigits: 4 })}
+                  {formatNumber(data.multiplicateur, locale, { minimumFractionDigits: 4, maximumFractionDigits: 4 })}
                 </span>
               </span>
             )}
@@ -129,10 +128,10 @@ export default async function BaremeHubPage() {
                         {m?.validFrom && (
                           <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 font-medium text-primary">
                             <Calendar className="size-3" />
-                            {formatDate(m.validFrom)}
+                            {formatDate(m.validFrom, locale)}
                           </span>
                         )}
-                        {m && m.count > 0 && <span>{t('baremeAmounts', { count: m.count.toLocaleString('fr-BE') })}</span>}
+                        {m && m.count > 0 && <span>{t('baremeAmounts', { count: formatNumber(m.count, locale) })}</span>}
                       </div>
                     </Link>
                   )

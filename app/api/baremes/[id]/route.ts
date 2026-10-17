@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
+import { prisma, withDbRetry } from '@/lib/prisma'
 import { requireAdminAuth } from '@/lib/auth-check'
 import { ensureWriteAllowed } from '@/lib/admin/readonly-guard'
 import { logActivity } from '@/lib/activity-logger'
 import { unlink } from 'fs/promises'
 import path from 'path'
+import { deleteBlob, isBlobsPath } from '@/lib/storage/blob-storage'
+import { apiError, apiOk } from '@/lib/api/response'
 
 export async function DELETE(
   req: NextRequest,
@@ -12,7 +14,7 @@ export async function DELETE(
 ) {
   const auth = await requireAdminAuth()
   if (!auth.isAuthorized) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return auth.error
   }
 
   const writeGuard = await ensureWriteAllowed()
@@ -29,21 +31,36 @@ export async function DELETE(
       )
     }
 
-    // Supprimer le fichier physique (legacy sous public/, nouveaux sous private/)
+    if (!['draft', 'pending_approval', 'rejected', 'deleting'].includes(file.status)) {
+      return apiError(409, 'La source d’une version publiée ou archivée doit être conservée.', { code: 'protected_version' })
+    }
+    // Transition durable avant le stockage : une publication concurrente ne peut
+    // pas exploiter une source en cours de suppression. Une panne reste réessayable.
+    const claimed = await withDbRetry(() => prisma.baremeFile.updateMany({
+      where: { id, status: file.status, filePath: file.filePath }, data: { status: 'deleting' },
+    }))
+    if (claimed.count !== 1) return apiError(409, 'L’import a changé : actualiser puis réessayer.')
     try {
-      const relative = file.filePath.replace(/^\//, '')
-      const fullPath = relative.startsWith('uploads/')
-        ? path.join(process.cwd(), 'public', relative)
-        : path.join(process.cwd(), relative)
-      await unlink(fullPath)
-    } catch {
-      // Continuer même si le fichier physique n'existe plus
+      if (isBlobsPath(file.filePath)) {
+        await deleteBlob(file.filePath)
+      } else if (file.filePath) {
+        const relative = file.filePath.replace(/^\//, '')
+        const fullPath = path.resolve(relative.startsWith('uploads/') ? path.join(process.cwd(), 'public') : process.cwd(), relative)
+        const roots = [path.resolve(process.cwd(), 'private', 'uploads', 'baremes'), path.resolve(process.cwd(), 'public', 'uploads', 'baremes')]
+        if (!roots.some((root) => fullPath.startsWith(root + path.sep))) throw new Error('Invalid legacy source path')
+        try { await unlink(fullPath) } catch (error) {
+          if (!(error instanceof Error && 'code' in error && error.code === 'ENOENT')) throw error
+        }
+      }
+    } catch (error) {
+      console.error('[baremes/delete] source cleanup failed:', error)
+      return apiError(502, 'Suppression de la source impossible. La fiche est conservée en attente de suppression ; réessayez.', { code: 'source_cleanup_failed' })
     }
 
     // Supprimer en cascade (sheets liées via onDelete: Cascade)
-    await prisma.baremeFile.delete({ where: { id } })
+    const removed = await withDbRetry(() => prisma.baremeFile.deleteMany({ where: { id, status: 'deleting', filePath: file.filePath } }))
 
-    await logActivity(
+    if (removed.count > 0) await logActivity(
       auth.user?.email || 'unknown',
       'deleted',
       'file',
@@ -51,10 +68,7 @@ export async function DELETE(
       id
     )
 
-    return NextResponse.json(
-      { success: true },
-      { headers: { 'Content-Type': 'application/json; charset=utf-8' } }
-    )
+    return apiOk({ success: true })
   } catch (error) {
     console.error('DELETE error:', error)
     return NextResponse.json(

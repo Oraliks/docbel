@@ -26,6 +26,7 @@
  */
 
 import { parseBaremaFile, type ParsedSheet } from '@/lib/baremes-parser'
+import { matchesSignature } from '@/lib/file-signatures'
 import { extractValidFromFileName } from './normalize'
 
 /* ------------------------------------------------------------------ */
@@ -266,6 +267,86 @@ export interface OnemBaremeRef {
 
 /** Timeout HTTP du fetch hub (12s, aligné sur la veille existante ~10-15s). */
 const HUB_FETCH_TIMEOUT_MS = 12_000
+/** Même plafond que l'import : un contrôle manuel ne télécharge jamais un xlsx arbitrairement grand. */
+const MAX_ONEM_XLSX_BYTES = 25 * 1024 * 1024
+const MAX_ONEM_HTML_BYTES = 1 * 1024 * 1024
+const MAX_ONEM_REDIRECTS = 3
+const ACCEPTED_XLSX_MIME_TYPES = new Set([
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'application/octet-stream',
+  'application/zip',
+])
+
+function isTrustedOnemUrl(value: string): boolean {
+  try {
+    const url = new URL(value)
+    return (
+      url.protocol === 'https:' &&
+      (url.hostname === 'onem.be' || url.hostname.endsWith('.onem.be'))
+    )
+  } catch {
+    return false
+  }
+}
+
+/**
+ * Suit uniquement des redirections HTTPS vers le domaine officiel ONEM.
+ * `fetch` ne doit pas suivre une redirection implicite vers une destination
+ * arbitraire, car le lien vient d'une page distante même si cette page est
+ * officielle.
+ */
+async function fetchTrustedOnem(
+  url: string,
+  init: RequestInit,
+  fetchImpl: typeof fetch
+): Promise<Response | null> {
+  let current = url
+  for (let attempt = 0; attempt <= MAX_ONEM_REDIRECTS; attempt++) {
+    if (!isTrustedOnemUrl(current)) return null
+    const response = await fetchImpl(current, { ...init, redirect: 'manual' })
+    if (response.status >= 300 && response.status < 400) {
+      const location = response.headers.get('location')
+      if (!location) return null
+      current = new URL(location, current).toString()
+      continue
+    }
+    return response
+  }
+  return null
+}
+
+async function readResponseWithinLimit(
+  response: Response,
+  maxBytes: number
+): Promise<Buffer | null> {
+  const contentLength = response.headers.get('content-length')
+  if (contentLength && Number(contentLength) > maxBytes) return null
+  const reader = response.body?.getReader()
+  if (!reader) {
+    const bytes = Buffer.from(await response.arrayBuffer())
+    return bytes.byteLength <= maxBytes ? bytes : null
+  }
+  const chunks: Uint8Array[] = []
+  let total = 0
+  while (true) {
+    const { done, value } = await reader.read()
+    if (done) break
+    total += value.byteLength
+    if (total > maxBytes) {
+      await reader.cancel()
+      return null
+    }
+    chunks.push(value)
+  }
+  return Buffer.concat(chunks)
+}
+
+function hasAcceptedXlsxMimeType(response: Response): boolean {
+  const header = response.headers.get('content-type')
+  if (!header) return true
+  const mimeType = header.split(';', 1)[0]?.trim().toLowerCase()
+  return !!mimeType && ACCEPTED_XLSX_MIME_TYPES.has(mimeType)
+}
 
 /**
  * Récupère, depuis le hub ONEM, le lien vers le workbook `barema-new-*.xlsx` le
@@ -293,19 +374,24 @@ export async function fetchLatestOnemBaremeUrl(
   fetchImpl: typeof fetch = fetch
 ): Promise<OnemBaremeRef | null> {
   try {
-    const res = await fetchImpl(ONEM_BAREME_HUB_URL, {
+    const res = await fetchTrustedOnem(ONEM_BAREME_HUB_URL, {
       headers: {
         // UA friendly — les sites .be rejettent souvent les UA vides (cf. veille).
         'user-agent': 'BeldocBot/1.0 (+https://beldoc.be ; veille barèmes ONEM)',
         accept: 'text/html,application/xhtml+xml,*/*;q=0.8',
       },
       signal: AbortSignal.timeout(HUB_FETCH_TIMEOUT_MS),
-    })
-    if (!res.ok) {
-      console.warn(`[onemSync] hub HTTP ${res.status}`)
+    }, fetchImpl)
+    if (!res || !res.ok) {
+      console.warn(`[onemSync] hub HTTP ${res?.status ?? 'unreachable'}`)
       return null
     }
-    const html = await res.text()
+    const body = await readResponseWithinLimit(res, MAX_ONEM_HTML_BYTES)
+    if (!body) {
+      console.warn('[onemSync] hub trop volumineux')
+      return null
+    }
+    const html = body.toString('utf8')
     return extractLatestBaremeRefFromHtml(html, ONEM_BAREME_HUB_URL)
   } catch (err) {
     // Réseau bloqué (sandbox), DNS, timeout… → best-effort, on ne casse rien.
@@ -348,6 +434,7 @@ export function extractLatestBaremeRefFromHtml(
     } catch {
       continue
     }
+    if (!isTrustedOnemUrl(abs)) continue
     if (seen.has(abs)) continue
     seen.add(abs)
 
@@ -493,20 +580,32 @@ export async function compareWithPublishedOnem(
 
   let theirs: Buffer
   try {
-    const res = await fetchImpl(latest.url, {
+    const res = await fetchTrustedOnem(latest.url, {
       headers: {
         'user-agent': 'BeldocBot/1.0 (+https://beldoc.be ; contrôle barèmes ONEM)',
         accept:
           'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/octet-stream,*/*;q=0.8',
       },
       signal: AbortSignal.timeout(HUB_FETCH_TIMEOUT_MS),
-    })
-    if (!res.ok) {
-      console.warn(`[onemSync] download xlsx HTTP ${res.status}`)
+    }, fetchImpl)
+    if (!res || !res.ok) {
+      console.warn(`[onemSync] download xlsx HTTP ${res?.status ?? 'unreachable'}`)
       return null
     }
-    const arr = await res.arrayBuffer()
-    theirs = Buffer.from(arr)
+    if (!hasAcceptedXlsxMimeType(res)) {
+      console.warn('[onemSync] download xlsx avec MIME inattendu')
+      return null
+    }
+    const body = await readResponseWithinLimit(res, MAX_ONEM_XLSX_BYTES)
+    if (!body) {
+      console.warn('[onemSync] download xlsx trop volumineux')
+      return null
+    }
+    if (!matchesSignature(body, 'xlsx')) {
+      console.warn('[onemSync] download xlsx avec signature invalide')
+      return null
+    }
+    theirs = body
   } catch (err) {
     console.warn(
       '[onemSync] download xlsx échoué (best-effort):',

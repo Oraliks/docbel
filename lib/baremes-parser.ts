@@ -140,7 +140,7 @@ function extractEffectiveDate(workbook: XLSX.WorkBook): string {
       if (cell.startsWith('!')) continue
       const cellObj = ws[cell]
       const value = String(cellObj.w || cellObj.v || '')
-      const match = value.match(/(\d{1,2})-(\d{1,2})-(\d{4})/)
+      const match = value.match(/(\d{1,2})[/-](\d{1,2})[/-](\d{4})/)
       if (match) {
         return value
       }

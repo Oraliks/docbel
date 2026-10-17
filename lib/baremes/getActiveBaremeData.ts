@@ -40,6 +40,9 @@ interface CacheEntry {
 const CACHE_TTL_MS = 5 * 60 * 1000 // 5 minutes
 let cache: CacheEntry | null = null
 
+/** Famille servie par le lecteur public chômage. */
+const ONEM_RATES_FILE_TYPE = 'onem-rates'
+
 /**
  * Récupère les BaremeAmount du dernier import publié (status="published"),
  * triés par validFrom desc. Les calculateurs et pages info doivent utiliser
@@ -49,15 +52,27 @@ let cache: CacheEntry | null = null
  * invalidateActiveBaremeCache). En cas de besoin temps réel, passer force=true.
  */
 export async function getActiveBaremeData(
-  options: { force?: boolean } = {}
+  options: { force?: boolean; now?: Date } = {}
 ): Promise<ActiveBaremeData | null> {
-  if (!options.force && cache && Date.now() - cache.cachedAt < CACHE_TTL_MS) {
+  // Un appel avec une date de référence est une consultation historique/testable :
+  // ne pas lui retourner l'entrée liée à « maintenant » du cache global.
+  if (!options.force && !options.now && cache && Date.now() - cache.cachedAt < CACHE_TTL_MS) {
     return cache.data
   }
 
+  const now = options.now ?? new Date()
+
   const file = await withDbRetry(() =>
     prisma.baremeFile.findFirst({
-      where: { status: 'published' },
+      // La publication archive par famille (`fileType`). Le lecteur public ne
+      // doit donc jamais prendre par erreur un autre référentiel publié. Une
+      // date d'effet inconnue reste une anomalie à traiter dans l'admin, pas
+      // une donnée applicable par défaut.
+      where: {
+        status: 'published',
+        fileType: ONEM_RATES_FILE_TYPE,
+        validFrom: { lte: now },
+      },
       orderBy: [{ validFrom: 'desc' }, { publishedAt: 'desc' }],
       select: {
         id: true,
@@ -70,7 +85,7 @@ export async function getActiveBaremeData(
   )
 
   if (!file) {
-    cache = { data: null, cachedAt: Date.now() }
+    if (!options.now) cache = { data: null, cachedAt: Date.now() }
     return null
   }
 
@@ -126,7 +141,7 @@ export async function getActiveBaremeData(
     allAmounts,
   }
 
-  cache = { data, cachedAt: Date.now() }
+  if (!options.now) cache = { data, cachedAt: Date.now() }
   return data
 }
 

@@ -221,7 +221,12 @@ function findHeaderRow(sheet: ParsedSheet): HeaderInfo | null {
     const row = sheet.cellData[r]
     const lowered = row.map((c) => (c ?? '').toLowerCase().trim())
 
-    const articleCol = lowered.findIndex((c) => HEADER_KEYWORDS.article.some((k) => c === k))
+    // L'intitulé officiel ONEM peut compléter « Artikel » par la référence du
+    // texte, par exemple « Artikel KB WLH » (classeur du 01/09/2026). C'est
+    // toujours la colonne article, sans changer l'interprétation de sa valeur.
+    const articleCol = lowered.findIndex((c) =>
+      HEADER_KEYWORDS.article.some((k) => c === k || c.startsWith(`${k} `))
+    )
     const amountCol = lowered.findIndex((c) =>
       HEADER_KEYWORDS.amount.some((k) => c.startsWith(k))
     )

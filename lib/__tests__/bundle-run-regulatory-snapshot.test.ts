@@ -2,7 +2,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 import { Prisma } from "@prisma/client";
 import { PDFDocument } from "pdf-lib";
-import type { FormPayload, PdfFormField } from "../pdf-forms/types";
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
+import type { FormPayload } from "../pdf-forms/types";
 import type { RegulatoryDecision } from "../regulatory-decision/types";
 
 const io = vi.hoisted(() => ({
@@ -41,11 +43,17 @@ import { withPersonalSituationTrace } from "../regulatory-decision/personal-situ
 import { regenerateOneDocument } from "../bundles/regenerate-pdfs";
 import { deleteUserAndPersonalData } from "../users-delete";
 import { READONLY_COOKIE } from "../admin/readonly-guard";
+import { C1_FAMILLE } from "../pdf-forms/seed/c1/famille";
+import { buildValidator, isFieldVisible, visiblePayload } from "../pdf-forms/validation";
+import * as filler from "../pdf-forms/filler";
+import { deriveFamilyFactsFromC1 } from "../regulatory-decision/personal-situation-change";
 
 const slug = "changement-situation-personnelle";
 const now = new Date("2026-10-17T12:00:00Z");
-const fields = [{ id: "statutFamilial", type: "text", pdfFieldName: "", required: false,
-  label: { fr: "Situation" } }] as PdfFormField[];
+const fields = C1_FAMILLE;
+const isolated: FormPayload = { statutFamilial: "isole", pensionAlimentaire: "non", habiteEnColocation: "non" };
+const spouse = { prenom: "Synthetic", nom: "Example", dateNaissance: "1980-01-01", lien: "epoux",
+  typeRevenuPro: "aucun", revenuRemplacement: "aucun" };
 const form = { id: "c1", slug: "c1-changement-situation", title: "C1", description: "",
   issuer: "ONEM", status: "published", active: true, allowDownload: true,
   defaultLocale: "fr", version: 1, fields, triggers: [], technicalSchema: [],
@@ -68,7 +76,7 @@ const req = (body?: unknown) => new NextRequest("https://example.invalid/api/run
 });
 const params = { params: Promise.resolve({ id: "bundle" }) };
 const start = (body?: unknown) => creation.POST(req(body), params);
-const validateC1 = (delivery = "save", payload: FormPayload = { statutFamilial: "isole" }) =>
+const validateC1 = (delivery = "save", payload: FormPayload = isolated) =>
   generate.POST(req({ consent: true, bundleRunId: "run", delivery, payload }),
     { params: Promise.resolve({ slug: form.slug }) });
 function selectionOnly(snapshot: RegulatoryDecision) {
@@ -106,11 +114,7 @@ beforeEach(() => {
   });
   io.findForm.mockResolvedValue(form);
   io.findForms.mockResolvedValue([form]);
-  io.source.mockImplementation(async () => {
-    const pdf = await PDFDocument.create();
-    pdf.addPage();
-    return Buffer.from(await pdf.save());
-  });
+  io.source.mockImplementation(() => readFile(join(process.cwd(), "private/pdfs/C1_FR.pdf")));
   io.deleteRuns.mockResolvedValue({ count: 0 });
   io.raw.mockResolvedValue(1);
   io.transaction.mockImplementation(async (operation) => operation({
@@ -120,7 +124,7 @@ beforeEach(() => {
     user: { delete: io.deleteUser },
   }));
 });
-afterEach(() => { vi.useRealTimers(); vi.unstubAllEnvs(); });
+afterEach(() => { vi.restoreAllMocks(); vi.useRealTimers(); vi.unstubAllEnvs(); });
 
 describe("selection at new run creation", () => {
   it.each([true, false])("creates an atomic selection for an authenticated=%s citizen", async (authenticated) => {
@@ -238,7 +242,7 @@ describe("existing C1 enrichment and document lifecycle", () => {
       householdAssessment: { composition: "alone" }, personalSituationTrace: { version: 1 },
     });
     expect(original).not.toHaveProperty("householdAssessment");
-    expect(current!.payloads.c1).toEqual({ statutFamilial: "isole" });
+    expect(current!.payloads.c1).toMatchObject(isolated);
     expect(response.headers.get("content-type")).toContain(delivery === "save" ? "application/json" : "application/pdf");
   });
 
@@ -247,6 +251,79 @@ describe("existing C1 enrichment and document lifecycle", () => {
     expect((await validateC1()).status).toBe(200);
     expect(current!.regulatoryDecisionSnapshot).toBeNull();
     expect(withPersonalSituationTrace(null, { statutFamilial: "isole" }, now)).toBeNull();
+  });
+
+  it.each(["save", "download"])("filters stale spouse answers transitively before %s assessment and PDF", async (delivery) => {
+    await start();
+    const officialOnemState = { onemCode: "B / 60B", recordedAt: "2026-10-01" };
+    current!.regulatoryDecisionSnapshot = { ...current!.regulatoryDecisionSnapshot!, officialOnemState };
+    expect((await validateC1("save", { statutFamilial: "cohabite", cohabiteType: "menage-commun",
+      cohabitants: [spouse] })).status).toBe(200);
+    expect(current!.regulatoryDecisionSnapshot).toMatchObject({ householdAssessment: { composition: "spouse_or_partner" } });
+    const changedBranch: FormPayload = { ...current!.payloads.c1, ...isolated };
+    // Reproduce the client's single-pass submission using its real visibility predicate.
+    const clientPayload = Object.fromEntries(fields.filter((field) => field.id in changedBranch
+      && isFieldVisible(field.visibleIf, changedBranch)).map((field) => [field.id, changedBranch[field.id]]));
+    expect(clientPayload).not.toHaveProperty("cohabiteType");
+    expect(clientPayload).toHaveProperty("cohabitants");
+    const expectedVisible = visiblePayload(fields, buildValidator(fields, "fr").parse(clientPayload) as FormPayload);
+    const fillSpy = vi.spyOn(filler, "fillForm");
+    const response = await validateC1(delivery, clientPayload);
+    expect(response.status).toBe(200);
+    expect(current!.payloads.c1).toEqual(expectedVisible);
+    expect(current!.payloads.c1).not.toHaveProperty("cohabitants");
+    expect(current!.regulatoryDecisionSnapshot).toMatchObject({ officialOnemState,
+      householdAssessment: { composition: "alone", expectedCategory: "N", status: "probable" },
+      personalSituationTrace: { companions: [] } });
+    if (delivery === "download") {
+      expect(fillSpy.mock.calls[0][2]).toEqual(expectedVisible);
+      const pdf = await PDFDocument.load(await response.arrayBuffer());
+      expect(pdf.getForm().getCheckBox("jhabite seul 9").isChecked()).toBe(true);
+      expect(pdf.getForm().getTextField("Personne1_Prenom").getText() ?? "").toBe("");
+    } else {
+      expect(fillSpy).not.toHaveBeenCalled();
+    }
+  });
+
+  it("drops stale pension facts after returning from an isolated to a common household", async () => {
+    await start();
+    const oldPension: FormPayload = { ...isolated, pensionAlimentaire: "oui", statutJugementPensionAlimentaire: "en-main",
+      pensionAlimentairePaiementEffectif: "oui", pensionAlimentaireBaseJuridique: "decision-judiciaire",
+      pensionAlimentaireBeneficiaire: "enfant-mineur" };
+    expect((await validateC1("save", oldPension)).status).toBe(200);
+    expect(current!.regulatoryDecisionSnapshot).toMatchObject({ householdAssessment: { expectedCategory: "A" } });
+    expect((await validateC1("save", { ...oldPension, statutFamilial: "cohabite",
+      cohabiteType: "menage-commun", cohabitants: [spouse] })).status).toBe(200);
+    for (const key of ["pensionAlimentaire", "statutJugementPensionAlimentaire", "pensionAlimentairePaiementEffectif",
+      "pensionAlimentaireBaseJuridique", "pensionAlimentaireBeneficiaire"]) {
+      expect(current!.payloads.c1).not.toHaveProperty(key);
+    }
+    expect(current!.regulatoryDecisionSnapshot).toMatchObject({ householdAssessment: { composition: "spouse_or_partner" } });
+  });
+
+  it.each(["save", "download"])("keeps a partial alimony claim unknown through %s until payment facts are supplied", async (delivery) => {
+    await start();
+    const officialOnemState = { onemCode: "B / 60B" };
+    current!.regulatoryDecisionSnapshot = { ...current!.regulatoryDecisionSnapshot!, officialOnemState };
+    if (delivery === "download") current!.completedTemplateIds = [form.id];
+    const partial: FormPayload = { ...isolated, pensionAlimentaire: "oui", statutJugementPensionAlimentaire: "en-main" };
+    const parsed = buildValidator(fields, "fr").parse(partial) as FormPayload;
+    expect(deriveFamilyFactsFromC1(parsed).isolated?.alimony?.paid).toBeUndefined();
+    expect((await validateC1(delivery, partial)).status).toBe(200);
+    expect(current!.regulatoryDecisionSnapshot).toMatchObject({ officialOnemState,
+      householdAssessment: { status: "needs_information", expectedCategory: null,
+        missingFacts: expect.arrayContaining(["isolated.alimony.paid", "isolated.alimony.admissibleBasis", "isolated.alimony.beneficiary"]) } });
+    expect((await validateC1(delivery, { ...partial, pensionAlimentairePaiementEffectif: "oui" })).status).toBe(200);
+    expect(current!.regulatoryDecisionSnapshot).toMatchObject({ officialOnemState,
+      householdAssessment: { status: "needs_information", expectedCategory: null } });
+    const complete = { ...partial, pensionAlimentairePaiementEffectif: "oui",
+      pensionAlimentaireBaseJuridique: "decision-judiciaire", pensionAlimentaireBeneficiaire: "enfant-mineur" };
+    expect((await validateC1(delivery, complete)).status).toBe(200);
+    expect(current!.regulatoryDecisionSnapshot).toMatchObject({ officialOnemState,
+      householdAssessment: { status: "probable", expectedCategory: "A" } });
+    expect((await validateC1(delivery, { ...complete, pensionAlimentairePaiementEffectif: "non" })).status).toBe(200);
+    expect(current!.regulatoryDecisionSnapshot).toMatchObject({ officialOnemState,
+      householdAssessment: { status: "probable", expectedCategory: "N" } });
   });
 
   it.each(["save", "download"])("refuses a foreign run before %s can enrich it", async (delivery) => {

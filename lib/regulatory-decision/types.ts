@@ -117,6 +117,8 @@ export interface RegulatoryDecision {
     changes: Array<{ reason: "CHILD_STARTED_WORK" | "CHILD_STOPPED_WORK" | "CHILD_LOST_FAMILY_ALLOWANCE" | "CHILD_GAINED_FAMILY_ALLOWANCE" | "INCOME_CHANGED" | "HOUSEHOLD_MEMBER_CHANGED" | "CHILD_STUDIES_ENDED" | "CHILD_110_1M_ENDED"; factKey?: string; previous?: Record<string, unknown>; current?: Record<string, unknown>; effectiveDate?: string }>;
     sourceRuleIds: string[];
   };
+  /** C1 expiry events already emitted, retained across incomplete answers and branch changes. */
+  reportedChildIncomeExpiries?: Array<{ factKey: string; periodStartedAt: string; reassessmentAt: string }>;
   relativeHouseholdAssessment?: {
     composition: "relatives_only" | "children_and_relatives";
     expectedCategory: "A" | "B" | null;

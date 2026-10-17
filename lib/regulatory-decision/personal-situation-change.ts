@@ -11,7 +11,7 @@ import {
   type FamilyIncome,
   type FamilyPerson,
 } from "./household-composition";
-import type { RegulatoryDecision } from "./types";
+import type { RegulatoryDecision, RegulatoryFacts } from "./types";
 import type { C1BaremeThresholds } from "@/lib/baremes/c1-thresholds";
 
 /**
@@ -215,15 +215,65 @@ export function deriveHouseholdCompositionFromC1(payload: FormPayload) {
   return householdCompositionFromFamilyFacts(deriveFamilyFactsFromC1(payload));
 }
 
-function deriveChildrenOnlyAssessment(
+type ChildIncomeExpiry = NonNullable<RegulatoryDecision["reportedChildIncomeExpiries"]>[number];
+
+function childIncomeExpiryKey(expiry: ChildIncomeExpiry) {
+  return JSON.stringify([expiry.factKey, expiry.periodStartedAt, expiry.reassessmentAt]);
+}
+
+function establishedChildIncomeExpiry(factKey: string, temporalFacts: RegulatoryFacts, now: Date): ChildIncomeExpiry | undefined {
+  const current = decideArticle110ChildFirstProfessionalIncome(temporalFacts, now).temporalEffect;
+  if (current?.onemCode !== "110&1V" || !current.reassessmentAt) return undefined;
+  const occupationStartedAt = temporalFacts["family.child.firstProfessionalIncomeStartedAt"]?.value;
+  if (typeof occupationStartedAt !== "object" || occupationStartedAt.kind !== "date") return undefined;
+  // Reuse the existing decision at occupation start to obtain the canonical
+  // period start, including occupations begun before the end of studies.
+  const initial = decideArticle110ChildFirstProfessionalIncome(temporalFacts, new Date(`${occupationStartedAt.value}T00:00:00Z`)).temporalEffect;
+  if (initial?.onemCode !== "110&1M") return undefined;
+  return { factKey, periodStartedAt: initial.effectiveFrom, reassessmentAt: current.reassessmentAt };
+}
+
+function previouslyReportedChildIncomeExpiries(decision: RegulatoryDecision): ChildIncomeExpiry[] {
+  const history = [...(decision.reportedChildIncomeExpiries ?? [])];
+  // Older single-child snapshots can prove a reported expiry through their
+  // event and saved temporal facts, even though they have no dedicated ledger.
+  const candidates = decision.childrenOnlyAssessment?.facts.filter((fact) => fact.firstProfessionalIncome === true) ?? [];
+  const candidate = candidates.length === 1 ? candidates[0] : undefined;
+  const temporal = decision.article110Decision;
+  if (candidate && temporal?.temporalEffect?.onemCode === "110&1V" && decision.childrenOnlyAssessment?.changes.some((change) => change.reason === "CHILD_110_1M_ENDED" && change.factKey === candidate.factKey)) {
+    const expiry = establishedChildIncomeExpiry(candidate.factKey, temporal.factsUsed, new Date(temporal.decidedAt));
+    if (expiry && !history.some((item) => childIncomeExpiryKey(item) === childIncomeExpiryKey(expiry))) history.push(expiry);
+  }
+  return history;
+}
+
+function deriveChildIncomeExpiryEvents(payload: FormPayload, previous: ChildIncomeExpiry[], now: Date) {
+  const history = [...previous];
+  const reported = new Set(history.map(childIncomeExpiryKey));
+  const newlyExpired = new Map<string, ChildIncomeExpiry>();
+  for (const [factKey, declaration] of c1PeopleById(payload)) {
+    const temporalFacts = deriveArticle110FactsFromC1({ cohabitants: [declaration] });
+    if (!temporalFacts) continue;
+    const expiry = establishedChildIncomeExpiry(factKey, temporalFacts, now);
+    if (!expiry || reported.has(childIncomeExpiryKey(expiry))) continue;
+    reported.add(childIncomeExpiryKey(expiry));
+    history.push(expiry);
+    newlyExpired.set(factKey, expiry);
+  }
+  return { history, newlyExpired };
+}
+
+function deriveChildrenOnlyAssessmentUpdate(
   previous: RegulatoryDecision["childrenOnlyAssessment"] | undefined,
+  previouslyReportedExpiries: ChildIncomeExpiry[],
   composition: ReturnType<typeof deriveHouseholdCompositionFromC1>,
   householdAssessment: ReturnType<typeof evaluateFamilySituation>,
   payload: FormPayload,
   neutralisedChildFactKeys: string[],
   now: Date,
-): RegulatoryDecision["childrenOnlyAssessment"] | undefined {
-  if (composition.kind !== "children_only") return undefined;
+): { assessment?: RegulatoryDecision["childrenOnlyAssessment"]; reportedExpiries: ChildIncomeExpiry[] } {
+  if (composition.kind !== "children_only") return { reportedExpiries: previouslyReportedExpiries };
+  const expiries = deriveChildIncomeExpiryEvents(payload, previouslyReportedExpiries, now);
   const expectedCategory = householdAssessment.expectedCategory === "A" || householdAssessment.expectedCategory === "B" ? householdAssessment.expectedCategory : null;
   const declarations = c1PeopleById(payload);
   const facts = composition.members.map((member) => ({
@@ -241,6 +291,8 @@ function deriveChildrenOnlyAssessment(
   const effectiveDate = text(payload, "dateModificationSituationFamilialeEffective") ?? text(payload, "dateModificationEffective");
   for (const [factKey, current] of after) {
     const prior = before.get(factKey);
+    const expiry = expiries.newlyExpired.get(factKey);
+    if (expiry) changes.push({ reason: "CHILD_110_1M_ENDED", factKey, ...(prior ? { previous: prior } : {}), current: { ...current, periodStartedAt: expiry.periodStartedAt, reassessmentAt: expiry.reassessmentAt }, effectiveDate });
     if (!prior) continue;
     if (prior.hasProfessionalIncome !== true && current.hasProfessionalIncome === true) changes.push({ reason: "CHILD_STARTED_WORK", factKey, previous: prior, current, effectiveDate });
     if (prior.hasProfessionalIncome === true && current.hasProfessionalIncome === false) changes.push({ reason: "CHILD_STOPPED_WORK", factKey, previous: prior, current, effectiveDate });
@@ -248,26 +300,21 @@ function deriveChildrenOnlyAssessment(
     if (prior.receivesFamilyAllowances !== true && current.receivesFamilyAllowances === true) changes.push({ reason: "CHILD_GAINED_FAMILY_ALLOWANCE", factKey, previous: prior, current, effectiveDate });
     if (prior.hasReplacementIncome !== current.hasReplacementIncome) changes.push({ reason: "INCOME_CHANGED", factKey, previous: prior, current, effectiveDate });
     if (prior.studiesEndedAt !== current.studiesEndedAt && current.studiesEndedAt) changes.push({ reason: "CHILD_STUDIES_ENDED", factKey, previous: prior, current, effectiveDate: current.studiesEndedAt });
-    if (prior.neutralisedBy110_1M === true) {
-      // Losing confirmation is not an expiry. Reuse the existing temporal
-      // decision per child instead of inferring an end from an inactive flag.
-      const declaration = declarations.get(factKey);
-      const temporalFacts = declaration ? deriveArticle110FactsFromC1({ cohabitants: [declaration] }) : null;
-      const temporalDecision = temporalFacts ? decideArticle110ChildFirstProfessionalIncome(temporalFacts, now) : undefined;
-      if (temporalDecision?.temporalEffect?.onemCode === "110&1V") changes.push({ reason: "CHILD_110_1M_ENDED", factKey, previous: prior, current, effectiveDate });
-    }
   }
   if (previous) {
     for (const [factKey, prior] of before) if (!after.has(factKey)) changes.push({ reason: "HOUSEHOLD_MEMBER_CHANGED", factKey, previous: prior, effectiveDate });
     for (const [factKey, current] of after) if (!before.has(factKey)) changes.push({ reason: "HOUSEHOLD_MEMBER_CHANGED", factKey, current, effectiveDate });
   }
   return {
-    expectedCategory,
-    categoryChanged: previous ? previous.expectedCategory !== expectedCategory : false,
-    declarationRequired: changes.length > 0,
-    facts,
-    changes,
-    sourceRuleIds: ["situation_familiale_children_only"],
+    reportedExpiries: expiries.history,
+    assessment: {
+      expectedCategory,
+      categoryChanged: previous ? previous.expectedCategory !== expectedCategory : false,
+      declarationRequired: changes.length > 0,
+      facts,
+      changes,
+      sourceRuleIds: ["situation_familiale_children_only"],
+    },
   };
 }
 
@@ -464,7 +511,7 @@ export function withPersonalSituationTrace(
     baremeSource: thresholds?.source,
     neutralisedChildIds: neutralisedChildFactKeys,
   });
-  const childrenOnlyAssessment = deriveChildrenOnlyAssessment(previousChildrenAssessment, composition, householdAssessment, payload, neutralisedChildFactKeys, now);
+  const { assessment: childrenOnlyAssessment, reportedExpiries } = deriveChildrenOnlyAssessmentUpdate(previousChildrenAssessment, previouslyReportedChildIncomeExpiries(decision), composition, householdAssessment, payload, neutralisedChildFactKeys, now);
   const relativeHouseholdAssessment = deriveRelativeHouseholdAssessment(previousRelativeAssessment, composition, householdAssessment, payload, familyFacts);
   const thirdPartyHouseholdAssessment = deriveThirdPartyHouseholdAssessment(previousThirdPartyAssessment, decision.householdAssessment, composition, householdAssessment, payload);
   return {
@@ -473,6 +520,7 @@ export function withPersonalSituationTrace(
     ...(article110Decision ? { article110Decision } : {}),
     householdAssessment,
     ...(childrenOnlyAssessment ? { childrenOnlyAssessment } : {}),
+    ...(reportedExpiries.length > 0 ? { reportedChildIncomeExpiries: reportedExpiries } : {}),
     ...(relativeHouseholdAssessment ? { relativeHouseholdAssessment } : {}),
     ...(thirdPartyHouseholdAssessment ? { thirdPartyHouseholdAssessment } : {}),
     ...(legacyIsolatedAssessment || legacyIsolatedHistory

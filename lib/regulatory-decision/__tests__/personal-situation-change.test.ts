@@ -265,6 +265,120 @@ describe("C1 re-evaluation from an existing snapshot", () => {
     expectPreserved(before, after);
   });
 
+  const temporalRows = {
+    unknown: { ...firstJobChild, dateDebutPremiereActivite: "", dateFinEtudes: "" },
+    active: firstJobChild,
+    expired: { ...firstJobChild, dateDebutPremiereActivite: "2025-04-01", dateFinEtudes: "2025-03-31" },
+  };
+  const expiry = { factKey: "c1:id:child", periodStartedAt: "2025-04-01", reassessmentAt: "2026-04-01" };
+  const temporalTransitions = [
+    ["unknown", "unknown", false], ["unknown", "active", false], ["unknown", "expired", true],
+    ["active", "unknown", false], ["active", "active", false], ["active", "expired", true],
+    ["expired", "unknown", false], ["expired", "active", false], ["expired", "expired", false],
+  ] as const;
+  it.each(temporalTransitions)("handles temporal transition %s -> %s (emit expiry: %s)", (oldState, newState, emit) => {
+    const before = withPersonalSituationTrace(decision(), { cohabitants: [temporalRows[oldState]] }, now, thresholds)!;
+    const savedBefore = structuredClone(before);
+    if (oldState === "unknown") expect(before.article110Decision).toMatchObject({ status: "needs_information" });
+    const after = withPersonalSituationTrace(before, { cohabitants: [temporalRows[newState]] }, now, thresholds)!;
+    const events = after.childrenOnlyAssessment?.changes.filter((change) => change.reason === "CHILD_110_1M_ENDED");
+    expect(events).toHaveLength(emit ? 1 : 0);
+    expect(after.childrenOnlyAssessment?.declarationRequired).toBe(emit);
+    if (newState === "expired") {
+      expect(after.article110Decision?.temporalEffect).toMatchObject({ onemCode: "110&1V", reassessmentAt: "2026-04-01" });
+      expect(after.reportedChildIncomeExpiries).toContainEqual(expiry);
+    } else {
+      expect(after.article110Decision?.temporalEffect?.onemCode).toBe(newState === "active" ? "110&1M" : undefined);
+      expect(after.reportedChildIncomeExpiries ?? []).toEqual(before.reportedChildIncomeExpiries ?? []);
+    }
+    expect(after.officialOnemState).toEqual(before.officialOnemState);
+    expect(after.temporalHistory).toEqual(before.temporalHistory);
+    expect(after.isolatedHouseholdAssessmentHistory).toEqual(before.isolatedHouseholdAssessmentHistory);
+    expect(before).toEqual(savedBefore);
+  });
+
+  it("reports a corrected expired period even after an expiry was already reported for that child", () => {
+    const first = withPersonalSituationTrace(decision(), { cohabitants: [temporalRows.expired] }, now, thresholds)!;
+    const corrected = { ...firstJobChild, dateDebutPremiereActivite: "2024-04-01", dateFinEtudes: "2024-03-31" };
+    const second = withPersonalSituationTrace(first, { cohabitants: [corrected] }, now, thresholds)!;
+    expect(second.childrenOnlyAssessment?.changes).toContainEqual(expect.objectContaining({ reason: "CHILD_110_1M_ENDED", current: expect.objectContaining({ periodStartedAt: "2024-04-01", reassessmentAt: "2025-04-01" }) }));
+    expect(second.reportedChildIncomeExpiries).toEqual([expiry, { factKey: "c1:id:child", periodStartedAt: "2024-04-01", reassessmentAt: "2025-04-01" }]);
+    const returned = withPersonalSituationTrace(second, { cohabitants: [temporalRows.expired] }, now, thresholds)!;
+    expect(returned.childrenOnlyAssessment?.changes.map((change) => change.reason)).not.toContain("CHILD_110_1M_ENDED");
+    expect(returned.reportedChildIncomeExpiries).toEqual(second.reportedChildIncomeExpiries);
+  });
+
+  it("retains reported expiries through unknown answers, branch changes and JSON saves, while permitting a new period", () => {
+    const first = withPersonalSituationTrace(decision(), { cohabitants: [temporalRows.expired] }, now, thresholds)!;
+    const unknown = withPersonalSituationTrace(first, { cohabitants: [temporalRows.unknown] }, now, thresholds)!;
+    const relative = withPersonalSituationTrace(unknown, { cohabitants: [parent] }, now, thresholds)!;
+    expect(relative.childrenOnlyAssessment).toBeUndefined();
+    const persisted = JSON.parse(JSON.stringify(relative)) as RegulatoryDecision;
+    const repeated = withPersonalSituationTrace(persisted, { cohabitants: [temporalRows.expired] }, now, thresholds)!;
+    expect(repeated.childrenOnlyAssessment?.changes.map((change) => change.reason)).not.toContain("CHILD_110_1M_ENDED");
+    expect(repeated.reportedChildIncomeExpiries).toEqual([expiry]);
+    const active = withPersonalSituationTrace(repeated, { cohabitants: [firstJobChild] }, now, thresholds)!;
+    const next = withPersonalSituationTrace(active, { cohabitants: [firstJobChild] }, new Date("2027-04-01T00:00:00Z"), thresholds)!;
+    expect(next.childrenOnlyAssessment?.changes).toContainEqual(expect.objectContaining({ reason: "CHILD_110_1M_ENDED", current: expect.objectContaining({ periodStartedAt: "2026-04-01", reassessmentAt: "2027-04-01" }) }));
+    expect(next.reportedChildIncomeExpiries).toHaveLength(2);
+  });
+
+  it("deduplicates by the effective period, not by corrections to an occupation begun during studies", () => {
+    const row = { ...temporalRows.expired, dateDebutPremiereActivite: "2025-01-01" };
+    const before = withPersonalSituationTrace(decision(), { cohabitants: [row] }, now, thresholds)!;
+    const after = withPersonalSituationTrace(before, { cohabitants: [{ ...row, dateDebutPremiereActivite: "2025-02-01" }] }, now, thresholds)!;
+    expect(after.reportedChildIncomeExpiries).toEqual([expiry]);
+    expect(after.childrenOnlyAssessment?.changes.map((change) => change.reason)).not.toContain("CHILD_110_1M_ENDED");
+  });
+
+  it("distinguishes corrected periods with different starts even when their leap-year expiry date is identical", () => {
+    const row = { ...firstJobChild, dateDebutPremiereActivite: "2024-02-28", dateFinEtudes: "2024-02-27" };
+    const before = withPersonalSituationTrace(decision(), { cohabitants: [row] }, now, thresholds)!;
+    const after = withPersonalSituationTrace(before, { cohabitants: [{ ...row, dateDebutPremiereActivite: "2024-02-29", dateFinEtudes: "2024-02-28" }] }, now, thresholds)!;
+    expect(after.reportedChildIncomeExpiries).toEqual([
+      { factKey: "c1:id:child", periodStartedAt: "2024-02-28", reassessmentAt: "2025-02-28" },
+      { factKey: "c1:id:child", periodStartedAt: "2024-02-29", reassessmentAt: "2025-02-28" },
+    ]);
+    expect(after.childrenOnlyAssessment?.changes.filter((change) => change.reason === "CHILD_110_1M_ENDED")).toHaveLength(1);
+  });
+
+  it("confirms an expired period from an old snapshot with no saved temporal state or prior event", () => {
+    const before = withPersonalSituationTrace(decision(), { cohabitants: [temporalRows.unknown] }, now, thresholds)!;
+    delete before.article110Decision;
+    const savedBefore = structuredClone(before);
+    const after = withPersonalSituationTrace(before, { cohabitants: [temporalRows.expired] }, now, thresholds)!;
+    expect(after.childrenOnlyAssessment).toMatchObject({ declarationRequired: true, changes: expect.arrayContaining([expect.objectContaining({ reason: "CHILD_110_1M_ENDED" })]) });
+    expect(after.reportedChildIncomeExpiries).toEqual([expiry]);
+    expect(before).toEqual(savedBefore);
+  });
+
+  it("recognises a single-child expiry already reported by an older snapshot without the dedicated ledger", () => {
+    const before = withPersonalSituationTrace(decision(), { cohabitants: [temporalRows.expired] }, now, thresholds)!;
+    delete before.reportedChildIncomeExpiries;
+    for (const change of before.childrenOnlyAssessment!.changes) {
+      delete change.current?.periodStartedAt;
+      delete change.current?.reassessmentAt;
+    }
+    const savedBefore = structuredClone(before);
+    const after = withPersonalSituationTrace(before, { cohabitants: [temporalRows.expired] }, now, thresholds)!;
+    expect(after.reportedChildIncomeExpiries).toEqual([expiry]);
+    expect(after.childrenOnlyAssessment?.changes.map((change) => change.reason)).not.toContain("CHILD_110_1M_ENDED");
+    expect(before).toEqual(savedBefore);
+  });
+
+  it("tracks each child's reported period through reordering, removal and reinsertion", () => {
+    const second = { ...firstJobChild, id: "second" };
+    const first = withPersonalSituationTrace(decision(), { cohabitants: [temporalRows.expired, second] }, now, thresholds)!;
+    const reordered = withPersonalSituationTrace(first, { cohabitants: [second, temporalRows.expired] }, now, thresholds)!;
+    expect(reordered.childrenOnlyAssessment?.changes.map((change) => change.reason)).not.toContain("CHILD_110_1M_ENDED");
+    const next = withPersonalSituationTrace(reordered, { cohabitants: [second] }, new Date("2027-04-01T00:00:00Z"), thresholds)!;
+    expect(next.childrenOnlyAssessment?.changes.filter((change) => change.reason === "CHILD_110_1M_ENDED").map((change) => change.factKey)).toEqual(["c1:id:second"]);
+    const returned = withPersonalSituationTrace(next, { cohabitants: [temporalRows.expired, second] }, new Date("2027-04-01T00:00:00Z"), thresholds)!;
+    expect(returned.childrenOnlyAssessment?.changes.map((change) => change.reason)).not.toContain("CHILD_110_1M_ENDED");
+    expect(returned.reportedChildIncomeExpiries).toEqual([expiry, { factKey: "c1:id:second", periodStartedAt: "2026-04-01", reassessmentAt: "2027-04-01" }]);
+    expect(returned.officialOnemState).toEqual(first.officialOnemState);
+  });
+
   it.each([
     { kind: "professional", row: { ...child, typeRevenuPro: "salarie-employe", montantRevenuPro: 100 }, unavailable: { childProfessionalMonthly: null }, reason: "CHILD_STARTED_WORK", currentFact: { hasProfessionalIncome: true } },
     { kind: "replacement", row: { ...child, revenuRemplacement: "chomage", montantRevenuRemplacement: 100 }, unavailable: { childReplacementMonthly: null }, reason: "INCOME_CHANGED", currentFact: { hasReplacementIncome: true } },

@@ -1,4 +1,4 @@
-import type { FormPayload } from "@/lib/pdf-forms/types";
+import type { FieldValueRecord, FormPayload } from "@/lib/pdf-forms/types";
 import {
   decideArticle110ChildFirstProfessionalIncome,
   activeFirstProfessionalIncomePersonIds,
@@ -127,6 +127,24 @@ function stableC1PersonId(person: Record<string, unknown>, relation: FamilyPerso
   return name ? `c1:person:${relation}:${name}` : `c1:row:${index}:${relation}`;
 }
 
+/** Per-income declarations for traces; global inventory completeness stays in the evaluator. */
+function c1IncomePresence(value: unknown): boolean | undefined {
+  const answer = typeof value === "string" ? value.trim() : "";
+  return answer ? answer !== "aucun" : undefined;
+}
+
+function c1PeopleById(payload: FormPayload): Map<string, FieldValueRecord> {
+  const people = new Map<string, FieldValueRecord>();
+  if (!Array.isArray(payload.cohabitants)) return people;
+  payload.cohabitants.forEach((entry, index) => {
+    if (!entry || typeof entry !== "object") return;
+    const person = entry;
+    const relation = RELATION_BY_C1_VALUE[typeof person.lien === "string" ? person.lien : ""] ?? "unknown";
+    people.set(stableC1PersonId(person, relation, index), person);
+  });
+  return people;
+}
+
 /** C1 adapter: maps declarations to the common family contract, never to a category. */
 export function deriveFamilyFactsFromC1(payload: FormPayload, asOf = new Date().toISOString().slice(0, 10)): FamilyFacts {
   const explicitlyAlone = text(payload, "statutFamilial") === "isole";
@@ -203,15 +221,17 @@ function deriveChildrenOnlyAssessment(
   householdAssessment: ReturnType<typeof evaluateFamilySituation>,
   payload: FormPayload,
   neutralisedChildFactKeys: string[],
+  now: Date,
 ): RegulatoryDecision["childrenOnlyAssessment"] | undefined {
   if (composition.kind !== "children_only") return undefined;
   const expectedCategory = householdAssessment.expectedCategory === "A" || householdAssessment.expectedCategory === "B" ? householdAssessment.expectedCategory : null;
+  const declarations = c1PeopleById(payload);
   const facts = composition.members.map((member) => ({
     factKey: member.factKey,
     receivesFamilyAllowances: member.receivesFamilyAllowances,
-    hasProfessionalIncome: member.hasProfessionalIncome,
-    hasReplacementIncome: member.hasReplacementIncome,
-    firstProfessionalIncome: member.firstProfessionalIncome,
+    hasProfessionalIncome: c1IncomePresence(declarations.get(member.factKey)?.typeRevenuPro),
+    hasReplacementIncome: c1IncomePresence(declarations.get(member.factKey)?.revenuRemplacement),
+    firstProfessionalIncome: declarations.get(member.factKey)?.premierRevenuProfessionnel === "oui" ? true : declarations.get(member.factKey)?.premierRevenuProfessionnel === "non" ? false : undefined,
     studiesEndedAt: member.studiesEndedAt,
     neutralisedBy110_1M: neutralisedChildFactKeys.includes(member.factKey) || undefined,
   }));
@@ -228,7 +248,14 @@ function deriveChildrenOnlyAssessment(
     if (prior.receivesFamilyAllowances !== true && current.receivesFamilyAllowances === true) changes.push({ reason: "CHILD_GAINED_FAMILY_ALLOWANCE", factKey, previous: prior, current, effectiveDate });
     if (prior.hasReplacementIncome !== current.hasReplacementIncome) changes.push({ reason: "INCOME_CHANGED", factKey, previous: prior, current, effectiveDate });
     if (prior.studiesEndedAt !== current.studiesEndedAt && current.studiesEndedAt) changes.push({ reason: "CHILD_STUDIES_ENDED", factKey, previous: prior, current, effectiveDate: current.studiesEndedAt });
-    if (prior.firstProfessionalIncome === true && current.neutralisedBy110_1M !== true) changes.push({ reason: "CHILD_110_1M_ENDED", factKey, previous: prior, current, effectiveDate });
+    if (prior.neutralisedBy110_1M === true) {
+      // Losing confirmation is not an expiry. Reuse the existing temporal
+      // decision per child instead of inferring an end from an inactive flag.
+      const declaration = declarations.get(factKey);
+      const temporalFacts = declaration ? deriveArticle110FactsFromC1({ cohabitants: [declaration] }) : null;
+      const temporalDecision = temporalFacts ? decideArticle110ChildFirstProfessionalIncome(temporalFacts, now) : undefined;
+      if (temporalDecision?.temporalEffect?.onemCode === "110&1V") changes.push({ reason: "CHILD_110_1M_ENDED", factKey, previous: prior, current, effectiveDate });
+    }
   }
   if (previous) {
     for (const [factKey, prior] of before) if (!after.has(factKey)) changes.push({ reason: "HOUSEHOLD_MEMBER_CHANGED", factKey, previous: prior, effectiveDate });
@@ -253,9 +280,10 @@ function deriveRelativeHouseholdAssessment(
 ): RegulatoryDecision["relativeHouseholdAssessment"] | undefined {
   if (composition.kind !== "relatives_only" && composition.kind !== "children_and_relatives") return undefined;
   const expectedCategory = householdAssessment.expectedCategory === "A" || householdAssessment.expectedCategory === "B" ? householdAssessment.expectedCategory : null;
+  const declarations = c1PeopleById(payload);
   const facts = composition.members.filter((member) => member.relation === "relative").map((member) => ({
     factKey: member.factKey,
-    professional: member.hasProfessionalIncome,
+    professional: c1IncomePresence(declarations.get(member.factKey)?.typeRevenuPro),
     replacementType: member.replacementIncomeType,
     // Keep the declared amount: the compact composition can aggregate a missing
     // pension amount to zero, which is not evidence of a changed amount.
@@ -270,7 +298,7 @@ function deriveRelativeHouseholdAssessment(
     const prior = before.get(current.factKey);
     if (!prior) continue;
     if (prior.replacementType !== "pension" && current.replacementType === "pension") changes.push({ reason: "PENSION_STARTED", factKey: current.factKey, previous: prior, current, effectiveDate });
-    const replacementKnownAbsent = composition.members.find((member) => member.factKey === current.factKey)?.hasReplacementIncome === false;
+    const replacementKnownAbsent = c1IncomePresence(declarations.get(current.factKey)?.revenuRemplacement) === false;
     if (prior.replacementType === "pension" && (replacementKnownAbsent || (current.replacementType !== undefined && current.replacementType !== "pension"))) changes.push({ reason: "PENSION_STOPPED", factKey: current.factKey, previous: prior, current, effectiveDate });
     if (Number.isFinite(prior.pensionGrossAmount) && Number.isFinite(current.pensionGrossAmount) && prior.pensionGrossAmount !== current.pensionGrossAmount) changes.push({ reason: "PENSION_AMOUNT_CHANGED", factKey: current.factKey, previous: prior, current, effectiveDate });
     if (prior.replacementType !== current.replacementType || prior.professional !== current.professional) changes.push({ reason: "INCOME_CHANGED", factKey: current.factKey, previous: prior, current, effectiveDate });
@@ -436,7 +464,7 @@ export function withPersonalSituationTrace(
     baremeSource: thresholds?.source,
     neutralisedChildIds: neutralisedChildFactKeys,
   });
-  const childrenOnlyAssessment = deriveChildrenOnlyAssessment(previousChildrenAssessment, composition, householdAssessment, payload, neutralisedChildFactKeys);
+  const childrenOnlyAssessment = deriveChildrenOnlyAssessment(previousChildrenAssessment, composition, householdAssessment, payload, neutralisedChildFactKeys, now);
   const relativeHouseholdAssessment = deriveRelativeHouseholdAssessment(previousRelativeAssessment, composition, householdAssessment, payload, familyFacts);
   const thirdPartyHouseholdAssessment = deriveThirdPartyHouseholdAssessment(previousThirdPartyAssessment, decision.householdAssessment, composition, householdAssessment, payload);
   return {

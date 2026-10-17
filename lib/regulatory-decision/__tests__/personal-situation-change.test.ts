@@ -173,6 +173,99 @@ describe("C1 re-evaluation from an existing snapshot", () => {
   }
 
   it.each([
+    { professional: "aucun", replacement: "", stopped: true, expectedProfessional: false, expectedReplacement: undefined },
+    { professional: "aucun", replacement: "aucun", stopped: true, expectedProfessional: false, expectedReplacement: false },
+    { professional: "", replacement: "aucun", stopped: false, expectedProfessional: undefined, expectedReplacement: false },
+    { professional: "", replacement: "", stopped: false, expectedProfessional: undefined, expectedReplacement: undefined },
+    { professional: "salarie-employe", replacement: "", stopped: false, expectedProfessional: true, expectedReplacement: undefined },
+  ])("keeps the child's explicit stop distinct from unknown income ($professional / $replacement)", ({ professional, replacement, stopped, expectedProfessional, expectedReplacement }) => {
+    const before = withPersonalSituationTrace(decision(), { cohabitants: [{ ...child, typeRevenuPro: "salarie-employe", montantRevenuPro: 100 }] }, now, thresholds)!;
+    const savedBefore = structuredClone(before);
+    const after = withPersonalSituationTrace(before, {
+      dateModificationSituationFamilialeEffective: "2026-10-10",
+      cohabitants: [{ ...child, typeRevenuPro: professional, revenuRemplacement: replacement, montantRevenuPro: 100 }],
+    }, now, thresholds)!;
+    const reasons = after.childrenOnlyAssessment?.changes.map((change) => change.reason);
+    expect(reasons?.includes("CHILD_STOPPED_WORK")).toBe(stopped);
+    expect(after.childrenOnlyAssessment?.facts[0]).toMatchObject({ hasProfessionalIncome: expectedProfessional, hasReplacementIncome: expectedReplacement });
+    if (stopped) expect(after.childrenOnlyAssessment?.changes).toContainEqual(expect.objectContaining({ reason: "CHILD_STOPPED_WORK", effectiveDate: "2026-10-10", current: expect.objectContaining({ hasProfessionalIncome: false }) }));
+    if (replacement === "") expect(reasons).toContain("INCOME_CHANGED");
+    expectPreserved(before, after);
+    expect(before).toEqual(savedBefore);
+  });
+
+  it.each([
+    { professional: "", replacement: "aucun", stopped: true },
+    { professional: "aucun", replacement: "aucun", stopped: true },
+    { professional: "aucun", replacement: "", stopped: false },
+    { professional: "", replacement: "", stopped: false },
+    { professional: "", replacement: "pension", stopped: false },
+    { professional: "", replacement: "chomage", stopped: true },
+  ])("keeps the parent's explicit pension stop distinct from unknown income ($professional / $replacement)", ({ professional, replacement, stopped }) => {
+    const before = withPersonalSituationTrace(decision(), { cohabitants: [parent] }, now, thresholds)!;
+    const savedBefore = structuredClone(before);
+    const after = withPersonalSituationTrace(before, {
+      dateModificationSituationFamilialeEffective: "2026-10-10",
+      cohabitants: [{ ...parent, typeRevenuPro: professional, revenuRemplacement: replacement }],
+    }, now, thresholds)!;
+    const reasons = after.relativeHouseholdAssessment?.changes.map((change) => change.reason);
+    expect(reasons?.includes("PENSION_STOPPED")).toBe(stopped);
+    if (stopped) expect(after.relativeHouseholdAssessment?.changes).toContainEqual(expect.objectContaining({ reason: "PENSION_STOPPED", effectiveDate: "2026-10-10" }));
+    if (replacement !== "pension" || professional === "") expect(reasons).toContain("INCOME_CHANGED");
+    expectPreserved(before, after);
+    expect(before).toEqual(savedBefore);
+  });
+
+  const firstJobChild = {
+    ...child, typeRevenuPro: "salarie-employe", montantRevenuPro: 100,
+    premierRevenuProfessionnel: "oui", demandeNeutralisationPremierRevenu: "oui",
+    dateDebutPremiereActivite: "2026-04-01", dateFinEtudes: "2026-03-31",
+  };
+  it.each([
+    { title: "unknown activity", row: { ...firstJobChild, typeRevenuPro: "" } },
+    { title: "unknown first-income confirmation", row: { ...firstJobChild, premierRevenuProfessionnel: "" } },
+    { title: "explicit activity stop within the calendar period", row: { ...firstJobChild, typeRevenuPro: "aucun" } },
+  ])("does not announce a 110&1M expiry from $title", ({ row }) => {
+    const before = withPersonalSituationTrace(decision(), { cohabitants: [firstJobChild] }, now, thresholds)!;
+    const savedBefore = structuredClone(before);
+    expect(before.childrenOnlyAssessment?.facts[0].neutralisedBy110_1M).toBe(true);
+    const after = withPersonalSituationTrace(before, { cohabitants: [row] }, now, thresholds)!;
+    expect(after.childrenOnlyAssessment?.changes.map((change) => change.reason)).not.toContain("CHILD_110_1M_ENDED");
+    expect(after.childrenOnlyAssessment?.facts[0].firstProfessionalIncome).toBe(row.premierRevenuProfessionnel === "oui" ? true : undefined);
+    expect(after.article110Decision?.temporalEffect).toMatchObject({ onemCode: "110&1M", effectiveUntil: "2027-03-31" });
+    expect(after.article110Decision?.temporalHistory).toEqual(before.article110Decision?.temporalHistory);
+    expectPreserved(before, after);
+    expect(before).toEqual(savedBefore);
+  });
+
+  it("records an established 110&1M expiry once at the 110&1V boundary", () => {
+    const before = withPersonalSituationTrace(decision(), { cohabitants: [firstJobChild] }, new Date("2027-03-31T00:00:00Z"), thresholds)!;
+    const savedBefore = structuredClone(before);
+    const payload = { dateModificationSituationFamilialeEffective: "2027-04-01", cohabitants: [firstJobChild] };
+    const after = withPersonalSituationTrace(before, payload, new Date("2027-04-01T00:00:00Z"), thresholds)!;
+    expect(after.article110Decision?.temporalEffect).toMatchObject({ onemCode: "110&1V", effectiveFrom: "2027-04-01" });
+    expect(after.childrenOnlyAssessment?.changes.filter((change) => change.reason === "CHILD_110_1M_ENDED")).toEqual([expect.objectContaining({ factKey: "c1:id:child", effectiveDate: "2027-04-01" })]);
+    expect(after.article110Decision?.temporalHistory).toEqual(expect.arrayContaining(before.article110Decision!.temporalHistory!));
+    expect(after.officialOnemState).toEqual(before.officialOnemState);
+    expect(after.temporalHistory).toEqual(before.temporalHistory);
+    expect(after.isolatedHouseholdAssessmentHistory).toEqual(before.isolatedHouseholdAssessmentHistory);
+    expect(before).toEqual(savedBefore);
+    const repeated = withPersonalSituationTrace(after, payload, new Date("2027-04-02T00:00:00Z"), thresholds)!;
+    expect(repeated.childrenOnlyAssessment?.changes.map((change) => change.reason)).not.toContain("CHILD_110_1M_ENDED");
+    expect(repeated.article110Decision?.temporalHistory).toEqual(after.article110Decision?.temporalHistory);
+  });
+
+  it("establishes expiry for each child independently of the household's single temporal trace", () => {
+    const second = { ...firstJobChild, id: "second", dateDebutPremiereActivite: "2026-10-01", dateFinEtudes: "2026-09-30" };
+    const payload = { cohabitants: [firstJobChild, second] };
+    const before = withPersonalSituationTrace(decision(), payload, new Date("2027-03-31T00:00:00Z"), thresholds)!;
+    const after = withPersonalSituationTrace(before, payload, new Date("2027-04-01T00:00:00Z"), thresholds)!;
+    expect(after.childrenOnlyAssessment?.changes.filter((change) => change.reason === "CHILD_110_1M_ENDED").map((change) => change.factKey)).toEqual(["c1:id:child"]);
+    expect(after.childrenOnlyAssessment?.facts.find((fact) => fact.factKey === "c1:id:second")?.neutralisedBy110_1M).toBe(true);
+    expectPreserved(before, after);
+  });
+
+  it.each([
     { kind: "professional", row: { ...child, typeRevenuPro: "salarie-employe", montantRevenuPro: 100 }, unavailable: { childProfessionalMonthly: null }, reason: "CHILD_STARTED_WORK", currentFact: { hasProfessionalIncome: true } },
     { kind: "replacement", row: { ...child, revenuRemplacement: "chomage", montantRevenuRemplacement: 100 }, unavailable: { childReplacementMonthly: null }, reason: "INCOME_CHANGED", currentFact: { hasReplacementIncome: true } },
   ])("records the known $kind change while the missing ceiling leaves the current category unresolved", ({ row, unavailable, reason, currentFact }) => {

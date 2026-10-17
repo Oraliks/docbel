@@ -5,7 +5,10 @@
 >
 > Légende statut/confiance : `official` (lu sur source institutionnelle), `high`, `medium`,
 > `to_verify`. Statut : `active`, `transitional`, `deprecated`, `to_verify`.
-> Date de mise à jour de l'index : **2026-06-30**.
+> Mise à jour ciblée : **17/10/2026**, section situation familiale seulement ; les autres
+> thèmes conservent leur vérification antérieure. `active / official` ne signifie pas
+> implémenté ni exhaustif. Les catégories finales restent A/B/N ; information manquante
+> ou couverture insuffisante = état du calcul sans lettre finale, distinct de l'état ONEM.
 
 ## Réforme 2026 — `reforme-2026.md`
 | rule_id | statut / confiance | résumé |
@@ -61,18 +64,28 @@
 |---------|--------------------|--------|
 | `situation_familiale_c1` | active / official | C1 = déclaration situation perso/familiale (impact droit et montant) |
 | `situation_familiale_categories` | active / high | 3 catégories A (charge famille) / N (isolé) / B (cohabitant) |
-| `situation_familiale_definitions` | to_verify / official | T147 actuelle vérifiée ; aucune qualification individuelle implémentée |
+| `situation_familiale_definitions` | deprecated / official | Ancien cadrage global ; remplacé par les trois définitions ciblées ci-dessous |
+| `situation_familiale_cohabitation_am59` | active / official | Cohabitation par les faits, absences et adresse distinguées ; pas de N automatique |
+| `situation_familiale_partenaire_assimilation_art110` | active / official | Ménage de fait, charge financière, exclusions parenté et enfant ouvrant droit aux AF pour lui |
+| `situation_familiale_charge_financiere_am59` | active / official | Entretien parental, RIS, autre chômeur cohabitant, mariage avec cohabitation ; déclaration séparée des faits |
 | `situation_familiale_impact_montant` | active / official | 2e période = forfait selon catégorie familiale |
 | `situation_familiale_revenu_enfant_premier_emploi` | active / official | Neutralisation temporaire de 12 mois ; échéance 110&1V à réévaluer |
 | `situation_familiale_revenu_enfant_contrat_etudiant` | active / official | Contrat d'occupation d'étudiant déclaré : montant conservé, exclu uniquement de l'examen du revenu de l'enfant |
 | `situation_familiale_composition_priorities` | active / official | Composition complète avant branche ; conjoint/partenaire prioritaire |
-| `situation_familiale_conjoint_revenu_am60` | active / official | AM art. 60 : revenu du conjoint/partenaire, plafond publié et examen 60A/60B |
+| `situation_familiale_conjoint_revenu_am60` | deprecated / official | Ancienne description 60A/60B conservée ; remplacée par les conditions AM ci-dessous |
+| `situation_familiale_conjoint_revenus_conditions_am60` | active / official | Déclaration, salaire, contrat/mois et revenus mixtes ; correspondance 60A/60B complète à vérifier séparément |
+| `situation_familiale_cpas_contexte_partenaire` | active / official | RIS/aide équivalente : portée propre au partenaire conservée après échec d'assimilation ; aucun reclassement neutre automatique |
 | `situation_familiale_third_parties` | active / official | Tiers : revenus pertinents évalués sans assimilation à un partenaire |
 | `situation_familiale_ascendants_pensions` | active / official | Allocation handicap neutralisée ; pensions d'ascendants brutes cumulées et barème daté |
 | `situation_familiale_children_only` | active / official | Enfants seuls : revenus/allocations familiales, déclaration distincte de la catégorie |
 | `situation_familiale_isole_pension_alimentaire` | active / official | Isolé : pension effectivement payée, base juridique et pièce à documenter |
-| `situation_familiale_isole_garde_alternee` | to_verify / official | Garde alternée : possibilité A à faire confirmer, sans seuil pratique |
-| `situation_familiale_cohousing_a_verifier` | to_verify / official | Co-housing : faits et pièces en revue ONEM, jamais déduit de l'adresse |
+| `situation_familiale_isole_garde_alternee` | to_verify / to_verify | Garde alternée : qualification automatique non établie, aucun résultat final tiré du libellé |
+| `situation_familiale_cohousing_a_verifier` | to_verify / to_verify | Co-housing : faits et pièces en revue ONEM, jamais déduit de l'adresse |
+
+Ce lot documente la qualification préalable ; il ne modifie aucun moteur. La règle étudiante
+et les branches existantes restent conservées. Pour les questions décisives, les dates d'effet
+distinctes des versions et les limites (parents inconnus, AF, inventaires partiels, pensions,
+60A/60B), lire les sections correspondantes de `situation-familiale-c1-t147.md` avant de conclure.
 
 ## Formulaires — `formulaires-onem.md`
 | rule_id | statut / confiance | résumé |
@@ -116,7 +129,8 @@
 
 ## Règles `to_verify` (à ne pas utiliser pour conclure)
 - `reforme_2026_fin_de_droit_a_verifier`
-- `situation_familiale_definitions`
+- `situation_familiale_isole_garde_alternee`
+- `situation_familiale_cohousing_a_verifier`
 - `formulaire_c109_seul`
 
 Ces règles servent à **cadrer** un `a_verifier`, jamais à fonder une conclusion ferme.

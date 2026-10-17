@@ -49,6 +49,27 @@ describe("prepared strict partner qualification", () => {
       partnerQualifications: [{ personId: "other", status: "needs_information" }] });
   });
 
+  it.each(["first", "last"])("keeps spouse priority when an excluded partner is declared %s", (order) => {
+    const spouse: FamilyPerson = { id: "s", relation: "spouse", incomes: [] };
+    const excluded: FamilyPerson = { id: "p", relation: "partner", partnerQualification: {
+      ...qualified, facts: { ...qualified.facts, familyRelationship: answer("kin_or_ally_through_third_degree") },
+    }, incomes: [] };
+    const people = order === "first" ? [excluded, spouse] : [spouse, excluded];
+    expect(evaluate(people)).toMatchObject({ expectedCategory: "A", status: "probable",
+      partnerQualifications: [{ personId: "p", status: "excluded_on_facts", nextStep: "clarify_actual_relationship" }] });
+  });
+
+  it("keeps spouse priority over several eligible partner declarations", () => {
+    const result = evaluate([
+      { id: "p1", relation: "partner", partnerQualification: qualified, incomes: [] },
+      { id: "s", relation: "spouse", incomes: [] },
+      { id: "p2", relation: "partner", partnerQualification: qualified, incomes: [] },
+    ]);
+    expect(result).toMatchObject({ expectedCategory: "A", status: "probable",
+      partnerQualifications: [{ personId: "p1", status: "eligible_on_facts" }, { personId: "p2", status: "eligible_on_facts" }] });
+    expect(result.missingFacts).toBeUndefined();
+  });
+
   it("preserves an excluded person and asks for the actual relationship", () => {
     const result = evaluate([
       { id: "child", relation: "child", receivesFamilyAllowances: true, incomes: [] },
@@ -108,8 +129,44 @@ describe("prepared strict partner qualification", () => {
     });
     expect(result).toMatchObject({ status: "needs_review", expectedCategory: null,
       missingFacts: ["partnerIncome.article60Coverage"] });
-    expect(result.sourceRuleIds).toContain("situation_familiale_conjoint_revenus_conditions_am60");
+    expect(result.sourceRuleIds).not.toContain("situation_familiale_conjoint_revenus_conditions_am60");
     expect(result.sourceRuleIds).not.toContain("situation_familiale_conjoint_revenu_am60");
+  });
+
+  it.each([
+    [{ kind: "pension" as const, amountKind: "gross" as const }, "p.incomes.0.amount"],
+    [{ kind: "pension" as const, amount: 100, amountKind: "gross" as const }, "partnerIncome.article60Coverage"],
+    [{ kind: "pension" as const, amount: 100 }, "p.incomes.0.amountKind"],
+    [{ kind: "replacement" as const }, "p.incomes.0.amount"],
+    [{ kind: "professional" as const, amount: 1500, contract: "cdd" as const, variable: true }, "p.incomes.0.monthlyAmount"],
+    [{ kind: "professional" as const, amount: 1500, contract: "cdd" as const, variable: true, monthlyAmount: 1500 }, "partnerIncome.article60Coverage"],
+  ])("never certifies a historic B shortcut from income facts %j", (income, missingFact) => {
+    const result = evaluateFamilySituation({
+      facts: { asOf: "2026-10-10", people: [{ id: "p", relation: "partner", partnerQualification: qualified,
+        incomes: [income] }] },
+      activeChildIncomeNeutralisation: false, spouseProfessionalMonthlyThreshold: 1_000,
+      baremeSource: { fileId: "2026-09", fileName: "2026-09.xlsx", validFrom: new Date("2026-09-01") },
+      partnerQualificationPolicy: "require_facts",
+    });
+    expect(result).toMatchObject({ expectedCategory: null, operationalArticle: "needs_review",
+      missingFacts: [missingFact] });
+    expect(result.sourceRuleIds).not.toContain("situation_familiale_conjoint_revenus_conditions_am60");
+    expect(result.sourceRuleIds).not.toContain("situation_familiale_conjoint_revenu_am60");
+  });
+
+  it("requires the dated professional threshold before reaching unsupported AM60 coverage", () => {
+    const facts = { asOf: "2026-10-10", people: [{ id: "p", relation: "partner" as const,
+      partnerQualification: qualified, incomes: [{ kind: "professional" as const, amount: 1500, contract: "cdd" as const,
+        variable: true, monthlyAmount: 1500 }] }] };
+    const noThreshold = evaluateFamilySituation({ facts, activeChildIncomeNeutralisation: false,
+      spouseProfessionalMonthlyThreshold: null, partnerQualificationPolicy: "require_facts" });
+    expect(noThreshold).toMatchObject({ status: "needs_information", expectedCategory: null,
+      missingFacts: ["bareme.spouseProfessionalMonthly"] });
+    const afterDate = evaluateFamilySituation({ facts: { ...facts, asOf: "2026-08-31" },
+      activeChildIncomeNeutralisation: false, spouseProfessionalMonthlyThreshold: 1000,
+      baremeSource: { fileId: "2026-09", fileName: "2026-09.xlsx", validFrom: new Date("2026-09-01") },
+      partnerQualificationPolicy: "require_facts" });
+    expect(afterDate).toMatchObject({ expectedCategory: null, missingFacts: ["bareme.coverage"] });
   });
 });
 

@@ -59,11 +59,13 @@ describe("visiblePayload with repeating rows", () => {
     const row = { id: "person-1", typeRevenuPro: "salarie-employe",
       revenuRemplacement: "aucun", montantRevenuRemplacement: 500, montantRevenuPro: 900 };
     const input = { people: [row, { ...row, id: "person-2", typeRevenuPro: "aucun",
-      revenuRemplacement: "pension" }] };
+      revenuRemplacement: "pension" }, { ...row, id: "person-3",
+      revenuRemplacement: "chomage", montantRevenuRemplacement: 351 }] };
     const expected = { people: [
       { id: "person-1", typeRevenuPro: "salarie-employe", montantRevenuPro: 900 },
       { id: "person-2", typeRevenuPro: "aucun", revenuRemplacement: "pension",
         montantRevenuRemplacement: 500, montantRevenuPro: 900 },
+      { id: "person-3", typeRevenuPro: "salarie-employe", montantRevenuPro: 900 },
     ] };
     for (const order of [itemFields, itemFields.slice().reverse()]) {
       const filtered = visiblePayload([field({ id: "people", type: "array", itemFields: order })], input);

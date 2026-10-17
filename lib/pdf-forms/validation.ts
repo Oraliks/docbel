@@ -413,6 +413,11 @@ export function isFieldVisible(cond: VisibleIf | undefined, payload: FormPayload
   return true;
 }
 
+function dependsOnHiddenField(cond: VisibleIf | undefined, hidden: ReadonlySet<string>): boolean {
+  return !!cond && (hidden.has(cond.fieldId) ||
+    (cond.and?.some((extra) => dependsOnHiddenField(extra, hidden)) ?? false));
+}
+
 /// Le payload amputé des champs que le citoyen NE VOYAIT PAS au moment d'envoyer.
 ///
 /// Un champ masqué par `visibleIf` garde sa valeur dans le state du runner : le
@@ -438,8 +443,10 @@ export function isFieldVisible(cond: VisibleIf | undefined, payload: FormPayload
 /// présentation (`hidden`, `readOnly`, `autoAnswered`) ne retirent rien.
 export function visiblePayload(fields: PdfFormField[], payload: FormPayload): FormPayload {
   const out: FormPayload = { ...payload };
-  const gated = fields.filter((f) => f.visibleIf && f.id in out);
+  const gated = fields.filter((f) => f.visibleIf);
   const arrays = fields.filter((f) => f.type === "array" && f.itemFields?.length);
+  const hiddenRoot = new Set<string>();
+  const hiddenRows = new Map<FieldValueRecord, Set<string>>();
   for (const f of arrays) {
     const rows = out[f.id];
     if (isFieldValueRecordArray(rows)) out[f.id] = rows.map((row) => ({ ...row }));
@@ -450,30 +457,39 @@ export function visiblePayload(fields: PdfFormField[], payload: FormPayload): Fo
     // Evaluate every condition against the same state. Deleting a parent while
     // scanning could turn a negative condition (`undefined !== "aucun"`) true
     // and revive a stale descendant, depending on schema order.
-    const rootToRemove: string[] = [];
-    const rowToRemove: Array<{ row: FieldValueRecord; id: string }> = [];
+    const rootToHide: string[] = [];
+    const rowToHide: Array<{ row: FieldValueRecord; id: string }> = [];
     for (const f of gated) {
-      if (!(f.id in out)) continue;
-      if (!isFieldVisible(f.visibleIf, out)) {
-        rootToRemove.push(f.id);
+      if (hiddenRoot.has(f.id)) continue;
+      if (dependsOnHiddenField(f.visibleIf, hiddenRoot) || !isFieldVisible(f.visibleIf, out)) {
+        rootToHide.push(f.id);
       }
     }
     for (const f of arrays) {
       const rows = out[f.id];
       if (!isFieldValueRecordArray(rows)) continue;
       for (const row of rows) {
+        const rowHidden = hiddenRows.get(row) ?? new Set<string>();
+        hiddenRows.set(row, rowHidden);
         for (const sub of f.itemFields ?? []) {
-          if (!(sub.id in row)) continue;
-          if (!isFieldVisible(sub.visibleIf, row as FormPayload) ||
+          if (rowHidden.has(sub.id)) continue;
+          if (dependsOnHiddenField(sub.visibleIf, rowHidden) ||
+              !isFieldVisible(sub.visibleIf, row as FormPayload) ||
               !isFieldVisible(sub.visibleIfParent, out)) {
-            rowToRemove.push({ row, id: sub.id });
+            rowToHide.push({ row, id: sub.id });
           }
         }
       }
     }
-    for (const id of rootToRemove) delete out[id];
-    for (const { row, id } of rowToRemove) delete row[id];
-    removed = rootToRemove.length > 0 || rowToRemove.length > 0;
+    for (const id of rootToHide) {
+      hiddenRoot.add(id);
+      delete out[id];
+    }
+    for (const { row, id } of rowToHide) {
+      hiddenRows.get(row)!.add(id);
+      delete row[id];
+    }
+    removed = rootToHide.length > 0 || rowToHide.length > 0;
   }
   return out;
 }

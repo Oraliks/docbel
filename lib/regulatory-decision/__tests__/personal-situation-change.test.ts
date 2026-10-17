@@ -352,7 +352,7 @@ describe("C1 re-evaluation from an existing snapshot", () => {
     expect(before).toEqual(savedBefore);
   });
 
-  it("recognises a single-child expiry already reported by an older snapshot without the dedicated ledger", () => {
+  it("confirms a legacy expiry once when the old event has no explicit child/period association", () => {
     const before = withPersonalSituationTrace(decision(), { cohabitants: [temporalRows.expired] }, now, thresholds)!;
     delete before.reportedChildIncomeExpiries;
     for (const change of before.childrenOnlyAssessment!.changes) {
@@ -362,8 +362,120 @@ describe("C1 re-evaluation from an existing snapshot", () => {
     const savedBefore = structuredClone(before);
     const after = withPersonalSituationTrace(before, { cohabitants: [temporalRows.expired] }, now, thresholds)!;
     expect(after.reportedChildIncomeExpiries).toEqual([expiry]);
-    expect(after.childrenOnlyAssessment?.changes.map((change) => change.reason)).not.toContain("CHILD_110_1M_ENDED");
+    expect(after.childrenOnlyAssessment?.changes.filter((change) => change.reason === "CHILD_110_1M_ENDED")).toHaveLength(1);
     expect(before).toEqual(savedBefore);
+    const repeated = withPersonalSituationTrace(after, { cohabitants: [temporalRows.expired] }, now, thresholds)!;
+    expect(repeated.childrenOnlyAssessment?.changes.map((change) => change.reason)).not.toContain("CHILD_110_1M_ENDED");
+  });
+
+  function legacyAfterFirstChildStopped() {
+    const a = { ...firstJobChild, id: "A", dateDebutPremiereActivite: "2024-04-01", dateFinEtudes: "2024-03-31" };
+    const b = { ...firstJobChild, id: "B", dateDebutPremiereActivite: "2025-04-01", dateFinEtudes: "2025-03-31" };
+    const firstFacts = deriveArticle110FactsFromC1({ cohabitants: [a] })!;
+    const globalA = preserveArticle110TemporalHistory(undefined, decideArticle110ChildFirstProfessionalIncome(firstFacts, now));
+    // Historical record reproduced with e6ca4836: A starts, B is added, A stops.
+    // The old compact facts mark only B as first-income, while the global
+    // decision still contains A's dates. Neither proves ownership for B.
+    const aBefore = { factKey: "c1:id:A", receivesFamilyAllowances: false, hasProfessionalIncome: true, hasReplacementIncome: false, firstProfessionalIncome: true };
+    const aAfter = { ...aBefore, hasProfessionalIncome: false, firstProfessionalIncome: false };
+    const bFact = { ...aBefore, factKey: "c1:id:B" };
+    const snapshot: RegulatoryDecision = {
+      ...decision(), article110Decision: globalA,
+      childrenOnlyAssessment: {
+        expectedCategory: "B", categoryChanged: false, declarationRequired: true,
+        facts: [aAfter, bFact], sourceRuleIds: ["situation_familiale_children_only"],
+        changes: [
+          { reason: "CHILD_STOPPED_WORK", factKey: aAfter.factKey, previous: aBefore, current: aAfter },
+          { reason: "CHILD_110_1M_ENDED", factKey: aAfter.factKey, previous: aBefore, current: aAfter },
+          { reason: "CHILD_110_1M_ENDED", factKey: bFact.factKey, previous: bFact, current: bFact },
+        ],
+      },
+    };
+    return { snapshot, stoppedA: { ...a, typeRevenuPro: "aucun" }, a, b };
+  }
+
+  it.each([false, true])("does not assign A's legacy global period to B before a date correction (reordered: %s)", (reordered) => {
+    const { snapshot, stoppedA, b } = legacyAfterFirstChildStopped();
+    const saved = structuredClone(snapshot);
+    const order = <T,>(rows: T[]) => reordered ? [...rows].reverse() : rows;
+    const migrated = withPersonalSituationTrace(snapshot, { cohabitants: order([stoppedA, b]) }, now, thresholds)!;
+    expect(migrated.reportedChildIncomeExpiries).toEqual(expect.arrayContaining([
+      { factKey: "c1:id:A", periodStartedAt: "2024-04-01", reassessmentAt: "2025-04-01" },
+      { factKey: "c1:id:B", periodStartedAt: "2025-04-01", reassessmentAt: "2026-04-01" },
+    ]));
+    expect(migrated.reportedChildIncomeExpiries).not.toContainEqual({ factKey: "c1:id:B", periodStartedAt: "2024-04-01", reassessmentAt: "2025-04-01" });
+    const correctedB = { ...b, dateDebutPremiereActivite: "2024-04-01", dateFinEtudes: "2024-03-31" };
+    const persisted = JSON.parse(JSON.stringify(migrated)) as RegulatoryDecision;
+    const corrected = withPersonalSituationTrace(persisted, { cohabitants: order([stoppedA, correctedB]) }, now, thresholds)!;
+    expect(corrected.childrenOnlyAssessment?.changes.filter((change) => change.reason === "CHILD_110_1M_ENDED")).toEqual([
+      expect.objectContaining({ factKey: "c1:id:B", current: expect.objectContaining({ periodStartedAt: "2024-04-01", reassessmentAt: "2025-04-01" }) }),
+    ]);
+    expect(corrected.childrenOnlyAssessment?.declarationRequired).toBe(true);
+    const repeated = withPersonalSituationTrace(corrected, { cohabitants: order([correctedB, stoppedA]) }, now, thresholds)!;
+    expect(repeated.childrenOnlyAssessment?.changes.map((change) => change.reason)).not.toContain("CHILD_110_1M_ENDED");
+    expect(repeated.reportedChildIncomeExpiries).toEqual(corrected.reportedChildIncomeExpiries);
+    expectPreserved(snapshot, corrected);
+    expect(snapshot).toEqual(saved);
+  });
+
+  it("keeps certain ledgers distinct from a stale global trace when two children stop and resume", () => {
+    const { snapshot, stoppedA, a, b } = legacyAfterFirstChildStopped();
+    const migrated = withPersonalSituationTrace(snapshot, { cohabitants: [stoppedA, b] }, now, thresholds)!;
+    const savedLedger = structuredClone(migrated.reportedChildIncomeExpiries);
+    const stoppedB = { ...b, typeRevenuPro: "aucun" };
+    const resumedA = withPersonalSituationTrace(migrated, { cohabitants: [stoppedB, a] }, now, thresholds)!;
+    expect(resumedA.childrenOnlyAssessment?.changes.map((change) => [change.reason, change.factKey])).toEqual(expect.arrayContaining([
+      ["CHILD_STARTED_WORK", "c1:id:A"], ["CHILD_STOPPED_WORK", "c1:id:B"],
+    ]));
+    expect(resumedA.reportedChildIncomeExpiries).toEqual(savedLedger);
+    const resumedB = withPersonalSituationTrace(resumedA, { cohabitants: [a, b] }, now, thresholds)!;
+    expect(resumedB.childrenOnlyAssessment?.changes).toContainEqual(expect.objectContaining({ reason: "CHILD_STARTED_WORK", factKey: "c1:id:B" }));
+    expect(resumedB.childrenOnlyAssessment?.changes.map((change) => change.reason)).not.toContain("CHILD_110_1M_ENDED");
+    expect(resumedB.reportedChildIncomeExpiries).toEqual(savedLedger);
+    expectPreserved(snapshot, resumedB);
+  });
+
+  it("preserves the reviewer's 1,536 temporal ledger transitions", () => {
+    const row = (id: string, job: string, studies: string) => ({ ...firstJobChild, id, dateDebutPremiereActivite: job, dateFinEtudes: studies });
+    const aExpiry = { factKey: "c1:id:A", periodStartedAt: "2025-04-01", reassessmentAt: "2026-04-01" };
+    const bExpiry = { factKey: "c1:id:A", periodStartedAt: "2024-04-01", reassessmentAt: "2025-04-01" };
+    const states = [
+      { name: "unknown", payload: { cohabitants: [row("A", "", "")] }, expiries: [] },
+      { name: "active", payload: { cohabitants: [row("A", "2026-04-01", "2026-03-31")] }, expiries: [] },
+      { name: "expired", payload: { cohabitants: [row("A", "2025-04-01", "2025-03-31")] }, expiries: [aExpiry] },
+      { name: "corrected", payload: { cohabitants: [row("A", "2024-04-01", "2024-03-31")] }, expiries: [bExpiry] },
+      { name: "equivalent", payload: { cohabitants: [row("A", "2025-02-01", "2025-03-31")] }, expiries: [aExpiry] },
+      { name: "relatives", payload: { cohabitants: [{ id: "parent", lien: "pere", typeRevenuPro: "aucun", revenuRemplacement: "aucun" }] }, expiries: [] },
+      { name: "empty", payload: { statutFamilial: "cohabite", cohabitants: [] }, expiries: [] },
+      { name: "twoChildren", payload: { cohabitants: [row("B", "2024-04-01", "2024-03-31"), row("A", "2025-04-01", "2025-03-31")] }, expiries: [{ ...bExpiry, factKey: "c1:id:B" }, aExpiry] },
+    ];
+    function freeze(value: unknown) {
+      if (!value || typeof value !== "object" || Object.isFrozen(value)) return;
+      Object.freeze(value);
+      Object.values(value).forEach(freeze);
+    }
+    let transitions = 0;
+    for (const first of states) for (const second of states) for (const third of states) {
+      let snapshot = decision();
+      const seen = new Set<string>();
+      const ledger: NonNullable<RegulatoryDecision["reportedChildIncomeExpiries"]> = [];
+      for (const state of [first, second, third]) {
+        freeze(snapshot);
+        freeze(state.payload);
+        const saved = JSON.stringify(snapshot);
+        const expected = state.expiries.filter((entry) => !seen.has(JSON.stringify(entry)));
+        expected.forEach((entry) => { seen.add(JSON.stringify(entry)); ledger.push(entry); });
+        const out = withPersonalSituationTrace(snapshot, state.payload, now, thresholds)!;
+        const emitted = out.childrenOnlyAssessment?.changes.filter((change) => change.reason === "CHILD_110_1M_ENDED").map((change) => ({ factKey: change.factKey, periodStartedAt: change.current?.periodStartedAt, reassessmentAt: change.current?.reassessmentAt })) ?? [];
+        expect(emitted, [first.name, second.name, third.name].join(" -> ")).toEqual(expected);
+        expect(out.reportedChildIncomeExpiries ?? []).toEqual(ledger);
+        expect(out.officialOnemState).toEqual(snapshot.officialOnemState);
+        expect(JSON.stringify(snapshot)).toBe(saved);
+        snapshot = JSON.parse(JSON.stringify(out)) as RegulatoryDecision;
+        transitions++;
+      }
+    }
+    expect(transitions).toBe(1_536);
   });
 
   it("tracks each child's reported period through reordering, removal and reinsertion", () => {

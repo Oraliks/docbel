@@ -233,20 +233,6 @@ function establishedChildIncomeExpiry(factKey: string, temporalFacts: Regulatory
   return { factKey, periodStartedAt: initial.effectiveFrom, reassessmentAt: current.reassessmentAt };
 }
 
-function previouslyReportedChildIncomeExpiries(decision: RegulatoryDecision): ChildIncomeExpiry[] {
-  const history = [...(decision.reportedChildIncomeExpiries ?? [])];
-  // Older single-child snapshots can prove a reported expiry through their
-  // event and saved temporal facts, even though they have no dedicated ledger.
-  const candidates = decision.childrenOnlyAssessment?.facts.filter((fact) => fact.firstProfessionalIncome === true) ?? [];
-  const candidate = candidates.length === 1 ? candidates[0] : undefined;
-  const temporal = decision.article110Decision;
-  if (candidate && temporal?.temporalEffect?.onemCode === "110&1V" && decision.childrenOnlyAssessment?.changes.some((change) => change.reason === "CHILD_110_1M_ENDED" && change.factKey === candidate.factKey)) {
-    const expiry = establishedChildIncomeExpiry(candidate.factKey, temporal.factsUsed, new Date(temporal.decidedAt));
-    if (expiry && !history.some((item) => childIncomeExpiryKey(item) === childIncomeExpiryKey(expiry))) history.push(expiry);
-  }
-  return history;
-}
-
 function deriveChildIncomeExpiryEvents(payload: FormPayload, previous: ChildIncomeExpiry[], now: Date) {
   const history = [...previous];
   const reported = new Set(history.map(childIncomeExpiryKey));
@@ -511,7 +497,9 @@ export function withPersonalSituationTrace(
     baremeSource: thresholds?.source,
     neutralisedChildIds: neutralisedChildFactKeys,
   });
-  const { assessment: childrenOnlyAssessment, reportedExpiries } = deriveChildrenOnlyAssessmentUpdate(previousChildrenAssessment, previouslyReportedChildIncomeExpiries(decision), composition, householdAssessment, payload, neutralisedChildFactKeys, now);
+  // Only the explicit ledger proves which child/period was reported. A legacy
+  // global temporal decision has no reliable person association.
+  const { assessment: childrenOnlyAssessment, reportedExpiries } = deriveChildrenOnlyAssessmentUpdate(previousChildrenAssessment, decision.reportedChildIncomeExpiries ?? [], composition, householdAssessment, payload, neutralisedChildFactKeys, now);
   const relativeHouseholdAssessment = deriveRelativeHouseholdAssessment(previousRelativeAssessment, composition, householdAssessment, payload, familyFacts);
   const thirdPartyHouseholdAssessment = deriveThirdPartyHouseholdAssessment(previousThirdPartyAssessment, decision.householdAssessment, composition, householdAssessment, payload);
   return {

@@ -1,4 +1,4 @@
-import type { FormPayload } from "@/lib/pdf-forms/types";
+import type { FieldValueRecord, FormPayload } from "@/lib/pdf-forms/types";
 import {
   decideArticle110ChildFirstProfessionalIncome,
   activeFirstProfessionalIncomePersonIds,
@@ -11,7 +11,7 @@ import {
   type FamilyIncome,
   type FamilyPerson,
 } from "./household-composition";
-import type { RegulatoryDecision } from "./types";
+import type { RegulatoryDecision, RegulatoryFacts } from "./types";
 import type { C1BaremeThresholds } from "@/lib/baremes/c1-thresholds";
 
 /**
@@ -127,9 +127,26 @@ function stableC1PersonId(person: Record<string, unknown>, relation: FamilyPerso
   return name ? `c1:person:${relation}:${name}` : `c1:row:${index}:${relation}`;
 }
 
+/** Per-income declarations for traces; global inventory completeness stays in the evaluator. */
+function c1IncomePresence(value: unknown): boolean | undefined {
+  const answer = typeof value === "string" ? value.trim() : "";
+  return answer ? answer !== "aucun" : undefined;
+}
+
+function c1PeopleById(payload: FormPayload): Map<string, FieldValueRecord> {
+  const people = new Map<string, FieldValueRecord>();
+  if (!Array.isArray(payload.cohabitants)) return people;
+  payload.cohabitants.forEach((entry, index) => {
+    if (!entry || typeof entry !== "object") return;
+    const person = entry;
+    const relation = RELATION_BY_C1_VALUE[typeof person.lien === "string" ? person.lien : ""] ?? "unknown";
+    people.set(stableC1PersonId(person, relation, index), person);
+  });
+  return people;
+}
+
 /** C1 adapter: maps declarations to the common family contract, never to a category. */
 export function deriveFamilyFactsFromC1(payload: FormPayload, asOf = new Date().toISOString().slice(0, 10)): FamilyFacts {
-  const hasCohabitantInventory = Array.isArray(payload.cohabitants);
   const explicitlyAlone = text(payload, "statutFamilial") === "isole";
   const cohabitants = Array.isArray(payload.cohabitants) ? payload.cohabitants : [];
   return {
@@ -138,11 +155,11 @@ export function deriveFamilyFactsFromC1(payload: FormPayload, asOf = new Date().
       if (!entry || typeof entry !== "object") return [{ id: `c1:row:${index}:unknown`, relation: "unknown" as const, incomeInventoryComplete: false }];
       const person = entry as Record<string, unknown>;
       const relation = RELATION_BY_C1_VALUE[typeof person.lien === "string" ? person.lien : ""] ?? "unknown";
-      const professionalAnswer = typeof person.typeRevenuPro === "string" ? person.typeRevenuPro : undefined;
-      const replacementAnswer = typeof person.revenuRemplacement === "string" ? person.revenuRemplacement : undefined;
+      const professionalAnswer = typeof person.typeRevenuPro === "string" ? person.typeRevenuPro.trim() || undefined : undefined;
+      const replacementAnswer = typeof person.revenuRemplacement === "string" ? person.revenuRemplacement.trim() || undefined : undefined;
       const professional = professionalAnswer !== undefined && professionalAnswer !== "aucun";
       const replacement = replacementAnswer !== undefined && replacementAnswer !== "aucun";
-      const replacementType = typeof person.revenuRemplacement === "string" ? person.revenuRemplacement : undefined;
+      const replacementType = replacementAnswer;
       const incomeAmount = typeof person.montantRevenuPro === "number" ? person.montantRevenuPro : undefined;
       const replacementAmount = typeof person.montantRevenuRemplacement === "number" ? person.montantRevenuRemplacement : undefined;
       const professionalContract: FamilyIncome["contract"] = person.typeContratRevenuPro === "cdi" || person.typeContratRevenuPro === "cdd"
@@ -168,7 +185,8 @@ export function deriveFamilyFactsFromC1(payload: FormPayload, asOf = new Date().
         incomes,
       }];
     }),
-    ...(!hasCohabitantInventory && !explicitlyAlone ? { householdDeclared: true } : {}),
+    // An absent or empty inventory cannot establish an isolated household.
+    ...(!explicitlyAlone ? { householdDeclared: true } : {}),
     ...(explicitlyAlone ? {
       isolated: {
         ...(text(payload, "pensionAlimentaire") === "oui" ? {
@@ -197,20 +215,59 @@ export function deriveHouseholdCompositionFromC1(payload: FormPayload) {
   return householdCompositionFromFamilyFacts(deriveFamilyFactsFromC1(payload));
 }
 
-function deriveChildrenOnlyAssessment(
+type ChildIncomeExpiry = NonNullable<RegulatoryDecision["reportedChildIncomeExpiries"]>[number];
+
+function childIncomeExpiryKey(expiry: ChildIncomeExpiry) {
+  return JSON.stringify([expiry.factKey, expiry.periodStartedAt, expiry.reassessmentAt]);
+}
+
+function establishedChildIncomeExpiry(factKey: string, temporalFacts: RegulatoryFacts, now: Date): ChildIncomeExpiry | undefined {
+  const current = decideArticle110ChildFirstProfessionalIncome(temporalFacts, now).temporalEffect;
+  if (current?.onemCode !== "110&1V" || !current.reassessmentAt) return undefined;
+  const occupationStartedAt = temporalFacts["family.child.firstProfessionalIncomeStartedAt"]?.value;
+  if (typeof occupationStartedAt !== "object" || occupationStartedAt.kind !== "date") return undefined;
+  // Reuse the existing decision at occupation start to obtain the canonical
+  // period start, including occupations begun before the end of studies.
+  const initial = decideArticle110ChildFirstProfessionalIncome(temporalFacts, new Date(`${occupationStartedAt.value}T00:00:00Z`)).temporalEffect;
+  if (initial?.onemCode !== "110&1M") return undefined;
+  return { factKey, periodStartedAt: initial.effectiveFrom, reassessmentAt: current.reassessmentAt };
+}
+
+function deriveChildIncomeExpiryEvents(payload: FormPayload, previous: ChildIncomeExpiry[], now: Date) {
+  const history = [...previous];
+  const reported = new Set(history.map(childIncomeExpiryKey));
+  const newlyExpired = new Map<string, ChildIncomeExpiry>();
+  for (const [factKey, declaration] of c1PeopleById(payload)) {
+    const temporalFacts = deriveArticle110FactsFromC1({ cohabitants: [declaration] });
+    if (!temporalFacts) continue;
+    const expiry = establishedChildIncomeExpiry(factKey, temporalFacts, now);
+    if (!expiry || reported.has(childIncomeExpiryKey(expiry))) continue;
+    reported.add(childIncomeExpiryKey(expiry));
+    history.push(expiry);
+    newlyExpired.set(factKey, expiry);
+  }
+  return { history, newlyExpired };
+}
+
+function deriveChildrenOnlyAssessmentUpdate(
   previous: RegulatoryDecision["childrenOnlyAssessment"] | undefined,
+  previouslyReportedExpiries: ChildIncomeExpiry[],
   composition: ReturnType<typeof deriveHouseholdCompositionFromC1>,
   householdAssessment: ReturnType<typeof evaluateFamilySituation>,
   payload: FormPayload,
   neutralisedChildFactKeys: string[],
-): RegulatoryDecision["childrenOnlyAssessment"] | undefined {
-  if (composition.kind !== "children_only" || (householdAssessment.expectedCategory !== "A" && householdAssessment.expectedCategory !== "B")) return undefined;
+  now: Date,
+): { assessment?: RegulatoryDecision["childrenOnlyAssessment"]; reportedExpiries: ChildIncomeExpiry[] } {
+  if (composition.kind !== "children_only") return { reportedExpiries: previouslyReportedExpiries };
+  const expiries = deriveChildIncomeExpiryEvents(payload, previouslyReportedExpiries, now);
+  const expectedCategory = householdAssessment.expectedCategory === "A" || householdAssessment.expectedCategory === "B" ? householdAssessment.expectedCategory : null;
+  const declarations = c1PeopleById(payload);
   const facts = composition.members.map((member) => ({
     factKey: member.factKey,
     receivesFamilyAllowances: member.receivesFamilyAllowances,
-    hasProfessionalIncome: member.hasProfessionalIncome,
-    hasReplacementIncome: member.hasReplacementIncome,
-    firstProfessionalIncome: member.firstProfessionalIncome,
+    hasProfessionalIncome: c1IncomePresence(declarations.get(member.factKey)?.typeRevenuPro),
+    hasReplacementIncome: c1IncomePresence(declarations.get(member.factKey)?.revenuRemplacement),
+    firstProfessionalIncome: declarations.get(member.factKey)?.premierRevenuProfessionnel === "oui" ? true : declarations.get(member.factKey)?.premierRevenuProfessionnel === "non" ? false : undefined,
     studiesEndedAt: member.studiesEndedAt,
     neutralisedBy110_1M: neutralisedChildFactKeys.includes(member.factKey) || undefined,
   }));
@@ -220,26 +277,30 @@ function deriveChildrenOnlyAssessment(
   const effectiveDate = text(payload, "dateModificationSituationFamilialeEffective") ?? text(payload, "dateModificationEffective");
   for (const [factKey, current] of after) {
     const prior = before.get(factKey);
+    const expiry = expiries.newlyExpired.get(factKey);
+    if (expiry) changes.push({ reason: "CHILD_110_1M_ENDED", factKey, ...(prior ? { previous: prior } : {}), current: { ...current, periodStartedAt: expiry.periodStartedAt, reassessmentAt: expiry.reassessmentAt }, effectiveDate });
     if (!prior) continue;
     if (prior.hasProfessionalIncome !== true && current.hasProfessionalIncome === true) changes.push({ reason: "CHILD_STARTED_WORK", factKey, previous: prior, current, effectiveDate });
-    if (prior.hasProfessionalIncome === true && current.hasProfessionalIncome !== true) changes.push({ reason: "CHILD_STOPPED_WORK", factKey, previous: prior, current, effectiveDate });
-    if (prior.receivesFamilyAllowances === true && current.receivesFamilyAllowances !== true) changes.push({ reason: "CHILD_LOST_FAMILY_ALLOWANCE", factKey, previous: prior, current, effectiveDate });
+    if (prior.hasProfessionalIncome === true && current.hasProfessionalIncome === false) changes.push({ reason: "CHILD_STOPPED_WORK", factKey, previous: prior, current, effectiveDate });
+    if (prior.receivesFamilyAllowances === true && current.receivesFamilyAllowances === false) changes.push({ reason: "CHILD_LOST_FAMILY_ALLOWANCE", factKey, previous: prior, current, effectiveDate });
     if (prior.receivesFamilyAllowances !== true && current.receivesFamilyAllowances === true) changes.push({ reason: "CHILD_GAINED_FAMILY_ALLOWANCE", factKey, previous: prior, current, effectiveDate });
     if (prior.hasReplacementIncome !== current.hasReplacementIncome) changes.push({ reason: "INCOME_CHANGED", factKey, previous: prior, current, effectiveDate });
     if (prior.studiesEndedAt !== current.studiesEndedAt && current.studiesEndedAt) changes.push({ reason: "CHILD_STUDIES_ENDED", factKey, previous: prior, current, effectiveDate: current.studiesEndedAt });
-    if (prior.firstProfessionalIncome === true && current.neutralisedBy110_1M !== true) changes.push({ reason: "CHILD_110_1M_ENDED", factKey, previous: prior, current, effectiveDate });
   }
   if (previous) {
     for (const [factKey, prior] of before) if (!after.has(factKey)) changes.push({ reason: "HOUSEHOLD_MEMBER_CHANGED", factKey, previous: prior, effectiveDate });
     for (const [factKey, current] of after) if (!before.has(factKey)) changes.push({ reason: "HOUSEHOLD_MEMBER_CHANGED", factKey, current, effectiveDate });
   }
   return {
-    expectedCategory: householdAssessment.expectedCategory,
-    categoryChanged: previous ? previous.expectedCategory !== householdAssessment.expectedCategory : false,
-    declarationRequired: changes.length > 0,
-    facts,
-    changes,
-    sourceRuleIds: ["situation_familiale_children_only"],
+    reportedExpiries: expiries.history,
+    assessment: {
+      expectedCategory,
+      categoryChanged: previous ? previous.expectedCategory !== expectedCategory : false,
+      declarationRequired: changes.length > 0,
+      facts,
+      changes,
+      sourceRuleIds: ["situation_familiale_children_only"],
+    },
   };
 }
 
@@ -248,13 +309,18 @@ function deriveRelativeHouseholdAssessment(
   composition: ReturnType<typeof deriveHouseholdCompositionFromC1>,
   householdAssessment: ReturnType<typeof evaluateFamilySituation>,
   payload: FormPayload,
+  familyFacts: FamilyFacts,
 ): RegulatoryDecision["relativeHouseholdAssessment"] | undefined {
-  if ((composition.kind !== "relatives_only" && composition.kind !== "children_and_relatives") || (householdAssessment.expectedCategory !== "A" && householdAssessment.expectedCategory !== "B")) return undefined;
+  if (composition.kind !== "relatives_only" && composition.kind !== "children_and_relatives") return undefined;
+  const expectedCategory = householdAssessment.expectedCategory === "A" || householdAssessment.expectedCategory === "B" ? householdAssessment.expectedCategory : null;
+  const declarations = c1PeopleById(payload);
   const facts = composition.members.filter((member) => member.relation === "relative").map((member) => ({
     factKey: member.factKey,
-    professional: member.hasProfessionalIncome,
+    professional: c1IncomePresence(declarations.get(member.factKey)?.typeRevenuPro),
     replacementType: member.replacementIncomeType,
-    pensionGrossAmount: member.replacementIncomeAmount,
+    // Keep the declared amount: the compact composition can aggregate a missing
+    // pension amount to zero, which is not evidence of a changed amount.
+    pensionGrossAmount: familyFacts.people.find((person) => person.id === member.factKey)?.incomes?.find((income) => income.kind === "pension")?.amount,
     pensionProof: member.pensionProofAvailable,
     disabilityProof: member.disabilityProofAvailable,
   }));
@@ -265,8 +331,9 @@ function deriveRelativeHouseholdAssessment(
     const prior = before.get(current.factKey);
     if (!prior) continue;
     if (prior.replacementType !== "pension" && current.replacementType === "pension") changes.push({ reason: "PENSION_STARTED", factKey: current.factKey, previous: prior, current, effectiveDate });
-    if (prior.replacementType === "pension" && current.replacementType !== "pension") changes.push({ reason: "PENSION_STOPPED", factKey: current.factKey, previous: prior, current, effectiveDate });
-    if (prior.pensionGrossAmount !== current.pensionGrossAmount) changes.push({ reason: "PENSION_AMOUNT_CHANGED", factKey: current.factKey, previous: prior, current, effectiveDate });
+    const replacementKnownAbsent = c1IncomePresence(declarations.get(current.factKey)?.revenuRemplacement) === false;
+    if (prior.replacementType === "pension" && (replacementKnownAbsent || (current.replacementType !== undefined && current.replacementType !== "pension"))) changes.push({ reason: "PENSION_STOPPED", factKey: current.factKey, previous: prior, current, effectiveDate });
+    if (Number.isFinite(prior.pensionGrossAmount) && Number.isFinite(current.pensionGrossAmount) && prior.pensionGrossAmount !== current.pensionGrossAmount) changes.push({ reason: "PENSION_AMOUNT_CHANGED", factKey: current.factKey, previous: prior, current, effectiveDate });
     if (prior.replacementType !== current.replacementType || prior.professional !== current.professional) changes.push({ reason: "INCOME_CHANGED", factKey: current.factKey, previous: prior, current, effectiveDate });
     if (prior.disabilityProof !== current.disabilityProof) changes.push({ reason: "DISABILITY_PROOF_CHANGED", factKey: current.factKey, previous: prior, current, effectiveDate });
   }
@@ -275,7 +342,7 @@ function deriveRelativeHouseholdAssessment(
     for (const [factKey, prior] of before) if (!afterKeys.has(factKey)) changes.push({ reason: "HOUSEHOLD_MEMBER_CHANGED", factKey, previous: prior, effectiveDate });
     for (const current of facts) if (!before.has(current.factKey)) changes.push({ reason: "HOUSEHOLD_MEMBER_CHANGED", factKey: current.factKey, current, effectiveDate });
   }
-  return { composition: composition.kind, expectedCategory: householdAssessment.expectedCategory, categoryChanged: previous ? previous.expectedCategory !== householdAssessment.expectedCategory : false, declarationRequired: changes.length > 0, facts, changes, sourceRuleIds: ["situation_familiale_ascendants_pensions"] };
+  return { composition: composition.kind, expectedCategory, categoryChanged: previous ? previous.expectedCategory !== expectedCategory : false, declarationRequired: changes.length > 0, facts, changes, sourceRuleIds: ["situation_familiale_ascendants_pensions"] };
 }
 
 function deriveThirdPartyHouseholdAssessment(
@@ -400,6 +467,11 @@ export function withPersonalSituationTrace(
   const {
     isolatedHouseholdAssessment: legacyIsolatedAssessment,
     isolatedHouseholdAssessmentHistory: legacyIsolatedHistory,
+    // Recompute current derived assessments instead of retaining an older conclusion
+    // when the category is unresolved or the household has changed branch.
+    childrenOnlyAssessment: previousChildrenAssessment,
+    relativeHouseholdAssessment: previousRelativeAssessment,
+    thirdPartyHouseholdAssessment: previousThirdPartyAssessment,
     ...currentDecision
   } = decision;
   const article110Facts = deriveArticle110FactsFromC1(payload);
@@ -416,21 +488,27 @@ export function withPersonalSituationTrace(
     facts: familyFacts,
     activeChildIncomeNeutralisation: neutralisedChildFactKeys.length > 0,
     spouseProfessionalMonthlyThreshold: thresholds?.spouseProfessionalMonthly,
+    // null means unavailable; undefined would enable the engine's legacy fallback.
+    childProfessionalMonthlyThreshold: thresholds?.childProfessionalMonthly ?? null,
+    childReplacementMonthlyThreshold: thresholds?.childReplacementMonthly ?? null,
     ascendantPensionWithChildMonthlyThreshold: thresholds?.ascendantPensionWithChildMonthly,
     ascendantPensionMonthlyThreshold: thresholds?.ascendantPensionMonthly,
     ascendantDisabledPensionMonthlyThreshold: thresholds?.ascendantDisabledPensionMonthly,
     baremeSource: thresholds?.source,
     neutralisedChildIds: neutralisedChildFactKeys,
   });
-  const childrenOnlyAssessment = deriveChildrenOnlyAssessment(decision.childrenOnlyAssessment, composition, householdAssessment, payload, neutralisedChildFactKeys);
-  const relativeHouseholdAssessment = deriveRelativeHouseholdAssessment(decision.relativeHouseholdAssessment, composition, householdAssessment, payload);
-  const thirdPartyHouseholdAssessment = deriveThirdPartyHouseholdAssessment(decision.thirdPartyHouseholdAssessment, decision.householdAssessment, composition, householdAssessment, payload);
+  // Only the explicit ledger proves which child/period was reported. A legacy
+  // global temporal decision has no reliable person association.
+  const { assessment: childrenOnlyAssessment, reportedExpiries } = deriveChildrenOnlyAssessmentUpdate(previousChildrenAssessment, decision.reportedChildIncomeExpiries ?? [], composition, householdAssessment, payload, neutralisedChildFactKeys, now);
+  const relativeHouseholdAssessment = deriveRelativeHouseholdAssessment(previousRelativeAssessment, composition, householdAssessment, payload, familyFacts);
+  const thirdPartyHouseholdAssessment = deriveThirdPartyHouseholdAssessment(previousThirdPartyAssessment, decision.householdAssessment, composition, householdAssessment, payload);
   return {
     ...currentDecision,
     personalSituationTrace: derivePersonalSituationTrace(payload),
     ...(article110Decision ? { article110Decision } : {}),
     householdAssessment,
     ...(childrenOnlyAssessment ? { childrenOnlyAssessment } : {}),
+    ...(reportedExpiries.length > 0 ? { reportedChildIncomeExpiries: reportedExpiries } : {}),
     ...(relativeHouseholdAssessment ? { relativeHouseholdAssessment } : {}),
     ...(thirdPartyHouseholdAssessment ? { thirdPartyHouseholdAssessment } : {}),
     ...(legacyIsolatedAssessment || legacyIsolatedHistory

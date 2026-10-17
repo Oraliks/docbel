@@ -3,7 +3,7 @@ import type { Article110VerifierInput } from "@/lib/regulatory-decision/article-
 import { article110VerifierFacts, evaluateArticle110Verifier } from "@/lib/regulatory-decision/article-110-verifier";
 import type { C1BaremeThresholds } from "@/lib/baremes/c1-thresholds";
 import { evaluateFamilySituation } from "@/lib/regulatory-decision/household-composition";
-import { article110VerifierInputToFamilyTreeState, chooseFamilyTreeBranch, resetFamilyTreeBranch, setDeclaredAloneSituation, setTreeProfessionalIncomeType, updateTreePerson, type FamilyTreeState } from "../interactive-flow";
+import { article110VerifierInputToFamilyTreeState, familyTreeStateToArticle110VerifierInput, chooseFamilyTreeBranch, resetFamilyTreeBranch, setDeclaredAloneSituation, setTreeProfessionalIncomeType, updateTreePerson, type FamilyTreeState } from "../interactive-flow";
 
 const thresholds: C1BaremeThresholds = {
   spouseProfessionalMonthly: 1_000,
@@ -16,25 +16,29 @@ const thresholds: C1BaremeThresholds = {
   source: { fileId: "family-tree-test", fileName: "bareme-test.xlsx", validFrom: new Date("2026-09-01") },
 };
 
-/** Mirrors the page adapter: navigation owns facts only; the shared verifier decides. */
-function evaluateTree(state: FamilyTreeState, extra: Partial<Article110VerifierInput> = {}) {
-  return evaluateArticle110Verifier({
-    people: state.people,
-    thresholds,
-    asOf: "2026-10-12",
-    isAloneExplicit: state.branch === "alone",
-    multiPersonHouseholdSelected: state.branch === "others",
-    isolatedDeclaration: state.declaredAloneSituation === "alternating_care" ? "alternating_care" : undefined,
-    alimony: state.declaredAloneSituation === "alimony" ? { enabled: true, legalConditionEstablished: state.alimonyLegalCondition, beneficiary: "minor_child" } : undefined,
-    anyChildReceivesFamilyAllowances: state.anyChildReceivesFamilyAllowances,
-    cohousing: state.cohousing,
-    cohousingAutonomousLiving: state.cohousingAutonomousLiving,
-    cohousingRecognition: state.cohousingRecognition === true ? "recognised_same_address" : state.cohousingRecognition === false ? "pending" : undefined,
-    ...extra,
-  });
+/** Exercise the same mapping used by FamilySituationTree. */
+function evaluateTree(state: FamilyTreeState) {
+  return evaluateArticle110Verifier(familyTreeStateToArticle110VerifierInput(state, thresholds, "2026-10-12"));
 }
-
 describe("interactive family tree state", () => {
+  it("passes the supplied date and ceilings and preserves detailed isolated facts", () => {
+    const state: FamilyTreeState = {
+      branch: "alone", people: [],
+      alimony: true, alimonyLegalCondition: true, alimonyBeneficiary: "adult_child", alimonyAdultChildInNeed: false,
+      alternatingCare: true, alternatingCareDaysPerWeek: 2, alternatingCareCycle: "quarterly",
+      alternatingCareFamilyAllowances: false, alternatingCareChildHasRelevantIncome: false,
+    };
+    const before = structuredClone(state);
+    const input = familyTreeStateToArticle110VerifierInput(state, thresholds, "2026-10-12");
+    expect(input.thresholds).toBe(thresholds);
+    expect(input).toMatchObject({
+      asOf: "2026-10-12", isAloneExplicit: true, multiPersonHouseholdSelected: false,
+      alimony: { enabled: true, legalConditionEstablished: true, beneficiary: "adult_child", adultChildInNeed: false },
+      alternatingCare: { enabled: true, averageDaysPerWeek: 2, cycle: "quarterly", familyAllowances: false, childHasRelevantIncome: false },
+    });
+    expect(state).toEqual(before);
+  });
+
   it("prefills a representable matrix household without changing its facts", () => {
     const state = article110VerifierInputToFamilyTreeState({
       thresholds,
@@ -85,8 +89,8 @@ describe("interactive family tree state", () => {
 
   it("turns an incomplete alimony or alternating-care declaration into the next factual question", () => {
     const alone = chooseFamilyTreeBranch("alone");
-    const alimony = evaluateTree({ ...alone, alimony: true }, { alimony: { enabled: true } });
-    const care = evaluateTree({ ...alone, alternatingCare: true }, { alternatingCare: { enabled: true } });
+    const alimony = evaluateTree({ ...alone, alimony: true });
+    const care = evaluateTree({ ...alone, alternatingCare: true });
     expect(alimony.missingFacts.map((fact) => fact.factKey)).toContain("isolated.alimony");
     expect(care.missingFacts.map((fact) => fact.factKey)).toEqual(expect.arrayContaining([
       "isolated.alternatingCare.averageDaysPerWeek",
@@ -240,13 +244,13 @@ describe("interactive family tree state", () => {
       ...chooseFamilyTreeBranch("others"),
       people: [{ id: "friend", label: "Ami", relation: "third_party" as const, hasProfessionalIncome: false, hasReplacementIncome: false }],
     };
-    expect(evaluateTree(state, { cohousing: true, cohousingAutonomousLiving: true, cohousingRecognition: "pending" }).householdAssessment).toMatchObject({
+    expect(evaluateTree({ ...state, cohousing: true, cohousingAutonomousLiving: true, cohousingRecognition: false }).householdAssessment).toMatchObject({
       composition: "third_parties_only",
       expectedCategory: "N",
       status: "probable",
       administrativeTreatment: { provisionalCategory: "B" },
     });
-    expect(evaluateTree(state, { cohousing: false }).householdAssessment).toMatchObject({
+    expect(evaluateTree({ ...state, cohousing: false }).householdAssessment).toMatchObject({
       composition: "third_parties_only",
       expectedCategory: "B",
       status: "probable",

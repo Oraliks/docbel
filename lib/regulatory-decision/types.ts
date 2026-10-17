@@ -108,15 +108,17 @@ export interface RegulatoryDecision {
   };
   /** Previous isolated-household claims are retained to support a human retroactive review. */
   isolatedHouseholdAssessmentHistory?: Array<NonNullable<RegulatoryDecision["isolatedHouseholdAssessment"]>>;
-  /** Children-only branch: a calculated category plus the C1 declaration event, never an ONEM code. */
+  /** Current children-only facts/events; the theoretical category stays null while unresolved. Never an ONEM code. */
   childrenOnlyAssessment?: {
-    expectedCategory: "A" | "B";
+    expectedCategory: "A" | "B" | null;
     categoryChanged: boolean;
     declarationRequired: boolean;
     facts: Array<{ factKey: string; receivesFamilyAllowances?: boolean; hasProfessionalIncome?: boolean; hasReplacementIncome?: boolean; firstProfessionalIncome?: boolean; studiesEndedAt?: string; neutralisedBy110_1M?: boolean }>;
     changes: Array<{ reason: "CHILD_STARTED_WORK" | "CHILD_STOPPED_WORK" | "CHILD_LOST_FAMILY_ALLOWANCE" | "CHILD_GAINED_FAMILY_ALLOWANCE" | "INCOME_CHANGED" | "HOUSEHOLD_MEMBER_CHANGED" | "CHILD_STUDIES_ENDED" | "CHILD_110_1M_ENDED"; factKey?: string; previous?: Record<string, unknown>; current?: Record<string, unknown>; effectiveDate?: string }>;
     sourceRuleIds: string[];
   };
+  /** C1 expiry events already emitted, retained across incomplete answers and branch changes. */
+  reportedChildIncomeExpiries?: Array<{ factKey: string; periodStartedAt: string; reassessmentAt: string }>;
   relativeHouseholdAssessment?: {
     composition: "relatives_only" | "children_and_relatives";
     expectedCategory: "A" | "B" | null;

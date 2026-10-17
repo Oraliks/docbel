@@ -97,7 +97,7 @@ describe("tree / verifier / C1 adapter parity", () => {
     { title: "empty income answers remain unknown", people: [{ id: "child", relation: "child", receivesFamilyAllowances: false }], payload: { cohabitants: [{ ...noIncomeC1Child, typeRevenuPro: "", revenuRemplacement: "  " }] }, category: null, status: "needs_information" },
     { title: "professional amount absent remains unknown", people: [{ ...noIncomeChild, hasProfessionalIncome: true, professionalIncomeType: "employee" }], payload: { cohabitants: [{ ...noIncomeC1Child, typeRevenuPro: "salarie-employe" }] }, category: null, status: "needs_information" },
     { title: "replacement amount absent remains unknown", people: [{ ...noIncomeChild, hasReplacementIncome: true, replacementIncomeType: "unemployment" }], payload: { cohabitants: [{ ...noIncomeC1Child, revenuRemplacement: "chomage" }] }, category: null, status: "needs_information" },
-    { title: "professional income completes the visible C1 axis when replacement is hidden", people: [{ ...noIncomeChild, hasProfessionalIncome: true, professionalIncomeType: "employee", professionalIncomeAmount: 201 }], payload: { cohabitants: [{ ...noIncomeC1Child, typeRevenuPro: "salarie-employe", montantRevenuPro: 201, revenuRemplacement: "" }] }, category: "B" },
+    { title: "professional income retained with replacement unanswered", people: [{ ...noIncomeChild, hasProfessionalIncome: true, professionalIncomeType: "employee", professionalIncomeAmount: 201, hasReplacementIncome: undefined }], payload: { cohabitants: [{ ...noIncomeC1Child, typeRevenuPro: "salarie-employe", montantRevenuPro: 201, revenuRemplacement: "" }] }, category: null, status: "needs_information" },
     { title: "replacement income retained with professional unanswered", people: [{ ...noIncomeChild, hasProfessionalIncome: undefined, hasReplacementIncome: true, replacementIncomeType: "unemployment", replacementIncomeAmount: 351 }], payload: { cohabitants: [{ ...noIncomeC1Child, typeRevenuPro: "", revenuRemplacement: "chomage", montantRevenuRemplacement: 351 }] }, category: null, status: "needs_information" },
     { title: "both income kinds keep their own ceiling", people: [{ ...noIncomeChild, hasProfessionalIncome: true, professionalIncomeType: "employee", professionalIncomeAmount: 200, hasReplacementIncome: true, replacementIncomeType: "unemployment", replacementIncomeAmount: 351 }], payload: { cohabitants: [{ ...noIncomeC1Child, typeRevenuPro: "salarie-employe", montantRevenuPro: 200, revenuRemplacement: "chomage", montantRevenuRemplacement: 351 }] }, category: "B" },
     { title: "family allowance retains priority over unknown income", people: [{ id: "child", relation: "child", receivesFamilyAllowances: true }], payload: { cohabitants: [{ lien: "enfant", allocationsFamiliales: "oui" }] }, category: "A" },
@@ -602,7 +602,7 @@ describe("personal situation change trace", () => {
 
     expect(partial).toMatchObject({ incomeInventoryComplete: false });
     expect(partial?.incomes).toEqual([]);
-    expect(salaried).toMatchObject({ incomeInventoryComplete: true });
+    expect(salaried).toMatchObject({ incomeInventoryComplete: false });
     expect(salaried?.incomes).toEqual([expect.objectContaining({ kind: "professional", amount: 900 })]);
     expect(empty).toMatchObject({ incomeInventoryComplete: true, incomes: [] });
   });

@@ -178,12 +178,10 @@ export function deriveFamilyFactsFromC1(payload: FormPayload, asOf = new Date().
         ...(person.allocationsFamiliales === "oui" || person.allocationsFamiliales === "non" ? { receivesFamilyAllowances: person.allocationsFamiliales === "oui" } : {}),
         ...(person.handicapReconnu === "oui" || person.handicapReconnu === "non" ? { disabilityRelevant: person.handicapReconnu === "oui" } : {}),
         ...(person.lien === "pere" || person.lien === "mere" ? { isAscendant: true } : {}),
-        // C1 hides the replacement axis once a professional income is selected.
-        // That selected income completes the visible inventory even though the
-        // hidden replacement answer is removed. With no professional income,
-        // the explicit replacement answer (including "aucun") is still needed.
-        incomeInventoryComplete: professionalAnswer !== undefined &&
-          (professional || replacementAnswer !== undefined),
+        // An omitted answer is not an explicit absence of income. Keep declared
+        // items, but mark the inventory partial so the common calculation never
+        // turns an unfinished C1 line into a no-income household.
+        incomeInventoryComplete: professionalAnswer !== undefined && replacementAnswer !== undefined,
         incomes,
       }];
     }),

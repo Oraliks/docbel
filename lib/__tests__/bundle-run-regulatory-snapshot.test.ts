@@ -235,6 +235,60 @@ describe("selection at new run creation", () => {
 });
 
 describe("existing C1 enrichment and document lifecycle", () => {
+  const childBareme = { fileId: "synthetic", fileName: "synthetic", validFrom: now,
+    amountsByCategory: { other_unemployment_amount: [
+      { article: "Art 60 al. 3", labelFr: "Enfant revenu professionnel", labelNl: null,
+        unit: "monthly", amount: 200 },
+      { article: "Art 62 al. 1", labelFr: "Enfant revenu de remplacement", labelNl: null,
+        unit: "monthly", amount: 350 },
+    ] } };
+  const childBase = { prenom: spouse.prenom, nom: spouse.nom, dateNaissance: spouse.dateNaissance,
+    lien: "enfant", allocationsFamiliales: "non" };
+
+  it.each(["save", "download"])("keeps conflicting hidden child income unresolved through %s and removes its PDF amount", async (delivery) => {
+    io.activeBareme.mockResolvedValue(childBareme);
+    await start();
+    const officialOnemState = { onemCode: "B / 60B" };
+    current!.regulatoryDecisionSnapshot = { ...current!.regulatoryDecisionSnapshot!, officialOnemState };
+    const child = { ...childBase, typeRevenuPro: "salarie-employe", montantRevenuPro: 200,
+      revenuRemplacement: "chomage", montantRevenuRemplacement: 351 };
+    const payload = { statutFamilial: "cohabite", cohabiteType: "menage-commun", cohabitants: [child] };
+    if (delivery === "download") expect((await validateC1("save", payload)).status).toBe(200);
+    const response = await validateC1(delivery, payload);
+    expect(response.status).toBe(200);
+    const [persisted] = current!.payloads.c1.cohabitants as Array<Record<string, unknown>>;
+    expect(persisted).toMatchObject({ typeRevenuPro: "salarie-employe", montantRevenuPro: 200 });
+    expect(persisted).not.toHaveProperty("revenuRemplacement");
+    expect(persisted).not.toHaveProperty("montantRevenuRemplacement");
+    expect(current!.regulatoryDecisionSnapshot).toMatchObject({ officialOnemState,
+      householdAssessment: { status: "needs_information", expectedCategory: null } });
+    if (delivery === "download") {
+      const pdf = await PDFDocument.load(await response.arrayBuffer());
+      expect(pdf.getForm().getTextField("Personne1_RevenuRemplacement_Montant").getText() ?? "").toBe("");
+      expect(pdf.getForm().getTextField("Personne1_ActiviteProfessionnelle_Montant").getText()).toBe("200");
+    }
+  });
+
+  it.each([
+    ["no income", { typeRevenuPro: "aucun", revenuRemplacement: "aucun" }, "A", "probable"],
+    ["replacement only above ceiling", { typeRevenuPro: "aucun", revenuRemplacement: "chomage",
+      montantRevenuRemplacement: 351 }, "B", "probable"],
+    ["professional only at ceiling", { typeRevenuPro: "salarie-employe", montantRevenuPro: 200,
+      revenuRemplacement: "aucun" }, "A", "probable"],
+    ["professional with unanswered replacement", { typeRevenuPro: "salarie-employe",
+      montantRevenuPro: 200 }, null, "needs_information"],
+    ["unanswered professional axis", { typeRevenuPro: "", revenuRemplacement: "chomage",
+      montantRevenuRemplacement: 351 }, null, "needs_information"],
+  ] as const)("keeps the %s C1 income inventory distinct", async (_name, income, category, status) => {
+    io.activeBareme.mockResolvedValue(childBareme);
+    await start();
+    const response = await validateC1("save", { statutFamilial: "cohabite", cohabiteType: "menage-commun",
+      cohabitants: [{ ...childBase, ...income }] });
+    expect(response.status).toBe(200);
+    expect(current!.regulatoryDecisionSnapshot).toMatchObject({ householdAssessment: {
+      expectedCategory: category, status } });
+  });
+
   it.each(["save", "download"])("drops a hidden replacement amount while retaining a complete salaried inventory through %s", async (delivery) => {
     io.activeBareme.mockResolvedValue({ fileId: "synthetic", fileName: "synthetic", validFrom: now,
       amountsByCategory: { other_unemployment_amount: [
@@ -261,9 +315,13 @@ describe("existing C1 enrichment and document lifecycle", () => {
     const [persisted] = current!.payloads.c1.cohabitants as Array<Record<string, unknown>>;
     expect(persisted).toMatchObject({ typeRevenuPro: "salarie-employe", montantRevenuPro: 900,
       typeContratRevenuPro: "cdi", revenuProfessionnelVariable: "non" });
-    expect(persisted).not.toHaveProperty("revenuRemplacement");
+    expect(persisted).toHaveProperty("revenuRemplacement", "aucun");
     expect(persisted).not.toHaveProperty("montantRevenuRemplacement");
     expect(deriveFamilyFactsFromC1(current!.payloads.c1).people[0].incomeInventoryComplete).toBe(true);
+    expect(current!.regulatoryDecisionSnapshot).toMatchObject({ officialOnemState,
+      householdAssessment: { status: "probable", expectedCategory: "A", operationalArticle: "60A" } });
+    const resumed = current!.payloads.c1;
+    expect((await validateC1("save", resumed)).status).toBe(200);
     expect(current!.regulatoryDecisionSnapshot).toMatchObject({ officialOnemState,
       householdAssessment: { status: "probable", expectedCategory: "A", operationalArticle: "60A" } });
     if (delivery === "download") {

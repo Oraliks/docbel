@@ -591,6 +591,9 @@ describe("personal situation change trace", () => {
 
   it("distinguishes an incomplete income inventory from explicit negative C1 answers", () => {
     const partial = deriveFamilyFactsFromC1({
+      cohabitants: [{ lien: "epoux", typeRevenuPro: "aucun" }],
+    }).people?.[0];
+    const salaried = deriveFamilyFactsFromC1({
       cohabitants: [{ lien: "epoux", typeRevenuPro: "salarie-employe", montantRevenuPro: 900 }],
     }).people?.[0];
     const empty = deriveFamilyFactsFromC1({
@@ -598,16 +601,20 @@ describe("personal situation change trace", () => {
     }).people?.[0];
 
     expect(partial).toMatchObject({ incomeInventoryComplete: false });
-    expect(partial?.incomes).toEqual([expect.objectContaining({ kind: "professional", amount: 900 })]);
+    expect(partial?.incomes).toEqual([]);
+    expect(salaried).toMatchObject({ incomeInventoryComplete: false });
+    expect(salaried?.incomes).toEqual([expect.objectContaining({ kind: "professional", amount: 900 })]);
     expect(empty).toMatchObject({ incomeInventoryComplete: true, incomes: [] });
   });
 
-  it.each([undefined, "", "  "])("keeps unanswered income %s unknown without discarding a declared zero", (answer) => {
-    const payload = { cohabitants: [{ lien: "enfant", typeRevenuPro: "salarie-employe", montantRevenuPro: 0, revenuRemplacement: answer }] };
+  it.each([undefined, "", "  "])("keeps unanswered professional income %s unknown without discarding a declared zero replacement", (answer) => {
+    const payload = { cohabitants: [{ lien: "enfant", typeRevenuPro: answer,
+      revenuRemplacement: "mutuelle", montantRevenuRemplacement: 0 }] };
     const person = deriveFamilyFactsFromC1(payload).people[0];
     expect(person.incomeInventoryComplete).toBe(false);
-    expect(person.incomes).toEqual([expect.objectContaining({ kind: "professional", amount: 0 })]);
-    expect(deriveHouseholdCompositionFromC1(payload).members[0]).toMatchObject({ hasProfessionalIncome: true, professionalIncomeAmount: 0, hasReplacementIncome: undefined });
+    expect(person.incomes).toEqual([expect.objectContaining({ kind: "replacement", amount: 0 })]);
+    expect(deriveHouseholdCompositionFromC1(payload).members[0]).toMatchObject({
+      hasProfessionalIncome: undefined, hasReplacementIncome: true, replacementIncomeAmount: 0 });
   });
 
   it("preserves declared professional and replacement incomes without turning document statuses into facts", () => {

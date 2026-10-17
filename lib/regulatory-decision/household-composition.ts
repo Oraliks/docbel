@@ -285,8 +285,30 @@ export function evaluateFamilySituation(input: {
       if (alimony.admissibleBasis === false) return { composition: "alone", status: "probable", expectedCategory: "N", operationalArticle: "none", incomeAssessment: "not_relevant", monthlyPaymentAssessment: "NEEDS_REVIEW", recommendedAction: "declaration_required", trigger: "c1_household_update", factKeys: [], sourceRuleIds: ["situation_familiale_isole_pension_alimentaire"], explanation: "La pension alimentaire déclarée ne repose pas encore sur un fondement juridique admissible." };
       return { composition: "alone", status: "needs_information", expectedCategory: null, operationalArticle: "needs_review", incomeAssessment: "needs_review", monthlyPaymentAssessment: "NEEDS_REVIEW", recommendedAction: "information_required", trigger: "c1_household_update", factKeys: ["isolated.alimony"], sourceRuleIds: ["situation_familiale_isole_pension_alimentaire"] };
     })() : null;
-    // Pension is terminal: alternating care is not a fallback branch.
-    if (alimonyAssessment) return explainAssessment(alimonyAssessment, input.facts.asOf);
+    // Retain known pension outcomes; incomplete pension facts cannot exclude
+    // an A basis independently established by the existing care assessment.
+    if (alimonyAssessment && alimonyAssessment.status !== "needs_information") {
+      return explainAssessment(alimonyAssessment, input.facts.asOf);
+    }
+    const alimonyNeedsInformation = !!alimony &&
+      (alimony.paid === undefined || alimonyAssessment?.status === "needs_information");
+    const finishIsolatedAssessment = (assessment: HouseholdAssessment): HouseholdAssessment => {
+      if (!alimonyNeedsInformation || !alimony || assessment.expectedCategory === "A") {
+        return explainAssessment(assessment, input.facts.asOf);
+      }
+      return explainAssessment({
+        composition: "alone", status: "needs_information", expectedCategory: null,
+        operationalArticle: "needs_review", incomeAssessment: "needs_review",
+        monthlyPaymentAssessment: "NEEDS_REVIEW", recommendedAction: "information_required",
+        trigger: "c1_household_update",
+        factKeys: [...new Set([...assessment.factKeys, ...(alimonyAssessment?.factKeys ?? []),
+          ...(alimony.paid === undefined ? ["isolated.alimony.paid"] : []),
+          ...(alimony.admissibleBasis === undefined ? ["isolated.alimony.admissibleBasis"] : []),
+          ...(alimony.beneficiary === undefined ? ["isolated.alimony.beneficiary"] : []),
+        ])],
+        sourceRuleIds: [...new Set([...assessment.sourceRuleIds, "situation_familiale_isole_pension_alimentaire"])],
+      }, input.facts.asOf);
+    };
     const care = input.facts.isolated?.alternatingCare;
     if (care) {
       const averageDaysPerWeek = care.averageDaysPerWeek;
@@ -295,7 +317,7 @@ export function evaluateFamilySituation(input: {
         ...(!care.cycle ? ["isolated.alternatingCare.cycle"] : []),
       ];
       if (missingCareFacts.length > 0) {
-        return explainAssessment({ composition: "alone", status: "needs_information", expectedCategory: null, operationalArticle: "needs_review", incomeAssessment: "needs_review", monthlyPaymentAssessment: "NEEDS_REVIEW", recommendedAction: "information_required", trigger: "c1_household_update", factKeys: missingCareFacts, sourceRuleIds: ["situation_familiale_isole_garde_alternee"] }, input.facts.asOf);
+        return finishIsolatedAssessment({ composition: "alone", status: "needs_information", expectedCategory: null, operationalArticle: "needs_review", incomeAssessment: "needs_review", monthlyPaymentAssessment: "NEEDS_REVIEW", recommendedAction: "information_required", trigger: "c1_household_update", factKeys: missingCareFacts, sourceRuleIds: ["situation_familiale_isole_garde_alternee"] });
       }
       if (averageDaysPerWeek !== undefined && averageDaysPerWeek >= 2) {
         const familyAllowances = care.children?.some((child) => child.familyAllowances === true)
@@ -312,16 +334,16 @@ export function evaluateFamilySituation(input: {
           return explainAssessment({ composition: "alone", status: "probable", expectedCategory: "A", operationalArticle: "none", incomeAssessment: "not_relevant", monthlyPaymentAssessment: "A_RATE", recommendedAction: "declaration_required", trigger: "c1_household_update", factKeys: [], sourceRuleIds: ["situation_familiale_isole_garde_alternee"], appliesAllWeek: true }, input.facts.asOf);
         }
         if (familyAllowances === false && childHasRelevantIncome === true) {
-          return explainAssessment({ composition: "children_only", status: "probable", expectedCategory: "B", operationalArticle: "none", incomeAssessment: "relevant", monthlyPaymentAssessment: "B_RATE", recommendedAction: "declaration_required", trigger: "c1_household_update", factKeys: [], sourceRuleIds: ["situation_familiale_isole_garde_alternee"] }, input.facts.asOf);
+          return finishIsolatedAssessment({ composition: "children_only", status: "probable", expectedCategory: "B", operationalArticle: "none", incomeAssessment: "relevant", monthlyPaymentAssessment: "B_RATE", recommendedAction: "declaration_required", trigger: "c1_household_update", factKeys: [], sourceRuleIds: ["situation_familiale_isole_garde_alternee"] });
         }
         const missingChildFacts = [
           ...(familyAllowances === undefined ? ["isolated.alternatingCare.familyAllowances"] : []),
           ...(childHasRelevantIncome === undefined ? ["isolated.alternatingCare.childHasRelevantIncome"] : []),
         ];
-        return explainAssessment({ composition: "alone", status: "needs_information", expectedCategory: null, operationalArticle: "needs_review", incomeAssessment: "needs_review", monthlyPaymentAssessment: "NEEDS_REVIEW", recommendedAction: "information_required", trigger: "c1_household_update", factKeys: missingChildFacts, sourceRuleIds: ["situation_familiale_isole_garde_alternee"] }, input.facts.asOf);
+        return finishIsolatedAssessment({ composition: "alone", status: "needs_information", expectedCategory: null, operationalArticle: "needs_review", incomeAssessment: "needs_review", monthlyPaymentAssessment: "NEEDS_REVIEW", recommendedAction: "information_required", trigger: "c1_household_update", factKeys: missingChildFacts, sourceRuleIds: ["situation_familiale_isole_garde_alternee"] });
       }
     }
-    return explainAssessment({
+    return finishIsolatedAssessment({
       composition: "alone",
       status: "probable",
       expectedCategory: "N",
@@ -332,7 +354,7 @@ export function evaluateFamilySituation(input: {
       trigger: "c1_household_update",
       factKeys: [],
       sourceRuleIds: ["situation_familiale_categories", "situation_familiale_composition_priorities"],
-    }, input.facts.asOf);
+    });
   }
   const assessment = assessHouseholdBranch({
     composition: householdCompositionFromFamilyFacts(input.facts),

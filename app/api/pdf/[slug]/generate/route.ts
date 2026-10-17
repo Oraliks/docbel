@@ -17,7 +17,7 @@ import { applyServerAutoFields } from "@/lib/pdf-forms/auto-fields";
 import { shouldFlattenGeneratedPdf } from "@/lib/pdf-forms/flatten-policy";
 import { buildDiagnosticsSummary, stablePayloadHashOf } from "@/lib/pdf-forms/submission-log";
 import type { FillDiagnostic } from "@/lib/pdf-forms/filler";
-import { PdfFormField, FormPayload, Locale, isLocale } from "@/lib/pdf-forms/types";
+import { PdfFormField, FormPayload, Locale, isFieldValueRecordArray, isLocale } from "@/lib/pdf-forms/types";
 import { ensureWriteAllowed } from "@/lib/admin/readonly-guard";
 import { loadDossierState } from "@/lib/bundles/completion";
 import { stableDocumentKey } from "@/lib/bundles/document-identity";
@@ -27,6 +27,27 @@ import { getActiveBaremeData } from "@/lib/baremes/getActiveBaremeData";
 import { getC1BaremeThresholds } from "@/lib/baremes/c1-thresholds";
 
 const json = { "Content-Type": "application/json; charset=utf-8" };
+
+// C1 shows either the professional or replacement-income selector in a row.
+// Keep an explicitly submitted "aucun" for the assessment and resumed drafts
+// when that selector becomes hidden. A missing or positive hidden answer never
+// becomes a negative declaration. The printable payload remains fully filtered.
+function retainC1ReplacementAbsences(visible: FormPayload, prepared: FormPayload): FormPayload {
+  const visibleRows = visible.cohabitants;
+  const originalRows = prepared.cohabitants;
+  if (!isFieldValueRecordArray(visibleRows) ||
+      !isFieldValueRecordArray(originalRows)) return visible;
+  let changed = false;
+  const rows = visibleRows.map((row, index) => {
+    const original = originalRows[index];
+    if (original?.revenuRemplacement !== "aucun" ||
+        typeof row.typeRevenuPro !== "string" || row.typeRevenuPro === "aucun" ||
+        "revenuRemplacement" in row) return row;
+    changed = true;
+    return { ...row, revenuRemplacement: "aucun" };
+  });
+  return changed ? { ...visible, cohabitants: rows } : visible;
+}
 
 /// POST — génère le PDF rempli. AUCUN stockage (RGPD) :
 ///   - delivery "download" → stream direct du PDF.
@@ -95,7 +116,13 @@ export async function POST(
   // exclut ces champs de son schéma et `z.object` strippe les clés inconnues —
   // les injecter avant `safeParse` (comme avant le 2026-07-11) les faisait
   // disparaître de `result.data`, d'où un PDF sans date ni signature.
-  const validated = applyServerAutoFields(fields, result.data as FormPayload, today);
+  // Filter the printable payload transitively, then retain only the narrow C1
+  // negative-income evidence needed by the family assessment and resume state.
+  const prepared = applyServerAutoFields(fields, result.data as FormPayload, today);
+  const printable = visiblePayload(fields, prepared);
+  const validated = form.slug === "c1-changement-situation"
+    ? retainC1ReplacementAbsences(printable, prepared)
+    : printable;
 
   // Propriété du run (même logique que app/api/documents/bundles/[id]/run/route.ts) :
   // userId de session si connecté, sinon cookie de session anonyme.
@@ -279,14 +306,14 @@ export async function POST(
   // citoyen voyait. Un IBAN saisi puis masque par un passage au cheque
   // circulaire restait dans le payload et s'imprimait a cote de la case
   // « cheque » cochee.
-  const extraStamps = resolveStamps(visiblePayload(fields, validated), getRulesForSlug(form.slug));
+  const extraStamps = resolveStamps(printable, getRulesForSlug(form.slug));
 
   let pdfBytes: Buffer;
   // Hissé hors du `try` : le résumé de complétude part avec le log de
   // livraison, écrit plus bas (opposabilité, S7).
   let diagnostics: FillDiagnostic[] = [];
   try {
-    const filled = await fillForm(source, fields, validated, {
+    const filled = await fillForm(source, fields, printable, {
       flatten: shouldFlattenGeneratedPdf(form.slug),
       technicalSchema,
       extraStamps,

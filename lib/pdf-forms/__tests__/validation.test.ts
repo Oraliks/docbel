@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { buildValidator, isFieldVisible, anchoredRegex, validateFieldFormat, isFieldComplete, countRequirements, validateStepFields, findFirstInvalidStep } from "../validation";
+import { buildValidator, isFieldVisible, visiblePayload, anchoredRegex, validateFieldFormat, isFieldComplete, countRequirements, validateStepFields, findFirstInvalidStep } from "../validation";
 import { PdfFormField } from "../types";
 
 /// Prochain samedi (UTC) à partir d'aujourd'hui — dérivé plutôt que codé en
@@ -15,6 +15,66 @@ function nextSaturdayISO(): string {
 function field(p: Partial<PdfFormField> & Pick<PdfFormField, "id" | "type">): PdfFormField {
   return { pdfFieldName: p.id, required: false, label: { fr: p.id }, ...p } as PdfFormField;
 }
+
+describe("visiblePayload with repeating rows", () => {
+  const schema = [field({ id: "parentAnswer", type: "text", visibleIf: { fieldId: "showParent", op: "equals", value: true } }),
+    field({ id: "people", type: "array", itemFields: [
+      field({ id: "leaf", type: "text", visibleIf: { fieldId: "middle", op: "equals", value: "yes" } }),
+      field({ id: "middle", type: "text", visibleIf: { fieldId: "trigger", op: "equals", value: "yes" } }),
+      field({ id: "trigger", type: "text", visibleIf: { fieldId: "relation", op: "equals", value: "FAC" } }),
+      field({ id: "parentDetail", type: "text", visibleIfParent: { fieldId: "parentAnswer", op: "equals", value: "yes" } }),
+      field({ id: "localDetail", type: "text", visibleIf: { fieldId: "mode", op: "equals", value: "local" } }),
+      field({ id: "systemValue", type: "text", hidden: true, readOnly: true, autoAnswered: true }),
+    ] })];
+  const row = { id: "person-1", relation: "FAC", mode: "local", trigger: "yes", middle: "yes", leaf: "kept",
+    parentDetail: "parent", localDetail: "local", systemValue: "computed", birthDate: "1980-01-01" };
+
+  it("removes a chain from only the changed row without mutating input or dropping visible facts", () => {
+    const input = { showParent: true, parentAnswer: "yes", mode: "root", people: [row, { ...row, id: "person-2", relation: "epoux" }] };
+    const before = structuredClone(input);
+    const filtered = visiblePayload(schema, input);
+    expect(filtered.people).toEqual([row, { id: "person-2", relation: "epoux", mode: "local", parentDetail: "parent",
+      localDetail: "local", systemValue: "computed", birthDate: "1980-01-01" }]);
+    expect(input).toEqual(before);
+    expect(visiblePayload(schema, filtered)).toEqual(filtered);
+    expect(visiblePayload(schema.slice().reverse(), input)).toEqual(filtered);
+  });
+
+  it("evaluates parent conditions against the filtered root and line conditions against each line", () => {
+    const filtered = visiblePayload(schema, { showParent: false, parentAnswer: "yes", mode: "local",
+      people: [row, { ...row, id: "person-2", mode: "root" }] });
+    expect(filtered).not.toHaveProperty("parentAnswer");
+    expect(filtered.people).toEqual([
+      { ...row, parentDetail: undefined }, { ...row, id: "person-2", mode: "root", parentDetail: undefined, localDetail: undefined },
+    ].map((person) => Object.fromEntries(Object.entries(person).filter(([, value]) => value !== undefined))));
+  });
+
+  it("never revives a stale amount through a negative condition when its answer is removed", () => {
+    const itemFields = [
+      field({ id: "revenuRemplacement", type: "select",
+        visibleIf: { fieldId: "typeRevenuPro", op: "equals", value: "aucun" } }),
+      field({ id: "montantRevenuRemplacement", type: "number",
+        visibleIf: { fieldId: "revenuRemplacement", op: "notEquals", value: "aucun" } }),
+    ];
+    const row = { id: "person-1", typeRevenuPro: "salarie-employe",
+      revenuRemplacement: "aucun", montantRevenuRemplacement: 500, montantRevenuPro: 900 };
+    const input = { people: [row, { ...row, id: "person-2", typeRevenuPro: "aucun",
+      revenuRemplacement: "pension" }, { ...row, id: "person-3",
+      revenuRemplacement: "chomage", montantRevenuRemplacement: 351 }] };
+    const expected = { people: [
+      { id: "person-1", typeRevenuPro: "salarie-employe", montantRevenuPro: 900 },
+      { id: "person-2", typeRevenuPro: "aucun", revenuRemplacement: "pension",
+        montantRevenuRemplacement: 500, montantRevenuPro: 900 },
+      { id: "person-3", typeRevenuPro: "salarie-employe", montantRevenuPro: 900 },
+    ] };
+    for (const order of [itemFields, itemFields.slice().reverse()]) {
+      const filtered = visiblePayload([field({ id: "people", type: "array", itemFields: order })], input);
+      expect(filtered).toEqual(expected);
+      expect(visiblePayload([field({ id: "people", type: "array", itemFields: order })], filtered)).toEqual(filtered);
+    }
+    expect(input.people[0]).toEqual(row);
+  });
+});
 
 describe("buildValidator", () => {
   it("NISS : valide OK ; bloque longueur + date impossible ; laisse passer un checksum douteux (#4)", () => {

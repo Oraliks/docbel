@@ -37,6 +37,7 @@ async function run(req: NextRequest) {
     UPDATE "BundleRun" SET
       "payloads" = '{}'::jsonb, "eligibilityAnswers" = '{}'::jsonb,
       "orientationAnswers" = NULL, "completedTemplateIds" = '[]'::jsonb,
+      "regulatoryDecisionSnapshot" = NULL,
       "resumeEmail" = NULL, "userId" = NULL, "sessionId" = NULL,
       "resumeCode" = NULL, "resumeCodeHash" = NULL, "draftPayloads" = NULL,
       "lastFormId" = NULL, "lastStepId" = NULL, "lastActiveField" = NULL,

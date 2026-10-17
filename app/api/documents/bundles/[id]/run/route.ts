@@ -19,6 +19,7 @@ import { apiError, apiOk } from "@/lib/api/response";
 import { parseOrientationAnswers } from "@/lib/dossiers/orientation";
 import { bundleRunHasProgress } from "@/lib/bundles/run-progress";
 import { resolveForceNewAction } from "@/lib/bundles/run-creation";
+import { initializePersonalSituationSnapshot } from "@/lib/regulatory-decision/personal-situation";
 
 const COOKIE_NAME = "beldoc-bundle-session";
 const ORIENTATION_COOKIE = "beldoc-orientation";
@@ -220,9 +221,16 @@ export async function POST(
     return !!found;
   });
 
+  const startedAt = new Date();
+  // Sélection seule, même pour un clone : les réponses C1 l'enrichiront lors de leur validation.
+  const regulatoryDecisionSnapshot = initializePersonalSituationSnapshot(bundle.slug, null, startedAt);
   const run = await prisma.bundleRun.create({
     data: {
       bundleId: id,
+      startedAt,
+      ...(regulatoryDecisionSnapshot
+        ? { regulatoryDecisionSnapshot: regulatoryDecisionSnapshot as unknown as Prisma.InputJsonValue }
+        : {}),
       userId,
       sessionId,
       resumeCodeHash: hashResumeCode(resumeCodePlain),

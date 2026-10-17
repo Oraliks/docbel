@@ -47,6 +47,8 @@ import { C1_FAMILLE } from "../pdf-forms/seed/c1/famille";
 import { buildValidator, isFieldVisible, visiblePayload } from "../pdf-forms/validation";
 import * as filler from "../pdf-forms/filler";
 import { deriveFamilyFactsFromC1 } from "../regulatory-decision/personal-situation-change";
+import { C1_TRIGGERS } from "../pdf-forms/seed/c1/triggers";
+import { collectTriggeredSlugs } from "../pdf-forms/triggers";
 
 const slug = "changement-situation-personnelle";
 const now = new Date("2026-10-17T12:00:00Z");
@@ -230,6 +232,40 @@ describe("selection at new run creation", () => {
 });
 
 describe("existing C1 enrichment and document lifecycle", () => {
+  it.each(["save", "download"])("removes hidden FAC status on a single row changing to spouse through %s", async (delivery) => {
+    await start();
+    const officialOnemState = { onemCode: "B / 60B", recordedAt: "2026-10-01" };
+    current!.regulatoryDecisionSnapshot = { ...current!.regulatoryDecisionSnapshot!, officialOnemState };
+    const fac = { ...spouse, lien: "FAC", c1PartenaireStatus: "premiere-fois" };
+    const other = { ...spouse, prenom: "Second", lien: "FAC", c1PartenaireStatus: "deja-declare" };
+    const payload: FormPayload = { statutFamilial: "cohabite", cohabiteType: "menage-commun", cohabitants: [fac, other] };
+    expect((await validateC1("save", payload)).status).toBe(200);
+    expect(current!.regulatoryDecisionSnapshot).toMatchObject({ personalSituationTrace: {
+      companions: [expect.objectContaining({ formSlug: "c1-partenaire" })] } });
+    const changed = { ...payload, cohabitants: [{ ...fac, lien: "epoux" }, other] };
+    const response = await validateC1(delivery, changed);
+    expect(response.status).toBe(200);
+    const rows = current!.payloads.c1.cohabitants;
+    expect(rows).toMatchObject([{ prenom: spouse.prenom, nom: spouse.nom, dateNaissance: spouse.dateNaissance,
+      lien: "epoux", typeRevenuPro: "aucun", revenuRemplacement: "aucun" }, other]);
+    expect((rows as Array<Record<string, unknown>>)[0]).not.toHaveProperty("c1PartenaireStatus");
+    expect(current!.regulatoryDecisionSnapshot).toMatchObject({ officialOnemState, decidedAt: now.toISOString(),
+      personalSituationTrace: { companions: [] } });
+    expect(collectTriggeredSlugs(C1_TRIGGERS, current!.payloads.c1)).not.toContain("c1-partenaire");
+    if (delivery === "download") {
+      const pdf = await PDFDocument.load(await response.arrayBuffer());
+      expect(pdf.getForm().getCheckBox("C1P_FirstTime").isChecked()).toBe(false);
+      expect(pdf.getForm().getCheckBox("C1P_DejaDéclaré").isChecked()).toBe(true);
+      expect(pdf.getForm().getTextField("Personne1_Prenom").getText()).toBe(spouse.prenom);
+    }
+    // Changing only the remaining FAC to first-time must still activate its own status.
+    expect((await validateC1("save", { ...changed, cohabitants: [{ ...fac, lien: "epoux" },
+      { ...other, c1PartenaireStatus: "premiere-fois" }] })).status).toBe(200);
+    expect(collectTriggeredSlugs(C1_TRIGGERS, current!.payloads.c1)).toContain("c1-partenaire");
+    expect(current!.regulatoryDecisionSnapshot).toMatchObject({ officialOnemState,
+      personalSituationTrace: { companions: [expect.objectContaining({ formSlug: "c1-partenaire" })] } });
+  });
+
   it.each(["save", "download"])("creation then %s enriches through the real C1 helper", async (delivery) => {
     await start();
     const original = current!.regulatoryDecisionSnapshot!;

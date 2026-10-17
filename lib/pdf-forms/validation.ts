@@ -433,9 +433,17 @@ export function isFieldVisible(cond: VisibleIf | undefined, payload: FormPayload
 /// cohabitant laisse les deux valeurs derrière lui ; une passe simple garderait
 /// le jugement, puisque `pensionAlimentaire` vaut encore « oui » dans le payload
 /// brut. On itère donc jusqu'à ce que plus rien ne tombe.
+/// Les sous-champs de tableaux suivent le même point fixe : `visibleIf` lit
+/// leur ligne et `visibleIfParent` lit le formulaire filtré. Les flags de
+/// présentation (`hidden`, `readOnly`, `autoAnswered`) ne retirent rien.
 export function visiblePayload(fields: PdfFormField[], payload: FormPayload): FormPayload {
   const out: FormPayload = { ...payload };
   const gated = fields.filter((f) => f.visibleIf && f.id in out);
+  const arrays = fields.filter((f) => f.type === "array" && f.itemFields?.length);
+  for (const f of arrays) {
+    const rows = out[f.id];
+    if (isFieldValueRecordArray(rows)) out[f.id] = rows.map((row) => ({ ...row }));
+  }
   let removed = true;
   while (removed) {
     removed = false;
@@ -444,6 +452,20 @@ export function visiblePayload(fields: PdfFormField[], payload: FormPayload): Fo
       if (!isFieldVisible(f.visibleIf, out)) {
         delete out[f.id];
         removed = true;
+      }
+    }
+    for (const f of arrays) {
+      const rows = out[f.id];
+      if (!isFieldValueRecordArray(rows)) continue;
+      for (const row of rows) {
+        for (const sub of f.itemFields ?? []) {
+          if (!(sub.id in row)) continue;
+          if (!isFieldVisible(sub.visibleIf, row as FormPayload) ||
+              !isFieldVisible(sub.visibleIfParent, out)) {
+            delete row[sub.id];
+            removed = true;
+          }
+        }
       }
     }
   }

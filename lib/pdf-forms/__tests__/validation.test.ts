@@ -48,6 +48,30 @@ describe("visiblePayload with repeating rows", () => {
       { ...row, parentDetail: undefined }, { ...row, id: "person-2", mode: "root", parentDetail: undefined, localDetail: undefined },
     ].map((person) => Object.fromEntries(Object.entries(person).filter(([, value]) => value !== undefined))));
   });
+
+  it("never revives a stale amount through a negative condition when its answer is removed", () => {
+    const itemFields = [
+      field({ id: "revenuRemplacement", type: "select",
+        visibleIf: { fieldId: "typeRevenuPro", op: "equals", value: "aucun" } }),
+      field({ id: "montantRevenuRemplacement", type: "number",
+        visibleIf: { fieldId: "revenuRemplacement", op: "notEquals", value: "aucun" } }),
+    ];
+    const row = { id: "person-1", typeRevenuPro: "salarie-employe",
+      revenuRemplacement: "aucun", montantRevenuRemplacement: 500, montantRevenuPro: 900 };
+    const input = { people: [row, { ...row, id: "person-2", typeRevenuPro: "aucun",
+      revenuRemplacement: "pension" }] };
+    const expected = { people: [
+      { id: "person-1", typeRevenuPro: "salarie-employe", montantRevenuPro: 900 },
+      { id: "person-2", typeRevenuPro: "aucun", revenuRemplacement: "pension",
+        montantRevenuRemplacement: 500, montantRevenuPro: 900 },
+    ] };
+    for (const order of [itemFields, itemFields.slice().reverse()]) {
+      const filtered = visiblePayload([field({ id: "people", type: "array", itemFields: order })], input);
+      expect(filtered).toEqual(expected);
+      expect(visiblePayload([field({ id: "people", type: "array", itemFields: order })], filtered)).toEqual(filtered);
+    }
+    expect(input.people[0]).toEqual(row);
+  });
 });
 
 describe("buildValidator", () => {

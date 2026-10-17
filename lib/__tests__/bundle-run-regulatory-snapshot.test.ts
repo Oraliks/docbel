@@ -13,11 +13,13 @@ const io = vi.hoisted(() => ({
   createRun: vi.fn(), updateRun: vi.fn(), updateRuns: vi.fn(), deleteRuns: vi.fn(),
   findForm: vi.fn(), findForms: vi.fn(), log: vi.fn(), event: vi.fn(), raw: vi.fn(),
   transaction: vi.fn(), deleteRelated: vi.fn(), unlink: vi.fn(), deleteUser: vi.fn(),
+  activeBareme: vi.fn(),
 }));
 vi.mock("server-only", () => ({}));
 vi.mock("@/lib/auth", () => ({ auth: { api: { getSession: io.session } } }));
 vi.mock("next/headers", () => ({ headers: async () => new Headers(), cookies: io.cookies }));
 vi.mock("@/lib/pdf-forms/storage", () => ({ readSourcePdf: io.source }));
+vi.mock("@/lib/baremes/getActiveBaremeData", () => ({ getActiveBaremeData: io.activeBareme }));
 vi.mock("@/lib/utils/rate-limit", () => ({
   checkRateLimit: async () => ({ ok: true }), getClientIp: () => "127.0.0.1",
 }));
@@ -117,6 +119,7 @@ beforeEach(() => {
   io.findForm.mockResolvedValue(form);
   io.findForms.mockResolvedValue([form]);
   io.source.mockImplementation(() => readFile(join(process.cwd(), "private/pdfs/C1_FR.pdf")));
+  io.activeBareme.mockResolvedValue(null);
   io.deleteRuns.mockResolvedValue({ count: 0 });
   io.raw.mockResolvedValue(1);
   io.transaction.mockImplementation(async (operation) => operation({
@@ -232,6 +235,46 @@ describe("selection at new run creation", () => {
 });
 
 describe("existing C1 enrichment and document lifecycle", () => {
+  it.each(["save", "download"])("drops a hidden replacement amount while retaining a complete salaried inventory through %s", async (delivery) => {
+    io.activeBareme.mockResolvedValue({ fileId: "synthetic", fileName: "synthetic", validFrom: now,
+      amountsByCategory: { other_unemployment_amount: [
+        { article: "Art 60 al. 2", labelFr: "Conjoint revenu professionnel", labelNl: null,
+          unit: "monthly", amount: 1000 },
+      ] } });
+    await start();
+    const officialOnemState = { onemCode: "B / 60B" };
+    current!.regulatoryDecisionSnapshot = { ...current!.regulatoryDecisionSnapshot!, officialOnemState };
+    const replacement = { ...spouse, typeRevenuPro: "aucun", revenuRemplacement: "mutuelle",
+      montantRevenuRemplacement: 500 };
+    const base = { statutFamilial: "cohabite", cohabiteType: "menage-commun",
+      cohabitants: [replacement] };
+    expect((await validateC1("save", base)).status).toBe(200);
+    expect((await validateC1("save", { ...base, cohabitants: [
+      { ...replacement, revenuRemplacement: "aucun" },
+    ] })).status).toBe(200);
+    const salaried = { ...replacement, typeRevenuPro: "salarie-employe",
+      revenuRemplacement: "aucun", montantRevenuPro: 900, typeContratRevenuPro: "cdi",
+      revenuProfessionnelVariable: "non" };
+    const changed = { ...base, cohabitants: [salaried] };
+    const response = await validateC1(delivery, changed);
+    expect(response.status).toBe(200);
+    const [persisted] = current!.payloads.c1.cohabitants as Array<Record<string, unknown>>;
+    expect(persisted).toMatchObject({ typeRevenuPro: "salarie-employe", montantRevenuPro: 900,
+      typeContratRevenuPro: "cdi", revenuProfessionnelVariable: "non" });
+    expect(persisted).not.toHaveProperty("revenuRemplacement");
+    expect(persisted).not.toHaveProperty("montantRevenuRemplacement");
+    expect(deriveFamilyFactsFromC1(current!.payloads.c1).people[0].incomeInventoryComplete).toBe(true);
+    expect(current!.regulatoryDecisionSnapshot).toMatchObject({ officialOnemState,
+      householdAssessment: { status: "probable", expectedCategory: "A", operationalArticle: "60A" } });
+    if (delivery === "download") {
+      const pdf = await PDFDocument.load(await response.arrayBuffer());
+      expect(pdf.getForm().getTextField("Personne1_RevenuRemplacement_Montant").getText() ?? "").toBe("");
+      expect(pdf.getForm().getTextField("Personne1_ActiviteProfessionnelle_Montant").getText()).toBe("900");
+    }
+    expect(deriveFamilyFactsFromC1({ ...base, cohabitants: [{ ...spouse,
+      typeRevenuPro: "aucun", revenuRemplacement: undefined }] }).people[0].incomeInventoryComplete).toBe(false);
+  });
+
   it.each(["save", "download"])("removes hidden FAC status on a single row changing to spouse through %s", async (delivery) => {
     await start();
     const officialOnemState = { onemCode: "B / 60B", recordedAt: "2026-10-01" };

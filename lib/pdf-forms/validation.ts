@@ -447,11 +447,15 @@ export function visiblePayload(fields: PdfFormField[], payload: FormPayload): Fo
   let removed = true;
   while (removed) {
     removed = false;
+    // Evaluate every condition against the same state. Deleting a parent while
+    // scanning could turn a negative condition (`undefined !== "aucun"`) true
+    // and revive a stale descendant, depending on schema order.
+    const rootToRemove: string[] = [];
+    const rowToRemove: Array<{ row: FieldValueRecord; id: string }> = [];
     for (const f of gated) {
       if (!(f.id in out)) continue;
       if (!isFieldVisible(f.visibleIf, out)) {
-        delete out[f.id];
-        removed = true;
+        rootToRemove.push(f.id);
       }
     }
     for (const f of arrays) {
@@ -462,12 +466,14 @@ export function visiblePayload(fields: PdfFormField[], payload: FormPayload): Fo
           if (!(sub.id in row)) continue;
           if (!isFieldVisible(sub.visibleIf, row as FormPayload) ||
               !isFieldVisible(sub.visibleIfParent, out)) {
-            delete row[sub.id];
-            removed = true;
+            rowToRemove.push({ row, id: sub.id });
           }
         }
       }
     }
+    for (const id of rootToRemove) delete out[id];
+    for (const { row, id } of rowToRemove) delete row[id];
+    removed = rootToRemove.length > 0 || rowToRemove.length > 0;
   }
   return out;
 }

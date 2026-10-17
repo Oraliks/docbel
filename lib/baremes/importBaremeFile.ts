@@ -1,8 +1,7 @@
-import { mkdir, writeFile } from 'fs/promises'
-import path from 'path'
 import { z } from 'zod'
 import { Prisma } from '@prisma/client'
 import { prisma, withDbRetry } from '@/lib/prisma'
+import { deleteBlob, saveBlob } from '@/lib/storage/blob-storage'
 import { parseBaremaFile } from '@/lib/baremes-parser'
 import { sha256 } from './hash'
 import { normalizeBaremeData } from './normalizeBaremeData'
@@ -11,7 +10,7 @@ import { verifySheetContracts } from './sheetContracts'
 import { verifyCoverage } from './verifyCoverage'
 import { verifyInvariants } from './verifyInvariants'
 import { extractValidFromFileName } from './normalize'
-import { compareBaremeVersions, detectAnomaliesFromDiff } from './compareBaremeVersions'
+import { comparisonSnapshot, compareBaremeVersions, detectAnomaliesFromDiff } from './compareBaremeVersions'
 import { loadSheetMappingOverrides } from './loadSheetMappings'
 import { logPublicationEvent } from './publicationLog'
 import {
@@ -24,10 +23,6 @@ import {
   type BaremeImportSummary,
 } from './types'
 
-// Stockage PRIVÉ : jamais sous public/ — le fichier source n'est servi que via
-// la route authentifiée /api/baremes/import/[id]/source.
-const PRIVATE_UPLOAD_SUBDIR = path.join('private', 'uploads', 'baremes')
-
 export interface ImportBaremeInput {
   buffer: ArrayBuffer | Buffer
   fileName: string
@@ -36,6 +31,14 @@ export interface ImportBaremeInput {
   /** Active le workflow 4 yeux pour cet import (double approbation requise avant publish). */
   requiresApproval?: boolean
 }
+
+/** Frontière de stockage injectable uniquement pour les recettes serveur. */
+export interface BaremeSourceStorage {
+  save(buffer: Buffer, key: string, isPrivate: boolean): Promise<string>
+  delete(filePath: string): Promise<void>
+}
+
+const productionSourceStorage: BaremeSourceStorage = { save: saveBlob, delete: deleteBlob }
 
 export type ImportBaremeResult =
   | {
@@ -78,12 +81,13 @@ const amountDraftSchema = z.object({
  *  3. Lit le workbook (parseBaremaFile : valeurs calculées uniquement, aucune
  *     macro exécutée, aucune formule évaluée)
  *  4. Dispatche vers les parsers dédiés (normalizeBaremeData) + validation zod
- *  5. Sauvegarde le fichier dans private/ (jamais accessible publiquement)
+ *  5. Conserve le fichier dans le Blob privé durable (jamais accessible publiquement)
  *  6. Insère BaremeFile (status="draft") + BaremeAmount[] (avec trace) en transaction
  *  7. Crée aussi les BareSheet (vue grille brute) pour le diagnostic
  */
 export async function importBaremeFile(
-  input: ImportBaremeInput
+  input: ImportBaremeInput,
+  sourceStorage: BaremeSourceStorage = productionSourceStorage
 ): Promise<ImportBaremeResult> {
   if (!input.fileName.toLowerCase().endsWith('.xlsx')) {
     throw new Error('Seuls les fichiers .xlsx sont acceptés')
@@ -159,26 +163,17 @@ export async function importBaremeFile(
   const invariants = verifyInvariants(validatedAmounts)
   normalized.alerts.push(...invariants.alerts)
 
-  // 4) Sauvegarde disque — répertoire PRIVÉ
-  const uploadDir = path.join(/* turbopackIgnore: true */ process.cwd(), PRIVATE_UPLOAD_SUBDIR)
+  // 4) Conservation durable PRIVÉE AVANT toute écriture DB. Un chemin local
+  // de l'instance n'est pas une provenance exploitable sur les runtimes
+  // serverless : sans Blob privé, l'import échoue explicitement.
   const safeName = sanitizeFileName(input.fileName)
-  const storedName = `${Date.now()}-${safeName}`
-  let storedPath: string | null = null
+  let storedPath: string
   try {
-    await mkdir(uploadDir, { recursive: true })
-    await writeFile(path.join(uploadDir, storedName), buffer)
-    storedPath = path.posix.join('private/uploads/baremes', storedName)
+    storedPath = await sourceStorage.save(buffer, `private/baremes/${fileHash}-${safeName}`, true)
   } catch (err) {
-    // FS read-only (serverless) : l'import continue, le fichier source n'est
-    // simplement pas re-téléchargeable. Les données extraites sont en DB.
-    console.warn('[importBaremeFile] stockage du fichier source impossible:', err)
-    normalized.alerts.push(
-      makeIssue({
-        severity: 'info',
-        kind: 'other',
-        title: 'Fichier source non conservé',
-        reason: 'Le système de fichiers est en lecture seule — le .xlsx source ne sera pas re-téléchargeable depuis l\'admin. Les données extraites sont en base.',
-      })
+    console.error('[importBaremeFile] conservation durable du fichier source impossible:', err)
+    throw new Error(
+      'Conservation durable du fichier source impossible : l’import n’a pas été créé.'
     )
   }
 
@@ -237,46 +232,61 @@ export async function importBaremeFile(
   const AMOUNT_CHUNK = 500
 
   // 6) Insertion DB (transaction atomique, timeout élargi pour la DB Neon distante).
-  const fileId = await withDbRetry(() =>
-    prisma.$transaction(
-      async (tx) => {
-        const created = await tx.baremeFile.create({
-          data: {
-            name: input.fileName,
-            filePath: storedPath ?? '',
-            fileHash,
-            fileSize,
-            effectiveDate: parsed.fileMetadata.effectiveDate,
-            validFrom: normalized.validFrom,
-            multiplicateur: parsed.fileMetadata.multiplicateur,
-            status: 'draft',
-            summary: normalized.summary as unknown as Prisma.InputJsonValue,
-            diagnostics: diagnostics as unknown as Prisma.InputJsonValue,
-            alerts: normalized.alerts as unknown as Prisma.InputJsonValue,
-            requiresApproval: input.requiresApproval ?? false,
-            createdBy: input.createdBy ?? null,
-          },
-          select: { id: true },
-        })
-
-        // Grilles brutes (viewer/diagnostic) : un seul createMany au lieu de 12 inserts.
-        await tx.bareSheet.createMany({
-          data: sheetRows.map((s) => ({ ...s, fileId: created.id })),
-        })
-
-        // Montants normalisés (source des calculateurs) par lots.
-        for (let i = 0; i < amountRows.length; i += AMOUNT_CHUNK) {
-          const chunk = amountRows.slice(i, i + AMOUNT_CHUNK)
-          await tx.baremeAmount.createMany({
-            data: chunk.map((a) => ({ ...a, fileId: created.id })),
+  let fileId: string
+  try {
+    fileId = await withDbRetry(() =>
+      prisma.$transaction(
+        async (tx) => {
+          const created = await tx.baremeFile.create({
+            data: {
+              name: input.fileName,
+              filePath: storedPath,
+              fileHash,
+              fileSize,
+              effectiveDate: parsed.fileMetadata.effectiveDate,
+              validFrom: normalized.validFrom,
+              multiplicateur: parsed.fileMetadata.multiplicateur,
+              status: 'draft',
+              summary: normalized.summary as unknown as Prisma.InputJsonValue,
+              diagnostics: diagnostics as unknown as Prisma.InputJsonValue,
+              alerts: normalized.alerts as unknown as Prisma.InputJsonValue,
+              requiresApproval: input.requiresApproval ?? false,
+              createdBy: input.createdBy ?? null,
+            },
+            select: { id: true },
           })
-        }
 
-        return created.id
-      },
-      { timeout: 30_000, maxWait: 10_000 }
+          // Grilles brutes (viewer/diagnostic) : un seul createMany au lieu de 12 inserts.
+          await tx.bareSheet.createMany({
+            data: sheetRows.map((s) => ({ ...s, fileId: created.id })),
+          })
+
+          // Montants normalisés (source des calculateurs) par lots.
+          for (let i = 0; i < amountRows.length; i += AMOUNT_CHUNK) {
+            const chunk = amountRows.slice(i, i + AMOUNT_CHUNK)
+            await tx.baremeAmount.createMany({
+              data: chunk.map((a) => ({ ...a, fileId: created.id })),
+            })
+          }
+
+          return created.id
+        },
+        { timeout: 30_000, maxWait: 10_000 }
+      )
     )
-  )
+  } catch (err) {
+    // Le Blob vient d'être créé par CET import et n'est référencé par aucune
+    // ligne si la transaction a échoué. Ne jamais supprimer une source existante.
+    try {
+      await sourceStorage.delete(storedPath)
+    } catch (cleanupErr) {
+      console.error(
+        '[importBaremeFile] impossible de nettoyer le Blob orphelin après échec DB:',
+        cleanupErr
+      )
+    }
+    throw err
+  }
 
   const errorCount = normalized.alerts.filter(isBlockingIssue).length
   const warningCount = normalized.alerts.filter(
@@ -318,9 +328,9 @@ export async function importBaremeFile(
     enrichedAlerts = [...anomalies, ...normalized.alerts]
     enrichedSummary = {
       ...normalized.summary,
-      newEntries: diff.countsByType.new_entry,
-      modifiedEntries: diff.countsByType.amount_changed,
-      removedEntries: diff.countsByType.removed_entry,
+      newEntries: diff.countsByType.added,
+      modifiedEntries: diff.countsByType.modified,
+      removedEntries: diff.countsByType.disappeared,
     }
 
     // Mettre à jour la fiche avec les enrichissements
@@ -330,6 +340,7 @@ export async function importBaremeFile(
         data: {
           summary: enrichedSummary as unknown as Prisma.InputJsonValue,
           alerts: enrichedAlerts as unknown as Prisma.InputJsonValue,
+          diagnostics: { ...diagnostics, comparison: comparisonSnapshot(diff) } as unknown as Prisma.InputJsonValue,
         },
       })
     )

@@ -21,7 +21,9 @@ Source de vérité du routage de chrome : `resolveProSegment` + early-returns da
 - **Dossiers dynamiques** : `lib/bundles/conditions.ts` (moteur AND/OR V2),
   `lib/bundles/` (resume-code, eligibility, vocabulary, types/LIFE_EVENT_CATEGORIES).
 - **Calculateurs** (montants légaux) : `lib/calculators/` (IPP, préavis, allocs-fam, km,
-  pécule, indemnité, tarif social ; `_methodology.ts` ~2828 l.). ⚠️ **0 test** aujourd'hui.
+  pécule, indemnité, tarif social ; `_methodology.ts`). Des tests existent dans
+  `lib/calculators/__tests__/` ; vérifier la couverture du calculateur modifié et
+  appliquer la vérification réglementaire avant commit.
 - **Booking / RDV** : `lib/booking/` (crypto-nrn, dedupe, status, partner-guard, notify).
 - **NRN belge** : `lib/booking/crypto-nrn.ts`, `lib/booking/dedupe.ts` (HMAC+AES).
 - **IA chômage / RAG** : `lib/chomage-ia/` (web-search, embeddings, RAG).

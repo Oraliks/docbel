@@ -17,6 +17,11 @@ const eslintConfig = defineConfig([
     // Project-specific ignores:
     ".claude/**",
     ".codex/**",
+    // Worktrees et journaux locaux sont des artefacts de l'environnement : ils
+    // peuvent contenir une copie complète du dépôt et ne font pas partie du
+    // périmètre de lint du checkout courant.
+    ".worktrees/**",
+    ".validation-logs/**",
     "node_modules/**",
     "prisma/migrations/**",
     "components/ui/**", // shadcn auto-generated, edit at your own risk

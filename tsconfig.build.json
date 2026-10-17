@@ -1,4 +1,9 @@
 {
   "extends": "./tsconfig.json",
-  "exclude": ["node_modules", ".next/dev/**"]
+  "exclude": [
+    "node_modules",
+    ".next/dev/**",
+    ".worktrees/**",
+    ".validation-logs/**"
+  ]
 }

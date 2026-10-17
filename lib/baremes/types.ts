@@ -250,6 +250,8 @@ export interface BaremeDiagnostics {
     expectedCount: number
     status: string
   }[]
+  /** Périmètre figé de la comparaison, sans migration des imports historiques. */
+  comparison?: BaremeComparisonSnapshot
 }
 
 // Résumé global de l'import (stocké dans BaremeFile.summary)
@@ -265,40 +267,77 @@ export interface BaremeImportSummary {
   removedEntries?: number
 }
 
-// Diff entre deux versions
-export type BaremeDiffChange =
-  | {
-      type: 'amount_changed'
-      key: string
-      oldValue: number
-      newValue: number
-      category: string
-      sourceSheet?: string
-    }
-  | {
-      type: 'new_entry'
-      key: string
-      newValue: number
-      category: string
-      sourceSheet?: string
-    }
-  | {
-      type: 'removed_entry'
-      key: string
-      oldValue: number
-      category: string
-      sourceSheet?: string
-    }
+export type BaremeComparisonState = 'computed' | 'first_import' | 'reference_unavailable'
+export type BaremeDiffChangeType = 'modified' | 'unchanged' | 'added' | 'disappeared' | 'ambiguous'
+
+export interface BaremeComparableAmount {
+  id: string
+  sourceSheet: string
+  category: string
+  allocationCode: string | null
+  salaryCode: string | null
+  article: string | null
+  labelFr: string | null
+  labelNl: string | null
+  unit: string | null
+  amount: number
+  minDailySalary: number | null
+  maxDailySalary: number | null
+  comparisonKey: string
+  trace: BaremeRowTrace | null
+}
+
+export type BaremeDiffAttribute = 'unit' | 'minDailySalary' | 'maxDailySalary' | 'article' | 'allocationCode' | 'salaryCode'
+
+/** Une ligne avant/après, y compris les valeurs inchangées et les collisions. */
+export interface BaremeDiffChange {
+  type: BaremeDiffChangeType
+  key: string
+  oldValue?: number
+  newValue?: number
+  category: string | null
+  sourceSheet?: string | null
+  old?: BaremeComparableAmount
+  current?: BaremeComparableAmount
+  amountChanged?: boolean
+  changedAttributes?: BaremeDiffAttribute[]
+  warning?: 'ambiguous_identity'
+}
+
+export interface BaremeComparisonFileRef {
+  id: string
+  name: string
+  status: string
+  fileType: string
+  validFrom: string | null
+  dataRevision: string
+}
+
+export interface BaremeComparisonSnapshot {
+  version: 1
+  state: BaremeComparisonState
+  candidate: BaremeComparisonFileRef
+  reference: BaremeComparisonFileRef | null
+  computedAt: string
+}
 
 export interface BaremeDiff {
   changes: BaremeDiffChange[]
   previousFileId: string | null
   newFileId: string
+  state: BaremeComparisonState
+  candidate: BaremeComparisonFileRef
+  reference: BaremeComparisonFileRef | null
+  candidateDataRevision: string
+  referenceDataRevision: string | null
   countsByType: {
-    amount_changed: number
-    new_entry: number
-    removed_entry: number
+    modified: number
+    unchanged: number
+    added: number
+    disappeared: number
+    ambiguous: number
   }
+  countsByChange: { amount: number; attributes: number }
 }
 
 /** Conversion index colonne 0-based → lettres Excel (0→A, 25→Z, 26→AA, …). */

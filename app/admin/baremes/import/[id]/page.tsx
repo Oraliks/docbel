@@ -18,7 +18,9 @@ import {
   ShieldCheck,
 } from 'lucide-react'
 import { toast } from 'sonner'
-import { useTranslations } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
+import { formatDate, formatDateTime, formatNumber } from '@/lib/i18n/format'
+import type { Locale } from '@/i18n/locales'
 import { AmountsPreviewTab } from '@/components/admin/baremes/amounts-preview-tab'
 import {
   IssuesTab,
@@ -36,7 +38,7 @@ interface FileRecord {
   id: string
   name: string
   status: string
-  filePath: string
+  sourceAvailable: boolean
   fileHash: string | null
   fileSize: number | null
   effectiveDate: string
@@ -58,24 +60,10 @@ interface FileRecord {
   alerts: IssueItem[] | null
 }
 
-interface DiffChange {
-  type: 'amount_changed' | 'new_entry' | 'removed_entry'
-  key: string
-  oldValue?: number
-  newValue?: number
-  category: string
-  sourceSheet?: string
-}
-
-interface Diff {
-  changes: DiffChange[]
-  previousFileId: string | null
-  newFileId: string
-  countsByType: {
-    amount_changed: number
-    new_entry: number
-    removed_entry: number
-  }
+interface ComparisonSnapshot {
+  state: 'computed' | 'first_import' | 'reference_unavailable'
+  candidate: { id: string; name: string; validFrom: string | null; dataRevision: string }
+  reference: { id: string; name: string; validFrom: string | null; dataRevision: string } | null
 }
 
 interface Approval {
@@ -109,7 +97,7 @@ interface PreviewData {
   file: FileRecord
   exportAllowed: boolean
   totalAmounts: number
-  diff: Diff | null
+  comparison: ComparisonSnapshot | null
   history?: HistoryEntry[]
   approvals?: Approval[]
   amountsPreview?: PreviewAmount[]
@@ -117,6 +105,7 @@ interface PreviewData {
 
 export default function BaremeImportPreviewPage() {
   const t = useTranslations('admin.baremes')
+  const locale = useLocale()
   const params = useParams<{ id: string }>()
   const id = params?.id
 
@@ -147,22 +136,15 @@ export default function BaremeImportPreviewPage() {
     void load()
   }, [load])
 
-  const publish = async (force = false) => {
+  const publish = async () => {
     if (!id) return
-    if (
-      !confirm(
-        force
-          ? t('previewPublishForceConfirm')
-          : t('previewPublishConfirm')
-      )
-    )
-      return
+    if (!confirm(t('previewPublishConfirm'))) return
     setActing(true)
     try {
       const res = await fetch(`/api/baremes/import/${id}/publish`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ force }),
+        body: JSON.stringify({}),
       })
       const body = await res.json().catch(() => ({}))
       if (!res.ok) throw new Error(body.error ?? t('previewPublishFailed'))
@@ -171,6 +153,22 @@ export default function BaremeImportPreviewPage() {
     } catch (err) {
       const message = err instanceof Error ? err.message : t('error')
       toast.error(message)
+    } finally {
+      setActing(false)
+    }
+  }
+
+  const reviewComparison = async () => {
+    if (!id) return
+    setActing(true)
+    try {
+      const res = await fetch(`/api/baremes/import/${id}/review`, { method: 'POST' })
+      const body = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(body.error ?? t('comparisonReviewFailed'))
+      toast.success(t('comparisonReviewRecorded'))
+      await load()
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : t('error'))
     } finally {
       setActing(false)
     }
@@ -270,7 +268,7 @@ export default function BaremeImportPreviewPage() {
     )
   }
 
-  const { file, exportAllowed, totalAmounts, diff } = data
+  const { file, exportAllowed, totalAmounts, comparison } = data
   const alerts = file.alerts ?? []
   const summary = file.summary
   const isDraftOrPending = file.status === 'draft' || file.status === 'pending_approval'
@@ -364,7 +362,7 @@ export default function BaremeImportPreviewPage() {
               <span className="inline-flex items-center gap-1">
                 <Calendar className="w-3 h-3" />
                 {file.validFrom
-                  ? t('validSince', { date: new Date(file.validFrom).toLocaleDateString('fr-BE') })
+                  ? t('validSince', { date: formatDate(file.validFrom, locale) })
                   : t('rawDate', { date: file.effectiveDate || '—' })}
               </span>
               {file.multiplicateur && <span>×{file.multiplicateur.toFixed(4)}</span>}
@@ -374,13 +372,13 @@ export default function BaremeImportPreviewPage() {
               </span>
               {file.createdBy && <span>{t('byActor', { actor: file.createdBy })}</span>}
               {file.publishedAt && (
-                <span>{t('publishedOn', { date: new Date(file.publishedAt).toLocaleDateString('fr-BE') })}</span>
+                <span>{t('publishedOn', { date: formatDate(file.publishedAt, locale) })}</span>
               )}
             </div>
           </div>
 
           <div className="flex gap-2 shrink-0">
-            {file.filePath && (
+            {file.sourceAvailable ? (
               <Button
                 variant="outline"
                 onClick={() => window.open(`/api/baremes/import/${file.id}/source`, '_blank')}
@@ -389,9 +387,16 @@ export default function BaremeImportPreviewPage() {
               >
                 {t('sourceXlsx')}
               </Button>
+            ) : (
+              <span className="self-center text-xs text-muted-foreground">
+                {t('sourceUnavailable')}
+              </span>
             )}
             {isDraftOrPending && (
               <>
+                <Button variant="outline" onClick={reviewComparison} disabled={acting || !comparison || comparison.state === 'reference_unavailable'} size="sm">
+                  {t('comparisonReview')}
+                </Button>
                 <Button
                   variant="outline"
                   onClick={() => reject()}
@@ -406,12 +411,8 @@ export default function BaremeImportPreviewPage() {
                     <CheckCircle2 className="w-4 h-4 mr-2" />
                     {t('approveWithCount', { count: approvals.length })}
                   </Button>
-                ) : errorCount > 0 ? (
-                  <Button onClick={() => publish(true)} disabled={acting} variant="outline" size="sm">
-                    {t('publishWithErrors', { count: errorCount })}
-                  </Button>
                 ) : (
-                  <Button onClick={() => publish(false)} disabled={acting} size="sm">
+                  <Button onClick={publish} disabled={acting} size="sm">
                     <CheckCircle2 className="w-4 h-4 mr-2" />
                     {t('publish')}
                   </Button>
@@ -445,9 +446,9 @@ export default function BaremeImportPreviewPage() {
             <TabsTrigger value="summary">{t('tabSummary')}</TabsTrigger>
             <TabsTrigger value="diff">
               {t('tabChanges')}
-              {diff && diff.changes.length > 0 && (
+              {comparison && (
                 <Badge variant="secondary" className="ml-2">
-                  {diff.changes.length}
+                  {comparison.state === 'computed' ? '↔' : '!'}
                 </Badge>
               )}
             </TabsTrigger>
@@ -486,7 +487,7 @@ export default function BaremeImportPreviewPage() {
         </TabsContent>
 
         <TabsContent value="diff">
-          <DiffPanel diff={diff} status={file.status} />
+          <DiffPanel fileId={file.id} snapshot={comparison} />
         </TabsContent>
 
         <TabsContent value="allocations">
@@ -536,6 +537,10 @@ function formatBytes(bytes: number): string {
   return `${(bytes / 1024 / 1024).toFixed(2)} Mo`
 }
 
+function formatComparisonNumber(value: number, locale: Locale, maximumFractionDigits = 8): string {
+  return formatNumber(value, locale, { maximumFractionDigits })
+}
+
 function SummaryTab({
   file,
   exportAllowed,
@@ -550,6 +555,7 @@ function SummaryTab({
   warnCount: number
 }) {
   const t = useTranslations('admin.baremes')
+  const locale = useLocale()
   const summary = file.summary
   const dl = (type: string) =>
     window.open(`/api/baremes/import/${file.id}/export?type=${type}`, '_blank')
@@ -590,7 +596,7 @@ function SummaryTab({
               <dt className="text-muted-foreground">{t('summaryPeriod')}</dt>
               <dd className="font-medium">
                 {file.validFrom
-                  ? new Date(file.validFrom).toLocaleDateString('fr-BE')
+                  ? formatDate(file.validFrom, locale)
                   : t('summaryPeriodMissing')}
               </dd>
               <dt className="text-muted-foreground">{t('summarySize')}</dt>
@@ -605,7 +611,7 @@ function SummaryTab({
               )}
               <dt className="text-muted-foreground">{t('summaryImportedBy')}</dt>
               <dd>
-                {file.createdBy ?? '—'} · {new Date(file.createdAt).toLocaleString('fr-BE')}
+                {file.createdBy ?? '—'} · {formatDateTime(file.createdAt, locale)}
               </dd>
             </dl>
           </CardContent>
@@ -659,7 +665,7 @@ function SummaryTab({
         <CardHeader className="pb-2">
           <CardTitle className="text-sm">
             {t('tabSheets')} — {summary?.sheetsParsed ?? 0}/{summary?.sheetsDetected ?? 0}{' '}
-            {t('summarySheetsParsed')} · {totalAmounts.toLocaleString('fr-BE')}{' '}
+            {t('summarySheetsParsed')} · {formatNumber(totalAmounts, locale)}{' '}
             {t('summaryRowsExtracted')}
           </CardTitle>
         </CardHeader>
@@ -707,6 +713,7 @@ function Stat({
   value: number
   tone?: 'default' | 'success' | 'muted' | 'primary' | 'warn' | 'error'
 }) {
+  const locale = useLocale()
   const toneClass: Record<typeof tone, string> = {
     default: 'border-border',
     success: 'border-green-200 bg-green-50 dark:bg-green-950/20',
@@ -717,135 +724,88 @@ function Stat({
   }
   return (
     <div className={`rounded-lg border p-3 ${toneClass[tone]}`}>
-      <div className="text-2xl font-semibold">{value.toLocaleString('fr-BE')}</div>
+      <div className="text-2xl font-semibold">{formatNumber(value, locale)}</div>
       <div className="text-xs text-muted-foreground mt-1">{label}</div>
     </div>
   )
 }
 
-function DiffPanel({ diff, status }: { diff: Diff | null; status: string }) {
-  const t = useTranslations('admin.baremes')
-  if (status !== 'draft') {
-    return (
-      <Card>
-        <CardContent className="py-8 text-center text-muted-foreground text-sm">
-          {t('diffOnlyDrafts')}
-        </CardContent>
-      </Card>
-    )
-  }
-  if (!diff) {
-    return (
-      <Card>
-        <CardContent className="py-8 text-center text-muted-foreground text-sm">
-          {t('diffNone')}
-        </CardContent>
-      </Card>
-    )
-  }
-  if (!diff.previousFileId) {
-    return (
-      <Card>
-        <CardContent className="py-8 text-center text-muted-foreground text-sm">
-          {t('diffNoPrevious')}
-        </CardContent>
-      </Card>
-    )
-  }
-
-  const groups = {
-    amount_changed: diff.changes.filter((c) => c.type === 'amount_changed'),
-    new_entry: diff.changes.filter((c) => c.type === 'new_entry'),
-    removed_entry: diff.changes.filter((c) => c.type === 'removed_entry'),
-  }
-
-  return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-3 gap-3">
-        <Stat label={t('diffModified')} value={groups.amount_changed.length} tone="warn" />
-        <Stat label={t('diffNew')} value={groups.new_entry.length} tone="success" />
-        <Stat label={t('diffRemoved')} value={groups.removed_entry.length} tone="error" />
-      </div>
-
-      {groups.amount_changed.length > 0 && (
-        <DiffSection title={t('diffSectionModified')} items={groups.amount_changed.slice(0, 100)} />
-      )}
-      {groups.new_entry.length > 0 && (
-        <DiffSection title={t('diffSectionNew')} items={groups.new_entry.slice(0, 100)} />
-      )}
-      {groups.removed_entry.length > 0 && (
-        <DiffSection title={t('diffSectionRemoved')} items={groups.removed_entry.slice(0, 100)} />
-      )}
-
-      {diff.changes.length > 300 && (
-        <p className="text-xs text-muted-foreground">
-          {t('diffLimited')}
-        </p>
-      )}
-    </div>
-  )
+type ComparisonRow = {
+  type: 'modified' | 'unchanged' | 'added' | 'disappeared' | 'ambiguous'
+  key: string
+  oldValue?: number
+  newValue?: number
+  category: string | null
+  sourceSheet?: string | null
+  amountChanged?: boolean
+  changedAttributes?: string[]
+  old?: { unit: string | null; trace: { sourceCell?: string; rawValue?: string; normalizedValue?: number | string | null; mappingFile?: string | null; transformTemplate?: string | null } | null }
+  current?: { unit: string | null; trace: { sourceCell?: string; rawValue?: string; normalizedValue?: number | string | null; mappingFile?: string | null; transformTemplate?: string | null } | null }
 }
 
-function DiffSection({ title, items }: { title: string; items: DiffChange[] }) {
+interface ComparisonData {
+  state: 'ready' | 'stale' | 'legacy_unavailable'
+  comparison?: ComparisonSnapshot
+  counts?: Record<ComparisonRow['type'], number>
+  filteredTotal?: number
+  total?: number
+  page?: number
+  pageSize?: number
+  range?: { start: number; end: number }
+  items?: ComparisonRow[]
+  facets?: { sheets: string[]; categories: string[] }
+  error?: string
+}
+
+function DiffPanel({ fileId, snapshot }: { fileId: string; snapshot: ComparisonSnapshot | null }) {
   const t = useTranslations('admin.baremes')
-  return (
-    <Card>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-sm">{title}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="border rounded-md overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-muted/50 text-xs text-muted-foreground">
-              <tr>
-                <th className="text-left px-3 py-2">{t('diffColKey')}</th>
-                <th className="text-left px-3 py-2">{t('diffColSource')}</th>
-                <th className="text-right px-3 py-2">{t('diffColOld')}</th>
-                <th className="text-right px-3 py-2">{t('diffColNew')}</th>
-                <th className="text-right px-3 py-2">Δ</th>
-              </tr>
-            </thead>
-            <tbody>
-              {items.map((c, i) => {
-                const oldV = 'oldValue' in c ? c.oldValue : null
-                const newV = 'newValue' in c ? c.newValue : null
-                const delta = oldV != null && newV != null ? newV - oldV : null
-                const deltaPct =
-                  oldV != null && oldV !== 0 && delta != null ? (delta / oldV) * 100 : null
-                return (
-                  <tr key={i} className="border-t">
-                    <td className="px-3 py-1.5 font-mono text-xs">{c.key}</td>
-                    <td className="px-3 py-1.5 text-xs text-muted-foreground">
-                      {c.sourceSheet ?? c.category}
-                    </td>
-                    <td className="px-3 py-1.5 text-right font-mono">
-                      {oldV != null ? oldV.toFixed(2) : '—'}
-                    </td>
-                    <td className="px-3 py-1.5 text-right font-mono">
-                      {newV != null ? newV.toFixed(2) : '—'}
-                    </td>
-                    <td
-                      className={`px-3 py-1.5 text-right font-mono text-xs ${
-                        delta != null && delta > 0
-                          ? 'text-green-700 dark:text-green-400'
-                          : delta != null && delta < 0
-                            ? 'text-red-700 dark:text-red-400'
-                            : 'text-muted-foreground'
-                      }`}
-                    >
-                      {delta != null
-                        ? `${delta > 0 ? '+' : ''}${delta.toFixed(2)}${deltaPct != null ? ` (${deltaPct > 0 ? '+' : ''}${deltaPct.toFixed(1)}%)` : ''}`
-                        : '—'}
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
-      </CardContent>
-    </Card>
-  )
+  const locale = useLocale()
+  const [state, setState] = useState<ComparisonRow['type'] | ''>('')
+  const [q, setQ] = useState('')
+  const [sheet, setSheet] = useState('')
+  const [category, setCategory] = useState('')
+  const [page, setPage] = useState(1)
+  const [data, setData] = useState<ComparisonData | null>(null)
+  const [loading, setLoading] = useState(false)
+  const loadComparison = useCallback(async () => {
+    setLoading(true)
+    try {
+      const params = new URLSearchParams({ page: String(page), pageSize: '50' })
+      if (state) params.set('state', state)
+      if (q.trim()) params.set('q', q.trim())
+      if (sheet) params.set('sheet', sheet)
+      if (category) params.set('category', category)
+      const response = await fetch(`/api/baremes/import/${fileId}/comparison?${params}`)
+      setData(await response.json())
+    } catch {
+      setData({ state: 'legacy_unavailable', error: t('comparisonLoadError') })
+    } finally {
+      setLoading(false)
+    }
+  }, [category, fileId, page, q, sheet, state, t])
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void loadComparison()
+  }, [loadComparison])
+  const setFilter = (next: ComparisonRow['type'] | '') => { setPage(1); setState(next) }
+  if (!snapshot) return <Card><CardContent className="py-8 text-center text-muted-foreground text-sm">{t('comparisonHistoricUnavailable')}</CardContent></Card>
+  if (snapshot.state === 'first_import') return <Card><CardContent className="py-8 text-center text-muted-foreground text-sm">{t('comparisonFirstImport')}</CardContent></Card>
+  if (snapshot.state === 'reference_unavailable') return <Card><CardContent className="py-8 text-center text-muted-foreground text-sm">{t('comparisonReferenceUnavailable')}</CardContent></Card>
+  const counts = data?.counts
+  return <div className="space-y-4">
+    <Card><CardContent className="py-4 space-y-2 text-sm">
+      <div className="grid gap-2 md:grid-cols-2"><div><strong>{t('comparisonReference')}</strong> {snapshot.reference?.name} · {snapshot.reference?.id}</div><div><strong>{t('comparisonCandidate')}</strong> {snapshot.candidate.name} · {snapshot.candidate.id}</div></div>
+      <p className="text-xs text-muted-foreground">{data?.state === 'stale' ? t('comparisonStale') : t('comparisonScope')}</p>
+    </CardContent></Card>
+    <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
+      {(['modified', 'unchanged', 'added', 'disappeared', 'ambiguous'] as const).map((kind) => <Button key={kind} type="button" variant={state === kind ? 'default' : 'outline'} className="h-auto justify-between py-3" onClick={() => setFilter(state === kind ? '' : kind)}><span>{t(`comparisonState_${kind}`)}</span><span>{counts?.[kind] ?? '—'}</span></Button>)}
+    </div>
+    <div className="flex flex-wrap gap-2"><input className="h-9 min-w-60 flex-1 rounded-md border bg-background px-3 text-sm" value={q} onChange={(event) => { setPage(1); setQ(event.target.value) }} placeholder={t('comparisonSearch')} aria-label={t('comparisonSearch')} /><select className="h-9 rounded-md border bg-background px-2 text-sm" value={sheet} onChange={(event) => { setPage(1); setSheet(event.target.value) }} aria-label={t('comparisonSheet')}><option value="">{t('comparisonAllSheets')}</option>{(data?.facets?.sheets ?? []).map((value) => <option key={value} value={value}>{value}</option>)}</select><select className="h-9 rounded-md border bg-background px-2 text-sm" value={category} onChange={(event) => { setPage(1); setCategory(event.target.value) }} aria-label={t('comparisonCategory')}><option value="">{t('comparisonAllCategories')}</option>{(data?.facets?.categories ?? []).map((value) => <option key={value} value={value}>{value}</option>)}</select><Button type="button" variant="outline" onClick={() => { setPage(1); setQ(''); setState(''); setSheet(''); setCategory('') }}>{t('comparisonReset')}</Button><Button type="button" variant="outline" onClick={() => window.open(`/api/baremes/import/${fileId}/export?type=comparison&scope=all`, '_blank')}>{t('comparisonExportAll')}</Button><Button type="button" variant="outline" disabled={!state && !q.trim() && !sheet && !category} onClick={() => { const params = new URLSearchParams({ type: 'comparison', scope: 'filtered' }); if (state) params.set('state', state); if (q.trim()) params.set('q', q.trim()); window.open(`/api/baremes/import/${fileId}/export?${params}`, '_blank') }}>{t('comparisonExportFiltered')}</Button></div>
+    {data?.error ? <p className="text-sm text-destructive">{data.error}</p> : null}
+    {/* @ts-expect-error JSX tuple inference widens the compact provenance tuple below. */}
+    <div className="border rounded-md overflow-x-auto"><table className="w-full text-sm"><thead className="bg-muted/50 text-xs text-muted-foreground"><tr><th className="text-left px-3 py-2">{t('diffColKey')}</th><th className="text-left px-3 py-2">{t('diffColSource')}</th><th className="text-right px-3 py-2">{t('diffColOld')}</th><th className="text-right px-3 py-2">{t('diffColNew')}</th><th className="text-right px-3 py-2">Δ</th><th className="text-left px-3 py-2">{t('comparisonProvenance')}</th></tr></thead><tbody>{(data?.items ?? []).map((row, index) => { const delta = row.oldValue != null && row.newValue != null ? row.newValue - row.oldValue : null; const relative = row.oldValue && delta != null ? (delta / row.oldValue) * 100 : null; return <tr key={`${row.key}-${index}`} className="border-t"><td className="px-3 py-2"><div className="font-mono text-xs">{row.key}</div><div className="text-xs text-muted-foreground">{t(`comparisonState_${row.type}`)}{row.changedAttributes?.length ? ` · ${row.changedAttributes.join(', ')}` : ''}</div></td><td className="px-3 py-2 text-xs">{row.sourceSheet ?? row.category ?? '—'}</td><td className="px-3 py-2 text-right font-mono">{row.oldValue ?? '—'}{row.old?.unit ? ` ${row.old.unit}` : ''}</td><td className="px-3 py-2 text-right font-mono">{row.newValue ?? '—'}{row.current?.unit ? ` ${row.current.unit}` : ''}</td><td className="px-3 py-2 text-right font-mono text-xs">{delta == null ? '—' : `${delta > 0 ? '+' : ''}${formatComparisonNumber(delta, locale)}${relative == null ? ` (${t('comparisonRelativeUnavailable')})` : ` (${formatComparisonNumber(relative, locale, 6)}%)`}`}</td><td className="px-3 py-2 text-xs"><details><summary className="cursor-pointer underline">{t('comparisonProvenance')}</summary><div className="mt-2 space-y-1">{[['Avant', row.old?.trace], ['Après', row.current?.trace]].map(([label, trace]) => <p key={String(label)}><strong>{label}</strong>: {trace ? `${trace.sourceCell ?? '—'} · ${trace.rawValue ?? '—'} · ${trace.mappingFile ?? trace.transformTemplate ?? '—'}` : t('comparisonProvenanceUnavailable')}</p>)}</div></details></td></tr> })}</tbody></table></div>
+    <div className="flex items-center justify-between text-sm"><span>{loading ? t('loading') : t('comparisonRange', { start: data?.range?.start ?? 0, end: data?.range?.end ?? 0, total: data?.filteredTotal ?? 0, global: data?.total ?? 0 })}</span><div className="flex gap-2"><Button type="button" variant="outline" size="sm" disabled={page <= 1 || loading} onClick={() => setPage((value) => value - 1)}>{t('comparisonPrevious')}</Button><Button type="button" variant="outline" size="sm" disabled={loading || !data || (data.range?.end ?? 0) >= (data.filteredTotal ?? 0)} onClick={() => setPage((value) => value + 1)}>{t('comparisonNext')}</Button></div></div>
+  </div>
 }
 
 function WorkflowPanel({
@@ -860,6 +820,7 @@ function WorkflowPanel({
   status: string
 }) {
   const t = useTranslations('admin.baremes')
+  const locale = useLocale()
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
       <Card>
@@ -901,7 +862,7 @@ function WorkflowPanel({
                       <p className="text-xs text-muted-foreground mt-0.5">« {a.comment} »</p>
                     )}
                     <p className="text-[10px] text-muted-foreground mt-0.5">
-                      {new Date(a.createdAt).toLocaleString('fr-BE')}
+                      {formatDateTime(a.createdAt, locale)}
                     </p>
                   </div>
                 </li>
@@ -938,13 +899,7 @@ function WorkflowPanel({
               {history.map((h) => (
                 <li key={h.id} className="flex items-start gap-3 pb-2 border-b last:border-0">
                   <div className="text-[10px] text-muted-foreground font-mono shrink-0 w-24 pt-0.5">
-                    {new Date(h.createdAt).toLocaleString('fr-BE', {
-                      day: '2-digit',
-                      month: '2-digit',
-                      year: '2-digit',
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })}
+                    {formatDateTime(h.createdAt, locale)}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">

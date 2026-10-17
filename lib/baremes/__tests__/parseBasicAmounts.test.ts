@@ -52,6 +52,26 @@ describe('parseBasicAmounts', () => {
     expect(result.amounts[2].unit).toBe('daily')
   })
 
+  it('reconnaît le préfixe Artikel de l’en-tête ONEM « Artikel KB WLH »', () => {
+    const sheet = makeSheet([
+      ['Basisbedragen'],
+      ['Artikel KB WLH', 'Wat', '', 'Basisbedrag', 'Freq bedrag', 'Zie'],
+      ['28, § 2', 'GMMI vanaf 0', 'D7', '2.189,81', 'maand', 'cao 43'],
+    ])
+
+    const result = parseBasicAmounts(sheet, { validFrom: VALID_FROM })
+
+    expect(result.amounts).toHaveLength(1)
+    expect(result.amounts[0]).toMatchObject({
+      article: '28, § 2',
+      amount: 2189.81,
+      unit: 'monthly',
+      comparisonKey: 'basic_amount:D7',
+    })
+    expect(result.amounts[0].trace?.sourceCell).toBe('D3')
+    expect(result.alerts.some((alert) => alert.kind === 'unknown_column')).toBe(false)
+  })
+
   it('signale une erreur si la colonne Basisbedrag est introuvable', () => {
     const sheet = makeSheet([
       ['Artikel', 'Wat', 'PasDeMontant'],

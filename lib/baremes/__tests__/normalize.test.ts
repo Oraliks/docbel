@@ -113,6 +113,16 @@ describe('extractValidFromFileName', () => {
     expect(d!.getUTCDate()).toBe(1)
   })
 
+  it('extrait le format officiel ONEM baremaYYYYMMDD-new', () => {
+    const d = extractValidFromFileName('barema20260901-new.xlsx')
+    expect(d).not.toBeNull()
+    expect(d!.getUTCFullYear()).toBe(2026)
+    expect(d!.getUTCMonth()).toBe(8) // septembre
+    expect(d!.getUTCDate()).toBe(1)
+    expect(extractValidFromFileName('barema20260901-old.xlsx')).toEqual(d)
+    expect(extractValidFromFileName('barema20261301-new.xlsx')).toBeNull()
+  })
+
   it('extrait la date du format DD-MM-YYYY', () => {
     const d = extractValidFromFileName('bareme-01-04-2026.xlsx')
     expect(d!.getUTCFullYear()).toBe(2026)

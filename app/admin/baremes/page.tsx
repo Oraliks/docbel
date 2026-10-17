@@ -41,7 +41,8 @@ import {
   ArrowUpDown,
 } from 'lucide-react'
 import { toast } from 'sonner'
-import { useTranslations } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
+import { formatDate, formatNumber } from '@/lib/i18n/format'
 import { useConfirm } from '@/components/ui/confirm-dialog'
 
 interface BareFile {
@@ -90,6 +91,7 @@ function StatusBadge({ status }: { status: string }) {
 
 export default function BaremesAdminPage() {
   const t = useTranslations('admin.baremes')
+  const locale = useLocale()
   const confirm = useConfirm()
   const [files, setFiles] = useState<BareFile[]>([])
   const [loading, setLoading] = useState(true)
@@ -98,24 +100,32 @@ export default function BaremesAdminPage() {
   const [sortKey, setSortKey] = useState<SortKey>('uploadedAt')
   const [sortDir, setSortDir] = useState<SortDir>('desc')
   const [acting, setActing] = useState<string | null>(null)
+  const [nextCursor, setNextCursor] = useState<string | null>(null)
+  const [totalFiles, setTotalFiles] = useState(0)
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (append = false, cursor?: string | null) => {
     setLoading(true)
     try {
-      const res = await fetch('/api/baremes')
+      const params = new URLSearchParams({ limit: '50' })
+      if (statusFilter !== 'all') params.set('status', statusFilter)
+      if (search.trim()) params.set('search', search.trim())
+      if (append && cursor) params.set('cursor', cursor)
+      const res = await fetch(`/api/baremes?${params}`)
       const data = await res.json()
-      setFiles(data.files ?? [])
+      setFiles((previous) => (append ? [...previous, ...(data.files ?? [])] : (data.files ?? [])))
+      setNextCursor(data.nextCursor ?? null)
+      setTotalFiles(data.total ?? 0)
     } catch (err) {
       console.error(err)
       toast.error(t('loadError'))
     } finally {
       setLoading(false)
     }
-  }, [t])
+  }, [search, statusFilter, t])
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    void load()
+    void load(false)
   }, [load])
 
   const counts = useMemo(() => {
@@ -128,14 +138,7 @@ export default function BaremesAdminPage() {
   }, [files])
 
   const filtered = useMemo(() => {
-    let result = files
-    if (statusFilter !== 'all') {
-      result = result.filter((f) => f.status === statusFilter)
-    }
-    if (search.trim()) {
-      const q = search.toLowerCase().trim()
-      result = result.filter((f) => f.name.toLowerCase().includes(q))
-    }
+    const result = files
     const sorted = [...result].sort((a, b) => {
       let cmp = 0
       switch (sortKey) {
@@ -162,7 +165,7 @@ export default function BaremesAdminPage() {
       return sortDir === 'asc' ? cmp : -cmp
     })
     return sorted
-  }, [files, search, statusFilter, sortKey, sortDir])
+  }, [files, sortKey, sortDir])
 
   const toggleSort = (key: SortKey) => {
     if (sortKey === key) {
@@ -176,11 +179,9 @@ export default function BaremesAdminPage() {
   const handlePublish = async (id: string, hasErrors: boolean) => {
     const ok = await confirm({
       title: hasErrors ? t('publishConfirmErrorsTitle') : t('publishConfirmTitle'),
-      description: hasErrors
-        ? t('publishConfirmErrorsDescription')
-        : t('publishConfirmDescription'),
-      confirmText: hasErrors ? t('publishAnyway') : t('publish'),
-      destructive: hasErrors,
+      description: hasErrors ? t('publishConfirmErrorsDescription') : t('publishConfirmDescription'),
+      confirmText: t('publish'),
+      destructive: false,
     })
     if (!ok) return
     setActing(id)
@@ -188,7 +189,7 @@ export default function BaremesAdminPage() {
       const res = await fetch(`/api/baremes/import/${id}/publish`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ force: hasErrors }),
+        body: JSON.stringify({}),
       })
       const body = await res.json()
       if (!res.ok) throw new Error(body.error ?? t('failed'))
@@ -264,7 +265,7 @@ export default function BaremesAdminPage() {
           >
             {t('sheetMappings')}
           </Link>
-          <Button variant="outline" onClick={() => load()} disabled={loading}>
+          <Button variant="outline" onClick={() => load(false)} disabled={loading}>
             <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
             {t('refresh')}
           </Button>
@@ -345,7 +346,7 @@ export default function BaremesAdminPage() {
             </Button>
           )}
           <div className="ml-auto text-sm text-muted-foreground">
-            {t('fileCount', { shown: filtered.length, total: files.length })}
+            {t('fileCount', { shown: filtered.length, total: totalFiles })}
           </div>
         </CardContent>
       </Card>
@@ -422,11 +423,11 @@ export default function BaremesAdminPage() {
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground">
                     {f.validFrom
-                      ? new Date(f.validFrom).toLocaleDateString('fr-BE')
+                      ? formatDate(f.validFrom, locale)
                       : f.effectiveDate || '—'}
                   </TableCell>
                   <TableCell className="text-right font-mono">
-                    {f.amountsCount > 0 ? f.amountsCount.toLocaleString('fr-BE') : '—'}
+                    {f.amountsCount > 0 ? formatNumber(f.amountsCount, locale) : '—'}
                   </TableCell>
                   <TableCell>
                     <Badge variant="secondary" className="text-xs">
@@ -437,7 +438,7 @@ export default function BaremesAdminPage() {
                     {f.multiplicateur ? `×${f.multiplicateur.toFixed(4)}` : '—'}
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground">
-                    {new Date(f.uploadedAt).toLocaleDateString('fr-BE')}
+                    {formatDate(f.uploadedAt, locale)}
                   </TableCell>
                   <TableCell className="text-right">
                     <RowActions
@@ -453,6 +454,13 @@ export default function BaremesAdminPage() {
           </TableBody>
         </Table>
       </Card>
+      {nextCursor && (
+        <div className="flex justify-center">
+          <Button variant="outline" onClick={() => load(true, nextCursor)} disabled={loading}>
+            {t('loadMore')}
+          </Button>
+        </div>
+      )}
     </div>
   )
 }
@@ -468,6 +476,7 @@ function KpiCard({
   tone?: 'default' | 'success' | 'muted' | 'primary' | 'warn' | 'info' | 'error'
   onClick?: () => void
 }) {
+  const locale = useLocale()
   const toneClass: Record<typeof tone, string> = {
     default: 'border-border',
     success: 'border-green-300 bg-green-50/40 dark:bg-green-950/10',
@@ -485,7 +494,7 @@ function KpiCard({
         onClick ? 'hover:border-primary cursor-pointer' : ''
       }`}
     >
-      <div className="text-2xl font-semibold tabular-nums">{value.toLocaleString('fr-BE')}</div>
+      <div className="text-2xl font-semibold tabular-nums">{formatNumber(value, locale)}</div>
       <div className="text-xs text-muted-foreground mt-1">{label}</div>
     </Comp>
   )

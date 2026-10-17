@@ -43,7 +43,10 @@ Lecture **quand on touche aux routes / à l'auth / aux données sensibles**.
 - Ne pas lire le rôle depuis la session en cache pour des décisions sensibles → re-requêter
   la DB comme `requireAdminAuth`.
 - Endpoints publics (`contact-messages`, `newsletter`, `geocode`, `auth/[...all]`) → rate-limit.
-  ⚠️ `lib/utils/rate-limit.ts` est **in-memory** (inefficace en serverless) → cible Upstash.
+  `lib/utils/rate-limit.ts` utilise le backend **PostgreSQL partagé et atomique**
+  quand `RATE_LIMIT_BACKEND=postgres` (configuré sur Vercel). Une panne/configuration
+  invalide refuse la requête ; aucun repli mémoire n'est autorisé en production.
+  Le backend mémoire explicite est réservé au développement local et aux tests.
 - Ne pas exposer de PII via une route GET non authentifiée (vérifier `baremes/export`).
 
 ## Convention de réponse API (2026-07)

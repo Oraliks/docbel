@@ -4,8 +4,9 @@
 > 1 ONEM/RVA · 2 Sécurité sociale belge · 3 CAPAC / organismes de paiement / syndicats ·
 > 4 Actiris / Forem / VDAB / ADG · 5 textes légaux (Moniteur belge).
 >
-> Les sources marquées ✅ ont été **consultées et confirmées** le **2026-06-30** (recherche web
-> vérifiée). Celles marquées 🟡 sont **partiellement confirmées** (page en refonte, PDF non
+> La date de consultation et le périmètre sont indiqués **par entrée** : la mise à jour ciblée
+> du 17/10/2026 ne revérifie pas tous les thèmes. ✅ = passages précisés consultés et confirmés.
+> Celles marquées 🟡 sont **partiellement confirmées** (page en refonte, PDF non
 > lisible, 403…) → traiter le contenu associé comme `to_verify`. Les `TODO_SOURCE_OFFICIELLE`
 > restent à compléter.
 
@@ -81,8 +82,17 @@
   revenus, pension alimentaire et allocations familiales
 - Base légale : AR du 25/11/1991, art. 110 (définitions) ; AM du 26/11/1991, art. 59-63
   (cohabitation, revenus) — cf. section « Textes légaux » ci-dessous.
-- Priorité : 1 · Vérifié : 2026-10-08 ✅ · Statut : T147 publiée par l'ONEM, mise à jour le
-  01/09/2026. Les montants indexés restent séparés des règles de qualification.
+- Priorité : 1 · Vérifié : 2026-10-17 ✅ · Périmètre : définitions de cohabitation/partenaire/
+  charge financière, conjoint prioritaire, enfants/parents/tiers, revenus et rubrique CPAS.
+- Version de la page et validité des montants affichés : 01/09/2026 ; **pas** date générale
+  d'entrée en vigueur des définitions. Aucun montant recopié dans le référentiel.
+- Repères : « Qui est considéré comme votre partenaire par l'ONEM ? », « Quelles sont les
+  conditions pour être financièrement à votre charge ? », « Allocations du CPAS ».
+- Portée : lecture pédagogique à articuler avec AR art. 110 et AM art. 59–62. Les questions
+  d'entretien parental et la portée exacte « autre chômeur cohabitant » se vérifient dans
+  l'AM art. 59, pas dans un résumé ou un commentaire RioLex tronqué. La rubrique CPAS distingue
+  le partenaire des autres personnes ; elle ne permet pas de neutraliser son RIS par un
+  changement automatique d'étiquette dans le moteur.
 
 ### ONEM / RioLex — AM du 26/11/1991, article 60
 - Institution : ONEM / RVA
@@ -91,6 +101,9 @@
   temporaire de douze mois, réévaluation à l'échéance
 - Priorité : 1 · Vérifié : 2026-10-08 ✅ · Statut : commentaire ONEM du 19/10/2022 conservé
   par RioLex ; les codes 110&1M et 110&1V sont recoupés avec le Lookup S04/S36.
+- Historique inchangé : commentaire et codes non revérifiés dans le lot du 17/10/2026.
+  Les conditions nouvelles de qualification/revenus sont fondées sur le texte Justel
+  intégral relu (voir ci-dessous), sans faire d'un extrait de commentaire une preuve suffisante.
 
 ---
 
@@ -139,7 +152,33 @@
 
 ### ONEM — C1 (Déclaration de la situation personnelle et familiale)
 - Institution : ONEM / RVA · URL : https://www.onem.be/formulaires-attestations/c1
-- Priorité : 1 · Vérifié : 2026-06-30 ✅ · Statut : confirmé
+- PDF consulté : https://www.onem.be/file/cc73d96153bbd5448a56f19d925d05b1379c7f21/e0f37a5e04a197d7cf9f110148e9cd38354a6477/01-01-2024-c1-fr.pdf
+- Priorité : 1 · Vérifié : 2026-10-17 ✅ · Périmètre : rubrique familiale, lien déclaré et grille
+  des personnes ; version imprimée 01/01/2024. Ne vaut pas qualification ou décision ONEM.
+
+### ONEM — C1, feuille info jointe
+- Institution : ONEM / RVA
+- URL : https://www.onem.be/index.php/file/cc73d96153bbd5448a56f19d925d05b1379c7f21/448471413941904267f10257baa3afef967570c8/01-01-2024_c1-info_fr.pdf
+- Priorité : 1 · Vérifié : 2026-10-17 ✅ · Version imprimée : 01/01/2024.
+- Périmètre : rubriques 9–17, pages 1–2 : vie seule/cohabitation, relation (12), pièce pour la
+  charge financière et déclaration antérieure inchangée (13), allocataire du paiement (14),
+  activité/revenus et travail d'étudiant non compris pour le revenu de l'enfant (15–16),
+  salaire effectif du mois et C110A (16), revenus de remplacement et CPAS à déclarer (17).
+- Limite : la case « allocations familiales » concerne le paiement au demandeur ; elle ne
+  démontre pas à elle seule tout droit pertinent pour l'assimilation ou la branche enfant.
+  Cette source chômage précise la provenance de la règle étudiante existante, sans élargir
+  son effet ni supprimer son ancienne référence crédit-temps conservée dans la fiche.
+
+### ONEM — C1-Partenaire
+- Institution : ONEM / RVA · Page : https://www.onem.be/formulaires-attestations/c1-partenaire
+- PDF consulté : https://www.onem.be/file/cc73d96153bbd5448a56f19d925d05b1379c7f21/e539bf0da5b3112f2ca6a56c55cdd06d8b601cda/formulaire.pdf
+- Priorité : 1 · Vérifié : 2026-10-17 ✅ · Version imprimée : 15/09/2022, page unique.
+- Périmètre : conditions d'usage, définition, entretien parental, questionnaire sur revenus,
+  RIS, autre chômeur et allocations pour le partenaire ; déclaration conjointe, deux signatures,
+  trois exemplaires. L'usage distingue aussi les allocations d'insertion ; ne pas généraliser
+  cette mention en une conclusion de chômage complet.
+- Lecture : le résumé imprimé emploie « autre membre du ménage », tandis que sa case précise
+  un autre chômeur ; le fondement normatif exact est l'AM art. 59, alinéa 3, 3°.
 
 ### ONEM — C4 (Certificat de chômage, employeurs)
 - Institution : ONEM / RVA · URL : https://www.onem.be/employeurs/chomage-complet/formulaire-c4-certificat-de-chomage
@@ -240,6 +279,38 @@
 - Thèmes / articles cités : calcul des journées (art. 7-14) ; cohabitation / revenus (art. 59-63) ;
   contenu et transmission de la carte de contrôle (art. 40-41).
 - Priorité : 5 · Vérifié : 2026-07-01 ✅ · Statut : confirmé (renvoi ejustice ; texte consolidé public).
+
+### Justel — Revérification ciblée AR art. 110 / AM art. 59–63 (17/10/2026)
+- Institution : SPF Justice ; priorité 5, textes normatifs (domaine public).
+- AR : https://www.ejustice.just.fgov.be/eli/arrete/1991/11/25/1991013192/justel
+  — consolidation annoncée au 14/10/2026 ; article 110, §1–§5 relu.
+- AM : https://www.ejustice.just.fgov.be/cgi_loi/change_lg.pl?language=fr&la=F&cn=1991112630&table_name=loi
+  — numac 1992013272, consolidation annoncée au 20/03/2026 ; articles 59–63 lus intégralement.
+  Consultation HTTP directe après échec du lecteur web ; pas de commentaire RioLex substitué.
+- Dernière consultation : 2026-10-17 ✅, limitée aux articles précisés ; les autres articles
+  et les dates de vérification globales antérieures ci-dessus ne sont pas réactualisés.
+- AR art. 110, §1, alinéa 2 : assimilation au conjoint (ménage de fait, charge financière,
+  exclusions de parenté/alliance et enfant ouvrant droit aux allocations pour lui). Alinéa 4 :
+  autres personnes sans revenu pertinent écartées dans le cadre du 2°. §2–§3 : isolé/cohabitant ;
+  §4 : preuve de ménage ; §5 : délégation et disposition distincte sur le montant mensuel.
+  Assimilation issue de l'AR du 04/08/1996, art. 4, effet 01/09/1996 ; preuve du §4 dans la
+  rédaction AR du 10/11/2005, art. 2, effet 01/01/2006.
+- AM art. 59, alinéa 1 : faits de cohabitation ; alinéa 2 : absences assimilées ; alinéa 3,
+  1°–3° : déclaration des deux personnes, aide sociale/entretien parental, autre chômeur
+  cohabitant (AM du 20/06/1997, art. 2, effet 01/07/1997). Alinéa 4 : exclusion mariage **et**
+  cohabitation avec le conjoint (AM du 05/08/1996, art. 1, effet 01/09/1996).
+- AM art. 60, alinéa 2 : déclaration, salaire, plafond et absence de revenu de remplacement,
+  sauf incapacité/chômage temporaire dans l'occupation neutralisée avec cumul sous plafond
+  (AM du 26/06/2008, art. 1, effet 01/07/2008). Alinéa 4 : rémunération réelle et contractuelle
+  pour un mois complet (CDI ou CDD successifs d'au moins un mois au total) ; alinéa 5 : période
+  sous contrat (AM du 27/04/2001, art. 1, effet 01/04/2001). Dernier alinéa : montant journalier
+  après la première période lorsque la charge de famille liée au revenu irrégulier ne se
+  détermine qu'en fin de mois (effet 01/11/2012 ; renvoi modifié au 01/03/2026).
+- AM art. 61–62 : nature et exceptions des revenus de remplacement ; art. 63 : parents
+  d'accueil. Lecture de contexte, sans validation exhaustive des branches pensions ou 60A/60B.
+- Les dates de consolidation, de formulaire et de consultation ne remplacent pas les dates
+  d'effet ci-dessus. Barèmes indexés à rechercher pour la date de situation ; pas de recopie
+  des montants de base non indexés de Justel en tant que seuils actuellement applicables.
 
 ---
 

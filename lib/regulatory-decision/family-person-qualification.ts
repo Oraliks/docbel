@@ -128,32 +128,61 @@ export function qualifyPartnerAssimilation(
     );
   }
 
+  const sameRoofFact = read("sameRoof");
+  const marriage = read("marriedToAnotherPerson");
+  const spouseCohabitation = read("cohabitsWithThatSpouse");
   const required: FactKey[] = [
     "sameRoof", "mainlySharedHousekeeping", "formsDeFactoHousehold",
     "familyRelationship", "childWithFamilyAllowanceEntitlement",
     "dependentOnParentWithMaintenanceDuty", "receivesRisOrEquivalent",
-    "dependentOnAnotherUnemployedCohabitant", "marriedToAnotherPerson",
+    "dependentOnAnotherUnemployedCohabitant",
   ];
-  if (read("marriedToAnotherPerson").value === true) required.push("cohabitsWithThatSpouse");
-  if (read("sameRoof").value === false) required.push("absenceReason");
+  // Marriage AND living with that spouse is the exclusion. Either valid false
+  // independently clears it, so the other answer is not required.
+  if (marriage.value === false) required.push("marriedToAnotherPerson");
+  else if (spouseCohabitation.value === false || marriage.value === true) required.push("cohabitsWithThatSpouse");
+  else required.push("marriedToAnotherPerson");
+  if (sameRoofFact.value === false) required.push("absenceReason");
 
-  const invalid = required.filter((key) => read(key).invalidDate);
+  // A present answer may contradict the facts even when it is not required
+  // to prove eligibility. Validate its date before treating it as absent.
+  const datedFacts = new Set<FactKey>(required);
+  if (marriage.value !== false && input.facts.cohabitsWithThatSpouse?.value !== undefined) {
+    datedFacts.add("cohabitsWithThatSpouse");
+  }
+  if (input.facts.absenceReason?.value !== undefined &&
+    (sameRoofFact.value === false || input.facts.absenceReason.value !== "none")) {
+    datedFacts.add("absenceReason");
+  }
+  const invalid = [...datedFacts].filter((key) => read(key).invalidDate);
   const absenceStart = read("absenceStartedAt");
   const absenceDate = absenceStart.value;
-  if (read("sameRoof").value === false && (absenceStart.invalidDate ||
+  if (sameRoofFact.value !== true && read("absenceReason").value !== undefined &&
+    read("absenceReason").value !== "none" && (absenceStart.invalidDate ||
     (absenceDate !== undefined && (!validDate(absenceDate) || absenceDate > input.asOf)))) {
     invalid.push("absenceStartedAt");
   }
   if (invalid.length) return result("needs_review", invalid, [], ["UNSUPPORTED_DATE"], [COHABITATION]);
 
-  const sameRoof = read("sameRoof").value;
+  const sameRoof = sameRoofFact.value;
   const shared = read("mainlySharedHousekeeping").value;
   const deFacto = read("formsDeFactoHousehold").value;
   const absence = read("absenceReason").value;
+  if (sameRoof !== true && absence !== undefined && absence !== "none") {
+    return result("needs_review", sameRoof === false ? ["sameRoof", "absenceReason"] : ["absenceReason"], [], ["ABSENCE_REQUIRES_REVIEW"], [COHABITATION]);
+  }
+  if (sameRoof === false) {
+    if (absence === undefined) {
+      return result("needs_information", ["sameRoof"], ["absenceReason"], ["MISSING_DECISIVE_FACTS"], [COHABITATION]);
+    }
+    if (deFacto === true) {
+      return result("needs_review", ["sameRoof", "absenceReason", "formsDeFactoHousehold"], [], ["CONTRADICTORY_FACTS"], [COHABITATION, ASSIMILATION]);
+    }
+    return result("excluded_on_facts", ["sameRoof", "absenceReason"], [], ["COHABITATION_NOT_ESTABLISHED"], [COHABITATION]);
+  }
   if ((deFacto === true && shared === false) ||
     (deFacto === false && sameRoof === true && shared === true) ||
-    (sameRoof === true && absence !== undefined && absence !== "none") ||
-    (sameRoof === false && absence === "none" && deFacto === true)) {
+    (sameRoof === true && absence !== undefined && absence !== "none")) {
     return result("needs_review", ["sameRoof", "mainlySharedHousekeeping", "formsDeFactoHousehold"], [], ["CONTRADICTORY_FACTS"], [COHABITATION, ASSIMILATION]);
   }
 
@@ -161,16 +190,6 @@ export function qualifyPartnerAssimilation(
     const keys: FactKey[] = [...(shared === false ? ["mainlySharedHousekeeping" as const] : []), ...(deFacto === false ? ["formsDeFactoHousehold" as const] : [])];
     return result("excluded_on_facts", keys, [], ["NO_DE_FACTO_HOUSEHOLD"], [COHABITATION, ASSIMILATION]);
   }
-  if (sameRoof === false && absence === "none") {
-    return result("excluded_on_facts", ["sameRoof", "absenceReason"], [], ["COHABITATION_NOT_ESTABLISHED"], [COHABITATION]);
-  }
-  if (sameRoof === false && absence !== undefined) {
-    return result("needs_review", ["sameRoof", "absenceReason"], [], ["ABSENCE_REQUIRES_REVIEW"], [COHABITATION]);
-  }
-  if (sameRoof === false && absence === undefined) {
-    return result("needs_information", ["sameRoof"], ["absenceReason"], ["MISSING_DECISIVE_FACTS"], [COHABITATION]);
-  }
-
   const missing = required.filter((key) => read(key).value === undefined);
   if (missing.length) return result("needs_information", [], missing, ["MISSING_DECISIVE_FACTS"], []);
 

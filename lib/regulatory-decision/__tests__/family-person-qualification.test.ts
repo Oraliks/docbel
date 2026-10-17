@@ -75,6 +75,30 @@ describe("partner assimilation — material facts only", () => {
     expect(qualifyPartnerAssimilation(input({ ...complete, cohabitsWithThatSpouse: answer(true) })).status).toBe("eligible_on_facts");
   });
 
+  it.each([
+    [undefined, false, "eligible_on_facts", []],
+    [false, undefined, "eligible_on_facts", []],
+    [true, false, "eligible_on_facts", []],
+    [undefined, true, "needs_information", ["marriedToAnotherPerson"]],
+    [undefined, undefined, "needs_information", ["marriedToAnotherPerson"]],
+    [true, undefined, "needs_information", ["cohabitsWithThatSpouse"]],
+  ] as const)("evaluates both sides of the marital conjunction (%s, %s)", (married, cohabits, status, missing) => {
+    const facts: FamilyPersonQualificationFacts = {
+      ...complete,
+      marriedToAnotherPerson: married === undefined ? undefined : answer(married),
+      cohabitsWithThatSpouse: cohabits === undefined ? undefined : answer(cohabits),
+    };
+    const result = qualifyPartnerAssimilation(input(facts));
+    expect(result.status).toBe(status);
+    expect(result.missingFactKeys).toEqual(missing);
+    if (cohabits === false && married === undefined) {
+      expect(result.decisiveFactKeys).toContain("cohabitsWithThatSpouse");
+      expect(result.decisiveFactKeys).not.toContain("marriedToAnotherPerson");
+      const reversed = input(Object.fromEntries(Object.entries(facts).reverse()) as FamilyPersonQualificationFacts);
+      expect(qualifyPartnerAssimilation(reversed)).toEqual(result);
+    }
+  });
+
   it("asks for absence context before interpreting a missing shared roof", () => {
     const result = qualifyPartnerAssimilation(input({ ...complete, sameRoof: answer(false) }));
     expect(result).toMatchObject({ status: "needs_information", missingFactKeys: ["absenceReason"] });
@@ -89,6 +113,22 @@ describe("partner assimilation — material facts only", () => {
       expect("durationMonths" in result).toBe(false);
     },
   );
+
+  it("reviews a particular absence before a current-housekeeping exclusion", () => {
+    const facts: FamilyPersonQualificationFacts = {
+      ...complete, sameRoof: answer(false), mainlySharedHousekeeping: answer(false),
+      formsDeFactoHousehold: undefined, absenceReason: answer("imprisonment"),
+      absenceStartedAt: answer("2026-09-01"),
+    };
+    expect(qualifyPartnerAssimilation(input(facts))).toMatchObject({
+      status: "needs_review", reasonCodes: ["ABSENCE_REQUIRES_REVIEW"],
+      missingFactKeys: [],
+    });
+    expect(qualifyPartnerAssimilation(input({ ...facts, familyRelationship: answer("kin_or_ally_through_third_degree") })))
+      .toMatchObject({ status: "excluded_on_facts", reasonCodes: ["FAMILY_RELATIONSHIP_EXCLUSION"] });
+    expect(qualifyPartnerAssimilation(input({ ...facts, sameRoof: undefined })))
+      .toMatchObject({ status: "needs_review", reasonCodes: ["ABSENCE_REQUIRES_REVIEW"] });
+  });
 
   it("keeps formalities distinct from the same material result", () => {
     const prepared = qualifyPartnerAssimilation(input(complete, { declarationStatus: "prepared" }));
@@ -110,6 +150,17 @@ describe("partner assimilation — material facts only", () => {
     expect(invalid).toMatchObject({ status: "needs_review", reasonCodes: ["UNSUPPORTED_DATE"] });
     const invalidAbsence = qualifyPartnerAssimilation(input({ ...complete, sameRoof: answer(false), absenceReason: answer("professional"), absenceStartedAt: answer("2026-02-30") }));
     expect(invalidAbsence).toMatchObject({ status: "needs_review", reasonCodes: ["UNSUPPORTED_DATE"] });
+  });
+
+  it("reviews an invalid date on an otherwise contradictory absence", () => {
+    const invalid = qualifyPartnerAssimilation(input({ ...complete, absenceReason: answer("imprisonment", "2026-02-30") }));
+    expect(invalid).toMatchObject({
+      status: "needs_review", reasonCodes: ["UNSUPPORTED_DATE"], decisiveFactKeys: ["absenceReason"],
+    });
+    expect(qualifyPartnerAssimilation(input({ ...complete, absenceReason: answer("imprisonment", "2026-10-01") })))
+      .toMatchObject({ status: "needs_review", reasonCodes: ["CONTRADICTORY_FACTS"] });
+    expect(qualifyPartnerAssimilation(input({ ...complete, familyRelationship: answer("foster_parent"), absenceReason: answer("imprisonment", "2026-02-30") })))
+      .toMatchObject({ status: "excluded_on_facts", reasonCodes: ["FAMILY_RELATIONSHIP_EXCLUSION"] });
   });
 
   it("lets an independent exclusion prevail over an irrelevant contradiction", () => {

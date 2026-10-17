@@ -1,4 +1,5 @@
 import type { Article110VerifierInput, Article110VerifierPerson } from "@/lib/regulatory-decision/article-110-verifier";
+import type { C1BaremeThresholds } from "@/lib/baremes/c1-thresholds";
 
 export type FamilyTreeBranch = "alone" | "partner" | "others";
 export type DeclaredAloneSituation = "none" | "alternating_care" | "alimony";
@@ -23,6 +24,26 @@ export type FamilyTreeState = {
   /** Declared once for the whole children branch when it can change the result. */
   anyChildReceivesFamilyAllowances?: boolean;
 };
+
+/** Production boundary: navigation supplies facts; the shared verifier decides. */
+export function familyTreeStateToArticle110VerifierInput(
+  state: FamilyTreeState,
+  thresholds: C1BaremeThresholds,
+  asOf: string,
+): Article110VerifierInput {
+  return {
+    people: state.people, thresholds, asOf,
+    isAloneExplicit: state.branch === "alone",
+    multiPersonHouseholdSelected: state.branch === "others",
+    anyChildReceivesFamilyAllowances: state.anyChildReceivesFamilyAllowances,
+    isolatedDeclaration: state.declaredAloneSituation === "alternating_care" ? "alternating_care" : undefined,
+    alimony: state.declaredAloneSituation === "alimony" ? { enabled: true, legalConditionEstablished: state.alimonyLegalCondition, beneficiary: "minor_child" } : state.alimony === undefined ? undefined : { enabled: state.alimony, legalConditionEstablished: state.alimonyLegalCondition, beneficiary: state.alimonyBeneficiary, adultChildInNeed: state.alimonyAdultChildInNeed },
+    alternatingCare: state.alternatingCare === undefined ? undefined : { enabled: state.alternatingCare, averageDaysPerWeek: state.alternatingCareDaysPerWeek, cycle: state.alternatingCareCycle, familyAllowances: state.alternatingCareFamilyAllowances, childHasRelevantIncome: state.alternatingCareChildHasRelevantIncome },
+    cohousing: state.cohousing,
+    cohousingAutonomousLiving: state.cohousingAutonomousLiving,
+    cohousingRecognition: state.cohousingRecognition === true ? "recognised_same_address" : state.cohousingRecognition === false ? "pending" : undefined,
+  };
+}
 
 /** UI-only state transitions. Categories and thresholds always remain in the shared verifier. */
 export function chooseFamilyTreeBranch(branch: FamilyTreeBranch): FamilyTreeState {

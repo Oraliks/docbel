@@ -13,8 +13,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import type { C1BaremeThresholds } from "@/lib/baremes/c1-thresholds";
 import { formatDate } from "@/lib/i18n/format";
 import { Article110RandomTestMode } from "@/components/family-situation-tree/article-110-random-test-mode";
-import { evaluateArticle110Verifier, type Article110VerifierInput, type Article110VerifierPerson } from "@/lib/regulatory-decision/article-110-verifier";
-import { article110VerifierInputToFamilyTreeState, changeTreePersonRelation, removeTreePerson, resetFamilyTreeBranch, setDeclaredAloneSituation, updateTreePerson, type FamilyTreeBranch, type FamilyTreeState } from "@/lib/family-situation-tree/interactive-flow";
+import { evaluateArticle110Verifier, type Article110VerifierPerson } from "@/lib/regulatory-decision/article-110-verifier";
+import { article110VerifierInputToFamilyTreeState, familyTreeStateToArticle110VerifierInput, changeTreePersonRelation, removeTreePerson, resetFamilyTreeBranch, setDeclaredAloneSituation, updateTreePerson, type FamilyTreeBranch, type FamilyTreeState } from "@/lib/family-situation-tree/interactive-flow";
 
 type Props = { thresholds: C1BaremeThresholds; initialState?: FamilyTreeState; initialAsOf?: string };
 type T = ReturnType<typeof useTranslations>;
@@ -29,18 +29,7 @@ export function FamilySituationTree({ thresholds, initialState = EMPTY, initialA
   const focusRef = useRef<HTMLHeadingElement>(null);
   const [state, setState] = useState<FamilyTreeState>(initialState);
   const [asOf, setAsOf] = useState(() => initialAsOf ?? new Date().toISOString().slice(0, 10));
-  const input = useMemo<Article110VerifierInput>(() => ({
-    people: state.people, thresholds, asOf,
-    isAloneExplicit: state.branch === "alone",
-    multiPersonHouseholdSelected: state.branch === "others",
-    anyChildReceivesFamilyAllowances: state.anyChildReceivesFamilyAllowances,
-    isolatedDeclaration: state.declaredAloneSituation === "alternating_care" ? "alternating_care" : undefined,
-    alimony: state.declaredAloneSituation === "alimony" ? { enabled: true, legalConditionEstablished: state.alimonyLegalCondition, beneficiary: "minor_child" } : state.alimony === undefined ? undefined : { enabled: state.alimony, legalConditionEstablished: state.alimonyLegalCondition, beneficiary: state.alimonyBeneficiary, adultChildInNeed: state.alimonyAdultChildInNeed },
-    alternatingCare: state.alternatingCare === undefined ? undefined : { enabled: state.alternatingCare, averageDaysPerWeek: state.alternatingCareDaysPerWeek, cycle: state.alternatingCareCycle, familyAllowances: state.alternatingCareFamilyAllowances, childHasRelevantIncome: state.alternatingCareChildHasRelevantIncome },
-    cohousing: state.cohousing,
-    cohousingAutonomousLiving: state.cohousingAutonomousLiving,
-    cohousingRecognition: state.cohousingRecognition === true ? "recognised_same_address" : state.cohousingRecognition === false ? "pending" : undefined,
-  }), [asOf, state, thresholds]);
+  const input = useMemo(() => familyTreeStateToArticle110VerifierInput(state, thresholds, asOf), [asOf, state, thresholds]);
   const result = useMemo(() => evaluateArticle110Verifier(input), [input]);
   const choose = (branch: FamilyTreeBranch) => { setState((current) => resetFamilyTreeBranch(current, branch)); requestAnimationFrame(() => focusRef.current?.focus()); };
 

@@ -129,7 +129,6 @@ function stableC1PersonId(person: Record<string, unknown>, relation: FamilyPerso
 
 /** C1 adapter: maps declarations to the common family contract, never to a category. */
 export function deriveFamilyFactsFromC1(payload: FormPayload, asOf = new Date().toISOString().slice(0, 10)): FamilyFacts {
-  const hasCohabitantInventory = Array.isArray(payload.cohabitants);
   const explicitlyAlone = text(payload, "statutFamilial") === "isole";
   const cohabitants = Array.isArray(payload.cohabitants) ? payload.cohabitants : [];
   return {
@@ -138,11 +137,11 @@ export function deriveFamilyFactsFromC1(payload: FormPayload, asOf = new Date().
       if (!entry || typeof entry !== "object") return [{ id: `c1:row:${index}:unknown`, relation: "unknown" as const, incomeInventoryComplete: false }];
       const person = entry as Record<string, unknown>;
       const relation = RELATION_BY_C1_VALUE[typeof person.lien === "string" ? person.lien : ""] ?? "unknown";
-      const professionalAnswer = typeof person.typeRevenuPro === "string" ? person.typeRevenuPro : undefined;
-      const replacementAnswer = typeof person.revenuRemplacement === "string" ? person.revenuRemplacement : undefined;
+      const professionalAnswer = typeof person.typeRevenuPro === "string" ? person.typeRevenuPro.trim() || undefined : undefined;
+      const replacementAnswer = typeof person.revenuRemplacement === "string" ? person.revenuRemplacement.trim() || undefined : undefined;
       const professional = professionalAnswer !== undefined && professionalAnswer !== "aucun";
       const replacement = replacementAnswer !== undefined && replacementAnswer !== "aucun";
-      const replacementType = typeof person.revenuRemplacement === "string" ? person.revenuRemplacement : undefined;
+      const replacementType = replacementAnswer;
       const incomeAmount = typeof person.montantRevenuPro === "number" ? person.montantRevenuPro : undefined;
       const replacementAmount = typeof person.montantRevenuRemplacement === "number" ? person.montantRevenuRemplacement : undefined;
       const professionalContract: FamilyIncome["contract"] = person.typeContratRevenuPro === "cdi" || person.typeContratRevenuPro === "cdd"
@@ -168,7 +167,8 @@ export function deriveFamilyFactsFromC1(payload: FormPayload, asOf = new Date().
         incomes,
       }];
     }),
-    ...(!hasCohabitantInventory && !explicitlyAlone ? { householdDeclared: true } : {}),
+    // An absent or empty inventory cannot establish an isolated household.
+    ...(!explicitlyAlone ? { householdDeclared: true } : {}),
     ...(explicitlyAlone ? {
       isolated: {
         ...(text(payload, "pensionAlimentaire") === "oui" ? {
@@ -416,6 +416,9 @@ export function withPersonalSituationTrace(
     facts: familyFacts,
     activeChildIncomeNeutralisation: neutralisedChildFactKeys.length > 0,
     spouseProfessionalMonthlyThreshold: thresholds?.spouseProfessionalMonthly,
+    // null means unavailable; undefined would enable the engine's legacy fallback.
+    childProfessionalMonthlyThreshold: thresholds?.childProfessionalMonthly ?? null,
+    childReplacementMonthlyThreshold: thresholds?.childReplacementMonthly ?? null,
     ascendantPensionWithChildMonthlyThreshold: thresholds?.ascendantPensionWithChildMonthly,
     ascendantPensionMonthlyThreshold: thresholds?.ascendantPensionMonthly,
     ascendantDisabledPensionMonthlyThreshold: thresholds?.ascendantDisabledPensionMonthly,

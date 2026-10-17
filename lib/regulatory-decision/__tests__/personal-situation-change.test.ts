@@ -7,7 +7,131 @@ import {
   withPersonalSituationTrace,
 } from "../personal-situation-change";
 import { decidePersonalSituation } from "../personal-situation";
-import { evaluateArticle110Verifier } from "../article-110-verifier";
+import { evaluateArticle110Verifier, type Article110VerifierInput, type Article110VerifierPerson } from "../article-110-verifier";
+import type { C1BaremeThresholds } from "@/lib/baremes/c1-thresholds";
+import type { FormPayload } from "@/lib/pdf-forms/types";
+import { familyTreeStateToArticle110VerifierInput, type FamilyTreeState } from "@/lib/family-situation-tree/interactive-flow";
+
+describe("tree / verifier / C1 adapter parity", () => {
+  const asOf = "2026-10-12";
+  const now = new Date(`${asOf}T00:00:00Z`);
+  // Synthetic, deliberately distinct ceilings detect swapped or omitted roles.
+  const thresholds: C1BaremeThresholds = {
+    spouseProfessionalMonthly: 900,
+    spouseReplacementMonthly: 750,
+    childProfessionalMonthly: 200,
+    childReplacementMonthly: 350,
+    ascendantPensionWithChildMonthly: 600,
+    ascendantPensionMonthly: 500,
+    ascendantDisabledPensionMonthly: 550,
+    source: { fileId: "synthetic", fileName: "synthetic.xlsx", validFrom: new Date("2026-09-01") },
+  };
+  const noIncomeChild: Article110VerifierPerson = { id: "child", relation: "child", receivesFamilyAllowances: false, hasProfessionalIncome: false, hasReplacementIncome: false };
+  const noIncomeC1Child = { lien: "enfant", allocationsFamiliales: "non", typeRevenuPro: "aucun", revenuRemplacement: "aucun" };
+  const officialOnemState = { onemCode: "B / 60B", recordedAt: "2026-10-08" };
+  type Case = {
+    title: string;
+    people: Article110VerifierPerson[];
+    payload: FormPayload;
+    category: "A" | "N" | "B" | null;
+    status?: "probable" | "needs_information";
+    composition?: string;
+    branch?: FamilyTreeState["branch"];
+    thresholds?: C1BaremeThresholds;
+  };
+
+  function checkParity(test: Case) {
+    const usedThresholds = test.thresholds ?? thresholds;
+    const branch = test.branch ?? "others";
+    // Both sources are declared by the fixture; neither adapter builds the other's input.
+    const verifierInput: Article110VerifierInput = {
+      people: test.people, thresholds: usedThresholds, asOf,
+      isAloneExplicit: branch === "alone", multiPersonHouseholdSelected: branch === "others",
+    };
+    const tree = evaluateArticle110Verifier(familyTreeStateToArticle110VerifierInput({ branch, people: test.people }, usedThresholds, asOf));
+    const verifier = evaluateArticle110Verifier(verifierInput);
+    const c1 = withPersonalSituationTrace({
+      ...decidePersonalSituation({ "entry.dossier": { value: "changement-situation-personnelle", origin: "system" } }),
+      officialOnemState,
+    }, test.payload, now, usedThresholds);
+    const expected = {
+      expectedCategory: test.category,
+      status: test.status ?? "probable",
+      composition: test.composition ?? "children_only",
+      evaluatedAt: asOf,
+    };
+    for (const assessment of [tree.householdAssessment, verifier.householdAssessment, c1?.householdAssessment]) {
+      expect(assessment).toMatchObject(expected);
+      expect(assessment).toMatchObject({
+        operationalArticle: verifier.householdAssessment.operationalArticle,
+        monthlyPaymentAssessment: verifier.householdAssessment.monthlyPaymentAssessment,
+        incomeAssessment: verifier.householdAssessment.incomeAssessment,
+        sourceRuleIds: verifier.householdAssessment.sourceRuleIds,
+      });
+    }
+    expect(tree.householdAssessment).toEqual(verifier.householdAssessment);
+    expect(c1?.officialOnemState).toEqual(officialOnemState);
+  }
+
+  for (const [kind, ceiling] of [["professional", 200], ["replacement", 350]] as const) {
+    it.each([[ceiling - 0.01, "A"], [ceiling, "A"], [ceiling + 0.01, "B"], [0, "A"]] as const)(
+      `keeps ${kind} income %s at the correct child ceiling (${ceiling})`, (amount, category) => {
+        checkParity({
+          title: kind, category,
+          people: [{ ...noIncomeChild, ...(kind === "professional"
+            ? { hasProfessionalIncome: true, professionalIncomeType: "employee", professionalIncomeAmount: amount }
+            : { hasReplacementIncome: true, replacementIncomeType: "unemployment", replacementIncomeAmount: amount }) }],
+          payload: { cohabitants: [{ ...noIncomeC1Child, ...(kind === "professional"
+            ? { typeRevenuPro: "salarie-employe", montantRevenuPro: amount }
+            : { revenuRemplacement: "chomage", montantRevenuRemplacement: amount }) }] },
+        });
+      },
+    );
+  }
+
+  it.each<Case>([
+    { title: "explicit aucun remains negative", people: [noIncomeChild], payload: { cohabitants: [noIncomeC1Child] }, category: "A" },
+    { title: "absent income answers remain unknown", people: [{ id: "child", relation: "child", receivesFamilyAllowances: false }], payload: { cohabitants: [{ lien: "enfant", allocationsFamiliales: "non" }] }, category: null, status: "needs_information" },
+    { title: "empty income answers remain unknown", people: [{ id: "child", relation: "child", receivesFamilyAllowances: false }], payload: { cohabitants: [{ ...noIncomeC1Child, typeRevenuPro: "", revenuRemplacement: "  " }] }, category: null, status: "needs_information" },
+    { title: "professional amount absent remains unknown", people: [{ ...noIncomeChild, hasProfessionalIncome: true, professionalIncomeType: "employee" }], payload: { cohabitants: [{ ...noIncomeC1Child, typeRevenuPro: "salarie-employe" }] }, category: null, status: "needs_information" },
+    { title: "replacement amount absent remains unknown", people: [{ ...noIncomeChild, hasReplacementIncome: true, replacementIncomeType: "unemployment" }], payload: { cohabitants: [{ ...noIncomeC1Child, revenuRemplacement: "chomage" }] }, category: null, status: "needs_information" },
+    { title: "professional income retained with replacement unanswered", people: [{ ...noIncomeChild, hasProfessionalIncome: true, professionalIncomeType: "employee", professionalIncomeAmount: 201, hasReplacementIncome: undefined }], payload: { cohabitants: [{ ...noIncomeC1Child, typeRevenuPro: "salarie-employe", montantRevenuPro: 201, revenuRemplacement: "" }] }, category: null, status: "needs_information" },
+    { title: "replacement income retained with professional unanswered", people: [{ ...noIncomeChild, hasProfessionalIncome: undefined, hasReplacementIncome: true, replacementIncomeType: "unemployment", replacementIncomeAmount: 351 }], payload: { cohabitants: [{ ...noIncomeC1Child, typeRevenuPro: "", revenuRemplacement: "chomage", montantRevenuRemplacement: 351 }] }, category: null, status: "needs_information" },
+    { title: "both income kinds keep their own ceiling", people: [{ ...noIncomeChild, hasProfessionalIncome: true, professionalIncomeType: "employee", professionalIncomeAmount: 200, hasReplacementIncome: true, replacementIncomeType: "unemployment", replacementIncomeAmount: 351 }], payload: { cohabitants: [{ ...noIncomeC1Child, typeRevenuPro: "salarie-employe", montantRevenuPro: 200, revenuRemplacement: "chomage", montantRevenuRemplacement: 351 }] }, category: "B" },
+    { title: "family allowance retains priority over unknown income", people: [{ id: "child", relation: "child", receivesFamilyAllowances: true }], payload: { cohabitants: [{ lien: "enfant", allocationsFamiliales: "oui" }] }, category: "A" },
+    { title: "family allowance retains priority over above-ceiling income", people: [{ ...noIncomeChild, receivesFamilyAllowances: true, hasProfessionalIncome: true, professionalIncomeType: "employee", professionalIncomeAmount: 201 }], payload: { cohabitants: [{ ...noIncomeC1Child, allocationsFamiliales: "oui", typeRevenuPro: "salarie-employe", montantRevenuPro: 201 }] }, category: "A" },
+    { title: "absent collective inventory stays unknown", people: [], payload: { statutFamilial: "cohabite" }, category: null, status: "needs_information", composition: "mixed_or_unsupported" },
+    { title: "empty collective inventory stays unknown", people: [], payload: { statutFamilial: "cohabite", cohabitants: [] }, category: null, status: "needs_information", composition: "mixed_or_unsupported" },
+    { title: "empty inventory without isolated declaration stays unknown", people: [], payload: { cohabitants: [] }, category: null, status: "needs_information", composition: "mixed_or_unsupported" },
+    { title: "explicit isolated declaration remains known", people: [], payload: { statutFamilial: "isole", cohabitants: [] }, category: "N", composition: "alone", branch: "alone" },
+    { title: "spouse priority over a child's unknown income", people: [{ id: "spouse", relation: "spouse", hasProfessionalIncome: false, hasReplacementIncome: false }, { id: "child", relation: "child" }], payload: { cohabitants: [{ lien: "epoux", typeRevenuPro: "aucun", revenuRemplacement: "aucun" }, { lien: "enfant" }] }, category: "A", composition: "spouse_or_partner" },
+    { title: "third-party income retains priority over family allowance", people: [{ ...noIncomeChild, receivesFamilyAllowances: true }, { id: "third", relation: "third_party", hasProfessionalIncome: true, hasReplacementIncome: false }], payload: { cohabitants: [{ ...noIncomeC1Child, allocationsFamiliales: "oui" }, { lien: "aucun-lien", typeRevenuPro: "salarie-employe", revenuRemplacement: "aucun" }] }, category: "B", composition: "children_and_third_parties" },
+    { title: "relative pension uses the relative ceiling", people: [{ id: "parent", relation: "relative", isAscendant: true, hasProfessionalIncome: false, hasReplacementIncome: true, replacementIncomeType: "pension", replacementIncomeAmount: 500 }], payload: { cohabitants: [{ lien: "pere", typeRevenuPro: "aucun", revenuRemplacement: "pension", montantRevenuRemplacement: 500, montantPensionNature: "brut" }] }, category: "A", composition: "relatives_only" },
+  ])("$title", checkParity);
+
+  it.each(["professional", "replacement"] as const)("keeps a missing %s ceiling unknown", (kind) => {
+    checkParity({
+      title: kind, category: null, status: "needs_information",
+      thresholds: { ...thresholds, ...(kind === "professional" ? { childProfessionalMonthly: null } : { childReplacementMonthly: null }) },
+      people: [{ ...noIncomeChild, ...(kind === "professional"
+        ? { hasProfessionalIncome: true, professionalIncomeType: "employee", professionalIncomeAmount: 100 }
+        : { hasReplacementIncome: true, replacementIncomeType: "unemployment", replacementIncomeAmount: 100 }) }],
+      payload: { cohabitants: [{ ...noIncomeC1Child, ...(kind === "professional"
+        ? { typeRevenuPro: "salarie-employe", montantRevenuPro: 100 }
+        : { revenuRemplacement: "chomage", montantRevenuRemplacement: 100 }) }] },
+    });
+  });
+
+  it("does not invoke legacy child thresholds when the C1 threshold bundle is absent", () => {
+    const decision = decidePersonalSituation({ "entry.dossier": { value: "changement-situation-personnelle", origin: "system" } });
+    for (const row of [
+      { ...noIncomeC1Child, typeRevenuPro: "salarie-employe", montantRevenuPro: 100 },
+      { ...noIncomeC1Child, revenuRemplacement: "chomage", montantRevenuRemplacement: 100 },
+    ]) {
+      expect(withPersonalSituationTrace(decision, { cohabitants: [row] }, now)?.householdAssessment).toMatchObject({ expectedCategory: null, status: "needs_information" });
+    }
+  });
+});
 
 describe("personal situation change trace", () => {
   it("keeps an absent C1 household inventory unknown instead of treating it as an isolated declaration", () => {
@@ -37,6 +161,14 @@ describe("personal situation change trace", () => {
     expect(partial).toMatchObject({ incomeInventoryComplete: false });
     expect(partial?.incomes).toEqual([expect.objectContaining({ kind: "professional", amount: 900 })]);
     expect(empty).toMatchObject({ incomeInventoryComplete: true, incomes: [] });
+  });
+
+  it.each([undefined, "", "  "])("keeps unanswered income %s unknown without discarding a declared zero", (answer) => {
+    const payload = { cohabitants: [{ lien: "enfant", typeRevenuPro: "salarie-employe", montantRevenuPro: 0, revenuRemplacement: answer }] };
+    const person = deriveFamilyFactsFromC1(payload).people[0];
+    expect(person.incomeInventoryComplete).toBe(false);
+    expect(person.incomes).toEqual([expect.objectContaining({ kind: "professional", amount: 0 })]);
+    expect(deriveHouseholdCompositionFromC1(payload).members[0]).toMatchObject({ hasProfessionalIncome: true, professionalIncomeAmount: 0, hasReplacementIncome: undefined });
   });
 
   it("preserves declared professional and replacement incomes without turning document statuses into facts", () => {

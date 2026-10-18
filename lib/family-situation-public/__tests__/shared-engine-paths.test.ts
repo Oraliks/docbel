@@ -18,6 +18,7 @@ describe("public family-situation paths use the shared Article 110 engine", () =
       { id: "parent", relation: "relative", isAscendant: true, hasProfessionalIncome: false, hasReplacementIncome: false },
     ] })
     expect(result.category).toBe("B")
+    expect(result.reason).toBe("Les faits déclarés correspondent à la situation théorique retenue pour ce ménage avec enfants et parents ou famille, sans allocations familiales déclarées.")
   })
 
   it("does not turn an unknown partner income into a category", () => {
@@ -78,11 +79,13 @@ describe("public family-situation paths use the shared Article 110 engine", () =
   it("only displays categories for the explicitly complete public paths", () => {
     const alone: Person[] = []
     const parent: Person[] = [{ id: "parent", name: "Paul", relation: "parent" }]
+    const child: Person[] = [{ id: "child", name: "Léa", relation: "child" }]
     const childAndParent: Person[] = [{ id: "child", name: "Léa", relation: "child" }, ...parent]
     const show = (input: Parameters<typeof canShowFamilySituationCategory>[0]) => canShowFamilySituationCategory(input)
     expect(show({ intent: "current", livesAlone: true, people: alone, answers: { aloneSituation: "none" }, unknownDetails: [], particular: [], hasDeclaredAlimonyOrientation: false })).toBe(true)
     expect(show({ intent: "current", livesAlone: true, people: alone, answers: { aloneSituation: "alimony", alimonyDocument: "judgment" }, unknownDetails: [], particular: [], hasDeclaredAlimonyOrientation: true })).toBe(true)
     expect(show({ intent: "current", livesAlone: true, people: alone, answers: { aloneSituation: "alimony", alimonyDocument: "pending" }, unknownDetails: [], particular: [], hasDeclaredAlimonyOrientation: true })).toBe(true)
+    expect(show({ intent: "current", livesAlone: false, people: child, answers: { childrenAllowance: "yes" }, unknownDetails: [], particular: [], hasDeclaredAlimonyOrientation: false })).toBe(true)
     expect(show({ intent: "current", livesAlone: false, people: childAndParent, answers: { childrenAllowance: "no", relativeIncome: "no" }, unknownDetails: [], particular: [], hasDeclaredAlimonyOrientation: false })).toBe(true)
     for (const input of [
       { intent: "unknown" as const, livesAlone: false, people: alone, answers: {}, unknownDetails: [], particular: [], hasDeclaredAlimonyOrientation: false },

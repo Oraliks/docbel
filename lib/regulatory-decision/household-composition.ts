@@ -691,7 +691,7 @@ export function assessHouseholdBranch(input: {
     if (composition.kind === "children_and_relatives" && !composition.members.some(
       (member) => member.relation === "child" && member.receivesFamilyAllowances === true,
     )) {
-      return { ...relativeBase, status: "probable", expectedCategory: "B", operationalArticle: "none", incomeAssessment: "relevant", monthlyPaymentAssessment: "B_RATE", recommendedAction: action(officialOnemCode, "declaration_required") };
+      return { ...relativeBase, status: "probable", expectedCategory: "B", operationalArticle: "none", incomeAssessment: "relevant", monthlyPaymentAssessment: "B_RATE", recommendedAction: action(officialOnemCode, "declaration_required"), explanation: "Les faits déclarés correspondent à la situation théorique retenue pour ce ménage avec enfants et parents ou famille, sans allocations familiales déclarées." };
     }
     if (relatives.some((member) => member.hasProfessionalIncome === true)) return { ...relativeBase, status: "probable", expectedCategory: "B", operationalArticle: "none", incomeAssessment: "relevant", monthlyPaymentAssessment: "B_RATE", recommendedAction: action(officialOnemCode, "declaration_required") };
     const relevantNonPension = relatives.some((member) => hasRelevantReplacementIncome(member) === true && member.replacementIncomeType !== "pension");

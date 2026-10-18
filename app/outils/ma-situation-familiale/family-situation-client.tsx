@@ -59,9 +59,13 @@ export function canShowFamilySituationCategory({ intent, livesAlone, people, ans
     && !people.some((person) => person.relation === "spouse" || person.relation === "partner" || person.relation === "unrelated")
     && answers.childrenAllowance === "no"
     && answers.relativeIncome === "no"
+  const childrenOnlyWithFamilyAllowances = people.some((person) => person.relation === "child")
+    && people.every((person) => person.relation === "child")
+    && answers.childrenAllowance === "yes"
   return intent !== "unknown" && unknownDetails.length === 0 && particular.length === 0 && (
     hasDeclaredAlimonyOrientation
     || (livesAlone && answers.aloneSituation === "none")
+    || childrenOnlyWithFamilyAllowances
     || ownerApprovedCohabitant
   )
 }

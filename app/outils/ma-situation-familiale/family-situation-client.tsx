@@ -450,9 +450,10 @@ const partnerQualificationQuestions = [
   "partnerChildAllowance", "partnerParentMaintenance", "partnerRis", "partnerOtherUnemployed", "partnerMarriedAnother",
 ] as const
 const partnerQualificationAnswerKeys = [...partnerQualificationQuestions, "partnerSpouseSameRoof"] as const
+type PartnerQualificationAnswerKey = typeof partnerQualificationAnswerKeys[number]
 
 function PartnerQualificationStep({ t, answers, onChoose, onContinue }: { t: Translation; answers: Answers; onChoose: (key: keyof Answers, value: string) => void; onContinue: () => void }) {
-  const questionKeys = answers.partnerMarriedAnother === "yes" ? [...partnerQualificationQuestions, "partnerSpouseSameRoof"] : partnerQualificationQuestions
+  const questionKeys: readonly PartnerQualificationAnswerKey[] = answers.partnerMarriedAnother === "yes" ? [...partnerQualificationQuestions, "partnerSpouseSameRoof"] : partnerQualificationQuestions
   const complete = questionKeys.every((key) => answers[key] !== undefined)
   return <div><h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">{t("partnerQualificationQuestion")}</h2><p className="mt-3 max-w-2xl text-sm leading-relaxed text-[color:var(--glass-ink-soft)]">{t("partnerQualificationBody")}</p><div className="mt-6 grid gap-4">{questionKeys.map((key) => <fieldset key={key} className="glass-surface rounded-2xl p-4"><legend className="px-1 text-base font-semibold">{t(`partnerQualification.${key}` as never)}</legend><div className="mt-3 flex flex-wrap gap-2">{["yes", "no", "unknown"].map((value) => <Button key={value} type="button" variant={answers[key] === value ? "default" : "outline"} aria-pressed={answers[key] === value} onClick={() => onChoose(key, value)}>{t(value as never)}</Button>)}</div></fieldset>)}</div><ContinueButton t={t} onClick={onContinue} disabled={!complete} /></div>
 }

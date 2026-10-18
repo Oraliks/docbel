@@ -7,6 +7,7 @@ import {
   type FamilyIncome,
   type FamilyPerson,
   type HouseholdRelation,
+  type PartnerQualificationData,
 } from "./household-composition";
 
 /** Facts entered in the partner checker. This module deliberately has no document state. */
@@ -15,6 +16,8 @@ export type Article110VerifierPerson = {
   relation: HouseholdRelation;
   label?: string;
   partnerEstablished?: boolean;
+  /** Material facts required to assess a declared, non-married partner. */
+  partnerQualification?: PartnerQualificationData;
   isAscendant?: boolean;
   /** Declared SPF loss-of-autonomy recognition, used for the ascendant pension ceiling. */
   disabilityRelevant?: boolean;
@@ -41,6 +44,8 @@ export type Article110VerifierPerson = {
 export type Article110VerifierInput = {
   people: Article110VerifierPerson[];
   thresholds: C1BaremeThresholds;
+  /** Public partner journeys can require material assimilation facts without changing legacy consumers. */
+  partnerQualificationPolicy?: "require_facts";
   asOf?: string;
   isAloneExplicit?: boolean;
   officialOnemCode?: string;
@@ -96,6 +101,7 @@ export function article110VerifierFacts(input: Article110VerifierInput): FamilyF
     householdDeclared: input.isAloneExplicit ? undefined : input.multiPersonHouseholdSelected,
     people: input.isAloneExplicit ? [] : input.people.map((person): FamilyPerson => ({
       id: person.id, relation: person.relation, partnerEstablished: person.partnerEstablished,
+      partnerQualification: person.partnerQualification,
       isAscendant: person.isAscendant, disabilityRelevant: person.disabilityRelevant,
       receivesFamilyAllowances: person.id === firstChildId && input.anyChildReceivesFamilyAllowances !== undefined
         ? input.anyChildReceivesFamilyAllowances
@@ -150,6 +156,7 @@ export function evaluateArticle110Verifier(input: Article110VerifierInput) {
     ascendantPensionMonthlyThreshold: input.thresholds.ascendantPensionMonthly,
     ascendantDisabledPensionMonthlyThreshold: input.thresholds.ascendantDisabledPensionMonthly,
     baremeSource: input.thresholds.source,
+    partnerQualificationPolicy: input.partnerQualificationPolicy,
   });
   const missingFacts = (assessment.missingFacts ?? []).map((factKey) => ({ factKey, label: labelForFact(factKey) }));
   const needsInformation = assessment.status === "needs_information";

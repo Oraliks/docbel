@@ -21,6 +21,54 @@ describe("public family-situation paths use the shared Article 110 engine", () =
     expect(result.reason).toBe("Les faits déclarés correspondent à la situation théorique retenue pour ce ménage avec enfants et parents ou famille, sans allocations familiales déclarées.")
   })
 
+  it("returns A for the two approved no-income paths exposed by the public journey", () => {
+    const childOnly = buildFamilySituationEvaluationInput({
+      thresholds, date: "18/10/2026", intent: "current", livesAlone: false,
+      people: [{ id: "child", name: "Léa", relation: "child" }],
+      answers: { childrenAllowance: "no", childrenIncome: "no" }, partnerAmount: "", relativeAmount: "",
+    })
+    const relativesOnly = buildFamilySituationEvaluationInput({
+      thresholds, date: "18/10/2026", intent: "current", livesAlone: false,
+      people: [{ id: "family", name: "Camille", relation: "family" }],
+      answers: { relativeIncome: "no" }, partnerAmount: "", relativeAmount: "",
+    })
+    expect(evaluateArticle110Verifier(childOnly)).toMatchObject({ category: "A", householdAssessment: { status: "probable" } })
+    expect(evaluateArticle110Verifier(relativesOnly)).toMatchObject({ category: "A", householdAssessment: { status: "probable" } })
+  })
+
+  it("only exposes partner results after the existing qualification facts are complete", () => {
+    const partner = [{ id: "partner", name: "Sam", relation: "partner" as const }]
+    const incomplete = evaluateArticle110Verifier(buildFamilySituationEvaluationInput({
+      thresholds, date: "18/10/2026", intent: "current", livesAlone: false, people: partner,
+      answers: { partnerSituation: "noIncome" }, partnerAmount: "", relativeAmount: "",
+    }))
+    expect(incomplete).toMatchObject({ category: null, householdAssessment: { status: "needs_information" } })
+    expect(incomplete.missingFacts.map((fact) => fact.factKey)).toContain("partner.partnerQualification.facts.sameRoof")
+
+    const qualified = evaluateArticle110Verifier(buildFamilySituationEvaluationInput({
+      thresholds, date: "18/10/2026", intent: "current", livesAlone: false, people: partner,
+      answers: {
+        partnerSituation: "noIncome", partnerSameRoof: "yes", partnerSharedHousekeeping: "yes", partnerDeFactoHousehold: "yes",
+        partnerFamilyRelationship: "no", partnerChildAllowance: "no", partnerParentMaintenance: "no", partnerRis: "no",
+        partnerOtherUnemployed: "no", partnerMarriedAnother: "no",
+      }, partnerAmount: "", relativeAmount: "",
+    }))
+    expect(qualified).toMatchObject({ category: "A", householdAssessment: { status: "probable" } })
+  })
+
+  it("keeps a variable partner salary masked until the C110A month amount is known", () => {
+    const partner = [{ id: "spouse", name: "Sam", relation: "spouse" as const }]
+    const common = {
+      thresholds: { ...thresholds, spouseProfessionalMonthly: 1000 }, date: "18/10/2026", intent: "current" as const, livesAlone: false,
+      people: partner, answers: { partnerSituation: "employee", partnerFixed: "variable", partnerContract: "temporary" }, partnerAmount: "900", relativeAmount: "",
+    }
+    const missingC110a = evaluateArticle110Verifier(buildFamilySituationEvaluationInput(common))
+    expect(missingC110a).toMatchObject({ category: null, householdAssessment: { status: "needs_information" } })
+    expect(missingC110a.missingFacts.map((fact) => fact.factKey)).toContain("spouse.incomes.0.monthlyAmount")
+    expect(evaluateArticle110Verifier(buildFamilySituationEvaluationInput({ ...common, partnerC110aAmount: "900" })))
+      .toMatchObject({ category: null, householdAssessment: { status: "needs_review", missingFacts: ["partnerIncome.article60Coverage"] } })
+  })
+
   it("does not turn an unknown partner income into a category", () => {
     const result = evaluateArticle110Verifier({ thresholds, asOf: "2026-10-18", people: [{ id: "partner", relation: "partner" }] })
     expect(result.category).toBeNull()
@@ -86,7 +134,11 @@ describe("public family-situation paths use the shared Article 110 engine", () =
     expect(show({ intent: "current", livesAlone: true, people: alone, answers: { aloneSituation: "alimony", alimonyDocument: "judgment" }, unknownDetails: [], particular: [], hasDeclaredAlimonyOrientation: true })).toBe(true)
     expect(show({ intent: "current", livesAlone: true, people: alone, answers: { aloneSituation: "alimony", alimonyDocument: "pending" }, unknownDetails: [], particular: [], hasDeclaredAlimonyOrientation: true })).toBe(true)
     expect(show({ intent: "current", livesAlone: false, people: child, answers: { childrenAllowance: "yes" }, unknownDetails: [], particular: [], hasDeclaredAlimonyOrientation: false })).toBe(true)
+    expect(show({ intent: "current", livesAlone: false, people: child, answers: { childrenAllowance: "no", childrenIncome: "no" }, unknownDetails: [], particular: [], hasDeclaredAlimonyOrientation: false })).toBe(true)
+    expect(show({ intent: "current", livesAlone: false, people: parent, answers: { relativeIncome: "no" }, unknownDetails: [], particular: [], hasDeclaredAlimonyOrientation: false })).toBe(true)
     expect(show({ intent: "current", livesAlone: false, people: childAndParent, answers: { childrenAllowance: "no", relativeIncome: "no" }, unknownDetails: [], particular: [], hasDeclaredAlimonyOrientation: false })).toBe(true)
+    expect(show({ intent: "current", livesAlone: false, people: [{ id: "spouse", name: "Sam", relation: "spouse" }], answers: { partnerSituation: "noIncome" }, unknownDetails: [], particular: [], hasDeclaredAlimonyOrientation: false, hasProbablePartnerAssessment: true })).toBe(true)
+    expect(show({ intent: "current", livesAlone: false, people: [{ id: "spouse", name: "Sam", relation: "spouse" }, { id: "partner", name: "Alex", relation: "partner" }], answers: { partnerSituation: "noIncome" }, unknownDetails: [], particular: [], hasDeclaredAlimonyOrientation: false, hasProbablePartnerAssessment: true })).toBe(false)
     for (const input of [
       { intent: "unknown" as const, livesAlone: false, people: alone, answers: {}, unknownDetails: [], particular: [], hasDeclaredAlimonyOrientation: false },
       { intent: "current" as const, livesAlone: true, people: alone, answers: { aloneSituation: "unknown" }, unknownDetails: [], particular: [], hasDeclaredAlimonyOrientation: false },

@@ -17,12 +17,12 @@ export type Intent = "current" | "changed" | "unknown"
 export type Relation = "spouse" | "partner" | "child" | "parent" | "family" | "unrelated"
 type Step =
   | "intent" | "date" | "household" | "confirm" | "aloneSituation" | "alimonyDocument"
-  | "partnerSituation" | "partnerSalary" | "partnerFixed" | "partnerContract" | "partnerDates" | "partnerOther"
+  | "partnerSituation" | "partnerSalary" | "partnerFixed" | "partnerC110aAmount" | "partnerContract" | "partnerDates" | "partnerOther" | "partnerQualification"
   | "childrenAllowance" | "childrenIncome" | "childFirstWorkChoice" | "childFirstWork" | "relativeIncome"
   | "relativeIncomeKind" | "relativePension" | "relativeSpf" | "unrelatedIncome" | "unrelatedDetail" | "unrelatedHousehold" | "particular" | "summary"
 export type Person = { id: string; name: string; relation: Relation }
-export type Answers = Partial<Record<"aloneSituation" | "alimonyDocument" | "partnerSituation" | "partnerFixed" | "partnerContract" | "childrenAllowance" | "childrenIncome" | "childFirstWork" | "relativeIncome" | "relativeIncomeKind" | "relativePension" | "relativeSpf" | "unrelatedIncome" | "unrelatedHousehold", string>>
-type DetailKey = "partnerAmount" | "partnerDetail" | "relativeAmount" | "studiesEndedAt" | "workStartedAt" | "contractStartAt" | "contractEndAt" | "unrelatedDetail"
+export type Answers = Partial<Record<"aloneSituation" | "alimonyDocument" | "partnerSituation" | "partnerFixed" | "partnerContract" | "partnerSameRoof" | "partnerSharedHousekeeping" | "partnerDeFactoHousehold" | "partnerFamilyRelationship" | "partnerChildAllowance" | "partnerParentMaintenance" | "partnerRis" | "partnerOtherUnemployed" | "partnerMarriedAnother" | "partnerSpouseSameRoof" | "childrenAllowance" | "childrenIncome" | "childFirstWork" | "relativeIncome" | "relativeIncomeKind" | "relativePension" | "relativeSpf" | "unrelatedIncome" | "unrelatedHousehold", string>>
+type DetailKey = "partnerAmount" | "partnerC110aAmount" | "partnerDetail" | "relativeAmount" | "studiesEndedAt" | "workStartedAt" | "contractStartAt" | "contractEndAt" | "unrelatedDetail"
 type SummaryDetail = { label: string; value: string }
 
 const makeId = () => globalThis.crypto?.randomUUID?.() ?? `person-${Date.now()}-${Math.random().toString(36).slice(2)}`
@@ -45,7 +45,7 @@ export function namedPensionAmounts(value: string, people: Person[]) {
   return amounts
 }
 
-export function canShowFamilySituationCategory({ intent, livesAlone, people, answers, unknownDetails, particular, hasDeclaredAlimonyOrientation }: {
+export function canShowFamilySituationCategory({ intent, livesAlone, people, answers, unknownDetails, particular, hasDeclaredAlimonyOrientation, hasProbablePartnerAssessment }: {
   intent?: Intent
   livesAlone: boolean
   people: Person[]
@@ -53,6 +53,7 @@ export function canShowFamilySituationCategory({ intent, livesAlone, people, ans
   unknownDetails: DetailKey[]
   particular: string[]
   hasDeclaredAlimonyOrientation: boolean
+  hasProbablePartnerAssessment?: boolean
 }) {
   const ownerApprovedCohabitant = people.some((person) => person.relation === "child")
     && people.some((person) => person.relation === "parent" || person.relation === "family")
@@ -62,15 +63,25 @@ export function canShowFamilySituationCategory({ intent, livesAlone, people, ans
   const childrenOnlyWithFamilyAllowances = people.some((person) => person.relation === "child")
     && people.every((person) => person.relation === "child")
     && answers.childrenAllowance === "yes"
+  const childrenOnlyWithoutFamilyAllowancesOrIncome = people.some((person) => person.relation === "child")
+    && people.every((person) => person.relation === "child")
+    && answers.childrenAllowance === "no"
+    && answers.childrenIncome === "no"
+  const relativesOnlyWithoutIncome = people.some((person) => person.relation === "parent" || person.relation === "family")
+    && people.every((person) => person.relation === "parent" || person.relation === "family")
+    && answers.relativeIncome === "no"
   return intent !== "unknown" && unknownDetails.length === 0 && particular.length === 0 && (
     hasDeclaredAlimonyOrientation
     || (livesAlone && answers.aloneSituation === "none")
     || childrenOnlyWithFamilyAllowances
+    || childrenOnlyWithoutFamilyAllowancesOrIncome
+    || relativesOnlyWithoutIncome
     || ownerApprovedCohabitant
+    || (hasProbablePartnerAssessment === true && people.filter((person) => person.relation === "spouse" || person.relation === "partner").length === 1)
   )
 }
 
-export function buildFamilySituationEvaluationInput({ thresholds, date, intent, livesAlone, people, answers, partnerAmount, relativeAmount }: {
+export function buildFamilySituationEvaluationInput({ thresholds, date, intent, livesAlone, people, answers, partnerAmount, partnerC110aAmount = "", relativeAmount }: {
   thresholds: C1BaremeThresholds
   date: string
   intent?: Intent
@@ -78,6 +89,7 @@ export function buildFamilySituationEvaluationInput({ thresholds, date, intent, 
   people: Person[]
   answers: Answers
   partnerAmount: string
+  partnerC110aAmount?: string
   relativeAmount: string
 }): Article110VerifierInput {
   const composition = {
@@ -98,6 +110,7 @@ export function buildFamilySituationEvaluationInput({ thresholds, date, intent, 
     && ascendantPensionTotal <= Math.max(thresholds.ascendantPensionMonthly!, thresholds.ascendantDisabledPensionMonthly!)
   return {
     thresholds,
+    partnerQualificationPolicy: "require_facts" as const,
     asOf: /^\d{2}\/\d{2}\/\d{4}$/.test(date) ? `${date.slice(6)}-${date.slice(3, 5)}-${date.slice(0, 2)}` : date,
     isAloneExplicit: livesAlone,
     multiPersonHouseholdSelected: intent === "unknown" ? true : !livesAlone && people.length > 0,
@@ -125,6 +138,9 @@ export function buildFamilySituationEvaluationInput({ thresholds, date, intent, 
       const partnerEmployee = isPartner && answers.partnerSituation === "employee"
       const partnerReplacement = isPartner && ["unemployment", "mutual", "pension", "disability", "cpas"].includes(answers.partnerSituation ?? "")
       const partnerAmountNumber = /^\s*\d+(?:[.,]\d+)?\s*$/.test(partnerAmount) ? Number(partnerAmount.replace(",", ".")) : undefined
+      const partnerC110aAmountNumber = /^\s*\d+(?:[.,]\d+)?\s*$/.test(partnerC110aAmount) ? Number(partnerC110aAmount.replace(",", ".")) : undefined
+      const qualificationAnswer = <T,>(value: T | undefined) => value === undefined ? undefined : { value, origin: "user" as const, sourceField: "public.family-situation" }
+      const qualificationBoolean = (value: string | undefined) => value === "yes" ? true : value === "no" ? false : undefined
       const familyPension = (person.relation === "parent" || person.relation === "family") && answers.relativeIncomeKind === "pension" && pensionAmounts.has(person.id)
       return {
         id: person.id,
@@ -137,9 +153,26 @@ export function buildFamilySituationEvaluationInput({ thresholds, date, intent, 
         professionalIncomeType: partnerEmployee ? "employee" as const : undefined,
         professionalIncomeContract: answers.partnerContract === "cdi" ? "cdi" : answers.partnerContract === "temporary" ? "cdd" : answers.partnerContract === "other" ? "other" : undefined,
         professionalIncomeVariable: answers.partnerFixed === "fixed" ? false : answers.partnerFixed === "variable" ? true : undefined,
+        c110aMonthlyDeclaredIncome: answers.partnerFixed === "variable" ? partnerC110aAmountNumber : undefined,
         hasReplacementIncome: noIncome || childNoIncome || relativeNoIncome || unrelatedNoIncome ? false : partnerEmployee ? false : familyPension || partnerReplacement ? true : undefined,
         replacementIncomeType: familyPension || answers.partnerSituation === "pension" ? "pension" as const : answers.partnerSituation === "disability" ? "disability_allowance" as const : partnerReplacement ? "other" as const : undefined,
         replacementIncomeAmount: pensionAmounts.get(person.id),
+        partnerQualification: person.relation === "partner" ? {
+          schemaVersion: 2 as const,
+          declarationStatus: "prepared" as const,
+          facts: {
+            sameRoof: qualificationAnswer(qualificationBoolean(answers.partnerSameRoof)),
+            mainlySharedHousekeeping: qualificationAnswer(qualificationBoolean(answers.partnerSharedHousekeeping)),
+            formsDeFactoHousehold: qualificationAnswer(qualificationBoolean(answers.partnerDeFactoHousehold)),
+            familyRelationship: qualificationAnswer(answers.partnerFamilyRelationship === "yes" ? "kin_or_ally_through_third_degree" as const : answers.partnerFamilyRelationship === "no" ? "none" as const : undefined),
+            childWithFamilyAllowanceEntitlement: qualificationAnswer(qualificationBoolean(answers.partnerChildAllowance)),
+            dependentOnParentWithMaintenanceDuty: qualificationAnswer(qualificationBoolean(answers.partnerParentMaintenance)),
+            receivesRisOrEquivalent: qualificationAnswer(qualificationBoolean(answers.partnerRis)),
+            dependentOnAnotherUnemployedCohabitant: qualificationAnswer(qualificationBoolean(answers.partnerOtherUnemployed)),
+            marriedToAnotherPerson: qualificationAnswer(qualificationBoolean(answers.partnerMarriedAnother)),
+            cohabitsWithThatSpouse: qualificationAnswer(qualificationBoolean(answers.partnerSpouseSameRoof)),
+          },
+        } : undefined,
       }
     }),
   }
@@ -159,6 +192,7 @@ export function FamilySituationClient({ thresholds }: { thresholds: C1BaremeThre
   const [savedLivesAlone, setSavedLivesAlone] = useState(false)
   const [answers, setAnswers] = useState<Answers>({})
   const [partnerAmount, setPartnerAmount] = useState("")
+  const [partnerC110aAmount, setPartnerC110aAmount] = useState("")
   const [partnerDetail, setPartnerDetail] = useState("")
   const [relativeAmount, setRelativeAmount] = useState("")
   const [studiesEndedAt, setStudiesEndedAt] = useState("")
@@ -190,18 +224,19 @@ export function FamilySituationClient({ thresholds }: { thresholds: C1BaremeThre
     && ascendantPensionTotal > Math.min(thresholds.ascendantPensionMonthly!, thresholds.ascendantDisabledPensionMonthly!)
     && ascendantPensionTotal <= Math.max(thresholds.ascendantPensionMonthly!, thresholds.ascendantDisabledPensionMonthly!)
   const householdChanged = useMemo(() => JSON.stringify({ people, livesAlone }) !== JSON.stringify({ people: savedPeople, livesAlone: savedLivesAlone }), [livesAlone, people, savedLivesAlone, savedPeople])
-  const householdAnswersExist = Object.values(answers).some((value) => value !== undefined) || [partnerAmount, partnerDetail, relativeAmount, studiesEndedAt, workStartedAt, contractStartAt, contractEndAt, unrelatedDetail].some(Boolean) || unknownDetails.length > 0 || particular.length > 0
+  const householdAnswersExist = Object.values(answers).some((value) => value !== undefined) || [partnerAmount, partnerC110aAmount, partnerDetail, relativeAmount, studiesEndedAt, workStartedAt, contractStartAt, contractEndAt, unrelatedDetail].some(Boolean) || unknownDetails.length > 0 || particular.length > 0
   const relationLabel = (value: Relation) => value === "spouse" ? t("relationSpouse") : value === "partner" ? t("relationPartner") : value === "child" ? t("relationChild") : value === "parent" ? t("relationParent") : value === "family" ? t("relationFamily") : t("relationUnrelated")
   const firstPartner = people.find((person) => person.relation === "spouse" || person.relation === "partner")
-  const evaluationInput = useMemo(() => buildFamilySituationEvaluationInput({ thresholds, date, intent, livesAlone, people, answers, partnerAmount, relativeAmount }), [answers, date, intent, livesAlone, partnerAmount, people, relativeAmount, thresholds])
+  const evaluationInput = useMemo(() => buildFamilySituationEvaluationInput({ thresholds, date, intent, livesAlone, people, answers, partnerAmount, partnerC110aAmount, relativeAmount }), [answers, date, intent, livesAlone, partnerAmount, partnerC110aAmount, people, relativeAmount, thresholds])
   const evaluation = useMemo(() => evaluateArticle110Verifier(evaluationInput), [evaluationInput])
   const hasDeclaredAlimonyOrientation = evaluation.declaredOrientation !== null
-  const canShowCategory = canShowFamilySituationCategory({ intent, livesAlone, people, answers, unknownDetails, particular, hasDeclaredAlimonyOrientation })
+  const partnerRelationshipCount = people.filter((person) => person.relation === "spouse" || person.relation === "partner").length
+  const canShowCategory = canShowFamilySituationCategory({ intent, livesAlone, people, answers, unknownDetails, particular, hasDeclaredAlimonyOrientation, hasProbablePartnerAssessment: composition.partner && partnerRelationshipCount === 1 && evaluation.householdAssessment.status === "probable" && evaluation.category !== null })
   const publicEvaluation = canShowCategory ? evaluation : {
     ...evaluation,
     category: null,
     declaredOrientation: null,
-    reason: t("summaryNoCategoryBody"),
+    reason: evaluation.householdAssessment.status === "probable" ? t("summaryNoCategoryBody") : evaluation.reason,
   }
 
   const go = (next: Step) => {
@@ -223,6 +258,7 @@ export function FamilySituationClient({ thresholds }: { thresholds: C1BaremeThre
   const clearDetails = (...keys: DetailKey[]) => {
     keys.forEach((key) => {
       if (key === "partnerAmount") setPartnerAmount("")
+      if (key === "partnerC110aAmount") setPartnerC110aAmount("")
       if (key === "partnerDetail") setPartnerDetail("")
       if (key === "relativeAmount") setRelativeAmount("")
       if (key === "studiesEndedAt") setStudiesEndedAt("")
@@ -240,7 +276,7 @@ export function FamilySituationClient({ thresholds }: { thresholds: C1BaremeThre
   const markDetailUnknown = (key: DetailKey) => setUnknownDetails((current) => current.includes(key) ? current : [...current, key])
   const clearHouseholdAnswers = () => {
     setAnswers({})
-    clearDetails("partnerAmount", "partnerDetail", "relativeAmount", "studiesEndedAt", "workStartedAt", "contractStartAt", "contractEndAt", "unrelatedDetail")
+    clearDetails("partnerAmount", "partnerC110aAmount", "partnerDetail", "relativeAmount", "studiesEndedAt", "workStartedAt", "contractStartAt", "contractEndAt", "unrelatedDetail")
     setParticular([])
   }
   const startForHousehold = (): Step => {
@@ -286,7 +322,9 @@ export function FamilySituationClient({ thresholds }: { thresholds: C1BaremeThre
     setStep(intent === "changed" ? "date" : intent === "unknown" ? "particular" : "household")
   }
   const close = () => go("particular")
-  const afterPartner = (): Step => composition.children ? "childrenAllowance" : composition.family ? "relativeIncome" : composition.unrelated ? "unrelatedIncome" : "particular"
+  const needsPartnerQualification = firstPartner?.relation === "partner" && !people.some((person) => person.relation === "spouse")
+  const afterPartner = (): Step => needsPartnerQualification ? "partnerQualification" : composition.children ? "childrenAllowance" : composition.family ? "relativeIncome" : composition.unrelated ? "unrelatedIncome" : "particular"
+  const afterPartnerQualification = (): Step => composition.children ? "childrenAllowance" : composition.family ? "relativeIncome" : composition.unrelated ? "unrelatedIncome" : "particular"
   const afterFamily = (): Step => composition.unrelated ? "unrelatedIncome" : "particular"
   const afterChildren = (): Step => composition.family ? "relativeIncome" : composition.unrelated ? "unrelatedIncome" : "particular"
   const topic = t(`topic${step[0].toUpperCase()}${step.slice(1)}` as never)
@@ -305,12 +343,14 @@ export function FamilySituationClient({ thresholds }: { thresholds: C1BaremeThre
         {step === "confirm" ? <ConfirmStep t={t} onConfirm={() => { clearHouseholdAnswers(); setSavedDate(date); setSavedPeople(people); setSavedLivesAlone(livesAlone); go(startForHousehold()) }} /> : null}
         {step === "aloneSituation" ? <ChoiceStep t={t} titleKey="aloneQuestion" choices={["none", "alimony", "alternating", "unknown"]} labelKey="aloneSituation" value={answers.aloneSituation} onChoose={(value) => { updateAnswer("aloneSituation", value); if (value !== "alimony") clearAnswerKeys("alimonyDocument"); if (value === "alimony") go("alimonyDocument"); else close() }} /> : null}
         {step === "alimonyDocument" ? <ChoiceStep t={t} titleKey="alimonyDocumentQuestion" choices={["judgment", "pending", "none", "unknown"]} labelKey="alimonyDocument" value={answers.alimonyDocument} notice={answers.alimonyDocument === "pending" ? t("judgmentPendingNotice") : t("alimonyPaymentNotice")} onChoose={(value) => { updateAnswer("alimonyDocument", value); close() }} /> : null}
-        {step === "partnerSituation" ? <ChoiceStep t={t} titleKey="partnerSituationQuestion" values={{ name: firstPartner?.name ?? t("partnerFallback") }} choices={["noIncome", "employee", "selfEmployed", "unemployment", "mutual", "pension", "disability", "cpas", "other", "unknown"]} labelKey="partnerSituation" value={answers.partnerSituation} onChoose={(value) => { updateAnswer("partnerSituation", value); clearAnswerKeys("partnerFixed", "partnerContract"); clearDetails("partnerAmount", "partnerDetail", "contractStartAt", "contractEndAt"); if (value === "employee") go("partnerSalary"); else if (value !== "noIncome" && value !== "unknown") go("partnerOther"); else go(afterPartner()) }} /> : null}
+        {step === "partnerSituation" ? <ChoiceStep t={t} titleKey="partnerSituationQuestion" values={{ name: firstPartner?.name ?? t("partnerFallback") }} choices={["noIncome", "employee", "selfEmployed", "unemployment", "mutual", "pension", "disability", "cpas", "other", "unknown"]} labelKey="partnerSituation" value={answers.partnerSituation} onChoose={(value) => { updateAnswer("partnerSituation", value); clearAnswerKeys("partnerFixed", "partnerContract"); clearDetails("partnerAmount", "partnerC110aAmount", "partnerDetail", "contractStartAt", "contractEndAt"); if (value === "employee") go("partnerSalary"); else if (value !== "noIncome" && value !== "unknown") go("partnerOther"); else go(afterPartner()) }} /> : null}
         {step === "partnerSalary" ? <AmountStep t={t} titleKey="partnerSalaryQuestion" bodyKey="partnerSalaryBody" value={partnerAmount} onChange={updateDetail("partnerAmount", setPartnerAmount)} onUnknown={() => { markDetailUnknown("partnerAmount"); go("partnerFixed") }} onContinue={() => go("partnerFixed")} /> : null}
-        {step === "partnerFixed" ? <ChoiceStep t={t} titleKey="partnerFixedQuestion" choices={["fixed", "variable", "unknown"]} labelKey="partnerFixed" value={answers.partnerFixed} onChoose={(value) => { updateAnswer("partnerFixed", value); clearAnswerKeys("partnerContract"); clearDetails("contractStartAt", "contractEndAt"); go("partnerContract") }} /> : null}
+        {step === "partnerFixed" ? <ChoiceStep t={t} titleKey="partnerFixedQuestion" choices={["fixed", "variable", "unknown"]} labelKey="partnerFixed" value={answers.partnerFixed} onChoose={(value) => { updateAnswer("partnerFixed", value); clearAnswerKeys("partnerContract"); clearDetails("partnerC110aAmount", "contractStartAt", "contractEndAt"); go(value === "variable" ? "partnerC110aAmount" : "partnerContract") }} /> : null}
+        {step === "partnerC110aAmount" ? <AmountStep t={t} titleKey="partnerC110aAmountQuestion" bodyKey="partnerC110aAmountBody" value={partnerC110aAmount} onChange={updateDetail("partnerC110aAmount", setPartnerC110aAmount)} onUnknown={() => { markDetailUnknown("partnerC110aAmount"); go("partnerContract") }} onContinue={() => go("partnerContract")} /> : null}
         {step === "partnerContract" ? <ChoiceStep t={t} titleKey="partnerContractQuestion" choices={["cdi", "temporary", "other", "unknown"]} labelKey="partnerContract" value={answers.partnerContract} onChoose={(value) => { updateAnswer("partnerContract", value); if (value !== "temporary") clearDetails("contractStartAt", "contractEndAt"); go(value === "temporary" ? "partnerDates" : afterPartner()) }} /> : null}
         {step === "partnerDates" ? <DatesStep t={t} titleKey="partnerDatesQuestion" bodyKey="partnerDatesBody" firstLabelKey="contractStartLabel" secondLabelKey="contractEndLabel" valueA={contractStartAt} valueB={contractEndAt} onChangeA={updateDetail("contractStartAt", setContractStartAt)} onChangeB={updateDetail("contractEndAt", setContractEndAt)} onUnknown={() => { markDetailUnknown("contractStartAt"); markDetailUnknown("contractEndAt"); go(afterPartner()) }} onContinue={() => go(afterPartner())} /> : null}
         {step === "partnerOther" ? <TextStep t={t} titleKey="partnerOtherQuestion" bodyKey="partnerOtherBody" value={partnerDetail} onChange={updateDetail("partnerDetail", setPartnerDetail)} onUnknown={() => { markDetailUnknown("partnerDetail"); go(afterPartner()) }} onContinue={() => go(afterPartner())} /> : null}
+        {step === "partnerQualification" ? <PartnerQualificationStep t={t} answers={answers} onChoose={updateAnswer} onContinue={() => go(afterPartnerQualification())} /> : null}
         {step === "childrenAllowance" ? <ChoiceStep t={t} titleKey="childrenQuestion" bodyKey="childrenBody" choices={["yes", "no", "unknown"]} labelKey="childrenAllowance" value={answers.childrenAllowance} onChoose={(value) => { updateAnswer("childrenAllowance", value); if (value !== "no") { clearAnswerKeys("childrenIncome", "childFirstWork"); clearDetails("studiesEndedAt", "workStartedAt") } if (childrenOnly) go(value === "no" ? "childrenIncome" : "particular"); else go(afterChildren()) }} /> : null}
         {step === "childrenIncome" ? <ChoiceStep t={t} titleKey="childrenIncomeQuestion" choices={["yes", "no", "unknown"]} labelKey="childrenIncome" value={answers.childrenIncome} onChoose={(value) => { updateAnswer("childrenIncome", value); if (value !== "yes") { clearAnswerKeys("childFirstWork"); clearDetails("studiesEndedAt", "workStartedAt") } if (value === "yes") go("childFirstWorkChoice"); else close() }} /> : null}
         {step === "childFirstWorkChoice" ? <ChoiceStep t={t} titleKey="childFirstWorkChoiceQuestion" choices={["yes", "no", "unknown"]} labelKey="childFirstWork" value={answers.childFirstWork} onChoose={(value) => { updateAnswer("childFirstWork", value); if (value !== "yes") clearDetails("studiesEndedAt", "workStartedAt"); if (value === "yes") go("childFirstWork"); else close() }} /> : null}
@@ -329,6 +369,7 @@ export function FamilySituationClient({ thresholds }: { thresholds: C1BaremeThre
           publicEvaluation.declaredOrientation?.basis === "alimony_legal_document" ? { label: t("summary.alimonyOrientation"), value: t("alimonyOrientationNotice") } : null,
           answers.alimonyDocument === "pending" ? { label: t("alimonyDocumentQuestion"), value: t("judgmentPendingNotice") } : null,
           answers.partnerSituation === "employee" ? { label: t("summary.partnerAmount"), value: unknownDetails.includes("partnerAmount") ? t("unknown") : partnerAmount || t("notAnswered") } : null,
+          answers.partnerFixed === "variable" ? { label: t("summary.partnerC110aAmount"), value: unknownDetails.includes("partnerC110aAmount") ? t("unknown") : partnerC110aAmount || t("notAnswered") } : null,
           answers.partnerSituation && !["employee", "noIncome", "unknown"].includes(answers.partnerSituation) ? { label: t("summary.partnerDetail"), value: unknownDetails.includes("partnerDetail") ? t("unknown") : partnerDetail || t("notAnswered") } : null,
           answers.partnerContract === "temporary" ? { label: t("summary.contractStart"), value: unknownDetails.includes("contractStartAt") ? t("unknown") : contractStartAt || t("notAnswered") } : null,
           answers.partnerContract === "temporary" ? { label: t("summary.contractEnd"), value: unknownDetails.includes("contractEndAt") ? t("unknown") : contractEndAt || t("notAnswered") } : null,
@@ -336,6 +377,8 @@ export function FamilySituationClient({ thresholds }: { thresholds: C1BaremeThre
           answers.childFirstWork === "yes" ? { label: t("summary.workStartedAt"), value: unknownDetails.includes("workStartedAt") ? t("unknown") : workStartedAt || t("notAnswered") } : null,
           answers.relativeIncomeKind === "pension" ? { label: t("summary.relativeAmount"), value: unknownDetails.includes("relativeAmount") ? t("unknown") : relativeAmount || t("notAnswered") } : null,
           answers.unrelatedIncome === "yes" ? { label: t("summary.unrelatedDetail"), value: unknownDetails.includes("unrelatedDetail") ? t("unknown") : unrelatedDetail || t("notAnswered") } : null,
+          answers.unrelatedHousehold === "separate" ? { label: t("summary.unrelatedHousehold"), value: t("unrelatedSeparateNotice") } : null,
+          ...publicEvaluation.missingFacts.map((fact) => ({ label: t("summary.requiredInfo"), value: familySituationMissingFactLabel(t, fact.factKey, fact.label) })),
         ].filter((detail): detail is SummaryDetail => detail !== null)} onEdit={() => { setHistory([]); setStep("intent") }} /> : null}
       </CardContent></Card>
     </section>
@@ -402,12 +445,49 @@ function ParticularStep({ t, value, onChange, onContinue }: { t: Translation; va
   })}</div><ContinueButton t={t} onClick={onContinue} /></div>
 }
 
+const partnerQualificationQuestions = [
+  "partnerSameRoof", "partnerSharedHousekeeping", "partnerDeFactoHousehold", "partnerFamilyRelationship",
+  "partnerChildAllowance", "partnerParentMaintenance", "partnerRis", "partnerOtherUnemployed", "partnerMarriedAnother",
+] as const
+const partnerQualificationAnswerKeys = [...partnerQualificationQuestions, "partnerSpouseSameRoof"] as const
+
+function PartnerQualificationStep({ t, answers, onChoose, onContinue }: { t: Translation; answers: Answers; onChoose: (key: keyof Answers, value: string) => void; onContinue: () => void }) {
+  const questionKeys = answers.partnerMarriedAnother === "yes" ? [...partnerQualificationQuestions, "partnerSpouseSameRoof"] : partnerQualificationQuestions
+  const complete = questionKeys.every((key) => answers[key] !== undefined)
+  return <div><h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">{t("partnerQualificationQuestion")}</h2><p className="mt-3 max-w-2xl text-sm leading-relaxed text-[color:var(--glass-ink-soft)]">{t("partnerQualificationBody")}</p><div className="mt-6 grid gap-4">{questionKeys.map((key) => <fieldset key={key} className="glass-surface rounded-2xl p-4"><legend className="px-1 text-base font-semibold">{t(`partnerQualification.${key}` as never)}</legend><div className="mt-3 flex flex-wrap gap-2">{["yes", "no", "unknown"].map((value) => <Button key={value} type="button" variant={answers[key] === value ? "default" : "outline"} aria-pressed={answers[key] === value} onClick={() => onChoose(key, value)}>{t(value as never)}</Button>)}</div></fieldset>)}</div><ContinueButton t={t} onClick={onContinue} disabled={!complete} /></div>
+}
+
+function familySituationMissingFactLabel(t: Translation, factKey: string, fallback: string) {
+  const key = factKey.endsWith(".partnerQualification.facts.sameRoof") ? "missingFacts.partnerSameRoof"
+    : factKey.endsWith(".partnerQualification.facts.mainlySharedHousekeeping") ? "missingFacts.partnerSharedHousekeeping"
+      : factKey.endsWith(".partnerQualification.facts.formsDeFactoHousehold") ? "missingFacts.partnerDeFactoHousehold"
+        : factKey.endsWith(".partnerQualification.facts.familyRelationship") ? "missingFacts.partnerFamilyRelationship"
+          : factKey.endsWith(".partnerQualification.facts.childWithFamilyAllowanceEntitlement") ? "missingFacts.partnerChildAllowance"
+            : factKey.endsWith(".partnerQualification.facts.dependentOnParentWithMaintenanceDuty") ? "missingFacts.partnerParentMaintenance"
+              : factKey.endsWith(".partnerQualification.facts.receivesRisOrEquivalent") ? "missingFacts.partnerRis"
+                : factKey.endsWith(".partnerQualification.facts.dependentOnAnotherUnemployedCohabitant") ? "missingFacts.partnerOtherUnemployed"
+                  : factKey.endsWith(".partnerQualification.facts.marriedToAnotherPerson") ? "missingFacts.partnerMarriedAnother"
+                    : factKey.endsWith(".partnerQualification.facts.cohabitsWithThatSpouse") ? "missingFacts.partnerSpouseSameRoof"
+                      : factKey.endsWith(".actualRelationship") ? "missingFacts.partnerActualRelationship"
+                        : factKey.endsWith(".partnerQualification.review") ? "missingFacts.partnerReview"
+                          : factKey.endsWith(".monthlyAmount") ? "missingFacts.partnerC110aAmount"
+                            : factKey.endsWith(".contract") ? "missingFacts.partnerContract"
+                              : factKey.endsWith(".variable") ? "missingFacts.partnerFixed"
+                                : factKey.endsWith(".amount") ? "missingFacts.partnerAmount"
+                                  : factKey.endsWith(".incomes") ? "missingFacts.partnerIncomeInventory"
+                                    : factKey === "bareme.spouseProfessionalMonthly" ? "missingFacts.partnerThreshold"
+                                      : factKey === "bareme.coverage" ? "missingFacts.baremeCoverage"
+                                        : factKey === "partnerIncome.article60Coverage" ? "missingFacts.partnerArticle60Coverage"
+                                          : "missingFacts.generic"
+  return key === "missingFacts.generic" && fallback ? t(key as never) : t(key as never)
+}
+
 function SummaryStep({ t, intent, date, people, livesAlone, answers, particular, relationLabel, details, onEdit }: { t: Translation; evaluation: ReturnType<typeof evaluateArticle110Verifier>; intent?: Intent; date: string; people: Person[]; livesAlone: boolean; answers: Answers; particular: string[]; relationLabel: (value: Relation) => string; details: SummaryDetail[]; onEdit: () => void }) {
   // The owner-approved children-and-family scenario is evaluated as cohabitant;
   // it is no longer presented as a blocked or reserved citizen case.
   const reservedCase = false
   const documents = [answers.aloneSituation === "alternating" ? t("documentAlternating") : null, answers.alimonyDocument === "judgment" ? t("documentAlimony") : null, answers.unrelatedHousehold === "separate" ? t("documentRegis") : null].filter((item): item is string => !!item)
-  return <div><h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">{t("summaryTitle")}</h2><div className="glass-feedback mt-5 flex gap-3 px-4 py-4" data-tone="info"><CircleHelp className="mt-0.5 size-5 shrink-0" aria-hidden /><div><p className="font-semibold">{t("summaryNoCategoryTitle")}</p><p className="mt-1 text-sm leading-relaxed">{t("summaryNoCategoryBody")}</p></div></div>{reservedCase ? <div className="glass-feedback mt-4 flex gap-3 px-4 py-4" data-tone="attention"><Info className="mt-0.5 size-5 shrink-0" aria-hidden /><p className="text-sm leading-relaxed">{t("reservedCaseNotice")}</p></div> : null}<dl className="mt-6 grid gap-3"><SummaryRow icon={<CalendarDays />} label={t("summaryDate")} value={date || t("notAnswered")} /><SummaryRow icon={<UsersRound />} label={t("summaryHousehold")} value={people.length ? people.map((person) => `${person.name} — ${relationLabel(person.relation)}`).join(", ") : livesAlone ? t("liveAlone") : t("notAnswered")} /><SummaryRow icon={<FileText />} label={t("summaryRequest")} value={intent === "changed" ? t("intentChangedTitle") : intent === "current" ? t("intentCurrentTitle") : t("unknown")} />{Object.entries(answers).filter(([, value]) => value).map(([key, value]) => <SummaryRow key={key} icon={<FileText />} label={t(`summary.${key}` as never)} value={t(`${key}.${value}` as never)} />)}{details.map((detail) => <SummaryRow key={detail.label} icon={<FileText />} label={detail.label} value={detail.value} />)}{particular.length ? <SummaryRow icon={<FileText />} label={t("summaryParticular")} value={particular.map((item) => t(`particular.${item}` as never)).join(", ")} /> : null}</dl><div className="glass-surface mt-6 p-4"><h3 className="font-semibold">{t("documentsTitle")}</h3>{documents.length ? <ul className="mt-2 space-y-2 text-sm text-[color:var(--glass-ink-soft)]">{documents.map((document) => <li key={document} className="flex gap-2"><FileText className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden />{document}</li>)}</ul> : <p className="mt-1 text-sm leading-relaxed text-[color:var(--glass-ink-soft)]">{t("documentsBody")}</p>}<p className="mt-3 text-sm leading-relaxed text-[color:var(--glass-ink-soft)]">{t("documentsNoCheck")}</p></div><div className="mt-6"><Button type="button" variant="outline" size="lg" onClick={onEdit}><Pencil data-icon="inline-start" />{t("editAnswers")}</Button></div><p className="mt-5 text-sm leading-relaxed text-[color:var(--glass-ink-soft)]">{t("disclaimer")}</p></div>
+  return <div><h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">{t("summaryTitle")}</h2><div className="glass-feedback mt-5 flex gap-3 px-4 py-4" data-tone="info"><CircleHelp className="mt-0.5 size-5 shrink-0" aria-hidden /><div><p className="font-semibold">{t("summaryNoCategoryTitle")}</p><p className="mt-1 text-sm leading-relaxed">{t("summaryNoCategoryBody")}</p></div></div>{reservedCase ? <div className="glass-feedback mt-4 flex gap-3 px-4 py-4" data-tone="attention"><Info className="mt-0.5 size-5 shrink-0" aria-hidden /><p className="text-sm leading-relaxed">{t("reservedCaseNotice")}</p></div> : null}<dl className="mt-6 grid gap-3"><SummaryRow icon={<CalendarDays />} label={t("summaryDate")} value={date || t("notAnswered")} /><SummaryRow icon={<UsersRound />} label={t("summaryHousehold")} value={people.length ? people.map((person) => `${person.name} — ${relationLabel(person.relation)}`).join(", ") : livesAlone ? t("liveAlone") : t("notAnswered")} /><SummaryRow icon={<FileText />} label={t("summaryRequest")} value={intent === "changed" ? t("intentChangedTitle") : intent === "current" ? t("intentCurrentTitle") : t("unknown")} />{Object.entries(answers).filter(([key, value]) => value && !partnerQualificationAnswerKeys.includes(key as typeof partnerQualificationAnswerKeys[number])).map(([key, value]) => <SummaryRow key={key} icon={<FileText />} label={t(`summary.${key}` as never)} value={t(`${key}.${value}` as never)} />)}{details.map((detail) => <SummaryRow key={detail.label} icon={<FileText />} label={detail.label} value={detail.value} />)}{particular.length ? <SummaryRow icon={<FileText />} label={t("summaryParticular")} value={particular.map((item) => t(`particular.${item}` as never)).join(", ")} /> : null}</dl><div className="glass-surface mt-6 p-4"><h3 className="font-semibold">{t("documentsTitle")}</h3>{documents.length ? <ul className="mt-2 space-y-2 text-sm text-[color:var(--glass-ink-soft)]">{documents.map((document) => <li key={document} className="flex gap-2"><FileText className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden />{document}</li>)}</ul> : <p className="mt-1 text-sm leading-relaxed text-[color:var(--glass-ink-soft)]">{t("documentsBody")}</p>}<p className="mt-3 text-sm leading-relaxed text-[color:var(--glass-ink-soft)]">{t("documentsNoCheck")}</p></div><div className="mt-6"><Button type="button" variant="outline" size="lg" onClick={onEdit}><Pencil data-icon="inline-start" />{t("editAnswers")}</Button></div><p className="mt-5 text-sm leading-relaxed text-[color:var(--glass-ink-soft)]">{t("disclaimer")}</p></div>
 }
 
 function ContinueButton({ t, onClick, disabled, label }: { t: Translation; onClick: () => void; disabled?: boolean; label?: string }) {

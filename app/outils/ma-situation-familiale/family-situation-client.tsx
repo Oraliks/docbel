@@ -76,9 +76,16 @@ export function buildFamilySituationEvaluationInput({ thresholds, date, intent, 
       ? answers.unrelatedHousehold === "separate" ? true : answers.unrelatedHousehold === "shared" ? false : undefined : undefined,
     cohousingAutonomousLiving: answers.unrelatedHousehold === "separate" ? true : answers.unrelatedHousehold === "shared" ? false : undefined,
     isolatedDeclaration: answers.aloneSituation === "alimony" ? "alimony" : answers.aloneSituation === "alternating" ? "alternating_care" : undefined,
-    // The public journey does not collect payment or beneficiary facts. A judgment
-    // remains visible in the recap, while the shared engine keeps the category to confirm.
-    alimony: answers.aloneSituation === "alimony" ? { enabled: true, legalConditionEstablished: answers.alimonyDocument === "judgment" ? true : ["pending", "none"].includes(answers.alimonyDocument ?? "") ? false : undefined } : undefined,
+    // Product orientation only: do not create payment or beneficiary facts in the
+    // shared regulatory assessment.
+    declaredAlimonyOutcome: livesAlone && answers.aloneSituation === "alimony"
+      ? answers.alimonyDocument === "judgment" ? "legal_document"
+        : ["pending", "none"].includes(answers.alimonyDocument ?? "") ? "pending_or_absent"
+          : undefined
+      : undefined,
+    alimony: answers.aloneSituation === "alimony"
+      ? { legalConditionEstablished: answers.alimonyDocument === "judgment" ? true : ["pending", "none"].includes(answers.alimonyDocument ?? "") ? false : undefined }
+      : undefined,
     people: people.map((person) => {
       const isPartner = person.relation === "spouse" || person.relation === "partner"
       const noIncome = isPartner && answers.partnerSituation === "noIncome"
@@ -152,11 +159,14 @@ export function FamilySituationClient({ thresholds }: { thresholds: C1BaremeThre
   const firstPartner = people.find((person) => person.relation === "spouse" || person.relation === "partner")
   const evaluationInput = useMemo(() => buildFamilySituationEvaluationInput({ thresholds, date, intent, livesAlone, people, answers, partnerAmount, relativeAmount }), [answers, date, intent, livesAlone, partnerAmount, people, relativeAmount, thresholds])
   const evaluation = useMemo(() => evaluateArticle110Verifier(evaluationInput), [evaluationInput])
-  const canShowCategory = intent !== "unknown" && unknownDetails.length === 0 && particular.length === 0
-    && evaluation.category !== null && evaluation.missingFacts.length === 0 && evaluation.onemDecisionStatus === "not_required"
+  const hasDeclaredAlimonyOrientation = evaluation.declaredOrientation !== null
+  const canShowCategory = intent !== "unknown" && unknownDetails.length === 0 && particular.length === 0 && (
+    hasDeclaredAlimonyOrientation || (evaluation.category !== null && evaluation.missingFacts.length === 0 && evaluation.onemDecisionStatus === "not_required")
+  )
   const publicEvaluation = canShowCategory ? evaluation : {
     ...evaluation,
     category: null,
+    declaredOrientation: null,
     reason: t("summaryNoCategoryBody"),
   }
 
@@ -280,8 +290,9 @@ export function FamilySituationClient({ thresholds }: { thresholds: C1BaremeThre
         {step === "unrelatedHousehold" ? <ChoiceStep t={t} titleKey="unrelatedQuestion" bodyKey="unrelatedBody" choices={["shared", "separate", "unknown"]} labelKey="unrelatedHousehold" value={answers.unrelatedHousehold} notice={answers.unrelatedHousehold === "separate" ? t("unrelatedSeparateNotice") : undefined} onChoose={(value) => { updateAnswer("unrelatedHousehold", value); go("unrelatedIncome") }} /> : null}
         {step === "particular" ? <ParticularStep t={t} value={particular} onChange={setParticular} onContinue={() => go("summary")} /> : null}
         {step === "summary" ? <SummaryStep t={t} evaluation={publicEvaluation} intent={intent} date={date} people={people} livesAlone={livesAlone} answers={answers} particular={particular} relationLabel={relationLabel} details={[
-          { label: t("summary.category"), value: publicEvaluation.category === "A" ? t("categoryA") : publicEvaluation.category === "N" ? t("categoryN") : publicEvaluation.category === "B" ? t("categoryB") : t("summaryNoCategoryTitle") },
+          { label: t("summary.category"), value: (publicEvaluation.category ?? publicEvaluation.declaredOrientation?.category) === "A" ? t("categoryA") : (publicEvaluation.category ?? publicEvaluation.declaredOrientation?.category) === "N" ? t("categoryN") : (publicEvaluation.category ?? publicEvaluation.declaredOrientation?.category) === "B" ? t("categoryB") : t("summaryNoCategoryTitle") },
           { label: t("summary.assessment"), value: publicEvaluation.reason },
+          publicEvaluation.declaredOrientation?.basis === "alimony_legal_document" ? { label: t("summary.alimonyOrientation"), value: t("alimonyOrientationNotice") } : null,
           answers.alimonyDocument === "pending" ? { label: t("alimonyDocumentQuestion"), value: t("judgmentPendingNotice") } : null,
           answers.partnerSituation === "employee" ? { label: t("summary.partnerAmount"), value: unknownDetails.includes("partnerAmount") ? t("unknown") : partnerAmount || t("notAnswered") } : null,
           answers.partnerSituation && !["employee", "noIncome", "unknown"].includes(answers.partnerSituation) ? { label: t("summary.partnerDetail"), value: unknownDetails.includes("partnerDetail") ? t("unknown") : partnerDetail || t("notAnswered") } : null,

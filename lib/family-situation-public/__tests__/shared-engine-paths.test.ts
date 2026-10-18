@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { evaluateArticle110Verifier } from "@/lib/regulatory-decision/article-110-verifier"
+import { article110VerifierFacts, evaluateArticle110Verifier } from "@/lib/regulatory-decision/article-110-verifier"
 import { buildFamilySituationEvaluationInput, namedPensionAmounts } from "@/app/outils/ma-situation-familiale/family-situation-client"
 
 const thresholds = { spouseProfessionalMonthly: null, childProfessionalMonthly: null, spouseReplacementMonthly: null, childReplacementMonthly: null, ascendantPensionWithChildMonthly: null, ascendantPensionMonthly: null, ascendantDisabledPensionMonthly: null, source: null }
@@ -62,8 +62,32 @@ describe("public family-situation paths use the shared Article 110 engine", () =
     expect(evaluateArticle110Verifier(buildFamilySituationEvaluationInput({ ...common, answers: { ...common.answers, relativeSpf: "yes" } })).category).toBe("A")
   })
 
-  it("keeps a judgment under review until the payment and beneficiary facts are known", () => {
-    const result = evaluateArticle110Verifier(buildFamilySituationEvaluationInput({ thresholds, date: "18/10/2026", intent: "current", livesAlone: true, people: [], answers: { aloneSituation: "alimony", alimonyDocument: "judgment" }, partnerAmount: "", relativeAmount: "" }))
+  it("keeps regulatory judgment facts unknown while exposing the declared public orientation", () => {
+    const input = buildFamilySituationEvaluationInput({ thresholds, date: "18/10/2026", intent: "current", livesAlone: true, people: [], answers: { aloneSituation: "alimony", alimonyDocument: "judgment" }, partnerAmount: "", relativeAmount: "" })
+    const result = evaluateArticle110Verifier(input)
     expect(result.category).toBeNull()
+    expect(result.declaredOrientation).toEqual({ category: "A", basis: "alimony_legal_document" })
+    expect(article110VerifierFacts(input).isolated?.alimony?.paid).toBeUndefined()
+  })
+
+  it("keeps a pending or absent judgment isolated without inventing payment", () => {
+    for (const alimonyDocument of ["pending", "none"] as const) {
+      const input = buildFamilySituationEvaluationInput({ thresholds, date: "18/10/2026", intent: "current", livesAlone: true, people: [], answers: { aloneSituation: "alimony", alimonyDocument }, partnerAmount: "", relativeAmount: "" })
+      const result = evaluateArticle110Verifier(input)
+      expect(result.category).toBeNull()
+      expect(result.declaredOrientation).toEqual({ category: "N", basis: "alimony_pending_or_absent" })
+      expect(article110VerifierFacts(input).isolated?.alimony?.paid).toBeUndefined()
+    }
+  })
+
+  it("keeps an unknown document outside the declared orientation", () => {
+    const input = buildFamilySituationEvaluationInput({ thresholds, date: "18/10/2026", intent: "current", livesAlone: true, people: [], answers: { aloneSituation: "alimony", alimonyDocument: "unknown" }, partnerAmount: "", relativeAmount: "" })
+    expect(evaluateArticle110Verifier(input).declaredOrientation).toBeNull()
+    expect(article110VerifierFacts(input).isolated?.alimony).toBeUndefined()
+  })
+
+  it("keeps the legacy alimony payment mapping for existing consumers", () => {
+    const facts = article110VerifierFacts({ thresholds, isAloneExplicit: true, people: [], alimony: { enabled: true, legalConditionEstablished: true } })
+    expect(facts.isolated?.alimony).toMatchObject({ paid: true, admissibleBasis: true })
   })
 })

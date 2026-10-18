@@ -3589,6 +3589,7 @@
       },
       "judgmentPendingNotice": "Quand vous recevrez le jugement, prévenez rapidement votre organisme de paiement. L’ONEM examine ensuite le dossier et la date d’effet.",
       "alimonyPaymentNotice": "Une pension alimentaire doit être effectivement payée. DocBel ne vous demande pas de le prouver et ne le contrôle pas.",
+      "alimonyOrientationNotice": "La pension doit être effectivement payée. L’ONEM peut le vérifier et reste seul compétent pour décider de votre catégorie.",
       "partnerFallback": "votre partenaire",
       "partnerSituationQuestion": "Quelle est la situation de {name} ?",
       "partnerSituation": {
@@ -3740,6 +3741,7 @@
       "summary": {
         "category": "Résultat théorique",
         "assessment": "Explication du moteur familial",
+        "alimonyOrientation": "Orientation déclarative",
         "aloneSituation": "Situation particulière indiquée",
         "alimonyDocument": "Document pour la pension alimentaire",
         "partnerSituation": "Situation du partenaire",

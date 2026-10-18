@@ -54,7 +54,12 @@ export type Article110VerifierInput = {
   anyChildReceivesFamilyAllowances?: boolean;
   /** A short-path declaration; detailed C1 facts remain available independently. */
   isolatedDeclaration?: "alternating_care" | "alimony";
-  alimony?: { enabled?: boolean; legalConditionEstablished?: boolean; beneficiary?: "minor_child" | "adult_child" | "other"; adultChildInNeed?: boolean };
+  /**
+   * Product-facing orientation only, declared in the public journey. It never
+   * supplies the payment or beneficiary facts used by the common assessment.
+   */
+  declaredAlimonyOutcome?: "legal_document" | "pending_or_absent";
+  alimony?: { enabled?: boolean; paymentDeclared?: boolean; legalConditionEstablished?: boolean; beneficiary?: "minor_child" | "adult_child" | "other"; adultChildInNeed?: boolean };
   alternatingCare?: { enabled?: boolean; averageDaysPerWeek?: number; cycle?: "monthly" | "quarterly" | "semiannual" | "annual"; familyAllowances?: boolean; childHasRelevantIncome?: boolean; children?: Array<{ id: string; familyAllowances?: boolean; hasRelevantIncome?: boolean }> };
 };
 
@@ -80,6 +85,12 @@ function toIncome(person: Article110VerifierPerson): { incomes?: FamilyIncome[];
 
 export function article110VerifierFacts(input: Article110VerifierInput): FamilyFacts {
   const firstChildId = input.people.find((person) => person.relation === "child")?.id;
+  const alimony = input.alimony;
+  const hasAlimonyFact = alimony?.enabled !== undefined
+    || alimony?.paymentDeclared !== undefined
+    || alimony?.legalConditionEstablished !== undefined
+    || alimony?.beneficiary !== undefined
+    || alimony?.adultChildInNeed !== undefined;
   return {
     asOf: input.asOf ?? new Date().toISOString().slice(0, 10),
     householdDeclared: input.isAloneExplicit ? undefined : input.multiPersonHouseholdSelected,
@@ -98,9 +109,9 @@ export function article110VerifierFacts(input: Article110VerifierInput): FamilyF
     },
     isolated: {
       declaredQualifiedBasis: input.isolatedDeclaration,
-      alimony: input.alimony?.enabled === undefined ? undefined : {
-        paid: input.alimony.enabled, admissibleBasis: input.alimony.legalConditionEstablished,
-        beneficiary: input.alimony.beneficiary, adultChildInNeed: input.alimony.adultChildInNeed,
+      alimony: !hasAlimonyFact ? undefined : {
+        paid: alimony?.paymentDeclared ?? alimony?.enabled, admissibleBasis: alimony?.legalConditionEstablished,
+        beneficiary: alimony?.beneficiary, adultChildInNeed: alimony?.adultChildInNeed,
       },
       alternatingCare: input.alternatingCare?.enabled === true ? {
         averageDaysPerWeek: input.alternatingCare.enabled ? input.alternatingCare.averageDaysPerWeek : undefined,
@@ -143,8 +154,16 @@ export function evaluateArticle110Verifier(input: Article110VerifierInput) {
   const missingFacts = (assessment.missingFacts ?? []).map((factKey) => ({ factKey, label: labelForFact(factKey) }));
   const needsInformation = assessment.status === "needs_information";
   const onemDecisionRequired = assessment.status === "needs_review" || assessment.administrativeTreatment?.decisionNeeded === true;
+  // Separate from `category`: this owner-approved public orientation does not
+  // manufacture the payment/beneficiary facts needed by other consumers.
+  const declaredOrientation = input.isAloneExplicit && input.declaredAlimonyOutcome === "legal_document"
+    ? { category: "A" as const, basis: "alimony_legal_document" as const }
+    : input.isAloneExplicit && input.declaredAlimonyOutcome === "pending_or_absent"
+      ? { category: "N" as const, basis: "alimony_pending_or_absent" as const }
+      : null;
   return {
     category: assessment.expectedCategory,
+    declaredOrientation,
     householdAssessment: assessment,
     reason: assessment.explanation ?? "Une évaluation théorique est en cours.",
     missingFacts,

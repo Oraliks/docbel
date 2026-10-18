@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest"
 
 import { article110VerifierFacts, evaluateArticle110Verifier } from "@/lib/regulatory-decision/article-110-verifier"
-import { buildFamilySituationEvaluationInput, namedPensionAmounts } from "@/app/outils/ma-situation-familiale/family-situation-client"
+import { buildFamilySituationEvaluationInput, canShowFamilySituationCategory, namedPensionAmounts } from "@/app/outils/ma-situation-familiale/family-situation-client"
 
 const thresholds = { spouseProfessionalMonthly: null, childProfessionalMonthly: null, spouseReplacementMonthly: null, childReplacementMonthly: null, ascendantPensionWithChildMonthly: null, ascendantPensionMonthly: null, ascendantDisabledPensionMonthly: null, source: null }
 
@@ -60,6 +60,31 @@ describe("public family-situation paths use the shared Article 110 engine", () =
     const common = { thresholds: pensionThresholds, date: "18/10/2026", intent: "current" as const, livesAlone: false, people: [{ id: "parent", name: "Paul", relation: "parent" as const }], answers: { relativeIncome: "yes", relativeIncomeKind: "pension" }, partnerAmount: "", relativeAmount: "Paul : 850 €" }
     expect(evaluateArticle110Verifier(buildFamilySituationEvaluationInput({ ...common, answers: { ...common.answers, relativeSpf: "no" } })).category).toBe("B")
     expect(evaluateArticle110Verifier(buildFamilySituationEvaluationInput({ ...common, answers: { ...common.answers, relativeSpf: "yes" } })).category).toBe("A")
+  })
+
+  it("only uses the SPF answer when the declared ascendant pension is between the two ceilings", () => {
+    const common = { thresholds: pensionThresholds, date: "18/10/2026", intent: "current" as const, livesAlone: false, people: [{ id: "parent", name: "Paul", relation: "parent" as const }], answers: { relativeIncome: "yes", relativeIncomeKind: "pension", relativeSpf: "yes" }, partnerAmount: "" }
+    for (const relativeAmount of ["Paul : 700 €", "Paul : 950 €"]) {
+      const person = buildFamilySituationEvaluationInput({ ...common, relativeAmount }).people[0]
+      expect(person.disabilityRelevant).toBeUndefined()
+    }
+  })
+
+  it("only displays categories for the explicitly complete public paths", () => {
+    const alone = [] as const
+    const parent = [{ id: "parent", name: "Paul", relation: "parent" as const }]
+    const childAndParent = [{ id: "child", name: "Léa", relation: "child" as const }, ...parent]
+    const show = (input: Parameters<typeof canShowFamilySituationCategory>[0]) => canShowFamilySituationCategory(input)
+    expect(show({ intent: "current", livesAlone: true, people: alone, answers: { aloneSituation: "none" }, unknownDetails: [], particular: [], hasDeclaredAlimonyOrientation: false })).toBe(true)
+    expect(show({ intent: "current", livesAlone: true, people: alone, answers: { aloneSituation: "alimony", alimonyDocument: "judgment" }, unknownDetails: [], particular: [], hasDeclaredAlimonyOrientation: true })).toBe(true)
+    expect(show({ intent: "current", livesAlone: true, people: alone, answers: { aloneSituation: "alimony", alimonyDocument: "pending" }, unknownDetails: [], particular: [], hasDeclaredAlimonyOrientation: true })).toBe(true)
+    expect(show({ intent: "current", livesAlone: false, people: childAndParent, answers: { childrenAllowance: "no", relativeIncome: "no" }, unknownDetails: [], particular: [], hasDeclaredAlimonyOrientation: false })).toBe(true)
+    for (const input of [
+      { intent: "unknown" as const, livesAlone: false, people: alone, answers: {}, unknownDetails: [], particular: [], hasDeclaredAlimonyOrientation: false },
+      { intent: "current" as const, livesAlone: true, people: alone, answers: { aloneSituation: "unknown" }, unknownDetails: [], particular: [], hasDeclaredAlimonyOrientation: false },
+      { intent: "current" as const, livesAlone: true, people: alone, answers: { aloneSituation: "alternating" }, unknownDetails: [], particular: [], hasDeclaredAlimonyOrientation: false },
+      { intent: "current" as const, livesAlone: false, people: parent, answers: { relativeIncome: "yes", relativeIncomeKind: "salary" }, unknownDetails: [], particular: [], hasDeclaredAlimonyOrientation: false },
+    ]) expect(show(input)).toBe(false)
   })
 
   it("keeps regulatory judgment facts unknown while exposing the declared public orientation", () => {

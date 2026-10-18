@@ -45,6 +45,27 @@ export function namedPensionAmounts(value: string, people: Person[]) {
   return amounts
 }
 
+export function canShowFamilySituationCategory({ intent, livesAlone, people, answers, unknownDetails, particular, hasDeclaredAlimonyOrientation }: {
+  intent?: Intent
+  livesAlone: boolean
+  people: Person[]
+  answers: Answers
+  unknownDetails: DetailKey[]
+  particular: string[]
+  hasDeclaredAlimonyOrientation: boolean
+}) {
+  const ownerApprovedCohabitant = people.some((person) => person.relation === "child")
+    && people.some((person) => person.relation === "parent" || person.relation === "family")
+    && !people.some((person) => person.relation === "spouse" || person.relation === "partner" || person.relation === "unrelated")
+    && answers.childrenAllowance === "no"
+    && answers.relativeIncome === "no"
+  return intent !== "unknown" && unknownDetails.length === 0 && particular.length === 0 && (
+    hasDeclaredAlimonyOrientation
+    || (livesAlone && answers.aloneSituation === "none")
+    || ownerApprovedCohabitant
+  )
+}
+
 export function buildFamilySituationEvaluationInput({ thresholds, date, intent, livesAlone, people, answers, partnerAmount, relativeAmount }: {
   thresholds: C1BaremeThresholds
   date: string
@@ -66,6 +87,14 @@ export function buildFamilySituationEvaluationInput({ thresholds, date, intent, 
     && thresholds.ascendantPensionMonthly !== null
     && thresholds.ascendantDisabledPensionMonthly !== null
     && thresholds.ascendantPensionMonthly !== thresholds.ascendantDisabledPensionMonthly
+    && people.some((person) => person.relation === "parent"
+      && answers.relativeIncomeKind === "pension"
+      && (() => {
+        const pension = pensionAmounts.get(person.id)
+        return pension !== undefined
+          && pension > Math.min(thresholds.ascendantPensionMonthly!, thresholds.ascendantDisabledPensionMonthly!)
+          && pension <= Math.max(thresholds.ascendantPensionMonthly!, thresholds.ascendantDisabledPensionMonthly!)
+      })())
   return {
     thresholds,
     asOf: /^\d{2}\/\d{2}\/\d{4}$/.test(date) ? `${date.slice(6)}-${date.slice(3, 5)}-${date.slice(0, 2)}` : date,
@@ -149,10 +178,19 @@ export function FamilySituationClient({ thresholds }: { thresholds: C1BaremeThre
     partner: people.some((person) => person.relation === "spouse" || person.relation === "partner"),
   }), [people])
   const childrenOnly = composition.children && !composition.family && !composition.unrelated && !composition.partner
+  const relativePensionAmounts = useMemo(() => namedPensionAmounts(relativeAmount, people), [people, relativeAmount])
   const shouldAskRelativeSpf = !composition.children
     && thresholds.ascendantPensionMonthly !== null
     && thresholds.ascendantDisabledPensionMonthly !== null
     && thresholds.ascendantPensionMonthly !== thresholds.ascendantDisabledPensionMonthly
+    && people.some((person) => person.relation === "parent"
+      && answers.relativeIncomeKind === "pension"
+      && (() => {
+        const pension = relativePensionAmounts.get(person.id)
+        return pension !== undefined
+          && pension > Math.min(thresholds.ascendantPensionMonthly!, thresholds.ascendantDisabledPensionMonthly!)
+          && pension <= Math.max(thresholds.ascendantPensionMonthly!, thresholds.ascendantDisabledPensionMonthly!)
+      })())
   const householdChanged = useMemo(() => JSON.stringify({ people, livesAlone }) !== JSON.stringify({ people: savedPeople, livesAlone: savedLivesAlone }), [livesAlone, people, savedLivesAlone, savedPeople])
   const householdAnswersExist = Object.values(answers).some((value) => value !== undefined) || [partnerAmount, partnerDetail, relativeAmount, studiesEndedAt, workStartedAt, contractStartAt, contractEndAt, unrelatedDetail].some(Boolean) || unknownDetails.length > 0 || particular.length > 0
   const relationLabel = (value: Relation) => value === "spouse" ? t("relationSpouse") : value === "partner" ? t("relationPartner") : value === "child" ? t("relationChild") : value === "parent" ? t("relationParent") : value === "family" ? t("relationFamily") : t("relationUnrelated")
@@ -160,9 +198,7 @@ export function FamilySituationClient({ thresholds }: { thresholds: C1BaremeThre
   const evaluationInput = useMemo(() => buildFamilySituationEvaluationInput({ thresholds, date, intent, livesAlone, people, answers, partnerAmount, relativeAmount }), [answers, date, intent, livesAlone, partnerAmount, people, relativeAmount, thresholds])
   const evaluation = useMemo(() => evaluateArticle110Verifier(evaluationInput), [evaluationInput])
   const hasDeclaredAlimonyOrientation = evaluation.declaredOrientation !== null
-  const canShowCategory = intent !== "unknown" && unknownDetails.length === 0 && particular.length === 0 && (
-    hasDeclaredAlimonyOrientation || (evaluation.category !== null && evaluation.missingFacts.length === 0 && evaluation.onemDecisionStatus === "not_required")
-  )
+  const canShowCategory = canShowFamilySituationCategory({ intent, livesAlone, people, answers, unknownDetails, particular, hasDeclaredAlimonyOrientation })
   const publicEvaluation = canShowCategory ? evaluation : {
     ...evaluation,
     category: null,

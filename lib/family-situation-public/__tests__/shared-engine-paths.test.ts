@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest"
 
 import { article110VerifierFacts, evaluateArticle110Verifier } from "@/lib/regulatory-decision/article-110-verifier"
-import { buildFamilySituationEvaluationInput, canShowFamilySituationCategory, namedPensionAmounts } from "@/app/outils/ma-situation-familiale/family-situation-client"
+import { buildFamilySituationEvaluationInput, canShowFamilySituationCategory, namedPensionAmounts, type Person } from "@/app/outils/ma-situation-familiale/family-situation-client"
 
 const thresholds = { spouseProfessionalMonthly: null, childProfessionalMonthly: null, spouseReplacementMonthly: null, childReplacementMonthly: null, ascendantPensionWithChildMonthly: null, ascendantPensionMonthly: null, ascendantDisabledPensionMonthly: null, source: null }
 
@@ -70,10 +70,15 @@ describe("public family-situation paths use the shared Article 110 engine", () =
     }
   })
 
+  it("uses the SPF answer when the declared ascendant pension total is between the two ceilings", () => {
+    const input = buildFamilySituationEvaluationInput({ thresholds: pensionThresholds, date: "18/10/2026", intent: "current", livesAlone: false, people: [{ id: "paul", name: "Paul", relation: "parent" }, { id: "jeanne", name: "Jeanne", relation: "parent" }], answers: { relativeIncome: "yes", relativeIncomeKind: "pension", relativeSpf: "yes" }, partnerAmount: "", relativeAmount: "Paul : 425 € ; Jeanne : 425 €" })
+    expect(input.people.map((person) => person.disabilityRelevant)).toEqual([true, true])
+  })
+
   it("only displays categories for the explicitly complete public paths", () => {
-    const alone = [] as const
-    const parent = [{ id: "parent", name: "Paul", relation: "parent" as const }]
-    const childAndParent = [{ id: "child", name: "Léa", relation: "child" as const }, ...parent]
+    const alone: Person[] = []
+    const parent: Person[] = [{ id: "parent", name: "Paul", relation: "parent" }]
+    const childAndParent: Person[] = [{ id: "child", name: "Léa", relation: "child" }, ...parent]
     const show = (input: Parameters<typeof canShowFamilySituationCategory>[0]) => canShowFamilySituationCategory(input)
     expect(show({ intent: "current", livesAlone: true, people: alone, answers: { aloneSituation: "none" }, unknownDetails: [], particular: [], hasDeclaredAlimonyOrientation: false })).toBe(true)
     expect(show({ intent: "current", livesAlone: true, people: alone, answers: { aloneSituation: "alimony", alimonyDocument: "judgment" }, unknownDetails: [], particular: [], hasDeclaredAlimonyOrientation: true })).toBe(true)

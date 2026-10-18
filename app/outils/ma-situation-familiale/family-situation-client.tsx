@@ -83,18 +83,15 @@ export function buildFamilySituationEvaluationInput({ thresholds, date, intent, 
     partner: people.some((person) => person.relation === "spouse" || person.relation === "partner"),
   }
   const pensionAmounts = namedPensionAmounts(relativeAmount, people)
+  const ascendantPensionTotal = people.reduce((total, person) => person.relation === "parent" && answers.relativeIncomeKind === "pension"
+    ? total + (pensionAmounts.get(person.id) ?? 0)
+    : total, 0)
   const askRelativeSpf = !composition.children
     && thresholds.ascendantPensionMonthly !== null
     && thresholds.ascendantDisabledPensionMonthly !== null
     && thresholds.ascendantPensionMonthly !== thresholds.ascendantDisabledPensionMonthly
-    && people.some((person) => person.relation === "parent"
-      && answers.relativeIncomeKind === "pension"
-      && (() => {
-        const pension = pensionAmounts.get(person.id)
-        return pension !== undefined
-          && pension > Math.min(thresholds.ascendantPensionMonthly!, thresholds.ascendantDisabledPensionMonthly!)
-          && pension <= Math.max(thresholds.ascendantPensionMonthly!, thresholds.ascendantDisabledPensionMonthly!)
-      })())
+    && ascendantPensionTotal > Math.min(thresholds.ascendantPensionMonthly!, thresholds.ascendantDisabledPensionMonthly!)
+    && ascendantPensionTotal <= Math.max(thresholds.ascendantPensionMonthly!, thresholds.ascendantDisabledPensionMonthly!)
   return {
     thresholds,
     asOf: /^\d{2}\/\d{2}\/\d{4}$/.test(date) ? `${date.slice(6)}-${date.slice(3, 5)}-${date.slice(0, 2)}` : date,
@@ -179,18 +176,15 @@ export function FamilySituationClient({ thresholds }: { thresholds: C1BaremeThre
   }), [people])
   const childrenOnly = composition.children && !composition.family && !composition.unrelated && !composition.partner
   const relativePensionAmounts = useMemo(() => namedPensionAmounts(relativeAmount, people), [people, relativeAmount])
+  const ascendantPensionTotal = useMemo(() => people.reduce((total, person) => person.relation === "parent" && answers.relativeIncomeKind === "pension"
+    ? total + (relativePensionAmounts.get(person.id) ?? 0)
+    : total, 0), [answers.relativeIncomeKind, people, relativePensionAmounts])
   const shouldAskRelativeSpf = !composition.children
     && thresholds.ascendantPensionMonthly !== null
     && thresholds.ascendantDisabledPensionMonthly !== null
     && thresholds.ascendantPensionMonthly !== thresholds.ascendantDisabledPensionMonthly
-    && people.some((person) => person.relation === "parent"
-      && answers.relativeIncomeKind === "pension"
-      && (() => {
-        const pension = relativePensionAmounts.get(person.id)
-        return pension !== undefined
-          && pension > Math.min(thresholds.ascendantPensionMonthly!, thresholds.ascendantDisabledPensionMonthly!)
-          && pension <= Math.max(thresholds.ascendantPensionMonthly!, thresholds.ascendantDisabledPensionMonthly!)
-      })())
+    && ascendantPensionTotal > Math.min(thresholds.ascendantPensionMonthly!, thresholds.ascendantDisabledPensionMonthly!)
+    && ascendantPensionTotal <= Math.max(thresholds.ascendantPensionMonthly!, thresholds.ascendantDisabledPensionMonthly!)
   const householdChanged = useMemo(() => JSON.stringify({ people, livesAlone }) !== JSON.stringify({ people: savedPeople, livesAlone: savedLivesAlone }), [livesAlone, people, savedLivesAlone, savedPeople])
   const householdAnswersExist = Object.values(answers).some((value) => value !== undefined) || [partnerAmount, partnerDetail, relativeAmount, studiesEndedAt, workStartedAt, contractStartAt, contractEndAt, unrelatedDetail].some(Boolean) || unknownDetails.length > 0 || particular.length > 0
   const relationLabel = (value: Relation) => value === "spouse" ? t("relationSpouse") : value === "partner" ? t("relationPartner") : value === "child" ? t("relationChild") : value === "parent" ? t("relationParent") : value === "family" ? t("relationFamily") : t("relationUnrelated")

@@ -464,18 +464,34 @@ export function evaluateFamilySituation(input: FamilySituationEvaluationInput): 
     }
     const hasRelevantIncome = eligible.some((person) => person.incomes?.some((income) =>
       income.active !== false && income.kind !== "spf_disability"));
+    const spouseIncomeBase = {
+      composition: composition.kind,
+      operationalArticle: "needs_review" as const,
+      incomeAssessment: "needs_review" as const,
+      monthlyPaymentAssessment: "NEEDS_REVIEW" as const,
+      trigger: "c1_household_update" as const,
+      factKeys: composition.factKeys,
+      sourceRuleIds: ["situation_familiale_composition_priorities"],
+    };
     if (missingIncomeFacts.length || hasRelevantIncome) {
       const needsInformation = missingIncomeFacts.length > 0;
       return complete({
-        composition: composition.kind, status: needsInformation ? "needs_information" : "needs_review",
-        expectedCategory: null, operationalArticle: "needs_review", incomeAssessment: "needs_review",
-        monthlyPaymentAssessment: "NEEDS_REVIEW",
+        ...spouseIncomeBase, status: needsInformation ? "needs_information" : "needs_review",
+        expectedCategory: null,
         recommendedAction: needsInformation ? "information_required" : "review_required",
-        trigger: "c1_household_update", factKeys: composition.factKeys,
         missingFacts: needsInformation ? [...new Set(missingIncomeFacts)] : ["partnerIncome.article60Coverage"],
-        sourceRuleIds: ["situation_familiale_composition_priorities"],
       });
     }
+    return complete({
+      ...spouseIncomeBase,
+      status: "probable",
+      expectedCategory: "A",
+      operationalArticle: "none",
+      incomeAssessment: "no_income",
+      monthlyPaymentAssessment: "A_RATE",
+      recommendedAction: "declaration_required",
+      sourceRuleIds: [...spouseIncomeBase.sourceRuleIds, "situation_familiale_conjoint_revenus_conditions_am60"],
+    });
   }
   const assessment = assessHouseholdBranch({
     composition,

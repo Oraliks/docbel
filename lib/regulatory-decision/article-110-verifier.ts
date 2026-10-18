@@ -16,6 +16,8 @@ export type Article110VerifierPerson = {
   label?: string;
   partnerEstablished?: boolean;
   isAscendant?: boolean;
+  /** Declared SPF loss-of-autonomy recognition, used for the ascendant pension ceiling. */
+  disabilityRelevant?: boolean;
   receivesFamilyAllowances?: boolean;
   hasProfessionalIncome?: boolean;
   professionalIncomeAmount?: number;
@@ -83,7 +85,7 @@ export function article110VerifierFacts(input: Article110VerifierInput): FamilyF
     householdDeclared: input.isAloneExplicit ? undefined : input.multiPersonHouseholdSelected,
     people: input.isAloneExplicit ? [] : input.people.map((person): FamilyPerson => ({
       id: person.id, relation: person.relation, partnerEstablished: person.partnerEstablished,
-      isAscendant: person.isAscendant,
+      isAscendant: person.isAscendant, disabilityRelevant: person.disabilityRelevant,
       receivesFamilyAllowances: person.id === firstChildId && input.anyChildReceivesFamilyAllowances !== undefined
         ? input.anyChildReceivesFamilyAllowances
         : person.receivesFamilyAllowances,

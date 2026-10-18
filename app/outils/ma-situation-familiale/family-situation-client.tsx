@@ -11,17 +11,17 @@ import { Label } from "@/components/ui/label"
 import { formatDate } from "@/lib/i18n/format"
 import { GLASS_CARD, GLASS_INPUT } from "@/lib/glass-classes"
 import type { C1BaremeThresholds } from "@/lib/baremes/c1-thresholds"
-import { evaluateArticle110Verifier } from "@/lib/regulatory-decision/article-110-verifier"
+import { evaluateArticle110Verifier, type Article110VerifierInput } from "@/lib/regulatory-decision/article-110-verifier"
 
-type Intent = "current" | "changed" | "unknown"
-type Relation = "spouse" | "partner" | "child" | "parent" | "family" | "unrelated"
+export type Intent = "current" | "changed" | "unknown"
+export type Relation = "spouse" | "partner" | "child" | "parent" | "family" | "unrelated"
 type Step =
   | "intent" | "date" | "household" | "confirm" | "aloneSituation" | "alimonyDocument"
   | "partnerSituation" | "partnerSalary" | "partnerFixed" | "partnerContract" | "partnerDates" | "partnerOther"
   | "childrenAllowance" | "childrenIncome" | "childFirstWorkChoice" | "childFirstWork" | "relativeIncome"
   | "relativeIncomeKind" | "relativePension" | "relativeSpf" | "unrelatedIncome" | "unrelatedDetail" | "unrelatedHousehold" | "particular" | "summary"
 export type Person = { id: string; name: string; relation: Relation }
-type Answers = Partial<Record<"aloneSituation" | "alimonyDocument" | "partnerSituation" | "partnerFixed" | "partnerContract" | "childrenAllowance" | "childrenIncome" | "childFirstWork" | "relativeIncome" | "relativeIncomeKind" | "relativePension" | "relativeSpf" | "unrelatedIncome" | "unrelatedHousehold", string>>
+export type Answers = Partial<Record<"aloneSituation" | "alimonyDocument" | "partnerSituation" | "partnerFixed" | "partnerContract" | "childrenAllowance" | "childrenIncome" | "childFirstWork" | "relativeIncome" | "relativeIncomeKind" | "relativePension" | "relativeSpf" | "unrelatedIncome" | "unrelatedHousehold", string>>
 type DetailKey = "partnerAmount" | "partnerDetail" | "relativeAmount" | "studiesEndedAt" | "workStartedAt" | "contractStartAt" | "contractEndAt" | "unrelatedDetail"
 type SummaryDetail = { label: string; value: string }
 
@@ -43,6 +43,69 @@ export function namedPensionAmounts(value: string, people: Person[]) {
     amounts.set(candidates[0].id, Number(match[2].replace(/[\s\u00a0]/g, "").replace(",", ".")))
   }
   return amounts
+}
+
+export function buildFamilySituationEvaluationInput({ thresholds, date, intent, livesAlone, people, answers, partnerAmount, relativeAmount }: {
+  thresholds: C1BaremeThresholds
+  date: string
+  intent?: Intent
+  livesAlone: boolean
+  people: Person[]
+  answers: Answers
+  partnerAmount: string
+  relativeAmount: string
+}): Article110VerifierInput {
+  const composition = {
+    children: people.some((person) => person.relation === "child"),
+    family: people.some((person) => person.relation === "parent" || person.relation === "family"),
+    unrelated: people.some((person) => person.relation === "unrelated"),
+    partner: people.some((person) => person.relation === "spouse" || person.relation === "partner"),
+  }
+  const pensionAmounts = namedPensionAmounts(relativeAmount, people)
+  const askRelativeSpf = !composition.children
+    && thresholds.ascendantPensionMonthly !== null
+    && thresholds.ascendantDisabledPensionMonthly !== null
+    && thresholds.ascendantPensionMonthly !== thresholds.ascendantDisabledPensionMonthly
+  return {
+    thresholds,
+    asOf: /^\d{2}\/\d{2}\/\d{4}$/.test(date) ? `${date.slice(6)}-${date.slice(3, 5)}-${date.slice(0, 2)}` : date,
+    isAloneExplicit: livesAlone,
+    multiPersonHouseholdSelected: intent === "unknown" ? true : !livesAlone && people.length > 0,
+    anyChildReceivesFamilyAllowances: answers.childrenAllowance === "yes" ? true : answers.childrenAllowance === "no" ? false : undefined,
+    cohousing: composition.unrelated && !composition.partner && !composition.children && !composition.family
+      ? answers.unrelatedHousehold === "separate" ? true : answers.unrelatedHousehold === "shared" ? false : undefined : undefined,
+    cohousingAutonomousLiving: answers.unrelatedHousehold === "separate" ? true : answers.unrelatedHousehold === "shared" ? false : undefined,
+    isolatedDeclaration: answers.aloneSituation === "alimony" ? "alimony" : answers.aloneSituation === "alternating" ? "alternating_care" : undefined,
+    // The public journey does not collect payment or beneficiary facts. A judgment
+    // remains visible in the recap, while the shared engine keeps the category to confirm.
+    alimony: answers.aloneSituation === "alimony" ? { enabled: true, legalConditionEstablished: answers.alimonyDocument === "judgment" ? true : ["pending", "none"].includes(answers.alimonyDocument ?? "") ? false : undefined } : undefined,
+    people: people.map((person) => {
+      const isPartner = person.relation === "spouse" || person.relation === "partner"
+      const noIncome = isPartner && answers.partnerSituation === "noIncome"
+      const childNoIncome = person.relation === "child" && answers.childrenIncome === "no"
+      const relativeNoIncome = (person.relation === "parent" || person.relation === "family") && answers.relativeIncome === "no"
+      const unrelatedNoIncome = person.relation === "unrelated" && answers.unrelatedIncome === "no"
+      const partnerEmployee = isPartner && answers.partnerSituation === "employee"
+      const partnerReplacement = isPartner && ["unemployment", "mutual", "pension", "disability", "cpas"].includes(answers.partnerSituation ?? "")
+      const partnerAmountNumber = /^\s*\d+(?:[.,]\d+)?\s*$/.test(partnerAmount) ? Number(partnerAmount.replace(",", ".")) : undefined
+      const familyPension = (person.relation === "parent" || person.relation === "family") && answers.relativeIncomeKind === "pension" && pensionAmounts.has(person.id)
+      return {
+        id: person.id,
+        relation: person.relation === "parent" || person.relation === "family" ? "relative" as const : person.relation === "unrelated" ? "third_party" as const : person.relation,
+        isAscendant: person.relation === "parent" ? true : undefined,
+        disabilityRelevant: familyPension && askRelativeSpf ? answers.relativeSpf === "yes" ? true : answers.relativeSpf === "no" ? false : undefined : undefined,
+        receivesFamilyAllowances: person.relation === "child" && answers.childrenAllowance === "yes" ? true : person.relation === "child" && answers.childrenAllowance === "no" ? false : undefined,
+        hasProfessionalIncome: noIncome || childNoIncome || relativeNoIncome || unrelatedNoIncome ? false : partnerEmployee ? true : partnerReplacement ? false : undefined,
+        professionalIncomeAmount: partnerEmployee ? partnerAmountNumber : undefined,
+        professionalIncomeType: partnerEmployee ? "employee" as const : undefined,
+        professionalIncomeContract: answers.partnerContract === "cdi" ? "cdi" : answers.partnerContract === "temporary" ? "cdd" : answers.partnerContract === "other" ? "other" : undefined,
+        professionalIncomeVariable: answers.partnerFixed === "fixed" ? false : answers.partnerFixed === "variable" ? true : undefined,
+        hasReplacementIncome: noIncome || childNoIncome || relativeNoIncome || unrelatedNoIncome ? false : partnerEmployee ? false : familyPension || partnerReplacement ? true : undefined,
+        replacementIncomeType: familyPension || answers.partnerSituation === "pension" ? "pension" as const : answers.partnerSituation === "disability" ? "disability_allowance" as const : partnerReplacement ? "other" as const : undefined,
+        replacementIncomeAmount: pensionAmounts.get(person.id),
+      }
+    }),
+  }
 }
 
 export function FamilySituationClient({ thresholds }: { thresholds: C1BaremeThresholds }) {
@@ -79,54 +142,18 @@ export function FamilySituationClient({ thresholds }: { thresholds: C1BaremeThre
     partner: people.some((person) => person.relation === "spouse" || person.relation === "partner"),
   }), [people])
   const childrenOnly = composition.children && !composition.family && !composition.unrelated && !composition.partner
+  const shouldAskRelativeSpf = !composition.children
+    && thresholds.ascendantPensionMonthly !== null
+    && thresholds.ascendantDisabledPensionMonthly !== null
+    && thresholds.ascendantPensionMonthly !== thresholds.ascendantDisabledPensionMonthly
   const householdChanged = useMemo(() => JSON.stringify({ people, livesAlone }) !== JSON.stringify({ people: savedPeople, livesAlone: savedLivesAlone }), [livesAlone, people, savedLivesAlone, savedPeople])
   const householdAnswersExist = Object.values(answers).some((value) => value !== undefined) || [partnerAmount, partnerDetail, relativeAmount, studiesEndedAt, workStartedAt, contractStartAt, contractEndAt, unrelatedDetail].some(Boolean) || unknownDetails.length > 0 || particular.length > 0
   const relationLabel = (value: Relation) => value === "spouse" ? t("relationSpouse") : value === "partner" ? t("relationPartner") : value === "child" ? t("relationChild") : value === "parent" ? t("relationParent") : value === "family" ? t("relationFamily") : t("relationUnrelated")
   const firstPartner = people.find((person) => person.relation === "spouse" || person.relation === "partner")
-  const evaluation = useMemo(() => evaluateArticle110Verifier({
-    thresholds,
-    asOf: /^\d{2}\/\d{2}\/\d{4}$/.test(date) ? `${date.slice(6)}-${date.slice(3, 5)}-${date.slice(0, 2)}` : date,
-    isAloneExplicit: livesAlone,
-    // A visitor who chose "I don't know" did not declare that they live alone.
-    multiPersonHouseholdSelected: intent === "unknown" ? true : !livesAlone && people.length > 0,
-    anyChildReceivesFamilyAllowances: answers.childrenAllowance === "yes" ? true : answers.childrenAllowance === "no" ? false : undefined,
-    cohousing: composition.unrelated && !composition.partner && !composition.children && !composition.family
-      ? answers.unrelatedHousehold === "separate" ? true : answers.unrelatedHousehold === "shared" ? false : undefined : undefined,
-    cohousingAutonomousLiving: answers.unrelatedHousehold === "separate" ? true : answers.unrelatedHousehold === "shared" ? false : undefined,
-    isolatedDeclaration: answers.aloneSituation === "alimony" ? "alimony" : answers.aloneSituation === "alternating" ? "alternating_care" : undefined,
-    alimony: answers.aloneSituation === "alimony" ? { enabled: true, legalConditionEstablished: answers.alimonyDocument === "judgment" ? true : ["pending", "none"].includes(answers.alimonyDocument ?? "") ? false : undefined } : undefined,
-    people: people.map((person) => {
-      const isPartner = person.relation === "spouse" || person.relation === "partner"
-      const noIncome = isPartner && answers.partnerSituation === "noIncome"
-      const childNoIncome = person.relation === "child" && answers.childrenIncome === "no"
-      const relativeNoIncome = (person.relation === "parent" || person.relation === "family") && answers.relativeIncome === "no"
-      const unrelatedNoIncome = person.relation === "unrelated" && answers.unrelatedIncome === "no"
-      const partnerEmployee = isPartner && answers.partnerSituation === "employee"
-      const partnerReplacement = isPartner && ["unemployment", "mutual", "pension", "disability", "cpas"].includes(answers.partnerSituation ?? "")
-      const partnerAmountNumber = /^\s*\d+(?:[.,]\d+)?\s*$/.test(partnerAmount) ? Number(partnerAmount.replace(",", ".")) : undefined
-      const familyPension = (person.relation === "parent" || person.relation === "family") && answers.relativeIncomeKind === "pension" && namedPensionAmounts(relativeAmount, people).has(person.id)
-      return {
-        id: person.id,
-        relation: person.relation === "parent" || person.relation === "family" ? "relative" as const : person.relation === "unrelated" ? "third_party" as const : person.relation,
-        isAscendant: person.relation === "parent" ? true : undefined,
-        receivesFamilyAllowances: person.relation === "child" && answers.childrenAllowance === "yes" ? true : person.relation === "child" && answers.childrenAllowance === "no" ? false : undefined,
-        hasProfessionalIncome: noIncome || childNoIncome || relativeNoIncome || unrelatedNoIncome ? false : partnerEmployee ? true : partnerReplacement ? false : undefined,
-        professionalIncomeAmount: partnerEmployee ? partnerAmountNumber : undefined,
-        professionalIncomeType: partnerEmployee ? "employee" as const : undefined,
-        professionalIncomeContract: answers.partnerContract === "cdi" ? "cdi" : answers.partnerContract === "temporary" ? "cdd" : answers.partnerContract === "other" ? "other" : undefined,
-        professionalIncomeVariable: answers.partnerFixed === "fixed" ? false : answers.partnerFixed === "variable" ? true : undefined,
-        hasReplacementIncome: noIncome || childNoIncome || relativeNoIncome || unrelatedNoIncome ? false : partnerEmployee ? false : familyPension || partnerReplacement ? true : undefined,
-        replacementIncomeType: familyPension || answers.partnerSituation === "pension" ? "pension" as const : answers.partnerSituation === "disability" ? "disability_allowance" as const : partnerReplacement ? "other" as const : undefined,
-        replacementIncomeAmount: namedPensionAmounts(relativeAmount, people).get(person.id),
-      }
-    }),
-  }), [answers, composition, date, intent, livesAlone, partnerAmount, people, relativeAmount, thresholds])
-  const ownerApprovedCohabitant = composition.children && composition.family && !composition.partner && !composition.unrelated && answers.childrenAllowance === "no" && answers.relativeIncome === "no"
-  // This public intake only exposes a category when its small questionnaire has
-  // collected every decisive fact. Other compositions stay at "to confirm".
-  const canShowCategory = intent !== "unknown" && unknownDetails.length === 0 && (
-    particular.length === 0 && ((livesAlone && answers.aloneSituation === "none") || ownerApprovedCohabitant)
-  )
+  const evaluationInput = useMemo(() => buildFamilySituationEvaluationInput({ thresholds, date, intent, livesAlone, people, answers, partnerAmount, relativeAmount }), [answers, date, intent, livesAlone, partnerAmount, people, relativeAmount, thresholds])
+  const evaluation = useMemo(() => evaluateArticle110Verifier(evaluationInput), [evaluationInput])
+  const canShowCategory = intent !== "unknown" && unknownDetails.length === 0 && particular.length === 0
+    && evaluation.category !== null && evaluation.missingFacts.length === 0 && evaluation.onemDecisionStatus === "not_required"
   const publicEvaluation = canShowCategory ? evaluation : {
     ...evaluation,
     category: null,
@@ -245,8 +272,8 @@ export function FamilySituationClient({ thresholds }: { thresholds: C1BaremeThre
         {step === "childFirstWorkChoice" ? <ChoiceStep t={t} titleKey="childFirstWorkChoiceQuestion" choices={["yes", "no", "unknown"]} labelKey="childFirstWork" value={answers.childFirstWork} onChoose={(value) => { updateAnswer("childFirstWork", value); if (value !== "yes") clearDetails("studiesEndedAt", "workStartedAt"); if (value === "yes") go("childFirstWork"); else close() }} /> : null}
         {step === "childFirstWork" ? <DatesStep t={t} titleKey="childFirstWorkQuestion" bodyKey="childFirstWorkBody" firstLabelKey="studiesEndedLabel" secondLabelKey="workStartedLabel" valueA={studiesEndedAt} valueB={workStartedAt} onChangeA={updateDetail("studiesEndedAt", setStudiesEndedAt)} onChangeB={updateDetail("workStartedAt", setWorkStartedAt)} onUnknown={() => { markDetailUnknown("studiesEndedAt"); markDetailUnknown("workStartedAt"); close() }} onContinue={close} /> : null}
         {step === "relativeIncome" ? <ChoiceStep t={t} titleKey="relativeIncomeQuestion" bodyKey={composition.children ? "relativeIncomeChildrenBody" : undefined} choices={["yes", "no", "unknown"]} labelKey="relativeIncome" value={answers.relativeIncome} onChoose={(value) => { updateAnswer("relativeIncome", value); if (value !== "yes") { clearAnswerKeys("relativeIncomeKind", "relativeSpf"); clearDetails("relativeAmount") } if (value === "yes") go("relativeIncomeKind"); else go(afterFamily()) }} /> : null}
-        {step === "relativeIncomeKind" ? <ChoiceStep t={t} titleKey="relativeIncomeKindQuestion" choices={["salary", "pension", "disability", "other", "unknown"]} labelKey="relativeIncomeKind" value={answers.relativeIncomeKind} onChoose={(value) => { updateAnswer("relativeIncomeKind", value); if (value !== "pension") clearDetails("relativeAmount"); if (value !== "disability") clearAnswerKeys("relativeSpf"); if (value === "pension") go("relativePension"); else if (value === "disability") go("relativeSpf"); else go(afterFamily()) }} /> : null}
-        {step === "relativePension" ? <TextStep t={t} titleKey="relativePensionQuestion" bodyKey="relativePensionBody" labelKey="relativePensionLabel" placeholderKey="relativePensionPlaceholder" value={relativeAmount} onChange={updateDetail("relativeAmount", setRelativeAmount)} onUnknown={() => { markDetailUnknown("relativeAmount"); go("relativeSpf") }} onContinue={() => go("relativeSpf")} /> : null}
+        {step === "relativeIncomeKind" ? <ChoiceStep t={t} titleKey="relativeIncomeKindQuestion" choices={["salary", "pension", "disability", "other", "unknown"]} labelKey="relativeIncomeKind" value={answers.relativeIncomeKind} onChoose={(value) => { updateAnswer("relativeIncomeKind", value); if (value !== "pension") { clearDetails("relativeAmount"); clearAnswerKeys("relativeSpf") } if (value === "pension") go("relativePension"); else go(afterFamily()) }} /> : null}
+        {step === "relativePension" ? <TextStep t={t} titleKey="relativePensionQuestion" bodyKey="relativePensionBody" labelKey="relativePensionLabel" placeholderKey="relativePensionPlaceholder" value={relativeAmount} onChange={updateDetail("relativeAmount", setRelativeAmount)} onUnknown={() => { markDetailUnknown("relativeAmount"); go(shouldAskRelativeSpf ? "relativeSpf" : afterFamily()) }} onContinue={() => go(shouldAskRelativeSpf ? "relativeSpf" : afterFamily())} /> : null}
         {step === "relativeSpf" ? <ChoiceStep t={t} titleKey="relativeSpfQuestion" bodyKey="relativeSpfBody" choices={["yes", "no", "unknown"]} labelKey="relativeSpf" value={answers.relativeSpf} onChoose={(value) => { updateAnswer("relativeSpf", value); go(afterFamily()) }} /> : null}
         {step === "unrelatedIncome" ? <ChoiceStep t={t} titleKey="unrelatedIncomeQuestion" choices={["yes", "no", "unknown"]} labelKey="unrelatedIncome" value={answers.unrelatedIncome} onChoose={(value) => { updateAnswer("unrelatedIncome", value); if (value !== "yes") clearDetails("unrelatedDetail"); if (value === "yes") go("unrelatedDetail"); else close() }} /> : null}
         {step === "unrelatedDetail" ? <TextStep t={t} titleKey="unrelatedDetailQuestion" bodyKey="unrelatedDetailBody" value={unrelatedDetail} onChange={updateDetail("unrelatedDetail", setUnrelatedDetail)} onUnknown={() => { markDetailUnknown("unrelatedDetail"); close() }} onContinue={close} /> : null}

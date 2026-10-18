@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest"
 
 import { evaluateArticle110Verifier } from "@/lib/regulatory-decision/article-110-verifier"
-import { namedPensionAmounts } from "@/app/outils/ma-situation-familiale/family-situation-client"
+import { buildFamilySituationEvaluationInput, namedPensionAmounts } from "@/app/outils/ma-situation-familiale/family-situation-client"
 
 const thresholds = { spouseProfessionalMonthly: null, childProfessionalMonthly: null, spouseReplacementMonthly: null, childReplacementMonthly: null, ascendantPensionWithChildMonthly: null, ascendantPensionMonthly: null, ascendantDisabledPensionMonthly: null, source: null }
+
+const pensionThresholds = { ...thresholds, ascendantPensionMonthly: 800, ascendantDisabledPensionMonthly: 900 }
 
 describe("public family-situation paths use the shared Article 110 engine", () => {
   it("returns isolated for a person explicitly living alone", () => {
@@ -52,5 +54,16 @@ describe("public family-situation paths use the shared Article 110 engine", () =
     const onePerson = [{ id: "a", name: "Paul", relation: "parent" as const }]
     expect(namedPensionAmounts("Paul : 700 €", sameNamePeople).size).toBe(0)
     expect(namedPensionAmounts("Paul : 700 € ; Paul : 800 €", onePerson).size).toBe(0)
+  })
+
+  it("passes the SPF answer through to the shared pension ceiling", () => {
+    const common = { thresholds: pensionThresholds, date: "18/10/2026", intent: "current" as const, livesAlone: false, people: [{ id: "parent", name: "Paul", relation: "parent" as const }], answers: { relativeIncome: "yes", relativeIncomeKind: "pension" }, partnerAmount: "", relativeAmount: "Paul : 850 €" }
+    expect(evaluateArticle110Verifier(buildFamilySituationEvaluationInput({ ...common, answers: { ...common.answers, relativeSpf: "no" } })).category).toBe("B")
+    expect(evaluateArticle110Verifier(buildFamilySituationEvaluationInput({ ...common, answers: { ...common.answers, relativeSpf: "yes" } })).category).toBe("A")
+  })
+
+  it("keeps a judgment under review until the payment and beneficiary facts are known", () => {
+    const result = evaluateArticle110Verifier(buildFamilySituationEvaluationInput({ thresholds, date: "18/10/2026", intent: "current", livesAlone: true, people: [], answers: { aloneSituation: "alimony", alimonyDocument: "judgment" }, partnerAmount: "", relativeAmount: "" }))
+    expect(result.category).toBeNull()
   })
 })

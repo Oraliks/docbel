@@ -98,7 +98,45 @@ describe("Article 110 theoretical verifier", () => {
     });
   });
 
-  it("applies the dated child-income ceiling to a declared student occupation amount", () => {
+  it("excludes only a child's student occupation contract without requiring its amount or a threshold", () => {
+    const result = evaluateArticle110Verifier({
+      thresholds,
+      anyChildReceivesFamilyAllowances: false,
+      people: [{ id: "child", relation: "child", hasProfessionalIncome: true, professionalIncomeType: "student_occupation_contract", hasReplacementIncome: false }],
+    });
+    expect(result.category).toBe("A");
+    expect(result.householdAssessment.excludedStudentOccupationIncome).toBe(true);
+  });
+
+  it("does not extend the student contract exclusion to a child's replacement income", () => {
+    const result = evaluateArticle110Verifier({
+      thresholds: { ...thresholds, childReplacementMonthly: 200 },
+      anyChildReceivesFamilyAllowances: false,
+      people: [{ id: "child", relation: "child", hasProfessionalIncome: true, professionalIncomeType: "student_occupation_contract", hasReplacementIncome: true, replacementIncomeType: "unemployment", replacementIncomeAmount: 300 }],
+    });
+    expect(result.category).toBe("B");
+  });
+
+  it("keeps a spouse's declared student occupation income relevant", () => {
+    const input = {
+      thresholds,
+      people: [{ id: "spouse", relation: "spouse" as const, hasProfessionalIncome: true, professionalIncomeType: "student_occupation_contract" as const, professionalIncomeAmount: 1200, professionalIncomeContract: "cdi" as const, professionalIncomeVariable: false, hasReplacementIncome: false }],
+    };
+    expect(evaluateArticle110Verifier(input).category).toBe("B");
+    expect(article110VerifierFacts(input).people[0].incomes?.[0].excludedFromChildProfessionalAssessment).not.toBe(true);
+  });
+
+  it("does not require a dated threshold for an excluded child student contract", () => {
+    const result = evaluateArticle110Verifier({
+      thresholds: { ...thresholds, source: { fileId: "later", fileName: "later.xlsx", validFrom: new Date("2026-10-01") } },
+      asOf: "2026-09-01",
+      anyChildReceivesFamilyAllowances: false,
+      people: [{ id: "child", relation: "child", hasProfessionalIncome: true, professionalIncomeType: "student_occupation_contract", hasReplacementIncome: false }],
+    });
+    expect(result.category).toBe("A");
+  });
+
+  it("preserves a declared student occupation amount while excluding it for a child", () => {
     const result = evaluateArticle110Verifier({
       thresholds: { ...thresholds, childProfessionalMonthly: 500 },
       anyChildReceivesFamilyAllowances: false,
@@ -112,6 +150,22 @@ describe("Article 110 theoretical verifier", () => {
       thresholds: { ...thresholds, childProfessionalMonthly: 500 },
       people: [{ id: "child", relation: "child", hasProfessionalIncome: true, professionalIncomeType: "student_occupation_contract", professionalIncomeAmount: 450 }],
     }).people[0].incomes).toMatchObject([{ amount: 450 }]);
+  });
+
+  it.each([false, true])("keeps an unqualified child replacement income unresolved, student=%s", (student) => {
+    const input = {
+      thresholds: { ...thresholds, childReplacementMonthly: 600 },
+      anyChildReceivesFamilyAllowances: false,
+      people: [{ id: "child", relation: "child" as const, hasProfessionalIncome: student,
+        professionalIncomeType: "student_occupation_contract" as const,
+        hasReplacementIncome: true, replacementIncomeType: "other" as const,
+        replacementIncomeAmount: 100, replacementIncomeNeedsQualification: true }],
+    };
+    const result = evaluateArticle110Verifier(input);
+    expect(result.category).toBeNull();
+    expect(result.missingFacts.map((fact) => fact.factKey)).toContain("child.replacementIncomeType");
+    expect(article110VerifierFacts(input).people[0].incomes).toContainEqual(expect.objectContaining({ kind: "replacement", amount: 100, needsQualification: true }));
+    expect(evaluateArticle110Verifier({ ...input, anyChildReceivesFamilyAllowances: true }).category).toBe("A");
   });
 
   it("uses the same alternating-care result as the common calculation", () => {

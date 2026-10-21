@@ -3,6 +3,7 @@ import { prisma, withDbRetry } from '@/lib/prisma'
 import { invalidateActiveBaremeCache } from './getActiveBaremeData'
 import { logPublicationEvent } from './publicationLog'
 import { readSnapshot } from './comparisonReview'
+import { brusselsCalendarDay, parseCalendarDate } from './calendar-date'
 
 export interface PublishBaremeOptions {
   /** Identité loggée dans BaremeFile.publishedBy (typiquement email). */
@@ -73,7 +74,7 @@ function validatePublicationCandidate(
       message: "Date d'effet absente ou illisible — publication automatique bloquée.",
     }
   }
-  if (file.validFrom.getTime() > Date.now()) {
+  if (file.validFrom > parseCalendarDate(brusselsCalendarDay())!) {
     return {
       status: 'error',
       reason: 'future_valid_from',
@@ -278,12 +279,16 @@ export async function rejectBaremeImport(
   return { status: 'rejected' }
 }
 
-/** Restaure explicitement une version archivée dans une transaction serializable. */
+/**
+ * Restaure une version réellement publiée. Le courant et les versions qui
+ * gagneraient contre la cible sont retirés, y compris les archives intermédiaires :
+ * après C -> A, B ne doit pas redevenir le barème applicable.
+ */
 export async function rollbackToVersion(
   fileId: string,
   actorEmail?: string | null
 ): Promise<
-  | { status: 'rolled_back'; archivedPreviousId: string | null }
+  | { status: 'rolled_back'; archivedPreviousId: string | null; revokedFileIds: string[] }
   | { status: 'error'; message: string }
 > {
   try {
@@ -292,7 +297,7 @@ export async function rollbackToVersion(
         async (tx) => {
           const file = await tx.baremeFile.findUnique({
             where: { id: fileId },
-            select: { id: true, status: true, fileType: true },
+            select: { id: true, status: true, fileType: true, validFrom: true, publishedAt: true },
           })
           if (!file) return { status: 'error' as const, message: 'Fichier introuvable' }
           if (file.status !== 'archived') {
@@ -301,23 +306,88 @@ export async function rollbackToVersion(
               message: `Seuls les fichiers archivés peuvent être restaurés (statut actuel: ${file.status})`,
             }
           }
+          const readAt = new Date()
+          const today = parseCalendarDate(brusselsCalendarDay(readAt))!
+          if (!file.validFrom || file.validFrom > today || !file.publishedAt || file.publishedAt > readAt) {
+            return {
+              status: 'error' as const,
+              message: "La restauration exige une date d'effet applicable et une publication antérieure vérifiable.",
+            }
+          }
+
           const current = await tx.baremeFile.findFirst({
             where: { status: 'published', fileType: file.fileType, NOT: { id: fileId } },
+            orderBy: [{ validFrom: 'desc' }, { publishedAt: 'desc' }, { id: 'desc' }],
             select: { id: true },
           })
-          if (current) {
-            await tx.baremeFile.update({ where: { id: current.id }, data: { status: 'archived' } })
+          const withdrawWhere: Prisma.BaremeFileWhereInput = {
+            fileType: file.fileType,
+            NOT: { id: fileId },
+            OR: [
+              { status: 'published' },
+              {
+                status: 'archived',
+                publishedAt: { not: null },
+                OR: [
+                  { validFrom: { gt: file.validFrom } },
+                  { validFrom: file.validFrom, publishedAt: { gt: file.publishedAt } },
+                  { validFrom: file.validFrom, publishedAt: file.publishedAt, id: { gt: file.id } },
+                ],
+              },
+            ],
+          }
+          const revokedFiles: Array<{ id: string; status: string }> = []
+          for (;;) {
+            const page = await tx.baremeFile.findMany({
+              where: withdrawWhere,
+              orderBy: { id: 'asc' },
+              take: 1000,
+              select: { id: true, status: true },
+            })
+            if (page.length === 0) break
+            const revoked = await tx.baremeFile.updateMany({
+              where: { ...withdrawWhere, id: { in: page.map((candidate) => candidate.id) } },
+              data: { status: 'revoked' },
+            })
+            if (revoked.count !== page.length) throw new PublicationStateChangedError()
+            revokedFiles.push(...page)
+            if (page.length < 1000) break
           }
           const restored = await tx.baremeFile.updateMany({
             where: { id: fileId, status: 'archived' },
-            data: { status: 'published', publishedAt: new Date(), publishedBy: actorEmail ?? null },
+            // publishedAt conserve la première publication, pas la date du rollback.
+            data: { status: 'published', publishedBy: actorEmail ?? null },
           })
-          if (restored.count !== 1) {
-            // Même garantie que la publication : l'archivage du courant doit
-            // être annulé si la cible n'est plus archivée.
-            throw new PublicationStateChangedError()
+          if (restored.count !== 1) throw new PublicationStateChangedError()
+
+          // Le journal de retrait est atomique avec les statuts : le rollback
+          // reste explicable même si le journal best-effort extérieur échoue.
+          await tx.baremePublicationLog.createMany({
+            data: [
+              ...revokedFiles.map((revoked) => ({
+                fileId: revoked.id,
+                action: 'revoked',
+                fromStatus: revoked.status,
+                toStatus: 'revoked',
+                actorEmail: actorEmail ?? null,
+                details: { reason: 'rolled_back_to', rolledBackToId: fileId },
+              })),
+              {
+                fileId,
+                action: 'rollback',
+                fromStatus: 'archived',
+                toStatus: 'published',
+                actorEmail: actorEmail ?? null,
+                details: { archivedPreviousId: current?.id ?? null, revokedFileIds: revokedFiles.map((revoked) => revoked.id) },
+              },
+            ],
+          })
+          return {
+            status: 'rolled_back' as const,
+            // Nom conservé pour compatibilité des clients ; le statut est revoked.
+            archivedPreviousId: current?.id ?? null,
+            revokedFileIds: revokedFiles.map((revoked) => revoked.id),
           }
-          return { status: 'rolled_back' as const, archivedPreviousId: current?.id ?? null }
         },
         {
           isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
@@ -327,26 +397,7 @@ export async function rollbackToVersion(
       )
     )
     if (result.status === 'error') return result
-
     invalidateActiveBaremeCache()
-    if (result.archivedPreviousId) {
-      await logPublicationEvent({
-        fileId: result.archivedPreviousId,
-        action: 'archived',
-        fromStatus: 'published',
-        toStatus: 'archived',
-        actorEmail,
-        details: { reason: 'rolled_back_to', rolledBackToId: fileId },
-      })
-    }
-    await logPublicationEvent({
-      fileId,
-      action: 'rollback',
-      fromStatus: 'archived',
-      toStatus: 'published',
-      actorEmail,
-      details: { archivedPreviousId: result.archivedPreviousId },
-    })
     return result
   } catch (error) {
     if (isConcurrentPublicationError(error)) {

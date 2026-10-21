@@ -1,11 +1,12 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
+import { apiError, apiOk } from '@/lib/api/response'
 import { requireAdminAuth } from '@/lib/auth-check'
 import { ensureWriteAllowed } from '@/lib/admin/readonly-guard'
 import { rollbackToVersion } from '@/lib/baremes/publishBaremeImport'
 import { logActivity } from '@/lib/activity-logger'
 
 export const runtime = 'nodejs'
-const jsonHeaders = { 'Content-Type': 'application/json; charset=utf-8' }
+
 
 export async function POST(
   _req: NextRequest,
@@ -22,30 +23,21 @@ export async function POST(
     const result = await rollbackToVersion(id, auth.user.email)
 
     if (result.status === 'error') {
-      return NextResponse.json(
-        { error: result.message },
-        { status: 400, headers: jsonHeaders }
-      )
+      return apiError(400, result.message)
     }
 
     await logActivity(
-      auth.user.email,
+      auth.user.name,
       'published',
       'file',
       `bareme-${id}`,
       id,
-      `Rollback vers version archivée${result.archivedPreviousId ? ` (publié actuel archivé: ${result.archivedPreviousId})` : ''}`
+      `Rollback vers version archivée (versions retirées : ${result.revokedFileIds.join(', ') || 'aucune'})`
     )
 
-    return NextResponse.json(
-      { status: 'rolled_back', archivedPreviousId: result.archivedPreviousId },
-      { headers: jsonHeaders }
-    )
+    return apiOk(result)
   } catch (err) {
     console.error('[baremes/import/[id]/rollback] error:', err)
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : 'Internal error' },
-      { status: 500, headers: jsonHeaders }
-    )
+    return apiError(500, 'Internal error')
   }
 }

@@ -66,6 +66,7 @@ const STATUS_INFO: Record<string, { tone: string; order: number }> = {
   draft: { tone: 'bg-yellow-100 text-yellow-900 border-yellow-300', order: 0 },
   published: { tone: 'bg-green-100 text-green-900 border-green-300', order: 1 },
   archived: { tone: 'bg-muted text-muted-foreground', order: 3 },
+  revoked: { tone: 'bg-muted text-muted-foreground', order: 4 },
   rejected: { tone: 'bg-red-100 text-red-900 border-red-300', order: 4 },
   active: { tone: 'bg-blue-100 text-blue-900 border-blue-300', order: 2 },
 }
@@ -75,6 +76,7 @@ const STATUS_LABEL_KEY: Record<string, string> = {
   draft: 'statusDraft',
   published: 'statusPublished',
   archived: 'statusArchived',
+  revoked: 'statusRevoked',
   rejected: 'statusRejected',
   active: 'statusLegacy',
 }
@@ -334,6 +336,7 @@ export default function BaremesAdminPage() {
               <SelectItem value="draft">{t('kpiDrafts')}</SelectItem>
               <SelectItem value="published">{t('kpiPublished')}</SelectItem>
               <SelectItem value="archived">{t('kpiArchived')}</SelectItem>
+              <SelectItem value="revoked">{t('statusRevoked')}</SelectItem>
               <SelectItem value="rejected">{t('statusRejectedPlural')}</SelectItem>
               <SelectItem value="active">{t('kpiLegacy')}</SelectItem>
             </SelectContent>

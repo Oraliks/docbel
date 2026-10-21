@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState, type ReactNode } from "react"
+import { useEffect, useMemo, useState, type ReactNode } from "react"
 import { ArrowLeft, ArrowRight, CalendarDays, Check, CircleHelp, FileText, Info, Pencil, Plus, Trash2, UsersRound } from "lucide-react"
 import { useLocale, useTranslations } from "next-intl"
 
@@ -10,7 +10,10 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { formatDate } from "@/lib/i18n/format"
 import { GLASS_CARD, GLASS_INPUT } from "@/lib/glass-classes"
+import { brusselsCalendarDay, parseCalendarDate } from "@/lib/baremes/calendar-date"
 import type { C1BaremeThresholds } from "@/lib/baremes/c1-thresholds"
+import { activeFirstProfessionalIncomePersonIds } from "@/lib/regulatory-decision/article-110-child-income"
+import { parseFamilySituationAmount } from "@/lib/family-situation-public/amount"
 import { evaluateArticle110Verifier, type Article110VerifierInput } from "@/lib/regulatory-decision/article-110-verifier"
 
 export type Intent = "current" | "changed" | "unknown"
@@ -22,10 +25,40 @@ type Step =
   | "relativeIncomeKind" | "relativePension" | "relativeSpf" | "unrelatedIncome" | "unrelatedDetail" | "unrelatedHousehold" | "particular" | "summary"
 export type Person = { id: string; name: string; relation: Relation }
 export type Answers = Partial<Record<"aloneSituation" | "alimonyDocument" | "partnerSituation" | "partnerFixed" | "partnerContract" | "partnerSameRoof" | "partnerSharedHousekeeping" | "partnerDeFactoHousehold" | "partnerFamilyRelationship" | "partnerChildAllowance" | "partnerParentMaintenance" | "partnerRis" | "partnerOtherUnemployed" | "partnerMarriedAnother" | "partnerSpouseSameRoof" | "childrenAllowance" | "childrenIncome" | "childFirstWork" | "relativeIncome" | "relativeIncomeKind" | "relativePension" | "relativeSpf" | "unrelatedIncome" | "unrelatedHousehold", string>>
+export type RelativePensionStatus = "no_pension" | "unknown"
+export type RelativeOtherIncomes = Partial<Record<string, "noIncome" | "professional" | "replacement" | "disability" | "unknown">>
+export type RelativePensionAmounts = Partial<Record<string, string>>
+export type ChildFirstEmployment = Partial<Record<string, {
+  hasIncome?: "yes" | "no" | "unknown"
+  incomeKind?: "professional" | "replacement" | "student"
+  incomeAmount?: string
+  incomeAmountUnknown?: boolean
+  firstWork?: "yes" | "no" | "unknown"
+  studiesEndedAt?: string
+  workStartedAt?: string
+}>>
 type DetailKey = "partnerAmount" | "partnerC110aAmount" | "partnerDetail" | "relativeAmount" | "studiesEndedAt" | "workStartedAt" | "contractStartAt" | "contractEndAt" | "unrelatedDetail"
 type SummaryDetail = { label: string; value: string }
 
 const makeId = () => globalThis.crypto?.randomUUID?.() ?? `person-${Date.now()}-${Math.random().toString(36).slice(2)}`
+
+const unavailableThresholds: C1BaremeThresholds = {
+  spouseProfessionalMonthly: null,
+  childProfessionalMonthly: null,
+  spouseReplacementMonthly: null,
+  childReplacementMonthly: null,
+  ascendantPensionWithChildMonthly: null,
+  ascendantPensionMonthly: null,
+  ascendantDisabledPensionMonthly: null,
+  source: null,
+}
+
+function fixedDateToIso(value: string) {
+  const match = value.match(/^(\d{2})\/(\d{2})\/(\d{4})$/)
+  if (!match) return undefined
+  const iso = `${match[3]}-${match[2]}-${match[1]}`
+  return parseCalendarDate(iso) ? iso : undefined
+}
 
 export function namedPensionAmounts(value: string, people: Person[]) {
   const amounts = new Map<string, number>()
@@ -40,12 +73,68 @@ export function namedPensionAmounts(value: string, people: Person[]) {
       invalidPersonIds.add(candidates[0].id)
       continue
     }
-    amounts.set(candidates[0].id, Number(match[2].replace(/[\s\u00a0]/g, "").replace(",", ".")))
+    const amount = parseFamilySituationAmount(match[2])
+    if (amount !== undefined) amounts.set(candidates[0].id, amount)
   }
   return amounts
 }
 
-export function canShowFamilySituationCategory({ intent, livesAlone, people, answers, unknownDetails, particular, hasDeclaredAlimonyOrientation, hasProbablePartnerAssessment }: {
+export function pensionAmountsByPerson(values: RelativePensionAmounts, people: Person[]) {
+  const amounts = new Map<string, number>()
+  for (const person of people) {
+    if (person.relation !== "parent" && person.relation !== "family") continue
+    const amount = parseFamilySituationAmount(values[person.id])
+    if (amount !== undefined) amounts.set(person.id, amount)
+  }
+  return amounts
+}
+
+export function childIncomeCollectionState(entry: ChildFirstEmployment[string], date: string) {
+  if (entry?.hasIncome === "no" || entry?.incomeKind === "student" && entry.hasIncome === "yes") return { complete: true, canContinue: true, requiresAmount: false }
+  if (entry?.hasIncome !== "yes" || !entry.incomeKind) return { complete: false, canContinue: entry?.hasIncome === "unknown", requiresAmount: false }
+  const amountComplete = !entry.incomeAmountUnknown && parseFamilySituationAmount(entry.incomeAmount) !== undefined
+  const amountState = { complete: amountComplete, canContinue: amountComplete || entry.incomeAmountUnknown === true, requiresAmount: true }
+  if (entry.incomeKind === "replacement" || entry.firstWork === "no") return amountState
+  if (entry.firstWork === "unknown") return { complete: false, canContinue: true, requiresAmount: false }
+  const startedAt = fixedDateToIso(entry.workStartedAt ?? "")
+  const studiesEndedAt = fixedDateToIso(entry.studiesEndedAt ?? "")
+  const asOf = fixedDateToIso(date)
+  if (entry.firstWork !== "yes" || !startedAt || !studiesEndedAt || !asOf) return { complete: false, canContinue: false, requiresAmount: false }
+  if (startedAt > asOf) return { complete: false, canContinue: false, requiresAmount: false, invalidWorkDate: true }
+  const isNeutralised = activeFirstProfessionalIncomePersonIds([{ id: "child", relation: "child", incomes: [{ kind: "professional", firstProfessionalIncome: true, neutralisationRequested: true, startedAt, studiesEndedAt }] }], asOf).length > 0
+  return isNeutralised ? { complete: true, canContinue: true, requiresAmount: false } : amountState
+}
+
+export function updateChildIncomeEntry(values: ChildFirstEmployment, id: string, change: Partial<NonNullable<ChildFirstEmployment[string]>>): ChildFirstEmployment {
+  let entry = { ...values[id], ...change }
+  if (change.incomeAmount !== undefined && change.incomeAmountUnknown === undefined) entry.incomeAmountUnknown = false
+  if (change.hasIncome !== undefined && change.hasIncome !== values[id]?.hasIncome) entry = { hasIncome: change.hasIncome }
+  if (change.incomeKind !== undefined && change.incomeKind !== values[id]?.incomeKind) entry = { hasIncome: entry.hasIncome, incomeKind: change.incomeKind }
+  if (change.firstWork !== undefined && change.firstWork !== values[id]?.firstWork) entry = { hasIncome: entry.hasIncome, incomeKind: entry.incomeKind, firstWork: change.firstWork }
+  return { ...values, [id]: entry }
+}
+
+export function resolveFamilySituationThresholds(current: C1BaremeThresholds, needsHistorical: boolean, selectedAsOf: string | undefined, historicalAsOf: string | null, historical: C1BaremeThresholds | null) {
+  const resolved = !needsHistorical || selectedAsOf === historicalAsOf
+  return { resolved, thresholds: needsHistorical ? resolved && historical ? historical : unavailableThresholds : current }
+}
+
+export function relativePensionCollectionState(people: Person[], amounts: Map<string, number>, statuses: Partial<Record<string, RelativePensionStatus>>, otherIncomes: RelativeOtherIncomes, thresholds: C1BaremeThresholds) {
+  const relatives = people.filter((person) => person.relation === "parent" || person.relation === "family")
+  const complete = relatives.length > 0 && relatives.every((person) => statuses[person.id] === "no_pension" ? otherIncomes[person.id] !== undefined : statuses[person.id] === "unknown" || amounts.has(person.id))
+  const factsComplete = complete && relatives.every((person) => statuses[person.id] !== "unknown" && (statuses[person.id] !== "no_pension" || otherIncomes[person.id] !== "unknown"))
+  const pensioners = relatives.filter((person) => statuses[person.id] !== "no_pension")
+  const total = pensioners.reduce((sum, person) => sum + (amounts.get(person.id) ?? 0), 0)
+  const lower = thresholds.ascendantPensionMonthly
+  const upper = thresholds.ascendantDisabledPensionMonthly
+  const shouldAskSpf = factsComplete && !people.some((person) => person.relation === "child")
+    && pensioners.length > 0 && pensioners.every((person) => person.relation === "parent" && amounts.has(person.id))
+    && relatives.every((person) => statuses[person.id] !== "no_pension" || (otherIncomes[person.id] === "noIncome" || otherIncomes[person.id] === "disability"))
+    && typeof lower === "number" && typeof upper === "number" && lower !== upper && total > Math.min(lower, upper) && total <= Math.max(lower, upper)
+  return { complete, factsComplete, shouldAskSpf }
+}
+
+export function canShowFamilySituationCategory({ intent, livesAlone, people, answers, unknownDetails, particular, hasDeclaredAlimonyOrientation, hasProbablePartnerAssessment, hasProbableAscendantPensionAssessment, hasProbableChildAssessment, hasProbableRelativeAssessment }: {
   intent?: Intent
   livesAlone: boolean
   people: Person[]
@@ -54,6 +143,9 @@ export function canShowFamilySituationCategory({ intent, livesAlone, people, ans
   particular: string[]
   hasDeclaredAlimonyOrientation: boolean
   hasProbablePartnerAssessment?: boolean
+  hasProbableAscendantPensionAssessment?: boolean
+  hasProbableChildAssessment?: boolean
+  hasProbableRelativeAssessment?: boolean
 }) {
   const ownerApprovedCohabitant = people.some((person) => person.relation === "child")
     && people.some((person) => person.relation === "parent" || person.relation === "family")
@@ -78,10 +170,13 @@ export function canShowFamilySituationCategory({ intent, livesAlone, people, ans
     || relativesOnlyWithoutIncome
     || ownerApprovedCohabitant
     || (hasProbablePartnerAssessment === true && people.filter((person) => person.relation === "spouse" || person.relation === "partner").length === 1)
+    || hasProbableAscendantPensionAssessment === true
+    || hasProbableChildAssessment === true
+    || hasProbableRelativeAssessment === true
   )
 }
 
-export function buildFamilySituationEvaluationInput({ thresholds, date, intent, livesAlone, people, answers, partnerAmount, partnerC110aAmount = "", relativeAmount }: {
+export function buildFamilySituationEvaluationInput({ thresholds, date, intent, livesAlone, people, answers, partnerAmount, partnerC110aAmount = "", relativeAmount, relativePensionAmounts, relativePensionStatuses = {}, relativeOtherIncomes = {}, studiesEndedAt = "", workStartedAt = "", childFirstEmployment = {} }: {
   thresholds: C1BaremeThresholds
   date: string
   intent?: Intent
@@ -91,6 +186,12 @@ export function buildFamilySituationEvaluationInput({ thresholds, date, intent, 
   partnerAmount: string
   partnerC110aAmount?: string
   relativeAmount: string
+  relativePensionAmounts?: RelativePensionAmounts
+  relativePensionStatuses?: Partial<Record<string, RelativePensionStatus>>
+  relativeOtherIncomes?: RelativeOtherIncomes
+  studiesEndedAt?: string
+  workStartedAt?: string
+  childFirstEmployment?: ChildFirstEmployment
 }): Article110VerifierInput {
   const composition = {
     children: people.some((person) => person.relation === "child"),
@@ -98,16 +199,10 @@ export function buildFamilySituationEvaluationInput({ thresholds, date, intent, 
     unrelated: people.some((person) => person.relation === "unrelated"),
     partner: people.some((person) => person.relation === "spouse" || person.relation === "partner"),
   }
-  const pensionAmounts = namedPensionAmounts(relativeAmount, people)
-  const ascendantPensionTotal = people.reduce((total, person) => person.relation === "parent" && answers.relativeIncomeKind === "pension"
-    ? total + (pensionAmounts.get(person.id) ?? 0)
-    : total, 0)
-  const askRelativeSpf = !composition.children
-    && thresholds.ascendantPensionMonthly !== null
-    && thresholds.ascendantDisabledPensionMonthly !== null
-    && thresholds.ascendantPensionMonthly !== thresholds.ascendantDisabledPensionMonthly
-    && ascendantPensionTotal > Math.min(thresholds.ascendantPensionMonthly!, thresholds.ascendantDisabledPensionMonthly!)
-    && ascendantPensionTotal <= Math.max(thresholds.ascendantPensionMonthly!, thresholds.ascendantDisabledPensionMonthly!)
+  const children = people.filter((person) => person.relation === "child")
+  const soleChildId = children.length === 1 ? children[0]?.id : undefined
+  const pensionAmounts = relativePensionAmounts === undefined ? namedPensionAmounts(relativeAmount, people) : pensionAmountsByPerson(relativePensionAmounts, people)
+  const askRelativeSpf = answers.relativeIncomeKind === "pension" && relativePensionCollectionState(people, pensionAmounts, relativePensionStatuses, relativeOtherIncomes, thresholds).shouldAskSpf
   return {
     thresholds,
     partnerQualificationPolicy: "require_facts" as const,
@@ -123,7 +218,7 @@ export function buildFamilySituationEvaluationInput({ thresholds, date, intent, 
     // shared regulatory assessment.
     declaredAlimonyOutcome: livesAlone && answers.aloneSituation === "alimony"
       ? answers.alimonyDocument === "judgment" ? "legal_document"
-        : ["pending", "none"].includes(answers.alimonyDocument ?? "") ? "pending_or_absent"
+        : ["pending", "none", "unknown"].includes(answers.alimonyDocument ?? "") ? "pending_or_absent"
           : undefined
       : undefined,
     alimony: answers.aloneSituation === "alimony"
@@ -132,31 +227,61 @@ export function buildFamilySituationEvaluationInput({ thresholds, date, intent, 
     people: people.map((person) => {
       const isPartner = person.relation === "spouse" || person.relation === "partner"
       const noIncome = isPartner && answers.partnerSituation === "noIncome"
-      const childNoIncome = person.relation === "child" && answers.childrenIncome === "no"
-      const relativeNoIncome = (person.relation === "parent" || person.relation === "family") && answers.relativeIncome === "no"
+      const declaredChildEmployment = answers.childrenIncome === "yes" ? childFirstEmployment[person.id] : undefined
+      const childIncomeStatus = declaredChildEmployment?.hasIncome
+      const soleChildLegacyIncome = person.id === soleChildId && declaredChildEmployment === undefined && answers.childrenIncome === "yes"
+      const childNoIncome = person.relation === "child" && (childIncomeStatus === "no" || (declaredChildEmployment === undefined && answers.childrenIncome === "no"))
+      const declaredWorkStart = fixedDateToIso(declaredChildEmployment?.workStartedAt ?? workStartedAt)
+      const examinedOn = fixedDateToIso(date)
+      const workStartsAfterExamination = declaredChildEmployment?.firstWork === "yes" && declaredWorkStart !== undefined && examinedOn !== undefined && declaredWorkStart > examinedOn
+      const childIncomeUnknown = person.relation === "child" && (workStartsAfterExamination || childIncomeStatus === "unknown" || (answers.childrenIncome === "yes" && person.id !== soleChildId && declaredChildEmployment === undefined))
+      const childHasDeclaredIncome = person.relation === "child" && (childIncomeStatus === "yes" || soleChildLegacyIncome)
+      const childIncomeKind = declaredChildEmployment?.incomeKind ?? (soleChildLegacyIncome ? "professional" : undefined)
+      const childProfessionalIncome = childHasDeclaredIncome && (childIncomeKind === "professional" || childIncomeKind === "student")
+      const childReplacementIncome = childHasDeclaredIncome && childIncomeKind === "replacement"
+      const childIncomeAmount = declaredChildEmployment?.incomeAmountUnknown ? undefined : parseFamilySituationAmount(declaredChildEmployment?.incomeAmount)
+      const childFirstProfessionalIncome = childProfessionalIncome && childIncomeKind === "professional" && (declaredChildEmployment?.firstWork ?? answers.childFirstWork) === "yes"
+      const childFirstProfessionalIncomeStartedAt = childFirstProfessionalIncome ? fixedDateToIso(declaredChildEmployment?.workStartedAt ?? workStartedAt) : undefined
+      const childStudiesEndedAt = childFirstProfessionalIncome ? fixedDateToIso(declaredChildEmployment?.studiesEndedAt ?? studiesEndedAt) : undefined
+      const isRelative = person.relation === "parent" || person.relation === "family"
+      const relativeOtherIncome = isRelative && answers.relativeIncome === "yes" && answers.relativeIncomeKind === "pension" && relativePensionStatuses[person.id] === "no_pension" ? relativeOtherIncomes[person.id] : undefined
+      const relativeNoIncome = isRelative && (answers.relativeIncome === "no" || relativeOtherIncome === "noIncome")
       const unrelatedNoIncome = person.relation === "unrelated" && answers.unrelatedIncome === "no"
       const partnerEmployee = isPartner && answers.partnerSituation === "employee"
       const partnerReplacement = isPartner && ["unemployment", "mutual", "pension", "disability", "cpas"].includes(answers.partnerSituation ?? "")
-      const partnerAmountNumber = /^\s*\d+(?:[.,]\d+)?\s*$/.test(partnerAmount) ? Number(partnerAmount.replace(",", ".")) : undefined
-      const partnerC110aAmountNumber = /^\s*\d+(?:[.,]\d+)?\s*$/.test(partnerC110aAmount) ? Number(partnerC110aAmount.replace(",", ".")) : undefined
+      const partnerAmountNumber = parseFamilySituationAmount(partnerAmount)
+      const partnerC110aAmountNumber = parseFamilySituationAmount(partnerC110aAmount)
       const qualificationAnswer = <T,>(value: T | undefined) => value === undefined ? undefined : { value, origin: "user" as const, sourceField: "public.family-situation" }
       const qualificationBoolean = (value: string | undefined) => value === "yes" ? true : value === "no" ? false : undefined
-      const familyPension = (person.relation === "parent" || person.relation === "family") && answers.relativeIncomeKind === "pension" && pensionAmounts.has(person.id)
+      const familyPension = (person.relation === "parent" || person.relation === "family")
+        && answers.relativeIncomeKind === "pension"
+        && relativePensionStatuses[person.id] !== "no_pension"
+        && (pensionAmounts.has(person.id) || relativePensionStatuses[person.id] === "unknown")
       return {
         id: person.id,
         relation: person.relation === "parent" || person.relation === "family" ? "relative" as const : person.relation === "unrelated" ? "third_party" as const : person.relation,
         isAscendant: person.relation === "parent" ? true : undefined,
         disabilityRelevant: familyPension && askRelativeSpf ? answers.relativeSpf === "yes" ? true : answers.relativeSpf === "no" ? false : undefined : undefined,
         receivesFamilyAllowances: person.relation === "child" && answers.childrenAllowance === "yes" ? true : person.relation === "child" && answers.childrenAllowance === "no" ? false : undefined,
-        hasProfessionalIncome: noIncome || childNoIncome || relativeNoIncome || unrelatedNoIncome ? false : partnerEmployee ? true : partnerReplacement ? false : undefined,
-        professionalIncomeAmount: partnerEmployee ? partnerAmountNumber : undefined,
-        professionalIncomeType: partnerEmployee ? "employee" as const : undefined,
+        hasProfessionalIncome: noIncome || childNoIncome || relativeNoIncome || unrelatedNoIncome ? false : childIncomeUnknown ? undefined : partnerEmployee || childProfessionalIncome || relativeOtherIncome === "professional" ? true : childReplacementIncome || partnerReplacement || familyPension || relativeOtherIncome === "replacement" || relativeOtherIncome === "disability" ? false : undefined,
+        professionalIncomeAmount: partnerEmployee ? partnerAmountNumber : childProfessionalIncome && declaredChildEmployment?.incomeKind === "professional" ? childIncomeAmount : undefined,
+        professionalIncomeType: partnerEmployee ? "employee" as const : childIncomeKind === "student" ? "student_occupation_contract" as const : childProfessionalIncome ? "employee" as const : undefined,
         professionalIncomeContract: answers.partnerContract === "cdi" ? "cdi" : answers.partnerContract === "temporary" ? "cdd" : answers.partnerContract === "other" ? "other" : undefined,
         professionalIncomeVariable: answers.partnerFixed === "fixed" ? false : answers.partnerFixed === "variable" ? true : undefined,
         c110aMonthlyDeclaredIncome: answers.partnerFixed === "variable" ? partnerC110aAmountNumber : undefined,
-        hasReplacementIncome: noIncome || childNoIncome || relativeNoIncome || unrelatedNoIncome ? false : partnerEmployee ? false : familyPension || partnerReplacement ? true : undefined,
-        replacementIncomeType: familyPension || answers.partnerSituation === "pension" ? "pension" as const : answers.partnerSituation === "disability" ? "disability_allowance" as const : partnerReplacement ? "other" as const : undefined,
-        replacementIncomeAmount: pensionAmounts.get(person.id),
+        firstProfessionalIncome: childFirstProfessionalIncome || undefined,
+        // In this public journey, the two confirmed dates are the user's
+        // declaration to request the temporary Article 110&1M treatment.
+        // Invalid or absent dates never create that request.
+        neutralisationRequested: childFirstProfessionalIncomeStartedAt && childStudiesEndedAt ? true : undefined,
+        firstProfessionalIncomeStartedAt: childFirstProfessionalIncomeStartedAt,
+        studiesEndedAt: childStudiesEndedAt,
+        hasReplacementIncome: noIncome || childNoIncome || relativeNoIncome || unrelatedNoIncome ? false : childIncomeUnknown ? undefined : childProfessionalIncome || partnerEmployee || relativeOtherIncome === "professional" ? false : childReplacementIncome || familyPension || partnerReplacement || relativeOtherIncome === "replacement" || relativeOtherIncome === "disability" ? true : undefined,
+        replacementIncomeType: childReplacementIncome || relativeOtherIncome === "replacement" ? "other" as const : familyPension || answers.partnerSituation === "pension" ? "pension" as const : answers.partnerSituation === "disability" || relativeOtherIncome === "disability" ? "disability_allowance" as const : partnerReplacement ? "other" as const : undefined,
+        replacementIncomeAmount: childReplacementIncome ? childIncomeAmount : pensionAmounts.get(person.id),
+        // The short public choice does not identify the replacement scheme.
+        // Keep the declared amount while requiring that nature to be qualified.
+        replacementIncomeNeedsQualification: childReplacementIncome || relativeOtherIncome === "replacement" || undefined,
         partnerQualification: person.relation === "partner" ? {
           schemaVersion: 2 as const,
           declarationStatus: "prepared" as const,
@@ -184,7 +309,9 @@ export function FamilySituationClient({ thresholds }: { thresholds: C1BaremeThre
   const [step, setStep] = useState<Step>("intent")
   const [history, setHistory] = useState<Step[]>([])
   const [intent, setIntent] = useState<Intent>()
-  const [date, setDate] = useState(() => formatDate(new Date(), locale))
+  const [date, setDate] = useState(() => formatDate(`${brusselsCalendarDay()}T00:00:00`, locale))
+  const [historicalThresholds, setHistoricalThresholds] = useState<C1BaremeThresholds | null>(null)
+  const [historicalBaremeAsOf, setHistoricalBaremeAsOf] = useState<string | null>(null)
   const [savedDate, setSavedDate] = useState(date)
   const [people, setPeople] = useState<Person[]>([])
   const [savedPeople, setSavedPeople] = useState<Person[]>([])
@@ -194,7 +321,10 @@ export function FamilySituationClient({ thresholds }: { thresholds: C1BaremeThre
   const [partnerAmount, setPartnerAmount] = useState("")
   const [partnerC110aAmount, setPartnerC110aAmount] = useState("")
   const [partnerDetail, setPartnerDetail] = useState("")
-  const [relativeAmount, setRelativeAmount] = useState("")
+  const [relativePensionAmounts, setRelativePensionAmounts] = useState<RelativePensionAmounts>({})
+  const [relativePensionStatuses, setRelativePensionStatuses] = useState<Partial<Record<string, RelativePensionStatus>>>({})
+  const [relativeOtherIncomes, setRelativeOtherIncomes] = useState<RelativeOtherIncomes>({})
+  const [childFirstEmployment, setChildFirstEmployment] = useState<ChildFirstEmployment>({})
   const [studiesEndedAt, setStudiesEndedAt] = useState("")
   const [workStartedAt, setWorkStartedAt] = useState("")
   const [contractStartAt, setContractStartAt] = useState("")
@@ -206,6 +336,29 @@ export function FamilySituationClient({ thresholds }: { thresholds: C1BaremeThre
   const [relation, setRelation] = useState<Relation>("spouse")
   const [editingId, setEditingId] = useState<string>()
 
+  const selectedAsOf = fixedDateToIso(date)
+  const needsHistoricalBareme = intent === "changed"
+  useEffect(() => {
+    if (!needsHistoricalBareme || !selectedAsOf) return
+    let cancelled = false
+    void fetch(`/api/baremes/c1-thresholds?asOf=${selectedAsOf}`)
+      .then(async (response) => response.ok ? response.json() as Promise<C1BaremeThresholds> : unavailableThresholds)
+      .then((data) => {
+        if (cancelled) return
+        const source = data.source && data.source.validFrom
+          ? { ...data.source, validFrom: new Date(data.source.validFrom) }
+          : data.source
+        setHistoricalThresholds({ ...data, source })
+        setHistoricalBaremeAsOf(selectedAsOf)
+      })
+      .catch(() => {
+        if (cancelled) return
+        setHistoricalThresholds(unavailableThresholds)
+        setHistoricalBaremeAsOf(selectedAsOf)
+      })
+    return () => { cancelled = true }
+  }, [needsHistoricalBareme, selectedAsOf])
+
   const composition = useMemo(() => ({
     children: people.some((person) => person.relation === "child"),
     family: people.some((person) => person.relation === "parent" || person.relation === "family"),
@@ -213,25 +366,28 @@ export function FamilySituationClient({ thresholds }: { thresholds: C1BaremeThre
     partner: people.some((person) => person.relation === "spouse" || person.relation === "partner"),
   }), [people])
   const childrenOnly = composition.children && !composition.family && !composition.unrelated && !composition.partner
-  const relativePensionAmounts = useMemo(() => namedPensionAmounts(relativeAmount, people), [people, relativeAmount])
-  const ascendantPensionTotal = useMemo(() => people.reduce((total, person) => person.relation === "parent" && answers.relativeIncomeKind === "pension"
-    ? total + (relativePensionAmounts.get(person.id) ?? 0)
-    : total, 0), [answers.relativeIncomeKind, people, relativePensionAmounts])
-  const shouldAskRelativeSpf = !composition.children
-    && thresholds.ascendantPensionMonthly !== null
-    && thresholds.ascendantDisabledPensionMonthly !== null
-    && thresholds.ascendantPensionMonthly !== thresholds.ascendantDisabledPensionMonthly
-    && ascendantPensionTotal > Math.min(thresholds.ascendantPensionMonthly!, thresholds.ascendantDisabledPensionMonthly!)
-    && ascendantPensionTotal <= Math.max(thresholds.ascendantPensionMonthly!, thresholds.ascendantDisabledPensionMonthly!)
+  const parsedRelativePensionAmounts = useMemo(() => pensionAmountsByPerson(relativePensionAmounts, people), [people, relativePensionAmounts])
+  const { resolved: baremeIsResolvedForDate, thresholds: evaluationThresholds } = resolveFamilySituationThresholds(thresholds, needsHistoricalBareme, selectedAsOf, historicalBaremeAsOf, historicalThresholds)
+  const pensionCollection = relativePensionCollectionState(people, parsedRelativePensionAmounts, relativePensionStatuses, relativeOtherIncomes, evaluationThresholds)
+  const shouldAskRelativeSpf = pensionCollection.shouldAskSpf
   const householdChanged = useMemo(() => JSON.stringify({ people, livesAlone }) !== JSON.stringify({ people: savedPeople, livesAlone: savedLivesAlone }), [livesAlone, people, savedLivesAlone, savedPeople])
-  const householdAnswersExist = Object.values(answers).some((value) => value !== undefined) || [partnerAmount, partnerC110aAmount, partnerDetail, relativeAmount, studiesEndedAt, workStartedAt, contractStartAt, contractEndAt, unrelatedDetail].some(Boolean) || unknownDetails.length > 0 || particular.length > 0
+  const householdAnswersExist = Object.values(answers).some((value) => value !== undefined) || [partnerAmount, partnerC110aAmount, partnerDetail, studiesEndedAt, workStartedAt, contractStartAt, contractEndAt, unrelatedDetail, ...Object.values(relativePensionAmounts), ...Object.values(childFirstEmployment).flatMap((entry) => entry ? [entry.hasIncome, entry.incomeKind, entry.incomeAmount, entry.firstWork, entry.studiesEndedAt, entry.workStartedAt] : [])].some(Boolean) || Object.keys(relativePensionStatuses).length > 0 || unknownDetails.length > 0 || particular.length > 0
   const relationLabel = (value: Relation) => value === "spouse" ? t("relationSpouse") : value === "partner" ? t("relationPartner") : value === "child" ? t("relationChild") : value === "parent" ? t("relationParent") : value === "family" ? t("relationFamily") : t("relationUnrelated")
   const firstPartner = people.find((person) => person.relation === "spouse" || person.relation === "partner")
-  const evaluationInput = useMemo(() => buildFamilySituationEvaluationInput({ thresholds, date, intent, livesAlone, people, answers, partnerAmount, partnerC110aAmount, relativeAmount }), [answers, date, intent, livesAlone, partnerAmount, partnerC110aAmount, people, relativeAmount, thresholds])
-  const evaluation = useMemo(() => evaluateArticle110Verifier(evaluationInput), [evaluationInput])
+  const evaluationInput = buildFamilySituationEvaluationInput({ thresholds: evaluationThresholds, date, intent, livesAlone, people, answers, partnerAmount, partnerC110aAmount, relativeAmount: "", relativePensionAmounts, relativePensionStatuses, relativeOtherIncomes, studiesEndedAt, workStartedAt, childFirstEmployment })
+  const evaluation = evaluateArticle110Verifier(evaluationInput)
   const hasDeclaredAlimonyOrientation = evaluation.declaredOrientation !== null
   const partnerRelationshipCount = people.filter((person) => person.relation === "spouse" || person.relation === "partner").length
-  const canShowCategory = canShowFamilySituationCategory({ intent, livesAlone, people, answers, unknownDetails, particular, hasDeclaredAlimonyOrientation, hasProbablePartnerAssessment: composition.partner && partnerRelationshipCount === 1 && evaluation.householdAssessment.status === "probable" && evaluation.category !== null })
+  const hasUnknownRelativePension = Object.values(relativePensionStatuses).includes("unknown")
+  const hasUnknownDecisiveSpf = shouldAskRelativeSpf && answers.relativeSpf !== "yes" && answers.relativeSpf !== "no"
+  const ascendantPensionComplete = answers.relativeIncome === "yes" && answers.relativeIncomeKind === "pension" && pensionCollection.factsComplete && !hasUnknownDecisiveSpf
+  const childIncomeFactsComplete = people.filter((person) => person.relation === "child").every((person) => childIncomeCollectionState(childFirstEmployment[person.id], date).complete)
+  const hasProbableChildAssessment = childrenOnly
+    && answers.childrenIncome === "yes"
+    && childIncomeFactsComplete
+    && evaluation.householdAssessment.status === "probable"
+    && evaluation.category !== null
+  const canShowCategory = baremeIsResolvedForDate && canShowFamilySituationCategory({ intent, livesAlone, people, answers, unknownDetails: hasUnknownRelativePension || hasUnknownDecisiveSpf ? [...unknownDetails, "relativeAmount"] : unknownDetails, particular, hasDeclaredAlimonyOrientation, hasProbablePartnerAssessment: composition.partner && partnerRelationshipCount === 1 && evaluation.householdAssessment.status === "probable" && evaluation.category !== null, hasProbableAscendantPensionAssessment: ascendantPensionComplete && !composition.children && !composition.partner && !composition.unrelated && people.some((person) => person.relation === "parent") && people.every((person) => person.relation === "parent") && evaluation.householdAssessment.status === "probable" && evaluation.category !== null, hasProbableChildAssessment, hasProbableRelativeAssessment: composition.family && !composition.partner && !composition.unrelated && (!composition.children || answers.childrenAllowance === "yes" || answers.childrenAllowance === "no") && (answers.relativeIncome === "no" || ascendantPensionComplete) && evaluation.householdAssessment.status === "probable" && evaluation.category !== null })
   const publicEvaluation = canShowCategory ? evaluation : {
     ...evaluation,
     category: null,
@@ -260,13 +416,18 @@ export function FamilySituationClient({ thresholds }: { thresholds: C1BaremeThre
       if (key === "partnerAmount") setPartnerAmount("")
       if (key === "partnerC110aAmount") setPartnerC110aAmount("")
       if (key === "partnerDetail") setPartnerDetail("")
-      if (key === "relativeAmount") setRelativeAmount("")
+      if (key === "relativeAmount") {
+        setRelativePensionAmounts({})
+        setRelativePensionStatuses({})
+        setRelativeOtherIncomes({})
+      }
       if (key === "studiesEndedAt") setStudiesEndedAt("")
       if (key === "workStartedAt") setWorkStartedAt("")
       if (key === "contractStartAt") setContractStartAt("")
       if (key === "contractEndAt") setContractEndAt("")
       if (key === "unrelatedDetail") setUnrelatedDetail("")
     })
+    if (keys.includes("studiesEndedAt") || keys.includes("workStartedAt")) setChildFirstEmployment({})
     setUnknownDetails((current) => current.filter((key) => !keys.includes(key)))
   }
   const updateDetail = (key: DetailKey, setValue: (value: string) => void) => (value: string) => {
@@ -310,7 +471,7 @@ export function FamilySituationClient({ thresholds }: { thresholds: C1BaremeThre
   }
   const chooseIntent = (value: Intent) => {
     if (value === "current") {
-      const today = formatDate(new Date(), locale)
+      const today = formatDate(`${brusselsCalendarDay()}T00:00:00`, locale)
       setDate(today)
       setSavedDate(today)
     }
@@ -319,14 +480,14 @@ export function FamilySituationClient({ thresholds }: { thresholds: C1BaremeThre
   const continueIntent = () => {
     if (!intent) return
     setHistory([])
-    setStep(intent === "changed" ? "date" : intent === "unknown" ? "particular" : "household")
+    setStep(intent === "changed" ? "date" : "household")
   }
-  const close = () => go("particular")
+  const close = () => go("summary")
   const needsPartnerQualification = firstPartner?.relation === "partner" && !people.some((person) => person.relation === "spouse")
-  const afterPartner = (): Step => needsPartnerQualification ? "partnerQualification" : composition.children ? "childrenAllowance" : composition.family ? "relativeIncome" : composition.unrelated ? "unrelatedIncome" : "particular"
-  const afterPartnerQualification = (): Step => composition.children ? "childrenAllowance" : composition.family ? "relativeIncome" : composition.unrelated ? "unrelatedIncome" : "particular"
-  const afterFamily = (): Step => composition.unrelated ? "unrelatedIncome" : "particular"
-  const afterChildren = (): Step => composition.family ? "relativeIncome" : composition.unrelated ? "unrelatedIncome" : "particular"
+  const afterPartner = (): Step => needsPartnerQualification ? "partnerQualification" : composition.children ? "childrenAllowance" : composition.family ? "relativeIncome" : composition.unrelated ? "unrelatedIncome" : "summary"
+  const afterPartnerQualification = (): Step => composition.children ? "childrenAllowance" : composition.family ? "relativeIncome" : composition.unrelated ? "unrelatedIncome" : "summary"
+  const afterFamily = (): Step => composition.unrelated ? "unrelatedIncome" : "summary"
+  const afterChildren = (): Step => composition.family ? "relativeIncome" : composition.unrelated ? "unrelatedIncome" : "summary"
   const topic = t(`topic${step[0].toUpperCase()}${step.slice(1)}` as never)
 
   return (
@@ -337,9 +498,10 @@ export function FamilySituationClient({ thresholds }: { thresholds: C1BaremeThre
       </header>
       <Card className={`${GLASS_CARD} p-1`}><CardContent className="space-y-6 p-4 sm:p-7">
         {step !== "intent" ? <div className="flex items-center justify-between gap-3 text-sm">{history.length ? <Button type="button" variant="ghost" onClick={back}><ArrowLeft data-icon="inline-start" />{t("back")}</Button> : <span />}<span className="font-semibold text-[color:var(--glass-ink-soft)]">{topic}</span></div> : null}
+        {step !== "particular" ? <div className="flex justify-end"><Button type="button" variant="ghost" size="sm" className="h-auto max-w-full whitespace-normal py-2 text-right" onClick={() => go("particular")}><CircleHelp data-icon="inline-start" />{particular.length ? t("particularEditAction") : t("particularOpenAction")}</Button></div> : null}
         {step === "intent" ? <IntentStep t={t} value={intent} onChoose={chooseIntent} onContinue={continueIntent} /> : null}
         {step === "date" ? <DateStep t={t} value={date} onChange={setDate} onContinue={continueDate} /> : null}
-        {step === "household" ? <HouseholdStep t={t} people={people} livesAlone={livesAlone} name={name} relation={relation} editingId={editingId} relationLabel={relationLabel} onNameChange={setName} onRelationChange={setRelation} onAdd={addOrUpdatePerson} onEdit={(person) => { setName(person.name); setRelation(person.relation); setEditingId(person.id) }} onRemove={(id) => setPeople((current) => current.filter((person) => person.id !== id))} onAlone={() => { setPeople([]); setLivesAlone(true); setEditingId(undefined); setName("") }} onUnknown={() => { setPeople([]); setLivesAlone(false); setEditingId(undefined); clearHouseholdAnswers(); go("particular") }} onContinue={continueHousehold} /> : null}
+        {step === "household" ? <HouseholdStep t={t} people={people} livesAlone={livesAlone} name={name} relation={relation} editingId={editingId} relationLabel={relationLabel} onNameChange={setName} onRelationChange={setRelation} onAdd={addOrUpdatePerson} onEdit={(person) => { setName(person.name); setRelation(person.relation); setEditingId(person.id) }} onRemove={(id) => setPeople((current) => current.filter((person) => person.id !== id))} onAlone={() => { setPeople([]); setLivesAlone(true); setEditingId(undefined); setName("") }} onUnknown={() => { setPeople([]); setLivesAlone(false); setEditingId(undefined); clearHouseholdAnswers(); go("summary") }} onContinue={continueHousehold} /> : null}
         {step === "confirm" ? <ConfirmStep t={t} onConfirm={() => { clearHouseholdAnswers(); setSavedDate(date); setSavedPeople(people); setSavedLivesAlone(livesAlone); go(startForHousehold()) }} /> : null}
         {step === "aloneSituation" ? <ChoiceStep t={t} titleKey="aloneQuestion" choices={["none", "alimony", "alternating", "unknown"]} labelKey="aloneSituation" value={answers.aloneSituation} onChoose={(value) => { updateAnswer("aloneSituation", value); if (value !== "alimony") clearAnswerKeys("alimonyDocument"); if (value === "alimony") go("alimonyDocument"); else close() }} /> : null}
         {step === "alimonyDocument" ? <ChoiceStep t={t} titleKey="alimonyDocumentQuestion" choices={["judgment", "pending", "none", "unknown"]} labelKey="alimonyDocument" value={answers.alimonyDocument} notice={answers.alimonyDocument === "pending" ? t("judgmentPendingNotice") : t("alimonyPaymentNotice")} onChoose={(value) => { updateAnswer("alimonyDocument", value); close() }} /> : null}
@@ -351,21 +513,21 @@ export function FamilySituationClient({ thresholds }: { thresholds: C1BaremeThre
         {step === "partnerDates" ? <DatesStep t={t} titleKey="partnerDatesQuestion" bodyKey="partnerDatesBody" firstLabelKey="contractStartLabel" secondLabelKey="contractEndLabel" valueA={contractStartAt} valueB={contractEndAt} onChangeA={updateDetail("contractStartAt", setContractStartAt)} onChangeB={updateDetail("contractEndAt", setContractEndAt)} onUnknown={() => { markDetailUnknown("contractStartAt"); markDetailUnknown("contractEndAt"); go(afterPartner()) }} onContinue={() => go(afterPartner())} /> : null}
         {step === "partnerOther" ? <TextStep t={t} titleKey="partnerOtherQuestion" bodyKey="partnerOtherBody" value={partnerDetail} onChange={updateDetail("partnerDetail", setPartnerDetail)} onUnknown={() => { markDetailUnknown("partnerDetail"); go(afterPartner()) }} onContinue={() => go(afterPartner())} /> : null}
         {step === "partnerQualification" ? <PartnerQualificationStep t={t} answers={answers} onChoose={updateAnswer} onContinue={() => go(afterPartnerQualification())} /> : null}
-        {step === "childrenAllowance" ? <ChoiceStep t={t} titleKey="childrenQuestion" bodyKey="childrenBody" choices={["yes", "no", "unknown"]} labelKey="childrenAllowance" value={answers.childrenAllowance} onChoose={(value) => { updateAnswer("childrenAllowance", value); if (value !== "no") { clearAnswerKeys("childrenIncome", "childFirstWork"); clearDetails("studiesEndedAt", "workStartedAt") } if (childrenOnly) go(value === "no" ? "childrenIncome" : "particular"); else go(afterChildren()) }} /> : null}
-        {step === "childrenIncome" ? <ChoiceStep t={t} titleKey="childrenIncomeQuestion" choices={["yes", "no", "unknown"]} labelKey="childrenIncome" value={answers.childrenIncome} onChoose={(value) => { updateAnswer("childrenIncome", value); if (value !== "yes") { clearAnswerKeys("childFirstWork"); clearDetails("studiesEndedAt", "workStartedAt") } if (value === "yes") go("childFirstWorkChoice"); else close() }} /> : null}
+        {step === "childrenAllowance" ? <ChoiceStep t={t} titleKey="childrenQuestion" bodyKey="childrenBody" choices={["yes", "no", "unknown"]} labelKey="childrenAllowance" value={answers.childrenAllowance} onChoose={(value) => { updateAnswer("childrenAllowance", value); if (value !== "no") { clearAnswerKeys("childrenIncome", "childFirstWork"); clearDetails("studiesEndedAt", "workStartedAt"); setChildFirstEmployment({}) } if (childrenOnly) go(value === "no" ? "childrenIncome" : "summary"); else go(afterChildren()) }} /> : null}
+        {step === "childrenIncome" ? <ChoiceStep t={t} titleKey="childrenIncomeQuestion" choices={["yes", "no", "unknown"]} labelKey="childrenIncome" value={answers.childrenIncome} onChoose={(value) => { updateAnswer("childrenIncome", value); if (value !== "yes") { clearAnswerKeys("childFirstWork"); clearDetails("studiesEndedAt", "workStartedAt"); setChildFirstEmployment({}) } if (value === "yes") go("childFirstWork"); else close() }} /> : null}
         {step === "childFirstWorkChoice" ? <ChoiceStep t={t} titleKey="childFirstWorkChoiceQuestion" choices={["yes", "no", "unknown"]} labelKey="childFirstWork" value={answers.childFirstWork} onChoose={(value) => { updateAnswer("childFirstWork", value); if (value !== "yes") clearDetails("studiesEndedAt", "workStartedAt"); if (value === "yes") go("childFirstWork"); else close() }} /> : null}
-        {step === "childFirstWork" ? <DatesStep t={t} titleKey="childFirstWorkQuestion" bodyKey="childFirstWorkBody" firstLabelKey="studiesEndedLabel" secondLabelKey="workStartedLabel" valueA={studiesEndedAt} valueB={workStartedAt} onChangeA={updateDetail("studiesEndedAt", setStudiesEndedAt)} onChangeB={updateDetail("workStartedAt", setWorkStartedAt)} onUnknown={() => { markDetailUnknown("studiesEndedAt"); markDetailUnknown("workStartedAt"); close() }} onContinue={close} /> : null}
+        {step === "childFirstWork" ? <ChildrenFirstEmploymentStep t={t} people={people} date={date} values={childFirstEmployment} onChange={setChildFirstEmployment} onContinue={close} /> : null}
         {step === "relativeIncome" ? <ChoiceStep t={t} titleKey="relativeIncomeQuestion" bodyKey={composition.children ? "relativeIncomeChildrenBody" : undefined} choices={["yes", "no", "unknown"]} labelKey="relativeIncome" value={answers.relativeIncome} onChoose={(value) => { updateAnswer("relativeIncome", value); if (value !== "yes") { clearAnswerKeys("relativeIncomeKind", "relativeSpf"); clearDetails("relativeAmount") } if (value === "yes") go("relativeIncomeKind"); else go(afterFamily()) }} /> : null}
         {step === "relativeIncomeKind" ? <ChoiceStep t={t} titleKey="relativeIncomeKindQuestion" choices={["salary", "pension", "disability", "other", "unknown"]} labelKey="relativeIncomeKind" value={answers.relativeIncomeKind} onChoose={(value) => { updateAnswer("relativeIncomeKind", value); if (value !== "pension") { clearDetails("relativeAmount"); clearAnswerKeys("relativeSpf") } if (value === "pension") go("relativePension"); else go(afterFamily()) }} /> : null}
-        {step === "relativePension" ? <TextStep t={t} titleKey="relativePensionQuestion" bodyKey="relativePensionBody" labelKey="relativePensionLabel" placeholderKey="relativePensionPlaceholder" value={relativeAmount} onChange={updateDetail("relativeAmount", setRelativeAmount)} onUnknown={() => { markDetailUnknown("relativeAmount"); go(shouldAskRelativeSpf ? "relativeSpf" : afterFamily()) }} onContinue={() => go(shouldAskRelativeSpf ? "relativeSpf" : afterFamily())} /> : null}
+        {step === "relativePension" ? <PensionAmountsStep t={t} people={people} values={relativePensionAmounts} statuses={relativePensionStatuses} otherIncomes={relativeOtherIncomes} canContinue={baremeIsResolvedForDate && pensionCollection.complete} onOtherIncomeChange={(id, value) => setRelativeOtherIncomes((current) => ({ ...current, [id]: value }))} onAmountChange={(id, value) => { setRelativeOtherIncomes((current) => { const next = { ...current }; delete next[id]; return next }); setRelativePensionAmounts((current) => ({ ...current, [id]: value })); setRelativePensionStatuses((current) => { const next = { ...current }; delete next[id]; return next }) }} onStatusChange={(id, status) => { setRelativeOtherIncomes((current) => { const next = { ...current }; delete next[id]; return next }); setRelativePensionAmounts((current) => ({ ...current, [id]: "" })); setRelativePensionStatuses((current) => ({ ...current, [id]: status })) }} onContinue={() => go(shouldAskRelativeSpf ? "relativeSpf" : afterFamily())} /> : null}
         {step === "relativeSpf" ? <ChoiceStep t={t} titleKey="relativeSpfQuestion" bodyKey="relativeSpfBody" choices={["yes", "no", "unknown"]} labelKey="relativeSpf" value={answers.relativeSpf} onChoose={(value) => { updateAnswer("relativeSpf", value); go(afterFamily()) }} /> : null}
         {step === "unrelatedIncome" ? <ChoiceStep t={t} titleKey="unrelatedIncomeQuestion" choices={["yes", "no", "unknown"]} labelKey="unrelatedIncome" value={answers.unrelatedIncome} onChoose={(value) => { updateAnswer("unrelatedIncome", value); if (value !== "yes") clearDetails("unrelatedDetail"); if (value === "yes") go("unrelatedDetail"); else close() }} /> : null}
         {step === "unrelatedDetail" ? <TextStep t={t} titleKey="unrelatedDetailQuestion" bodyKey="unrelatedDetailBody" value={unrelatedDetail} onChange={updateDetail("unrelatedDetail", setUnrelatedDetail)} onUnknown={() => { markDetailUnknown("unrelatedDetail"); close() }} onContinue={close} /> : null}
         {step === "unrelatedHousehold" ? <ChoiceStep t={t} titleKey="unrelatedQuestion" bodyKey="unrelatedBody" choices={["shared", "separate", "unknown"]} labelKey="unrelatedHousehold" value={answers.unrelatedHousehold} notice={answers.unrelatedHousehold === "separate" ? t("unrelatedSeparateNotice") : undefined} onChoose={(value) => { updateAnswer("unrelatedHousehold", value); go("unrelatedIncome") }} /> : null}
-        {step === "particular" ? <ParticularStep t={t} value={particular} onChange={setParticular} onContinue={() => go("summary")} /> : null}
+        {step === "particular" ? <ParticularStep t={t} value={particular} onChange={setParticular} onContinue={back} /> : null}
         {step === "summary" ? <SummaryStep t={t} evaluation={publicEvaluation} intent={intent} date={date} people={people} livesAlone={livesAlone} answers={answers} particular={particular} relationLabel={relationLabel} details={[
           { label: t("summary.category"), value: (publicEvaluation.category ?? publicEvaluation.declaredOrientation?.category) === "A" ? t("categoryA") : (publicEvaluation.category ?? publicEvaluation.declaredOrientation?.category) === "N" ? t("categoryN") : (publicEvaluation.category ?? publicEvaluation.declaredOrientation?.category) === "B" ? t("categoryB") : t("summaryNoCategoryTitle") },
-          { label: t("summary.assessment"), value: publicEvaluation.reason },
+          publicEvaluation.declaredOrientation ? null : { label: t("summary.assessment"), value: publicEvaluation.reason },
           publicEvaluation.declaredOrientation?.basis === "alimony_legal_document" ? { label: t("summary.alimonyOrientation"), value: t("alimonyOrientationNotice") } : null,
           answers.alimonyDocument === "pending" ? { label: t("alimonyDocumentQuestion"), value: t("judgmentPendingNotice") } : null,
           answers.partnerSituation === "employee" ? { label: t("summary.partnerAmount"), value: unknownDetails.includes("partnerAmount") ? t("unknown") : partnerAmount || t("notAnswered") } : null,
@@ -373,12 +535,23 @@ export function FamilySituationClient({ thresholds }: { thresholds: C1BaremeThre
           answers.partnerSituation && !["employee", "noIncome", "unknown"].includes(answers.partnerSituation) ? { label: t("summary.partnerDetail"), value: unknownDetails.includes("partnerDetail") ? t("unknown") : partnerDetail || t("notAnswered") } : null,
           answers.partnerContract === "temporary" ? { label: t("summary.contractStart"), value: unknownDetails.includes("contractStartAt") ? t("unknown") : contractStartAt || t("notAnswered") } : null,
           answers.partnerContract === "temporary" ? { label: t("summary.contractEnd"), value: unknownDetails.includes("contractEndAt") ? t("unknown") : contractEndAt || t("notAnswered") } : null,
-          answers.childFirstWork === "yes" ? { label: t("summary.studiesEndedAt"), value: unknownDetails.includes("studiesEndedAt") ? t("unknown") : studiesEndedAt || t("notAnswered") } : null,
-          answers.childFirstWork === "yes" ? { label: t("summary.workStartedAt"), value: unknownDetails.includes("workStartedAt") ? t("unknown") : workStartedAt || t("notAnswered") } : null,
-          answers.relativeIncomeKind === "pension" ? { label: t("summary.relativeAmount"), value: unknownDetails.includes("relativeAmount") ? t("unknown") : relativeAmount || t("notAnswered") } : null,
+           ...people.filter((person) => person.relation === "child").flatMap((person) => {
+             const entry = childFirstEmployment[person.id]
+             if (!entry) return []
+             const incomeValue = entry.hasIncome === "yes" && entry.incomeKind ? t(`childIncomeKind.${entry.incomeKind}` as never) : entry.hasIncome ? t(entry.hasIncome as never) : t("notAnswered")
+             return [
+               { label: `${t("summary.childrenIncome")} — ${person.name}`, value: incomeValue },
+               ...(entry.firstWork === "yes" ? [
+                 { label: `${t("summary.studiesEndedAt")} — ${person.name}`, value: entry.studiesEndedAt || t("notAnswered") },
+                 { label: `${t("summary.workStartedAt")} — ${person.name}`, value: entry.workStartedAt || t("notAnswered") },
+               ] : []),
+               ...(childIncomeCollectionState(entry, date).requiresAmount ? [{ label: `${t("childIncomeAmountLabel")} — ${person.name}`, value: entry.incomeAmountUnknown ? t("unknown") : entry.incomeAmount || t("notAnswered") }] : []),
+             ]
+           }),
+          answers.relativeIncomeKind === "pension" ? { label: t("summary.relativeAmount"), value: hasUnknownRelativePension ? t("unknown") : people.filter((person) => person.relation === "parent" || person.relation === "family").map((person) => relativePensionStatuses[person.id] === "no_pension" ? `${person.name}: ${relativeOtherIncomes[person.id] ? t(`relativeOtherIncome.${relativeOtherIncomes[person.id]}` as never) : t("relativePensionNoPension")}` : `${person.name}: ${relativePensionAmounts[person.id] || t("notAnswered")}`).join(" ; ") } : null,
           answers.unrelatedIncome === "yes" ? { label: t("summary.unrelatedDetail"), value: unknownDetails.includes("unrelatedDetail") ? t("unknown") : unrelatedDetail || t("notAnswered") } : null,
           answers.unrelatedHousehold === "separate" ? { label: t("summary.unrelatedHousehold"), value: t("unrelatedSeparateNotice") } : null,
-          ...publicEvaluation.missingFacts.map((fact) => ({ label: t("summary.requiredInfo"), value: familySituationMissingFactLabel(t, fact.factKey, fact.label) })),
+          ...(publicEvaluation.declaredOrientation ? [] : publicEvaluation.missingFacts).map((fact) => ({ label: t("summary.requiredInfo"), value: familySituationMissingFactLabel(t, fact.factKey, fact.label, people) })),
         ].filter((detail): detail is SummaryDetail => detail !== null)} onEdit={() => { setHistory([]); setStep("intent") }} /> : null}
       </CardContent></Card>
     </section>
@@ -401,7 +574,7 @@ function IntentStep({ t, value, onChoose, onContinue }: { t: Translation; value?
 }
 
 function DateStep({ t, value, onChange, onContinue }: { t: Translation; value: string; onChange: (value: string) => void; onContinue: () => void }) {
-  return <div><h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">{t("dateQuestion")}</h2><p className="mt-3 max-w-2xl text-sm leading-relaxed text-[color:var(--glass-ink-soft)]">{t("dateBody")}</p><div className="mt-6 max-w-md"><Label htmlFor="family-date">{t("dateLabel")}</Label><Input id="family-date" value={value} onChange={(event) => onChange(event.target.value)} placeholder={t("datePlaceholder")} className={`mt-2 h-12 ${GLASS_INPUT}`} /></div><ContinueButton t={t} onClick={onContinue} /></div>
+  return <div><h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">{t("dateQuestion")}</h2><p className="mt-3 max-w-2xl text-sm leading-relaxed text-[color:var(--glass-ink-soft)]">{t("dateBody")}</p><div className="mt-6 max-w-md"><Label htmlFor="family-date">{t("dateLabel")}</Label><Input id="family-date" value={value} onChange={(event) => onChange(event.target.value)} placeholder={t("datePlaceholder")} className={`mt-2 h-12 ${GLASS_INPUT}`} /></div><ContinueButton t={t} onClick={onContinue} disabled={!fixedDateToIso(value)} /></div>
 }
 
 function HouseholdStep({ t, people, livesAlone, name, relation, editingId, relationLabel, onNameChange, onRelationChange, onAdd, onEdit, onRemove, onAlone, onUnknown, onContinue }: { t: Translation; people: Person[]; livesAlone: boolean; name: string; relation: Relation; editingId?: string; relationLabel: (value: Relation) => string; onNameChange: (value: string) => void; onRelationChange: (value: Relation) => void; onAdd: () => void; onEdit: (person: Person) => void; onRemove: (id: string) => void; onAlone: () => void; onUnknown: () => void; onContinue: () => void }) {
@@ -425,11 +598,31 @@ function ChoiceCards({ t, title, body, notice, choices, value, onChoose }: { t: 
 }
 
 function AmountStep({ t, titleKey, bodyKey, value, onChange, onUnknown, onContinue }: { t: Translation; titleKey: string; bodyKey: string; value: string; onChange: (value: string) => void; onUnknown: () => void; onContinue: () => void }) {
-  return <div><h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">{t(titleKey as never)}</h2><p className="mt-3 max-w-2xl text-sm leading-relaxed text-[color:var(--glass-ink-soft)]">{t(bodyKey as never)}</p><div className="mt-6 max-w-md"><Label htmlFor="family-amount">{t("amountLabel")}</Label><Input id="family-amount" inputMode="decimal" value={value} onChange={(event) => onChange(event.target.value)} placeholder={t("amountPlaceholder")} className={`mt-2 h-12 ${GLASS_INPUT}`} /><p className="mt-2 text-sm text-[color:var(--glass-ink-soft)]">{t("amountHelp")}</p></div><div className="mt-5"><Button type="button" variant="ghost" onClick={onUnknown}><CircleHelp data-icon="inline-start" />{t("unknown")}</Button></div><ContinueButton t={t} onClick={onContinue} /></div>
+  return <div><h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">{t(titleKey as never)}</h2><p className="mt-3 max-w-2xl text-sm leading-relaxed text-[color:var(--glass-ink-soft)]">{t(bodyKey as never)}</p><div className="mt-6 max-w-md"><Label htmlFor="family-amount">{t("amountLabel")}</Label><Input id="family-amount" inputMode="decimal" value={value} onChange={(event) => onChange(event.target.value)} placeholder={t("amountPlaceholder")} className={`mt-2 h-12 ${GLASS_INPUT}`} /><p className="mt-2 text-sm text-[color:var(--glass-ink-soft)]">{t("amountHelp")}</p></div><div className="mt-5"><Button type="button" variant="ghost" onClick={onUnknown}><CircleHelp data-icon="inline-start" />{t("unknown")}</Button></div><ContinueButton t={t} onClick={onContinue} disabled={parseFamilySituationAmount(value) === undefined} /></div>
 }
 
 function TextStep({ t, titleKey, bodyKey, labelKey = "detailsLabel", placeholderKey = "detailsPlaceholder", value, onChange, onUnknown, onContinue }: { t: Translation; titleKey: string; bodyKey: string; labelKey?: string; placeholderKey?: string; value: string; onChange: (value: string) => void; onUnknown: () => void; onContinue: () => void }) {
   return <div><h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">{t(titleKey as never)}</h2><p className="mt-3 max-w-2xl text-sm leading-relaxed text-[color:var(--glass-ink-soft)]">{t(bodyKey as never)}</p><div className="mt-6 max-w-xl"><Label htmlFor="family-detail">{t(labelKey as never)}</Label><textarea id="family-detail" value={value} onChange={(event) => onChange(event.target.value)} placeholder={t(placeholderKey as never)} className={`mt-2 min-h-28 w-full p-3 ${GLASS_INPUT}`} /></div><div className="mt-5"><Button type="button" variant="ghost" onClick={onUnknown}><CircleHelp data-icon="inline-start" />{t("unknown")}</Button></div><ContinueButton t={t} onClick={onContinue} /></div>
+}
+
+export function PensionAmountsStep({ t, people, values, statuses, otherIncomes, canContinue, onOtherIncomeChange, onAmountChange, onStatusChange, onContinue }: { t: Translation; people: Person[]; values: RelativePensionAmounts; statuses: Partial<Record<string, RelativePensionStatus>>; otherIncomes: RelativeOtherIncomes; canContinue: boolean; onOtherIncomeChange: (id: string, value: NonNullable<RelativeOtherIncomes[string]>) => void; onAmountChange: (id: string, value: string) => void; onStatusChange: (id: string, status: RelativePensionStatus) => void; onContinue: () => void }) {
+  const relatives = people.filter((person) => person.relation === "parent" || person.relation === "family")
+  const isAmount = (value: string | undefined) => parseFamilySituationAmount(value) !== undefined
+  return <div><h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">{t("relativePensionQuestion")}</h2><p className="mt-3 max-w-2xl text-sm leading-relaxed text-[color:var(--glass-ink-soft)]">{t("relativePensionBody")}</p><div className="mt-6 grid gap-4">{relatives.map((person) => {
+    const status = statuses[person.id]
+    const value = values[person.id] ?? ""
+    return <fieldset key={person.id} className="glass-surface rounded-2xl p-4"><legend className="px-1 text-base font-semibold">{t("relativePensionPersonLabel", { name: person.name })}</legend><Label htmlFor={`relative-pension-${person.id}`} className="mt-3 block">{t("relativePensionGrossAmount")}</Label><Input id={`relative-pension-${person.id}`} inputMode="decimal" value={value} onChange={(event) => onAmountChange(person.id, event.target.value)} placeholder={t("amountPlaceholder")} className={`mt-2 h-12 ${GLASS_INPUT}`} />{value && !isAmount(value) ? <p className="mt-2 text-sm text-destructive">{t("relativePensionInvalidAmount")}</p> : null}<div className="mt-3 flex flex-wrap gap-2"><Button type="button" variant={status === "no_pension" ? "default" : "outline"} aria-pressed={status === "no_pension"} onClick={() => onStatusChange(person.id, "no_pension")}>{t("relativePensionNoPension")}</Button><Button type="button" variant={status === "unknown" ? "default" : "outline"} aria-pressed={status === "unknown"} onClick={() => onStatusChange(person.id, "unknown")}><CircleHelp data-icon="inline-start" />{t("unknown")}</Button></div>{status === "no_pension" ? <div className="mt-4"><p className="text-sm font-medium">{t("relativeOtherIncomeQuestion", { name: person.name })}</p><div className="mt-2 flex flex-wrap gap-2">{(["noIncome", "professional", "replacement", "disability", "unknown"] as const).map((kind) => <Button key={kind} type="button" variant={otherIncomes[person.id] === kind ? "default" : "outline"} aria-pressed={otherIncomes[person.id] === kind} onClick={() => onOtherIncomeChange(person.id, kind)}>{t(`relativeOtherIncome.${kind}` as never)}</Button>)}</div></div> : null}</fieldset>
+  })}</div><ContinueButton t={t} onClick={onContinue} disabled={!canContinue} /></div>
+}
+
+export function ChildrenFirstEmploymentStep({ t, people, date, values, onChange, onContinue }: { t: Translation; people: Person[]; date: string; values: ChildFirstEmployment; onChange: (value: ChildFirstEmployment) => void; onContinue: () => void }) {
+  const children = people.filter((person) => person.relation === "child")
+  const complete = children.length > 0 && children.every((person) => childIncomeCollectionState(values[person.id], date).canContinue)
+  const update = (id: string, change: Partial<NonNullable<ChildFirstEmployment[string]>>) => onChange(updateChildIncomeEntry(values, id, change))
+  return <div><h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">{t("childIncomeDetailsQuestion")}</h2><p className="mt-3 max-w-2xl text-sm leading-relaxed text-[color:var(--glass-ink-soft)]">{t("childIncomeDetailsBody")}</p><div className="mt-6 grid gap-4">{children.map((person) => {
+    const entry = values[person.id] ?? {}
+    return <fieldset key={person.id} className="glass-surface rounded-2xl p-4"><legend className="px-1 text-base font-semibold">{t("childFirstWorkPersonLabel", { name: person.name })}</legend><p className="mt-3 text-sm font-medium">{t("childIncomePersonQuestion")}</p><div className="mt-2 flex flex-wrap gap-2">{["yes", "no", "unknown"].map((value) => <Button key={value} type="button" variant={entry.hasIncome === value ? "default" : "outline"} aria-pressed={entry.hasIncome === value} onClick={() => update(person.id, { hasIncome: value as "yes" | "no" | "unknown" })}>{t(value as never)}</Button>)}</div>{entry.hasIncome === "yes" ? <><p className="mt-4 text-sm font-medium">{t("childIncomeKindQuestion")}</p><div className="mt-2 flex flex-wrap gap-2">{(["professional", "replacement", "student"] as const).map((value) => <Button key={value} type="button" variant={entry.incomeKind === value ? "default" : "outline"} aria-pressed={entry.incomeKind === value} onClick={() => update(person.id, { incomeKind: value })}>{t(`childIncomeKind.${value}` as never)}</Button>)}</div>{entry.incomeKind === "professional" ? <><p className="mt-4 text-sm font-medium">{t("childFirstWorkQuestion")}</p><div className="mt-2 flex flex-wrap gap-2">{["yes", "no", "unknown"].map((value) => <Button key={value} type="button" variant={entry.firstWork === value ? "default" : "outline"} aria-pressed={entry.firstWork === value} onClick={() => update(person.id, { firstWork: value as "yes" | "no" | "unknown" })}>{t(value as never)}</Button>)}</div>{entry.firstWork === "yes" ? <div className="mt-4 grid gap-4 sm:grid-cols-2"><div><Label htmlFor={`studies-${person.id}`}>{t("studiesEndedLabel")}</Label><Input id={`studies-${person.id}`} value={entry.studiesEndedAt ?? ""} onChange={(event) => update(person.id, { studiesEndedAt: event.target.value })} placeholder={t("datePlaceholder")} className={`mt-2 h-12 ${GLASS_INPUT}`} /></div><div><Label htmlFor={`work-${person.id}`}>{t("workStartedLabel")}</Label><Input id={`work-${person.id}`} aria-invalid={childIncomeCollectionState(entry, date).invalidWorkDate === true} value={entry.workStartedAt ?? ""} onChange={(event) => update(person.id, { workStartedAt: event.target.value })} placeholder={t("datePlaceholder")} className={`mt-2 h-12 ${GLASS_INPUT}`} /></div></div> : null}{childIncomeCollectionState(entry, date).requiresAmount ? <div className="mt-4">{entry.firstWork === "yes" ? <p className="mb-3 text-sm text-[color:var(--glass-ink-soft)]">{t("childIncomeAfterPeriodBody")}</p> : null}<Label htmlFor={`income-${person.id}`}>{t("childIncomeAmountLabel")}</Label><Input id={`income-${person.id}`} inputMode="decimal" value={entry.incomeAmount ?? ""} onChange={(event) => update(person.id, { incomeAmount: event.target.value })} placeholder={t("amountPlaceholder")} className={`mt-2 h-12 ${GLASS_INPUT}`} /><Button type="button" variant="ghost" className="mt-2" aria-pressed={entry.incomeAmountUnknown === true} onClick={() => update(person.id, { incomeAmount: "", incomeAmountUnknown: true })}><CircleHelp data-icon="inline-start" />{t("unknown")}</Button></div> : null}</> : null}{entry.incomeKind === "replacement" ? <div className="mt-4"><Label htmlFor={`income-${person.id}`}>{t("childIncomeAmountLabel")}</Label><Input id={`income-${person.id}`} inputMode="decimal" value={entry.incomeAmount ?? ""} onChange={(event) => update(person.id, { incomeAmount: event.target.value })} placeholder={t("amountPlaceholder")} className={`mt-2 h-12 ${GLASS_INPUT}`} /><Button type="button" variant="ghost" className="mt-2" aria-pressed={entry.incomeAmountUnknown === true} onClick={() => update(person.id, { incomeAmount: "", incomeAmountUnknown: true })}><CircleHelp data-icon="inline-start" />{t("unknown")}</Button></div> : null}</> : null}{childIncomeCollectionState(entry, date).invalidWorkDate ? <p className="mt-4 text-sm text-destructive" role="alert">{t("childWorkFutureNotice")}</p> : null}{entry.hasIncome === "unknown" || entry.firstWork === "unknown" || entry.incomeAmountUnknown ? <p className="mt-4 text-sm text-[color:var(--glass-ink-soft)]" role="status">{t("childIncomeUnknownHelp")}</p> : null}</fieldset>
+  })}</div><ContinueButton t={t} onClick={onContinue} disabled={!complete} /></div>
 }
 
 function DatesStep({ t, titleKey, bodyKey, firstLabelKey, secondLabelKey, valueA, valueB, onChangeA, onChangeB, onUnknown, onContinue }: { t: Translation; titleKey: string; bodyKey: string; firstLabelKey: string; secondLabelKey: string; valueA: string; valueB: string; onChangeA: (value: string) => void; onChangeB: (value: string) => void; onUnknown: () => void; onContinue: () => void }) {
@@ -458,7 +651,10 @@ function PartnerQualificationStep({ t, answers, onChoose, onContinue }: { t: Tra
   return <div><h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">{t("partnerQualificationQuestion")}</h2><p className="mt-3 max-w-2xl text-sm leading-relaxed text-[color:var(--glass-ink-soft)]">{t("partnerQualificationBody")}</p><div className="mt-6 grid gap-4">{questionKeys.map((key) => <fieldset key={key} className="glass-surface rounded-2xl p-4"><legend className="px-1 text-base font-semibold">{t(`partnerQualification.${key}` as never)}</legend><div className="mt-3 flex flex-wrap gap-2">{["yes", "no", "unknown"].map((value) => <Button key={value} type="button" variant={answers[key] === value ? "default" : "outline"} aria-pressed={answers[key] === value} onClick={() => onChoose(key, value)}>{t(value as never)}</Button>)}</div></fieldset>)}</div><ContinueButton t={t} onClick={onContinue} disabled={!complete} /></div>
 }
 
-function familySituationMissingFactLabel(t: Translation, factKey: string, fallback: string) {
+function familySituationMissingFactLabel(t: Translation, factKey: string, fallback: string, people: Person[]) {
+  const person = people.find((candidate) => factKey.startsWith(`${candidate.id}.`))
+  if (person?.relation === "child") return t("missingFacts.childIncome", { name: person.name })
+  if (person?.relation === "parent" || person?.relation === "family") return t("missingFacts.relativeIncome", { name: person.name })
   const key = factKey.endsWith(".partnerQualification.facts.sameRoof") ? "missingFacts.partnerSameRoof"
     : factKey.endsWith(".partnerQualification.facts.mainlySharedHousekeeping") ? "missingFacts.partnerSharedHousekeeping"
       : factKey.endsWith(".partnerQualification.facts.formsDeFactoHousehold") ? "missingFacts.partnerDeFactoHousehold"
@@ -478,17 +674,18 @@ function familySituationMissingFactLabel(t: Translation, factKey: string, fallba
                                   : factKey.endsWith(".incomes") ? "missingFacts.partnerIncomeInventory"
                                     : factKey === "bareme.spouseProfessionalMonthly" ? "missingFacts.partnerThreshold"
                                       : factKey === "bareme.coverage" ? "missingFacts.baremeCoverage"
-                                        : factKey === "partnerIncome.article60Coverage" ? "missingFacts.partnerArticle60Coverage"
+                                        : factKey === "partnerIncome.mixedIncomeCoverage" ? "missingFacts.partnerMixedIncomeCoverage"
+                                          : factKey === "partnerIncome.article60Coverage" ? "missingFacts.partnerArticle60Coverage"
                                           : "missingFacts.generic"
   return key === "missingFacts.generic" && fallback ? t(key as never) : t(key as never)
 }
 
-function SummaryStep({ t, intent, date, people, livesAlone, answers, particular, relationLabel, details, onEdit }: { t: Translation; evaluation: ReturnType<typeof evaluateArticle110Verifier>; intent?: Intent; date: string; people: Person[]; livesAlone: boolean; answers: Answers; particular: string[]; relationLabel: (value: Relation) => string; details: SummaryDetail[]; onEdit: () => void }) {
-  // The owner-approved children-and-family scenario is evaluated as cohabitant;
-  // it is no longer presented as a blocked or reserved citizen case.
-  const reservedCase = false
+export function SummaryStep({ t, evaluation, intent, date, people, livesAlone, answers, particular, relationLabel, details, onEdit }: { t: Translation; evaluation: ReturnType<typeof evaluateArticle110Verifier>; intent?: Intent; date: string; people: Person[]; livesAlone: boolean; answers: Answers; particular: string[]; relationLabel: (value: Relation) => string; details: SummaryDetail[]; onEdit: () => void }) {
+  const category = evaluation.declaredOrientation?.category ?? evaluation.category
+  const resultTitle = category === "A" ? t("categoryA") : category === "N" ? t("categoryN") : category === "B" ? t("categoryB") : t("summaryNoCategoryTitle")
+  const resultBody = evaluation.declaredOrientation?.basis === "alimony_legal_document" ? t("alimonyPaymentNotice") : evaluation.declaredOrientation?.basis === "alimony_pending_or_absent" && answers.alimonyDocument === "pending" ? t("judgmentPendingNotice") : category ? t("summaryResultBody") : t("summaryIncompleteBody")
   const documents = [answers.aloneSituation === "alternating" ? t("documentAlternating") : null, answers.alimonyDocument === "judgment" ? t("documentAlimony") : null, answers.unrelatedHousehold === "separate" ? t("documentRegis") : null].filter((item): item is string => !!item)
-  return <div><h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">{t("summaryTitle")}</h2><div className="glass-feedback mt-5 flex gap-3 px-4 py-4" data-tone="info"><CircleHelp className="mt-0.5 size-5 shrink-0" aria-hidden /><div><p className="font-semibold">{t("summaryNoCategoryTitle")}</p><p className="mt-1 text-sm leading-relaxed">{t("summaryNoCategoryBody")}</p></div></div>{reservedCase ? <div className="glass-feedback mt-4 flex gap-3 px-4 py-4" data-tone="attention"><Info className="mt-0.5 size-5 shrink-0" aria-hidden /><p className="text-sm leading-relaxed">{t("reservedCaseNotice")}</p></div> : null}<dl className="mt-6 grid gap-3"><SummaryRow icon={<CalendarDays />} label={t("summaryDate")} value={date || t("notAnswered")} /><SummaryRow icon={<UsersRound />} label={t("summaryHousehold")} value={people.length ? people.map((person) => `${person.name} — ${relationLabel(person.relation)}`).join(", ") : livesAlone ? t("liveAlone") : t("notAnswered")} /><SummaryRow icon={<FileText />} label={t("summaryRequest")} value={intent === "changed" ? t("intentChangedTitle") : intent === "current" ? t("intentCurrentTitle") : t("unknown")} />{Object.entries(answers).filter(([key, value]) => value && !partnerQualificationAnswerKeys.includes(key as typeof partnerQualificationAnswerKeys[number])).map(([key, value]) => <SummaryRow key={key} icon={<FileText />} label={t(`summary.${key}` as never)} value={t(`${key}.${value}` as never)} />)}{details.map((detail) => <SummaryRow key={detail.label} icon={<FileText />} label={detail.label} value={detail.value} />)}{particular.length ? <SummaryRow icon={<FileText />} label={t("summaryParticular")} value={particular.map((item) => t(`particular.${item}` as never)).join(", ")} /> : null}</dl><div className="glass-surface mt-6 p-4"><h3 className="font-semibold">{t("documentsTitle")}</h3>{documents.length ? <ul className="mt-2 space-y-2 text-sm text-[color:var(--glass-ink-soft)]">{documents.map((document) => <li key={document} className="flex gap-2"><FileText className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden />{document}</li>)}</ul> : <p className="mt-1 text-sm leading-relaxed text-[color:var(--glass-ink-soft)]">{t("documentsBody")}</p>}<p className="mt-3 text-sm leading-relaxed text-[color:var(--glass-ink-soft)]">{t("documentsNoCheck")}</p></div><div className="mt-6"><Button type="button" variant="outline" size="lg" onClick={onEdit}><Pencil data-icon="inline-start" />{t("editAnswers")}</Button></div><p className="mt-5 text-sm leading-relaxed text-[color:var(--glass-ink-soft)]">{t("disclaimer")}</p></div>
+  return <div><h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">{t("summaryTitle")}</h2><div className="glass-feedback mt-5 flex gap-3 px-4 py-4" data-tone="info"><CircleHelp className="mt-0.5 size-5 shrink-0" aria-hidden /><div><p className="font-semibold">{resultTitle}</p><p className="mt-1 text-sm leading-relaxed">{resultBody}</p></div></div><dl className="mt-6 grid gap-3"><SummaryRow icon={<CalendarDays />} label={t("summaryDate")} value={date || t("notAnswered")} /><SummaryRow icon={<UsersRound />} label={t("summaryHousehold")} value={people.length ? people.map((person) => `${person.name} — ${relationLabel(person.relation)}`).join(", ") : livesAlone ? t("liveAlone") : t("notAnswered")} /><SummaryRow icon={<FileText />} label={t("summaryRequest")} value={intent === "changed" ? t("intentChangedTitle") : intent === "current" ? t("intentCurrentTitle") : t("unknown")} />{Object.entries(answers).filter(([key, value]) => value && !partnerQualificationAnswerKeys.includes(key as typeof partnerQualificationAnswerKeys[number])).map(([key, value]) => <SummaryRow key={key} icon={<FileText />} label={t(`summary.${key}` as never)} value={t(`${key}.${value}` as never)} />)}{details.map((detail) => <SummaryRow key={detail.label} icon={<FileText />} label={detail.label} value={detail.value} />)}{particular.length ? <SummaryRow icon={<FileText />} label={t("summaryParticular")} value={particular.map((item) => t(`particular.${item}` as never)).join(", ")} /> : null}</dl><div className="glass-surface mt-6 p-4"><h3 className="font-semibold">{t("documentsTitle")}</h3>{documents.length ? <ul className="mt-2 space-y-2 text-sm text-[color:var(--glass-ink-soft)]">{documents.map((document) => <li key={document} className="flex gap-2"><FileText className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden />{document}</li>)}</ul> : <p className="mt-1 text-sm leading-relaxed text-[color:var(--glass-ink-soft)]">{t("documentsBody")}</p>}<p className="mt-3 text-sm leading-relaxed text-[color:var(--glass-ink-soft)]">{t("documentsNoCheck")}</p></div><div className="glass-surface mt-4 p-4"><h3 className="font-semibold">{t("summarySourcesTitle")}</h3><a href="https://www.onem.be/citoyens/chomage-complet/a-combien-seleve-votre-allocation-/quelle-est-votre-situation-familiale-" target="_blank" rel="noreferrer" className="mt-2 block text-sm underline underline-offset-4">{t("summarySourceOnem")}</a></div><div className="mt-6"><Button type="button" variant="outline" size="lg" onClick={onEdit}><Pencil data-icon="inline-start" />{t("editAnswers")}</Button></div><p className="mt-5 text-sm leading-relaxed text-[color:var(--glass-ink-soft)]">{t("summaryNoCategoryBody")}</p></div>
 }
 
 function ContinueButton({ t, onClick, disabled, label }: { t: Translation; onClick: () => void; disabled?: boolean; label?: string }) {

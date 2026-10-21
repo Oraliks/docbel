@@ -17,12 +17,9 @@ export async function generateMetadata(): Promise<Metadata> {
  * La qualification théorique est déléguée au moteur Article 110 partagé.
  */
 export default async function FamilySituationPage() {
-  // The public flow only receives the existing, read-only thresholds. The shared
-  // Article 110 evaluator remains the sole place where categories are calculated.
-  // A missing local database must never keep this public route in its loading state.
-  const activeBareme = await Promise.race([
-    getActiveBaremeData().catch(() => null),
-    new Promise<null>((resolve) => setTimeout(() => resolve(null), 1_500)),
-  ])
+  // Use the existing published, dated source. Returning `null` remains safe
+  // when it is unavailable; a short arbitrary timeout must not discard a
+  // valid ceiling and turn complete partner facts into an unexplained gap.
+  const activeBareme = await getActiveBaremeData().catch(() => null)
   return <FamilySituationClient thresholds={getC1BaremeThresholds(activeBareme)} />
 }

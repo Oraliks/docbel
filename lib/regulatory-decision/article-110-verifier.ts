@@ -39,6 +39,8 @@ export type Article110VerifierPerson = {
   hasReplacementIncome?: boolean;
   replacementIncomeType?: "unemployment" | "mutuality" | "pension" | "disability_allowance" | "other";
   replacementIncomeAmount?: number;
+  /** A generic replacement-income declaration does not identify an AM62 exemption. */
+  replacementIncomeNeedsQualification?: boolean;
 };
 
 export type Article110VerifierInput = {
@@ -78,11 +80,13 @@ function toIncome(person: Article110VerifierPerson): { incomes?: FamilyIncome[];
     studiesEndedAt: person.studiesEndedAt,
     monthlyAmount: person.c110aMonthlyDeclaredIncome,
     professionalActivityType: person.professionalIncomeType,
+    excludedFromChildProfessionalAssessment: person.relation === "child" && person.professionalIncomeType === "student_occupation_contract",
     professionalActivityDescription: person.professionalIncomeOtherDescription,
   });
   if (person.hasReplacementIncome === true) incomes.push({
     kind: person.replacementIncomeType === "pension" ? "pension" : person.replacementIncomeType === "disability_allowance" ? "spf_disability" : "replacement",
     amount: person.replacementIncomeAmount, amountKind: person.replacementIncomeType === "pension" ? "gross" : undefined, active: true,
+    needsQualification: person.replacementIncomeNeedsQualification,
   });
   const incomeInventoryComplete = person.hasProfessionalIncome !== undefined && person.hasReplacementIncome !== undefined;
   return { ...(incomes.length > 0 ? { incomes } : incomeInventoryComplete ? { incomes } : {}), incomeInventoryComplete };

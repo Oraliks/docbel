@@ -339,6 +339,7 @@ export default function BaremeImportPreviewPage() {
     },
     published: { label: t('statusPublished'), tone: 'bg-green-100 text-green-900 border-green-200' },
     archived: { label: t('statusArchived'), tone: 'bg-muted text-muted-foreground' },
+    revoked: { label: t('statusRevoked'), tone: 'bg-muted text-muted-foreground' },
     rejected: { label: t('statusRejected'), tone: 'bg-red-100 text-red-900 border-red-200' },
     active: { label: t('statusLegacyLong'), tone: 'bg-muted text-muted-foreground' },
   }
@@ -954,6 +955,7 @@ function WorkflowPanel({
 }
 
 function ActionBadge({ action }: { action: string }) {
+  const t = useTranslations('admin.baremes')
   const tones: Record<string, string> = {
     created: 'bg-blue-100 text-blue-900',
     published: 'bg-green-100 text-green-900',
@@ -967,7 +969,7 @@ function ActionBadge({ action }: { action: string }) {
   const tone = tones[action] ?? 'bg-muted'
   return (
     <span className={`text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded ${tone}`}>
-      {action.replace(/_/g, ' ')}
+      {action === 'revoked' ? t('statusRevoked') : action.replace(/_/g, ' ')}
     </span>
   )
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { getC1BaremeThresholds, getC1IncomeGuidance } from '../c1-thresholds'
+import { getC1BaremeThresholds, getC1IncomeGuidance, formatC1BaremeSource } from '../c1-thresholds'
 import type { ActiveBaremeData } from '../getActiveBaremeData'
 
 const data = (rows: Array<{ article: string; amount: number }>): ActiveBaremeData => ({
@@ -46,5 +46,51 @@ describe('C1 barème dynamique', () => {
     expect(guidance.belowThreshold).toBe(true)
     expect(guidance.message).toContain('chef de ménage')
     expect(guidance.evidence).toContain('Composition de ménage')
+  })
+})
+
+describe('C1 extraction sans repli implicite', () => {
+  it('distingue un barème absent et une ligne manquante sans importer un montant T147', () => {
+    const absent = getC1BaremeThresholds(null)
+    expect(absent.source).toBeNull()
+    expect(absent.spouseProfessionalMonthly).toBeNull()
+    expect(absent.issues?.spouseProfessionalMonthly).toBe('missing')
+    const partial = getC1BaremeThresholds(data([{ article: 'Article 60, al. 2', amount: 111 }]))
+    expect(partial.childProfessionalMonthly).toBeNull()
+    expect(partial.issues?.childProfessionalMonthly).toBe('missing')
+    expect(partial.source?.publishedAt).toEqual(new Date('2026-04-02'))
+  })
+
+  it('accepte des doublons concordants et signale les doublons contradictoires quel que soit leur ordre', () => {
+    const same = [{ article: 'Article 60, al. 2', amount: 111 }, { article: 'Article 60, al. 2', amount: 111 }]
+    expect(getC1BaremeThresholds(data(same)).spouseProfessionalMonthly).toBe(111)
+    expect(getC1BaremeThresholds(data(same)).issues?.spouseProfessionalMonthly).toBeUndefined()
+    const conflict = [{ article: 'Article 60, al. 2', amount: 111 }, { article: 'Article 60, al. 2', amount: 222 }]
+    for (const rows of [conflict, [...conflict].reverse()]) {
+      const result = getC1BaremeThresholds(data(rows))
+      expect(result.spouseProfessionalMonthly).toBeNull()
+      expect(result.issues?.spouseProfessionalMonthly).toBe('conflicting')
+      expect(result.childProfessionalMonthly).toBeNull()
+      expect(result.issues?.childProfessionalMonthly).toBe('missing')
+    }
+  })
+
+  it.each([Number.NaN, Number.POSITIVE_INFINITY, -1])('écarte une ligne de montant invalide : %s', (amount) => {
+    const result = getC1BaremeThresholds(data([{ article: 'Article 60, al. 2', amount }]))
+    expect(result.spouseProfessionalMonthly).toBeNull()
+    expect(result.issues?.spouseProfessionalMonthly).toBe('invalid')
+  })
+
+  it('accepte zéro et conserve séparément les montants synthétiques des versions datées', () => {
+    expect(getC1BaremeThresholds(data([{ article: 'Article 60, § 2', amount: 0 }])).spouseProfessionalMonthly).toBe(0)
+    const v1 = data([{ article: 'Article 60, al. 2', amount: 111 }])
+    const v2 = { ...data([{ article: 'Article 60, al. 2', amount: 222 }]), fileId: 'v2', validFrom: new Date('2026-07-01') }
+    expect(getC1BaremeThresholds(v1).spouseProfessionalMonthly).toBe(111)
+    expect(getC1BaremeThresholds(v2)).toMatchObject({ spouseProfessionalMonthly: 222, source: { fileId: 'v2', validFrom: new Date('2026-07-01') } })
+  })
+
+  it.each(['fr', 'en', 'ar'] as const)('formate la date civile fixe avec la locale %s', (locale) => {
+    const thresholds = getC1BaremeThresholds(data([]))
+    expect(formatC1BaremeSource(thresholds, locale)).toContain('01/04/2026')
   })
 })

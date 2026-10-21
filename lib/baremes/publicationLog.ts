@@ -6,6 +6,7 @@ export type PublicationAction =
   | 'published'
   | 'rejected'
   | 'archived'
+  | 'revoked'
   | 'rollback'
   | 'approved'
   | 'submitted_for_approval'

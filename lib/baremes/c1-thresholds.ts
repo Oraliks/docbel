@@ -1,6 +1,17 @@
 import type { ActiveBaremeAmount, ActiveBaremeData } from './getActiveBaremeData'
+import { defaultLocale, type Locale } from '@/i18n/locales'
+import { formatDate } from '@/lib/i18n/format'
 
 export type C1IncomeRole = 'spouseProfessional' | 'childProfessional' | 'spouseReplacement' | 'childReplacement'
+export type C1BaremeThresholdKey =
+  | 'spouseProfessionalMonthly'
+  | 'childProfessionalMonthly'
+  | 'spouseReplacementMonthly'
+  | 'childReplacementMonthly'
+  | 'ascendantPensionWithChildMonthly'
+  | 'ascendantPensionMonthly'
+  | 'ascendantDisabledPensionMonthly'
+export type C1BaremeThresholdIssue = 'missing' | 'conflicting' | 'invalid'
 
 export interface C1BaremeThresholds {
   spouseProfessionalMonthly: number | null
@@ -10,59 +21,69 @@ export interface C1BaremeThresholds {
   ascendantPensionWithChildMonthly?: number | null
   ascendantPensionMonthly?: number | null
   ascendantDisabledPensionMonthly?: number | null
-  source: { fileId: string; fileName: string; validFrom: Date | null } | null
+  source: { fileId: string; fileName: string; validFrom: Date | null; publishedAt?: Date | null } | null
+  /** Diagnostic technique : un seuil absent ou contradictoire n'est jamais inventé. */
+  issues?: Partial<Record<C1BaremeThresholdKey, C1BaremeThresholdIssue>>
 }
 
+const normalized = (value: string) => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+
 /**
- * Extrait les seuils utilisés par le parcours familial depuis le dernier
- * barème publié. Les libellés ONEM pouvant varier (NL/FR), on rapproche par
- * article + unité et jamais par montant codé en dur.
+ * Extrait les seuils depuis le seul fichier applicable sélectionné par le lecteur.
+ * Aucun montant de repli, aucune fusion avec une version courante ou précédente.
+ * Des doublons concordants sont acceptés ; des valeurs contradictoires restent null.
  */
 export function getC1BaremeThresholds(data: ActiveBaremeData | null): C1BaremeThresholds {
-  const empty: C1BaremeThresholds = {
-    spouseProfessionalMonthly: null,
-    childProfessionalMonthly: null,
-    spouseReplacementMonthly: null,
-    childReplacementMonthly: null,
-    ascendantPensionWithChildMonthly: null,
-    ascendantPensionMonthly: null,
-    ascendantDisabledPensionMonthly: null,
-    source: data ? { fileId: data.fileId, fileName: data.fileName, validFrom: data.validFrom } : null,
-  }
-  if (!data) return empty
-
-  const rows = (data.amountsByCategory.other_unemployment_amount ?? []).filter(
+  const rows = (data?.amountsByCategory.other_unemployment_amount ?? []).filter(
     (row) => row.unit === 'monthly'
   )
-  const find = (article: number, paragraph: number, labelIncludes: string[] = [], labelExcludes: string[] = []): number | null => {
-    const row = rows.find((candidate) => {
-      const haystack = `${candidate.article ?? ''} ${candidate.labelFr ?? ''} ${candidate.labelNl ?? ''}`
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '')
-        .toLowerCase()
-      return new RegExp(`\\b${article}\\b[\\s\\S]{0,24}\\b(?:al|aline?a|§)\\.?\\s*${paragraph}\\b`).test(haystack)
-        && labelIncludes.every((term) => haystack.includes(term.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()))
-        && labelExcludes.every((term) => !haystack.includes(term.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()))
+  const issues: Partial<Record<C1BaremeThresholdKey, C1BaremeThresholdIssue>> = {}
+  const find = (
+    key: C1BaremeThresholdKey,
+    article: number,
+    paragraph: number,
+    labelIncludes: string[] = [],
+    labelExcludes: string[] = [],
+  ): number | null => {
+    const candidates = rows.filter((candidate) => {
+      const haystack = normalized(`${candidate.article ?? ''} ${candidate.labelFr ?? ''} ${candidate.labelNl ?? ''}`)
+      return new RegExp(`\\b${article}\\b[\\s\\S]{0,24}(?:\\b(?:al|aline?a)\\.?|§)\\s*${paragraph}\\b`).test(haystack)
+        && labelIncludes.every((term) => haystack.includes(normalized(term)))
+        && labelExcludes.every((term) => !haystack.includes(normalized(term)))
     })
-    return row?.amount ?? null
+    if (candidates.length === 0) {
+      issues[key] = 'missing'
+      return null
+    }
+    if (candidates.some((candidate) => !Number.isFinite(candidate.amount) || candidate.amount < 0)) {
+      issues[key] = 'invalid'
+      return null
+    }
+    const values = new Set(candidates.map((candidate) => candidate.amount))
+    if (values.size !== 1) {
+      issues[key] = 'conflicting'
+      return null
+    }
+    return candidates[0].amount
   }
 
   return {
-    ...empty,
-    // AM art. 60, al. 2/3 : professionnel conjoint/enfant
-    spouseProfessionalMonthly: find(60, 2),
-    childProfessionalMonthly: find(60, 3),
-    // AM art. 61, al. 2 et art. 62, al. 1 : revenus de remplacement
-    spouseReplacementMonthly: find(61, 2),
-    childReplacementMonthly: find(62, 1),
-    // AM art. 62 : seuils des pensions d'ascendants, extraits du bloc
-    // « Situation familiale revenus bruts » du barème versionné.
-    ascendantPensionWithChildMonthly: find(62, 2),
-    ascendantPensionMonthly: find(62, 3, ['ascendant'], ['handicap']),
-    ascendantDisabledPensionMonthly: find(62, 3, ['ascendant', 'handicap']),
+    spouseProfessionalMonthly: find('spouseProfessionalMonthly', 60, 2),
+    childProfessionalMonthly: find('childProfessionalMonthly', 60, 3),
+    spouseReplacementMonthly: find('spouseReplacementMonthly', 61, 2),
+    childReplacementMonthly: find('childReplacementMonthly', 62, 1),
+    ascendantPensionWithChildMonthly: find('ascendantPensionWithChildMonthly', 62, 2),
+    ascendantPensionMonthly: find('ascendantPensionMonthly', 62, 3, ['ascendant'], ['handicap']),
+    ascendantDisabledPensionMonthly: find('ascendantDisabledPensionMonthly', 62, 3, ['ascendant', 'handicap']),
+    source: data ? {
+      fileId: data.fileId,
+      fileName: data.fileName,
+      validFrom: data.validFrom,
+      publishedAt: data.publishedAt,
+    } : null,
+    issues,
   }
 }
-
 export interface C1IncomeGuidance {
   belowThreshold: boolean | null
   message: string
@@ -101,10 +122,10 @@ export function getC1IncomeGuidance(
   }
 }
 
-export function formatC1BaremeSource(thresholds: C1BaremeThresholds): string | null {
+export function formatC1BaremeSource(thresholds: C1BaremeThresholds, locale: Locale = defaultLocale): string | null {
   if (!thresholds.source) return null
   const date = thresholds.source.validFrom
-    ? new Intl.DateTimeFormat('fr-BE', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(thresholds.source.validFrom)
+    ? formatDate(`${thresholds.source.validFrom.toISOString().slice(0, 10)}T12:00:00`, locale)
     : null
   return `Barème appliqué : ${thresholds.source.fileName}${date ? ` (valable depuis le ${date})` : ''}.`
 }

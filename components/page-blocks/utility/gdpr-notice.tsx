@@ -19,7 +19,7 @@ export const gdprNotice = defineBlock({
     acceptText: 'Accepter',
     declineText: 'Refuser',
     linkText: 'En savoir plus',
-    link: '/mentions-legales',
+    link: '',
   },
   meta: {
     name: 'Bannière GDPR',
@@ -47,8 +47,8 @@ export const gdprNotice = defineBlock({
     return (
       <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 max-w-xl w-[calc(100%-2rem)] rounded-2xl border bg-card shadow-2xl p-5 animate-in slide-in-from-bottom-4 duration-300">
         <p className="text-sm leading-relaxed">{message}</p>
-        {link && linkText && (
-          <a href={safeHref(link)} className="text-xs text-primary hover:underline mt-2 inline-block">
+        {safeLink && linkText && !blockedLegalPages.includes(safeLink) && (
+          <a href={safeLink} className="text-xs text-primary hover:underline mt-2 inline-block">
             {linkText}
           </a>
         )}

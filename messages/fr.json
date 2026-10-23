@@ -3474,7 +3474,7 @@
       "signup": "Les nouvelles inscriptions sont suspendues pendant les travaux du site. Les accès aux comptes existants restent disponibles.",
       "booking": "La prise de nouveaux rendez-vous et les inscriptions en liste d’attente sont temporairement suspendues. Pour gérer un rendez-vous existant, utilisez le lien reçu lors de sa réservation.",
       "dossier": "La création et l’enregistrement de nouveaux dossiers sont temporairement suspendus. Les informations et les outils autonomes restent consultables.",
-      "existing": "Vous consultez un dossier existant. Sa modification est temporairement suspendue. Seuls les documents déjà complétés peuvent être récupérés ; les consignes du dossier restent applicables.",
+      "existing": "Vous consultez un dossier existant. Sa modification est temporairement suspendue. Les documents d’un dossier entièrement complété restent récupérables ; les consignes du dossier restent applicables.",
       "ephemeral": "Vos réponses restent dans ce formulaire ouvert. Elles ne sont pas sauvegardées dans un dossier ; conservez votre document après l’avoir généré.",
       "profile": "Vous consultez votre profil existant. Sa modification et sa suppression sont temporairement suspendues.",
       "links": "Accès disponibles",

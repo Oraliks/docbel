@@ -1,3 +1,6 @@
+import { PUBLIC_WRITES_PAUSED } from "@/lib/public-access";
+import { TemporaryClosureNotice } from "@/components/docbel/temporary-closure-notice";
+import { getTranslations } from "next-intl/server";
 import { notFound, redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
@@ -20,6 +23,10 @@ export async function generateMetadata({
 }: {
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
+  if (PUBLIC_WRITES_PAUSED) {
+    const t = await getTranslations("public.temporaryClosure");
+    return { title: t("title") };
+  }
   const { slug } = await params;
   if (LEGACY_SLUGS[slug]) redirect(`/${LEGACY_SLUGS[slug]}/rendez-vous`);
   const tenant = await prisma.bookingTenant.findFirst({
@@ -37,6 +44,7 @@ export default async function TenantBookingPage({
   params: Promise<{ slug: string }>;
   searchParams: Promise<{ cp?: string; lang?: string }>;
 }) {
+  if (PUBLIC_WRITES_PAUSED) return <TemporaryClosureNotice kind="booking" />;
   const { slug } = await params;
   const { cp, lang } = await searchParams;
 

@@ -129,7 +129,7 @@ changement de dépendance. Les tests de référence métier sont inchangés.
 | `pnpm i18n:check` | Réussi, 0 erreur ICU/JSON ; fallback FR existant, `.validation-signup-i18n.log` |
 | `pnpm build` | Échec infrastructure : Turbopack refuse la jonction node_modules hors racine, `.validation-signup-build.log` |
 | `pnpm build --webpack` | Échec résolution react-pdf CJS/pdfjs-dist ESM via la jonction, `.validation-signup-build-webpack.log` ; aucune configuration projet modifiée |
-| Diagnostic `pnpm exec tsc --project tsconfig.build.json --noEmit --incremental false` | Complément en cours, ne remplace pas le build requis |
+| Diagnostic `pnpm exec tsc --project tsconfig.build.json --noEmit --incremental false` | Échec : erreurs dans fichiers hors delta (routes featured/og générées, Leaflet, tests familiaux/barèmes) ; `.validation-signup-tsc.log`, ne remplace pas le build requis |
 
 Revue indépendante : GPT-6 Luna, effort medium, lecture seule. La première
 conclusion sur l'option Google a été retirée après le test révélant le défaut.
@@ -157,3 +157,11 @@ Le build requis reste NON VALIDÉ localement ; le diagnostic TypeScript éventue
 ne s'y substitue pas. Préparer une PR brouillon, garder les gates manquants
 visibles et attendre CI propre avant de demander intégration. Aucune modification
 de configuration PDF ou de dépendance n'entre dans ce lot.
+
+PR brouillon ouverte : https://github.com/Oraliks/docbel/pull/83 ; commit de code
+f2402ef261e61449b6de4f7ea5998fdce183e50a, base distante vérifiée fdeab9816da4d77baf8e90716aa6bc5109037d08.
+CI en cours à l'ouverture. Le diagnostic TypeScript n'a signalé aucun fichier du
+delta ; les fichiers cités sont inchangés par rapport à la base (à distinguer
+d'une validation TypeScript globale, qui a échoué). Aucun de ces tests métier
+n'a été modifié pour contourner le diagnostic. L'état final CI est porté par la
+PR et la restitution au chef ; ce rapport décrit les preuves locales du lot.

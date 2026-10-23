@@ -112,6 +112,7 @@ export default async function BundleRoute({
                 status: { in: [...EDITABLE_BUNDLE_RUN_STATUSES] },
               },
           orderBy: { startedAt: "desc" },
+          take: 200,
         })
       : [];
 
@@ -130,6 +131,9 @@ export default async function BundleRoute({
   const targeted = bundleRunParam
     ? allRuns.find((r) => r.id === bundleRunParam) ?? null
     : null;
+
+  // A requested run must never silently open another saved request.
+  if (bundleRunParam && !targeted) notFound();
 
   // Entrée HYBRIDE : 2+ demandes avec progression, sans ciblage ni démarrage
   // explicite → écran « Mes demandes ». Sinon on ouvre la demande ciblée, ou la

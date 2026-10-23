@@ -1,5 +1,7 @@
 "use client";
 
+import { PUBLIC_WRITES_PAUSED } from "@/lib/public-access";
+import { TemporaryClosureNotice } from "@/components/docbel/temporary-closure-notice";
 import { useTranslations } from "next-intl";
 
 interface AutoSaveNoticeProps {
@@ -21,6 +23,8 @@ interface AutoSaveNoticeProps {
 /// réalité : « enregistrées automatiquement » seulement quand c'est vrai.
 export function AutoSaveNotice({ lastSavedAt, isPartOfBundle, serverSaved }: AutoSaveNoticeProps) {
   const t = useTranslations("public.contenu");
+
+  if (PUBLIC_WRITES_PAUSED) return <TemporaryClosureNotice kind={isPartOfBundle ? "existing" : "ephemeral"} compact />;
 
   if (!serverSaved) {
     return (

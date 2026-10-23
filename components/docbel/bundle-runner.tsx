@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { PUBLIC_WRITES_PAUSED } from "@/lib/public-access";
+import { TemporaryClosureNotice } from "./temporary-closure-notice";
 import { useRouter } from "next/navigation";
 import { useTranslations, useLocale } from "next-intl";
 import { toast } from "sonner";
@@ -138,6 +140,7 @@ export function BundleRunner({
   demandes = [],
 }: BundleRunnerProps) {
   const t = useTranslations("public.dossier");
+  const tp = useTranslations("public.temporaryClosure");
   const locale = useLocale();
   const router = useRouter();
   const confirm = useConfirm();
@@ -175,11 +178,12 @@ export function BundleRunner({
   /// le run ET il y a des questions, OU quand l'utilisateur a explicitement
   /// demandé à revoir ses réponses.
   const showsPrequalifierGate =
-    (!runId && hasEligibilityQuestions) || editingEligibility;
+    !PUBLIC_WRITES_PAUSED && ((!runId && hasEligibilityQuestions) || editingEligibility);
   const showsDocumentsSection = !showsPrequalifierGate || Boolean(runId);
 
   async function ensureRun(answers?: EligibilityAnswers): Promise<string | null> {
     if (runId && !answers) return runId;
+    if (PUBLIC_WRITES_PAUSED) return null;
     setStarting(true);
     try {
       const res = await fetch(`/api/documents/bundles/${bundle.id}/run`, {
@@ -334,7 +338,7 @@ export function BundleRunner({
   const [autoForwardFailed, setAutoForwardFailed] = useState(false);
   const autoForwardedRef = useRef(false);
   const canAutoForward =
-    autoStart &&
+    !PUBLIC_WRITES_PAUSED && autoStart &&
     !autoForwardFailed &&
     !showsPrequalifierGate &&
     !editingEligibility &&
@@ -397,7 +401,7 @@ export function BundleRunner({
         model={railModel}
         demandes={demandes}
         resumeSlot={
-          runId && resumeCode ? (
+          !PUBLIC_WRITES_PAUSED && runId && resumeCode ? (
             <ResumeCodeBanner
               runId={runId}
               resumeCode={resumeCode}
@@ -413,6 +417,7 @@ export function BundleRunner({
         }
       />
       <div className="flex min-w-0 flex-col gap-6">
+        {PUBLIC_WRITES_PAUSED && <TemporaryClosureNotice kind={runId ? "existing" : "dossier"} compact={Boolean(runId)} />}
         {/* Alerte « demande reprise » : cette demande a été clonée d'une précédente. */}
         {clonedFromDate && (
           <div className="rounded-2xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] p-3 text-sm text-[color:var(--glass-ink-soft)]">
@@ -432,7 +437,7 @@ export function BundleRunner({
             <div className="flex-1">
               <h1 className="glass-display text-2xl font-semibold text-[color:var(--glass-ink)]">{bundle.name}</h1>
             </div>
-            {runId && completedCount > 0 && (
+            {!PUBLIC_WRITES_PAUSED && runId && completedCount > 0 && (
               <Button variant="ghost" size="sm" onClick={reset}>
                 <RefreshCw data-icon="inline-start" aria-hidden />
                 {t("restart")}
@@ -460,7 +465,7 @@ export function BundleRunner({
         )}
 
         {/* Section "modifier la pré-qualification" — visible quand un run existe et qu'il y avait des questions */}
-        {runId && hasEligibilityQuestions && eligibilityCompleted && !editingEligibility && (
+        {!PUBLIC_WRITES_PAUSED && runId && hasEligibilityQuestions && eligibilityCompleted && !editingEligibility && (
           <div className="flex items-center justify-end">
             <Button
               variant="ghost"
@@ -477,7 +482,7 @@ export function BundleRunner({
         {/* Documents — masqué tant que la pré-qualification n'est pas faite */}
         {showsDocumentsSection && (
           <>
-            {!runId && (
+            {!PUBLIC_WRITES_PAUSED && !runId && (
               <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] p-3 text-sm text-[color:var(--glass-ink-soft)]">
                 <span>
                   {t("runnerStartHint")}
@@ -606,9 +611,11 @@ export function BundleRunner({
                         size="sm"
                         variant={completed || !isNextAction ? "outline" : "default"}
                         onClick={() => handleStart(item)}
-                        disabled={isPending || starting}
+                        disabled={isPending || starting || (PUBLIC_WRITES_PAUSED && !runId)}
                       >
-                        {completed
+                        {PUBLIC_WRITES_PAUSED
+                          ? tp(runId ? "consultDocument" : "paused")
+                          : completed
                           ? t("edit")
                           : starting
                             ? t("runnerStarting")

@@ -80,29 +80,28 @@
   /* Landing (glass) tokens — LIGHT mode. Promoted from the prototype
      route at /glass so the home page (and any other page that opts in
      via the .glass-root class) can share the same design language. */
-  --glass-bg-a: #e9d9ff;
-  --glass-bg-b: #f5dcef;
-  --glass-bg-c: #f8e8dc;
-  --glass-bg-d: #d8c8ff;
-  --glass-ink: #2a0f4d;
-  --glass-ink-soft: rgba(42, 15, 77, 0.68);
-  --glass-ink-faint: rgba(42, 15, 77, 0.52);
-  --glass-ink-line: rgba(42, 15, 77, 0.12);
-  --glass-surface: rgba(255, 255, 255, 0.5);
-  --glass-surface-strong: rgba(255, 255, 255, 0.62);
-  --glass-border: rgba(255, 255, 255, 0.85);
-  --glass-shadow: 0 8px 32px rgba(80, 40, 140, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.7);
-  --glass-accent-a: #9f7cff;
-  --glass-accent-b: #d08cff;
-  --glass-accent-c: #ff8cc0;
-  --glass-accent-d: #ffb070;
-  --glass-accent-deep: #5B46E5;
-  --glass-pop-bg: rgba(255, 80, 144, 0.16);
-  --glass-pop-fg: #c03070;
-  --glass-status-from: #8b6cf5;
-  --glass-status-to: #4a2178;
-  --glass-noise-opacity: 0.32;
+  --glass-bg-a: #faf9fc;
+  --glass-bg-b: #f0ebfb;
+  --glass-bg-c: #faf9fc;
+  --glass-bg-d: #f0ebfb;
+  --glass-ink: #272235;
+  --glass-ink-soft: #675f73;
+  --glass-ink-faint: #756b80;
+  --glass-ink-line: #e5e0ec;
+  --glass-surface: #ffffff;
+  --glass-surface-strong: #ffffff;
+  --glass-border: #e5e0ec;
+  --glass-shadow: 0 14px 44px -24px #4a337e25;
+  --glass-accent-a: #6444d8;
+  --glass-accent-b: #f0ebfb;
+  --glass-accent-c: #6444d8;
+  --glass-accent-d: #4930ac;
+  --glass-accent-deep: #6444d8;
+  --glass-pop-bg: #f0ebfb;
+  --glass-pop-fg: #4930ac;
+  --glass-status-from: #6444d8;
+  --glass-status-to: #4930ac;
+  --glass-noise-opacity: 0;
   --glass-success: var(--success);
   --glass-success-surface: var(--success-subtle);
   --glass-success-ink: var(--success-subtle-foreground);
@@ -181,31 +180,29 @@
      AGENTS.md › Design dark). Fond noir-violet profond, accents vifs
      (violet/rose/corail), surfaces glassmorphism + ombre profonde + glow.
      Fidèle à la planche DARKMODE fournie. */
-  --glass-bg-a: #0d0a22;
-  --glass-bg-b: #14102b;
-  --glass-bg-c: #070617;
-  --glass-bg-d: #120b2e;
-  --glass-ink: #f7f2ff;
-  --glass-ink-soft: rgba(247, 242, 255, 0.72);
-  --glass-ink-faint: rgba(247, 242, 255, 0.5);
-  --glass-ink-line: rgba(170, 140, 255, 0.12);
+  --glass-bg-a: #15111e;
+  --glass-bg-b: #261d38;
+  --glass-bg-c: #15111e;
+  --glass-bg-d: #261d38;
+  --glass-ink: #f5f0fc;
+  --glass-ink-soft: #c7bed4;
+  --glass-ink-faint: #b9afc9;
+  --glass-ink-line: #4c405f;
   /* Glassmorphism : léger voile violet translucide sur le fond sombre. */
-  --glass-surface: rgba(140, 110, 245, 0.07);
-  --glass-surface-strong: rgba(150, 120, 250, 0.13);
-  --glass-border: rgba(170, 132, 255, 0.18);
-  --glass-shadow: 0 18px 50px rgba(0, 0, 0, 0.6),
-    0 0 0 1px rgba(170, 132, 255, 0.06),
-    inset 0 1px 0 rgba(255, 255, 255, 0.05);
-  --glass-accent-a: #8b5cf6;
-  --glass-accent-b: #c084fc;
-  --glass-accent-c: #ff5fa2;
-  --glass-accent-d: #ff7a7a;
-  --glass-accent-deep: #a78bfa;
-  --glass-pop-bg: rgba(255, 95, 162, 0.16);
-  --glass-pop-fg: #ff8fbe;
-  --glass-status-from: #7c3aed;
-  --glass-status-to: #ff5fa2;
-  --glass-noise-opacity: 0.05;
+  --glass-surface: #211b2d;
+  --glass-surface-strong: #292134;
+  --glass-border: #4c405f;
+  --glass-shadow: 0 14px 44px -24px #00000070;
+  --glass-accent-a: #b9a2ff;
+  --glass-accent-b: #332747;
+  --glass-accent-c: #b9a2ff;
+  --glass-accent-d: #d0bfff;
+  --glass-accent-deep: #b9a2ff;
+  --glass-pop-bg: #332747;
+  --glass-pop-fg: #d0bfff;
+  --glass-status-from: #b9a2ff;
+  --glass-status-to: #d0bfff;
+  --glass-noise-opacity: 0;
 }
 
 /* ============================================================
@@ -232,32 +229,15 @@
   position: fixed;
   inset: 0;
   z-index: -2;
-  background:
-    radial-gradient(ellipse 90% 60% at 0% 0%, var(--glass-bg-a) 0%, transparent 60%),
-    radial-gradient(ellipse 70% 50% at 100% 0%, var(--glass-bg-b) 0%, transparent 55%),
-    radial-gradient(ellipse 80% 60% at 100% 100%, var(--glass-bg-c) 0%, transparent 60%),
-    radial-gradient(ellipse 90% 70% at 0% 100%, var(--glass-bg-d) 0%, transparent 60%),
-    linear-gradient(135deg, var(--glass-bg-a) 0%, var(--glass-bg-b) 50%, var(--glass-bg-d) 100%);
+  background: var(--glass-bg-a);
 }
 
 /* Dark : fond noir-violet profond + halos violet/rose ambiants (premium néon).
    Override complet du dégradé clair (on ne réutilise pas les blobs pastel). */
-.dark .glass-root::before {
-  background:
-    radial-gradient(ellipse 65% 50% at 12% -5%, rgba(124, 58, 237, 0.28) 0%, transparent 55%),
-    radial-gradient(ellipse 55% 45% at 100% 8%, rgba(255, 95, 162, 0.14) 0%, transparent 50%),
-    radial-gradient(ellipse 70% 55% at 88% 105%, rgba(139, 92, 246, 0.2) 0%, transparent 55%),
-    radial-gradient(circle at 50% 130%, rgba(124, 58, 237, 0.12) 0%, transparent 50%),
-    linear-gradient(165deg, #0b0820 0%, #070617 55%, #0d0a22 100%);
-}
+.dark .glass-root::before { background: var(--glass-bg-a); }
 
 /* Dark : mots accentués des titres en dégradé violet→rose (cf. hero maquette). */
-.dark .glass-display em {
-  background: linear-gradient(100deg, #a78bfa 0%, #c084fc 45%, #ff5fa2 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-}
+.dark .glass-display em { color: var(--glass-accent-deep); }
 
 .glass-root::after {
   content: "";
@@ -289,6 +269,11 @@
      (#1A1A24) au lieu de l'encre violacée du verre. Toute page sous
      .glass-root (accueil, mon-dossier, calculateurs, auth…) hérite ainsi de
      la même couleur de texte, sans toucher les composants un par un. */
+  --primary: var(--glass-accent-deep);
+  --primary-foreground: var(--glass-surface);
+  --background: var(--glass-bg-a);
+  --accent: var(--glass-bg-b);
+  --accent-foreground: var(--glass-ink);
   --foreground: var(--glass-ink);
   --card: var(--glass-surface);
   --card-foreground: var(--glass-ink);
@@ -296,7 +281,7 @@
   --popover-foreground: var(--glass-ink);
   --muted-foreground: var(--glass-ink-soft);
   --secondary-foreground: var(--glass-ink);
-  --border: var(--glass-ink-line);
+  --border: var(--glass-border);
   --input: color-mix(in oklab, var(--glass-ink) 22%, transparent);
   --ring: var(--glass-accent-deep);
 }
@@ -324,8 +309,8 @@
     [data-slot="dropdown-menu-content"],
     [data-slot="dialog-content"]
   ) {
-  -webkit-backdrop-filter: blur(28px) saturate(150%);
-  backdrop-filter: blur(28px) saturate(150%);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
   border: 1.5px solid var(--glass-border);
 }
 
@@ -338,16 +323,16 @@
 .glass-root
   :is(input, select, textarea):not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([data-slot="input-group-control"]):not([data-glass-input-unstyled]) {
   background: var(--glass-surface);
-  -webkit-backdrop-filter: blur(14px) saturate(140%);
-  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
 }
 
 /* Les groupes portent eux-mêmes la surface arrondie. Leur champ interne doit
    rester transparent, sinon il forme un rectangle blanc par-dessus le verre. */
 .glass-root [data-slot="input-group"] {
   background: var(--glass-surface);
-  -webkit-backdrop-filter: blur(14px) saturate(140%);
-  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
   overflow: hidden;
 }
 
@@ -520,8 +505,8 @@
 
 .glass-surface {
   background: var(--glass-surface);
-  -webkit-backdrop-filter: blur(28px) saturate(150%);
-  backdrop-filter: blur(28px) saturate(150%);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
   border: 1.5px solid var(--glass-border);
   border-radius: 24px;
   box-shadow: var(--glass-shadow);
@@ -529,8 +514,8 @@
 
 .glass-surface-strong {
   background: var(--glass-surface-strong);
-  -webkit-backdrop-filter: blur(36px) saturate(160%);
-  backdrop-filter: blur(36px) saturate(160%);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
   border: 1.5px solid var(--glass-border);
   border-radius: 18px;
   box-shadow: 0 16px 50px rgba(40, 15, 80, 0.18);
@@ -706,11 +691,12 @@
 }
 
 .glass-display {
-  font-family: var(--font-fraunces), ui-serif, Georgia, serif;
+  font-family: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
   letter-spacing: -0.02em;
 }
 
 .glass-display em {
+  font-family: var(--font-fraunces), Georgia, serif;
   font-style: italic;
   color: var(--glass-accent-deep);
 }
@@ -719,12 +705,7 @@
    halos mauve/rose localisés et panneaux plus nets. Cette règle est commune à
    toutes les routes sous le shell public pour éviter un changement de fond en
    naviguant entre l'accueil, les démarches, les outils et les actualités. */
-html:not(.dark) .glass-root::before {
-  background:
-    radial-gradient(ellipse 68% 48% at 78% 0%, color-mix(in oklab, var(--glass-bg-d) 44%, transparent), transparent 66%),
-    radial-gradient(ellipse 55% 45% at 0% 36%, color-mix(in oklab, var(--glass-bg-b) 34%, transparent), transparent 68%),
-    linear-gradient(145deg, color-mix(in oklab, var(--glass-surface-strong) 86%, var(--glass-bg-a)), color-mix(in oklab, var(--glass-surface-strong) 92%, var(--glass-bg-c)));
-}
+html:not(.dark) .glass-root::before { background: var(--glass-bg-a); }
 
 html:not(.dark) .glass-root :is(.glass-surface, [data-slot="card"]) {
   box-shadow:
@@ -1441,14 +1422,14 @@ html[data-docbel-text-size="small"] { font-size: 76%; }
 html[data-docbel-text-size="large"] { font-size: 100%; }
 html[data-docbel-text-size="xlarge"] { font-size: 112.5%; }
 
-html[data-docbel-contrast="high"] .glass-root {
+html[data-docbel-contrast="high"] :is(.glass-root, .docbel-public-popup) {
   --glass-ink: #151020;
   --glass-ink-soft: #292035;
   --glass-ink-faint: #3d304d;
   --glass-border: rgba(45, 30, 70, 0.42);
   --glass-ink-line: rgba(45, 30, 70, 0.32);
-  --glass-surface: rgba(250, 247, 255, 0.82);
-  --glass-surface-strong: rgba(250, 247, 255, 0.94);
+  --glass-surface: #ffffff;
+  --glass-surface-strong: #ffffff;
   --success: #075c37;
   --success-foreground: #ffffff;
   --success-subtle: #f5fff9;
@@ -1466,7 +1447,9 @@ html[data-docbel-contrast="high"] .glass-root {
   --info-border: #173f8f;
 }
 
-.dark[data-docbel-contrast="high"] .glass-root {
+.dark[data-docbel-contrast="high"] :is(.glass-root, .docbel-public-popup) {
+  --glass-surface: #171020;
+  --glass-surface-strong: #21182d;
   --glass-ink: #ffffff;
   --glass-ink-soft: #eee9ff;
   --glass-ink-faint: #d5caff;
@@ -1554,4 +1537,77 @@ html[data-docbel-motion="reduced"] *::after {
     outline-offset: 3px;
     box-shadow: none;
   }
+}
+
+/* Approved citizen design, 23/10/2026. Pro/admin tokens remain independent. */
+html:has(.glass-root), html[data-docbel-text-size="normal"]:has(.glass-root) { font-size: 100%; }
+html[data-docbel-text-size="small"]:has(.glass-root) { font-size: 87.5%; }
+html[data-docbel-text-size="large"]:has(.glass-root) { font-size: 125%; }
+html[data-docbel-text-size="xlarge"]:has(.glass-root) { font-size: 150%; }
+.glass-root, .docbel-public-popup {
+  --glass-accent-soft: var(--glass-bg-b);
+  --glass-cta-text: var(--glass-surface);
+  --primary: var(--glass-accent-deep);
+  --primary-foreground: var(--glass-surface);
+  --foreground: var(--glass-ink);
+  --muted-foreground: var(--glass-ink-soft);
+  --background: var(--glass-bg-a);
+  --card: var(--glass-surface);
+  --card-foreground: var(--glass-ink);
+  --popover: var(--glass-surface-strong);
+  --popover-foreground: var(--glass-ink);
+  --border: var(--glass-border);
+  --ring: var(--glass-accent-deep);
+  --accent: var(--glass-bg-b);
+  --accent-foreground: var(--glass-ink);
+  --radius: .875rem;
+  color: var(--glass-ink);
+  font-family: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
+}
+.docbel-public-shell { width: 100%; max-width: 1264px; margin-inline: auto; padding: 0 48px 32px; }
+.docbel-public-header { border-bottom: 1px solid var(--glass-border); background: var(--glass-bg-a); }
+.docbel-header-inner { display: flex; flex-wrap: wrap; align-items: center; gap: 24px; max-width: 1264px; margin-inline: auto; padding: 18px 48px; }
+.docbel-brand { display: inline-flex; align-items: center; gap: 10px; min-height: 44px; font-size: 26px; font-weight: 800; letter-spacing: -1.2px; }
+.docbel-brand-mark { display: grid; place-items: center; width: 39px; height: 42px; border-radius: 12px; background: var(--glass-accent-deep); color: var(--glass-surface); transform: rotate(-3deg); }
+.docbel-public-nav { display: flex; align-items: center; flex-wrap: wrap; gap: 4px; }
+.docbel-nav-link { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 10px 14px; border-radius: 12px; font-size: .875rem; font-weight: 600; color: var(--glass-ink-soft); }
+.docbel-nav-link:hover, .docbel-nav-link[aria-current="page"] { background: var(--glass-bg-b); color: var(--glass-accent-deep); }
+.docbel-nav-link[aria-current="page"] { font-weight: 800; }
+.docbel-header-controls { display: flex; align-items: center; gap: 8px; margin-inline-start: auto; }
+.docbel-header-control { display: inline-flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px; border: 1px solid var(--glass-border); border-radius: 12px; background: var(--glass-surface); }
+.glass-root :is(a,button,input,select,textarea,summary):focus-visible, .docbel-public-popup :is(a,button,input,select,textarea,summary):focus-visible { outline: 3px solid var(--glass-accent-deep); outline-offset: 3px; }
+.glass-root :is(button,[data-slot="button"]) { touch-action: manipulation; }
+.glass-root :is([data-slot="card"],.glass-surface) { border-width: 1px; box-shadow: var(--glass-shadow); }
+.glass-root :is(input,select,textarea) { scroll-margin-block: 24px; }
+.docbel-skip { position: fixed; inset-block-start: -100px; inset-inline-start: 16px; z-index: 100; background: var(--glass-accent-deep); color: var(--glass-surface); padding: 12px 20px; border-radius: 12px; }
+.docbel-skip:focus { inset-block-start: 12px; }
+.docbel-bottom-nav { display: none; }
+.docbel-display-panel section { border: 0; box-shadow: none; display: grid; grid-template-columns: 1fr; gap: 10px; padding: 0; background: transparent; }
+.docbel-display-panel section button { height: auto; min-height: 48px; padding-block: .5rem; justify-content: start; white-space: normal; text-align: start; }
+.docbel-public-footer { margin-block-start: 46px; border-top: 1px solid var(--glass-border); padding-block: 28px; color: var(--glass-ink-soft); }
+.docbel-public-footer a, .docbel-public-footer button { min-height: 44px; display: inline-flex; align-items: center; }
+.docbel-public-shell main { padding-block-start: 28px; }
+.docbel-public-shell:has(.docbel-home) main { padding-block-start: 0; }
+@media (max-width: 767px) {
+  .docbel-public-shell { padding: 0 20px calc(88px + env(safe-area-inset-bottom)); }
+  .docbel-header-inner { gap: 8px; padding: 12px 18px; }
+  .docbel-brand { font-size: 23px; gap: 7px; }
+  .docbel-brand-mark { width: 34px; height: 38px; }
+  .docbel-public-nav, .docbel-desktop-control { display: none; }
+  .docbel-bottom-nav { position: fixed; inset-inline: 0; inset-block-end: 0; z-index: 30; display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 4px; border-top: 1px solid var(--glass-border); background: var(--glass-surface); padding: 6px 10px calc(6px + env(safe-area-inset-bottom)); }
+  .docbel-bottom-nav .docbel-nav-link { flex-direction: column; gap: 3px; padding: 7px 2px; font-size: .6875rem; overflow-wrap: anywhere; text-align: center; }
+  .docbel-public-shell[data-journey="true"] { padding-block-end: calc(24px + env(safe-area-inset-bottom)); }
+  .docbel-public-popup.docbel-display-panel { inset-block-start: auto; inset-block-end: 0; inset-inline: 0; width: 100%; max-width: 100%; max-height: 88dvh; translate: none; transform: none; border-radius: 24px 24px 0 0; padding: 24px 24px calc(24px + env(safe-area-inset-bottom)); }
+}
+@media (max-width: 360px) { .docbel-brand { font-size: 20px; }.docbel-header-inner { padding-inline: 12px; }.docbel-header-controls { gap: 5px; } }
+
+.glass-root :is(input,select,textarea,[role="radiogroup"]) { scroll-margin-block-end: 8rem; }
+
+/* Consent controls reserve their measured height, including on a virtual keyboard. */
+.docbel-public-shell { padding-block-end: calc(32px + var(--docbel-consent-height, 0px)); }
+.glass-root [data-docbel-step-actions] { inset-block-end: var(--docbel-consent-height, 0px); }
+@media (max-width: 767px) {
+  .docbel-bottom-nav { inset-block-end: var(--docbel-consent-height, 0px); }
+  .docbel-public-shell { padding-block-end: calc(88px + env(safe-area-inset-bottom) + var(--docbel-consent-height, 0px)); }
+  .docbel-public-shell[data-journey="true"] { padding-block-end: calc(24px + env(safe-area-inset-bottom) + var(--docbel-consent-height, 0px)); }
 }

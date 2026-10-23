@@ -37,6 +37,7 @@ import {
 export function ResumeForm() {
   const router = useRouter();
   const t = useTranslations("public.dossier");
+  const design = useTranslations("public.design");
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -47,6 +48,7 @@ export function ResumeForm() {
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
+    if (loading) return;
     setError(null);
     const finalCode = normalizeResumeCode(code);
 
@@ -83,7 +85,7 @@ export function ResumeForm() {
       };
       toast.success(t("resumeSuccess", { name: data.bundleName }));
       router.push(
-        `/d/${data.bundleSlug}?bundleRun=${encodeURIComponent(data.runId)}&demarrer=1`,
+        `/d/${encodeURIComponent(data.bundleSlug)}?bundleRun=${encodeURIComponent(data.runId)}`,
       );
     } catch {
       setError(t("networkErrorRetry"));
@@ -152,7 +154,7 @@ export function ResumeForm() {
                       variant="outline"
                       size="sm"
                     >
-                      {t("resumeStartDossier")}
+                      {design("findJourney")}
                       <ArrowRightIcon data-icon="inline-end" aria-hidden />
                     </Button>
                   </AlertDescription>
@@ -175,7 +177,7 @@ export function ResumeForm() {
                   aria-hidden
                 />
               ) : null}
-              {loading ? t("resumeSearching") : t("resume")}
+              {loading ? t("resumeSearching") : design("consultAnswers")}
               {!loading ? (
                 <ArrowRightIcon data-icon="inline-end" aria-hidden />
               ) : null}
@@ -193,7 +195,7 @@ export function ResumeForm() {
             <h2 className="text-xl font-semibold">{t("resumeNoCodeTitle")}</h2>
           </CardTitle>
           <CardDescription className="text-sm leading-relaxed">
-            {t("resumeNoCodeBody")}
+            {design("ephemeralBody")}
           </CardDescription>
         </CardHeader>
         <CardContent className="flex-1 px-5 sm:px-6">
@@ -209,7 +211,7 @@ export function ResumeForm() {
             size="lg"
             className="min-h-12 w-full text-base"
           >
-            {t("resumeStartDossier")}
+            {design("findJourney")}
             <ArrowRightIcon data-icon="inline-end" aria-hidden />
           </Button>
         </CardFooter>

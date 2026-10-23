@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { PdfField } from "./pdf-field";
+import { FormAnswerSummary } from "./form-answer-summary";
 import { buildValidator, countRequirements, findFirstInvalidStep, isFieldVisible } from "@/lib/pdf-forms/validation";
 import { Locale, FieldValue, FormPayload, PdfFormField, PdfFormTrigger, loc } from "@/lib/pdf-forms/types";
 import type { PrefillMap } from "@/lib/pdf-forms/canonical/extract";
@@ -40,7 +41,7 @@ import { ContextHelpPanel } from "./context-help-panel";
 import { DemarcheRail, type DemarcheRailData } from "@/components/docbel/demarche-rail";
 import type { TipEntry } from "@/lib/form-context-tips";
 import { MotifSituationPicker } from "./motif-situation-picker";
-import { CompactAccordionSection } from "./compact-accordion-section";
+import { CompactAccordionSection, ReadOnlyFields } from "./compact-accordion-section";
 import { useDraftAutosave } from "./use-draft-autosave";
 import { StepFooter, SubmitFooter } from "./submit-footer";
 import { PaymentMethodPanel } from "./payment-method-panel";
@@ -226,8 +227,9 @@ interface PdfFormRunnerProps {
   rail?: DemarcheRailData;
 }
 
-export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, onValuesChange, onLocaleChange, contextTips, initialStepId, draftValues, isAuthenticated = false, rail }: PdfFormRunnerProps) {
+export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, onValuesChange, onLocaleChange, contextTips, initialStepId, draftValues, rail }: PdfFormRunnerProps) {
   const t = useTranslations("public.dossier");
+  const design = useTranslations("public.design");
   const router = useRouter();
   const [locale, setLocale] = useState<Locale>(form.defaultLocale);
   // Valeurs initiales : défauts (+ prefill profil/inter-documents), PUIS le
@@ -600,13 +602,13 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
     };
   }, []);
 
-  // Relâche le plancher au changement d'étape. Déclaré AVANT la mesure, donc
+  // Relâche le plancher au changement d'étape ou au résultat. Déclaré AVANT la mesure, donc
   // exécuté avant elle dans le même commit (les effets de mise en page se
   // déclenchent dans l'ordre de déclaration).
   useLayoutEffect(() => {
     plancherPage.current = 0;
     if (cale.current) cale.current.style.height = "0px";
-  }, [activeStepId]);
+  }, [activeStepId, done]);
 
   // À chaque rendu, et seulement à la hausse.
   useLayoutEffect(() => {
@@ -620,10 +622,8 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
     const manque = Math.max(0, plancherPage.current - naturelle);
     if (manque !== caleActuelle) el.style.height = `${manque}px`;
   });
-  // Les réponses sont réellement persistées côté serveur si on est dans un
-  // dossier (brouillon serveur, même anonyme) OU connecté (PdfFormDraft).
-  // Sinon (autonome anonyme) : rien n'est enregistré → message honnête.
-  const serverSaved = !!bundleRunId || isAuthenticated;
+  // V1 publique : le hook de brouillon est éphémère, même connecté.
+  const serverSaved = false;
 
   // Map champ → index d'étape (pour sauter sur la 1ʳᵉ erreur) — macro-aware.
   const fieldStepIndex = useMemo(() => {
@@ -749,6 +749,11 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
   );
 
   async function submit() {
+    // Le contexte ancien reste consultable. Intercepte aussi Entrée dans un champ.
+    if (bundleRunId) {
+      toast.info(design("oldReadOnly"));
+      return;
+    }
     // Repart d'une ardoise propre : un recapitulatif perime est pire qu'aucun.
     setInvalidFields([]);
     if (!consent) {
@@ -791,7 +796,8 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
           if (typeof cur !== "string" || cur.trim() === "") signedValues[f.id] = todayISO();
         }
       }
-    } else {
+    } else if (form.fields.some(isSignatureField)) {
+      // Un formulaire sans signature ne nécessite pas de nom de signataire.
       // Pas de nom exploitable : on annule pour ne pas générer un document
       // signé "anonyme".
       toast.error(t("runnerNameRequiredToSign"));
@@ -1124,6 +1130,8 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
         locale={locale}
         setLocale={setLocale}
         values={values}
+        summaryValues={derivedValues}
+        editableFieldIds={Object.keys(fieldStepIndex)}
         errors={errors}
         setValue={setValue}
         signerName={signerName}
@@ -1240,6 +1248,7 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
                 return { id: s.id, label: s.title, hasError: stepHasError(s), ...meta };
               })}
               activeIndex={activeIndex}
+              locale={locale}
               onSelect={handleStepSelect}
             />
           </div>
@@ -1278,10 +1287,11 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
 
               {/* Contenu de l'étape */}
               {current.kind === "summary" ? (
-                <ConfirmationCard hasSignature={form.fields.some(isSignatureField)} signerName={signerName} />
+                <><FormAnswerSummary fields={form.fields} values={derivedValues} locale={locale} editableFieldIds={Object.keys(fieldStepIndex)} onEdit={bundleRunId ? undefined : jumpToInvalidField} /><ConfirmationCard hasSignature={form.fields.some(isSignatureField)} signerName={signerName} /></>
               ) : current.kind === "optional-group" ? (
                 <CompactAccordionSection
                   sections={current.sections}
+                  readOnly={Boolean(bundleRunId)}
                   renderFields={(fields) => (
                     <FieldsCluster
                       fields={fields}
@@ -1297,6 +1307,7 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
                   )}
                 />
               ) : (
+                <ReadOnlyFields readOnly={Boolean(bundleRunId)}>
                 <FieldsCluster
                   fields={current.fields}
                   values={values}
@@ -1308,6 +1319,7 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
                   onStreetVerifiedChange={handleStreetVerified}
                   onFocusField={handleFocusField}
                 />
+                </ReadOnlyFields>
               )}
 
               {/* Pied d'étape — cf. components/pdf-forms/submit-footer.tsx */}
@@ -1857,6 +1869,8 @@ interface MacroRunnerBodyProps {
   locale: Locale;
   setLocale: (l: Locale) => void;
   values: FormPayload;
+  summaryValues: FormPayload;
+  editableFieldIds: string[];
   errors: Record<string, string>;
   setValue: (id: string, value: FieldValue) => void;
   signerName: string;
@@ -1893,7 +1907,7 @@ interface MacroRunnerBodyProps {
 /// affiche un sous-titre par section ; le long-tail non curé (`advanced`)
 /// va dans un accordéon replié.
 function MacroRunnerBody({
-  form, macroSteps, activeIndex, setActive, attemptAdvance, locale, setLocale, values, errors,
+  form, macroSteps, activeIndex, setActive, attemptAdvance, locale, setLocale, values, summaryValues, editableFieldIds, errors,
   setValue, signerName, consent, setConsent, consentError, delivery, setDelivery, doccleRef,
   setDoccleRef, submitting, submit, resetForm, lastSavedAt, serverSaved, liveTriggers, bundleRunId, onStreetVerifiedChange, verifiedStreets, onFocusField, activeFieldId, contextTips, rail, t,
   invalidFields, jumpToInvalidField,
@@ -2091,8 +2105,8 @@ function MacroRunnerBody({
                 // `c1-fields-improvements.test.ts`) : rendu inchangé pour lui.
                 if (sec.fields.some((f) => f.requiredGroup && f.renderAs === "chip")) {
                   return (
+                    <ReadOnlyFields key={sec.key ?? `sec-${i}`} readOnly={Boolean(bundleRunId)}>
                     <MotifSituationPicker
-                      key={sec.key ?? `sec-${i}`}
                       fields={sec.fields}
                       values={values}
                       errors={errors}
@@ -2101,6 +2115,7 @@ function MacroRunnerBody({
                       formId={form.id}
                       formSlug={form.slug}
                     />
+                    </ReadOnlyFields>
                   );
                 }
                 // Détection PAR LA DONNÉE, comme le picker de motifs juste
@@ -2108,8 +2123,8 @@ function MacroRunnerBody({
                 // rendu, quel que soit le formulaire qui la porte.
                 if (sec.key === "mode-paiement") {
                   return (
+                    <ReadOnlyFields key={sec.key} readOnly={Boolean(bundleRunId)}>
                     <PaymentMethodPanel
-                      key={sec.key}
                       title={sectionLabel(sec.key, locale)}
                       fields={sec.fields}
                       renderField={(field) => (
@@ -2133,6 +2148,7 @@ function MacroRunnerBody({
                         />
                       )}
                     />
+                    </ReadOnlyFields>
                   );
                 }
                 return (
@@ -2153,19 +2169,22 @@ function MacroRunnerBody({
                         {sectionLabel(sec.key, locale)}
                       </h3>
                     )}
-                    {cluster(sec.fields)}
+                    <ReadOnlyFields readOnly={Boolean(bundleRunId)}>{cluster(sec.fields)}</ReadOnlyFields>
                   </div>
                 );
               })}
 
               {current.advanced.length > 0 && (
                 <CompactAccordionSection
+                  readOnly={Boolean(bundleRunId)}
                   sections={[{ key: "advanced", title: t("runnerAdvancedSectionTitle"), fields: current.advanced, defaultOpen: false }]}
                   renderFields={cluster}
                 />
               )}
 
               {isLast ? (
+                <>
+                <FormAnswerSummary fields={form.fields} values={summaryValues} locale={locale} editableFieldIds={editableFieldIds} onEdit={bundleRunId ? undefined : jumpToInvalidField} />
                 <SubmitFooter
                   variant="confortable"
                   t={t}
@@ -2207,6 +2226,7 @@ function MacroRunnerBody({
                   canGoPrevious={activeIndex > 0}
                   onPrevious={() => setActive(activeIndex - 1)}
                 />
+                </>
               ) : (
                 <StepFooter
                   variant="confortable"

@@ -12,7 +12,7 @@
  * directe du premier formulaire dès qu'aucune question d'aiguillage ne reste.
  */
 
-import { type ComponentProps, useState } from "react";
+import { type ComponentProps } from "react";
 import { useTranslations } from "next-intl";
 import {
   AlertTriangle,
@@ -22,14 +22,11 @@ import {
   Check,
   ChevronRight,
   ClipboardCheck,
-  Clock,
   Coins,
   FileCheck2,
   FilePlus2,
   GraduationCap,
-  Headset,
   Info,
-  ShieldCheck,
   UserRoundCheck,
   Wallet,
   type LucideIcon,
@@ -141,14 +138,12 @@ export function DossierJourneyIntro({
   journey,
   warnings,
   documents,
-  ctaLabel,
-  ctaLabelKey,
   compactHero = false,
   ...runnerProps
 }: DossierJourneyIntroProps) {
   const t = useTranslations("public.dossierContent");
   const td = useTranslations("public.dossier");
-  const [started, setStarted] = useState(false);
+  const design = useTranslations("public.design");
 
   const resolve = (key: string | undefined, fallback: string): string => {
     if (!key) return fallback;
@@ -156,17 +151,8 @@ export function DossierJourneyIntro({
     return t.has(k) ? t(k) : fallback;
   };
 
-  if (started) {
-    return (
-      <div className="outils-rise">
-        <BundleRunner {...runnerProps} autoStart />
-      </div>
-    );
-  }
-
   const steps = [...journey].sort((a, b) => a.order - b.order);
-  const start = () => setStarted(true);
-  const cta = resolve(ctaLabelKey, ctaLabel);
+  const cta = design("consultDocuments");
 
   return (
     <section className="relative flex w-full flex-col gap-8" data-docbel-readable>
@@ -206,14 +192,13 @@ export function DossierJourneyIntro({
               ) : null}
             </div>
             <div className="flex flex-wrap items-center gap-3">
-              <button
-                type="button"
-                onClick={start}
+              <a
+                href="#documents-disponibles"
                 className="glass-cta inline-flex min-h-12 items-center gap-2 rounded-full px-6 py-3 text-base font-bold shadow-[0_12px_32px_-10px_rgba(91,70,229,0.55)]"
               >
                 {cta}
                 <ArrowRight className="size-4" aria-hidden />
-              </button>
+              </a>
               <a
                 href="#etapes-demande"
                 className="inline-flex min-h-12 items-center gap-2 rounded-full border px-5 py-3 text-base font-semibold text-[color:var(--glass-ink)] transition-colors hover:bg-[color:color-mix(in_oklab,var(--glass-accent-a)_12%,transparent)]"
@@ -223,23 +208,7 @@ export function DossierJourneyIntro({
                 {td("journeyHowItWorksLabel")}
               </a>
             </div>
-            <div className="flex flex-wrap gap-x-6 gap-y-2.5 pt-1">
-              {(
-                [
-                  { icon: Clock, titleKey: "journeyTrustFastTitle", bodyKey: "journeyTrustFastBody" },
-                  { icon: ShieldCheck, titleKey: "journeyTrustDataTitle", bodyKey: "journeyTrustDataBody" },
-                  { icon: Headset, titleKey: "journeyTrustHelpTitle", bodyKey: "journeyTrustHelpBody" },
-                ] as const
-              ).map(({ icon: Icon, titleKey, bodyKey }) => (
-                <div key={titleKey} className="flex items-start gap-2">
-                  <Icon className="mt-0.5 size-4 shrink-0 text-[color:var(--glass-accent-deep)]" aria-hidden />
-                  <div>
-                    <p className="text-sm font-semibold leading-tight text-[color:var(--glass-ink)]">{td(titleKey)}</p>
-                    <p className="text-sm leading-relaxed text-[color:var(--glass-ink-soft)]">{td(bodyKey)}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
+
           </div>
           <JourneyCompactPath className="w-full max-w-[440px] shrink-0" />
         </header>
@@ -257,14 +226,13 @@ export function DossierJourneyIntro({
                 {runnerProps.bundle.description}
               </p>
             ) : null}
-            <button
-              type="button"
-              onClick={start}
+            <a
+              href="#documents-disponibles"
               className="glass-cta mt-5 inline-flex min-h-12 w-fit items-center gap-2 rounded-full px-6 py-3 text-base font-bold shadow-[0_12px_32px_-10px_rgba(91,70,229,0.55)]"
             >
               {cta}
               <ArrowRight aria-hidden />
-            </button>
+            </a>
           </div>
           <JourneyHeroIllustration className="h-auto w-full max-w-[420px] justify-self-center lg:justify-self-end" />
         </header>
@@ -400,22 +368,22 @@ export function DossierJourneyIntro({
           </span>
           <div>
             <p className="glass-display text-2xl font-semibold leading-snug text-[color:var(--glass-ink)]">
-              {td("journeyBannerTitle")}
+              {design("ephemeralTitle")}
             </p>
             <p className="mt-1 max-w-md text-base leading-relaxed text-[color:var(--glass-ink-soft)]">
-              {td("journeyBannerSubtitle")}
+              {design("ephemeralBody")}
             </p>
           </div>
         </div>
-        <button
-          type="button"
-          onClick={start}
+        <a
+          href="#documents-disponibles"
           className="glass-cta inline-flex min-h-12 shrink-0 items-center justify-center gap-2 rounded-full px-7 py-3.5 text-base font-bold shadow-[0_12px_32px_-10px_rgba(91,70,229,0.55)]"
         >
           {cta}
           <ArrowRight className="size-4" aria-hidden />
-        </button>
+        </a>
       </div>
+      <BundleRunner {...runnerProps} />
     </section>
   );
 }

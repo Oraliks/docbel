@@ -13,11 +13,12 @@ const FOOTER_LINK_CLASS =
 
 export function LandingFooter() {
   const t = useTranslations("public.chrome");
+  const td = useTranslations("public.design");
   const { openPreferences } = useConsent();
   const siteName = useSiteSettings()?.identity.name ?? "Docbel";
 
   return (
-    <footer className="glass-surface mt-auto rounded-[24px] px-5 py-6 text-xs text-[color:var(--glass-ink-faint)] sm:px-7">
+    <footer className="docbel-public-footer text-xs">
       <div className="grid gap-7 md:grid-cols-2 lg:grid-cols-[minmax(230px,1.35fr)_repeat(3,minmax(120px,0.65fr))_auto] lg:gap-8">
         <div className="flex flex-col items-start gap-3">
           <Link
@@ -43,6 +44,7 @@ export function LandingFooter() {
         </div>
 
         <FooterGroup title={t("discover")}>
+          <Link href="/aide" className={FOOTER_LINK_CLASS}>{t("navHelp")}</Link>
           <Link href="/outils" className={FOOTER_LINK_CLASS}>
             {t("quickAllTools")}
           </Link>
@@ -61,8 +63,11 @@ export function LandingFooter() {
           <Link href="/accessibilite" className={FOOTER_LINK_CLASS}>
             {t("accessibility")}
           </Link>
+          <Link href="/formations" className={FOOTER_LINK_CLASS}>{td("formations")}</Link>
+          <Link href="/rendez-vous" className={FOOTER_LINK_CLASS}>{td("appointments")}</Link>
+          <Link href="/login" className={FOOTER_LINK_CLASS}>{td("privateAccess")}</Link>
           <Link href="/reprendre" className={FOOTER_LINK_CLASS}>
-            {t("quickResume")}
+            {td("existingResume")}
           </Link>
         </FooterGroup>
 

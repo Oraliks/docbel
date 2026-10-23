@@ -1564,16 +1564,16 @@
       "comparisonPrevious": "Précédent",
       "comparisonNext": "Suivant",
       "comparisonBefore": "Avant",
-      "comparisonAfter": "Après"
-      ,"comparisonReview": "Marquer la revue examinée"
-      ,"comparisonReviewRecorded": "Revue de comparaison enregistrée"
-      ,"comparisonReviewFailed": "Revue de comparaison impossible"
-      ,"comparisonExportAll": "Exporter la comparaison complète"
-      ,"comparisonExportFiltered": "Exporter le résultat filtré"
-      ,"comparisonSheet": "Feuille"
-      ,"comparisonAllSheets": "Toutes les feuilles"
-      ,"comparisonCategory": "Catégorie"
-      ,"comparisonAllCategories": "Toutes les catégories"
+      "comparisonAfter": "Après",
+      "comparisonReview": "Marquer la revue examinée",
+      "comparisonReviewRecorded": "Revue de comparaison enregistrée",
+      "comparisonReviewFailed": "Revue de comparaison impossible",
+      "comparisonExportAll": "Exporter la comparaison complète",
+      "comparisonExportFiltered": "Exporter le résultat filtré",
+      "comparisonSheet": "Feuille",
+      "comparisonAllSheets": "Toutes les feuilles",
+      "comparisonCategory": "Catégorie",
+      "comparisonAllCategories": "Toutes les catégories"
     },
     "formations": {
       "title": "Formations",
@@ -3862,7 +3862,11 @@
         "normal": "Texte normal",
         "large": "Texte grand",
         "xlarge": "Texte très grand"
-      }
+      },
+      "listenText": "Écouter ce texte",
+      "speechUnavailable": "La lecture vocale n’est pas disponible pour cette langue sur ce navigateur.",
+      "speechError": "La lecture vocale n’a pas pu démarrer. Réessayez.",
+      "speechLoading": "Préparation de la lecture…"
     },
     "cookieConsent": {
       "title": "Votre vie privée, votre choix",
@@ -3933,7 +3937,8 @@
       "notifUnreadCount": "{count, plural, one {# nouvelle} other {# nouvelles}}",
       "notifLoading": "Chargement…",
       "notifEmpty": "Aucune mise à jour pour l'instant.",
-      "notifSeeAllHistory": "Voir tout l'historique"
+      "notifSeeAllHistory": "Voir tout l'historique",
+      "navHelp": "Aide"
     },
     "contact": {
       "eyebrow": "Nous contacter",
@@ -4245,7 +4250,34 @@
       "loggedInNotice": "Vous êtes connecté.",
       "loggedInAccess": "Accéder à {label}",
       "bannerClose": "Fermer la bannière",
-      "toolPopularBadge": "Populaire"
+      "toolPopularBadge": "Populaire",
+      "designEyebrow": "À votre rythme. Dans votre langue.",
+      "designTitle": "Vos démarches,",
+      "designTitleAccent": "un pas à la fois.",
+      "designDescription": "Pas besoin de connaître tous les documents. Nous vous aidons à trouver par où commencer.",
+      "designStart": "Trouver ma démarche",
+      "designResume": "Consulter ma démarche",
+      "designOtherStart": "Trouver une autre démarche",
+      "designAssurance": "Vous pouvez consulter les outils sans créer de compte.",
+      "designListen": "Écouter",
+      "designGuideTag": "On avance ensemble",
+      "designGuideTitle": "Vous n’avez pas à tout savoir.",
+      "designStep1": "Vous choisissez votre situation",
+      "designStep1Description": "Avec des mots de tous les jours.",
+      "designStep2": "Nous vous guidons",
+      "designStep2Description": "Avec des questions et de l’aide.",
+      "designStep3": "Vous voyez la prochaine étape",
+      "designStep3Description": "Les documents et actions utiles pour votre démarche.",
+      "designSituationsTitle": "Qu’est-ce qui vous amène ?",
+      "designSituationsDescription": "Choisissez ce qui vous ressemble le plus.",
+      "designJourneys": "Démarches",
+      "designSituationsUnavailable": "Les démarches ne peuvent pas être chargées pour le moment. Vous pouvez réessayer depuis la page Démarches.",
+      "designSituationsEmpty": "Aucune démarche n’est disponible pour le moment.",
+      "designToolsUnavailable": "Les outils ne peuvent pas être chargés pour le moment. Réessayez depuis le catalogue.",
+      "designToolsEmpty": "Aucun outil n’est disponible pour le moment.",
+      "designEaseTitle": "Un peu d’aide fait toute la différence.",
+      "designEaseDescription": "Écoutez les consignes disponibles, agrandissez le texte ou changez de langue à tout moment.",
+      "designPreferences": "Adapter mon affichage"
     },
     "pro": {
       "navAccount": "Compte",
@@ -4989,7 +5021,6 @@
       "article110OnemDecisionRequired": "Décision ONEM requise",
       "article110NotAutomated": "Situation non encore automatisée",
       "article110InformationMissing": "Informations manquantes",
-      "article110DocumentRequired": "Pièce à fournir",
       "article110InformationSufficient": "Informations suffisantes",
       "article110Why": "Pourquoi ?",
       "article110WhatDetermined": "Ce qui a déterminé ce résultat",
@@ -5423,7 +5454,7 @@
         "summaryToComplete": "Informations à compléter",
         "childrenFamilyAllowanceQuestion": "Au moins un enfant ouvre-t-il encore droit aux allocations familiales ?",
         "studentOccupationContract": "Job étudiant — contrat d’occupation d’étudiant",
-          "studentOccupationHelp": "Le montant est pris en compte dans l’orientation lorsque le plafond applicable aux revenus de l’enfant est dépassé. Cela ne détermine pas le droit aux allocations familiales ni le régime social ou fiscal.",
+        "studentOccupationHelp": "Le montant est pris en compte dans l’orientation lorsque le plafond applicable aux revenus de l’enfant est dépassé. Cela ne détermine pas le droit aux allocations familiales ni le régime social ou fiscal.",
         "childProfessionalAmount": "Revenu professionnel brut pour le mois évalué (€)",
         "otherActivityDescription": "Précisez l’activité",
         "otherActivityAmount": "Revenu professionnel brut pour le mois évalué (€)",
@@ -5459,7 +5490,11 @@
         "aloneSubtreeTitle": "Personne seule",
         "subtreeToDetail": "Sous-arbre à détailler",
         "aloneDetailTitle": "Examiner les fondements éventuels de catégorie A",
-        "aloneDetailItems": ["pension alimentaire : fondement et paiement effectif ;", "jugement ou acte pertinent : conditions à examiner ;", "garde / hébergement : conditions et orientation à détailler."],
+        "aloneDetailItems": [
+          "pension alimentaire : fondement et paiement effectif ;",
+          "jugement ou acte pertinent : conditions à examiner ;",
+          "garde / hébergement : conditions et orientation à détailler."
+        ],
         "aloneSummary": "Conditions d’un fondement A remplies ?",
         "categoryA": "A",
         "categoryN": "N",
@@ -5467,7 +5502,12 @@
         "partnerQuestion": "Cohabite avec un conjoint ou un partenaire qualifié ?",
         "partnerSubtreeTitle": "Conjoint / partenaire",
         "partnerDetailTitle": "Qualifier les revenus du conjoint / partenaire",
-        "partnerDetailItems": ["nature des revenus professionnels ou de remplacement ;", "montants utiles ;", "cumuls éventuels ;", "exclusions, exceptions et seuils applicables."],
+        "partnerDetailItems": [
+          "nature des revenus professionnels ou de remplacement ;",
+          "montants utiles ;",
+          "cumuls éventuels ;",
+          "exclusions, exceptions et seuils applicables."
+        ],
         "partnerSummary": "Revenus pris en compte après qualification ?",
         "unrelatedQuestion": "Présence d’une personne sans lien de parenté ?",
         "aloneReferenceTitle": "Renvoi proposé vers la branche personne seule",
@@ -5476,13 +5516,28 @@
         "householdTitle": "Composition du ménage avec lien de parenté",
         "householdDescription": "Quatre sous-arbres à détailler",
         "childrenTitle": "Enfant(s) uniquement",
-        "childrenItems": ["droit aux allocations familiales ;", "revenus des enfants ;", "exceptions et neutralisations."],
+        "childrenItems": [
+          "droit aux allocations familiales ;",
+          "revenus des enfants ;",
+          "exceptions et neutralisations."
+        ],
         "parentsTitle": "Parent(s) / allié(s) uniquement",
-        "parentsItems": ["liens et degrés pertinents ;", "revenus pris en compte ;", "exceptions applicables."],
+        "parentsItems": [
+          "liens et degrés pertinents ;",
+          "revenus pris en compte ;",
+          "exceptions applicables."
+        ],
         "mixedTitle": "Enfant(s) + parent(s) / allié(s)",
-        "mixedItems": ["articulation des allocations familiales et de la composition ;", "revenus pertinents ;", "exceptions applicables."],
+        "mixedItems": [
+          "articulation des allocations familiales et de la composition ;",
+          "revenus pertinents ;",
+          "exceptions applicables."
+        ],
         "otherTitle": "Autre composition familiale",
-        "otherItems": ["composition particulière ;", "conditions et orientation à développer."],
+        "otherItems": [
+          "composition particulière ;",
+          "conditions et orientation à développer."
+        ],
         "resultToDetail": "Résultat à détailler",
         "legendTitle": "Légende",
         "legendQuestion": "Question",
@@ -6044,7 +6099,7 @@
       "guichetsTitle": "Tous les guichets",
       "guichetsIntro": "Les organismes et services qui proposent la prise de rendez-vous en ligne. Choisissez le vôtre pour réserver un créneau.",
       "guichetsEmpty": "Aucun guichet n'est disponible pour le moment.",
-      "guichetsCardCta": "Prendre rendez-vous",
+      "guichetsCardCta": "Consulter le guichet",
       "manageMetaTitle": "Gérer mon rendez-vous — Beldoc",
       "manageEyebrow": "Mon rendez-vous",
       "manageTitle": "Gérer ma demande",
@@ -6147,7 +6202,7 @@
       "runnerStepSummarySubtitle": "Vérifiez vos informations avant de signer.",
       "runnerOptionalGroupTitle": "Autres informations à déclarer",
       "runnerOptionalGroupSubtitle": "Dépliez uniquement ce qui vous concerne.",
-      "runnerConfirmationReady": "Votre déclaration est prête à être envoyée.",
+      "runnerConfirmationReady": "Vérifiez vos réponses avant de préparer le document.",
       "runnerConfirmationNameForSignature": "Renseignez votre nom en début de formulaire pour signer numériquement.",
       "runnerStepCounter": "Étape {current} sur {total}",
       "runnerStepRemaining": "{count, plural, one {# champ restant} other {# champs restants}}",
@@ -6187,7 +6242,7 @@
       "runnerDossierIncomplete": "Complétez d'abord : {titles}",
       "runnerStandaloneTriggerNotice": "N'oublie pas de joindre aussi : {titles}",
       "runnerLiveTriggerNotice": "Cette réponse ajoutera un document à votre dossier : {titles}",
-      "runnerDoneDownload": "Prévisualiser et signer",
+      "runnerDoneDownload": "Document généré",
       "runnerDoneDoccle": "Envoyer vers Doccle",
       "runnerGenerateAnother": "Générer un autre document",
       "runnerContinuationReadyTitle": "Votre {title} est prêt",
@@ -6223,6 +6278,8 @@
       "runnerGenerating": "Génération…",
       "runnerSubmitSignAndSend": "Signer et envoyer le document",
       "runnerSubmitSignAndGenerate": "Signer et générer le document",
+      "runnerSubmitGenerate": "Générer le document",
+      "runnerSubmitSend": "Envoyer le document",
       "runnerSubmitValidate": "Valider et continuer",
       "runnerSummarySigned": "Signé numériquement",
       "runnerSummarySignedWithName": "Signé numériquement — {name}",
@@ -6289,7 +6346,10 @@
       "arrayRemoveRow": "Supprimer",
       "arrayRemoveRowAria": "Supprimer la ligne {index}",
       "arrayFacAdviceTitle": "Vérifiez le lien avec cette personne.",
-      "arrayFacAdviceBody": "Vous êtes deux dans le ménage (vous compris). Si cette personne est réellement financièrement à votre charge, choisissez « FAC » plutôt que « Aucun lien » : vous pourriez prétendre au statut de chef de ménage. Un justificatif pourra être demandé par votre organisme de paiement."
+      "arrayFacAdviceBody": "Vous êtes deux dans le ménage (vous compris). Si cette personne est réellement financièrement à votre charge, choisissez « FAC » plutôt que « Aucun lien » : vous pourriez prétendre au statut de chef de ménage. Un justificatif pourra être demandé par votre organisme de paiement.",
+      "runnerHelpOpen": "Comprendre cette étape",
+      "runnerHelpClose": "J’ai compris",
+      "breadcrumb": "Fil d’Ariane"
     },
     "formations": {
       "metaCatalogueTitle": "Formations — Docbel",
@@ -11971,12 +12031,12 @@
         "Referentiels": "Référentiels"
       },
       "tools": {
-      "familySituation": {
-        "title": "Ma situation familiale",
-        "desc": "Préparez les informations utiles sur votre ménage avant votre démarche.",
-        "cat": "Tutoriels",
-        "time": "3 min"
-      },
+        "familySituation": {
+          "title": "Ma situation familiale",
+          "desc": "Préparez les informations utiles sur votre ménage avant votre démarche.",
+          "cat": "Tutoriels",
+          "time": "3 min"
+        },
         "tool6": {
           "title": "Calculateur de préavis",
           "desc": "Calculez votre délai de préavis légal en fonction de votre ancienneté, statut et date d'entrée en service.",
@@ -12142,6 +12202,66 @@
       "footer": "Docbel © {year}  |  https://www.docbel.be",
       "pagination": "{p} / {total}",
       "filename": "docbel-calcul-agr-{date}.pdf"
+    },
+    "design": {
+      "skip": "Aller au contenu",
+      "close": "Fermer",
+      "done": "Terminé",
+      "displayTitle": "Adapter mon affichage",
+      "displayDescription": "Choisissez un affichage confortable pour vous. Vous pouvez modifier ces réglages à tout moment.",
+      "formations": "Formations",
+      "appointments": "Rendez-vous",
+      "privateAccess": "Accès privé / administration",
+      "existingResume": "Consulter une ancienne démarche",
+      "helpTitle": "Un peu d’aide pour avancer",
+      "helpDescription": "Retrouvez les explications et les réglages utiles pendant votre visite.",
+      "helpGlossary": "Comprendre les mots",
+      "helpGlossaryBody": "Consultez le glossaire pour retrouver les termes et les sigles utilisés sur DocBel.",
+      "helpDisplay": "Lire plus confortablement",
+      "helpDisplayBody": "Le bouton Aa permet d’agrandir le texte, de renforcer le contraste et de réduire les animations.",
+      "helpContact": "Contacter DocBel",
+      "helpContactBody": "Une difficulté avec le site ? Utilisez le formulaire de contact existant.",
+      "helpTools": "Trouver un outil ou un document",
+      "helpToolsBody": "Parcourez le catalogue des outils et documents disponibles.",
+      "helpScope": "DocBel vous aide à vous informer et à préparer vos démarches. Les organismes compétents restent responsables de leurs décisions.",
+      "ephemeralTitle": "Vos réponses restent dans cette visite",
+      "ephemeralBody": "Les nouveaux dossiers ne sont pas enregistrés sur DocBel. Vous pouvez consulter les informations et utiliser les formulaires autonomes disponibles.",
+      "oldReadOnly": "Ancienne démarche : consultation uniquement",
+      "oldReadOnlyBody": "Les réponses déjà enregistrées restent consultables avec votre accès existant. La modification et l’enregistrement sont fermés.",
+      "consultDocuments": "Consulter les documents",
+      "standaloneForm": "Ouvrir le formulaire autonome",
+      "preparedNotSent": "Un document téléchargé n’est pas une demande transmise à un organisme.",
+      "recordedAnswers": "Réponses déjà enregistrées",
+      "consultAnswers": "Consulter les réponses",
+      "conditionPending": "Des informations complémentaires sont nécessaires pour préciser si ce document vous concerne.",
+      "otherDocuments": "Autres documents indiqués",
+      "sourceInformation": "Consulter les informations de l’organisme",
+      "findJourney": "Trouver une démarche",
+      "downloadIncomplete": "Le téléchargement de ce dossier reste indisponible car des documents requis sont incomplets. Les réponses déjà enregistrées restent consultables.",
+      "answersTitle": "Vos réponses",
+      "edit": "Modifier",
+      "editAnswer": "Modifier la réponse : {label}",
+      "answerYes": "Oui",
+      "answerNo": "Non",
+      "answerRow": "Personne {number}",
+      "registrationClosedTitle": "Les inscriptions sont temporairement fermées",
+      "registrationClosedBody": "Les outils et informations publics restent accessibles sans compte. La connexion est réservée aux accès existants.",
+      "bookingClosedTitle": "Les nouvelles réservations sont temporairement fermées",
+      "bookingClosedBody": "La prise de nouveaux rendez-vous et l’inscription sur liste d’attente ne sont pas disponibles sur DocBel.",
+      "bookingExistingHelp": "Vous avez déjà un rendez-vous ? Utilisez le lien de gestion reçu dans votre e-mail de confirmation.",
+      "profileReadOnlyTitle": "Profil en consultation uniquement",
+      "profileReadOnlyBody": "La modification et l’enregistrement du profil sont fermés. Vous pouvez toujours consulter ou supprimer les données déjà enregistrées."
+    },
+    "localeSwitcher": {
+      "title": "Choisir la langue",
+      "subtitle": "Sélectionnez votre langue préférée pour continuer.",
+      "search": "Rechercher une langue…",
+      "disclaimer": "Les traductions peuvent contenir des erreurs. La version française constitue la référence de DocBel ; vérifiez les informations importantes auprès des organismes compétents.",
+      "privacy": "Votre préférence de langue est mémorisée dans un cookie.",
+      "cta": "Continuer",
+      "loading": "Changement de langue…",
+      "empty": "Aucune langue trouvée.",
+      "error": "La langue n’a pas pu être changée. Réessayez."
     }
   }
 }

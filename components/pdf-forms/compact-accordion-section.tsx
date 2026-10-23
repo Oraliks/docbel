@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { Field as BaseField } from "@base-ui/react/field";
+import { useTranslations } from "next-intl";
 import {
   Accordion,
   AccordionContent,
@@ -12,6 +14,7 @@ import type { PublicField } from "@/lib/pdf-forms/public-serializer";
 
 interface CompactAccordionSectionProps {
   sections: OptionalSection[];
+  readOnly?: boolean;
   renderFields: (fields: PublicField[]) => React.ReactNode;
 }
 
@@ -19,7 +22,7 @@ interface CompactAccordionSectionProps {
 /// multi-ouverture. Une section s'ouvre par défaut si `defaultOpen` (déjà
 /// répondue) — calculé une fois au montage, pas recalculé à chaque frappe
 /// pour ne pas re-fermer une section que l'utilisateur vient d'ouvrir.
-export function CompactAccordionSection({ sections, renderFields }: CompactAccordionSectionProps) {
+export function CompactAccordionSection({ sections, renderFields, readOnly = false }: CompactAccordionSectionProps) {
   const [defaultOpenValues] = useState(() => sections.filter((s) => s.defaultOpen).map((s) => s.key));
 
   return (
@@ -30,10 +33,21 @@ export function CompactAccordionSection({ sections, renderFields }: CompactAccor
             {s.title}
           </AccordionTrigger>
           <AccordionContent className="pb-4">
-            <div className="flex flex-col gap-5 pt-2">{renderFields(s.fields)}</div>
+            <ReadOnlyFields readOnly={readOnly}><div className="flex flex-col gap-5 pt-2">{renderFields(s.fields)}</div></ReadOnlyFields>
           </AccordionContent>
         </AccordionItem>
       ))}
     </Accordion>
+  );
+}
+
+/** Native controls and Base UI controls share the same display-only boundary. */
+export function ReadOnlyFields({ readOnly, children }: { readOnly: boolean; children: React.ReactNode }) {
+  const t = useTranslations("public.design");
+  if (!readOnly) return <>{children}</>;
+  return (
+    <BaseField.Root disabled render={<fieldset disabled aria-label={t("oldReadOnly")} />} className="m-0 min-w-0 border-0 p-0">
+      {children}
+    </BaseField.Root>
   );
 }

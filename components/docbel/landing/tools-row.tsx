@@ -18,12 +18,14 @@ import { cn } from "@/lib/utils";
 interface LandingToolsRowProps {
   tools: Tool[];
   max?: number;
+  unavailable?: boolean;
 }
 
 /** Quatre outils reels du catalogue public, classes selon leur priorite serveur. */
 export async function LandingToolsRow({
   tools,
   max = 4,
+  unavailable = false,
 }: LandingToolsRowProps) {
   const t = await getTranslations("public.home");
   const visible = tools.slice(0, Math.max(0, Math.min(max, 4)));
@@ -37,7 +39,7 @@ export async function LandingToolsRow({
         <CardTitle>
           <h2
             id="landing-tools-heading"
-            className="glass-display text-[25px] font-semibold leading-tight sm:text-[29px]"
+            className="text-[24px] font-semibold leading-tight tracking-[-0.025em] sm:text-[27px]"
           >
             {t("toolsTitleLine1")} {" "}
             <em>{t("toolsTitleEm")}</em>
@@ -60,7 +62,10 @@ export async function LandingToolsRow({
       </CardHeader>
 
       <CardContent className="px-5 pb-5 sm:px-7 sm:pb-6">
-        <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        {visible.length === 0 ? (
+          <p role={unavailable ? "status" : undefined} className="text-sm leading-relaxed text-[color:var(--glass-ink-soft)]">{t(unavailable ? "designToolsUnavailable" : "designToolsEmpty")}</p>
+        ) : null}
+        <ul className="grid gap-3 sm:grid-cols-2 2xl:grid-cols-4">
           {visible.map((tool, index) => {
             const { Icon, hue } = glyphForTool(tool);
             const href = tool.href ?? `/outils/${getToolSlug(tool)}`;
@@ -75,7 +80,7 @@ export async function LandingToolsRow({
                     size="sm"
                     className="glass-interactive h-full min-h-[218px] rounded-2xl border-[color:var(--glass-border)] py-4"
                     style={{
-                      background: `linear-gradient(145deg, color-mix(in oklab, ${hue} 12%, var(--glass-surface-strong)), var(--glass-surface))`,
+                      background: "var(--glass-surface)",
                     }}
                   >
                     <CardHeader className="gap-3 px-4">

@@ -1,32 +1,18 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { toast } from "sonner";
+import { Field as BaseField } from "@base-ui/react/field";
 import { useTranslations } from "next-intl";
-import { useRouter } from "next/navigation";
 import {
   BriefcaseIcon,
   CreditCardIcon,
   MapPinIcon,
   PlusIcon,
-  SaveIcon,
   ShieldCheckIcon,
-  Trash2Icon,
   UserIcon,
   UsersIcon,
   XIcon,
 } from "lucide-react";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -177,18 +163,16 @@ export function ProfilePage({
   userEmail,
 }: ProfilePageProps) {
   const t = useTranslations("public.dossier");
-  const router = useRouter();
+  const design = useTranslations("public.design");
   const [form, setForm] = useState<ProfileForm>(
     initial
       ? { ...EMPTY, ...initial, householdMembers: initial.householdMembers ?? [] }
       : EMPTY
   );
-  const [saving, setSaving] = useState(false);
-  const [dirty, setDirty] = useState(false);
 
   // Le serveur ne propage pas toujours `householdMembers` dans `initial` :
   // on hydrate la composition de ménage depuis l'API au montage si elle n'a
-  // pas été fournie. N'écrase pas une saisie en cours (dirty).
+  // pas été fournie. Conserve les valeurs déjà chargées.
   useEffect(() => {
     if (initial?.householdMembers !== undefined) return;
     let cancelled = false;
@@ -216,7 +200,6 @@ export function ProfilePage({
 
   function update<K extends keyof ProfileForm>(key: K, value: ProfileForm[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
-    setDirty(true);
   }
 
   function updateMember<K extends keyof HouseholdMember>(
@@ -230,7 +213,6 @@ export function ProfilePage({
         i === index ? { ...m, [key]: value } : m
       ),
     }));
-    setDirty(true);
   }
 
   function addMember() {
@@ -239,7 +221,6 @@ export function ProfilePage({
         ? prev
         : { ...prev, householdMembers: [...prev.householdMembers, emptyMember()] }
     );
-    setDirty(true);
   }
 
   function removeMember(index: number) {
@@ -247,44 +228,6 @@ export function ProfilePage({
       ...prev,
       householdMembers: prev.householdMembers.filter((_, i) => i !== index),
     }));
-    setDirty(true);
-  }
-
-  async function save() {
-    setSaving(true);
-    try {
-      const res = await fetch("/api/user/profile", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
-      });
-      if (!res.ok) {
-        const j = await res.json().catch(() => ({}));
-        throw new Error(j.error || t("profileSaveFailed"));
-      }
-      toast.success(t("profileSaved"));
-      setDirty(false);
-      router.refresh();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : t("profileError"));
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  async function deleteProfile() {
-    setSaving(true);
-    try {
-      const res = await fetch("/api/user/profile", { method: "DELETE" });
-      if (!res.ok) throw new Error(t("profileSaveFailed"));
-      setForm(EMPTY);
-      toast.success(t("profileDeleted"));
-      router.refresh();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : t("profileError"));
-    } finally {
-      setSaving(false);
-    }
   }
 
   return (
@@ -293,18 +236,7 @@ export function ProfilePage({
         <p className="text-[12.5px] text-[color:var(--glass-ink-soft)]">
           {userName} · {userEmail}
         </p>
-        <Button
-          onClick={save}
-          disabled={saving || !dirty}
-          className="rounded-full px-5 py-2.5 text-[13px] font-bold disabled:opacity-50"
-          style={{
-            background: "var(--glass-ink)",
-            color: "var(--glass-bg-a)",
-          }}
-        >
-          <SaveIcon className="size-4" />
-          {saving ? t("profileSaving") : t("save")}
-        </Button>
+
       </div>
 
       <div
@@ -321,6 +253,8 @@ export function ProfilePage({
         <p>{t("profileSecurityNote")}</p>
       </div>
 
+      <aside className="glass-feedback rounded-2xl p-4" data-tone="info"><h2 className="font-semibold">{design("profileReadOnlyTitle")}</h2><p className="mt-2 text-sm leading-relaxed">{design("profileReadOnlyBody")}</p></aside>
+      <BaseField.Root disabled render={<fieldset disabled aria-label={design("profileReadOnlyTitle")} />} className="flex min-w-0 flex-col gap-5 border-0 p-0">
       <Card className={GLASS_CARD}>
         <CardHeader className="px-6 pt-6 pb-3">
           <CardTitle className="glass-display flex items-center gap-2 text-[20px] font-semibold">
@@ -680,57 +614,8 @@ export function ProfilePage({
         </CardContent>
       </Card>
 
-      <Card className={GLASS_CARD}>
-        <CardHeader className="px-6 pt-6 pb-3">
-          <CardTitle
-            className="glass-display flex items-center gap-2 text-[18px] font-semibold"
-            style={{ color: "#b8324a" }}
-          >
-            {t("profileDangerTitle")}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="px-6 pb-6">
-          <p className="mb-3 text-[12.5px] text-[color:var(--glass-ink-soft)]">
-            {t("profileDangerBody")}
-          </p>
-          <AlertDialog>
-            <AlertDialogTrigger
-              render={
-                <Button
-                  variant="outline"
-                  className="rounded-full border-0"
-                  style={{
-                    background: "rgba(220, 80, 100, 0.12)",
-                    color: "#b8324a",
-                  }}
-                >
-                  <Trash2Icon className="size-4" />
-                  {t("profileDeleteCta")}
-                </Button>
-              }
-            />
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>
-                  {t("profileDeleteConfirmTitle")}
-                </AlertDialogTitle>
-                <AlertDialogDescription>
-                  {t("profileDeleteConfirmBody")}
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>{t("profileCancel")}</AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={deleteProfile}
-                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                >
-                  {t("profileDeleteAction")}
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        </CardContent>
-      </Card>
+      </BaseField.Root>
+
     </div>
   );
 }

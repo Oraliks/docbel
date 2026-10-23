@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
+import { TemporaryClosureNotice } from "./temporary-closure-notice";
 import { useState } from "react";
 import { FeuilleDeRoutePanel } from "./feuille-de-route-panel";
 import type { OpCode } from "@/lib/feuille-de-route/model";
 import { useTranslations } from "next-intl";
-import { FileText, Download, ArrowRight, LockKeyhole, CircleHelp } from "lucide-react";
+import { FileText, Download, ArrowRight, CircleHelp } from "lucide-react";
 import { BundleWarnings } from "./onboarding/bundle-warnings";
 import { parseBundleWarnings } from "@/lib/bundles/types";
 import { parseEligibilityQuestions, type EligibilityAnswers } from "@/lib/bundles/eligibility";
@@ -89,9 +90,8 @@ export function BundleRunner({ bundle, runId, eligibilityAnswers, completedTempl
   const available = new Set(availableFormSlugs);
   return <section className="flex w-full flex-col gap-6">
     <header><h1 className="text-3xl font-semibold leading-tight tracking-tight">{bundle.name}</h1>{bundle.description ? <p className="mt-3 leading-relaxed text-muted-foreground">{bundle.description}</p> : null}</header>
-    <aside className="glass-feedback flex items-start gap-3 rounded-2xl p-5" data-tone="info">
-      <LockKeyhole className="mt-1 size-5 shrink-0" aria-hidden /><div><h2 className="font-semibold">{d(runId ? "oldReadOnly" : "ephemeralTitle")}</h2><p className="mt-2 text-sm leading-relaxed">{d(runId ? "oldReadOnlyBody" : "ephemeralBody")}</p></div>
-    </aside>
+    <p className="font-semibold">{d(runId ? "oldReadOnly" : "ephemeralTitle")}</p>
+    <TemporaryClosureNotice kind={runId ? "existing" : "dossier"} compact={Boolean(runId)} />
     <BundleWarnings warnings={parseBundleWarnings(bundle.warnings)} />
     {Object.keys(eligibilityAnswers).length > 0 ? <section className="glass-surface p-5"><h2 className="text-lg font-semibold">{d("recordedAnswers")}</h2><dl className="mt-4 grid gap-4">{questions.flatMap(question => {
       const value = eligibilityAnswers[question.id];
@@ -121,7 +121,7 @@ export function BundleRunner({ bundle, runId, eligibilityAnswers, completedTempl
       })}
     </section>
     {externalDocuments.length ? <section className="glass-surface p-5"><h2 className="text-xl font-semibold">{d("otherDocuments")}</h2><ul className="mt-4 grid gap-4">{externalDocuments.map(document => <li key={document.slug}><h3 className="font-semibold">{document.title}</h3><p className="mt-1 text-sm text-muted-foreground">{document.issuer}</p>{document.responsibilityNote ? <p className="mt-2 text-sm leading-relaxed">{document.responsibilityNote}</p> : null}{document.responsibilityUrl ? <a href={document.responsibilityUrl} className="inline-flex min-h-11 items-center text-sm text-primary underline">{d("sourceInformation")}</a> : null}</li>)}</ul></section> : null}
-    {runId && allRequiredDone ? <section className="glass-surface p-5"><h2 className="text-xl font-semibold">{t("roadmapStepSend")}</h2><p className="mt-2 text-sm text-muted-foreground">{t("roadmapStepSendBody")}</p><FeuilleDeRoutePanel documents={visibleItems.flatMap(({item,completed}) => completed && item.pdfForm ? [{slug:item.pdfForm.slug,title:itemTitle(item),href:`/document/${encodeURIComponent(item.pdfForm.slug)}?bundleRun=${encodeURIComponent(runId)}`,pdfFormId:item.pdfForm.id}] : [])} bundleRunId={runId} op={op} onOpChange={setOp} /></section> : null}
+    {runId && allRequiredDone ? <section id="recuperer-envoyer" className="glass-surface p-5"><h2 className="text-xl font-semibold">{t("roadmapStepSend")}</h2><p className="mt-2 text-sm text-muted-foreground">{t("roadmapStepSendBody")}</p><FeuilleDeRoutePanel documents={visibleItems.flatMap(({item,completed}) => completed && item.pdfForm ? [{slug:item.pdfForm.slug,title:itemTitle(item),href:`/document/${encodeURIComponent(item.pdfForm.slug)}?bundleRun=${encodeURIComponent(runId)}`,pdfFormId:item.pdfForm.id}] : [])} bundleRunId={runId} op={op} onOpChange={setOp} /></section> : null}
     {runId && !allRequiredDone ? <p className="rounded-xl border p-4 text-sm text-muted-foreground">{d("downloadIncomplete")}</p> : null}
     <p className="text-sm leading-relaxed text-muted-foreground">{d("preparedNotSent")}</p>
   </section>;

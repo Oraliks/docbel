@@ -12,6 +12,7 @@
  * directe du premier formulaire dès qu'aucune question d'aiguillage ne reste.
  */
 
+import { TemporaryClosureNotice } from "./temporary-closure-notice";
 import { type ComponentProps } from "react";
 import { useTranslations } from "next-intl";
 import {
@@ -156,6 +157,7 @@ export function DossierJourneyIntro({
 
   return (
     <section className="relative flex w-full flex-col gap-8" data-docbel-readable>
+      <TemporaryClosureNotice kind="dossier" compact />
       {/* Décor pastel très doux (blanc → lavande → rose → beige) */}
       <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
         <div

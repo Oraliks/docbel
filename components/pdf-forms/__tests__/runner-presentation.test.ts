@@ -59,7 +59,7 @@ describe("Présentation du runner public", () => {
 
   it("n'annonce aucun enregistrement sans sauvegarde confirmée", () => {
     const html = render(createElement(AutoSaveNotice, { serverSaved: true, lastSavedAt: null, isPartOfBundle: false }));
-    expect(html).toContain(messages.public.design.ephemeralTitle);
+    expect(html).toContain(messages.public.temporaryClosure.ephemeral);
     expect(html).not.toContain("enregistrées automatiquement");
   });
 

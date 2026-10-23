@@ -1,3 +1,5 @@
+import { PUBLIC_WRITES_PAUSED } from "@/lib/public-access";
+import { TemporaryClosureNotice } from "@/components/docbel/temporary-closure-notice";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
@@ -18,6 +20,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function GuichetsDirectoryPage() {
+  if (PUBLIC_WRITES_PAUSED) return <TemporaryClosureNotice kind="booking" />;
   const t = await getTranslations("public.dossier");
   // Annuaire public : guichets actifs, hors guichets privés (employeurs).
   const tenants = await prisma.bookingTenant.findMany({
@@ -34,6 +37,7 @@ export default async function GuichetsDirectoryPage() {
       },
     },
     orderBy: { name: "asc" },
+    take: 100,
   });
 
   return (

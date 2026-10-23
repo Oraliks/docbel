@@ -45,6 +45,10 @@ test.describe("design public — fixture strictement isolée", () => {
       await page.waitForLoadState("networkidle");
       await expect(page.getByRole("heading", { level: 1 })).toContainText("Vos démarches,");
       await expect(page.getByRole("heading", { level: 1 }).locator("em")).toHaveText("un pas à la fois.");
+      if (width === 390) {
+        await expect(page.getByRole("heading", { name: "Fonctionnalités temporairement en pause", exact: true })).toBeVisible();
+        await expect(page.getByText("La création et l’enregistrement de nouveaux dossiers sont temporairement suspendus. Les informations et les outils autonomes restent consultables.", { exact: true })).toBeVisible();
+      }
       await expect(page.getByRole("link", { name: "Trouver ma démarche", exact: true })).toHaveAttribute("href", "/mon-dossier");
       await expect(page.getByRole("link", { name: /RECETTE — outil actif/ }).first()).toBeVisible();
       await expect(page.getByRole("link", { name: /RECETTE — outil désactivé|RECETTE — outil privé/ })).toHaveCount(0);
@@ -55,13 +59,14 @@ test.describe("design public — fixture strictement isolée", () => {
       await expect(navigation.getByRole("link", { name: "Accueil", exact: true })).toHaveAttribute("aria-current", "page");
       await page.screenshot({ path: testInfo.outputPath(`home-${width}.png`), fullPage: true });
       await navigation.getByRole("link", { name: "Outils", exact: true }).click();
-      await expect(page).toHaveURL(/\/outils$/);
+      await expect(page).toHaveURL(/\/outils$/, { timeout: 30_000 });
       await expect(navigation.getByRole("link", { name: "Outils", exact: true })).toHaveAttribute("aria-current", "page");
       await noHorizontalOverflow(page);
     });
   }
 
-  test("vraie ancienne démarche : consultation seule et état issu du serveur", async ({ page, context }) => {
+  test("vraie ancienne démarche : consultation seule et état issu du serveur", async ({ page, context }, testInfo) => {
+    await page.setViewportSize({ width: 390, height: 844 });
     await context.addCookies([{ name: "beldoc-bundle-session", value: "design-recipe-session", url: BASE }]);
     await page.goto("/");
       await page.waitForLoadState("networkidle");
@@ -72,6 +77,20 @@ test.describe("design public — fixture strictement isolée", () => {
     await expect(page.getByRole("button", { name: /Démarrer|Enregistrer|Modifier mes réponses/ })).toHaveCount(0);
     const response = await page.request.post("/api/documents/bundles/design-recipe-bundle/run", { data: {} });
     expect(response.status()).toBe(403);
+    await page.screenshot({ path: testInfo.outputPath("old-dossier.png"), fullPage: true });
+    await page.goto(`${DOCUMENT}?bundleRun=design-recipe-run&bundleSlug=design-recipe`);
+    await page.waitForLoadState("networkidle");
+    await expect(page.locator("fieldset")).toHaveCount(1);
+    await expect(page.locator("fieldset")).toHaveJSProperty("disabled", true);
+    await expect(page.getByRole("radio", { name: "Violet de test", exact: true })).toBeChecked();
+    await expect(page.getByRole("radio", { name: "Violet de test", exact: true })).toBeDisabled();
+    await expect(page.locator("#recipe-reference")).toHaveValue("Ancienne recette");
+    await expect(page.locator("#recipe-reference")).toBeDisabled();
+    await expect(page.locator('button[type="submit"], input[type="submit"]')).toHaveCount(0);
+    await expect(page.locator('a[href="/d/design-recipe?bundleRun=design-recipe-run"]').first()).toBeVisible();
+    await expect(page.getByText(/Sa modification est temporairement suspendue/)).toBeVisible();
+    await noHorizontalOverflow(page);
+    await page.screenshot({ path: testInfo.outputPath("old-form-read-only.png"), fullPage: true });
   });
 
   test("validation, choix conditionnel, aide mobile et retour conservent les réponses", async ({ page }, testInfo) => {

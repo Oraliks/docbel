@@ -1,5 +1,6 @@
 "use client";
 
+import { PUBLIC_WRITES_PAUSED } from "@/lib/public-access";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
@@ -241,9 +242,11 @@ function LoginForm() {
         </>
       ) : null}
 
-      <p className="mt-2 text-center text-sm leading-relaxed text-muted-foreground">
-        {design("registrationClosedBody")}
-      </p>
+      {PUBLIC_WRITES_PAUSED && (
+        <p className="mt-2 text-center text-sm leading-relaxed text-muted-foreground">
+          {design("registrationClosedBody")}
+        </p>
+      )}
     </form>
   );
 }

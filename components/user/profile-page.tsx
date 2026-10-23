@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { PUBLIC_WRITES_PAUSED } from "@/lib/public-access";
+import { TemporaryClosureNotice } from "@/components/docbel/temporary-closure-notice";
 import { Field as BaseField } from "@base-ui/react/field";
 import { useTranslations } from "next-intl";
 import {
@@ -253,7 +255,9 @@ export function ProfilePage({
         <p>{t("profileSecurityNote")}</p>
       </div>
 
+      {PUBLIC_WRITES_PAUSED ? <TemporaryClosureNotice kind="profile" compact /> : (
       <aside className="glass-feedback rounded-2xl p-4" data-tone="info"><h2 className="font-semibold">{design("profileReadOnlyTitle")}</h2><p className="mt-2 text-sm leading-relaxed">{design("profileReadOnlyBody")}</p></aside>
+      )}
       <BaseField.Root disabled render={<fieldset disabled aria-label={design("profileReadOnlyTitle")} />} className="flex min-w-0 flex-col gap-5 border-0 p-0">
       <Card className={GLASS_CARD}>
         <CardHeader className="px-6 pt-6 pb-3">

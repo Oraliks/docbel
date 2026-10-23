@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { TemporaryClosureNotice } from "./temporary-closure-notice";
 import { useLocale, useTranslations } from "next-intl";
 import { ArrowRight, Download, FolderOpen } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -24,11 +25,13 @@ interface Props {
 
 /** Existing caller-owned démarches remain available for consultation in V1. */
 export function MesDemarchesClient({ groups }: Props) {
+  const tp = useTranslations("public.temporaryClosure");
   const t = useTranslations("public.dossier");
   const td = useTranslations("public.design");
 
   return (
     <section className="flex w-full flex-col gap-6">
+      <TemporaryClosureNotice kind="existing" compact />
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div className="flex flex-col gap-2">
           <h1 className="glass-display text-4xl font-semibold leading-tight sm:text-5xl">
@@ -55,11 +58,11 @@ export function MesDemarchesClient({ groups }: Props) {
           </EmptyHeader>
           <EmptyContent>
             <Button
-              render={<Link href="/mon-dossier" />}
+              render={<Link href="/outils" />}
               nativeButton={false}
               size="lg"
             >
-              {t("mesDemarchesEmptyCta")}
+              {tp("tools")}
               <ArrowRight data-icon="inline-end" aria-hidden />
             </Button>
           </EmptyContent>

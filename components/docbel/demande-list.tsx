@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { PUBLIC_WRITES_PAUSED } from "@/lib/public-access";
+import { TemporaryClosureNotice } from "./temporary-closure-notice";
 import { useLocale, useTranslations } from "next-intl";
 import { ArrowRight, FolderOpen } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -25,12 +27,14 @@ interface Props {
 export function DemandeList({ slug, bundleName, demandes }: Props) {
   const t = useTranslations("public.dossier");
   const td = useTranslations("public.design");
+  const tp = useTranslations("public.temporaryClosure");
   const locale = useLocale();
   return (
     <section
       className="glass-surface flex flex-col gap-4 rounded-3xl p-4 sm:p-5"
       data-docbel-readable
     >
+      {PUBLIC_WRITES_PAUSED && <TemporaryClosureNotice kind="existing" compact />}
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <span
@@ -41,10 +45,10 @@ export function DemandeList({ slug, bundleName, demandes }: Props) {
           </span>
           <div>
             <h2 className="text-xl font-bold text-[color:var(--glass-ink)]">
-              {td("oldReadOnly")}
+              {t("demandesTitle")}
             </h2>
             <p className="mt-1 text-sm text-[color:var(--glass-ink-soft)]">
-              {bundleName} · {td("oldReadOnlyBody")}
+              {bundleName}
             </p>
           </div>
         </div>
@@ -127,7 +131,7 @@ export function DemandeList({ slug, bundleName, demandes }: Props) {
                     size="sm"
                     className="h-auto min-h-11 whitespace-normal py-2 text-start"
                   >
-                    {td("existingResume")}
+                    {PUBLIC_WRITES_PAUSED ? tp("consult") : td("existingResume")}
                     <ArrowRight data-icon="inline-end" aria-hidden />
                   </Button>
 

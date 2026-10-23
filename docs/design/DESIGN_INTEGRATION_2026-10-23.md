@@ -82,8 +82,9 @@ est différée**. Le travail de développement, la revue et la recette ont repri
 Le delta antérieur a été sauvegardé avant reprise. Aucun reset, édition du checkout
 partagé, fusion main ou déploiement de ce design.
 
-La livraison minimale des fermetures est indépendante (PR86) ; sa future réconciliation
-sera une intégration Git contrôlée au SHA final communiqué, sans copier son worktree.
+La livraison minimale des fermetures est indépendante (PR86). Son main final
+`ef1aa003aff4140432100157d46abe3c388af4fa` est réconcilié par merge normal dans
+la branche design ; aucun fichier copié depuis le worktree technique.
 
 Contrôles acquis :
 
@@ -141,4 +142,39 @@ données conservées. Aucun service partagé n’a été modifié.
 
 PR de revue : #87, branche `codex/design-valide`. Première CI39990879020 arrêtée au lint
 avec 0erreur/58avertissements à cause de l’exemption rendez-vous devenue inutile ;
-retrait effectué, lint local réussi, nouvelle CI du HEAD à confirmer.
+retrait effectué. CI39991286064 du HEAD design initial `4c3ea52c` réussie : lint,
+3273tests réussis/1ignoré, i18n, compilation, TypeScript et232pages. Prévisualisation
+automatique réussie, sans recette fonctionnelle de cette instance.
+
+## Réconciliation avec main après PR86
+
+Main exact `ef1aa003aff4140432100157d46abe3c388af4fa` (release revue `dd0f92ec`)
+intégré à la branche design par merge normal, sans reset ni force. Quatorze conflits
+de présentation résolus en lots disjoints et revue ciblée des résolutions. Les notices
+et textes temporaires viennent du composant commun de la release ; les anciens CTA
+de création, sauvegarde, abandon et inscription ne sont pas réintroduits. L’accueil
+conserve le titre, les liens et la lecture ; sa carte latérale explique la pause.
+
+Le run ciblé reste résolu en DB avec son propriétaire indépendamment de la liste
+récente bornée (take200), et un id inaccessible produit404. La récupération reste
+gardée par allRequiredDone ; l’ancre recuperer-envoyer a été restaurée après revue.
+La consultation PDF de la release conserve la frontière ReadOnlyFields native/Base UI
+et les valeurs dérivées déjà affichées. Aucun changement aux gardes serveur de main,
+moteurs, barèmes, référence verrouillée, dépendances, configuration ou données partagées.
+
+Validation combinée locale :112tests/8fichiers réussis (fermetures, consultation,
+présentation, récapitulatif, navigation et accueil). Deux assertions propres au design
+suivent maintenant le texte temporaire commun ; assertions URL/no-autosave/no-mutation
+conservées, tests de la release et métier inchangés. Lint ciblé et diff-check réussis.
+Recette navigateur ciblée et CI propre du commit réconcilié consignées dans la PR87,
+qui reste brouillon. L’intégration du design à main et sa production demeurent différées.
+
+Recette réconciliée Edge ciblée : accueil390 + ancienne consultation/formulaire profond
+réussis. Nouvelle notice et navigation Outils vérifiées ; réponses conservées, champs
+natifs/Base UI désactivés, aucun submit et retour au run exact ; création toujours403.
+Le premier passage a révélé une assertion Playwright inadaptée au fieldset (remplacée
+par sa propriété disabled, contrôles réels toujours vérifiés disabled) et une attente
+URL10s trop courte en compilation dev froide (RSC7,20s + chunk0,74s observés).
+Une seule reprise bornée avec attente30s, même URL attendue :2cas réussis (4,0s/6,0s).
+Aucune modification applicative ni rejeu PDF/Aa pour contourner cet échec.
+Captures actualisées dans le dossier de visualisations de cette session : design-reconcile/.

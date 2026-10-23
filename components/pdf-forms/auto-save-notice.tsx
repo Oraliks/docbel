@@ -1,6 +1,8 @@
 "use client";
 
 import { useLocale, useTranslations } from "next-intl";
+import { PUBLIC_WRITES_PAUSED } from "@/lib/public-access";
+import { TemporaryClosureNotice } from "@/components/docbel/temporary-closure-notice";
 
 import { formatDateTime } from "@/lib/i18n/format";
 
@@ -24,6 +26,10 @@ export function AutoSaveNotice({ lastSavedAt, isPartOfBundle, serverSaved }: Aut
   const t = useTranslations("public.contenu");
   const design = useTranslations("public.design");
   const locale = useLocale();
+
+  if (PUBLIC_WRITES_PAUSED) {
+    return <TemporaryClosureNotice kind={isPartOfBundle ? "existing" : "ephemeral"} compact />;
+  }
 
   if (!serverSaved || !lastSavedAt) {
     return (

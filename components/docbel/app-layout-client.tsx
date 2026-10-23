@@ -1,6 +1,8 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { temporaryClosureForPath } from "@/lib/public-access";
+import { TemporaryClosureNotice } from "./temporary-closure-notice";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useTheme } from "@/components/theme-provider";
@@ -84,6 +86,11 @@ export function AppLayoutClient({ children }: { children: React.ReactNode }) {
     window.addEventListener("keydown", handleGlobalSearchShortcut);
     return () => window.removeEventListener("keydown", handleGlobalSearchShortcut);
   }, []);
+
+  const temporaryClosure = temporaryClosureForPath(pathname);
+  if (temporaryClosure) {
+    return <main id="main-content" className="flex min-h-svh w-full items-start p-6"><TemporaryClosureNotice kind={temporaryClosure} /></main>;
+  }
 
   // /admin owns its own chrome (AppSidebar inside app/admin/layout).
   // /login, /inscription, /mot-de-passe-oublie et /reinitialiser-mot-de-passe

@@ -1,5 +1,7 @@
 "use client";
 
+import { PUBLIC_WRITES_PAUSED } from "@/lib/public-access";
+import { TemporaryClosureNotice } from "../temporary-closure-notice";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { useTranslations } from "next-intl";
@@ -21,6 +23,8 @@ export function HowItWorksCard() {
     { title: t("designStep2"), description: t("designStep2Description") },
     { title: t("designStep3"), description: t("designStep3Description") },
   ];
+
+  if (PUBLIC_WRITES_PAUSED) return <TemporaryClosureNotice kind="dossier" />;
 
   return (
     <section className="relative h-full overflow-hidden rounded-[28px] border border-[color:var(--glass-border)] bg-[color:var(--glass-accent-soft)] p-6 sm:p-8" aria-labelledby="home-guide-title">

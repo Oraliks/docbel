@@ -114,7 +114,7 @@ export default async function BundleRoute({
                 status: { in: [...EDITABLE_BUNDLE_RUN_STATUSES] },
               },
           orderBy: { startedAt: "desc" },
-          take: 100,
+          take: 200,
         })
       : [];
 

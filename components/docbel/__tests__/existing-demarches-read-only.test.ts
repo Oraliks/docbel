@@ -36,7 +36,7 @@ describe("V1 existing démarche consultation", () => {
     const html = render(createElement(DemandeList, {
       bundleId: "synthetic-bundle", slug: "dossier-test", bundleName: "Test", demandes,
     }));
-    expect(html).toContain(messages.public.design.oldReadOnly);
+    expect(html).toContain(messages.public.temporaryClosure.existing);
     expect(html).toContain('/d/dossier-test?bundleRun=synthetic-run');
     expect(html).toContain('/d/dossier-test?bundleRun=synthetic-complete');
     expect(html).not.toContain("demarrer=1");

@@ -1,5 +1,6 @@
 "use client";
 
+import { PUBLIC_WRITES_PAUSED } from "@/lib/public-access";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
@@ -241,7 +242,7 @@ function LoginForm() {
         </>
       ) : null}
 
-      <p className="mt-2 text-center text-[12.5px] text-[color:var(--glass-ink-soft)]">
+      {!PUBLIC_WRITES_PAUSED && <p className="mt-2 text-center text-[12.5px] text-[color:var(--glass-ink-soft)]">
         {t("noAccountYet")}{" "}
         <Link
           href="/inscription"
@@ -250,7 +251,7 @@ function LoginForm() {
           <UserPlusIcon className="size-3.5" />
           {t("signUp")}
         </Link>
-      </p>
+      </p>}
     </form>
   );
 }

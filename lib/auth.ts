@@ -7,7 +7,6 @@ import { createAuthMiddleware, APIError } from "better-auth/api"
 import * as bcrypt from "bcryptjs"
 import { Resend } from "resend"
 import { prisma } from "@/lib/prisma"
-import { isEmailAuthorized } from "@/lib/partner-domains"
 import { UserStatus } from "@prisma/client"
 
 const authSecret = process.env.BETTER_AUTH_SECRET
@@ -88,7 +87,11 @@ export const auth = betterAuth({
   database: prismaAdapter(prisma, { provider: "postgresql" }),
   // disabledPaths ne s'applique qu'au routeur HTTP de Better Auth, pas à auth.api.
   // Dériver la liste du plugin couvre aussi ses futurs endpoints administratifs.
-  disabledPaths: Object.values(adminPlugin.endpoints).map((endpoint) => endpoint.path),
+  disabledPaths: [
+    ...Object.values(adminPlugin.endpoints).map((endpoint) => endpoint.path),
+    // V1 publique sans comptes visiteurs. Le bootstrap serveur reste interne.
+    "/sign-up/email",
+  ],
   trustedOrigins:
     process.env.BETTER_AUTH_TRUSTED_ORIGINS?.split(",")
       .map((value) => value.trim())
@@ -142,6 +145,7 @@ export const auth = betterAuth({
         google: {
           clientId: googleClientId!,
           clientSecret: googleClientSecret!,
+          disableSignUp: true,
           mapProfileToUser: async (profile) => {
             const email = profile.email?.trim().toLowerCase()
             if (!email) {
@@ -170,27 +174,13 @@ export const auth = betterAuth({
               }
             }
 
-            const authorization = await isEmailAuthorized(email)
-            if (!authorization.authorized || !authorization.organizationName) {
-              throw new APIError("FORBIDDEN", {
-                message:
-                  "Ce domaine email n'est pas autorisé pour l'inscription partenaire. Contactez DocBel.",
-                code: "domain_not_authorized",
-              })
-            }
-
-            const role =
-              authorization.segment === "employeur" ? "employer" : "partner"
-
-            return {
-              name: profile.name ?? email,
-              email,
-              role,
-              segment: authorization.segment ?? "partenaire",
-              partnerType: authorization.partnerType ?? null,
-              status: UserStatus.active,
-              partnerOrganization: authorization.organizationName,
-            } as Record<string, unknown>
+            // Better Auth 1.6.9 ne propage pas disableSignUp au chemin idToken.
+            // Ce mapping est commun au callback OAuth et à la connexion idToken :
+            // seuls les comptes préexistants peuvent se connecter avec Google.
+            throw new APIError("FORBIDDEN", {
+              message: "Les inscriptions publiques sont fermées.",
+              code: "public_registration_closed",
+            })
           },
         },
       }
@@ -282,6 +272,7 @@ export const auth = betterAuth({
     // pas par Better Auth lui-même.
     adminPlugin,
     magicLink({
+      disableSignUp: true,
       expiresIn: 60 * 15,
       sendMagicLink: async ({ email, url }) => {
         const apiKey = process.env.RESEND_API_KEY

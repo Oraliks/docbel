@@ -14,7 +14,7 @@ import type { DemandeSummary } from "@/lib/bundles/demande-summary";
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }) }));
 vi.mock("@/components/ui/confirm-dialog", () => ({ useConfirm: () => vi.fn() }));
-const render = (child: ReturnType<typeof createElement>) => renderToStaticMarkup(createElement(NextIntlClientProvider, { locale: "fr", messages, timeZone: "Europe/Brussels", children: child }));
+const render = (child: ReturnType<typeof createElement>) => renderToStaticMarkup(createElement(NextIntlClientProvider, { locale: "fr", messages, timeZone: "Europe/Brussels" }, child));
 
 describe("temporary public transition", () => {
   it.each(["/inscription", "/inscription/partenaire", "/inscription/employeur"])("closes signup page %s", (path) => expect(temporaryClosureForPath(path)).toBe("signup"));

@@ -1,5 +1,6 @@
 "use client";
 
+import { TemporaryClosureNotice } from "./temporary-closure-notice";
 import { PUBLIC_WRITES_PAUSED } from "@/lib/public-access";
 import Link from "next/link";
 import { useState } from "react";
@@ -29,6 +30,7 @@ interface Props {
 
 /** Cockpit transversal et anonyme de toutes les demarches en cours. */
 export function MesDemarchesClient({ groups: initialGroups }: Props) {
+  const tp = useTranslations("public.temporaryClosure");
   const t = useTranslations("public.dossier");
   const router = useRouter();
   const confirm = useConfirm();
@@ -71,6 +73,7 @@ export function MesDemarchesClient({ groups: initialGroups }: Props) {
 
   return (
     <section className="flex w-full flex-col gap-6">
+      {PUBLIC_WRITES_PAUSED && <TemporaryClosureNotice kind="existing" compact />}
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div className="flex flex-col gap-2">
           <h1 className="glass-display text-4xl font-semibold leading-tight sm:text-5xl">
@@ -80,7 +83,7 @@ export function MesDemarchesClient({ groups: initialGroups }: Props) {
             {t("mesDemarchesSubtitle")}
           </p>
         </div>
-        {groups.length > 0 ? (
+        {!PUBLIC_WRITES_PAUSED && groups.length > 0 ? (
           <Button
             render={<Link href="/mon-dossier" />}
             nativeButton={false}
@@ -109,11 +112,11 @@ export function MesDemarchesClient({ groups: initialGroups }: Props) {
           </EmptyHeader>
           <EmptyContent>
             <Button
-              render={<Link href="/mon-dossier" />}
+              render={<Link href={PUBLIC_WRITES_PAUSED ? "/outils" : "/mon-dossier"} />}
               nativeButton={false}
               size="lg"
             >
-              {t("mesDemarchesEmptyCta")}
+              {PUBLIC_WRITES_PAUSED ? tp("tools") : t("mesDemarchesEmptyCta")}
               <ArrowRight data-icon="inline-end" aria-hidden />
             </Button>
           </EmptyContent>

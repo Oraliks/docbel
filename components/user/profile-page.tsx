@@ -1,5 +1,7 @@
 "use client";
 
+import { PUBLIC_WRITES_PAUSED } from "@/lib/public-access";
+import { TemporaryClosureNotice } from "@/components/docbel/temporary-closure-notice";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
@@ -289,11 +291,13 @@ export function ProfilePage({
 
   return (
     <div className="flex flex-col gap-5">
+      {PUBLIC_WRITES_PAUSED && <TemporaryClosureNotice kind="profile" compact />}
+      <fieldset disabled={PUBLIC_WRITES_PAUSED} className="flex min-w-0 flex-col gap-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-[12.5px] text-[color:var(--glass-ink-soft)]">
           {userName} · {userEmail}
         </p>
-        <Button
+        {!PUBLIC_WRITES_PAUSED && <Button
           onClick={save}
           disabled={saving || !dirty}
           className="rounded-full px-5 py-2.5 text-[13px] font-bold disabled:opacity-50"
@@ -304,7 +308,7 @@ export function ProfilePage({
         >
           <SaveIcon className="size-4" />
           {saving ? t("profileSaving") : t("save")}
-        </Button>
+        </Button>}
       </div>
 
       <div
@@ -680,7 +684,7 @@ export function ProfilePage({
         </CardContent>
       </Card>
 
-      <Card className={GLASS_CARD}>
+      {!PUBLIC_WRITES_PAUSED && <Card className={GLASS_CARD}>
         <CardHeader className="px-6 pt-6 pb-3">
           <CardTitle
             className="glass-display flex items-center gap-2 text-[18px] font-semibold"
@@ -730,7 +734,8 @@ export function ProfilePage({
             </AlertDialogContent>
           </AlertDialog>
         </CardContent>
-      </Card>
+      </Card>}
+      </fieldset>
     </div>
   );
 }

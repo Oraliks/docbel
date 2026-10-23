@@ -1,5 +1,7 @@
 "use client";
 
+import { PUBLIC_WRITES_PAUSED } from "@/lib/public-access";
+import { TemporaryClosureNotice } from "./temporary-closure-notice";
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -28,6 +30,7 @@ interface Props {
 }
 
 export function DemandeList({ bundleId, slug, bundleName, demandes }: Props) {
+  const tp = useTranslations("public.temporaryClosure");
   const t = useTranslations("public.dossier");
   const locale = useLocale();
   const router = useRouter();
@@ -67,6 +70,7 @@ export function DemandeList({ bundleId, slug, bundleName, demandes }: Props) {
       className="glass-surface flex flex-col gap-4 rounded-3xl p-4 sm:p-5"
       data-docbel-readable
     >
+      {PUBLIC_WRITES_PAUSED && <TemporaryClosureNotice kind="existing" compact />}
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <span
@@ -168,10 +172,10 @@ export function DemandeList({ bundleId, slug, bundleName, demandes }: Props) {
                     size="sm"
                     className="min-h-10"
                   >
-                    {completed ? t("demandeReview") : t("demandeResume")}
+                    {PUBLIC_WRITES_PAUSED ? tp("consult") : completed ? t("demandeReview") : t("demandeResume")}
                     <ArrowRight data-icon="inline-end" aria-hidden />
                   </Button>
-                  <Button
+                  {!PUBLIC_WRITES_PAUSED && <Button
                     type="button"
                     variant="ghost"
                     size="icon"
@@ -181,7 +185,7 @@ export function DemandeList({ bundleId, slug, bundleName, demandes }: Props) {
                     aria-label={t("demandeAbandon")}
                   >
                     <Trash2 aria-hidden />
-                  </Button>
+                  </Button>}
                 </div>
               </li>
             );

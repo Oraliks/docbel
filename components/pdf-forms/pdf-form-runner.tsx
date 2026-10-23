@@ -1,5 +1,7 @@
 "use client";
 
+import { PUBLIC_WRITES_PAUSED } from "@/lib/public-access";
+import { TemporaryClosureNotice } from "@/components/docbel/temporary-closure-notice";
 import { useMemo, useState, useRef, useEffect, useLayoutEffect, useCallback } from "react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
@@ -1108,6 +1110,16 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
         </CardContent>
       </Card>
     );
+  }
+
+  if (PUBLIC_WRITES_PAUSED && bundleRunId) {
+    return <div className="flex w-full flex-col gap-4">
+      <TemporaryClosureNotice kind="existing" compact />
+      {bundleSlug && <a className="text-sm underline underline-offset-4" href={`/d/${encodeURIComponent(bundleSlug)}?bundleRun=${encodeURIComponent(bundleRunId)}`}>{t("runnerContinuationBack")}</a>}
+      <fieldset disabled className="min-w-0 rounded-2xl border border-border p-4">
+        <FieldsCluster fields={dataFields.filter((field) => isFieldVisible(field.visibleIf, derivedValues))} values={values} errors={{}} locale={locale} setValue={() => {}} formId={form.id} formSlug={form.slug} />
+      </fieldset>
+    </div>;
   }
 
   // Mode macro (C1) : rendu 5 étapes sans résumé, envoi sur la dernière.

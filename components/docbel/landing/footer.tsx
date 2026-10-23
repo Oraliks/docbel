@@ -1,5 +1,6 @@
 "use client";
 
+import { PUBLIC_WRITES_PAUSED } from "@/lib/public-access";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { CookieIcon, UserRoundIcon } from "lucide-react";
@@ -12,6 +13,7 @@ const FOOTER_LINK_CLASS =
   "w-fit rounded-lg text-[color:var(--glass-ink-soft)] outline-none transition-colors hover:text-[color:var(--glass-ink)] focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)] focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--glass-bg-a)]";
 
 export function LandingFooter() {
+  const tp = useTranslations("public.temporaryClosure");
   const t = useTranslations("public.chrome");
   const { openPreferences } = useConsent();
   const siteName = useSiteSettings()?.identity.name ?? "Docbel";
@@ -62,7 +64,7 @@ export function LandingFooter() {
             {t("accessibility")}
           </Link>
           <Link href="/reprendre" className={FOOTER_LINK_CLASS}>
-            {t("quickResume")}
+            {PUBLIC_WRITES_PAUSED ? tp("consult") : t("quickResume")}
           </Link>
         </FooterGroup>
 

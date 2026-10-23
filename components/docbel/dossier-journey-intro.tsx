@@ -12,6 +12,8 @@
  * directe du premier formulaire dès qu'aucune question d'aiguillage ne reste.
  */
 
+import { PUBLIC_WRITES_PAUSED } from "@/lib/public-access";
+import { TemporaryClosureNotice } from "./temporary-closure-notice";
 import { type ComponentProps, useState } from "react";
 import { useTranslations } from "next-intl";
 import {
@@ -148,6 +150,7 @@ export function DossierJourneyIntro({
 }: DossierJourneyIntroProps) {
   const t = useTranslations("public.dossierContent");
   const td = useTranslations("public.dossier");
+  const tp = useTranslations("public.temporaryClosure");
   const [started, setStarted] = useState(false);
 
   const resolve = (key: string | undefined, fallback: string): string => {
@@ -165,11 +168,12 @@ export function DossierJourneyIntro({
   }
 
   const steps = [...journey].sort((a, b) => a.order - b.order);
-  const start = () => setStarted(true);
-  const cta = resolve(ctaLabelKey, ctaLabel);
+  const start = () => { if (!PUBLIC_WRITES_PAUSED) setStarted(true); };
+  const cta = PUBLIC_WRITES_PAUSED ? tp("paused") : resolve(ctaLabelKey, ctaLabel);
 
   return (
     <section className="relative flex w-full flex-col gap-8" data-docbel-readable>
+      {PUBLIC_WRITES_PAUSED && <TemporaryClosureNotice kind="dossier" />}
       {/* Décor pastel très doux (blanc → lavande → rose → beige) */}
       <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
         <div
@@ -208,7 +212,7 @@ export function DossierJourneyIntro({
             <div className="flex flex-wrap items-center gap-3">
               <button
                 type="button"
-                onClick={start}
+                onClick={start} disabled={PUBLIC_WRITES_PAUSED}
                 className="glass-cta inline-flex min-h-12 items-center gap-2 rounded-full px-6 py-3 text-base font-bold shadow-[0_12px_32px_-10px_rgba(91,70,229,0.55)]"
               >
                 {cta}
@@ -259,7 +263,7 @@ export function DossierJourneyIntro({
             ) : null}
             <button
               type="button"
-              onClick={start}
+              onClick={start} disabled={PUBLIC_WRITES_PAUSED}
               className="glass-cta mt-5 inline-flex min-h-12 w-fit items-center gap-2 rounded-full px-6 py-3 text-base font-bold shadow-[0_12px_32px_-10px_rgba(91,70,229,0.55)]"
             >
               {cta}
@@ -409,7 +413,7 @@ export function DossierJourneyIntro({
         </div>
         <button
           type="button"
-          onClick={start}
+          onClick={start} disabled={PUBLIC_WRITES_PAUSED}
           className="glass-cta inline-flex min-h-12 shrink-0 items-center justify-center gap-2 rounded-full px-7 py-3.5 text-base font-bold shadow-[0_12px_32px_-10px_rgba(91,70,229,0.55)]"
         >
           {cta}

@@ -1,5 +1,7 @@
 "use client";
 
+import { PUBLIC_WRITES_PAUSED } from "@/lib/public-access";
+import { TemporaryClosureNotice } from "../temporary-closure-notice";
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -35,6 +37,7 @@ import {
 } from "@/lib/bundles/resume-code";
 
 export function ResumeForm() {
+  const tp = useTranslations("public.temporaryClosure");
   const router = useRouter();
   const t = useTranslations("public.dossier");
   const [code, setCode] = useState("");
@@ -147,12 +150,12 @@ export function ResumeForm() {
                   <AlertDescription className="flex flex-col items-start gap-3">
                     <p>{error}</p>
                     <Button
-                      render={<Link href="/mon-dossier" />}
+                      render={<Link href={PUBLIC_WRITES_PAUSED ? "/outils" : "/mon-dossier"} />}
                       nativeButton={false}
                       variant="outline"
                       size="sm"
                     >
-                      {t("resumeStartDossier")}
+                      {PUBLIC_WRITES_PAUSED ? tp("tools") : t("resumeStartDossier")}
                       <ArrowRightIcon data-icon="inline-end" aria-hidden />
                     </Button>
                   </AlertDescription>
@@ -184,7 +187,7 @@ export function ResumeForm() {
         </form>
       </Card>
 
-      <Card className="rounded-3xl">
+      {PUBLIC_WRITES_PAUSED ? <TemporaryClosureNotice kind="dossier" /> : <Card className="rounded-3xl">
         <CardHeader className="gap-3 px-5 sm:px-6">
           <span className="flex size-10 items-center justify-center rounded-2xl bg-[color:var(--glass-surface-strong)] text-[color:var(--glass-accent-deep)]">
             <CompassIcon className="size-5" aria-hidden />
@@ -203,17 +206,17 @@ export function ResumeForm() {
         </CardContent>
         <CardFooter className="border-0 bg-transparent px-5 pt-0 sm:px-6">
           <Button
-            render={<Link href="/mon-dossier" />}
+            render={<Link href={PUBLIC_WRITES_PAUSED ? "/outils" : "/mon-dossier"} />}
             nativeButton={false}
             variant="outline"
             size="lg"
             className="min-h-12 w-full text-base"
           >
-            {t("resumeStartDossier")}
+            {PUBLIC_WRITES_PAUSED ? tp("tools") : t("resumeStartDossier")}
             <ArrowRightIcon data-icon="inline-end" aria-hidden />
           </Button>
         </CardFooter>
-      </Card>
+      </Card>}
     </div>
   );
 }

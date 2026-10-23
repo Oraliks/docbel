@@ -72,7 +72,9 @@ export async function GET(
   const { id } = await params;
   const session = await auth.api.getSession({ headers: await headers() });
   const userId = session?.user?.id || null;
-  const sessionId = await resolveSessionId();
+  const sessionId = (await cookies()).get(COOKIE_NAME)?.value || null;
+  // Consultation seule : ne jamais créer de session de dossier sur un GET.
+  if (!userId && !sessionId) return apiOk(null);
 
   const where = userId
     ? { bundleId: id, userId, status: { in: [...EDITABLE_BUNDLE_RUN_STATUSES] } }

@@ -1,3 +1,5 @@
+import { PUBLIC_WRITES_PAUSED } from "@/lib/public-access";
+import { TemporaryClosureNotice } from "@/components/docbel/temporary-closure-notice";
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import { prisma } from "@/lib/prisma";
@@ -14,6 +16,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function RdvDiscoveryPage() {
+  if (PUBLIC_WRITES_PAUSED) return <TemporaryClosureNotice kind="booking" />;
   const t = await getTranslations("public.dossier");
   const tenants = await prisma.bookingTenant.findMany({
     where: { active: true },
@@ -25,6 +28,7 @@ export default async function RdvDiscoveryPage() {
       logoUrl: true,
     },
     orderBy: { name: "asc" },
+    take: 100,
   });
 
   return (

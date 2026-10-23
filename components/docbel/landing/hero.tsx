@@ -1,5 +1,7 @@
 "use client";
 
+import { PUBLIC_WRITES_PAUSED } from "@/lib/public-access";
+import { TemporaryClosureNotice } from "../temporary-closure-notice";
 import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
@@ -54,6 +56,8 @@ export function HowItWorksCard() {
       Icon: CheckCircle2,
     },
   ];
+
+  if (PUBLIC_WRITES_PAUSED) return <TemporaryClosureNotice kind="dossier" />;
 
   return (
     <Card className="h-full rounded-[24px] py-5">

@@ -1,5 +1,6 @@
 "use client";
 
+import { PUBLIC_WRITES_PAUSED } from "@/lib/public-access";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -54,6 +55,8 @@ export function NouvelleDemandeButton({ bundleId, slug, variant = "outline" }: P
       setLoading(false);
     }
   }
+
+  if (PUBLIC_WRITES_PAUSED) return null;
 
   return (
     <Button

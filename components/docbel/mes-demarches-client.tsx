@@ -183,6 +183,7 @@ function DemarcheRow({
 }) {
   const t = useTranslations("public.dossier");
   const locale = useLocale();
+  const tp = useTranslations("public.temporaryClosure");
   const completed = demarche.lifecycle === "completed_editable";
   const percentage = completed
     ? 100
@@ -256,7 +257,7 @@ function DemarcheRow({
             size="sm"
             className="min-h-10"
           >
-            {t("demandeResume")}
+            {PUBLIC_WRITES_PAUSED ? tp("consult") : t("demandeResume")}
             <ArrowRight data-icon="inline-end" aria-hidden />
           </Button>
         )}

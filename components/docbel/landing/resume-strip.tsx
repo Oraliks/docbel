@@ -1,5 +1,6 @@
 "use client";
 
+import { PUBLIC_WRITES_PAUSED } from "@/lib/public-access";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { ArrowRight, FolderOpen } from "lucide-react";
@@ -35,6 +36,7 @@ interface ResumeStripProps {
 
 /** Panneau lateral de reprise, alimente uniquement par les donnees serveur. */
 export function ResumeStrip({ run }: ResumeStripProps) {
+  const tp = useTranslations("public.temporaryClosure");
   const t = useTranslations("public.home");
   const completed = run.lifecycle === "completed_editable";
   const percentage = completed
@@ -48,7 +50,7 @@ export function ResumeStrip({ run }: ResumeStripProps) {
         completed: run.completed,
         total: run.total,
       });
-  const resumeHref = `/d/${encodeURIComponent(run.slug)}?bundleRun=${encodeURIComponent(run.runId)}&demarrer=1`;
+  const resumeHref = `/d/${encodeURIComponent(run.slug)}?bundleRun=${encodeURIComponent(run.runId)}`;
 
   return (
     <Card
@@ -96,7 +98,7 @@ export function ResumeStrip({ run }: ResumeStripProps) {
             {t("guidedResumeNext")}
           </p>
           <p className="mt-2 font-semibold leading-relaxed text-[color:var(--glass-ink)]">
-            {completed
+            {PUBLIC_WRITES_PAUSED ? tp("existing") : completed
               ? t("resumeCompletedProgress")
               : t("guidedResumeNextDescription")}
           </p>
@@ -108,7 +110,7 @@ export function ResumeStrip({ run }: ResumeStripProps) {
           href={resumeHref}
           className={cn(buttonVariants({ size: "lg" }), "w-full")}
         >
-          {completed ? t("resumeCompletedCta") : t("resumeCta")}
+          {PUBLIC_WRITES_PAUSED ? tp("consult") : completed ? t("resumeCompletedCta") : t("resumeCta")}
           <ArrowRight data-icon="inline-end" className="rtl:rotate-180" aria-hidden />
         </Link>
         <Link

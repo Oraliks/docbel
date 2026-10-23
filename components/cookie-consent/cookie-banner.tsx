@@ -8,7 +8,6 @@
 // `--glass-*` (définis sur :root/.dark) plutôt que par héritage.
 
 import { useEffect, useRef, useState } from "react";
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { CookieIcon } from "lucide-react";
@@ -73,13 +72,6 @@ export function CookieBanner() {
               style={{ color: "var(--glass-ink-soft)" }}
             >
               {t("description")}{" "}
-              <Link
-                href="/politique-confidentialite"
-                className="font-semibold underline underline-offset-2"
-                style={{ color: "var(--glass-ink)" }}
-              >
-                {t("learnMore")}
-              </Link>
             </p>
           </div>
         </div>

@@ -491,7 +491,7 @@ export function FamilySituationClient({ thresholds }: { thresholds: C1BaremeThre
   const topic = t(`topic${step[0].toUpperCase()}${step.slice(1)}` as never)
 
   return (
-    <section className="glass-root flex w-full flex-col gap-5 px-4 py-6 sm:gap-6 sm:px-6 lg:px-8" aria-labelledby="family-situation-title">
+    <section className="flex w-full flex-col gap-5 px-4 py-6 sm:gap-6 sm:px-6 lg:px-8" aria-labelledby="family-situation-title">
       <header className="glass-surface flex flex-col gap-3 p-5 sm:p-7">
         <div className="flex items-start gap-3"><span className="inline-flex size-11 shrink-0 items-center justify-center rounded-2xl bg-primary/15 text-primary" aria-hidden><UsersRound className="size-6" /></span><div><p className="text-sm font-semibold text-[color:var(--glass-ink-soft)]">{t("eyebrow")}</p><h1 id="family-situation-title" className="glass-display mt-1 text-3xl font-semibold tracking-tight sm:text-4xl">{t("title")}</h1><p className="mt-2 max-w-2xl text-sm leading-relaxed text-[color:var(--glass-ink-soft)]">{t("intro")}</p></div></div>
         <details className="glass-feedback px-4 py-3" data-tone="info"><summary className="cursor-pointer font-semibold">{t("helpSummary")}</summary><p className="mt-2 text-sm leading-relaxed">{t("helpBody")}</p></details>
@@ -567,9 +567,9 @@ function IntentStep({ t, value, onChoose, onContinue }: { t: Translation; value?
     { value: "unknown", title: t("unknown"), body: t("intentUnknownBody") },
   ]
 
-  return <div><h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">{t("intentQuestion")}</h2><div className="mt-6 grid gap-3 sm:grid-cols-3">{choices.map((choice) => {
+  return <div><h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">{t("intentQuestion")}</h2><div className="mt-6 grid gap-3 sm:gap-4">{choices.map((choice) => {
     const selected = value === choice.value
-    return <button key={choice.value} type="button" aria-pressed={selected} onClick={() => onChoose(choice.value)} className="glass-surface glass-interactive relative flex min-h-36 flex-col rounded-2xl p-4 text-left aria-pressed:!border-primary aria-pressed:!bg-primary/15 aria-pressed:!ring-2 aria-pressed:!ring-primary/25"><span className="pr-24 text-base font-semibold leading-snug">{choice.title}</span><span className="mt-2 text-sm leading-relaxed text-[color:var(--glass-ink-soft)]">{choice.body}</span>{selected ? <span className="absolute right-4 top-4 inline-flex items-center gap-1 rounded-full bg-primary px-2 py-1 text-xs font-semibold text-primary-foreground"><Check className="size-3.5" aria-hidden />{t("choiceSelected")}</span> : null}</button>
+    return <button key={choice.value} type="button" aria-pressed={selected} onClick={() => onChoose(choice.value)} className="glass-surface glass-interactive relative flex min-h-28 flex-col justify-center rounded-2xl p-5 text-left sm:min-h-32 sm:px-6 aria-pressed:!border-primary aria-pressed:!bg-primary/15 aria-pressed:!ring-2 aria-pressed:!ring-primary/25"><span className="pr-24 text-lg font-semibold leading-snug">{choice.title}</span><span className="mt-2 text-base leading-relaxed text-[color:var(--glass-ink-soft)]">{choice.body}</span>{selected ? <span className="absolute right-4 top-4 inline-flex items-center gap-1 rounded-full bg-primary px-2 py-1 text-xs font-semibold text-primary-foreground"><Check className="size-3.5" aria-hidden />{t("choiceSelected")}</span> : null}</button>
   })}</div>{value ? <div className="glass-feedback mt-4 flex items-center gap-3 px-4 py-3" data-tone="info" role="status"><Check className="size-5 shrink-0" aria-hidden /><p className="text-sm">{t("intentSelected")}</p></div> : null}<ContinueButton t={t} onClick={onContinue} disabled={!value} /></div>
 }
 
@@ -695,3 +695,4 @@ function ContinueButton({ t, onClick, disabled, label }: { t: Translation; onCli
 function SummaryRow({ icon, label, value }: { icon: ReactNode; label: string; value: string }) {
   return <div className="glass-surface flex items-start gap-3 rounded-2xl p-4"><span className="mt-0.5 text-primary" aria-hidden>{icon}</span><div className="min-w-0"><dt className="text-sm text-[color:var(--glass-ink-soft)]">{label}</dt><dd className="mt-1 break-words font-semibold">{value}</dd></div></div>
 }
+

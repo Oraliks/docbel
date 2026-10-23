@@ -85,7 +85,6 @@ export function LandingHeader({ onSearchOpen }: { persona: AudienceId; onSearchO
             <DropdownMenuContent align="end" className="docbel-public-popup min-w-60 rounded-2xl p-2">
               <DropdownMenuGroup>
                 <DropdownMenuItem render={<Link href="/actualites" />}>{t("quickNews")}</DropdownMenuItem>
-                <DropdownMenuItem render={<Link href="/formations" />}>{td("formations")}</DropdownMenuItem>
                 <DropdownMenuItem render={<Link href="/rendez-vous" />}>{td("appointments")}</DropdownMenuItem>
                 <DropdownMenuItem render={<Link href="/mes-demarches" />}>{t("navMesDemarches")}</DropdownMenuItem>
                 <DropdownMenuItem render={<Link href="/reprendre" />}>{td("existingResume")}</DropdownMenuItem>

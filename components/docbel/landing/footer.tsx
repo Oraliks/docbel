@@ -65,7 +65,6 @@ export function LandingFooter() {
           <Link href="/accessibilite" className={FOOTER_LINK_CLASS}>
             {t("accessibility")}
           </Link>
-          <Link href="/formations" className={FOOTER_LINK_CLASS}>{td("formations")}</Link>
           <Link href="/rendez-vous" className={FOOTER_LINK_CLASS}>{td("appointments")}</Link>
           <Link href="/login" className={FOOTER_LINK_CLASS}>{td("privateAccess")}</Link>
           <Link href="/reprendre" className={FOOTER_LINK_CLASS}>

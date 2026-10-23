@@ -1597,7 +1597,7 @@ html[data-docbel-text-size="xlarge"]:has(.glass-root) { font-size: 150%; }
   .docbel-bottom-nav { position: fixed; inset-inline: 0; inset-block-end: 0; z-index: 30; display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 4px; border-top: 1px solid var(--glass-border); background: var(--glass-surface); padding: 6px 10px calc(6px + env(safe-area-inset-bottom)); }
   .docbel-bottom-nav .docbel-nav-link { flex-direction: column; gap: 3px; padding: 7px 2px; font-size: .6875rem; overflow-wrap: anywhere; text-align: center; }
   .docbel-public-shell[data-journey="true"] { padding-block-end: calc(24px + env(safe-area-inset-bottom)); }
-  .docbel-public-popup.docbel-display-panel { inset-block-start: auto; inset-block-end: 0; inset-inline: 0; width: 100%; max-width: 100%; max-height: 88dvh; translate: none; transform: none; border-radius: 24px 24px 0 0; padding: 24px 24px calc(24px + env(safe-area-inset-bottom)); }
+  .docbel-public-popup.docbel-display-panel { inset-block-start: auto; inset-block-end: 0; inset-inline: 0; width: 100%; max-width: 100%; max-height: 88dvh; translate: 0 0 !important; transform: none; border-radius: 24px 24px 0 0; padding: 24px 24px calc(24px + env(safe-area-inset-bottom)); }
 }
 @media (max-width: 360px) { .docbel-brand { font-size: 20px; }.docbel-header-inner { padding-inline: 12px; }.docbel-header-controls { gap: 5px; } }
 
@@ -1611,3 +1611,4 @@ html[data-docbel-text-size="xlarge"]:has(.glass-root) { font-size: 150%; }
   .docbel-public-shell { padding-block-end: calc(88px + env(safe-area-inset-bottom) + var(--docbel-consent-height, 0px)); }
   .docbel-public-shell[data-journey="true"] { padding-block-end: calc(24px + env(safe-area-inset-bottom) + var(--docbel-consent-height, 0px)); }
 }
+

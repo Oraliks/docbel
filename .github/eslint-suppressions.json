@@ -77,11 +77,6 @@
       "count": 1
     }
   },
-  "app/rendez-vous/page.tsx": {
-    "@next/next/no-html-link-for-pages": {
-      "count": 1
-    }
-  },
   "components/admin/bureaux/bureaux-table.tsx": {
     "react-hooks/purity": {
       "count": 1
@@ -427,11 +422,6 @@
   },
   "components/reglementation/legal-text.tsx": {
     "react-hooks/immutability": {
-      "count": 1
-    }
-  },
-  "components/welcome-locale-modal.tsx": {
-    "react-hooks/set-state-in-effect": {
       "count": 1
     }
   },

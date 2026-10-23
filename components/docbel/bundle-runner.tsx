@@ -1,57 +1,18 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import { PUBLIC_WRITES_PAUSED } from "@/lib/public-access";
+import Link from "next/link";
 import { TemporaryClosureNotice } from "./temporary-closure-notice";
-import { useRouter } from "next/navigation";
-import { useTranslations, useLocale } from "next-intl";
-import { toast } from "sonner";
-import {
-  ArrowRight,
-  Building2,
-  CheckCircle2,
-  Circle,
-  Clock,
-  EyeOff,
-  Inbox,
-  Loader2,
-  Mail,
-  Package,
-  RefreshCw,
-  Pencil,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { ProgressFeedback } from "./progress-feedback";
-import { useConfirm } from "@/components/ui/confirm-dialog";
-import { NouvelleDemandeButton } from "./nouvelle-demande-button";
-import {
-  describeCondition,
-  type CollectedPayloads,
-} from "@/lib/bundles/conditions";
-import {
-  type EligibilityAnswers,
-  type EligibilityQuestion,
-  parseEligibilityQuestions,
-} from "@/lib/bundles/eligibility";
-import { parseBundleWarnings, type BundleWarning } from "@/lib/bundles/types";
-import { EligibilityPrequalifier } from "./onboarding/eligibility-prequalifier";
+import { useState } from "react";
+import { FeuilleDeRoutePanel } from "./feuille-de-route-panel";
+import type { OpCode } from "@/lib/feuille-de-route/model";
+import { useTranslations } from "next-intl";
+import { FileText, Download, ArrowRight, CircleHelp } from "lucide-react";
 import { BundleWarnings } from "./onboarding/bundle-warnings";
-import { ResumeCodeBanner } from "./onboarding/resume-code-banner";
-import { BundleRoadmap, type RoadmapDocument } from "./bundle-roadmap";
-import {
-  computeItemStatuses,
-  itemDescription,
-  itemOrganismeLabel,
-  itemTitle,
-  resolveTargetForm,
-  type BundleItem,
-} from "./bundle-runner/compute";
-import { DemarcheRail } from "./demarche-rail";
-import { buildDemarcheRailModel } from "@/lib/bundles/rail-model";
+import { parseBundleWarnings } from "@/lib/bundles/types";
+import { parseEligibilityQuestions, type EligibilityAnswers } from "@/lib/bundles/eligibility";
+import { describeCondition, type CollectedPayloads } from "@/lib/bundles/conditions";
+import { computeItemStatuses, itemTitle, itemDescription, type BundleItem } from "./bundle-runner/compute";
 import type { DemandeSummary } from "@/lib/bundles/demande-summary";
-import { formatDate } from "@/lib/i18n/format";
-import { cn } from "@/lib/utils";
 
 interface Bundle {
   id: string;
@@ -80,6 +41,7 @@ export interface ExternalDocument {
 
 interface BundleRunnerProps {
   bundle: Bundle;
+  availableFormSlugs?: string[];
   runId: string | null;
   resumeCode: string | null;
   resumeCodeExpiresAt: string | null;
@@ -114,617 +76,53 @@ interface BundleRunnerProps {
   demandes?: DemandeSummary[];
 }
 
-const RESPONSIBILITY_LABEL_KEYS: Record<ExternalDocument["responsibility"], string> = {
-  employer: "runnerResponsibilityEmployer",
-  onem: "runnerResponsibilityOnem",
-  external: "runnerResponsibilityExternal",
-};
 
-export function BundleRunner({
-  bundle,
-  runId: initialRunId,
-  resumeCode: initialResumeCode,
-  resumeCodeExpiresAt: initialResumeCodeExpiresAt,
-  resumeEmail,
-  eligibilityAnswers: initialEligibilityAnswers,
-  completedTemplateIds,
-  payloads,
-  templateNames,
-  fieldLabels,
-  applicableSlugs = null,
-  externalDocuments = [],
-  userEmail = null,
-  orientationAnswerIds = [],
-  autoStart = false,
-  clonedFromDate = null,
-  demandes = [],
-}: BundleRunnerProps) {
+/** V1 public consultation. The same document applicability engine is retained.
+ * Existing run data is passed only by the route after its ownership guard.
+ * No creation, mutation, code email or persistent form action is exposed here.
+ */
+export function BundleRunner({ bundle, runId, eligibilityAnswers, completedTemplateIds, payloads, templateNames, fieldLabels, applicableSlugs, externalDocuments = [], availableFormSlugs = [] }: BundleRunnerProps) {
   const t = useTranslations("public.dossier");
-  const tp = useTranslations("public.temporaryClosure");
-  const locale = useLocale();
-  const router = useRouter();
-  const confirm = useConfirm();
-  const [runId, setRunId] = useState<string | null>(initialRunId);
-  const [resumeCode, setResumeCode] = useState<string | null>(initialResumeCode);
-  const [resumeCodeExpiresAt, setResumeCodeExpiresAt] = useState<string | null>(
-    initialResumeCodeExpiresAt
-  );
-  const [starting, setStarting] = useState(false);
-  /// Slug du document tiers dont on génère le courrier (spinner par item).
-  const [generatingLetter, setGeneratingLetter] = useState<string | null>(null);
-  const [eligibilityAnswers, setEligibilityAnswers] = useState<EligibilityAnswers>(
-    initialEligibilityAnswers
-  );
-  const [editingEligibility, setEditingEligibility] = useState(false);
-
-  const eligibilityQuestions: EligibilityQuestion[] = useMemo(
-    () => parseEligibilityQuestions(bundle.eligibilityQuestions),
-    [bundle.eligibilityQuestions]
-  );
-  const warnings: BundleWarning[] = useMemo(
-    () => parseBundleWarnings(bundle.warnings),
-    [bundle.warnings]
-  );
-
-  const hasEligibilityQuestions = eligibilityQuestions.length > 0;
-  const eligibilityCompleted = useMemo(() => {
-    if (!hasEligibilityQuestions) return true;
-    return eligibilityQuestions.every(
-      (q) => eligibilityAnswers[q.id] !== undefined && eligibilityAnswers[q.id] !== ""
-    );
-  }, [hasEligibilityQuestions, eligibilityQuestions, eligibilityAnswers]);
-
-  /// Pré-qualification en écran bloquant : quand on n'a pas encore démarré
-  /// le run ET il y a des questions, OU quand l'utilisateur a explicitement
-  /// demandé à revoir ses réponses.
-  const showsPrequalifierGate =
-    !PUBLIC_WRITES_PAUSED && ((!runId && hasEligibilityQuestions) || editingEligibility);
-  const showsDocumentsSection = !showsPrequalifierGate || Boolean(runId);
-
-  async function ensureRun(answers?: EligibilityAnswers): Promise<string | null> {
-    if (runId && !answers) return runId;
-    if (PUBLIC_WRITES_PAUSED) return null;
-    setStarting(true);
-    try {
-      const res = await fetch(`/api/documents/bundles/${bundle.id}/run`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ eligibilityAnswers: answers ?? eligibilityAnswers }),
-      });
-      if (!res.ok) throw new Error(t("runnerStartError"));
-      const run = await res.json();
-      setRunId(run.id);
-      if (run.resumeCode) setResumeCode(run.resumeCode);
-      if (run.resumeCodeExpiresAt) setResumeCodeExpiresAt(run.resumeCodeExpiresAt);
-      router.refresh();
-      return run.id;
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : t("error"));
-      return null;
-    } finally {
-      setStarting(false);
-    }
-  }
-
-  /// Ouvre le formulaire d'un document (création/reprise du run + navigation).
-  /// Renvoie `true` si la navigation a été déclenchée, `false` en cas d'échec
-  /// (ex. création du run impossible) — utilisé par l'auto-ouverture pour
-  /// retomber sur la liste plutôt que de laisser l'utilisateur bloqué.
-  async function handleStart(item: BundleItem): Promise<boolean> {
-    if (!item.pdfForm) return false;
-    const id = await ensureRun();
-    if (!id) return false;
-    const url = `/document/${item.pdfForm.slug}?bundleRun=${encodeURIComponent(id)}&bundleSlug=${encodeURIComponent(bundle.slug)}`;
-    router.push(url);
-    return true;
-  }
-
-  /// Génère un courrier de réclamation PDF (document à charge d'un tiers) et
-  /// déclenche son téléchargement. Réservé aux responsabilités "employer" et
-  /// "external" (jamais "onem").
-  async function handleGenerateLetter(d: ExternalDocument) {
-    if (d.responsibility === "onem") return;
-    setGeneratingLetter(d.slug);
-    try {
-      const res = await fetch("/api/dossier/letter", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          runId,
-          docSlug: d.slug,
-          docTitle: d.title,
-          issuer: d.issuer,
-          responsibility: d.responsibility,
-        }),
-      });
-      const ct = res.headers.get("content-type") || "";
-      if (!res.ok || !ct.includes("application/pdf")) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || t("runnerLetterError"));
-      }
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `courrier-${d.slug}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
-      toast.success(t("runnerLetterSuccess"));
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : t("error"));
-    } finally {
-      setGeneratingLetter(null);
-    }
-  }
-
-  async function handlePrequalifierContinue(answers: EligibilityAnswers) {
-    setEligibilityAnswers(answers);
-    if (editingEligibility && runId) {
-      // Update existant
-      try {
-        const res = await fetch(`/api/documents/bundles/${bundle.id}/run`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ eligibilityAnswers: answers }),
-        });
-        if (!res.ok) throw new Error(t("runnerUpdateError"));
-        toast.success(t("runnerAnswersUpdated"));
-      } catch (err) {
-        toast.error(err instanceof Error ? err.message : t("error"));
-      }
-      setEditingEligibility(false);
-      router.refresh();
-    } else {
-      // Premier démarrage : crée le run avec les réponses
-      await ensureRun(answers);
-    }
-  }
-
-  async function reset() {
-    const ok = await confirm({
-      title: t("runnerRestartTitle"),
-      description: t("runnerResetDescription"),
-      confirmText: t("restart"),
-      destructive: true,
-    });
-    if (!ok || !runId) return;
-    try {
-      // Abandonne le run côté serveur (status=abandoned). Le prochain rendu
-      // ne trouvera plus de run in_progress et démarrera un parcours vierge.
-      const res = await fetch(`/api/bundles/runs/${encodeURIComponent(runId)}`, {
-        method: "DELETE",
-      });
-      if (!res.ok && res.status !== 404) {
-        toast.error(t("runnerResetError"));
-        return;
-      }
-      // Reset client : on perd la référence au run abandonné, on vide les
-      // réponses préliminaires affichées et on rafraîchit pour repartir
-      // d'une feuille blanche côté SSR.
-      setRunId(null);
-      setResumeCode(null);
-      setResumeCodeExpiresAt(null);
-      setEligibilityAnswers({});
-      setEditingEligibility(false);
-      router.refresh();
-      toast.success(t("runnerResetSuccess"));
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : t("error"));
-    }
-  }
-
-  // Statuts des items — logique PURE extraite (cf. ./bundle-runner/compute).
-  const {
-    visibleItems,
-    hiddenItems,
-    completedCount,
-    allRequiredDone,
-  } = computeItemStatuses(bundle.items, completedTemplateIds, payloads, applicableSlugs);
-  const nextActionId = visibleItems.find(
-    ({ item, completed, eligibility }) =>
-      !completed && eligibility !== "pending" && Boolean(item.pdfForm),
-  )?.item.id;
-
-  // --- Auto-ouverture du formulaire principal (opt-in `?demarrer=1`) ---
-  // On saute la liste « Documents du parcours » et on ouvre directement le
-  // document à remplir UNIQUEMENT quand il n'y a rien à décider : la
-  // pré-qualification est faite (pas de gate affiché) et aucun document n'est
-  // encore complété. Dès qu'un document est validé, `completedCount > 0` et on
-  // revient sur la liste (feuille de route / documents restants) — d'où
-  // l'absence de chaînage de redirections après la validation d'un formulaire.
-  const autoTarget = resolveTargetForm(visibleItems);
-  const [autoForwardFailed, setAutoForwardFailed] = useState(false);
-  const autoForwardedRef = useRef(false);
-  const canAutoForward =
-    !PUBLIC_WRITES_PAUSED && autoStart &&
-    !autoForwardFailed &&
-    !showsPrequalifierGate &&
-    !editingEligibility &&
-    completedCount === 0 &&
-    autoTarget !== null;
-
-  useEffect(() => {
-    if (!canAutoForward || autoForwardedRef.current || !autoTarget) return;
-    autoForwardedRef.current = true;
-    handleStart(autoTarget).then((ok) => {
-      if (!ok) {
-        // Échec (run non créé, réseau…) : on révèle la liste.
-        autoForwardedRef.current = false;
-        setAutoForwardFailed(true);
-      }
-    });
-    // On ne réagit qu'au passage à `true` de canAutoForward ; le ref garantit
-    // l'unicité, donc l'identité de handleStart/autoTarget (relus au moment du
-    // déclenchement) n'a pas à figurer dans les deps.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [canAutoForward]);
-
-  // Placeholder pendant l'auto-ouverture — évite le flash de la liste avant la
-  // redirection. Lien de repli vers la liste si JS/réseau ne suit pas.
-  if (canAutoForward) {
-    return (
-      <div className="flex min-h-[40vh] flex-col items-center justify-center gap-3 text-center">
-        <Loader2 className="size-6 animate-spin text-muted-foreground" />
-        <p className="text-sm text-muted-foreground">{t("runnerStarting")}</p>
-        <a
-          href={
-            runId
-              ? `/d/${bundle.slug}?bundleRun=${encodeURIComponent(runId)}`
-              : `/d/${bundle.slug}`
-          }
-          className="text-xs text-primary underline underline-offset-2"
-        >
-          {t("runnerFlowDocuments")}
-        </a>
-      </div>
-    );
-  }
-
-  // Modèle du rail — mêmes intrants que computeItemStatuses ci-dessus.
-  const railModel = buildDemarcheRailModel({
-    items: bundle.items,
-    completedTemplateIds,
-    payloads,
-    applicableSlugs,
-    hasEligibilityQuestions,
-    eligibilityCompleted,
-  });
-
-  return (
-    <div className="grid w-full grid-cols-1 gap-6 lg:grid-cols-[300px_minmax(0,1fr)] lg:items-start">
-      <DemarcheRail
-        bundleName={bundle.name}
-        bundleSlug={bundle.slug}
-        runId={runId}
-        model={railModel}
-        demandes={demandes}
-        resumeSlot={
-          !PUBLIC_WRITES_PAUSED && runId && resumeCode ? (
-            <ResumeCodeBanner
-              runId={runId}
-              resumeCode={resumeCode}
-              resumeCodeExpiresAt={resumeCodeExpiresAt}
-              initialResumeEmail={resumeEmail}
-            />
-          ) : undefined
-        }
-        newDemarcheSlot={
-          runId ? (
-            <NouvelleDemandeButton bundleId={bundle.id} slug={bundle.slug} variant="ghost" />
-          ) : undefined
-        }
-      />
-      <div className="flex min-w-0 flex-col gap-6">
-        {PUBLIC_WRITES_PAUSED && <TemporaryClosureNotice kind={runId ? "existing" : "dossier"} compact={Boolean(runId)} />}
-        {/* Alerte « demande reprise » : cette demande a été clonée d'une précédente. */}
-        {clonedFromDate && (
-          <div className="rounded-2xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] p-3 text-sm text-[color:var(--glass-ink-soft)]">
-            {t("demandeClonedNotice", {
-              date: formatDate(clonedFromDate, locale),
-            })}
-          </div>
-        )}
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center gap-2">
-            <div
-              className="flex size-10 items-center justify-center rounded-md text-white"
-              style={{ backgroundColor: bundle.color }}
-            >
-                <Package className="size-5" />
+  const d = useTranslations("public.design");
+  const [op, setOp] = useState<OpCode | null>(null);
+  const { visibleItems, allRequiredDone } = computeItemStatuses(bundle.items, completedTemplateIds, payloads, applicableSlugs);
+  const questions = parseEligibilityQuestions(bundle.eligibilityQuestions);
+  const available = new Set(availableFormSlugs);
+  return <section className="flex w-full flex-col gap-6">
+    <header><h1 className="text-3xl font-semibold leading-tight tracking-tight">{bundle.name}</h1>{bundle.description ? <p className="mt-3 leading-relaxed text-muted-foreground">{bundle.description}</p> : null}</header>
+    <p className="font-semibold">{d(runId ? "oldReadOnly" : "ephemeralTitle")}</p>
+    <TemporaryClosureNotice kind={runId ? "existing" : "dossier"} compact={Boolean(runId)} />
+    <BundleWarnings warnings={parseBundleWarnings(bundle.warnings)} />
+    {Object.keys(eligibilityAnswers).length > 0 ? <section className="glass-surface p-5"><h2 className="text-lg font-semibold">{d("recordedAnswers")}</h2><dl className="mt-4 grid gap-4">{questions.flatMap(question => {
+      const value = eligibilityAnswers[question.id];
+      if (value === undefined || value === "") return [];
+      const label = question.type === "select" ? question.options.find(option => option.value === value)?.label ?? value : value === "true" ? t("yes") : value === "false" ? t("no") : value;
+      return <div key={question.id}><dt className="font-medium">{question.label}</dt><dd className="mt-1 text-muted-foreground">{label}</dd></div>;
+    })}</dl></section> : null}
+    <section id="documents-disponibles" className="flex flex-col gap-4">
+      <h2 className="text-xl font-semibold">{t("runnerFlowDocuments")}</h2>
+      {visibleItems.map(({item,completed,eligibility}) => {
+        const form=item.pdfForm;
+        const canOpen=!!form && available.has(form.slug);
+        const href=form ? `/document/${encodeURIComponent(form.slug)}${runId ? `?bundleRun=${encodeURIComponent(runId)}&bundleSlug=${encodeURIComponent(bundle.slug)}` : ""}` : null;
+        return <article key={item.id} className="glass-surface flex flex-col items-start gap-4 p-5 sm:flex-row">
+          <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary"><FileText className="size-5" aria-hidden /></span>
+          <div className="min-w-0 flex-1"><h3 className="font-semibold">{itemTitle(item)}</h3>{itemDescription(item) ? <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{itemDescription(item)}</p> : null}
+            {form?.issuer ? <p className="mt-2 text-xs text-muted-foreground">{form.issuer}</p> : null}
+            {item.condition ? <p className="mt-2 text-sm text-muted-foreground">{t("runnerConditionLabel")} {describeCondition(item.condition,templateNames,fieldLabels)}</p> : null}
+            {eligibility === "pending" ? <p className="mt-2 flex items-center gap-2 text-sm text-muted-foreground"><CircleHelp className="size-4 shrink-0" aria-hidden />{d("conditionPending")}</p> : null}
+            {runId && form && !canOpen && payloads[form.id] ? <details className="mt-3 rounded-xl border p-4"><summary className="min-h-11 cursor-pointer font-semibold">{d("consultAnswers")}</summary><dl className="grid gap-3 pt-3">{Object.entries(payloads[form.id]).map(([key,value]) => <div key={key}><dt className="text-sm font-semibold">{fieldLabels[`${form.id}::${key}`] ?? key}</dt><dd className="mt-1 break-words text-sm text-muted-foreground">{typeof value === "object" ? JSON.stringify(value) : String(value ?? "")}</dd></div>)}</dl></details> : null}
+            <div className="mt-4 flex flex-wrap gap-3">
+              {canOpen && href ? <Link href={href} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border px-4 py-3 text-sm font-semibold">{d(runId ? "consultAnswers" : "standaloneForm")}<ArrowRight className="size-4 rtl:rotate-180" aria-hidden /></Link> : null}
+              {runId && allRequiredDone && completed && form ? <a href={`/api/bundles/runs/${encodeURIComponent(runId)}/download/${encodeURIComponent(form.id)}`} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground"><Download className="size-4" aria-hidden />{t("roadmapDownloadOne")}</a> : null}
             </div>
-            <div className="flex-1">
-              <h1 className="glass-display text-2xl font-semibold text-[color:var(--glass-ink)]">{bundle.name}</h1>
-            </div>
-            {!PUBLIC_WRITES_PAUSED && runId && completedCount > 0 && (
-              <Button variant="ghost" size="sm" onClick={reset}>
-                <RefreshCw data-icon="inline-start" aria-hidden />
-                {t("restart")}
-              </Button>
-            )}
           </div>
-          {bundle.description && (
-            <p className="text-sm text-[color:var(--glass-ink-soft)]">{bundle.description}</p>
-          )}
-        </div>
-
-        {/* Avertissements importants — toujours en haut */}
-        {warnings.length > 0 && <BundleWarnings warnings={warnings} />}
-
-        {/* Pré-qualification — informatif, jamais bloquant */}
-        {showsPrequalifierGate && (
-          <EligibilityPrequalifier
-            questions={eligibilityQuestions}
-            initialAnswers={eligibilityAnswers}
-            onAnswersChange={setEligibilityAnswers}
-            orientationAnswerIds={orientationAnswerIds}
-            onContinue={handlePrequalifierContinue}
-            continueLabel={runId ? t("save") : t("runnerStartFlow")}
-          />
-        )}
-
-        {/* Section "modifier la pré-qualification" — visible quand un run existe et qu'il y avait des questions */}
-        {!PUBLIC_WRITES_PAUSED && runId && hasEligibilityQuestions && eligibilityCompleted && !editingEligibility && (
-          <div className="flex items-center justify-end">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setEditingEligibility(true)}
-              className="text-xs"
-            >
-              <Pencil data-icon="inline-start" aria-hidden />
-              {t("runnerEditAnswers")}
-            </Button>
-          </div>
-        )}
-
-        {/* Documents — masqué tant que la pré-qualification n'est pas faite */}
-        {showsDocumentsSection && (
-          <>
-            {!PUBLIC_WRITES_PAUSED && !runId && (
-              <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] p-3 text-sm text-[color:var(--glass-ink-soft)]">
-                <span>
-                  {t("runnerStartHint")}
-                </span>
-              </div>
-            )}
-
-            {/* Feuille de route — l'écran de sortie (ancre #recuperer-envoyer),
-                dès que tout l'obligatoire est complété. Prédicat = `allRequiredDone`
-                SEUL, identique au déverrouillage de l'étape 3 du rail (rail-model
-                retrieveState) : sinon un dossier sans document requis côté citoyen
-                afficherait un lien « Récupérer » vers une ancre absente (#14). */}
-            {allRequiredDone && (
-              <BundleRoadmap
-                documents={visibleItems.flatMap(
-                  ({ item, completed }): RoadmapDocument[] =>
-                    completed && item.pdfForm
-                      ? [
-                          {
-                            slug: item.pdfForm.slug,
-                            title: itemTitle(item),
-                            href: `/document/${item.pdfForm.slug}?bundleRun=${encodeURIComponent(runId ?? "")}&bundleSlug=${encodeURIComponent(bundle.slug)}`,
-                            pdfFormId: item.pdfForm.id,
-                          },
-                        ]
-                      : []
-                )}
-                externalDocuments={externalDocuments}
-                resumeCode={resumeCode}
-                bundleRunId={runId}
-                userEmail={userEmail}
-              />
-            )}
-
-            <section className="glass-surface flex flex-col gap-2 rounded-3xl p-4 sm:p-5">
-              <h2 className="text-base font-semibold text-[color:var(--glass-ink)]">
-                {t("runnerFlowDocuments")}
-              </h2>
-              <ProgressFeedback
-                label={t("demandeProgress", {
-                  completed: completedCount,
-                  total: visibleItems.length,
-                })}
-                value={completedCount}
-                max={visibleItems.length}
-                state={allRequiredDone ? "done" : "current"}
-                compact
-                className="mb-2"
-              />
-                {visibleItems.map(({ item, completed, eligibility }, idx) => {
-                  const isPending = eligibility === "pending";
-                  const isNextAction = item.id === nextActionId;
-                  return (
-                    <div
-                      key={item.id}
-                      className={cn(
-                        "flex items-start gap-3 rounded-2xl border p-3 transition-colors",
-                        completed &&
-                          "border-[color:var(--success-border)] bg-[color:var(--success-subtle)]",
-                        isPending &&
-                          "border-dashed border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] opacity-70",
-                        !completed &&
-                          !isPending &&
-                          "border-[color:var(--glass-border)] bg-[color:var(--glass-surface)]",
-                        isNextAction &&
-                          "border-[color:var(--glass-accent-deep)] shadow-[0_12px_30px_-24px_var(--glass-accent-deep)]",
-                      )}
-                    >
-                      <div className="flex size-8 shrink-0 items-center justify-center rounded-full text-sm font-medium">
-                        {completed ? (
-                          <CheckCircle2 className="size-6 text-[color:var(--success)]" />
-                        ) : isPending ? (
-                          <Clock className="size-5 text-[color:var(--glass-ink-soft)]" />
-                        ) : (
-                          <Circle className="size-5 text-[color:var(--glass-ink-soft)]" />
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-medium text-[color:var(--glass-ink)]">
-                            {idx + 1}. {itemTitle(item)}
-                          </span>
-                          {(() => {
-                            const org = itemOrganismeLabel(item);
-                            return org ? (
-                              <Badge
-                                variant="outline"
-                                className="text-xs"
-                                style={{ borderColor: org.color, color: org.color }}
-                              >
-                                {org.label}
-                              </Badge>
-                            ) : null;
-                          })()}
-                          {!item.required && (
-                            <Badge variant="secondary" className="text-xs">
-                              {t("optional")}
-                            </Badge>
-                          )}
-                          {item.triggered && (
-                            <Badge
-                              variant="outline"
-                              className="border-[color:var(--attention-border)] bg-[color:var(--attention-subtle)] text-xs text-[color:var(--attention-subtle-foreground)]"
-                            >
-                              {t("runnerTriggeredBadge")}
-                            </Badge>
-                          )}
-                        </div>
-                        {itemDescription(item) && (
-                          <p className="text-xs text-[color:var(--glass-ink-soft)] line-clamp-1 mt-0.5">
-                            {itemDescription(item)}
-                          </p>
-                        )}
-                        {item.condition && (
-                          <p className="text-[11px] text-[color:var(--glass-ink-soft)] mt-1 italic">
-                            {t("runnerConditionLabel")} {describeCondition(item.condition, templateNames, fieldLabels)}
-                          </p>
-                        )}
-                        {isPending && (
-                          <p className="mt-1 text-[11px] text-[color:var(--attention)]">
-                            {t("runnerPendingHint")}
-                          </p>
-                        )}
-                      </div>
-                      <Button
-                        size="sm"
-                        variant={completed || !isNextAction ? "outline" : "default"}
-                        onClick={() => handleStart(item)}
-                        disabled={isPending || starting || (PUBLIC_WRITES_PAUSED && !runId)}
-                      >
-                        {PUBLIC_WRITES_PAUSED
-                          ? tp(runId ? "consultDocument" : "paused")
-                          : completed
-                          ? t("edit")
-                          : starting
-                            ? t("runnerStarting")
-                            : t("complete")}
-                        {!completed && (
-                          <ArrowRight data-icon="inline-end" aria-hidden />
-                        )}
-                      </Button>
-                    </div>
-                  );
-                })}
-            </section>
-
-            {externalDocuments.length > 0 && (
-              <section className="glass-surface flex flex-col gap-2 rounded-3xl border border-[color:var(--attention-border)] p-4 sm:p-5">
-                  <h2 className="flex items-center gap-2 text-base font-semibold text-[color:var(--glass-ink)]">
-                    <Inbox className="size-4 text-[color:var(--attention)]" />
-                    {t("runnerExternalDocsTitle", { count: externalDocuments.length })}
-                  </h2>
-                  <p className="text-xs text-[color:var(--glass-ink-soft)]">
-                    {t("runnerExternalDocsNote")}
-                  </p>
-                  {externalDocuments.map((d) => (
-                    <div
-                      key={d.slug}
-                      className="flex items-start gap-3 rounded-2xl border border-[color:var(--attention-border)] bg-[color:var(--attention-subtle)] p-3"
-                    >
-                      <div className="flex size-8 shrink-0 items-center justify-center rounded-full">
-                        <Building2 className="size-5 text-[color:var(--attention)]" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-medium">{d.title}</span>
-                          <Badge
-                            variant="outline"
-                            className="border-[color:var(--attention-border)] text-xs text-[color:var(--attention-subtle-foreground)]"
-                          >
-                            {t(RESPONSIBILITY_LABEL_KEYS[d.responsibility] as Parameters<typeof t>[0])}
-                          </Badge>
-                          {!d.required && (
-                            <Badge variant="secondary" className="text-xs">
-                              {t("optional")}
-                            </Badge>
-                          )}
-                        </div>
-                        {d.responsibilityNote && (
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {d.responsibilityNote}
-                          </p>
-                        )}
-                        {d.responsibilityUrl && (
-                          <a
-                            href={d.responsibilityUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-xs text-primary underline underline-offset-2 mt-1 inline-block"
-                          >
-                            {t("runnerResponsibilityLinkLabel")}
-                          </a>
-                        )}
-                      </div>
-                      {(d.responsibility === "employer" ||
-                        d.responsibility === "external") && (
-                        <div className="flex-shrink-0">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleGenerateLetter(d)}
-                            disabled={generatingLetter === d.slug}
-                          >
-                            <Mail data-icon="inline-start" aria-hidden />
-                            {generatingLetter === d.slug
-                              ? t("runnerLetterGenerating")
-                              : t("runnerGenerateLetter")}
-                          </Button>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-              </section>
-            )}
-
-            {hiddenItems.length > 0 && (
-              <section className="flex flex-col gap-1.5 rounded-3xl border border-dashed border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] p-4">
-                  <h2 className="flex items-center gap-2 text-sm font-semibold text-[color:var(--glass-ink-soft)]">
-                    <EyeOff className="size-4" />
-                    {t("runnerHiddenDocsTitle", { count: hiddenItems.length })}
-                  </h2>
-                  {hiddenItems.map(({ item }) => (
-                    <div
-                      key={item.id}
-                      className="text-xs text-muted-foreground flex items-center gap-2"
-                    >
-                      <Circle className="size-3" />
-                      <span>{itemTitle(item)}</span>
-                      {item.condition && (
-                        <span className="italic">
-                          {t("runnerRequiredIf", {
-                            condition: describeCondition(item.condition, templateNames, fieldLabels),
-                          })}
-                        </span>
-                      )}
-                    </div>
-                  ))}
-              </section>
-            )}
-          </>
-        )}
-      </div>
-    </div>
-  );
+        </article>;
+      })}
+    </section>
+    {externalDocuments.length ? <section className="glass-surface p-5"><h2 className="text-xl font-semibold">{d("otherDocuments")}</h2><ul className="mt-4 grid gap-4">{externalDocuments.map(document => <li key={document.slug}><h3 className="font-semibold">{document.title}</h3><p className="mt-1 text-sm text-muted-foreground">{document.issuer}</p>{document.responsibilityNote ? <p className="mt-2 text-sm leading-relaxed">{document.responsibilityNote}</p> : null}{document.responsibilityUrl ? <a href={document.responsibilityUrl} className="inline-flex min-h-11 items-center text-sm text-primary underline">{d("sourceInformation")}</a> : null}</li>)}</ul></section> : null}
+    {runId && allRequiredDone ? <section id="recuperer-envoyer" className="glass-surface p-5"><h2 className="text-xl font-semibold">{t("roadmapStepSend")}</h2><p className="mt-2 text-sm text-muted-foreground">{t("roadmapStepSendBody")}</p><FeuilleDeRoutePanel documents={visibleItems.flatMap(({item,completed}) => completed && item.pdfForm ? [{slug:item.pdfForm.slug,title:itemTitle(item),href:`/document/${encodeURIComponent(item.pdfForm.slug)}?bundleRun=${encodeURIComponent(runId)}`,pdfFormId:item.pdfForm.id}] : [])} bundleRunId={runId} op={op} onOpChange={setOp} /></section> : null}
+    {runId && !allRequiredDone ? <p className="rounded-xl border p-4 text-sm text-muted-foreground">{d("downloadIncomplete")}</p> : null}
+    <p className="text-sm leading-relaxed text-muted-foreground">{d("preparedNotSent")}</p>
+  </section>;
 }

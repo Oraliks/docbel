@@ -1,8 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { PUBLIC_WRITES_PAUSED } from "@/lib/public-access";
 import { TemporaryClosureNotice } from "../temporary-closure-notice";
-import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -37,9 +37,10 @@ import {
 } from "@/lib/bundles/resume-code";
 
 export function ResumeForm() {
-  const tp = useTranslations("public.temporaryClosure");
   const router = useRouter();
   const t = useTranslations("public.dossier");
+  const design = useTranslations("public.design");
+  const tp = useTranslations("public.temporaryClosure");
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -50,6 +51,7 @@ export function ResumeForm() {
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
+    if (loading) return;
     setError(null);
     const finalCode = normalizeResumeCode(code);
 
@@ -86,7 +88,7 @@ export function ResumeForm() {
       };
       toast.success(t("resumeSuccess", { name: data.bundleName }));
       router.push(
-        `/d/${data.bundleSlug}?bundleRun=${encodeURIComponent(data.runId)}&demarrer=1`,
+        `/d/${encodeURIComponent(data.bundleSlug)}?bundleRun=${encodeURIComponent(data.runId)}`,
       );
     } catch {
       setError(t("networkErrorRetry"));
@@ -155,7 +157,7 @@ export function ResumeForm() {
                       variant="outline"
                       size="sm"
                     >
-                      {PUBLIC_WRITES_PAUSED ? tp("tools") : t("resumeStartDossier")}
+                      {PUBLIC_WRITES_PAUSED ? tp("tools") : design("findJourney")}
                       <ArrowRightIcon data-icon="inline-end" aria-hidden />
                     </Button>
                   </AlertDescription>
@@ -178,7 +180,7 @@ export function ResumeForm() {
                   aria-hidden
                 />
               ) : null}
-              {loading ? t("resumeSearching") : t("resume")}
+              {loading ? t("resumeSearching") : design("consultAnswers")}
               {!loading ? (
                 <ArrowRightIcon data-icon="inline-end" aria-hidden />
               ) : null}
@@ -196,7 +198,7 @@ export function ResumeForm() {
             <h2 className="text-xl font-semibold">{t("resumeNoCodeTitle")}</h2>
           </CardTitle>
           <CardDescription className="text-sm leading-relaxed">
-            {t("resumeNoCodeBody")}
+            {design("ephemeralBody")}
           </CardDescription>
         </CardHeader>
         <CardContent className="flex-1 px-5 sm:px-6">
@@ -206,13 +208,13 @@ export function ResumeForm() {
         </CardContent>
         <CardFooter className="border-0 bg-transparent px-5 pt-0 sm:px-6">
           <Button
-            render={<Link href={PUBLIC_WRITES_PAUSED ? "/outils" : "/mon-dossier"} />}
+            render={<Link href="/mon-dossier" />}
             nativeButton={false}
             variant="outline"
             size="lg"
             className="min-h-12 w-full text-base"
           >
-            {PUBLIC_WRITES_PAUSED ? tp("tools") : t("resumeStartDossier")}
+            {design("findJourney")}
             <ArrowRightIcon data-icon="inline-end" aria-hidden />
           </Button>
         </CardFooter>

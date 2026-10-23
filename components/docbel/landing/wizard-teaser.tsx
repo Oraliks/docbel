@@ -1,131 +1,76 @@
-"use client";
-
+import { cache } from "react";
 import Link from "next/link";
-import { useTranslations } from "next-intl";
-import {
-  Accessibility,
-  ArrowRight,
-  Briefcase,
-  GraduationCap,
-  HelpCircle,
-  Hourglass,
-  MapPinned,
-  UserMinus,
-  type LucideIcon,
-} from "lucide-react";
-import { buttonVariants } from "@/components/ui/button";
-import {
-  Card,
-  CardAction,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { WIZARD_SITUATIONS } from "@/lib/dossier-wizard/config";
-import { cn } from "@/lib/utils";
+import { getTranslations } from "next-intl/server";
+import { ArrowRight, Info } from "lucide-react";
+import { prisma } from "@/lib/prisma";
+import { canToolBeViewedBy, filterByAudience, getPublicCatalog } from "@/lib/outils-catalog";
+import { isAudienceId } from "@/lib/audience";
+import { getToolSlug } from "@/lib/docbel-data";
+import { glyphForTool } from "@/lib/tool-glyphs";
 
-const ICONS: Record<string, LucideIcon> = {
-  Briefcase,
-  GraduationCap,
-  Hourglass,
-  Accessibility,
-  HelpCircle,
-  UserMinus,
-  MapPinned,
-};
+/** Même catalogue public pour les deux zones, sans réintroduire un outil désactivé. */
+export const loadHomeCatalog = cache(async () => {
+  try {
+    const [catalog, t] = await Promise.all([getPublicCatalog(), getTranslations()]);
+    const citizenTools = filterByAudience(catalog, "citoyen");
+    // Les href statiques contournent historiquement la déduplication du catalogue.
+    // Le contrôle est borné au nombre exact de slugs concernés, sans nouvelle source.
+    const linkedSlugs = [...new Set(citizenTools.filter((tool) => tool.href).map(getToolSlug))];
+    const linkedRows = linkedSlugs.length > 0 ? await prisma.tool.findMany({
+      where: { slug: { in: linkedSlugs } },
+      select: { slug: true, active: true, audience: true },
+      take: linkedSlugs.length,
+    }) : [];
+    const disabledSlugs = new Set(linkedRows.filter((tool) => !tool.active || (isAudienceId(tool.audience) && !canToolBeViewedBy(tool.audience, "citoyen"))).map((tool) => tool.slug));
+    const seen = new Set<string>();
+    return citizenTools.filter((tool) => {
+      const slug = getToolSlug(tool);
+      if (disabledSlugs.has(slug) || seen.has(slug)) return false;
+      seen.add(slug);
+      return true;
+    }).map((tool) => ({
+      ...tool,
+      title: tool.titleKey ? t(tool.titleKey as Parameters<typeof t>[0]) : tool.title,
+      desc: tool.descKey ? t(tool.descKey as Parameters<typeof t>[0]) : tool.desc,
+      time: tool.timeKey ? t(tool.timeKey as Parameters<typeof t>[0]) : tool.time,
+    }));
+  } catch {
+    return null;
+  }
+});
 
-const FEATURED_SITUATIONS = WIZARD_SITUATIONS.slice(0, 6);
-const ACCENTS = [
-  "var(--glass-accent-deep)",
-  "var(--glass-pop-fg)",
-  "var(--glass-accent-c)",
-  "var(--glass-accent-d)",
-  "var(--info)",
-  "var(--glass-accent-b)",
-] as const;
-
-function resolveIcon(name: string): LucideIcon {
-  return ICONS[name] ?? HelpCircle;
-}
-
-export function WizardTeaser() {
-  const t = useTranslations("public.home");
-  const tc = useTranslations("public.dossierContent");
-  const resolve = (key: string | undefined, fallback: string): string => {
-    if (!key) return fallback;
-    try {
-      const value = tc(key as Parameters<typeof tc>[0]);
-      return value && value !== key ? value : fallback;
-    } catch {
-      return fallback;
-    }
-  };
-
+/** Trois outils réellement utilisables, issus du catalogue et de ses métadonnées. */
+export async function WizardTeaser() {
+  const [t, tools] = await Promise.all([getTranslations("public.home"), loadHomeCatalog()]);
+  const visible = [...(tools ?? [])].sort((a, b) => Number(b.popular) - Number(a.popular)).slice(0, 3);
   return (
-    <Card
-      aria-labelledby="wizard-teaser-heading"
-      className="rounded-[24px] py-5 sm:py-6"
-    >
-      <CardHeader className="gap-2 px-5 sm:px-7">
-        <CardTitle>
-          <h2
-            id="wizard-teaser-heading"
-            className="glass-display text-[25px] font-semibold leading-tight sm:text-[29px]"
-          >
-            {t("situationTitle")}
-          </h2>
-        </CardTitle>
-        <CardAction>
-          <Link
-            href="/chomage"
-            className={cn(
-              buttonVariants({ variant: "ghost", size: "sm" }),
-              "shrink-0 text-primary",
-            )}
-          >
-            <span className="sr-only sm:not-sr-only sm:inline">
-              {t("wizardHubLink")}
-            </span>
-            <ArrowRight data-icon="inline-end" className="rtl:rotate-180" aria-hidden />
-          </Link>
-        </CardAction>
-      </CardHeader>
-
-      <CardContent className="px-5 sm:px-7">
-        <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-          {FEATURED_SITUATIONS.map((situation, index) => {
-            const Icon = resolveIcon(situation.icon);
-            const label = resolve(situation.labelKey, situation.label);
-            const accent = ACCENTS[index % ACCENTS.length];
-
+    <section aria-labelledby="wizard-teaser-heading">
+      <div className="mb-5 flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h2 id="wizard-teaser-heading" className="text-[24px] font-semibold leading-tight tracking-[-0.025em] sm:text-[27px]">{t("designSituationsTitle")}</h2>
+          <p className="mt-2 text-sm leading-relaxed text-[color:var(--glass-ink-soft)]">{t("designSituationsDescription")}</p>
+        </div>
+        <Link href="/mon-dossier" className="inline-flex min-h-10 items-center gap-2 text-sm font-medium text-[color:var(--glass-accent-deep)] underline underline-offset-4"><ArrowRight className="size-4 rtl:rotate-180" aria-hidden />{t("designJourneys")}</Link>
+      </div>
+      {visible.length > 0 ? (
+        <ul className="grid gap-4 md:grid-cols-3">
+          {visible.map((tool) => {
+            const { Icon } = glyphForTool(tool);
             return (
-              <Link
-                key={situation.value}
-                href={`/mon-dossier?situation=${encodeURIComponent(situation.value)}`}
-                className="glass-interactive group flex min-h-[78px] items-center gap-3 rounded-2xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-3.5 py-3 outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)]"
-              >
-                <span
-                  aria-hidden
-                  className="flex size-10 shrink-0 items-center justify-center rounded-xl"
-                  style={{
-                    color: accent,
-                    background: `color-mix(in oklab, ${accent} 13%, transparent)`,
-                  }}
-                >
-                  <Icon strokeWidth={1.9} />
-                </span>
-                <span className="min-w-0 flex-1 text-[13px] font-semibold leading-snug text-[color:var(--glass-ink)]">
-                  {label}
-                </span>
-                <ArrowRight
-                  className="size-4 shrink-0 text-[color:var(--glass-ink-faint)] transition-transform group-hover:translate-x-0.5 rtl:rotate-180"
-                  aria-hidden
-                />
-              </Link>
+              <li key={tool.id} className="min-w-0">
+                <Link href={tool.href ?? `/outils/${getToolSlug(tool)}`} className="glass-surface glass-interactive group flex h-full min-h-[210px] flex-col rounded-[20px] border border-[color:var(--glass-border)] p-5 outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)] sm:p-6">
+                  <div className="mb-5 flex items-center justify-between gap-4">
+                    <span className="flex size-11 items-center justify-center rounded-xl bg-[color:var(--glass-accent-soft)] text-[color:var(--glass-accent-deep)]" aria-hidden><Icon className="size-5" /></span>
+                    <ArrowRight className="size-4 text-[color:var(--glass-ink-faint)] rtl:rotate-180" aria-hidden />
+                  </div>
+                  <h3 className="text-base font-semibold leading-snug tracking-[-0.02em]">{tool.title}</h3>
+                  <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-[color:var(--glass-ink-soft)]">{tool.desc}</p>
+                </Link>
+              </li>
             );
           })}
-        </div>
-      </CardContent>
-    </Card>
+        </ul>
+      ) : <p role={tools === null ? "status" : undefined} className="glass-surface flex items-start gap-3 rounded-[20px] border border-[color:var(--glass-border)] p-5 text-sm leading-relaxed text-[color:var(--glass-ink-soft)]"><Info className="mt-0.5 size-4 shrink-0" aria-hidden />{t(tools === null ? "designToolsUnavailable" : "designToolsEmpty")}</p>}
+    </section>
   );
 }

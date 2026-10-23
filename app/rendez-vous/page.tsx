@@ -1,6 +1,7 @@
 import { PUBLIC_WRITES_PAUSED } from "@/lib/public-access";
 import { TemporaryClosureNotice } from "@/components/docbel/temporary-closure-notice";
 import type { Metadata } from "next";
+import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { prisma } from "@/lib/prisma";
 import { RdvStepper } from "./rdv-stepper";
@@ -8,6 +9,10 @@ import { RdvStepper } from "./rdv-stepper";
 export const dynamic = "force-dynamic";
 
 export async function generateMetadata(): Promise<Metadata> {
+  if (PUBLIC_WRITES_PAUSED) {
+    const t = await getTranslations("public.temporaryClosure");
+    return { title: t("title"), description: t("booking") };
+  }
   const t = await getTranslations("public.dossier");
   return {
     title: t("rdvMetaTitle"),
@@ -45,12 +50,12 @@ export default async function RdvDiscoveryPage() {
         </p>
       </div>
       <RdvStepper tenants={tenants} />
-      <a
+      <Link
         href="/rendez-vous/guichets"
         className="text-[13px] text-[color:var(--glass-ink-soft)] underline-offset-2 hover:text-[color:var(--glass-ink)] hover:underline"
       >
         {t("rdvBrowseAll")}
-      </a>
+      </Link>
     </section>
   );
 }

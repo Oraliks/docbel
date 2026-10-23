@@ -14,16 +14,16 @@ interface FormShellProps {
 export function FormShell({ children, helpPanel, helpFirstOnMobile = false }: FormShellProps) {
   if (helpFirstOnMobile) {
     return (
-      <div className="grid w-full grid-cols-1 gap-5 lg:grid-cols-[320px_1fr]">
+      <div className="grid w-full grid-cols-1 items-start gap-5 lg:grid-cols-[280px_minmax(0,1fr)] xl:gap-8 xl:grid-cols-[300px_minmax(0,1fr)]">
         <div className="min-w-0">{helpPanel}</div>
         <div className="min-w-0">{children}</div>
       </div>
     );
   }
   return (
-    <div className="grid w-full grid-cols-1 gap-5 lg:grid-cols-[320px_1fr]">
+    <div className="grid w-full grid-cols-1 items-start gap-5 lg:grid-cols-[280px_minmax(0,1fr)] xl:gap-8 xl:grid-cols-[300px_minmax(0,1fr)]">
       <div className="min-w-0 lg:order-2">{children}</div>
-      <div className="lg:order-1">{helpPanel}</div>
+      <div className="order-first min-w-0 lg:order-1">{helpPanel}</div>
     </div>
   );
 }

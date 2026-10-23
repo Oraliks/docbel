@@ -1,13 +1,9 @@
 "use client";
 
-import { TemporaryClosureNotice } from "./temporary-closure-notice";
-import { PUBLIC_WRITES_PAUSED } from "@/lib/public-access";
 import Link from "next/link";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { TemporaryClosureNotice } from "./temporary-closure-notice";
 import { useLocale, useTranslations } from "next-intl";
-import { toast } from "sonner";
-import { ArrowRight, Download, FolderOpen, Plus, Trash2 } from "lucide-react";
+import { ArrowRight, Download, FolderOpen } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,7 +13,6 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty";
-import { useConfirm } from "@/components/ui/confirm-dialog";
 import { ProgressFeedback } from "@/components/docbel/progress-feedback";
 import { ResumeForm } from "@/components/docbel/onboarding/resume-form";
 import { formatDate } from "@/lib/i18n/format";
@@ -28,73 +23,24 @@ interface Props {
   groups: MesDemarchesGroup[];
 }
 
-/** Cockpit transversal et anonyme de toutes les demarches en cours. */
-export function MesDemarchesClient({ groups: initialGroups }: Props) {
+/** Existing caller-owned démarches remain available for consultation in V1. */
+export function MesDemarchesClient({ groups }: Props) {
   const tp = useTranslations("public.temporaryClosure");
   const t = useTranslations("public.dossier");
-  const router = useRouter();
-  const confirm = useConfirm();
-  const [groups, setGroups] = useState(initialGroups);
-  const [busyId, setBusyId] = useState<string | null>(null);
-
-  async function abandon(runId: string) {
-    if (busyId) return;
-    const ok = await confirm({
-      title: t("demandeAbandon"),
-      description: t("demandeAbandonConfirm"),
-      confirmText: t("demandeAbandon"),
-      destructive: true,
-    });
-    if (!ok) return;
-    setBusyId(runId);
-    try {
-      const res = await fetch(`/api/bundles/runs/${encodeURIComponent(runId)}`, {
-        method: "DELETE",
-      });
-      if (!res.ok && res.status !== 404) {
-        toast.error(t("demandeAbandonError"));
-        return;
-      }
-      setGroups((prev) =>
-        prev
-          .map((group) => ({
-            ...group,
-            demarches: group.demarches.filter((item) => item.runId !== runId),
-          }))
-          .filter((group) => group.demarches.length > 0),
-      );
-      router.refresh();
-    } catch {
-      toast.error(t("demandeAbandonError"));
-    } finally {
-      setBusyId(null);
-    }
-  }
+  const td = useTranslations("public.design");
 
   return (
     <section className="flex w-full flex-col gap-6">
-      {PUBLIC_WRITES_PAUSED && <TemporaryClosureNotice kind="existing" compact />}
+      <TemporaryClosureNotice kind="existing" compact />
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div className="flex flex-col gap-2">
           <h1 className="glass-display text-4xl font-semibold leading-tight sm:text-5xl">
             {t.rich("mesDemarchesTitle", { em: (chunks) => <em>{chunks}</em> })}
           </h1>
           <p className="max-w-2xl text-sm leading-relaxed text-[color:var(--glass-ink-soft)] sm:text-base">
-            {t("mesDemarchesSubtitle")}
+            {td("oldReadOnlyBody")}
           </p>
         </div>
-        {!PUBLIC_WRITES_PAUSED && groups.length > 0 ? (
-          <Button
-            render={<Link href="/mon-dossier" />}
-            nativeButton={false}
-            variant="outline"
-            size="lg"
-            className="min-h-11"
-          >
-            <Plus data-icon="inline-start" aria-hidden />
-            {t("demandeNew")}
-          </Button>
-        ) : null}
       </header>
 
       {groups.length === 0 ? (
@@ -112,11 +58,11 @@ export function MesDemarchesClient({ groups: initialGroups }: Props) {
           </EmptyHeader>
           <EmptyContent>
             <Button
-              render={<Link href={PUBLIC_WRITES_PAUSED ? "/outils" : "/mon-dossier"} />}
+              render={<Link href="/outils" />}
               nativeButton={false}
               size="lg"
             >
-              {PUBLIC_WRITES_PAUSED ? tp("tools") : t("mesDemarchesEmptyCta")}
+              {tp("tools")}
               <ArrowRight data-icon="inline-end" aria-hidden />
             </Button>
           </EmptyContent>
@@ -146,8 +92,6 @@ export function MesDemarchesClient({ groups: initialGroups }: Props) {
                     key={demarche.runId}
                     demarche={demarche}
                     slug={group.bundle.slug}
-                    busy={busyId === demarche.runId}
-                    onAbandon={() => abandon(demarche.runId)}
                   />
                 ))}
               </ul>
@@ -166,9 +110,7 @@ export function MesDemarchesClient({ groups: initialGroups }: Props) {
         </p>
       </section>
 
-      <p className="text-xs text-[color:var(--glass-ink-faint)]">
-        {t("mesDemarchesRetention")}
-      </p>
+
     </section>
   );
 }
@@ -176,24 +118,20 @@ export function MesDemarchesClient({ groups: initialGroups }: Props) {
 function DemarcheRow({
   demarche,
   slug,
-  busy,
-  onAbandon,
 }: {
   demarche: DemandeSummary;
   slug: string;
-  busy: boolean;
-  onAbandon: () => void;
 }) {
   const t = useTranslations("public.dossier");
+  const td = useTranslations("public.design");
   const locale = useLocale();
-  const tp = useTranslations("public.temporaryClosure");
   const completed = demarche.lifecycle === "completed_editable";
   const percentage = completed
     ? 100
     : demarche.total > 0
       ? Math.round((demarche.completed / demarche.total) * 100)
       : 0;
-  const resumeHref = `/d/${encodeURIComponent(slug)}?bundleRun=${encodeURIComponent(demarche.runId)}&demarrer=1`;
+  const resumeHref = `/d/${encodeURIComponent(slug)}?bundleRun=${encodeURIComponent(demarche.runId)}`;
   const retrieveHref = `/d/${encodeURIComponent(slug)}?bundleRun=${encodeURIComponent(demarche.runId)}#recuperer-envoyer`;
 
   return (
@@ -248,7 +186,7 @@ function DemarcheRow({
             render={<Link href={retrieveHref} />}
             nativeButton={false}
             size="sm"
-            className="min-h-10"
+            className="h-auto min-h-11 whitespace-normal py-2 text-start"
           >
             <Download data-icon="inline-start" aria-hidden />
             {t("mesDemarchesRetrieve")}
@@ -258,9 +196,9 @@ function DemarcheRow({
             render={<Link href={resumeHref} />}
             nativeButton={false}
             size="sm"
-            className="min-h-10"
+            className="h-auto min-h-11 whitespace-normal py-2 text-start"
           >
-            {PUBLIC_WRITES_PAUSED ? tp("consult") : t("demandeResume")}
+            {td("existingResume")}
             <ArrowRight data-icon="inline-end" aria-hidden />
           </Button>
         )}
@@ -270,22 +208,12 @@ function DemarcheRow({
             nativeButton={false}
             variant="outline"
             size="sm"
-            className="min-h-10"
+            className="h-auto min-h-11 whitespace-normal py-2 text-start"
           >
-            {t("demandeReview")}
+            {td("existingResume")}
           </Button>
         ) : null}
-        {!PUBLIC_WRITES_PAUSED && <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="min-h-10 text-destructive"
-          onClick={onAbandon}
-          disabled={busy}
-          aria-label={t("demandeAbandon")}
-        >
-          <Trash2 aria-hidden />
-        </Button>}
+
       </div>
     </li>
   );

@@ -7,7 +7,7 @@
 // Montée hors `.glass-root` (niveau racine) → on stylise via les tokens
 // `--glass-*` (définis sur :root/.dark) plutôt que par héritage.
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -22,6 +22,21 @@ export function CookieBanner() {
   const { consent, bannerOpen, prefsOpen, acceptAll, rejectAll, save, openPreferences } =
     useConsent();
 
+  const bannerRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const banner = bannerRef.current;
+    if (!banner) return;
+    const root = document.documentElement;
+    const update = () => root.style.setProperty("--docbel-consent-height", `${banner.getBoundingClientRect().height}px`);
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(banner);
+    return () => {
+      observer.disconnect();
+      root.style.removeProperty("--docbel-consent-height");
+    };
+  }, [bannerOpen, prefsOpen, pathname]);
+
   // Hors front public : pas de bannière (les traceurs ne tournent pas en /admin,
   // qui suit le design shadcn). Aligné sur WelcomeLocaleModal.
   if (pathname?.startsWith("/admin")) return null;
@@ -29,6 +44,8 @@ export function CookieBanner() {
 
   return (
     <div
+      ref={bannerRef}
+      data-docbel-consent-banner
       role="dialog"
       aria-modal="false"
       aria-label={t("title")}
@@ -36,10 +53,10 @@ export function CookieBanner() {
       // ses gouttières transparentes latérales n'avalent PAS les clics sur le
       // contenu situé derrière (liens catalogue, footer…). La carte réactive
       // les pointer-events (`pointer-events-auto`) pour ses propres boutons.
-      className="pointer-events-none fixed inset-x-0 bottom-0 z-[60] flex justify-center px-3 pb-3 sm:px-4 sm:pb-4"
+      className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex justify-center px-3 pb-3 sm:px-4 sm:pb-4"
     >
       <div
-        className="glass-surface-strong animate-fade-in-up pointer-events-auto w-full max-w-3xl rounded-2xl p-4 sm:p-5"
+        className="glass-surface-strong animate-fade-in-up pointer-events-auto max-h-[75dvh] w-full max-w-3xl overflow-y-auto rounded-2xl p-4 sm:p-5"
         style={{ color: "var(--glass-ink)" }}
       >
         <div className="flex items-start gap-3">

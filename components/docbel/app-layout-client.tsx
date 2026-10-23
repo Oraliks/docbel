@@ -7,7 +7,9 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useTheme } from "@/components/theme-provider";
 import { LandingFooter } from "./landing/footer";
-import { LandingHeader } from "./landing/header";
+import { LandingHeader, PublicBottomNav } from "./landing/header";
+import { isPublicJourney } from "@/lib/public-navigation";
+import { useTranslations } from "next-intl";
 import { AppStateContext } from "@/lib/app-state-context";
 import { getAudienceFromPath } from "@/lib/audience";
 import { TOOLS_DATA, getToolSlug } from "@/lib/docbel-data";
@@ -62,6 +64,7 @@ function resolveProSegment(
 
 export function AppLayoutClient({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const tDesign = useTranslations("public.design");
   const { resolvedTheme, setTheme } = useTheme();
   const { data: session } = useAuthSession();
   const siteSettings = useSiteSettings();
@@ -95,7 +98,7 @@ export function AppLayoutClient({ children }: { children: React.ReactNode }) {
   if (
     pathname.startsWith("/admin") ||
     pathname.startsWith("/login") ||
-    pathname === "/inscription" ||
+    (pathname === "/inscription" || pathname.startsWith("/inscription/")) ||
     pathname === "/mot-de-passe-oublie" ||
     pathname === "/reinitialiser-mot-de-passe"
   ) {
@@ -144,19 +147,18 @@ export function AppLayoutClient({ children }: { children: React.ReactNode }) {
       }}
     >
       <div className="glass-root">
+        <a href="#main-content" className="docbel-skip">{tDesign("skip")}</a>
         {/* Bandeau d'annonce : barre pleine largeur collée en haut, HORS du
             <main> (qui a une largeur max + padding) pour être edge-to-edge. */}
         <AnnouncementBanner />
-        <div className="mx-auto flex min-h-svh w-full max-w-[1840px] flex-col gap-4 px-4 pt-4 pb-10 sm:gap-6 sm:px-6 sm:pt-6 sm:pb-12 lg:px-12 2xl:px-16">
-          <LandingHeader
-            persona={audience}
-            onSearchOpen={() => setPaletteOpen(true)}
-          />
-          <main id="main-content" className="flex w-full flex-1 flex-col">
+        <LandingHeader persona={audience} onSearchOpen={() => setPaletteOpen(true)} />
+        <div className="docbel-public-shell flex min-h-[80svh] flex-col" data-journey={isPublicJourney(pathname)}>
+          <main id="main-content" tabIndex={-1} className="flex w-full flex-1 flex-col">
             {children}
           </main>
           <LandingFooter />
         </div>
+        {!isPublicJourney(pathname) ? <PublicBottomNav /> : null}
 
         {paletteOpen ? (
           <LandingCommandPalette

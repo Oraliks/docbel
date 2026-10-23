@@ -79,6 +79,7 @@ function submitLabel(
   submitting: boolean,
   bundleRunId: string | undefined,
   delivery: "download" | "doccle",
+  hasSignature: boolean,
 ) {
   const icon = submitting ? (
     <Loader2Icon className="size-4 animate-spin" />
@@ -94,14 +95,13 @@ function submitLabel(
     : bundleRunId
       ? t("runnerSubmitValidate")
       : delivery === "doccle"
-        ? t("runnerSubmitSignAndSend")
-        : t("runnerSubmitSignAndGenerate");
+        ? t(hasSignature ? "runnerSubmitSignAndSend" : "runnerSubmitSend")
+        : t(hasSignature ? "runnerSubmitSignAndGenerate" : "runnerSubmitGenerate");
   return { icon, texte };
 }
 
 /// Pied d'une étape INTERMÉDIAIRE : navigation seule.
 export function StepFooter({
-  variant,
   t,
   bundleRunId,
   serverSaved,
@@ -117,46 +117,21 @@ export function StepFooter({
   );
   const reset = <ResetFormButton onConfirm={resetForm} disabled={submitting} />;
 
-  if (variant === "compact") {
-    return (
-      <div className="flex flex-col gap-3 border-t border-[color:var(--glass-border)] pt-4">
-        <div className="flex flex-wrap items-center justify-end gap-3">
-          <div className="flex items-center gap-2">
-            {canGoPrevious && (
-              <Button type="button" variant="outline" className="rounded-full" onClick={onPrevious}>
-                <ChevronLeftIcon className="size-4" /> {t("previous")}
-              </Button>
-            )}
-            <Button type="button" className="rounded-full px-6" onClick={onContinue}>
-              {t("continue")} <ChevronRightIcon className="size-4" />
-            </Button>
-          </div>
-        </div>
-        <div className="flex items-center justify-between gap-2">
-          {notice}
-          {reset}
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="flex flex-col gap-3 border-t border-[color:var(--glass-ink-line)] pt-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+    <div data-docbel-step-actions className="sticky bottom-0 z-20 mt-auto flex flex-col gap-3 border-t border-[color:var(--glass-border)] bg-[color:var(--glass-surface-strong)] pt-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] lg:static lg:pb-0">
+      <div className="flex items-center justify-between gap-3">
         {notice}
-        <div className="flex flex-col items-end gap-2">
-          <div className="flex items-center gap-2">
-            {canGoPrevious && (
-              <Button type="button" variant="outline" className="min-h-12 rounded-full" onClick={onPrevious}>
-                <ChevronLeftIcon className="size-4" /> {t("previous")}
-              </Button>
-            )}
-            <Button type="button" className="min-h-12 rounded-full px-6" onClick={onContinue}>
-              {t("continue")} <ChevronRightIcon className="size-4" />
-            </Button>
-          </div>
-          {reset}
-        </div>
+        {reset}
+      </div>
+      <div className="flex flex-wrap items-stretch justify-end gap-3">
+        {canGoPrevious && (
+          <Button type="button" variant="ghost" className="min-h-12 rounded-xl px-3" onClick={onPrevious} disabled={submitting}>
+            <ChevronLeftIcon className="size-4 rtl:rotate-180" aria-hidden /> {t("previous")}
+          </Button>
+        )}
+        <Button type="button" className="min-h-12 flex-1 whitespace-normal rounded-xl px-6 sm:flex-none sm:min-w-44" onClick={onContinue} disabled={submitting}>
+          {t("continue")} <ChevronRightIcon className="size-4 shrink-0 rtl:rotate-180" aria-hidden />
+        </Button>
       </div>
     </div>
   );
@@ -188,9 +163,10 @@ export function SubmitFooter(props: SubmitFooterProps) {
   } = props;
 
   const compact = variant === "compact";
+  const design = useTranslations("public.design");
   const choixLivraison = !bundleRunId && allowDownload && allowDoccle;
   const destinataireDoccle = !bundleRunId && delivery === "doccle";
-  const { icon, texte } = submitLabel(t, submitting, bundleRunId, delivery);
+  const { icon, texte } = submitLabel(t, submitting, bundleRunId, delivery, hasSignature);
 
   const blocLivraison = choixLivraison && (
     <div className="flex flex-col gap-2">
@@ -283,6 +259,25 @@ export function SubmitFooter(props: SubmitFooterProps) {
     </div>
   );
 
+  // Les anciennes démarches restent consultables ; aucune action ne promet
+  // une sauvegarde refusée par le garde HTTP V1. Le téléchargement historique
+  // conserve sa destination dédiée dans le récapitulatif de la démarche.
+  if (bundleRunId) {
+    return (
+      <div className="mt-auto flex flex-col gap-4 border-t border-[color:var(--glass-border)] pt-4">
+        <div className="rounded-2xl border border-[color:var(--glass-info-border)] bg-[color:var(--glass-info-surface)] p-4 text-[color:var(--glass-info-ink)]">
+          <p className="font-semibold">{design("oldReadOnly")}</p>
+          <p className="mt-1 text-sm leading-relaxed">{design("oldReadOnlyBody")}</p>
+        </div>
+        {canGoPrevious && (
+          <Button type="button" variant="outline" className="min-h-12 self-start rounded-xl" onClick={onPrevious}>
+            <ChevronLeftIcon className="size-4 rtl:rotate-180" aria-hidden /> {t("previous")}
+          </Button>
+        )}
+      </div>
+    );
+  }
+
   const notice = (
     <AutoSaveNotice lastSavedAt={lastSavedAt} isPartOfBundle={!!bundleRunId} serverSaved={serverSaved} />
   );
@@ -297,18 +292,19 @@ export function SubmitFooter(props: SubmitFooterProps) {
         {blocSignature}
         {invalidSummary}
         {consentCheckbox}
+      <p className="text-sm leading-relaxed text-[color:var(--glass-ink-soft)]">{design("preparedNotSent")}</p>
         <div className="flex items-center justify-between gap-2">
           {notice}
           {reset}
         </div>
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[color:var(--glass-border)] pt-4">
-          <div className="flex flex-1 items-center justify-end gap-2 sm:flex-none">
+          <div className="flex flex-1 flex-wrap items-stretch justify-end gap-2 sm:flex-none">
             {canGoPrevious && (
-              <Button type="button" variant="outline" className="rounded-full" onClick={onPrevious}>
-                <ChevronLeftIcon className="size-4" /> {t("previous")}
+              <Button type="button" variant="outline" className="min-h-12 rounded-xl whitespace-normal" onClick={onPrevious} disabled={submitting}>
+                <ChevronLeftIcon className="size-4 rtl:rotate-180" aria-hidden /> {t("previous")}
               </Button>
             )}
-            <Button type="submit" disabled={submitting} className="rounded-full px-6">
+            <Button type="submit" disabled={submitting} className="min-h-12 whitespace-normal rounded-xl px-6">
               {icon}
               {texte}
             </Button>
@@ -325,6 +321,7 @@ export function SubmitFooter(props: SubmitFooterProps) {
       {blocSignature}
       {invalidSummary}
       {consentCheckbox}
+      <p className="text-sm leading-relaxed text-[color:var(--glass-ink-soft)]">{design("preparedNotSent")}</p>
       {liveTriggers && liveTriggers.length > 0 && (
         <p className="text-xs text-amber-700 dark:text-amber-300 mt-2">
           {t("runnerLiveTriggerNotice", {
@@ -339,13 +336,13 @@ export function SubmitFooter(props: SubmitFooterProps) {
       <div className="flex flex-wrap items-center justify-between gap-3">
         {notice}
         <div className="flex flex-col items-end gap-2">
-          <div className="flex items-center gap-2">
+          <div className="flex w-full flex-wrap items-stretch gap-2 sm:w-auto">
             {canGoPrevious && (
-              <Button type="button" variant="outline" className="min-h-12 rounded-full" onClick={onPrevious}>
-                <ChevronLeftIcon className="size-4" /> {t("previous")}
+              <Button type="button" variant="outline" className="min-h-12 rounded-xl whitespace-normal" onClick={onPrevious} disabled={submitting}>
+                <ChevronLeftIcon className="size-4 rtl:rotate-180" aria-hidden /> {t("previous")}
               </Button>
             )}
-            <Button type="submit" disabled={submitting} className="min-h-12 rounded-full px-6">
+            <Button type="submit" disabled={submitting} className="min-h-12 whitespace-normal rounded-xl px-6">
               {icon}
               {texte}
             </Button>

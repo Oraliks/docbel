@@ -12,7 +12,6 @@ import {
   LoaderCircleIcon,
   LockIcon,
   MailIcon,
-  UserPlusIcon,
 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
@@ -56,6 +55,7 @@ function destForRole(role: string | null | undefined): string {
 
 function LoginForm() {
   const t = useTranslations("public.auth");
+  const design = useTranslations("public.design");
   const router = useRouter();
   const searchParams = useSearchParams();
   const explicitNext = searchParams.get("next");
@@ -67,7 +67,7 @@ function LoginForm() {
   const [error, setError] = useState("");
 
   const fieldClass =
-    "w-full rounded-2xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] py-3 pr-4 pl-11 text-[14px] text-[color:var(--glass-ink)] placeholder:text-[color:var(--glass-ink-faint)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)]";
+    "w-full rounded-2xl border border-[color:var(--border)] bg-[color:var(--background)] py-3 pr-4 pl-11 text-[14px] text-[color:var(--foreground)] placeholder:text-[color:var(--muted-foreground)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--primary)]";
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -126,11 +126,11 @@ function LoginForm() {
       ) : null}
 
       <label className="flex flex-col gap-1.5">
-        <span className="text-[12px] font-bold uppercase tracking-[0.06em] text-[color:var(--glass-ink-soft)]">
+        <span className="text-[12px] font-bold uppercase tracking-[0.06em] text-[color:var(--muted-foreground)]">
           {t("emailLabel")}
         </span>
         <div className="relative">
-          <MailIcon className="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-[color:var(--glass-ink-faint)]" />
+          <MailIcon className="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-[color:var(--muted-foreground)]" />
           <input
             type="email"
             required
@@ -145,11 +145,11 @@ function LoginForm() {
       </label>
 
       <label className="flex flex-col gap-1.5">
-        <span className="text-[12px] font-bold uppercase tracking-[0.06em] text-[color:var(--glass-ink-soft)]">
+        <span className="text-[12px] font-bold uppercase tracking-[0.06em] text-[color:var(--muted-foreground)]">
           {t("passwordLabel")}
         </span>
         <div className="relative">
-          <LockIcon className="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-[color:var(--glass-ink-faint)]" />
+          <LockIcon className="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-[color:var(--muted-foreground)]" />
           <input
             type={showPassword ? "text" : "password"}
             required
@@ -163,7 +163,7 @@ function LoginForm() {
           <button
             type="button"
             onClick={() => setShowPassword((v) => !v)}
-            className="absolute top-1/2 right-3 -translate-y-1/2 text-[color:var(--glass-ink-faint)] transition hover:text-[color:var(--glass-ink)]"
+            className="absolute top-1/2 right-3 -translate-y-1/2 text-[color:var(--muted-foreground)] transition hover:text-[color:var(--foreground)]"
             aria-label={showPassword ? t("hide") : t("show")}
           >
             {showPassword ? (
@@ -178,7 +178,7 @@ function LoginForm() {
       <div className="flex justify-end">
         <Link
           href="/mot-de-passe-oublie"
-          className="text-[12.5px] font-semibold text-[color:var(--glass-accent-deep)] hover:underline"
+          className="text-[12.5px] font-semibold text-[color:var(--primary)] hover:underline"
         >
           {t("forgotPassword")}
         </Link>
@@ -189,8 +189,8 @@ function LoginForm() {
         disabled={loading || !email || !password}
         className="inline-flex w-full items-center justify-center gap-2 rounded-full px-6 py-3.5 text-[14px] font-bold transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
         style={{
-          background: "var(--glass-ink)",
-          color: "var(--glass-bg-a)",
+          background: "var(--foreground)",
+          color: "var(--primary-foreground)",
         }}
       >
         {loading ? (
@@ -201,22 +201,22 @@ function LoginForm() {
 
       {process.env.NEXT_PUBLIC_GOOGLE_AUTH_ENABLED === "true" ? (
         <>
-          <div className="relative flex items-center gap-3 text-[11px] font-bold uppercase tracking-[0.12em] text-[color:var(--glass-ink-faint)]">
+          <div className="relative flex items-center gap-3 text-[11px] font-bold uppercase tracking-[0.12em] text-[color:var(--muted-foreground)]">
             <span
               className="h-px flex-1"
-              style={{ background: "var(--glass-ink-line)" }}
+              style={{ background: "var(--border)" }}
             />
             {t("orContinueWith")}
             <span
               className="h-px flex-1"
-              style={{ background: "var(--glass-ink-line)" }}
+              style={{ background: "var(--border)" }}
             />
           </div>
           <div className="flex justify-center gap-3">
             <button
               type="button"
               onClick={handleGoogle}
-              className="flex size-12 items-center justify-center rounded-full border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] transition hover:bg-[color:var(--glass-surface-strong)]"
+              className="flex size-12 items-center justify-center rounded-full border border-[color:var(--border)] bg-[color:var(--background)] transition hover:bg-[color:var(--card)]"
               aria-label={t("continueWithGoogle")}
             >
               <svg className="size-5" viewBox="0 0 24 24" aria-hidden="true">
@@ -242,16 +242,11 @@ function LoginForm() {
         </>
       ) : null}
 
-      {!PUBLIC_WRITES_PAUSED && <p className="mt-2 text-center text-[12.5px] text-[color:var(--glass-ink-soft)]">
-        {t("noAccountYet")}{" "}
-        <Link
-          href="/inscription"
-          className="inline-flex items-center gap-1 font-bold text-[color:var(--glass-accent-deep)] hover:underline"
-        >
-          <UserPlusIcon className="size-3.5" />
-          {t("signUp")}
-        </Link>
-      </p>}
+      {PUBLIC_WRITES_PAUSED && (
+        <p className="mt-2 text-center text-sm leading-relaxed text-muted-foreground">
+          {design("registrationClosedBody")}
+        </p>
+      )}
     </form>
   );
 }
@@ -264,7 +259,7 @@ function LoginPageContent() {
         className="relative hidden items-center justify-center overflow-hidden p-10 lg:flex"
         style={{
           backgroundImage:
-            "radial-gradient(ellipse at 30% 30%, var(--glass-accent-d) 0%, transparent 60%), linear-gradient(135deg, var(--glass-accent-c) 0%, var(--glass-accent-a) 60%, var(--glass-accent-deep) 100%)",
+            "radial-gradient(ellipse at 30% 30%, var(--muted) 0%, transparent 60%), linear-gradient(135deg, var(--secondary) 0%, var(--primary) 60%, var(--primary) 100%)",
         }}
       >
         <div
@@ -282,36 +277,36 @@ function LoginPageContent() {
               <div className="mb-1 flex items-center justify-between">
                 <span
                   className="text-[10px] font-extrabold tracking-[0.12em]"
-                  style={{ color: "var(--glass-accent-a)" }}
+                  style={{ color: "var(--primary)" }}
                 >
                   DOCBEL
                 </span>
                 <span
                   className="text-[10px] font-bold"
-                  style={{ color: "var(--glass-accent-a)" }}
+                  style={{ color: "var(--primary)" }}
                 >
                   ● ● ●
                 </span>
               </div>
-              <div className="h-1.5 w-3/4 rounded-full bg-[color:var(--glass-accent-a)]/20" />
-              <div className="h-1.5 rounded-full bg-[color:var(--glass-accent-a)]/20" />
-              <div className="h-1.5 w-1/2 rounded-full bg-[color:var(--glass-accent-a)]/20" />
-              <div className="h-1.5 rounded-full bg-[color:var(--glass-accent-a)]/20" />
-              <div className="h-1.5 w-3/4 rounded-full bg-[color:var(--glass-accent-a)]/20" />
+              <div className="h-1.5 w-3/4 rounded-full bg-[color:var(--primary)]/20" />
+              <div className="h-1.5 rounded-full bg-[color:var(--primary)]/20" />
+              <div className="h-1.5 w-1/2 rounded-full bg-[color:var(--primary)]/20" />
+              <div className="h-1.5 rounded-full bg-[color:var(--primary)]/20" />
+              <div className="h-1.5 w-3/4 rounded-full bg-[color:var(--primary)]/20" />
               <div
                 className="absolute right-3 bottom-3 size-10 rounded-xl"
                 style={{
                   backgroundImage:
-                    "linear-gradient(135deg, var(--glass-accent-a), var(--glass-accent-c))",
+                    "linear-gradient(135deg, var(--primary), var(--secondary))",
                 }}
               />
             </div>
             <div
               className="absolute -right-12 top-32 flex w-[140px] flex-col gap-1.5 rotate-[10deg] rounded-xl bg-white/95 p-3 shadow-[0_12px_30px_rgba(40,15,80,0.25)]"
             >
-              <div className="h-1 rounded-full bg-[color:var(--glass-accent-a)]/20" />
-              <div className="h-1 w-1/2 rounded-full bg-[color:var(--glass-accent-a)]/20" />
-              <div className="h-1 w-3/4 rounded-full bg-[color:var(--glass-accent-a)]/20" />
+              <div className="h-1 rounded-full bg-[color:var(--primary)]/20" />
+              <div className="h-1 w-1/2 rounded-full bg-[color:var(--primary)]/20" />
+              <div className="h-1 w-3/4 rounded-full bg-[color:var(--primary)]/20" />
             </div>
           </div>
           <div className="relative max-w-sm">
@@ -329,7 +324,7 @@ function LoginPageContent() {
       <main className="relative flex flex-col p-6 sm:p-10 lg:p-14">
         <Link
           href="/"
-          className="inline-flex w-fit items-center gap-2 rounded-full border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-4 py-2 text-[12.5px] font-semibold text-[color:var(--glass-ink-soft)] transition hover:bg-[color:var(--glass-surface-strong)]"
+          className="inline-flex w-fit items-center gap-2 rounded-full border border-[color:var(--border)] bg-[color:var(--background)] px-4 py-2 text-[12.5px] font-semibold text-[color:var(--muted-foreground)] transition hover:bg-[color:var(--card)]"
         >
           <ArrowLeftIcon className="size-4" />
           {t("backToHome")}
@@ -337,13 +332,13 @@ function LoginPageContent() {
 
         <div className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center py-10">
           <header className="mb-8 flex flex-col gap-2 text-center sm:text-left">
-            <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[color:var(--glass-ink-faint)]">
+            <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[color:var(--muted-foreground)]">
               {t("welcomeEyebrow")}
             </p>
             <h1 className="glass-display text-[40px] font-semibold leading-[1.05] sm:text-[48px]">
               {t("title")}
             </h1>
-            <p className="text-[14px] text-[color:var(--glass-ink-soft)]">
+            <p className="text-[14px] text-[color:var(--muted-foreground)]">
               {t("subtitle")}
             </p>
           </header>
@@ -357,11 +352,11 @@ function LoginPageContent() {
 
 export default function LoginPage() {
   return (
-    <div className="glass-root">
+    <div className="bg-background text-foreground">
       <Suspense
         fallback={
           <div className="flex min-h-screen items-center justify-center">
-            <LoaderCircleIcon className="size-8 animate-spin text-[color:var(--glass-ink-soft)]" />
+            <LoaderCircleIcon className="size-8 animate-spin text-[color:var(--muted-foreground)]" />
           </div>
         }
       >

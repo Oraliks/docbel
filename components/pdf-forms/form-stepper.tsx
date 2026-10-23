@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import { AlertCircle, CheckCircle2 } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { SpeechButton } from "@/components/docbel/speech-button";
 import { ProgressFeedback } from "@/components/docbel/progress-feedback";
 import { cn } from "@/lib/utils";
 
@@ -23,6 +24,7 @@ interface FormStepperProps {
   activeIndex: number;
   onSelect: (index: number) => void;
   showNavigation?: boolean;
+  locale?: string;
 }
 
 /// Mouvement réduit : la préférence système NE SUFFIT PAS ici, le projet
@@ -37,7 +39,7 @@ function prefersReducedMotion(): boolean {
 }
 
 /** Progression lisible : l'étape active est prioritaire, la navigation complète reste secondaire. */
-export function FormStepper({ steps, activeIndex, onSelect, showNavigation = true }: FormStepperProps) {
+export function FormStepper({ steps, activeIndex, onSelect, showNavigation = true, locale }: FormStepperProps) {
   const t = useTranslations("public.dossier");
   const total = steps.length;
   const activeStep = steps[activeIndex];
@@ -83,6 +85,7 @@ export function FormStepper({ steps, activeIndex, onSelect, showNavigation = tru
     // parent (pdf-form-runner.tsx) directement sous ce composant.
     return (
       <div className="flex flex-col gap-2 py-3" data-docbel-readable>
+        {activeStep?.label && <SpeechButton text={activeStep.label} locale={locale} className="self-start rounded-xl" />}
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2 sm:flex-nowrap sm:gap-x-5">
           <span className="shrink-0 rounded-full bg-[color:var(--glass-pop-bg)] px-4 py-2 text-sm font-bold text-[color:var(--glass-accent-deep)]">
             {t("runnerStepCounter", { current: activeIndex + 1, total })}
@@ -92,7 +95,7 @@ export function FormStepper({ steps, activeIndex, onSelect, showNavigation = tru
               libellé n'apparaît PAS ici : il vit dans le corps, sur le champ
               lui-même — l'en-tête reste une barre de progression compacte. */}
           {activeStep?.label && (
-            <h2 className="min-w-0 flex-1 truncate text-xl font-bold leading-tight text-[color:var(--glass-ink)] sm:flex-initial">
+            <h2 className="min-w-0 flex-1 text-xl font-bold leading-tight text-[color:var(--glass-ink)] sm:flex-initial">
               {activeStep.label}
             </h2>
           )}
@@ -114,7 +117,7 @@ export function FormStepper({ steps, activeIndex, onSelect, showNavigation = tru
           // (cf. MacroRunnerBody, question seule sur son étape) — un texte
           // recopié du PDF officiel peut être long, et le bandeau compact n'a
           // pas la hauteur d'une étape détaillée.
-          <p className="line-clamp-2 text-base leading-relaxed text-[color:var(--glass-ink-soft)]">
+          <p className="text-base leading-relaxed text-[color:var(--glass-ink-soft)]">
             {activeStep.description ?? activeStep.subLabel}
           </p>
         )}
@@ -124,6 +127,7 @@ export function FormStepper({ steps, activeIndex, onSelect, showNavigation = tru
 
   return (
     <div className="flex flex-col gap-4 py-3" data-docbel-readable>
+      {activeStep?.label && <SpeechButton text={activeStep.label} locale={locale} className="self-start rounded-xl" />}
       <div className="flex flex-col gap-2">
         <span className="text-base font-bold text-[color:var(--glass-accent-deep)]">
           {t("runnerStepCounter", { current: activeIndex + 1, total })}
@@ -187,7 +191,7 @@ export function FormStepper({ steps, activeIndex, onSelect, showNavigation = tru
                   aria-label={status ? `${index + 1}. ${step.label} — ${status}` : `${index + 1}. ${step.label}`}
                   className={cn(
                     // min-h-11 = 44 px : cible tactile minimale sur mobile.
-                    "flex min-h-11 items-center gap-2 rounded-xl border px-3 py-2 text-left text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 sm:min-h-12 sm:w-full sm:gap-3 sm:text-base",
+                    "flex min-h-12 items-center gap-2 rounded-xl border px-3 py-2 text-left text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 sm:min-h-12 sm:w-full sm:gap-3 sm:text-base",
                     isActive
                       ? "border-[color:var(--glass-accent-deep)] bg-[color:var(--glass-pop-bg)] font-bold text-[color:var(--glass-ink)]"
                       : "border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] text-[color:var(--glass-ink-soft)] hover:border-[color:var(--glass-accent-deep)]",
@@ -198,7 +202,7 @@ export function FormStepper({ steps, activeIndex, onSelect, showNavigation = tru
                     className={cn(
                       "relative flex size-7 shrink-0 items-center justify-center rounded-full text-sm font-bold sm:size-8",
                       isActive
-                        ? "bg-[color:var(--glass-accent-deep)] text-white"
+                        ? "bg-[color:var(--glass-accent-deep)] text-primary-foreground"
                         : "bg-[color:var(--glass-pop-bg)] text-[color:var(--glass-ink-soft)]",
                     )}
                   >
@@ -207,7 +211,7 @@ export function FormStepper({ steps, activeIndex, onSelect, showNavigation = tru
                   {/* Le libellé reste visible sur mobile (un simple numéro ne
                       dit pas ce que contient l'étape) mais borné à 10 rem pour
                       que plusieurs pastilles tiennent dans le champ visible. */}
-                  <span className="min-w-0 max-w-40 truncate sm:max-w-none sm:flex-1">{step.label}</span>
+                  <span className="min-w-0 max-w-48 whitespace-normal sm:max-w-none sm:flex-1">{step.label}</span>
                   {step.hasError ? (
                     // Pastille ronde rouge remplacée par une icône : un point de
                     // couleur ne signifiait rien sans la percevoir.

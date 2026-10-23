@@ -1,8 +1,10 @@
 "use client";
 
+import { useLocale, useTranslations } from "next-intl";
 import { PUBLIC_WRITES_PAUSED } from "@/lib/public-access";
 import { TemporaryClosureNotice } from "@/components/docbel/temporary-closure-notice";
-import { useTranslations } from "next-intl";
+
+import { formatDateTime } from "@/lib/i18n/format";
 
 interface AutoSaveNoticeProps {
   lastSavedAt: Date | null;
@@ -18,24 +20,25 @@ interface AutoSaveNoticeProps {
   serverSaved: boolean;
 }
 
-/// Surface visuelle de l'auto-save (debounce 1500ms côté PdfFormRunner) —
-/// n'introduit AUCUNE nouvelle logique de sauvegarde. Le texte s'adapte à la
-/// réalité : « enregistrées automatiquement » seulement quand c'est vrai.
+/// Mention factuelle : une capacité ou une session ne vaut jamais confirmation
+/// de sauvegarde. En V1 publique, le runner fournit toujours serverSaved=false.
 export function AutoSaveNotice({ lastSavedAt, isPartOfBundle, serverSaved }: AutoSaveNoticeProps) {
   const t = useTranslations("public.contenu");
+  const design = useTranslations("public.design");
+  const locale = useLocale();
 
-  if (PUBLIC_WRITES_PAUSED) return <TemporaryClosureNotice kind={isPartOfBundle ? "existing" : "ephemeral"} compact />;
+  if (PUBLIC_WRITES_PAUSED) {
+    return <TemporaryClosureNotice kind={isPartOfBundle ? "existing" : "ephemeral"} compact />;
+  }
 
-  if (!serverSaved) {
+  if (!serverSaved || !lastSavedAt) {
     return (
       <p className="text-xs text-[color:var(--glass-ink-soft)]">
-        {t("autoSaveLocalOnly")}
+        {isPartOfBundle ? design("oldReadOnlyBody") : design("ephemeralTitle")}
       </p>
     );
   }
-  const time = lastSavedAt
-    ? lastSavedAt.toLocaleTimeString("fr-BE", { hour: "2-digit", minute: "2-digit" })
-    : "none";
+  const time = formatDateTime(lastSavedAt, locale);
   return (
     <p className="text-xs text-[color:var(--glass-ink-soft)]">
       {t("autoSaveSaved", { time })}

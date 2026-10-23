@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useLocale, useTranslations } from "next-intl";
+import { useRouter } from "next/navigation";
 import {
   CheckIcon,
   ChevronRightIcon,
@@ -24,34 +25,12 @@ import {
 import { Button } from "@/components/ui/button";
 import "flag-icons/css/flag-icons.min.css";
 
-const COPY = {
-  title:      { fr: "Choisir la langue",          nl: "Taal kiezen",                    en: "Choose language" },
-  subtitle:   { fr: "Sélectionnez votre langue préférée pour continuer.",
-                nl: "Selecteer uw voorkeurstaal om door te gaan.",
-                en: "Select your preferred language to continue." },
-  search:     { fr: "Rechercher une langue…",      nl: "Zoek een taal…",                 en: "Search a language…" },
-  disclaimer: { fr: "Les traductions sont générées par IA et peuvent contenir des erreurs. La version française est la seule source officielle sans erreur.",
-                nl: "Vertalingen zijn AI-gegenereerd en kunnen fouten bevatten. De Franse versie is de enige officiële bron zonder fouten.",
-                en: "Translations are AI-generated and may contain errors. The French version is the only official error-free source." },
-  privacy:    { fr: "Vos préférences linguistiques seront enregistrées.",
-                nl: "Uw taalvoorkeur wordt opgeslagen.",
-                en: "Your language preference will be saved." },
-  cta:        { fr: "Continuer",                   nl: "Doorgaan",                       en: "Continue" },
-  loading:    { fr: "Changement de langue…",       nl: "Taal wijzigen…",                 en: "Switching language…" },
-  empty:      { fr: "Aucune langue trouvée.",      nl: "Geen taal gevonden.",             en: "No language found." },
-};
-
-function t(key: keyof typeof COPY, locale: string): string {
-  const map = COPY[key] as Record<string, string>;
-  return map[locale] ?? map.fr;
-}
-
 // Identité stable entre deux saisies : le bouton ne doit pas être remonté
 // à chaque rendu du sélecteur et perdre son focus clavier.
 function LocaleCloseButton() {
   const translate = useTranslations("public.dossier");
   return (
-    <DialogClose className="flex size-8 shrink-0 items-center justify-center rounded-lg opacity-60 transition-opacity hover:bg-accent hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring">
+    <DialogClose className="flex size-11 shrink-0 items-center justify-center rounded-lg opacity-60 transition-opacity hover:bg-accent hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring">
       <XIcon className="size-4" />
       <span className="sr-only">{translate("close")}</span>
     </DialogClose>
@@ -68,16 +47,19 @@ export function LocaleSwitcher({
 }: {
   localeList?: readonly Locale[];
   className?: string;
-  /** Drapeau + trigger réduits — pour les emplacements discrets (footer). */
+  /** Espacement réduit pour les emplacements discrets, nom de langue toujours visible. */
   compact?: boolean;
   /** Ouverture pilotée par le parent (ex: item de menu). Si fourni, le composant
    *  devient contrôlé et n'utilise plus son state interne. */
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
-  /** false = ne rend pas le drapeau-trigger (le parent ouvre le dialog). */
+  /** false = ne rend pas le déclencheur (le parent ouvre le dialog). */
   renderTrigger?: boolean;
 } = {}) {
   const current = useLocale() as Locale;
+  const t = useTranslations("public.localeSwitcher");
+  const router = useRouter();
+  const [error, setError] = useState(false);
   const [pending, startTransition] = useTransition();
   const [internalOpen, setInternalOpen] = useState(false);
   const isControlled = controlledOpen !== undefined;
@@ -86,6 +68,7 @@ export function LocaleSwitcher({
   const [search, setSearch] = useState("");
 
   function handleOpenChange(v: boolean) {
+    setError(false);
     if (v) {
       setSelected(current);
       setSearch("");
@@ -96,10 +79,15 @@ export function LocaleSwitcher({
 
   function confirm() {
     if (selected === current) { handleOpenChange(false); return; }
-    handleOpenChange(false);
+    setError(false);
     startTransition(async () => {
-      await setLocale(selected);
-      window.location.reload();
+      try {
+        await setLocale(selected);
+        router.refresh();
+        handleOpenChange(false);
+      } catch {
+        setError(true);
+      }
     });
   }
 
@@ -112,20 +100,14 @@ export function LocaleSwitcher({
       <Dialog open={open} onOpenChange={handleOpenChange}>
         {renderTrigger && (
           <DialogTrigger
-            aria-label={t("title", current)}
-            className={`inline-flex cursor-pointer items-center gap-1.5 rounded-lg font-medium outline-none transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 ${
+            aria-label={`${t("title")} : ${localeNames[current]}`}
+            className={`inline-flex min-h-11 cursor-pointer items-center gap-1.5 rounded-lg font-medium outline-none transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 ${
               compact ? "px-1.5 py-1 text-xs" : "px-2.5 py-1.5 text-sm"
             } ${className}`}
             disabled={pending}
           >
-            <span
-              className={`fi fi-${localeCountryCodes[current]} rounded-sm`}
-              style={
-                compact
-                  ? { width: "1em", height: "0.75em", display: "inline-block" }
-                  : { width: "1.25em", height: "0.9375em", display: "inline-block" }
-              }
-            />
+            <GlobeIcon className="size-4 shrink-0" aria-hidden />
+            <bdi lang={current}>{localeNames[current]}</bdi>
             {pending && <LoaderCircleIcon className="size-3.5 animate-spin opacity-60" />}
           </DialogTrigger>
         )}
@@ -133,12 +115,12 @@ export function LocaleSwitcher({
         {/* showCloseButton=false : on gère notre propre croix pour éviter le chevauchement */}
         <DialogContent showCloseButton={false} className="gap-0 overflow-hidden p-0 sm:max-w-2xl">
           {/* Titre accessible (sr-only) — toujours dans le DOM */}
-          <DialogTitle className="sr-only">{t("title", current)}</DialogTitle>
+          <DialogTitle className="sr-only">{t("title")}</DialogTitle>
 
-          <div className="flex h-[82dvh] flex-col sm:h-[520px] sm:flex-row">
+          <div className="flex h-[82dvh] max-h-[calc(100dvh-2rem)] flex-col sm:h-[520px] sm:flex-row">
 
             {/* ════ PANNEAU GAUCHE — desktop ════ */}
-            <div className="hidden w-60 shrink-0 flex-col border-r bg-muted/20 p-6 sm:flex">
+            <div className="hidden w-60 shrink-0 flex-col overflow-y-auto border-e bg-muted/20 p-6 sm:flex">
               {/* Globe + croix */}
               <div className="mb-4 flex items-start justify-between">
                 <div className="flex size-11 items-center justify-center rounded-full bg-primary/10">
@@ -148,21 +130,22 @@ export function LocaleSwitcher({
               </div>
 
               <p aria-hidden="true" className="text-xl font-bold leading-tight">
-                {t("title", current)}
+                {t("title")}
               </p>
               <p className="mt-2 text-sm text-muted-foreground">
-                {t("subtitle", current)}
+                {t("subtitle")}
               </p>
 
               {/* Recherche */}
               <div className="relative mt-4">
-                <SearchIcon className="absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+                <SearchIcon className="absolute start-3 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
                 <input
                   type="text"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  placeholder={t("search", current)}
-                  className="w-full rounded-lg border bg-background py-2 pl-8 pr-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  aria-label={t("search")}
+                  placeholder={t("search")}
+                  className="min-h-11 w-full rounded-lg border bg-background py-2 ps-8 pe-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 />
               </div>
 
@@ -171,7 +154,7 @@ export function LocaleSwitcher({
                 <div className="flex gap-2">
                   <InfoIcon className="mt-0.5 size-3.5 shrink-0 text-amber-600 dark:text-amber-400" />
                   <p className="text-xs leading-relaxed text-amber-800 dark:text-amber-300">
-                    {t("disclaimer", current)}
+                    {t("disclaimer")}
                   </p>
                 </div>
               </div>
@@ -179,7 +162,7 @@ export function LocaleSwitcher({
               {/* Note confidentialité */}
               <div className="mt-auto flex items-start gap-2 text-xs text-muted-foreground">
                 <ShieldIcon className="mt-0.5 size-4 shrink-0 text-primary/40" />
-                <span>{t("privacy", current)}</span>
+                <span>{t("privacy")}</span>
               </div>
             </div>
 
@@ -189,7 +172,7 @@ export function LocaleSwitcher({
                 <GlobeIcon className="size-4 text-primary" />
               </div>
               <p aria-hidden="true" className="flex-1 text-base font-bold">
-                {t("title", current)}
+                {t("title")}
               </p>
               <LocaleCloseButton />
             </div>
@@ -197,19 +180,20 @@ export function LocaleSwitcher({
             {/* ════ RECHERCHE + DISCLAIMER — mobile ════ */}
             <div className="shrink-0 space-y-2 p-3 sm:hidden">
               <div className="relative">
-                <SearchIcon className="absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+                <SearchIcon className="absolute start-3 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
                 <input
                   type="text"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  placeholder={t("search", current)}
-                  className="w-full rounded-lg border bg-background py-2 pl-8 pr-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  aria-label={t("search")}
+                  placeholder={t("search")}
+                  className="min-h-11 w-full rounded-lg border bg-background py-2 ps-8 pe-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 />
               </div>
               <div className="flex items-start gap-2 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 dark:border-amber-800 dark:bg-amber-950/40">
                 <InfoIcon className="mt-0.5 size-3.5 shrink-0 text-amber-600 dark:text-amber-400" />
                 <p className="text-[11px] leading-relaxed text-amber-800 dark:text-amber-300">
-                  {t("disclaimer", current)}
+                  {t("disclaimer")}
                 </p>
               </div>
             </div>
@@ -224,41 +208,45 @@ export function LocaleSwitcher({
                       key={l}
                       type="button"
                       onClick={() => setSelected(l)}
-                      className={`flex w-full items-center gap-3 border-b px-4 py-3.5 text-left text-sm transition-colors last:border-0 hover:bg-accent/60 ${
+                      aria-pressed={isActive}
+                      className={`flex w-full items-center gap-3 border-b px-4 py-3.5 text-start text-sm transition-colors last:border-0 hover:bg-accent/60 ${
                         isActive ? "bg-primary/5" : ""
                       }`}
                     >
                       <span
+                        aria-hidden="true"
                         className={`fi fi-${localeCountryCodes[l]} shrink-0 rounded-sm shadow-sm`}
                         style={{ width: "1.5em", height: "1.125em", display: "inline-block" }}
                       />
-                      <span className="flex-1 font-medium">{localeNames[l]}</span>
+                      <bdi lang={l} className="flex-1 font-medium">{localeNames[l]}</bdi>
                       {isActive ? (
                         <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-primary">
                           <CheckIcon className="size-3.5 text-primary-foreground" />
                         </span>
                       ) : (
-                        <ChevronRightIcon className="size-4 shrink-0 text-muted-foreground" />
+                        <ChevronRightIcon className="size-4 shrink-0 text-muted-foreground rtl:rotate-180" aria-hidden />
                       )}
                     </button>
                   );
                 })}
                 {filtered.length === 0 && (
                   <p className="px-4 py-10 text-center text-sm text-muted-foreground">
-                    {t("empty", current)}
+                    {t("empty")}
                   </p>
                 )}
               </div>
 
+              {error && <p role="alert" className="px-4 py-2 text-sm text-destructive">{t("error")}</p>}
+
               {/* Pied : note confidentialité (mobile) + bouton Continuer */}
-              <div className="flex shrink-0 items-center justify-between border-t p-4">
+              <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t p-4">
                 <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground sm:hidden">
                   <ShieldIcon className="size-3.5 shrink-0 text-primary/40" />
-                  <span>{t("privacy", current)}</span>
+                  <span>{t("privacy")}</span>
                 </div>
-                <Button onClick={confirm} disabled={pending} className="ml-auto">
+                <Button onClick={confirm} disabled={pending} className="ms-auto min-h-11">
                   {pending ? <LoaderCircleIcon className="animate-spin" /> : null}
-                  {t("cta", current)} →
+                  {t("cta")}
                 </Button>
               </div>
             </div>
@@ -268,10 +256,10 @@ export function LocaleSwitcher({
       </Dialog>
 
       {pending && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-background/60 backdrop-blur-sm transition-opacity">
+        <div role="status" aria-live="polite" className="fixed inset-0 z-[9999] flex items-center justify-center bg-background/60 backdrop-blur-sm transition-opacity">
           <div className="flex items-center gap-3 rounded-xl bg-card px-5 py-3 shadow-lg ring-1 ring-border">
             <LoaderCircleIcon className="size-5 animate-spin text-primary" />
-            <span className="text-sm font-medium">{t("loading", current)}</span>
+            <span className="text-sm font-medium">{t("loading")}</span>
           </div>
         </div>
       )}

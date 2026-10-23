@@ -415,8 +415,46 @@ function PdfFieldControl({
     );
   }
 
-  // Select / radio (3+ options) : liste déroulante (compact), inchangé.
-  if (field.type === "select" || field.type === "radio") {
+  // Choix tous visibles, navigation native au clavier et aucune avance automatique.
+  if (field.type === "radio") {
+    return (
+      <Field data-invalid={invalid} className="gap-3" onFocus={notifyFocus}>
+        <FieldLabel id={labelId} className="text-base font-semibold">
+          <LabelWithTooltip label={label} labelShort={labelShort} help={help} required={field.required} srOnly={hideLabel} />
+        </FieldLabel>
+        <div id={field.id} role="radiogroup" aria-labelledby={labelId} aria-describedby={describedBy} aria-invalid={invalid} aria-required={ariaRequired} className="grid gap-3">
+          {(field.options || []).map((option) => (
+            <label key={option.value} className="relative block cursor-pointer">
+              <input
+                type="radio"
+                name={field.id}
+                value={option.value}
+                checked={value === option.value}
+                onChange={() => onChange(option.value)}
+                aria-describedby={describedBy}
+                className="peer sr-only"
+              />
+              <span className={cn(
+                "flex min-h-16 items-center justify-between gap-4 rounded-2xl border px-4 py-4 text-base font-medium leading-relaxed text-[color:var(--glass-ink)] transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-[color:var(--glass-accent-deep)] peer-focus-visible:ring-offset-2 motion-reduce:transition-none",
+                value === option.value
+                  ? "border-[color:var(--glass-accent-deep)] bg-[color:var(--glass-pop-bg)]"
+                  : "border-[color:var(--glass-border)] bg-[color:var(--glass-surface-strong)] hover:border-[color:var(--glass-accent-deep)]",
+                invalid && "border-destructive",
+              )}>
+                <span>{loc(option.label, locale)}</span>
+                <span aria-hidden className={cn("flex size-5 shrink-0 items-center justify-center rounded-full border", value === option.value ? "border-[color:var(--glass-accent-deep)] bg-[color:var(--glass-accent-deep)] text-primary-foreground" : "border-[color:var(--glass-ink-soft)]")}>
+                  {value === option.value && <CheckCircle2Icon className="size-4" />}
+                </span>
+              </span>
+            </label>
+          ))}
+        </div>
+        {errorReport}
+      </Field>
+    );
+  }
+
+  if (field.type === "select") {
     return (
       <Field data-invalid={invalid} className="gap-1.5" onFocus={notifyFocus} onClick={notifyFocus}>
         <FieldLabel htmlFor={field.id} className="text-[13px]">
@@ -434,7 +472,7 @@ function PdfFieldControl({
         <Select modal={false} value={(value as string) ?? ""} onValueChange={(v) => onChange(v)}>
           <SelectTrigger
             id={field.id}
-            className="w-full"
+            className="min-h-12 w-full rounded-xl text-base"
             aria-invalid={invalid}
             aria-required={ariaRequired}
             aria-describedby={describedBy}

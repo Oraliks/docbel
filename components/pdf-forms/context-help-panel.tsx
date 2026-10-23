@@ -1,8 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRightIcon, CheckIcon, InfoIcon } from "lucide-react";
+import { SpeechButton } from "@/components/docbel/speech-button";
+import { ArrowRightIcon, CheckIcon, InfoIcon, XIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { Button } from "@/components/ui/button";
+import { Sheet, SheetTrigger, SheetContent, SheetHeader, SheetTitle, SheetClose, SheetFooter } from "@/components/ui/sheet";
 import { choisirCleDAide, getSectionHelp } from "@/lib/pdf-forms/section-help";
 import type { Locale, Localized } from "@/lib/pdf-forms/types";
 import { pickFieldHelp } from "@/lib/pdf-forms/field-help";
@@ -70,26 +73,13 @@ export function ContextHelpPanel({
   const activeField = activeFieldId ? fields?.find((f) => f.id === activeFieldId) : undefined;
   const fieldHelp = activeField ? pickFieldHelp(activeField, locale) : null;
 
-  return (
-    <aside
-      className={
-        embedded
-          ? "flex flex-col gap-3.5"
-          : // `max-h` + `overflow-y-auto` sur la colonne collante : le contenu
-            // de ce panneau CHANGE À CHAQUE CLIC dans le formulaire (l'aide du
-            // champ focalisé, cf. `activeFieldId`). Sans plafond, sa hauteur
-            // pilotait celle du document : cliquer un champ dont l'aide est
-            // plus courte raccourcissait la page, le navigateur écrêtait la
-            // position de défilement et la vue « remontait comme sur un # »
-            // (retour Oraliks, signalé sur le C1, le C1A puis le C1C).
-            // Plafonné à la hauteur de l'écran, le panneau défile en interne
-            // et cesse de faire varier la hauteur de la page.
-            "flex flex-col gap-3.5 rounded-3xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface-strong)] p-4 lg:sticky lg:top-6 lg:max-h-[calc(100vh-3rem)] lg:overflow-y-auto"
-      }
-    >
+  const content = (
+    <>
       <p className="text-[11px] font-bold uppercase tracking-[0.08em] text-[color:var(--glass-ink-soft)]">
         {t("runnerHelpPanelEyebrow")}
       </p>
+
+      <SpeechButton text={fieldHelp || `${help.title}. ${help.body}`} locale={locale} className="rounded-xl" />
 
       {/* Aide du champ focalisé (§10.4, Lot 4d) — surface EN TÊTE, au-dessus des
           infos importantes. Rendu seulement si un champ focalisé porte une aide ;
@@ -99,7 +89,7 @@ export function ContextHelpPanel({
           <span className="text-[11px] font-bold uppercase tracking-[0.08em] text-[color:var(--glass-accent-deep,#5B46E5)]">
             {t("runnerFieldHelpEyebrow")}
           </span>
-          <p className="text-[13px] leading-relaxed text-[color:var(--glass-ink-soft)]">
+          <p className="text-sm leading-relaxed text-[color:var(--glass-ink-soft)]">
             {fieldHelp}
           </p>
         </div>
@@ -133,14 +123,14 @@ export function ContextHelpPanel({
                   {pickLocalized(entry.title, locale)}
                 </h3>
                 {intro && (
-                  <p className="text-[13px] leading-relaxed text-[color:var(--glass-ink-soft)]">
+                  <p className="text-sm leading-relaxed text-[color:var(--glass-ink-soft)]">
                     {intro}
                   </p>
                 )}
               </div>
 
               {reminders.length > 0 && (
-                <ul className="flex flex-col gap-2 text-[13px] leading-relaxed text-[color:var(--glass-ink-soft)]">
+                <ul className="flex flex-col gap-2 text-sm leading-relaxed text-[color:var(--glass-ink-soft)]">
                   {reminders.map((r, i) => (
                     <li key={i} className="flex items-start gap-2">
                       <span
@@ -158,7 +148,7 @@ export function ContextHelpPanel({
                   <p className="mb-2 text-xs font-semibold text-[color:var(--glass-ink)]">
                     {t("runnerHelpChecklistLabel")}
                   </p>
-                  <ul className="flex flex-col gap-1.5 text-[13px] text-[color:var(--glass-ink-soft)]">
+                  <ul className="flex flex-col gap-1.5 text-sm text-[color:var(--glass-ink-soft)]">
                     {checklist.map((c, i) => (
                       <li key={i} className="flex items-start gap-2">
                         <CheckIcon
@@ -176,7 +166,7 @@ export function ContextHelpPanel({
               {linkHref && linkLabel && (
                 <Link
                   href={linkHref}
-                  className="inline-flex items-center gap-1 text-[13px] font-semibold text-[color:var(--glass-accent-deep,#5B46E5)] hover:underline"
+                  className="inline-flex items-center gap-1 text-sm font-semibold text-[color:var(--glass-accent-deep,#5B46E5)] hover:underline"
                 >
                   {linkLabel}
                   <ArrowRightIcon className="size-3.5" aria-hidden />
@@ -197,7 +187,7 @@ export function ContextHelpPanel({
             </span>
             <div className="flex min-w-0 flex-col gap-1">
               <h3 className="text-sm font-semibold text-[color:var(--glass-ink)]">{help.title}</h3>
-              <p className="text-[13px] leading-relaxed text-[color:var(--glass-ink-soft)]">{help.body}</p>
+              <p className="text-sm leading-relaxed text-[color:var(--glass-ink-soft)]">{help.body}</p>
             </div>
           </div>
 
@@ -206,7 +196,7 @@ export function ContextHelpPanel({
               <p className="mb-2 text-xs font-semibold text-[color:var(--glass-ink)]">
                 {t("runnerHelpExamplesLabel")}
               </p>
-              <ul className="flex flex-col gap-1.5 text-[13px] text-[color:var(--glass-ink-soft)]">
+              <ul className="flex flex-col gap-1.5 text-sm text-[color:var(--glass-ink-soft)]">
                 {help.examples.map((ex) => (
                   <li key={ex} className="flex items-start gap-2">
                     <span
@@ -222,6 +212,41 @@ export function ContextHelpPanel({
         </>
       )}
 
-    </aside>
+    </>
+  );
+
+  return (
+    <>
+      <div className="lg:hidden">
+        <Sheet>
+          <SheetTrigger render={<Button type="button" variant="ghost" className="min-h-11 justify-start gap-2 px-0 text-[color:var(--glass-accent-deep)] underline underline-offset-4" />}>
+            <InfoIcon className="size-4" aria-hidden />
+            {t("runnerHelpOpen")}
+          </SheetTrigger>
+          <SheetContent side="bottom" showCloseButton={false} className="max-h-[85dvh] gap-0 overflow-y-auto rounded-t-[28px] border-[color:var(--glass-border)] bg-[color:var(--glass-surface-strong)] text-[color:var(--glass-ink)]">
+            <div aria-hidden className="mx-auto mt-3 h-1 w-10 shrink-0 rounded-full bg-[color:var(--glass-border)]" />
+            <SheetHeader className="flex-row items-start justify-between gap-3 px-6 pt-4">
+              <SheetTitle className="text-xl font-semibold text-[color:var(--glass-ink)]">{t("runnerHelpPanelEyebrow")}</SheetTitle>
+              <SheetClose render={<Button type="button" variant="outline" size="icon" className="size-11 shrink-0 rounded-xl" />}>
+                <XIcon className="size-5" aria-hidden />
+                <span className="sr-only">{t("runnerHelpClose")}</span>
+              </SheetClose>
+            </SheetHeader>
+            <div className="flex flex-col gap-5 px-6 py-3 text-base leading-relaxed">{content}</div>
+            <SheetFooter className="px-6 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
+              <SheetClose render={<Button type="button" className="min-h-12 w-full rounded-xl" />}>
+                {t("runnerHelpClose")}
+                <CheckIcon className="size-4" aria-hidden />
+              </SheetClose>
+            </SheetFooter>
+          </SheetContent>
+        </Sheet>
+      </div>
+      <aside className={embedded
+        ? "hidden flex-col gap-4 lg:flex"
+        : "hidden flex-col gap-4 rounded-3xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface-strong)] p-5 lg:sticky lg:top-24 lg:flex lg:max-h-[calc(100dvh-7rem)] lg:overflow-y-auto"}>
+        {content}
+      </aside>
+    </>
   );
 }

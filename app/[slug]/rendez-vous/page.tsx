@@ -100,7 +100,7 @@ export default async function TenantBookingPage({
   }).catch(() => null);
 
   return (
-    <section className="mx-auto w-full max-w-6xl">
+    <section className="flex w-full flex-col gap-6">
       <BookingFlow
         slug={tenant.slug}
         tenantName={tenant.name}

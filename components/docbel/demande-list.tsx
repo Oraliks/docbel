@@ -1,13 +1,10 @@
 "use client";
 
+import Link from "next/link";
 import { PUBLIC_WRITES_PAUSED } from "@/lib/public-access";
 import { TemporaryClosureNotice } from "./temporary-closure-notice";
-import Link from "next/link";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
-import { toast } from "sonner";
-import { ArrowRight, FolderOpen, Trash2 } from "lucide-react";
+import { ArrowRight, FolderOpen } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,11 +13,9 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty";
-import { useConfirm } from "@/components/ui/confirm-dialog";
 import { ProgressFeedback } from "@/components/docbel/progress-feedback";
 import { formatDate } from "@/lib/i18n/format";
 import type { DemandeSummary } from "@/lib/bundles/demande-summary";
-import { NouvelleDemandeButton } from "./nouvelle-demande-button";
 
 interface Props {
   bundleId: string;
@@ -29,42 +24,11 @@ interface Props {
   demandes: DemandeSummary[];
 }
 
-export function DemandeList({ bundleId, slug, bundleName, demandes }: Props) {
-  const tp = useTranslations("public.temporaryClosure");
+export function DemandeList({ slug, bundleName, demandes }: Props) {
   const t = useTranslations("public.dossier");
+  const td = useTranslations("public.design");
+  const tp = useTranslations("public.temporaryClosure");
   const locale = useLocale();
-  const router = useRouter();
-  const confirm = useConfirm();
-  const [items, setItems] = useState(demandes);
-  const [busy, setBusy] = useState<string | null>(null);
-
-  async function abandon(runId: string) {
-    if (busy) return;
-    const ok = await confirm({
-      title: t("demandeAbandon"),
-      description: t("demandeAbandonConfirm"),
-      confirmText: t("demandeAbandon"),
-      destructive: true,
-    });
-    if (!ok) return;
-    setBusy(runId);
-    try {
-      const res = await fetch(`/api/bundles/runs/${encodeURIComponent(runId)}`, {
-        method: "DELETE",
-      });
-      if (!res.ok && res.status !== 404) {
-        toast.error(t("demandeAbandonError"));
-        return;
-      }
-      setItems((prev) => prev.filter((item) => item.runId !== runId));
-      router.refresh();
-    } catch {
-      toast.error(t("demandeAbandonError"));
-    } finally {
-      setBusy(null);
-    }
-  }
-
   return (
     <section
       className="glass-surface flex flex-col gap-4 rounded-3xl p-4 sm:p-5"
@@ -84,18 +48,13 @@ export function DemandeList({ bundleId, slug, bundleName, demandes }: Props) {
               {t("demandesTitle")}
             </h2>
             <p className="mt-1 text-sm text-[color:var(--glass-ink-soft)]">
-              {bundleName} · {t("demandesSubtitle")}
+              {bundleName}
             </p>
           </div>
         </div>
-        <NouvelleDemandeButton
-          bundleId={bundleId}
-          slug={slug}
-          variant="default"
-        />
       </header>
 
-      {items.length === 0 ? (
+      {demandes.length === 0 ? (
         <Empty className="min-h-44 border border-[color:var(--glass-border)]">
           <EmptyHeader>
             <EmptyMedia variant="icon">
@@ -106,14 +65,14 @@ export function DemandeList({ bundleId, slug, bundleName, demandes }: Props) {
         </Empty>
       ) : (
         <ul className="flex flex-col gap-3">
-          {items.map((demarche) => {
+          {demandes.map((demarche) => {
             const completed = demarche.lifecycle === "completed_editable";
             const percentage = completed
               ? 100
               : demarche.total > 0
                 ? Math.round((demarche.completed / demarche.total) * 100)
                 : 0;
-            const href = `/d/${encodeURIComponent(slug)}?bundleRun=${encodeURIComponent(demarche.runId)}&demarrer=1`;
+            const href = `/d/${encodeURIComponent(slug)}?bundleRun=${encodeURIComponent(demarche.runId)}`;
 
             return (
               <li
@@ -170,22 +129,12 @@ export function DemandeList({ bundleId, slug, bundleName, demandes }: Props) {
                     nativeButton={false}
                     variant={completed ? "outline" : "default"}
                     size="sm"
-                    className="min-h-10"
+                    className="h-auto min-h-11 whitespace-normal py-2 text-start"
                   >
-                    {PUBLIC_WRITES_PAUSED ? tp("consult") : completed ? t("demandeReview") : t("demandeResume")}
+                    {PUBLIC_WRITES_PAUSED ? tp("consult") : td("existingResume")}
                     <ArrowRight data-icon="inline-end" aria-hidden />
                   </Button>
-                  {!PUBLIC_WRITES_PAUSED && <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="min-h-10 text-destructive"
-                    onClick={() => abandon(demarche.runId)}
-                    disabled={busy === demarche.runId}
-                    aria-label={t("demandeAbandon")}
-                  >
-                    <Trash2 aria-hidden />
-                  </Button>}
+
                 </div>
               </li>
             );

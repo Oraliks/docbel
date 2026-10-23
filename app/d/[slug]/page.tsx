@@ -20,7 +20,7 @@ import {
 import { getDossier } from "@/lib/dossiers/registry";
 import { parseOrientationAnswers } from "@/lib/dossiers/orientation";
 import { dossierQuestionsToEligibility, selectDocuments, type DossierAnswers } from "@/lib/dossiers/types";
-import { getLocale } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { localizeRecord } from "@/lib/i18n/content";
 import { EDITABLE_BUNDLE_RUN_STATUSES } from "@/lib/bundles/run-lifecycle";
 import { bundleRunHasProgress } from "@/lib/bundles/run-progress";
@@ -53,6 +53,8 @@ export default async function BundleRoute({
   const autoStart = sp.demarrer === "1";
   const bundleRunParam = sp.bundleRun ?? null;
   const locale = await getLocale();
+  const td = await getTranslations("public.dossier");
+  const tc = await getTranslations("public.chrome");
 
   const bundleRaw = await prisma.documentBundle.findUnique({
     where: { slug },
@@ -63,7 +65,7 @@ export default async function BundleRoute({
           pdfForm: {
             select: {
               id: true, slug: true, title: true, description: true,
-              issuer: true, fields: true, triggers: true,
+              issuer: true, fields: true, triggers: true, active: true, status: true,
             },
           },
         },
@@ -127,12 +129,16 @@ export default async function BundleRoute({
     }),
   );
 
-  // Demande ciblée par `?bundleRun` (déjà bornée à l'appelant via allRuns).
-  const targeted = bundleRunParam
-    ? allRuns.find((r) => r.id === bundleRunParam) ?? null
+  // Resolve deep links independently of the bounded recent-run list.
+  // Ownership stays in the DB predicate; an unavailable target never opens another run.
+  const targeted = bundleRunParam && (userId || sessionId)
+    ? await prisma.bundleRun.findFirst({
+        where: { id: bundleRunParam, bundleId: bundle.id,
+          ...(userId ? { userId } : { sessionId: sessionId! }),
+          status: { in: [...EDITABLE_BUNDLE_RUN_STATUSES] },
+        },
+      })
     : null;
-
-  // A requested run must never silently open another saved request.
   if (bundleRunParam && !targeted) notFound();
 
   // Entrée HYBRIDE : 2+ demandes avec progression, sans ciblage ni démarrage
@@ -174,6 +180,7 @@ export default async function BundleRoute({
     triggeredSlugs.size > 0
       ? await prisma.pdfForm.findMany({
           where: { slug: { in: [...triggeredSlugs] }, status: "published", active: true },
+          take: triggeredSlugs.size,
           select: {
             id: true, slug: true, title: true, description: true, issuer: true, fields: true,
           },
@@ -377,11 +384,11 @@ export default async function BundleRoute({
       */}
       <nav
         className="mb-4 flex items-center gap-1 text-xs text-[color:var(--glass-ink-soft)]"
-        aria-label="Fil d'Ariane"
+        aria-label={td("breadcrumb")}
       >
-        <Link href="/" className="hover:underline">Accueil</Link>
+        <Link href="/" className="hover:underline">{tc("navHome")}</Link>
         <span aria-hidden>›</span>
-        <Link href="/mon-dossier" className="hover:underline">Démarches</Link>
+        <Link href="/mon-dossier" className="hover:underline">{tc("navMyDossier")}</Link>
         <span aria-hidden>›</span>
         <span>{dossierIssuer}</span>
         <span aria-hidden>›</span>
@@ -409,6 +416,7 @@ export default async function BundleRoute({
       ) : (() => {
         const runnerProps = {
           bundle: serializedBundle,
+          availableFormSlugs: [...bundle.items.flatMap(item => item.pdfForm?.active && item.pdfForm.status === "published" ? [item.pdfForm.slug] : []), ...triggeredForms.map(form => form.slug)],
           runId: effectiveRun?.id ?? null,
           resumeCode: effectiveRun?.resumeCode ?? null,
           resumeCodeExpiresAt: effectiveRun?.resumeCodeExpiresAt?.toISOString() ?? null,

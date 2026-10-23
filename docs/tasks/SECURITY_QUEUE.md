@@ -1,6 +1,6 @@
 # SECURITY_QUEUE — File sécurité technique
 
-Source : `docs/audits/AUDIT_TECH_2026-05-29.md` (partiellement périmé) + `AUDIT_RGPD_2026-06-06.md`
+Source : `docs/archive/AUDIT_TECH_2026-05-29.md` (partiellement périmé) + `AUDIT_RGPD_2026-06-06.md`
 (Axe 4, plus récent). Format par item : **risque · scénario · correction · validation**.
 Voir CONTRADICTIONS.md : certains items de l'audit tech sont déjà résolus.
 

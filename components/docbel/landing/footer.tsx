@@ -3,10 +3,10 @@
 import { PUBLIC_WRITES_PAUSED } from "@/lib/public-access";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { CookieIcon, UserRoundIcon } from "lucide-react";
+import { CookieIcon } from "lucide-react";
+import { DocBelLogo } from "@/components/brand/docbel-logo";
 import { LocaleSwitcher } from "@/components/locale-switcher";
 import { useConsent } from "@/components/cookie-consent/consent-provider";
-import { useSiteSettings } from "@/components/site-settings/site-settings-provider";
 import { publicLocales } from "@/i18n/config";
 
 const FOOTER_LINK_CLASS =
@@ -17,7 +17,6 @@ export function LandingFooter() {
   const t = useTranslations("public.chrome");
   const td = useTranslations("public.design");
   const { openPreferences } = useConsent();
-  const siteName = useSiteSettings()?.identity.name ?? "Docbel";
 
   return (
     <footer className="docbel-public-footer text-xs">
@@ -25,20 +24,10 @@ export function LandingFooter() {
         <div className="flex flex-col items-start gap-3">
           <Link
             href="/"
+            aria-label={t("backToHome")}
             className="flex items-center gap-2 rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)]"
           >
-            <span
-              className="flex size-9 items-center justify-center rounded-xl text-primary-foreground shadow-[0_4px_16px_color-mix(in_oklab,var(--glass-accent-deep)_35%,transparent)]"
-              style={{
-                backgroundImage:
-                  "linear-gradient(135deg, var(--glass-accent-a), var(--glass-accent-c))",
-              }}
-            >
-              <UserRoundIcon className="size-4" aria-hidden />
-            </span>
-            <span className="text-base font-extrabold tracking-tight text-[color:var(--glass-ink)]">
-              {siteName}
-            </span>
+            <DocBelLogo className="h-8 w-[128px]" decorative />
           </Link>
           <p className="max-w-64 leading-relaxed">
             {t("copyright", { year: new Date().getFullYear() })}

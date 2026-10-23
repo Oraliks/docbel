@@ -3,10 +3,10 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { Home, ListChecks, LayoutGrid, CircleHelp, Search, FileCheck2, MoreHorizontal, LogOut, Settings, User, Moon, Sun, X } from "lucide-react";
+import { Home, ListChecks, LayoutGrid, CircleHelp, Search, MoreHorizontal, LogOut, Settings, User, Moon, Sun, X } from "lucide-react";
 import { useAuthSession } from "@/components/auth-session-provider";
+import { DocBelLogo } from "@/components/brand/docbel-logo";
 import { authClient } from "@/lib/auth-client";
-import { useSiteSettings } from "@/components/site-settings/site-settings-provider";
 import { useTheme } from "@/components/theme-provider";
 import { LocaleSwitcher } from "@/components/locale-switcher";
 import { AccessibilityToolbar } from "@/components/docbel/accessibility-toolbar";
@@ -45,7 +45,6 @@ export function LandingHeader({ onSearchOpen }: { persona: AudienceId; onSearchO
   const { data: session } = useAuthSession();
   const router = useRouter();
   const { resolvedTheme, setTheme } = useTheme();
-  const siteName = useSiteSettings()?.identity.name ?? "DocBel";
   const role = session?.user && "role" in session.user ? session.user.role : null;
   const signOut = async () => {
     await authClient.signOut();
@@ -57,8 +56,7 @@ export function LandingHeader({ onSearchOpen }: { persona: AudienceId; onSearchO
     <header className="docbel-public-header">
       <div className="docbel-header-inner">
         <Link href="/" className="docbel-brand" aria-label={t("backToHome")}>
-          <span className="docbel-brand-mark"><FileCheck2 className="size-6" aria-hidden /></span>
-          <span>{siteName}</span>
+          <DocBelLogo className="h-10 w-[min(190px,48vw)]" decorative />
         </Link>
         <nav className="docbel-public-nav" aria-label={t("menu")}><PrimaryLinks /></nav>
         <div className="docbel-header-controls">

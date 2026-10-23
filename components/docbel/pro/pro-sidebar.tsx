@@ -9,7 +9,6 @@ import {
   BookOpenIcon,
   CalculatorIcon,
   CalendarClock,
-  CommandIcon,
   FileTextIcon,
   FilesIcon,
   FolderOpenIcon,
@@ -35,6 +34,7 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { NavUser } from "@/components/nav-user";
+import { DocBelLogo } from "@/components/brand/docbel-logo";
 import { getProSpace, type ProIcon, type ProSegment } from "@/lib/pro-nav";
 import { useFormationsModule } from "@/hooks/useFormationsModule";
 
@@ -93,7 +93,7 @@ export function ProSidebar({
               className="data-[slot=sidebar-menu-button]:p-1.5!"
               render={<Link href={space.homeUrl} />}
             >
-              <CommandIcon className="size-5!" />
+              <DocBelLogo variant="symbol" className="h-7 w-10" decorative />
               <span className="text-base font-semibold">Docbel</span>
               <span className="ml-auto text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
                 {t(SEGMENT_BADGE_KEYS[segment])}

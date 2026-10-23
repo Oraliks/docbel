@@ -186,3 +186,35 @@ le delta D seul se lit contre codex/public-persistence-v1. Aucune fusion ou mise
 en production autorisée par ce lot. Les parcours réels sous tokens et avec
 DB partagée ne sont pas testés ici ; fixtures et gardes contrôlent la transition.
 Les adaptations visuelles restent au responsable DESIGN via le chef.
+
+## Livraison cohérente — mandat du propriétaire du 23/10/2026
+
+Le propriétaire a explicitement autorisé la clôture et la mise en production des
+fermetures A/C/D, sans attendre la refonte DESIGN. Ces fermetures sont TEMPORAIRES
+pendant les travaux. Ce mandat de livraison remplace l'absence d'autorisation de
+fusion/production des sous-lots historiques ci-dessus ; il ne permet aucun
+changement de données, métier, référence verrouillée, configuration ou dépendance.
+
+La branche codex/temporary-closure-release conserve les commits A/C/D inchangés et
+ajoute uniquement la transition fonctionnelle sur le design actuel : entrées
+inscription/RDV suspendues, notices next-intl, anciennes réponses/profil en
+consultation, création/édition/reset/abandon masqués, aucune promesse d'autosave.
+Les pages de réservation fermées retournent avant les lectures métier. Un id de
+run demandé mais inaccessible renvoie404 au lieu d'ouvrir une autre demande.
+
+Récupération : les endpoints GET dédiés conservent propriété/rate-limit et le
+verrou allRequiredDone. Les documents d'un dossier entièrement complété restent
+récupérables. Aucun téléchargement prématuré ni assouplissement de ce verrou ;
+le handler generate avec bundleRunId reste fermé car il peut écrire même en
+mode download. Les consignes existantes de la feuille de route sont conservées.
+
+Réouverture ultérieure : coordonner lib/public-access.ts (présentation), les
+gardes auth/proxy, le hook autosave et notifyNextWaiter. Le seul indicateur UI ne
+réactive pas les écritures. Aucun module ou enregistrement existant supprimé.
+
+Validation nouvelle :19 tests de rendu SSR et de routage (code reprise, gestion
+par token, profil/formulaires existants, deux demandes distinctes, autosave).
+Les preuves définitives de lint baseline, suite complète, i18n, build, revue du
+SHA final, fusion et déploiement/alias sont consignées dans la PR de release et
+le bilan au chef. Les limites des fixtures et de la recette production demeurent
+explicites ; aucun succès production ne découle du seul push ou merge.

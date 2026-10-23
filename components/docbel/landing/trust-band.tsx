@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { ArrowRight, Leaf } from "lucide-react";
 
@@ -14,13 +13,12 @@ export function TrustBand() {
         <h2 id="home-ease-heading" className="text-base font-semibold leading-snug">{t("designEaseTitle")}</h2>
         <p className="mt-1 text-xs leading-relaxed text-[color:var(--glass-ink-soft)]">{t("designEaseDescription")}</p>
       </div>
-      <Link href="/accessibilite" onClick={(event) => {
+      <button type="button" onClick={() => {
         const trigger = document.querySelector<HTMLButtonElement>("[data-docbel-display-trigger]");
         if (trigger && trigger.getClientRects().length > 0) {
-          event.preventDefault();
           trigger.click();
         }
-      }} className="inline-flex min-h-11 items-center gap-2 text-xs font-semibold text-[color:var(--glass-success-ink)] underline underline-offset-4"><ArrowRight className="size-4 rtl:rotate-180" aria-hidden />{t("designPreferences")}</Link>
+      }} className="inline-flex min-h-11 items-center gap-2 text-xs font-semibold text-[color:var(--glass-success-ink)] underline underline-offset-4"><ArrowRight className="size-4 rtl:rotate-180" aria-hidden />{t("designPreferences")}</button>
     </section>
   );
 }

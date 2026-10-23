@@ -1,49 +1,38 @@
-# CONTRADICTIONS & zones à clarifier
+# Contradictions et décisions courantes
 
-Vérifié le 2026-06-28 contre le code actuel. **Conclusion centrale : `AUDIT.md`
-(2026-05-29) est partiellement périmé** — plusieurs items P0/P1 sont déjà résolus.
-Toujours recouper l'audit tech avec le code avant d'agir.
+## Référence historique
 
-## A. AUDIT_TECH déjà résolu (ne PAS re-travailler)
-| Item audit | Affirmation | Réalité (2026-06-28) | Source |
-|---|---|---|---|
-| P0 #1 | `next@16.2.4` vulnérable | **`next@16.2.6`** | `package.json:115` |
-| P0 #3 | build couplé à `migrate deploy` | build = `next build` (**découplé**) | `package.json:12` |
-| P0 #4 | `.env.example` sans clés IA | clés IA/Blob/quota **présentes** | `.env.example` |
-| P1 #8 | README/AGENTS disent « NextAuth v5 » | disent déjà **better-auth** | `README.md:12,85` `AGENTS.md:26` |
-| P1 #9 | `@prisma/client` en devDeps / `shadcn` en deps | **inversé correctement** | `package.json:76,164` |
-| P3 #17 | `lib/lucide-icons-catalog.ts.bak` | fichier **absent** | (glob) |
-| P3 #21 | pas d'`engines`, README « pnpm 11+ » | `engines` présent, README « pnpm 10+ » | `package.json:6` |
+Les constats et arbitrages détaillés de juin sont conservés intégralement dans
+[l'historique de cette note](../archive/CONTRADICTIONS_HISTORY_2026-10-23.md), avec
+les liens vers les [audits techniques](../archive/AUDIT_TECH_2026-05-29.md) et
+[RGPD](../archive/AUDIT_RGPD_2026-06-06.md). Les remplacements, preuves datées et
+restes uniques sont indexés dans [CLEANUP_QUEUE](CLEANUP_QUEUE.md). Les consignes
+actuelles du dépôt et les queues spécialisées prévalent sur les recommandations
+datées des audits et plans archivés.
 
-**Décision** : marquer ces lignes comme obsolètes dans l'audit (fait en tête de
-`docs/audits/AUDIT_TECH_2026-05-29.md`). Ne pas les remettre dans les queues.
+## Décisions propriétaire en vigueur — 23/10/2026
 
-## B. AUDIT_TECH vs AUDIT_RGPD (le RGPD, plus récent, gagne) — ✅ TRANCHÉ 2026-06-28
-| Sujet | AUDIT_TECH (05-29) | AUDIT_RGPD (06-06) | Décision (vérifiée code) |
-|---|---|---|---|
-| Sanitization HTML | « HTML brut non assaini » (P1 #5) | « sanitization isomorphe sur **tous** les 17 `dangerouslySetInnerHTML` » (Axe 4) | **RGPD a raison → CLOS.** `lib/sanitize-html.ts` couvre `article-view.tsx:73` + tous les blocs page-builder (html-raw/text/card/popover/modal/drawer/magazine-columns → `sanitizeHtml` ; embed → `sanitizeEmbedHtml` ; svg → `sanitizeSvg` ; custom-css = CSS via `sanitizeStyleContent`). P1 #5 **périmé**. |
-| Cookie `beldoc-bundle-session` | `httpOnly:false` (P1 #7) | « httpOnly OK contrairement à AUDIT.md **obsolète** » | **RGPD a raison → CLOS.** `bundles/resume/route.ts:121-127` = `httpOnly:true` + `secure` prod + `sameSite:lax` (idem `documents/bundles/[id]/run:51`). P1 #7 **périmé**. |
+- Échéance visée : **23/11/2026**.
+- Projet exercé à titre personnel, sans société déclarée.
+- Phase publique décidée : consultation et utilisation des outils sans compte
+  visiteur ni dossier enregistré. Cette phase de fermeture est temporaire ; les
+  fonctions et données existantes sont conservées pour la réouverture ultérieure.
+- L'administration privée reste utilisable. L'arbre familial approuvé reste inchangé.
+- La finalisation RGPD et la réouverture sont reportées. Leur report ne vaut pas
+  preuve que toutes les collectes sont désactivées.
 
-→ Les deux points sont **vérifiés et clos** (cf. SECURITY_QUEUE V1/V2). Aucune correction
-nécessaire. Seul reste ouvert le V3 (`safeEval` calculator.tsx), distinct de la section B.
+Sources de suivi : [MVP_SCOPE](MVP_SCOPE.md), [NEXT_ACTIONS](NEXT_ACTIONS.md),
+[RGPD_QUEUE](RGPD_QUEUE.md) et DECISIONS_V1 (`docs/operations/DECISIONS_V1.md`).
+Les informations légales et coordonnées encore à fournir restent ouvertes dans
+DECISIONS_V1 ; cette synthèse ne les tranche pas.
 
-## C. Statuts « terminé » trompeurs
-- `.work-plan.md` : « ✅ TERMINÉ » mais section « TODOs non câblés » (pin/archive sessions,
-  DELETE message, AbortSignal, retry 429). → archivé ; les vrais restes vont en TECH_DEBT.
-- `ONBOARDING_IMPLEMENTATION.md` : se dit « supprimable une fois intégré » et recommande
-  `pnpm db:push`. → archivé ; **ne jamais suivre le `db:push`** (Neon partagée).
+## Points techniques déjà suivis
 
-## D. Footguns documentés
-- **README `db:setup` → `prisma db push`** : dangereux si `DATABASE_URL` pointe la Neon
-  partagée (détruit pgvector + tables PDF). → note d'avertissement ajoutée au README.
-- `.env.example` incomplet pour des clés **réellement utilisées** : `BOOKING_NRN_SECRET`
-  (critique), `RESUME_CODE_SECRET`, `STRIPE_SECRET_KEY`, `KBO_OPEN_DATA_*`,
-  `DEMO_ACCOUNTS_PASSWORD`, `IBAN_NAME_PROVIDER`, `*_AI_PROVIDER`, `UNSPLASH_ACCESS_KEY`,
-  `NEXT_PUBLIC_SITE_URL`/`APP_URL`, `DECISION_TREE_RUNTIME_ENABLED`. → complété (quick win).
-  (`NEXTAUTH_SECRET`/`AUTH_SECRET` apparaissent en fallback legacy → à ne pas documenter,
-  voire retirer du code — à confirmer.)
+Les désaccords historiques sur la sanitisation HTML et le cookie de reprise sont
+consignés comme clos dans [SECURITY_QUEUE](SECURITY_QUEUE.md). Les autres constats
+techniques et leur statut se trouvent dans cette queue et TECH_DEBT_QUEUE. Le README
+et AGENTS.md portent les consignes applicables, notamment l'interdiction de
+`prisma db push` sur la base partagée.
 
-## E. À trancher par le propriétaire (décisions produit/design)
-- CTA front en clair : encre dark-violet sobre **ou** Violet `#5B46E5` ? (AGENTS « points connus »).
-- Forme juridique du responsable de traitement (personne physique vs société) — bloque
-  les mentions légales RGPD.
+Cette note résume les décisions communiquées et renvoie aux preuves ; elle ne
+revendique ni audit actuel du code ni conformité juridique complète.

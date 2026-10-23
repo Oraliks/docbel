@@ -1,6 +1,6 @@
 # RGPD_QUEUE — File conformité
 
-Source : `docs/audits/AUDIT_RGPD_2026-06-06.md` (note 3,5/10). **C'est le bloquant V1.**
+Source : `docs/archive/AUDIT_RGPD_2026-06-06.md` (note 3,5/10). **C'est le bloquant V1.**
 ⚠️ **Aucun texte juridique ici n'est final.** Les brouillons/pages produits doivent être
 **relus par un juriste IT belge** avant publication. Les items marqués 🧑‍⚖️ sortent du
 périmètre code (décision/juridique).
@@ -68,4 +68,4 @@ périmètre code (décision/juridique).
 3. NRN sans autorisation SPF + stockage en clair → mise en demeure + 10–50 k€.
 
 > Détail complet, articles cités, montants, ressources officielles :
-> `docs/audits/AUDIT_RGPD_2026-06-06.md` (checklist lignes 511-551 ; avocat 554-569).
+> `docs/archive/AUDIT_RGPD_2026-06-06.md` (checklist lignes 511-551 ; avocat 554-569).

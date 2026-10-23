@@ -21,7 +21,7 @@ export function LandingFooter() {
 
   return (
     <footer className="docbel-public-footer text-xs">
-      <div className="grid gap-7 md:grid-cols-2 lg:grid-cols-[minmax(230px,1.35fr)_repeat(3,minmax(120px,0.65fr))_auto] lg:gap-8">
+      <div className="grid gap-7 md:grid-cols-2 lg:grid-cols-[minmax(230px,1.35fr)_repeat(2,minmax(120px,0.65fr))_auto] lg:gap-8">
         <div className="flex flex-col items-start gap-3">
           <Link
             href="/"
@@ -62,22 +62,10 @@ export function LandingFooter() {
           <Link href="/contact" className={FOOTER_LINK_CLASS}>
             {t("contact")}
           </Link>
-          <Link href="/accessibilite" className={FOOTER_LINK_CLASS}>
-            {t("accessibility")}
-          </Link>
           <Link href="/rendez-vous" className={FOOTER_LINK_CLASS}>{td("appointments")}</Link>
           <Link href="/login" className={FOOTER_LINK_CLASS}>{td("privateAccess")}</Link>
           <Link href="/reprendre" className={FOOTER_LINK_CLASS}>
             {PUBLIC_WRITES_PAUSED ? tp("consult") : td("existingResume")}
-          </Link>
-        </FooterGroup>
-
-        <FooterGroup title={t("legalNotice")}>
-          <Link href="/mentions-legales" className={FOOTER_LINK_CLASS}>
-            {t("legalNotice")}
-          </Link>
-          <Link href="/politique-confidentialite" className={FOOTER_LINK_CLASS}>
-            {t("privacy")}
           </Link>
           <button
             type="button"

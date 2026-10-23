@@ -1,5 +1,6 @@
 "use client";
 
+import { PUBLIC_WRITES_PAUSED } from "@/lib/public-access";
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -270,7 +271,7 @@ function DemarcheRow({
             {t("demandeReview")}
           </Button>
         ) : null}
-        <Button
+        {!PUBLIC_WRITES_PAUSED && <Button
           type="button"
           variant="ghost"
           size="icon"
@@ -280,7 +281,7 @@ function DemarcheRow({
           aria-label={t("demandeAbandon")}
         >
           <Trash2 aria-hidden />
-        </Button>
+        </Button>}
       </div>
     </li>
   );

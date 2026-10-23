@@ -59,7 +59,7 @@ La couverture n’autorise pas à affirmer que chaque combinaison de page, thèm
 
 ## URL présentes au sitemap public
 
-Les 15 URL publiées dans `sitemap.xml` ont été ouvertes en production le 23/10/2026. Aucune n’a rendu un état 404 : accueil, actualités, contact, `/onem-ec32`, `/davy`, `/pourquoi-docbel`, l’article eC3.2 et les huit formulaires canoniques répertoriés dans le tableau. Cela couvre l’accès et le rendu initial, sans soumettre de données aux formulaires.
+Les 15 URL publiées dans `sitemap.xml` ont été ouvertes en production le 23/10/2026. Aucune n’a rendu un état 404 : accueil, actualités, contact, `/onem-ec32`, `/davy`, `/pourquoi-docbel`, l’article eC3.2 et les huit formulaires canoniques répertoriés dans le tableau. La vérification porte sur l’accès, le titre et le rendu initial; elle ne renseigne ni n’envoie les formulaires.
 
 ## Anomalies ou limites distinctes du défaut CSS
 

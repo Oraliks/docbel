@@ -9,6 +9,7 @@ import { useState, useEffect } from "react"
 import { NavMain } from "@/components/nav-main"
 import { NavSecondary } from "@/components/nav-secondary"
 import { NavUser } from "@/components/nav-user"
+import { DocBelLogo } from "@/components/brand/docbel-logo"
 import {
   Sidebar,
   SidebarContent,
@@ -18,7 +19,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import { FolderIcon, CommandIcon, NewspaperIcon, MailIcon, Wrench, MapPinIcon, UsersIcon, CalendarClock, BriefcaseIcon, GraduationCapIcon, ImageIcon, GitBranchIcon, LanguagesIcon, ActivityIcon, SettingsIcon } from "lucide-react"
+import { FolderIcon, NewspaperIcon, MailIcon, Wrench, MapPinIcon, UsersIcon, CalendarClock, BriefcaseIcon, GraduationCapIcon, ImageIcon, GitBranchIcon, LanguagesIcon, ActivityIcon, SettingsIcon } from "lucide-react"
 import Link from "next/link"
 
 const defaultUser = {
@@ -364,7 +365,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               className="data-[slot=sidebar-menu-button]:p-1.5!"
               render={<Link href="/admin" />}
             >
-              <CommandIcon className="size-5!" />
+              <DocBelLogo variant="symbol" className="h-6 w-8" decorative />
               <span className="text-base font-semibold">{siteName}</span>
             </SidebarMenuButton>
           </SidebarMenuItem>

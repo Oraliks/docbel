@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { authClient } from "@/lib/auth-client";
+import { DocBelLogo } from "@/components/brand/docbel-logo";
 
 const FIELD =
   "w-full rounded-2xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] py-3 pr-4 pl-11 text-[14px] text-[color:var(--glass-ink)] placeholder:text-[color:var(--glass-ink-faint)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)]";
@@ -60,12 +61,7 @@ export default function ForgotPasswordPage() {
             <div className="relative">
               <div className="relative flex h-[280px] w-[220px] -rotate-6 flex-col gap-3 rounded-2xl bg-white/95 p-5 shadow-[0_18px_50px_rgba(40,15,80,0.30)]">
                 <div className="mb-1 flex items-center justify-between">
-                  <span
-                    className="text-[10px] font-extrabold tracking-[0.12em]"
-                    style={{ color: "var(--glass-accent-a)" }}
-                  >
-                    DOCBEL
-                  </span>
+                  <DocBelLogo className="h-4 w-[64px]" decorative tone="light" />
                   <span
                     className="text-[10px] font-bold"
                     style={{ color: "var(--glass-accent-a)" }}

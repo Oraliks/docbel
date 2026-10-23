@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { ArrowLeftIcon, Building2Icon, HandshakeIcon } from "lucide-react";
+import { DocBelLogo } from "@/components/brand/docbel-logo";
 import {
   SignupForm,
   type ExpectedSegment,
@@ -63,12 +64,7 @@ export function InscriptionSplit() {
             <div className="relative">
               <div className="relative flex h-[280px] w-[220px] -rotate-6 flex-col gap-3 rounded-2xl bg-white/95 p-5 shadow-[0_18px_50px_rgba(40,15,80,0.30)]">
                 <div className="mb-1 flex items-center justify-between">
-                  <span
-                    className="text-[10px] font-extrabold tracking-[0.12em]"
-                    style={{ color: theme.accent }}
-                  >
-                    DOCBEL
-                  </span>
+                  <DocBelLogo className="h-4 w-[64px]" decorative tone="light" />
                   <span
                     className="text-[10px] font-bold"
                     style={{ color: theme.accent }}

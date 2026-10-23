@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 544 384" width="544" height="384" fill="none" role="img" aria-labelledby="docbel-guide-6-mono-title docbel-guide-6-mono-desc" color="#241047">
+<title id="docbel-guide-6-mono-title">DocBel — Le Nœud Guide</title>
+<desc id="docbel-guide-6-mono-desc">Un ruban violet entrelacé se dénoue en flèche corail : simplifier les démarches et guider le prochain pas.</desc>
+
+<path fill="currentColor" d="M25 191 C46 138 83 103 134 106 C180 106 220 139 260 184 L208 233 C177 199 147 178 116 167 C93 176 85 202 95 234 C64 235 44 249 32 266 C20 241 17 216 25 191Z"/>
+<path fill="currentColor" d="M261 312 L309 259 C325 278 339 293 352 300 C383 295 410 275 419 247 C418 289 401 321 370 339 C331 360 294 346 261 312Z"/>
+<path fill="currentColor" d="M309 249 C351 210 386 176 416 146 L383 122 Q377 116 384 109 C408 94 434 99 453 106 L516 126 Q524 128 521 136 C513 173 504 208 486 230 Q479 238 474 228 L458 187 C434 210 412 230 389 251 C372 267 357 278 341 284 C329 274 319 262 309 249Z"/>
+<path fill="currentColor" d="M35 266 C50 248 72 236 85 235 C83 268 93 292 120 310 C92 326 57 337 33 317 C21 302 24 283 35 266Z"/>
+<path fill="currentColor" d="M105 235 C128 239 147 252 167 273 L133 300 C116 284 106 260 105 235Z"/>
+<path fill="currentColor" d="M33 317 C56 345 94 327 132 311 C166 286 205 247 239 216 C268 189 296 166 326 156 C352 147 372 151 391 170 C352 201 317 234 285 269 C246 312 216 341 184 356 C137 382 65 364 33 317Z"/>
+<path d="M370 51L390 76M429 20V60M491 48L471 76" fill="none" stroke="currentColor" stroke-width="15" stroke-linecap="round"/>
+</svg>

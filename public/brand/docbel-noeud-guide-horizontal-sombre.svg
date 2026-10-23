@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 959 240" width="959" height="240" fill="none" role="img" aria-labelledby="docbel-guide-4-title docbel-guide-4-desc">
+<title id="docbel-guide-4-title">DocBel — Le Nœud Guide</title>
+<desc id="docbel-guide-4-desc">Un ruban violet entrelacé se dénoue en flèche corail : simplifier les démarches et guider le prochain pas.</desc>
+<defs>
+  <linearGradient id="docbel-guide-4-interieur" x1="30" y1="177" x2="121" y2="300" gradientUnits="userSpaceOnUse">
+    <stop offset="0" stop-color="#492387"/>
+    <stop offset="0.55" stop-color="#6340B4"/>
+    <stop offset="1" stop-color="#8B62DE"/>
+  </linearGradient>
+  <linearGradient id="docbel-guide-4-boucle" x1="109" y1="102" x2="236" y2="252" gradientUnits="userSpaceOnUse">
+    <stop offset="0" stop-color="#C898FF"/>
+    <stop offset="0.42" stop-color="#986AF2"/>
+    <stop offset="0.78" stop-color="#6D48C7"/>
+    <stop offset="1" stop-color="#57339C"/>
+  </linearGradient>
+  <linearGradient id="docbel-guide-4-retour" x1="277" y1="276" x2="409" y2="335" gradientUnits="userSpaceOnUse">
+    <stop offset="0" stop-color="#4B278D"/>
+    <stop offset="0.46" stop-color="#603CA8"/>
+    <stop offset="1" stop-color="#8055D4"/>
+  </linearGradient>
+  <linearGradient id="docbel-guide-4-pli" x1="95" y1="234" x2="157" y2="301" gradientUnits="userSpaceOnUse">
+    <stop offset="0" stop-color="#DECAFF"/>
+    <stop offset="0.56" stop-color="#B792FC"/>
+    <stop offset="1" stop-color="#8B60E9"/>
+  </linearGradient>
+  <linearGradient id="docbel-guide-4-revers" x1="37" y1="258" x2="126" y2="325" gradientUnits="userSpaceOnUse">
+    <stop offset="0" stop-color="#482282"/>
+    <stop offset="0.53" stop-color="#59329D"/>
+    <stop offset="1" stop-color="#7B50C9"/>
+  </linearGradient>
+  <linearGradient id="docbel-guide-4-corail" x1="398" y1="102" x2="503" y2="226" gradientUnits="userSpaceOnUse">
+    <stop offset="0" stop-color="#FF9A85"/>
+    <stop offset="0.55" stop-color="#FF8B79"/>
+    <stop offset="1" stop-color="#FF786B"/>
+  </linearGradient>
+  <linearGradient id="docbel-guide-4-direction" x1="317" y1="275" x2="469" y2="150" gradientUnits="userSpaceOnUse">
+    <stop offset="0" stop-color="#6237CE"/>
+    <stop offset="0.4" stop-color="#A27AF6"/>
+    <stop offset="0.73" stop-color="#D982DF"/>
+    <stop offset="1" stop-color="#FF929E"/>
+  </linearGradient>
+  <linearGradient id="docbel-guide-4-avant" x1="73" y1="365" x2="348" y2="156" gradientUnits="userSpaceOnUse">
+    <stop offset="0" stop-color="#8053F0"/>
+    <stop offset="0.38" stop-color="#AC87FA"/>
+    <stop offset="0.65" stop-color="#C7A2FC"/>
+    <stop offset="0.86" stop-color="#F1A0DE"/>
+    <stop offset="1" stop-color="#FFA7BE"/>
+  </linearGradient>
+  <linearGradient id="docbel-guide-4-eclat" x1="404" y1="24" x2="438" y2="82" gradientUnits="userSpaceOnUse">
+    <stop offset="0" stop-color="#FF806F"/>
+    <stop offset="1" stop-color="#FFB094"/>
+  </linearGradient>
+</defs>
+<g transform="translate(0 1) scale(.62)">
+<!-- retour-gauche -->
+<path fill="url(#docbel-guide-4-interieur)" d="M25 191 C47 151 82 144 116 167 C93 176 85 202 95 234 C102 262 117 283 133 310 L99 327 C69 329 46 304 32 266 C20 241 17 216 25 191Z"/>
+<!-- boucle-superieure -->
+<path fill="url(#docbel-guide-4-boucle)" d="M25 191 C46 138 83 103 134 106 C183 106 225 143 265 190 L208 243 C176 205 148 180 116 167 C82 144 47 151 25 191Z"/>
+<!-- retour-droit -->
+<path fill="url(#docbel-guide-4-retour)" d="M251 311 L309 249 C325 268 339 283 352 290 C383 285 410 265 419 237 C421 283 403 320 370 339 C329 362 286 345 251 311Z"/>
+<!-- pli-gauche -->
+<path fill="url(#docbel-guide-4-pli)" d="M95 234 C123 232 150 250 176 273 L132 311 C107 292 95 269 95 234Z"/>
+<!-- revers-gauche -->
+<path fill="url(#docbel-guide-4-revers)" d="M35 266 C50 248 72 236 95 234 C91 267 100 292 132 311 C97 333 57 347 33 317 C21 302 24 283 35 266Z"/>
+<!-- pointe -->
+<path fill="url(#docbel-guide-4-corail)" d="M384 109 C408 94 434 99 453 106 L516 126 Q524 128 521 136 C513 173 504 208 486 230 Q479 238 474 228 L456 185 L484 156 Q489 150 482 146 L416 146 L383 122 Q377 116 384 109Z"/>
+<!-- direction -->
+<path fill="url(#docbel-guide-4-direction)" d="M309 249 C351 210 386 176 416 146 L470 145 Q492 145 485 156 C447 194 421 222 389 251 C372 267 357 278 341 284 C329 274 319 262 309 249Z"/>
+<!-- ruban-avant -->
+<path fill="url(#docbel-guide-4-avant)" d="M33 317 C56 345 94 327 132 311 C166 286 205 247 239 216 C268 189 296 166 326 156 C352 147 372 151 391 170 C352 201 317 234 285 269 C246 312 216 341 184 356 C137 382 65 364 33 317Z"/>
+<path d="M116 167C148 180 176 205 208 243M132 311C166 286 205 247 239 216C268 189 296 166 326 156C352 147 372 151 391 170" fill="none" stroke="#FFF" stroke-opacity=".40" stroke-width="1.5" stroke-linecap="round"/>
+<path d="M370 51L390 76M429 20V60M491 48L471 76" fill="none" stroke="url(#docbel-guide-4-eclat)" stroke-width="15" stroke-linecap="round"/>
+</g>
+<path fill="#FFFFFF" d="M407.93 186C448.81 186 474.34 160.11 474.34 119.5C474.34 78.89 448.46 53 407.93 53H358.57V186ZM390.7 159.22V79.78H405.97C430.42 79.78 442.03 93.26 442.03 119.5C442.03 145.65 430.69 159.22 406.32 159.22ZM529.8 188.14C559.34 188.14 579.34 168.77 579.34 138.87C579.34 109.15 559.34 89.6 529.8 89.6C500.25 89.6 480.17 109.15 480.17 138.87C480.17 168.77 500.25 188.14 529.8 188.14ZM529.8 163.68C519 163.68 511.32 154.85 511.32 138.87C511.32 122.98 519.08 114.06 529.8 114.06C540.51 114.06 548.27 122.98 548.27 138.87C548.27 154.85 540.51 163.68 529.8 163.68ZM633.9 188.14C660.59 188.14 679.51 171.72 680.14 148.69H650.41C649.25 157.88 643.63 163.77 634.52 163.77C623.1 163.77 616.31 154.31 616.31 138.87C616.31 123.43 623.01 113.97 634.52 113.97C643.63 113.97 649.52 119.77 650.5 128.78H680.14C678.8 105.66 660.14 89.6 633.9 89.6C604.71 89.6 585.16 109.59 585.16 138.87C585.16 168.24 604.71 188.14 633.9 188.14Z"/>
+<path fill="#B39AF8" d="M691.93 186H751.29C780.83 186 797.52 170.47 797.52 148.42C797.52 129.59 784.76 117.45 768.16 116.38V116.2C783.15 112.89 792.88 102.09 792.88 86.74C792.88 66.84 776.81 53 747.27 53H691.93ZM723.26 161.36V130.39H746.2C757.71 130.39 764.76 136.46 764.76 146.1C764.76 155.65 757.62 161.36 746.02 161.36ZM723.26 107V77.64H744.23C754.5 77.64 760.84 83.35 760.84 92.28C760.84 101.29 754.5 107 744.23 107ZM851.37 188.14C875.2 188.14 894.22 174.84 897.7 155.83H870.12C867.88 162.08 861.46 166.01 852.44 166.01C840.3 166.01 833.16 158.42 832.8 146.46H898.41V138.16C898.41 109.59 878.86 89.6 850.57 89.6C822.63 89.6 802.81 110.13 802.81 138.87C802.81 167.61 822.45 188.14 851.37 188.14ZM832.98 128.07C834.32 118.16 841.02 112.27 851.37 112.27C861.64 112.27 868.42 118.16 869.76 128.07ZM938.51 53H907.81V186H938.51Z"/>
+</svg>

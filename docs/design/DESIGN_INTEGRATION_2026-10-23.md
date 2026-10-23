@@ -91,7 +91,8 @@ Contrôles acquis :
   Compléments récapitulatif/navigation, transition, lecture et présentation vérifiés
   ensuite ; les tests métier de référence n’ont pas été modifiés.
 - Lint complet avec baseline : **0 erreur / 58 avertissements** ; lint ciblé final réussi.
-  Une ancienne exemption WelcomeLocaleModal a été retirée, aucune ajoutée.
+  Deux anciennes exemptions devenues inutiles ont été retirées (WelcomeLocaleModal
+  et lien HTML de rendez-vous), aucune ajoutée.
 - i18n final réussi : aucun JSON invalide ni erreur ICU. Les clés nouvelles sont en FR ;
   les autres langues conservent leur fallback existant, sans traduction non relue.
 - Diff-check normalisé ; aucune dépendance, configuration de build ou migration modifiée.
@@ -135,5 +136,9 @@ Journaux `.validation-design-*.log` ignorés ; ne pas les publier en bloc.
 
 Cluster synthétique conservé sous le dossier de visualisations de la session,
 `pg-design`, port5434 ; serveur applicatif de recette localhost:3107.
-Les services de recette appartiennent à cette session et peuvent être arrêtés sans
-supprimer les données. Aucun service partagé n’a été modifié.
+Serveur Next3107 et cluster PostgreSQL5434 arrêtés proprement après les preuves finales ;
+données conservées. Aucun service partagé n’a été modifié.
+
+PR de revue : #87, branche `codex/design-valide`. Première CI39990879020 arrêtée au lint
+avec 0erreur/58avertissements à cause de l’exemption rendez-vous devenue inutile ;
+retrait effectué, lint local réussi, nouvelle CI du HEAD à confirmer.

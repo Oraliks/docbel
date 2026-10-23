@@ -38,7 +38,7 @@ export interface NormalizedBaremeImport {
  * Validations serveur strictes appliquées ici :
  *  - validFrom obligatoire (issue error si introuvable — jamais deviné) ;
  *  - montants finis et dans des bornes plausibles ;
- *  - comparisonKey uniques (doublons dédupliqués + issue) ;
+ *  - comparisonKey uniques (collisions conservées + issue) ;
  *  - feuilles supportées ou explicitement signalées.
  */
 export function normalizeBaremeData(
@@ -108,25 +108,31 @@ export function normalizeBaremeData(
 
   // — Validation : comparisonKey uniques (dédup en gardant la 1ère occurrence) —
   const byKey = new Map<string, BaremeAmountDraft>()
-  const duplicates = new Map<string, { count: number; droppedCells: string[] }>()
+  const collidingAmounts: BaremeAmountDraft[] = []
+  const duplicates = new Map<string, { count: number; cells: string[] }>()
   for (const draft of boundedAmounts) {
     const existing = byKey.get(draft.comparisonKey)
     if (!existing) {
       byKey.set(draft.comparisonKey, draft)
       continue
     }
-    const dup = duplicates.get(draft.comparisonKey) ?? { count: 1, droppedCells: [] }
+    const dup = duplicates.get(draft.comparisonKey) ?? { count: 1, cells: [] }
     dup.count++
-    if (draft.trace?.sourceCell) dup.droppedCells.push(`${draft.sourceSheet}!${draft.trace.sourceCell}`)
+    if (existing.trace?.sourceCell && dup.cells.length === 0) dup.cells.push(`${existing.sourceSheet}!${existing.trace.sourceCell}`)
+    if (draft.trace?.sourceCell) dup.cells.push(`${draft.sourceSheet}!${draft.trace.sourceCell}`)
     duplicates.set(draft.comparisonKey, dup)
-    // La 1ère occurrence gagne ; on marque quand même son statut
-    if (existing.status === 'valid') existing.status = 'warning'
+    // Ne choisir aucune occurrence arbitrairement : conserver chaque ligne afin
+    // que la comparaison signale l'identité ambiguë et que la revue puisse ouvrir les sources.
+    if (existing.status !== 'error') existing.status = 'warning'
     existing.warnings = [
       ...(existing.warnings ?? []),
-      `Clé dupliquée : ${dup.count} occurrences dans le fichier — seule celle-ci est conservée`,
+      `Clé dupliquée : ${dup.count} occurrences dans le fichier — identité à résoudre`,
     ]
+    draft.status = 'warning'
+    draft.warnings = [...(draft.warnings ?? []), `Clé dupliquée : ${dup.count} occurrences dans le fichier — identité à résoudre`]
+    collidingAmounts.push(draft)
   }
-  const amounts = [...byKey.values()]
+  const amounts = [...byKey.values(), ...collidingAmounts]
 
   // Une seule issue agrégée pour les doublons (le détail par clé vit dans
   // diagnostics.duplicates) — sinon un défaut structurel répété noierait
@@ -139,7 +145,7 @@ export function normalizeBaremeData(
         severity: 'warning',
         kind: 'duplicate',
         title: 'Doublons de clés de comparaison',
-        reason: `${duplicates.size} clé(s) apparaissent plusieurs fois (${totalDropped} ligne(s) écartée(s), seule la première occurrence est conservée). Exemples : ${examples}${duplicates.size > 5 ? '…' : ''}. Détail complet dans le Diagnostic.`,
+        reason: `${duplicates.size} clé(s) apparaissent plusieurs fois (${totalDropped} ligne(s) en collision). Aucune occurrence n'est choisie pour la comparaison. Exemples : ${examples}${duplicates.size > 5 ? '…' : ''}. Détail complet dans le Diagnostic.`,
         recommendation:
           'Si plusieurs occurrences sont légitimes, la clé de comparaison du parser concerné doit être affinée (voir sheet-templates.ts).',
       })
@@ -179,11 +185,8 @@ export function normalizeBaremeData(
     }),
     partialSheets: dispatch.partialSheets,
     sheetPeriods: dispatch.sheetPeriods,
-    duplicates: [...duplicates.entries()].map(([comparisonKey, d]) => ({
-      comparisonKey,
-      count: d.count,
-      droppedCells: d.droppedCells.slice(0, 10),
-    })),
+    duplicates: [...duplicates.entries()].map(([comparisonKey, d]) => ({ comparisonKey, count: d.count, droppedCells: [] })),
+    collisions: [...duplicates.entries()].map(([comparisonKey, d]) => ({ comparisonKey, count: d.count, cells: d.cells.slice(0, 20) })),
     ignoredRowsTruncated: ignoredRowsTruncated || undefined,
   }
 

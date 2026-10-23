@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
+import { auth } from "@/lib/auth";
+import { apiError } from "@/lib/api/response";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import {
@@ -108,24 +110,24 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: GENERIC_ERROR }, { status: 404 });
   }
 
-  // Positionne le cookie de session sur le run (génère un sessionId si absent).
-  let runSessionId = run.sessionId;
+  // Consultation d'un dossier existant : aucune réassociation/écriture serveur.
+  const runSessionId = run.sessionId;
   if (!runSessionId) {
-    runSessionId = `b_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
-    await prisma.bundleRun.update({
-      where: { id: run.id },
-      data: { sessionId: runSessionId },
+    const session = await auth.api.getSession({ headers: await headers() });
+    if (!run.userId || session?.user?.id !== run.userId) {
+      return apiError(409, "Ce dossier nécessite la connexion de son propriétaire existant.", {
+        code: "resume_requires_existing_owner",
+      });
+    }
+  } else {
+    cookieStore.set(BUNDLE_COOKIE, runSessionId, {
+      path: "/",
+      maxAge: 60 * 60 * 24 * 30,
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
     });
   }
-
-  cookieStore.set(BUNDLE_COOKIE, runSessionId, {
-    path: "/",
-    maxAge: 60 * 60 * 24 * 30,
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-  });
-
   await trackBundleEvent("resume_success", {
     bundleId: run.bundle.id,
     sessionId: runSessionId,

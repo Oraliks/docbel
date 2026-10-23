@@ -100,3 +100,89 @@ persistants et le cookie d'orientation restent à corriger dans navigation. Les
 logs d'événements et le journal de soumission PDF autonome restent inchangés :
 une réponse éphémère n'implique pas absence de toute collecte technique. Admin
 métier et outils non concernés n'ont pas été refondus ni testés globalement.
+
+## Sous-lot D — qualification et plan du 23/10/2026 (avant code)
+
+Branche isolée codex/public-profile-booking-v1, fondée sur C11e6426e ; A/C et
+leurs PR conservées. Contrat UI A/C compact transmis au chef par message, sans
+document miroir ni intervention dans nav/header/footer/zones DESIGN.
+Budget initial20–60min, confiance moyenne ; revue indépendante proportionnée,
+consommation non mesurée. Lots3–5 fichiers ; deux essais sans nouvelle preuve => chef.
+
+Qualification ciblée :
+- /api/user/profile : GET sous session du propriétaire, PUT upsert données
+  personnelles et DELETE deleteMany. Fermer PUT/DELETE côté HTTP ; garder GET
+  sous sa garde existante. Aucune donnée effacée ni statut/rôle changé.
+- /api/booking/[slug]/waitlist : POST public crée identité et contact en DB.
+  Fermer les nouvelles inscriptions ; anciens enregistrements conservés.
+- /api/booking/[slug]/book : POST public crée Booking, activité et notifications.
+  Fermeture prévue, mais transition des anciennes notifications waitlist à arbitrer
+  avant cette partie (voir ci-dessous). Aucun appel réel DB/mail.
+- Gestion existante : cancel/reschedule/verify/confirm-presence et ICS sous token,
+  renvoi du lien à l'email déjà enregistré, espaces privés sous leurs gardes.
+  Le report met à jour le même Booking ; ne pas le fermer comme nouvelle demande.
+- Availability et dedupe-check restent des lectures/traitements sans création de
+  réservation ; ne pas supprimer un outil éphémère par commodité.
+
+Point soumis au chef : notifyNextWaiter est appelé par annulation/report/actions
+admin et cron ; il marque notified et envoie un lien de création, sans preuve
+permettant une exception de réservation. Recommandation : suspendre seulement
+ce helper avant lecture/mutation/email quand les nouvelles réservations sont
+fermées ; données waitlist, cron/rétention et autres emails inchangés. Sinon
+isoler /book et livrer profil+waitlist seulement. Ne pas décider une suspension
+non mandatée : attendre réponse chef pour la partie concernée, continuer le reste.
+
+Plan de vérification : refus direct HTTP et encodages ; gardes admin/profil lecture
+maintenues ; anciens RDV consultables/annulables/reportables sous contrôles
+existants ; pas de lecture corps/DB/mail au refus. Tests ciblés puis lint baseline,
+suite complète, i18n et build en CI propre. Pas de build local identique aux échecs
+connus de jonction A/C. Pas de DB/Blob partagée, effacement, variables prod,
+fusion/déploiement, modification métier/arbre/calcul/seed/test métier.
+
+### Décisions reçues avant la suite D
+
+Le propriétaire a confirmé explicitement le23/10 : « V1 sans compte visiteur ni
+dossier enregistré, comme décidé ici ». Le conflit avec les clauses génériques
+comptes/sauvegarde du prompt design est tranché ; ne pas le rouvrir. Suspension
+courte du travail respectée, aucun changement perdu ; reprise sur ce mandat.
+Le chef autorise ensuite précisément la première option de transition booking :
+fermer nouvelles réservations/waitlist et suspendre notifyNextWaiter avant toute
+lecture/mutation/email, pour conserver les inscrits sans les marquer notifiés.
+Annulation/report/vérification/ICS/lien de gestion existants, données, gardes
+privées, autres notifications et planification/rétention crons restent conservés.
+Implémentation bornée prévue : proxy, helper waitlist, tests frontière existants,
+nouveau test intégration gestion/profil, ce rapport (5 fichiers). Aucun fichier
+visuel ou du responsable DESIGN n'est édité.
+
+### Résultats D et limites de la preuve
+
+Delta D limité aux cinq fichiers annoncés. Le proxy refuse les mutations profil
+et nouvelles réservations/waitlist avec403 avant les handlers. notifyNextWaiter
+retournefalse avant tout I/O ; aucun inscrit existant n'est marqué ni averti.
+Les tests exécutent les vrais handlers cancel/reschedule et GET profil avec
+fixtures : même Booking mis à jour, email ordinaire conservé, propriétaire requis.
+
+- Tests ciblés :64/64 ; suite complète :3238 réussis,1 ignoré (311 fichiers
+  réussis,1 ignoré). Lint :0 erreur,58 avertissements existants. i18n :réussi.
+- Premier passage complet :timeout15s du test AST rate-limit sous charge
+  concurrente lint/dev/tests. Ce test passe seul7/7 en3,02s ; suite entière
+  relancée seule après arrêt dev/lint, réussie en37,12s. Aucun test/timeout changé.
+- HTTP local Next16.2.6/pnpm10.33.2 :15/15 scénarios ;8 refus directs avec
+  encodages/corps malformés/en-tête middleware, lectures/gardes existantes et
+  contrôles inverses des en-têtes de routage. Renvoi du lien avec email invalide
+  retourne200 avantDB/mail. Le premier503 venait du rate-limit local non
+  configuré ; backend mémoire explicite pour la seconde preuve locale seulement.
+- DB factice127.0.0.1:1, aucune DB/Blob partagée ou messagerie réelle appelée.
+  Serveur de preuve arrêté, aucun listener3327 restant.
+- Revue indépendante GPT-6.1 Sol/medium des cinq fichiers :aucun défaut bloquant,
+  aucun secret/PII réelle. Reviewer informé des résultats et de la qualification.
+- Preuves locales ignorées : .validation-profile-booking-{targeted,tests,lint,
+  i18n,rate-limit,http-results,http-script,server,review}.log.
+
+Le build requis est réservé à la CI propre ; les échecs locaux connus de la
+jonction de dépendances ne sont pas répétés. La PR dépend de83/84 ; cible main
+pour la CI filtrée main/dev. Son diff complet inclut donc A/C par ascendance,
+le delta D seul se lit contre codex/public-persistence-v1. Aucune fusion ou mise
+en production autorisée par ce lot. Les parcours réels sous tokens et avec
+DB partagée ne sont pas testés ici ; fixtures et gardes contrôlent la transition.
+Les adaptations visuelles restent au responsable DESIGN via le chef.

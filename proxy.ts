@@ -21,6 +21,9 @@ export async function proxy(request: NextRequest) {
   const read = ["GET", "HEAD", "OPTIONS"].includes(request.method);
   if (parts[0] !== "api" || read) return NextResponse.next();
 
+  if (parts.length === 3 && parts[1] === "user" && parts[2] === "profile") return closed();
+  if (parts.length === 4 && parts[1] === "booking" && ["book", "waitlist"].includes(parts[3])) return closed();
+
   if (parts.length === 5 && parts[1] === "documents" && parts[2] === "bundles" && parts[4] === "run") {
     return closed();
   }

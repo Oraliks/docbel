@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { NextRequest, NextResponse } from 'next/server'
 import { comparisonFilterParams } from '@/lib/baremes/comparisonFilters'
-const mocks = vi.hoisted(() => ({ auth: vi.fn(), guard: vi.fn(), file: vi.fn(), published: vi.fn(), compare: vi.fn(), review: vi.fn(), refresh: vi.fn() }))
+const mocks = vi.hoisted(() => ({ auth: vi.fn(), guard: vi.fn(), file: vi.fn(), published: vi.fn(), sourceFiles: vi.fn(), compare: vi.fn(), review: vi.fn(), refresh: vi.fn() }))
 vi.mock('@/lib/auth-check', () => ({ requireAdminAuth: mocks.auth }))
 vi.mock('@/lib/admin/readonly-guard', () => ({ ensureWriteAllowed: mocks.guard }))
-vi.mock('@/lib/prisma', () => ({ prisma: { baremeFile: { findUnique: mocks.file, findFirst: mocks.published } }, withDbRetry: <T>(fn: () => T) => fn() }))
+vi.mock('@/lib/prisma', () => ({ prisma: { baremeFile: { findUnique: mocks.file, findFirst: mocks.published, findMany: mocks.sourceFiles } }, withDbRetry: <T>(fn: () => T) => fn() }))
 vi.mock('@/lib/baremes/compareBaremeVersions', () => ({ compareBaremeVersions: mocks.compare }))
 vi.mock('@/lib/baremes/comparisonReview', () => ({ readSnapshot: (d: { comparison?: unknown } | null) => d?.comparison ?? null, recordBaremeComparisonReview: mocks.review, refreshBaremeComparison: mocks.refresh }))
 import { GET, POST as refresh } from '@/app/api/baremes/import/[id]/comparison/route'
@@ -17,6 +17,7 @@ beforeEach(() => {
   mocks.guard.mockResolvedValue(null)
   mocks.file.mockResolvedValue({ id: 'C', fileType: 'test', name: 'C.xlsx', status: 'draft', validFrom: new Date('2026-01-01'), alerts: [], diagnostics: { comparison: { version: 1, state: 'first_import', candidate: { id: 'C', dataRevision: 'C-data' }, reference: null } } })
   mocks.published.mockResolvedValue(null)
+  mocks.sourceFiles.mockResolvedValue([])
   mocks.compare.mockResolvedValue({ changes: [], candidateDataRevision: 'C-data', referenceDataRevision: null, countsByType: {}, countsByChange: {} })
 })
 describe('routes de comparaison Barèmes', () => {

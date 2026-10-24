@@ -251,6 +251,8 @@ export interface BaremeRowTrace {
   mappingFile?: string | null
   /** Template/parser appliqué (ex: 'allocation_matrix'). */
   transformTemplate?: string | null
+  /** Formule telle qu’enregistrée dans Excel ; jamais évaluée par l’importeur. */
+  sourceFormula?: string | null
   /** Explication humaine complète de la provenance (tooltip admin). */
   transformReason?: string | null
   /** Taux d'indemnisation affiché en en-tête de colonne (0.65 / 0.60), si présent. */
@@ -378,7 +380,7 @@ export interface BaremeComparableAmount {
   trace: BaremeRowTrace | null
 }
 
-export type BaremeDiffAttribute = 'unit' | 'minDailySalary' | 'maxDailySalary' | 'article' | 'allocationCode' | 'salaryCode'
+export type BaremeDiffAttribute = 'category' | 'unit' | 'minDailySalary' | 'maxDailySalary' | 'article' | 'allocationCode' | 'salaryCode' | 'rate'
 
 /** Une ligne avant/après, y compris les valeurs inchangées et les collisions. */
 export interface BaremeDiffChange {
@@ -391,6 +393,8 @@ export interface BaremeDiffChange {
   old?: BaremeComparableAmount
   current?: BaremeComparableAmount
   amountChanged?: boolean
+  /** false when old/new context makes a numeric percentage misleading. */
+  amountComparable?: boolean
   changedAttributes?: BaremeDiffAttribute[]
   warning?: 'ambiguous_identity' | 'incomparable_context'
 }

@@ -3,16 +3,18 @@ import type { BaremeComparisonSnapshot } from '../types'
 import { createHash } from 'node:crypto'
 import { Prisma } from '@prisma/client'
 
-const mocks = vi.hoisted(() => ({ file: vi.fn(), transaction: vi.fn(), current: vi.fn(), published: vi.fn(), update: vi.fn(), log: vi.fn(), compare: vi.fn(), blob: vi.fn() }))
+const mocks = vi.hoisted(() => ({ file: vi.fn(), transaction: vi.fn(), current: vi.fn(), published: vi.fn(), update: vi.fn(), log: vi.fn(), compare: vi.fn(), blob: vi.fn(), amounts: vi.fn(), approvals: vi.fn(), deleteApprovals: vi.fn() }))
 vi.mock('@/lib/prisma', () => ({ prisma: { baremeFile: { findUnique: mocks.file }, $transaction: mocks.transaction }, withDbRetry: <T>(fn: () => T) => fn() }))
 vi.mock('../compareBaremeVersions', async (original) => ({ ...await original<typeof import('../compareBaremeVersions')>(), compareBaremeVersions: mocks.compare }))
 vi.mock('@/lib/storage/blob-storage', () => ({ getBlob: mocks.blob, isPrivateBlobPath: (path: string) => path?.startsWith('blobs:https://fixture.private.') }))
+import { dataRevisionFromAmounts } from '../compareBaremeVersions'
 import { recordBaremeComparisonReview, refreshBaremeComparison } from '../comparisonReview'
 
-const reference = { id: 'A', name: 'A', status: 'published', fileType: 'test', validFrom: '2026-01-01', dataRevision: 'A-data' }
-const snapshot = (ref: typeof reference | null = null): BaremeComparisonSnapshot => ({ version: 1, state: ref ? 'computed' : 'first_import', candidate: { ...reference, id: 'C', dataRevision: 'C-data' }, reference: ref, computedAt: '2026-01-01T00:00:00.000Z' })
+const revision = dataRevisionFromAmounts([])
+const reference = { id: 'A', name: 'A', status: 'published', fileType: 'test', validFrom: '2026-01-01', dataRevision: revision }
+const snapshot = (ref: typeof reference | null = null): BaremeComparisonSnapshot => ({ version: 1, state: ref ? 'computed' : 'first_import', candidate: { ...reference, id: 'C', dataRevision: revision }, reference: ref, computedAt: '2026-01-01T00:00:00.000Z' })
 function setup(saved = snapshot(), status = 'draft') {
-  const file = { id: 'C', fileType: 'test', status, diagnostics: { comparison: saved, unknownCodes: ['preserved'], structuralAlerts: [] }, alerts: [], summary: {} }
+  const file = { id: 'C', fileType: 'test', status, validFrom: new Date('2026-01-01'), diagnostics: { comparison: saved, unknownCodes: ['preserved'], structuralAlerts: [] }, alerts: [], summary: {} }
   mocks.file.mockResolvedValue(file)
   mocks.current.mockResolvedValue(file)
   mocks.published.mockResolvedValue(saved.reference)
@@ -20,7 +22,9 @@ function setup(saved = snapshot(), status = 'draft') {
 }
 beforeEach(() => {
   vi.resetAllMocks()
-  mocks.transaction.mockImplementation((fn: (tx: unknown) => unknown) => fn({ baremeFile: { findUnique: mocks.current, findFirst: mocks.published, update: mocks.update }, baremePublicationLog: { create: mocks.log } }))
+  mocks.amounts.mockResolvedValue([])
+  mocks.approvals.mockResolvedValue([])
+  mocks.transaction.mockImplementation((fn: (tx: unknown) => unknown) => fn({ baremeFile: { findUnique: mocks.current, findFirst: mocks.published, update: mocks.update }, baremePublicationLog: { create: mocks.log }, baremeAmount: { findMany: mocks.amounts }, baremeApproval: { findMany: mocks.approvals, deleteMany: mocks.deleteApprovals } }))
   setup()
 })
 describe('revue et renouvellement de comparaison', () => {
@@ -34,10 +38,17 @@ describe('revue et renouvellement de comparaison', () => {
     await expect(recordBaremeComparisonReview('C', 'admin@test', snapshot(reference))).resolves.toMatchObject({ reason: 'stale' })
     expect(mocks.log).not.toHaveBeenCalled()
   })
+  it.each([null, new Date('2999-01-01T00:00:00.000Z')])('ne permet pas de marquer la revue lorsque la date d’effet est absente ou future', async (validFrom) => {
+    mocks.file.mockResolvedValue({ id: 'C', fileType: 'test', status: 'draft', validFrom, diagnostics: { comparison: snapshot() }, summary: {}, alerts: [], fileHash: null, fileSize: null, filePath: '' })
+
+    await expect(recordBaremeComparisonReview('C', 'admin@test', snapshot())).resolves.toMatchObject({ reason: 'date_unavailable' })
+    expect(mocks.compare).not.toHaveBeenCalled()
+    expect(mocks.log).not.toHaveBeenCalled()
+  })
   it('renouvelle C vers B sans réimport et conserve diagnostics et ancienne paire', async () => {
     const old = snapshot(reference); setup(old)
-    const next = { ...reference, id: 'B', dataRevision: 'B-data' }
-    mocks.compare.mockResolvedValue({ ...old, changes: [], countsByType: { added: 0, modified: 0, disappeared: 0 }, reference: next, candidateDataRevision: 'C-data', referenceDataRevision: 'B-data' })
+    const next = { ...reference, id: 'B', dataRevision: revision }
+    mocks.compare.mockResolvedValue({ ...old, changes: [], countsByType: { added: 0, modified: 0, disappeared: 0, unchanged: 0, ambiguous: 0 }, reference: next, candidateDataRevision: revision, referenceDataRevision: revision })
     mocks.published.mockResolvedValue(next)
     await expect(refreshBaremeComparison('C', 'admin@test')).resolves.toMatchObject({ status: 'refreshed', snapshot: { reference: { id: 'B' } } })
     expect(mocks.compare).toHaveBeenCalledWith('C', undefined)
@@ -46,6 +57,17 @@ describe('revue et renouvellement de comparaison', () => {
   })
   it('refuse une modification concurrente du snapshot', async () => {
     mocks.current.mockResolvedValue({ status: 'draft', diagnostics: {} })
+    await expect(refreshBaremeComparison('C', 'admin@test')).resolves.toMatchObject({ reason: 'stale' })
+    expect(mocks.update).not.toHaveBeenCalled()
+    expect(mocks.log).not.toHaveBeenCalled()
+  })
+  it('refuse un renouvellement si les données changent entre le calcul et l’écriture transactionnelle', async () => {
+    mocks.amounts.mockResolvedValue([{
+      id: 'changed-row', sourceSheet: 'F', category: 'full_unemployment', allocationCode: 'key', salaryCode: null,
+      article: null, labelFr: 'key', labelNl: null, unit: 'daily', amount: { toNumber: () => 42 },
+      minDailySalary: null, maxDailySalary: null, comparisonKey: 'key', rawData: { trace: { rate: 0.4 } },
+    }])
+
     await expect(refreshBaremeComparison('C', 'admin@test')).resolves.toMatchObject({ reason: 'stale' })
     expect(mocks.update).not.toHaveBeenCalled()
     expect(mocks.log).not.toHaveBeenCalled()

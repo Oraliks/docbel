@@ -79,14 +79,16 @@ export function buildBaremeDiff(current: BaremeComparableAmount[], previous: Bar
     if (!old && next) { changes.push({ type: 'added', key, newValue: next.amount, category: next.category, sourceSheet: next.sourceSheet, current: next }); continue }
     if (old && !next) { changes.push({ type: 'disappeared', key, oldValue: old.amount, category: old.category, sourceSheet: old.sourceSheet, old }); continue }
     if (!old || !next) continue
-    const contextMismatch = comparisonContextMismatch(old, next)
-    if (contextMismatch) {
-      changes.push({ ...ambiguousChange(key, old, next), warning: 'incomparable_context' })
-      continue
-    }
     const changedAttributes = changedAttributeNames(old, next)
     const amountChanged = !numbersEqual(old.amount, next.amount)
-    changes.push({ type: amountChanged || changedAttributes.length ? 'modified' : 'unchanged', key, oldValue: old.amount, newValue: next.amount, category: next.category, sourceSheet: next.sourceSheet, old, current: next, amountChanged, changedAttributes })
+    const amountComparable = !comparisonContextMismatch(old, next)
+    changes.push({
+      type: amountChanged || changedAttributes.length ? 'modified' : 'unchanged',
+      key, oldValue: old.amount, newValue: next.amount, category: next.category,
+      sourceSheet: next.sourceSheet, old, current: next, amountChanged, amountComparable,
+      changedAttributes,
+      ...(amountComparable ? {} : { warning: 'incomparable_context' as const }),
+    })
   }
   const countsByType = { modified: 0, unchanged: 0, added: 0, disappeared: 0, ambiguous: 0 }
   let amount = 0; let attributes = 0
@@ -102,9 +104,10 @@ function comparisonContextMismatch(old: BaremeComparableAmount, current: BaremeC
   return old.category !== current.category || old.unit !== current.unit ||
     old.article !== current.article || old.minDailySalary !== current.minDailySalary ||
     old.maxDailySalary !== current.maxDailySalary ||
+    old.allocationCode !== current.allocationCode || old.salaryCode !== current.salaryCode ||
     (old.trace?.rate ?? null) !== (current.trace?.rate ?? null)
 }
-function changedAttributeNames(old: BaremeComparableAmount, current: BaremeComparableAmount): BaremeDiffAttribute[] { const values: Array<[BaremeDiffAttribute, unknown, unknown]> = [['unit', old.unit, current.unit], ['minDailySalary', old.minDailySalary, current.minDailySalary], ['maxDailySalary', old.maxDailySalary, current.maxDailySalary], ['article', old.article, current.article], ['allocationCode', old.allocationCode, current.allocationCode], ['salaryCode', old.salaryCode, current.salaryCode]]; return values.filter(([, a, b]) => !sameNullable(a, b)).map(([name]) => name) }
+function changedAttributeNames(old: BaremeComparableAmount, current: BaremeComparableAmount): BaremeDiffAttribute[] { const values: Array<[BaremeDiffAttribute, unknown, unknown]> = [['category', old.category, current.category], ['unit', old.unit, current.unit], ['minDailySalary', old.minDailySalary, current.minDailySalary], ['maxDailySalary', old.maxDailySalary, current.maxDailySalary], ['article', old.article, current.article], ['allocationCode', old.allocationCode, current.allocationCode], ['salaryCode', old.salaryCode, current.salaryCode], ['rate', old.trace?.rate ?? null, current.trace?.rate ?? null]]; return values.filter(([, a, b]) => !sameNullable(a, b)).map(([name]) => name) }
 function sameNullable(a: unknown, b: unknown) { return a === b || (typeof a === 'number' && typeof b === 'number' && numbersEqual(a, b)) }
 function numbersEqual(a: number, b: number) { return Math.abs(a - b) < 0.00000001 }
 export function dataRevisionFromAmounts(rows: BaremeComparableAmount[]) {
@@ -117,7 +120,9 @@ export function dataRevisionFromAmounts(rows: BaremeComparableAmount[]) {
       sourceCell: row.trace.sourceCell ?? null, sourceRowIndex: row.trace.sourceRowIndex ?? null,
       sourceColumnIndex: row.trace.sourceColumnIndex ?? null, rawValue: row.trace.rawValue ?? null,
       normalizedValue: row.trace.normalizedValue ?? null, rate: row.trace.rate ?? null,
-      mappingFile: row.trace.mappingFile ?? null, transformTemplate: row.trace.transformTemplate ?? null,
+      mappingKey: row.trace.mappingKey ?? null, mappingFile: row.trace.mappingFile ?? null,
+      transformTemplate: row.trace.transformTemplate ?? null, transformReason: row.trace.transformReason ?? null,
+      sourceFormula: row.trace.sourceFormula ?? null,
     } : null,
   }))
   return createHash('sha256').update(JSON.stringify(canonical)).digest('hex')
@@ -127,7 +132,7 @@ type AmountChange = BaremeDiffChange & { oldValue: number; newValue: number }
 export function detectAnomaliesFromDiff(diff: BaremeDiff): BaremeAlert[] {
   const suspects: AmountChange[] = []; const critical: AmountChange[] = []
   for (const change of diff.changes) {
-    if (change.type !== 'modified' || !change.amountChanged || change.oldValue === undefined || change.newValue === undefined || change.oldValue === 0) continue
+    if (change.type !== 'modified' || !change.amountChanged || change.amountComparable === false || change.oldValue === undefined || change.newValue === undefined || change.oldValue === 0) continue
     const pct = Math.abs((change.newValue - change.oldValue) / change.oldValue) * 100
     if (pct >= ANOMALY_ERROR_THRESHOLD_PCT) critical.push(change as AmountChange); else if (pct >= ANOMALY_THRESHOLD_PCT) suspects.push(change as AmountChange)
   }

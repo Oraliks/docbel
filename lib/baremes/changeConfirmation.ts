@@ -2,7 +2,7 @@ import { Prisma } from '@prisma/client'
 import { prisma, withDbRetry } from '@/lib/prisma'
 import { compareBaremeVersions } from './compareBaremeVersions'
 import { sameComparisonSnapshot } from './comparisonIdentity'
-import { readSnapshot } from './comparisonReview'
+import { readCurrentDataRevision, readSnapshot } from './comparisonReview'
 import { getBlob, isPrivateBlobPath } from '@/lib/storage/blob-storage'
 import { sha256 } from './hash'
 import type { BaremeAlert, BaremeComparisonSnapshot, BaremeProblemEvidence } from './types'
@@ -90,11 +90,17 @@ export async function confirmBaremeChange(
         where: { status: 'published', fileType: file.fileType, NOT: { id: fileId } },
         orderBy: [{ validFrom: 'desc' }, { publishedAt: 'desc' }], select: { id: true },
       })
+      const [candidateRevision, referenceRevision] = await Promise.all([
+        readCurrentDataRevision(tx, fileId),
+        published ? readCurrentDataRevision(tx, published.id) : Promise.resolve(null),
+      ])
       const currentSnapshot = readSnapshot(current?.diagnostics)
       if (!current || current.status !== file.status || !currentSnapshot
         || !sameComparisonSnapshot(currentSnapshot, snapshot)
         || current.fileHash !== file.fileHash || current.fileSize !== file.fileSize || current.filePath !== file.filePath
-        || (published?.id ?? null) !== (snapshot.reference?.id ?? null)) {
+        || (published?.id ?? null) !== (snapshot.reference?.id ?? null)
+        || candidateRevision !== diff.candidateDataRevision
+        || referenceRevision !== diff.referenceDataRevision) {
         return { status: 'error' as const, reason: 'stale' as const, message: 'La source ou la référence a changé. Actualisez et recommencez.' }
       }
 

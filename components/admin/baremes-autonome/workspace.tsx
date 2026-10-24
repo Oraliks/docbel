@@ -134,7 +134,7 @@ export function BaremesAutonomeWorkspace() {
   const valueFor = (row: Difference, side: 'before' | 'after') => row[side]?.value
   const issueSummary = workspace?.issues ?? []
 
-  return <main className="flex w-full flex-col gap-5 px-4 py-6 md:px-6">
+  return <section aria-label={t('title')} aria-busy={loading || busy} className="flex w-full flex-col gap-5 px-4 py-6 md:px-6">
     <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
       <AlertDialogContent><AlertDialogHeader><AlertDialogTitle>{t('publishConfirmTitle')}</AlertDialogTitle><AlertDialogDescription>{t('publishConfirmBody')}</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>{t('cancel')}</AlertDialogCancel><AlertDialogAction disabled={busy || loading || !workspace?.canPublish} onClick={() => void publish()}>{t('publish')}</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
     </AlertDialog>
@@ -152,7 +152,7 @@ export function BaremesAutonomeWorkspace() {
       <VersionCard title={workspace?.reference ? t('before') : t('beforeUnavailable')} version={workspace?.reference ?? null} locale={locale} tone="muted" />
       <Card className="border-emerald-500/20 bg-emerald-500/[0.025]"><CardHeader className="pb-2"><CardTitle className="flex items-center gap-2 text-base"><FileUp className="size-5 text-emerald-600" />{t('after')}</CardTitle></CardHeader><CardContent className="space-y-3">
         <div className="flex flex-wrap gap-2"><select aria-label={t('historyLabel')} value={versionId} onChange={(e) => { const id = e.target.value; setPage(1); setVersionId(id); if (!id) { setWorkspace(null); setSelected(null) } }} className="h-9 min-w-0 flex-1 rounded-lg border border-input bg-background px-3 text-sm"><option value="">{t('chooseVersion')}</option>{list.versions.map((v) => <option key={v.id} value={v.id}>{v.name} · {formatDate(v.createdAt, locale)}</option>)}</select>
-          <label className="inline-flex h-9 cursor-pointer items-center rounded-lg border px-3 text-sm hover:bg-muted"><Upload className="mr-2 size-4" />{t('importFile')}<input type="file" accept=".xlsx" className="sr-only" disabled={busy} onChange={(e) => { void onUpload(e.target.files?.[0]); e.currentTarget.value = '' }} /></label></div>
+          <label className="inline-flex h-9 cursor-pointer items-center rounded-lg border px-3 text-sm hover:bg-muted"><Upload className="mr-2 size-4" />{t('importFile')}<input type="file" accept=".xlsx" className="sr-only" disabled={busy || loading} onChange={(e) => { void onUpload(e.target.files?.[0]); e.currentTarget.value = '' }} /></label></div>
         {workspace ? <div className="grid grid-cols-2 gap-3 border-t pt-3 sm:grid-cols-3"><Meta label={t('effectiveDate')} value={workspace.candidate.effectiveFrom ? formatDate(workspace.candidate.effectiveFrom, locale) : t('unknown')} /><Meta label={t('lineCount')} value={formatNumber(workspace.candidate.count, locale)} /><Meta label={t('revision')} value={workspace.candidate.revision} /></div> : <p className="rounded-md border border-dashed p-4 text-sm text-muted-foreground">{t('emptyImport')}</p>}
         {uploadName && <p className="truncate text-xs text-muted-foreground">{t('selectedFile', { name: uploadName })}</p>}
       </CardContent></Card>
@@ -178,7 +178,7 @@ export function BaremesAutonomeWorkspace() {
       {issueSummary.length > 0 && <Card className="border-amber-500/30"><CardContent className="space-y-2 p-4"><p className="font-medium">{t('coverageTitle')}</p><p className="text-sm text-muted-foreground">{t('readingScope')}</p><details open={issueSummary.some((issue) => issue.blocking)}><summary className="cursor-pointer text-sm font-medium">{t('readingDetails', { count: issueSummary.length })}</summary><ul className="mt-2 list-inside list-disc text-sm">{issueSummary.map((issue, i) => <li key={`${issue.sheet}-${issue.cell}-${issue.code}-${i}`}>{t(issueTranslationKey(issue.code))} <span className="text-muted-foreground">({issue.sheet || t('workbook')}{issue.cell ? ` · ${issue.cell}` : ''})</span>{issue.blocking ? ` · ${t('blocking')}` : ''}</li>)}</ul></details></CardContent></Card>}
       <Card className="border-primary/20 bg-primary/[0.025]"><CardContent className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between"><div><h2 className="font-semibold">{t('readyTitle')}</h2></div><Button onClick={() => setConfirmOpen(true)} disabled={!workspace.canPublish || busy || loading || alreadyPublished}>{busy ? t('publishing') : t('publish')} <ArrowRight className="ml-2 size-4" /></Button></CardContent></Card>
     </>}
-  </main>
+  </section>
 }
 
 function Meta({ label, value }: { label: string; value: string }) { return <div className="min-w-0"><div className="text-xs text-muted-foreground">{label}</div><div className="truncate text-sm font-medium tabular-nums">{value}</div></div> }

@@ -16,6 +16,7 @@ test('real workbook import, persistent comparison, publication and responsive so
   page.on('pageerror', e => errors.push(e.message))
   await page.goto('/admin/baremes-autonome')
   await expect(page.getByRole('heading', { name: 'Barèmes — nouveau' })).toBeVisible()
+  await expect(page.getByRole('region', { name: 'Barèmes — nouveau', exact: true })).toHaveAttribute('aria-busy', 'false', { timeout: 60000 })
   await page.locator('input[type=file]').setInputFiles(original!)
   await expect(page.getByRole('combobox', { name: 'Historique des imports' }).locator('option:checked')).toContainText('barema20260901-new.xlsx', { timeout: 60000 })
   await expect(page.getByRole('button', { name: 'Publier dans le nouvel outil', exact: true })).toBeEnabled({ timeout: 60000 })

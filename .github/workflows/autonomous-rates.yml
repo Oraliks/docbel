@@ -1,0 +1,64 @@
+name: Autonomous rates isolation
+on:
+  pull_request:
+    paths:
+      - '**/baremes-autonome/**'
+      - 'prisma/**'
+      - 'tests/e2e/autonomous-rates.spec.ts'
+      - 'tests/e2e/autonomous-rates.config.ts'
+      - 'scripts/*autonomous-rates*'
+      - '.github/workflows/autonomous-rates.yml'
+jobs:
+  isolated-reference:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: docbel_test
+          POSTGRES_DB: autonomous_rates_test
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports: ['55433:5432']
+        options: --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgresql://autonomous_app@127.0.0.1:55433/autonomous_rates_test
+      DIRECT_URL: postgresql://autonomous_app@127.0.0.1:55433/autonomous_rates_test
+      AUTONOMOUS_RATES_TEST_DATABASE_URL: postgresql://autonomous_app@127.0.0.1:55433/autonomous_rates_test
+      DOCBEL_REFERENCE_XLSX: lib/baremes-autonome/__tests__/fixtures/barema20260901-new.xlsx
+      BETTER_AUTH_SECRET: isolated-rates-ci-auth-secret-only
+      BETTER_AUTH_URL: http://localhost:3010
+      NEXT_PUBLIC_BETTER_AUTH_URL: http://localhost:3010
+      BETTER_AUTH_TRUSTED_ORIGINS: http://localhost:3010
+      BOOKING_NRN_SECRET: isolated-rates-ci-nrn-secret-only
+      RATE_LIMIT_BACKEND: memory
+      NEXT_TELEMETRY_DISABLED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - name: Create disposable schema and deny historical domain
+        run: |
+          pnpm exec prisma migrate diff --from-empty --to-schema-datamodel prisma/schema.prisma --script --output /tmp/rates-schema.sql
+          psql postgresql://docbel_test@127.0.0.1:55433/autonomous_rates_test -v ON_ERROR_STOP=1 -f /tmp/rates-schema.sql
+          psql postgresql://docbel_test@127.0.0.1:55433/autonomous_rates_test -v ON_ERROR_STOP=1 -f scripts/autonomous-rates-test-db.sql
+      - run: pnpm exec vitest run lib/baremes-autonome
+      - run: pnpm exec playwright install --with-deps chromium
+      - name: Browser acceptance on isolated reference
+        env:
+          AUTONOMOUS_RATES_RESET_TEST: '1'
+          AUTONOMOUS_RATES_E2E: '1'
+          PLAYWRIGHT_BASE_URL: http://localhost:3010
+        run: |
+          pnpm exec tsx scripts/setup-autonomous-rates-local.ts
+          pnpm exec next dev --webpack -H 127.0.0.1 -p 3010 > /tmp/rates-server.log 2>&1 &
+          pnpm exec playwright test --config tests/e2e/autonomous-rates.config.ts
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: autonomous-rates-browser-evidence
+          path: |
+            test-results/autonomous-rates/*.png
+            playwright-report/
+            /tmp/rates-server.log

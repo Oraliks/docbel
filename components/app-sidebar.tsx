@@ -77,7 +77,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           url: "/admin/chomage/outils",
           children: [
             { title: t("calculateurs"), url: "/admin/chomage/outils/calculateurs" },
-            { title: t("baremes"), url: "/admin/baremes" },
+            { title: t("baremesCurrent"), url: "/admin/baremes" },
+            { title: t("baremesNew"), url: "/admin/baremes-autonome" },
             { title: t("commissions"), url: "/admin/commissions" },
             { title: t("u1"), url: "/admin/u1-institutions" },
           ],

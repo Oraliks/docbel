@@ -64,9 +64,9 @@ async function main() {
   assert.equal(diff.countsByType.unchanged, 10)
   assert.equal(diff.countsByType.added, 10)
   assert.equal(diff.countsByType.disappeared, 5)
-  assert.deepEqual(comparisonAlerts.map((alert) => alert.problem?.affectedCount), [56, 9])
+  assert.deepEqual(comparisonAlerts.map((alert) => alert.problem?.affectedCount), [55, 9])
   const diagnostics = JSON.parse(JSON.stringify({ unknownCodes: [], ignoredRows: [], unsupportedSheets: [{ name: 'Feuille hors périmètre', reason: 'fixture de couverture' }], partialSheets: [], sheetPeriods: [], duplicates: [], contracts: [], comparison: comparisonSnapshot(diff), comparisonAlerts })) as Prisma.InputJsonValue
-  await db.baremeFile.update({ where: { id: candidate.id }, data: { diagnostics } })
+  await db.baremeFile.update({ where: { id: candidate.id }, data: { diagnostics, alerts: comparisonAlerts as Prisma.InputJsonValue } })
   console.log(JSON.stringify({ email, candidateId: candidate.id, referenceId: old.id, expected: diff.countsByType, syntheticAnomalies: comparisonAlerts.map((alert) => alert.problem?.affectedCount) }, null, 2))
 }
 

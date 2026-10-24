@@ -117,6 +117,7 @@ async function main() {
   const { publishBaremeImport, rollbackToVersion } = await import("../lib/baremes/publishBaremeImport")
   const { approveBaremeImport } = await import("../lib/baremes/approveBaremeImport")
   const { recordBaremeComparisonReview, refreshBaremeComparison, readSnapshot } = await import("../lib/baremes/comparisonReview")
+  const { confirmBaremeChange } = await import("../lib/baremes/changeConfirmation")
   const { importBaremeFile } = await import("../lib/baremes/importBaremeFile")
   const { getActiveBaremeData } = await import("../lib/baremes/getActiveBaremeData")
   const { withBlobStorageTestAdapter } = await import("../lib/storage/blob-storage")
@@ -322,7 +323,7 @@ async function main() {
   const restored = await db.baremeFile.findUniqueOrThrow({ where: { id: imported.fileId } })
   assert.equal(restored.status, "published")
   assert.equal(restored.fileHash, workbookHash)
-  assert.equal((await db.baremeFile.findUniqueOrThrow({ where: { id: synthetic.id } })).status, "archived")
+  assert.equal((await db.baremeFile.findUniqueOrThrow({ where: { id: synthetic.id } })).status, "revoked")
   assert.equal(await db.baremeFile.count({ where: { fileType: "onem-rates", status: "published" } }), 1)
   assert.equal((await getActiveBaremeData({ force: true }))?.allAmounts.length, 6600)
   const restoredExport = await exportBaremes(new NextRequest(`https://docbel.test/api/baremes/export?fileId=${imported.fileId}`))
@@ -375,7 +376,15 @@ async function main() {
 
   const amountDraft = async (value: number) => {
     const file = await draft("renewal-alerts")
-    await db.baremeAmount.create({ data: { fileId: file.id, sourceSheet: "F", category: "basic", comparisonKey: "key", amount: value } })
+    const sourceId = randomUUID()
+    const source = Buffer.from(`synthetic renewal source ${value} ${sourceId}`)
+    const filePath = `blobs:https://fixture.private.blob.vercel-storage.com/private/baremes/${prefix}-renewal-${sourceId}.xlsx`
+    blobs.set(filePath, source)
+    await db.baremeFile.update({ where: { id: file.id }, data: { filePath, fileHash: createHash("sha256").update(source).digest("hex"), fileSize: source.byteLength } })
+    await db.baremeAmount.create({ data: {
+      fileId: file.id, sourceSheet: "F", category: "basic", comparisonKey: "key", amount: value,
+      rawData: { trace: { sourceCell: "B2", rawValue: String(value), normalizedValue: value, mappingFile: "runner-renewal-fixture.ts", transformTemplate: "synthetic" } },
+    } })
     await prepareComparison(file.id)
     return file
   }
@@ -386,20 +395,31 @@ async function main() {
   await refreshBaremeComparison(candidateC.id, "runner@example.test")
   const shownCA = readSnapshot((await db.baremeFile.findUniqueOrThrow({ where: { id: candidateC.id } })).diagnostics)
   assert(shownCA)
-  const baseB = await amountDraft(60)
+  const alertsCA = (await db.baremeFile.findUniqueOrThrow({ where: { id: candidateC.id }, select: { diagnostics: true } })).diagnostics as Prisma.JsonObject
+  const confirmationIssueCA = ((alertsCA.comparisonAlerts as Prisma.JsonArray) ?? []).map((entry) => entry as Prisma.JsonObject)
+    .find((entry) => (entry.problem as Prisma.JsonObject | undefined)?.publicationEffect === "review")
+  const problemIdCA = (confirmationIssueCA?.problem as Prisma.JsonObject | undefined)?.id
+  assert.equal(typeof problemIdCA, "string", "La comparaison C/A doit produire une anomalie confirmable")
+  assert.equal((await confirmBaremeChange(candidateC.id, "runner@example.test", {
+    comparison: shownCA, problemId: problemIdCA as string, reason: "Contrôle de la source synthétique C/A avant changement de référence.",
+  })).status, "confirmed")
+  const baseB = await amountDraft(100)
   await refreshBaremeComparison(baseB.id, "runner@example.test")
   await review(baseB.id)
   assert.equal((await publishBaremeImport(baseB.id)).status, "published")
   const renewed = await refreshBaremeComparison(candidateC.id, "runner@example.test")
   assert.equal(renewed.status, "refreshed")
   const renewedFile = await db.baremeFile.findUniqueOrThrow({ where: { id: candidateC.id } })
-  assert((renewedFile.alerts as Prisma.JsonArray).some((alert) => (alert as Prisma.JsonObject).level === "error"))
+  assert((renewedFile.alerts as Prisma.JsonArray).some((alert) => {
+    const problem = (alert as Prisma.JsonObject).problem as Prisma.JsonObject | undefined
+    return problem?.category === "anomaly" && problem.publicationEffect === "review"
+  }))
   assert.equal((renewedFile.summary as Prisma.JsonObject).modifiedEntries, 1)
   assert.equal((await recordBaremeComparisonReview(candidateC.id, "old-screen@example.test", shownCA)).status, "error")
   await review(candidateC.id)
   const refusedPublication = await publishBaremeImport(candidateC.id)
-  assert(refusedPublication.status === "error" && refusedPublication.reason === "has_errors")
-  results.push("C149/A100 vers C149/B60 : compteurs recalculés, ancien écran refusé, erreur comparative bloque la publication")
+  assert(refusedPublication.status === "error" && refusedPublication.reason === "change_confirmation_required")
+  results.push("C149/A100 vers C149/B100 : revue et confirmation C/A invalidées au refresh, ancienne décision refusée et nouvelle confirmation requise")
   const future = await draft("future", { validFrom: new Date("2099-01-01T00:00:00.000Z") })
   assert.equal((await publishBaremeImport(future.id)).status, "error")
   assert.equal((await db.baremeFile.findUniqueOrThrow({ where: { id: future.id } })).status, "draft")

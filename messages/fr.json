@@ -1534,6 +1534,7 @@
   "publicationBlockingIssues": "{count} problème(s) bloquant(s) restent à corriger.",
   "publicationReviewCurrent": "La comparaison affichée a été examinée et enregistrée pour cette révision.",
   "publicationReviewRequired": "La comparaison doit être consultée puis marquée comme examinée avant publication.",
+  "publicationConfirmChangesRequired": "{count} groupe(s) de variations doivent encore être confirmés avec justification.",
   "openComparisonToReview": "Consulter la comparaison",
   "publicationNotReadyExplanation": "Les actions de publication restent indisponibles tant que ces conditions ne sont pas remplies.",
       "downloadCsv": "Télécharger le CSV",

@@ -24,6 +24,8 @@ describe('normalizeBaremeData collisions', () => {
     expect(normalized.amounts.every((row) => row.status === 'warning')).toBe(true)
     expect(normalized.diagnostics.duplicates).toHaveLength(1)
     expect(normalized.diagnostics.duplicates[0].count).toBe(2)
+    expect(normalized.alerts).toContainEqual(expect.objectContaining({ level: 'error', kind: 'duplicate', problem: expect.objectContaining({ publicationEffect: 'blocking', owner: 'developer', affectedCount: 2, affectedKeys: ['basic_amount:D7'], allowedActions: expect.not.arrayContaining(['confirm_change']) }) }))
+    expect(normalized.alerts.find((issue) => issue.kind === 'duplicate')?.problem?.evidence).toHaveLength(2)
     expect(normalized.diagnostics.collisions).toEqual([
       { comparisonKey: 'basic_amount:D7', count: 2, cells: ['Basisbedragen!D2', 'Basisbedragen!D3'] },
     ])

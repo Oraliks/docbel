@@ -142,12 +142,18 @@ export function normalizeBaremeData(
     const examples = [...duplicates.keys()].slice(0, 5).join(', ')
     alerts.push(
       makeIssue({
-        severity: 'warning',
+        severity: 'error',
         kind: 'duplicate',
+        publicationEffect: 'blocking',
+        owner: 'developer',
+        allowedActions: ['open_source', 'reimport', 'technical_report'],
+        affectedCount: [...duplicates.values()].reduce((sum, duplicate) => sum + duplicate.count, 0),
+        affectedKeys: [...duplicates.keys()],
+        evidence: [...duplicates.entries()].flatMap(([comparisonKey, duplicate]) => duplicate.cells.map((source) => { const separator = source.lastIndexOf('!'); return { comparisonKey, sheet: separator < 0 ? undefined : source.slice(0, separator), cell: separator < 0 ? undefined : source.slice(separator + 1) } })),
         title: 'Doublons de clés de comparaison',
         reason: `${duplicates.size} clé(s) apparaissent plusieurs fois (${totalDropped} ligne(s) en collision). Aucune occurrence n'est choisie pour la comparaison. Exemples : ${examples}${duplicates.size > 5 ? '…' : ''}. Détail complet dans le Diagnostic.`,
         recommendation:
-          'Si plusieurs occurrences sont légitimes, la clé de comparaison du parser concerné doit être affinée (voir sheet-templates.ts).',
+          'Transmettre ce constat à l’équipe technique. Réimporter uniquement après correction validée de la correspondance des lignes.',
       })
     )
   }

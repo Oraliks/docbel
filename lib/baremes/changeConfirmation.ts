@@ -165,3 +165,32 @@ function evidenceForChange(change: import('./types').BaremeDiffChange): BaremePr
     newSource: { sheet: current.sourceSheet, cell: current.trace!.sourceCell, rawValue: current.trace!.rawValue, unit: current.unit },
   } as BaremeProblemEvidence
 }
+
+/** Variations confirmables sans décision enregistrée sur la comparaison exacte. */
+export function missingBaremeChangeConfirmations(
+  alerts: BaremeAlert[],
+  snapshot: BaremeComparisonSnapshot,
+  logs: Array<{ action: string; actorEmail: string | null; details: unknown }>,
+): string[] {
+  return alerts.flatMap((alert) => {
+    const problem = alert.problem
+    if (!problem || problem.category !== 'anomaly' || problem.publicationEffect !== 'review'
+      || !problem.allowedActions.includes('confirm_change')) return []
+    const keys = problem.affectedKeys ? [...new Set(problem.affectedKeys)].sort() : []
+    if (!keys.length || keys.length !== problem.affectedCount) return [problem.id]
+    const confirmed = logs.some((log) => {
+      if (log.action !== 'comparison_change_confirmed' || !log.actorEmail) return false
+      const details = log.details as {
+        version?: number; problemId?: string; reason?: string; reviewedKeys?: string[]
+        comparison?: BaremeComparisonSnapshot; candidateDataRevision?: string; referenceDataRevision?: string | null
+      } | null
+      return Boolean(details && details.version === 1 && details.problemId === problem.id
+        && typeof details.reason === 'string' && details.reason.trim().length >= 20
+        && details.comparison && sameComparisonSnapshot(details.comparison, snapshot)
+        && details.candidateDataRevision === snapshot.candidate.dataRevision
+        && details.referenceDataRevision === snapshot.reference?.dataRevision
+        && JSON.stringify([...(details.reviewedKeys ?? [])].sort()) === JSON.stringify(keys))
+    })
+    return confirmed ? [] : [problem.id]
+  })
+}

@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { createHash } from 'node:crypto'
 
 const mocks = vi.hoisted(() => ({
   findUnique: vi.fn(),
@@ -11,6 +12,8 @@ const mocks = vi.hoisted(() => ({
   findReview: vi.fn(),
   findMany: vi.fn(),
   createLogs: vi.fn(),
+  findConfirmations: vi.fn(),
+  findAmounts: vi.fn(),
 }))
 
 vi.mock('@/lib/prisma', () => ({
@@ -24,6 +27,7 @@ import { publishBaremeImport, rollbackToVersion } from '../publishBaremeImport'
 import { extractLatestBaremeRefFromHtml, fetchLatestOnemBaremeUrl } from '../onemSync'
 
 const past = new Date('2026-01-01T00:00:00.000Z')
+const emptyRevision = createHash('sha256').update('[]').digest('hex')
 
 function candidate(overrides: Record<string, unknown> = {}) {
   return {
@@ -39,8 +43,8 @@ function candidate(overrides: Record<string, unknown> = {}) {
       comparison: {
         version: 1,
         state: 'computed',
-        candidate: { id: 'draft-1', name: 'draft.xlsx', status: 'draft', fileType: 'onem-rates', validFrom: '2026-01-01T00:00:00.000Z', dataRevision: 'candidate-revision' },
-        reference: { id: 'previous-1', name: 'previous.xlsx', status: 'published', fileType: 'onem-rates', validFrom: '2025-01-01T00:00:00.000Z', dataRevision: 'reference-revision' },
+        candidate: { id: 'draft-1', name: 'draft.xlsx', status: 'draft', fileType: 'onem-rates', validFrom: '2026-01-01T00:00:00.000Z', dataRevision: emptyRevision },
+        reference: { id: 'previous-1', name: 'previous.xlsx', status: 'published', fileType: 'onem-rates', validFrom: '2025-01-01T00:00:00.000Z', dataRevision: emptyRevision },
         computedAt: '2026-01-01T00:00:00.000Z',
       },
     },
@@ -59,10 +63,13 @@ beforeEach(() => {
         update: mocks.update,
         updateMany: mocks.updateMany,
       },
-      baremePublicationLog: { findFirst: mocks.findReview, createMany: mocks.createLogs },
+      baremePublicationLog: { findFirst: mocks.findReview, createMany: mocks.createLogs, findMany: mocks.findConfirmations },
+      baremeAmount: { findMany: mocks.findAmounts },
     })
   )
   mocks.findReview.mockResolvedValue({ details: { comparison: candidate().diagnostics.comparison } })
+  mocks.findConfirmations.mockResolvedValue([])
+  mocks.findAmounts.mockResolvedValue([])
 })
 
 describe('publishBaremeImport', () => {
@@ -100,6 +107,13 @@ describe('publishBaremeImport', () => {
     } finally {
       vi.useRealTimers()
     }
+  })
+  it('refuse une comparaison revue si les montants ou leur provenance ont ensuite changé', async () => {
+    mocks.findUnique.mockResolvedValue(candidate())
+    mocks.findFirst.mockResolvedValue({ id: 'previous-1' })
+    mocks.findAmounts.mockResolvedValue([{ id: 'changed-row', amount: { toNumber: () => 12 }, minDailySalary: null, maxDailySalary: null, rawData: { trace: { sourceCell: 'B3', rawValue: '12' } } }])
+    await expect(publishBaremeImport('draft-1')).resolves.toMatchObject({ status: 'error', reason: 'comparison_stale' })
+    expect(mocks.updateMany).not.toHaveBeenCalled()
   })
   it('ne laisse plus force contourner une erreur de diagnostic', async () => {
     mocks.findUnique.mockResolvedValue(candidate({ alerts: [{ level: 'error' }] }))

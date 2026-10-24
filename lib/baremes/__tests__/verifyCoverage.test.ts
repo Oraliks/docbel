@@ -48,7 +48,7 @@ describe('verifyCoverage', () => {
     const amounts = [tracedAmount('C12', 76.55), tracedAmount('D12', 69.59)]
     const res = verifyCoverage([sheet], amounts)
     expect(res.results[0].orphans).toContain('E12=50.11')
-    expect(res.alerts.some((a) => a.level === 'warn' && /couverture inverse/i.test(a.title ?? ''))).toBe(true)
+    expect(res.alerts.some((a) => a.level === 'error' && /couverture inverse/i.test(a.title ?? '') && a.problem?.publicationEffect === 'blocking')).toBe(true)
   })
 
   it('ignore un doublon de cellule fusionnée (même valeur tracée dans la ligne)', () => {

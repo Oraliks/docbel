@@ -28,8 +28,8 @@ export async function compareBaremeVersions(newFileId: string, previousFileId?: 
     fetchComparableAmounts(newFileId),
     resolvedPrevious && resolvedPrevious.fileType === candidate.fileType ? fetchComparableAmounts(resolvedPrevious.id) : Promise.resolve([]),
   ])
-  const candidateRef = toFileRef(candidate, dataRevision(current))
-  const referenceRef = resolvedPrevious && resolvedPrevious.fileType === candidate.fileType ? toFileRef(resolvedPrevious, dataRevision(previous)) : null
+  const candidateRef = toFileRef(candidate, dataRevisionFromAmounts(current))
+  const referenceRef = resolvedPrevious && resolvedPrevious.fileType === candidate.fileType ? toFileRef(resolvedPrevious, dataRevisionFromAmounts(previous)) : null
   if (!candidate.validFrom && !previousFileId) return emptyDiff('reference_unavailable', candidateRef)
   if (!referenceRef) return emptyDiff('first_import', candidateRef)
   return buildBaremeDiff(current, previous, candidateRef, referenceRef)
@@ -107,12 +107,18 @@ function comparisonContextMismatch(old: BaremeComparableAmount, current: BaremeC
 function changedAttributeNames(old: BaremeComparableAmount, current: BaremeComparableAmount): BaremeDiffAttribute[] { const values: Array<[BaremeDiffAttribute, unknown, unknown]> = [['unit', old.unit, current.unit], ['minDailySalary', old.minDailySalary, current.minDailySalary], ['maxDailySalary', old.maxDailySalary, current.maxDailySalary], ['article', old.article, current.article], ['allocationCode', old.allocationCode, current.allocationCode], ['salaryCode', old.salaryCode, current.salaryCode]]; return values.filter(([, a, b]) => !sameNullable(a, b)).map(([name]) => name) }
 function sameNullable(a: unknown, b: unknown) { return a === b || (typeof a === 'number' && typeof b === 'number' && numbersEqual(a, b)) }
 function numbersEqual(a: number, b: number) { return Math.abs(a - b) < 0.00000001 }
-function dataRevision(rows: BaremeComparableAmount[]) {
+export function dataRevisionFromAmounts(rows: BaremeComparableAmount[]) {
   const canonical = [...rows].sort((a, b) => a.id.localeCompare(b.id)).map((row) => ({
     sourceSheet: row.sourceSheet, category: row.category, allocationCode: row.allocationCode,
     salaryCode: row.salaryCode, article: row.article, labelFr: row.labelFr, labelNl: row.labelNl,
     unit: row.unit, amount: row.amount, minDailySalary: row.minDailySalary,
     maxDailySalary: row.maxDailySalary, comparisonKey: row.comparisonKey,
+    trace: row.trace ? {
+      sourceCell: row.trace.sourceCell ?? null, sourceRowIndex: row.trace.sourceRowIndex ?? null,
+      sourceColumnIndex: row.trace.sourceColumnIndex ?? null, rawValue: row.trace.rawValue ?? null,
+      normalizedValue: row.trace.normalizedValue ?? null, rate: row.trace.rate ?? null,
+      mappingFile: row.trace.mappingFile ?? null, transformTemplate: row.trace.transformTemplate ?? null,
+    } : null,
   }))
   return createHash('sha256').update(JSON.stringify(canonical)).digest('hex')
 }
@@ -135,13 +141,15 @@ export function detectAnomaliesFromDiff(diff: BaremeDiff): BaremeAlert[] {
     }))
     return makeIssue({
       kind: 'anomaly', severity: 'warning', title,
-      reason: `${changes.length} variation(s) ≥${threshold}% à contrôler — ${changes.slice(0, 5).map((change) => `${formatChange(change)}, ${String(pctDelta(change))}%`).join(', ')}${changes.length > 5 ? '…' : ''}`,
+      reason: `${changes.length} variation(s) ≥${threshold}% à contrôler — ${changes.slice(0, 5).map((change) => `${formatChange(change)}, ${pctDelta(change).toFixed(2)}%`).join(', ')}${changes.length > 5 ? '…' : ''}`,
       publicationEffect: 'review', resolutionState: 'open', affectedCount: changes.length,
       groupId: `anomaly:${threshold}`, allowedActions: ['view_comparison', 'confirm_change', 'technical_report'],
       affectedKeys: keys, evidence: highEvidence,
     })
   }
   return [createAlert(critical, ANOMALY_ERROR_THRESHOLD_PCT, 'Variations très importantes'), createAlert(suspects, ANOMALY_THRESHOLD_PCT, 'Variations importantes')].filter((alert): alert is BaremeAlert => Boolean(alert))
-}function formatChange(c: AmountChange) { return `${c.key} (${String(c.oldValue)} → ${String(c.newValue)})` }
+}
+
+function formatChange(c: AmountChange) { return `${c.key} (${String(c.oldValue)} → ${String(c.newValue)})` }
 function pctDelta(c: AmountChange) { return ((c.newValue - c.oldValue) / c.oldValue) * 100 }
 export const ANOMALY_THRESHOLDS = { warn: ANOMALY_THRESHOLD_PCT, error: ANOMALY_ERROR_THRESHOLD_PCT }

@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
-vi.mock('@/lib/prisma', () => ({ prisma: {}, withDbRetry: <T>(operation: () => T) => operation() }))
-import { buildBaremeDiff, detectAnomaliesFromDiff } from '../compareBaremeVersions'
+const mocks = vi.hoisted(() => ({ file: vi.fn(), amounts: vi.fn() }))
+vi.mock('@/lib/prisma', () => ({ prisma: { baremeFile: { findUnique: mocks.file, findFirst: vi.fn() }, baremeAmount: { findMany: mocks.amounts } }, withDbRetry: <T>(operation: () => T) => operation() }))
+import { buildBaremeDiff, compareBaremeVersions, detectAnomaliesFromDiff } from '../compareBaremeVersions'
 import type { BaremeComparableAmount, BaremeComparisonFileRef } from '../types'
 
 const reference: BaremeComparisonFileRef = { id: 'old', name: 'old.xlsx', status: 'published', fileType: 'onem-rates', validFrom: '2026-01-01T00:00:00.000Z', dataRevision: 'old-revision' }
@@ -9,6 +10,23 @@ function amount(id: string, key: string, value: number, overrides: Partial<Barem
   return { id, comparisonKey: key, amount: value, sourceSheet: 'Feuille 1', category: 'full_unemployment', allocationCode: key, salaryCode: null, article: null, labelFr: key, labelNl: null, unit: 'daily', minDailySalary: null, maxDailySalary: null, trace: { sourceCell: `${id}1`, sourceRowIndex: 1, sourceColumnIndex: 1, rawValue: String(value), normalizedValue: value }, ...overrides }
 }
 
+describe('révision des données comparées', () => {
+  it('invalide la révision quand la provenance AcroForm / cellule change sans modifier le montant', async () => {
+    const dbRows = {
+      old: [{ id: 'old-1', sourceSheet: 'F', category: 'full_unemployment', allocationCode: 'key', salaryCode: null, article: null, labelFr: 'key', labelNl: null, unit: 'daily', amount: 10, minDailySalary: null, maxDailySalary: null, comparisonKey: 'key', rawData: { trace: { sourceCell: 'D7', sourceRowIndex: 7, sourceColumnIndex: 4, rawValue: '10', normalizedValue: 10, rate: 0.6, mappingFile: 'map.ts', transformTemplate: 'basic' } } }],
+      new: [{ id: 'new-1', sourceSheet: 'F', category: 'full_unemployment', allocationCode: 'key', salaryCode: null, article: null, labelFr: 'key', labelNl: null, unit: 'daily', amount: 10, minDailySalary: null, maxDailySalary: null, comparisonKey: 'key', rawData: { trace: { sourceCell: 'D8', sourceRowIndex: 8, sourceColumnIndex: 4, rawValue: '10', normalizedValue: 10, rate: 0.6, mappingFile: 'map.ts', transformTemplate: 'basic' } } }],
+    }
+    mocks.file.mockImplementation(async ({ where }: { where: { id: string } }) => ({ id: where.id, name: `${where.id}.xlsx`, status: where.id === 'new' ? 'draft' : 'published', fileType: 'onem-rates', validFrom: new Date('2026-04-01T00:00:00.000Z') }))
+    mocks.amounts.mockImplementation(async ({ where }: { where: { fileId: 'old' | 'new' } }) => dbRows[where.fileId])
+
+    const before = await compareBaremeVersions('new', 'old')
+    dbRows.new[0].rawData.trace.sourceCell = 'D9'
+    const after = await compareBaremeVersions('new', 'old')
+
+    expect(after.candidateDataRevision).not.toBe(before.candidateDataRevision)
+    expect(after.referenceDataRevision).toBe(before.referenceDataRevision)
+  })
+})
 describe('buildBaremeDiff', () => {
   it('couvre les quatre états, les attributs et la précision à quatre décimales', () => {
     const diff = buildBaremeDiff(

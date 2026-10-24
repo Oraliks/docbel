@@ -212,6 +212,33 @@ export default function BaremeImportPreviewPage() {
     }
   }
 
+  const resumeRejected = async () => {
+    if (!id) return
+    const reason = window.prompt(t('resumeRejectedPrompt'))
+    if (!reason) return
+    if (reason.trim().length < 20) {
+      toast.error(t('resumeRejectedReasonRequired'))
+      return
+    }
+    if (!confirm(t('resumeRejectedConfirm'))) return
+    setActing(true)
+    try {
+      const res = await fetch(`/api/baremes/import/${id}/resume`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reason }),
+      })
+      const body = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(body.error ?? t('resumeRejectedFailed'))
+      toast.success(t('resumeRejectedDone'))
+      await load()
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : t('error'))
+    } finally {
+      setActing(false)
+    }
+  }
+
   const approve = async () => {
     if (!id) return
     const comment = window.prompt(t('approvePrompt')) ?? ''
@@ -291,6 +318,7 @@ export default function BaremeImportPreviewPage() {
   const alerts = file.alerts ?? []
   const summary = file.summary
   const isDraftOrPending = file.status === 'draft' || file.status === 'pending_approval'
+  const isRejected = file.status === 'rejected'
   const isArchived = file.status === 'archived'
   const requiresApproval = file.requiresApproval === true
   const approvals = data.approvals ?? []
@@ -398,6 +426,9 @@ export default function BaremeImportPreviewPage() {
           <div className="flex gap-2 shrink-0">
             {isDraftOrPending && (
               <Button variant="outline" onClick={() => reject()} disabled={acting} className="text-red-600 hover:text-red-700" size="sm">{t('reject')}</Button>
+            )}
+            {isRejected && (
+              <Button variant="outline" onClick={() => void resumeRejected()} disabled={acting} size="sm">{t('resumeRejected')}</Button>
             )}
             {isArchived && (
               <Button onClick={rollback} disabled={acting} variant="outline" size="sm">
@@ -820,6 +851,9 @@ function WorkflowPanel({
                     {h.actorEmail && (
                       <p className="text-xs text-muted-foreground mt-0.5">{t('byActor', { actor: h.actorEmail })}</p>
                     )}
+                    {h.action === 'resumed' && typeof h.details?.reason === 'string' && (
+                      <p className="text-xs text-muted-foreground mt-0.5">{t('workflowResumeReason', { reason: h.details.reason })}</p>
+                    )}
                   </div>
                 </li>
               ))}
@@ -832,6 +866,7 @@ function WorkflowPanel({
 }
 
 function ActionBadge({ action }: { action: string }) {
+  const t = useTranslations('admin.baremes')
   const tones: Record<string, string> = {
     created: 'bg-blue-100 text-blue-900',
     published: 'bg-green-100 text-green-900',
@@ -841,11 +876,12 @@ function ActionBadge({ action }: { action: string }) {
     rollback: 'bg-purple-100 text-purple-900',
     approved: 'bg-green-50 text-green-700',
     submitted_for_approval: 'bg-orange-100 text-orange-900',
+    resumed: 'bg-violet-100 text-violet-900',
   }
   const tone = tones[action] ?? 'bg-muted'
   return (
     <span className={`text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded ${tone}`}>
-      {action.replace(/_/g, ' ')}
+      {action === 'resumed' ? t('workflowActionResumed') : action.replace(/_/g, ' ')}
     </span>
   )
 }

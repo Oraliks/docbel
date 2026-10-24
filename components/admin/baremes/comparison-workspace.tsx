@@ -200,9 +200,9 @@ export function ComparisonWorkspace(props: Props) {
 
     {snapshot?.state === 'first_import' && <p className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-950">{t('comparisonFirstImport')}</p>}
     {snapshot?.state === 'reference_unavailable' && <p role="alert" className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-950">{t('comparisonReferenceUnavailable')}</p>}
-    {data?.state === 'legacy_unavailable' && <div role="status" className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-950"><span>{props.canRecoverComparison ? t('comparisonPending') : t('comparisonHistoricUnavailable')}</span>{props.canRecoverComparison && <Button type="button" variant="outline" onClick={refresh} disabled={props.busy}><RefreshCw className="mr-2 size-4" />{t('comparisonRefresh')}</Button>}</div>}
+    {data?.state === 'legacy_unavailable' && <div role="status" className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-950"><span>{props.canRecoverComparison ? t('comparisonPending') : t('comparisonHistoricUnavailable')}</span>{props.canRecoverComparison && isDraft && <Button type="button" variant="outline" onClick={refresh} disabled={props.busy}><RefreshCw className="mr-2 size-4" />{t('comparisonRefresh')}</Button>}</div>}
     {data?.error && <p role="alert" className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">{data.error}</p>}
-    {stale && <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-950"><span className="flex items-center gap-2"><AlertTriangle className="size-4 shrink-0" />{t('comparisonStale')}</span><Button type="button" variant="outline" onClick={refresh} disabled={props.busy}><RefreshCw className="mr-2 size-4" />{t('comparisonRefresh')}</Button></div>}
+    {stale && <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-950"><span className="flex items-center gap-2"><AlertTriangle className="size-4 shrink-0" />{t('comparisonStale')}</span>{isDraft && <Button type="button" variant="outline" onClick={refresh} disabled={props.busy}><RefreshCw className="mr-2 size-4" />{t('comparisonRefresh')}</Button>}</div>}
     {props.file.publicationDateStatus !== 'applicable' && isDraft && <p role="status" className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-950">{t(`comparisonDate_${props.file.publicationDateStatus}`)}</p>}
     {missingConfirmationCount > 0 && <p role="status" className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-950">{t('comparisonConfirmationsRequired', { count: missingConfirmationCount })} <Link className="font-medium underline" href={`/admin/baremes/import/${props.file.id}?tab=issues`}>{t('comparisonOpenConfirmations')}</Link></p>}
 
@@ -273,7 +273,7 @@ export function ComparisonWorkspace(props: Props) {
         </ul>
         <div className="flex flex-wrap gap-2">
           {isDraft && !reviewed && <Button type="button" variant="outline" onClick={() => snapshot && void props.onReview(snapshot)} disabled={!canReview || stale}><ShieldCheck className="mr-2 size-4" />{t('comparisonReview')}</Button>}
-          {props.file.status !== 'published' && (showApproval
+          {isDraft && (showApproval
             ? <Button type="button" onClick={props.onApprove} disabled={!canPublish}><CheckCircle2 className="mr-2 size-4" />{t('approveWithCount', { count: props.approvalCount })}</Button>
             : <Button type="button" onClick={props.onPublish} disabled={!canPublish}><ArrowRight className="mr-2 size-4" />{t('comparisonPublishButton')}</Button>)}
           {props.file.status === 'published' && <Badge className="self-center"><CheckCircle2 className="mr-1 size-4" />{t('comparisonPublished')}</Badge>}

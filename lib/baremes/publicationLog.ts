@@ -12,6 +12,7 @@ export type PublicationAction =
   | 'submitted_for_approval'
   | 'force_published'
   | 'comparison_reviewed'
+  | 'resumed'
 
 export interface LogEventInput {
   fileId: string

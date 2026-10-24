@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 const mocks = vi.hoisted(() => ({ file: vi.fn(), amounts: vi.fn() }))
 vi.mock('@/lib/prisma', () => ({ prisma: { baremeFile: { findUnique: mocks.file, findFirst: vi.fn() }, baremeAmount: { findMany: mocks.amounts } }, withDbRetry: <T>(operation: () => T) => operation() }))
-import { buildBaremeDiff, compareBaremeVersions, detectAnomaliesFromDiff } from '../compareBaremeVersions'
+import { buildBaremeDiff, compareBaremeVersions, dataRevisionFromAmounts, detectAnomaliesFromDiff } from '../compareBaremeVersions'
 import type { BaremeComparableAmount, BaremeComparisonFileRef } from '../types'
 
 const reference: BaremeComparisonFileRef = { id: 'old', name: 'old.xlsx', status: 'published', fileType: 'onem-rates', validFrom: '2026-01-01T00:00:00.000Z', dataRevision: 'old-revision' }
@@ -34,17 +34,17 @@ describe('buildBaremeDiff', () => {
       [amount('o1', 'modified', 10.1234), amount('o2', 'unchanged', 20), amount('o4', 'unit', 40, { unit: 'daily' }), amount('o5', 'disappeared', 50), amount('o6', 'attribute', 50)],
       candidate, reference
     )
-    expect(diff.countsByType).toMatchObject({ modified: 2, unchanged: 1, added: 1, disappeared: 1, ambiguous: 1 })
+    expect(diff.countsByType).toMatchObject({ modified: 3, unchanged: 1, added: 1, disappeared: 1, ambiguous: 0 })
     expect(diff.changes.find((row) => row.key === 'modified')).toMatchObject({ type: 'modified', amountChanged: true, oldValue: 10.1234, newValue: 10.1235 })
     expect(diff.changes.find((row) => row.key === 'attribute')?.changedAttributes).toEqual(['allocationCode'])
-    expect(diff.changes.find((row) => row.key === 'unit')).toMatchObject({ type: 'ambiguous', warning: 'incomparable_context' })
+    expect(diff.changes.find((row) => row.key === 'unit')).toMatchObject({ type: 'modified', warning: 'incomparable_context', amountComparable: false })
   })
   it('isole les collisions au lieu de les rapprocher arbitrairement', () => {
     const diff = buildBaremeDiff([amount('n1', 'duplicate', 10), amount('n2', 'duplicate', 11)], [amount('o1', 'duplicate', 10)], candidate, reference)
     expect(diff.countsByType.ambiguous).toBe(3)
     expect(diff.changes.every((row) => row.warning === 'ambiguous_identity')).toBe(true)
   })
-  it('refuse de qualifier une variation quand unité, catégorie, article ou taux changent', () => {
+  it('traite les changements de contexte comme modifiés, sans delta économique comparable', () => {
     const old = [
       amount('o1', 'unit', 10),
       amount('o2', 'category', 20),
@@ -60,10 +60,28 @@ describe('buildBaremeDiff', () => {
 
     const diff = buildBaremeDiff(next, old, candidate, reference)
 
-    expect(diff.countsByType.ambiguous).toBe(4)
-    expect(diff.countsByType.modified).toBe(0)
+    expect(diff.countsByType.ambiguous).toBe(0)
+    expect(diff.countsByType.modified).toBe(4)
     expect(diff.changes.every((change) => change.warning === 'incomparable_context')).toBe(true)
-    expect(diff.countsByChange.amount).toBe(0)
+    expect(diff.changes.every((change) => change.amountComparable === false)).toBe(true)
+    expect(detectAnomaliesFromDiff(diff)).toEqual([])
+  })
+  it('ne masque pas un changement de taux lorsque la valeur numérique reste égale', () => {
+    const old = amount('o1', 'rate-equal', 100, { trace: { ...amount('o1', 'rate-equal', 100).trace!, rate: 0.6 } })
+    const next = amount('n1', 'rate-equal', 100, { trace: { ...amount('n1', 'rate-equal', 100).trace!, rate: 0.4 } })
+
+    const diff = buildBaremeDiff([next], [old], candidate, reference)
+
+    expect(diff.changes[0]).toMatchObject({ type: 'modified', amountChanged: false, amountComparable: false, changedAttributes: ['rate'], warning: 'incomparable_context' })
+  })
+  it('n’émet pas de variation en pourcentage si le montant passe du journalier au mensuel', () => {
+    const diff = buildBaremeDiff(
+      [amount('n1', 'unit-rate', 200, { unit: 'monthly' })],
+      [amount('o1', 'unit-rate', 100, { unit: 'daily' })], candidate, reference,
+    )
+
+    expect(diff.changes[0]).toMatchObject({ type: 'modified', amountChanged: true, amountComparable: false })
+    expect(detectAnomaliesFromDiff(diff)).toEqual([])
   })
   it('reconnaît une variation depuis zéro sans calculer un pourcentage infini', () => {
     const diff = buildBaremeDiff([amount('n1', 'zero-base', 12)], [amount('o1', 'zero-base', 0)], candidate, reference)
@@ -85,4 +103,13 @@ describe('buildBaremeDiff', () => {
     expect(diff.countsByType.modified).toBe(135)
     expect(diff.changes.slice(100, 135)).toHaveLength(35)
   })
+})
+
+it('inclut le taux, la formule et la justification de transformation dans la révision des données', () => {
+  const original = amount('row', 'key', 100, { trace: { ...amount('row', 'key', 100).trace!, rate: 0.6, sourceFormula: 'ROUND(A1,2)', transformReason: 'Taux de la colonne A1' } })
+  const changedRate = { ...original, trace: { ...original.trace!, rate: 0.4 } }
+  const changedFormula = { ...original, trace: { ...original.trace!, sourceFormula: 'ROUND(A1/2,2)' } }
+
+  expect(dataRevisionFromAmounts([changedRate])).not.toBe(dataRevisionFromAmounts([original]))
+  expect(dataRevisionFromAmounts([changedFormula])).not.toBe(dataRevisionFromAmounts([original]))
 })

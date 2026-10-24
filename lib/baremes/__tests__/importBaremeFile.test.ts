@@ -114,6 +114,23 @@ beforeEach(() => {
 })
 
 describe('importBaremeFile — conservation de la source', () => {
+  it('attache la formule Excel de la cellule réelle à la provenance du montant', async () => {
+    mocks.parse.mockReturnValue({
+      fileMetadata: { effectiveDate: '1-4-2026' },
+      sheets: [{ name: 'Formules', category: 'Formules', sheetIndex: 0, rowCount: 2, colCount: 2, cellData: [['Code', 'Montant'], ['AA1', '0.75']], searchText: 'aa1 0.75', formulaData: { B2: 'ROUND(A2/2,2)' } }],
+    })
+    mocks.normalize.mockReturnValue({
+      amounts: [{ sourceSheet: 'Formules', category: 'full_unemployment', amount: 0.75, comparisonKey: 'AA1', trace: { sourceCell: 'B2', sourceRowIndex: 2, sourceColumnIndex: 2, rawValue: '0.75', normalizedValue: 0.75 } }],
+      alerts: [], summary: { sheetsDetected: 1, sheetsParsed: 1, sheetsIgnored: 0, sheetsByName: [], amountsExtracted: 1 },
+      validFrom: new Date('2026-04-01T00:00:00.000Z'),
+      diagnostics: { unknownCodes: [], ignoredRows: [], unsupportedSheets: [], partialSheets: [], sheetPeriods: [], duplicates: [] },
+    })
+
+    await importBaremeFile({ buffer: sourceBytes, fileName: 'barema-new-01042026.xlsx' })
+
+    expect(mocks.createAmounts).toHaveBeenCalledWith(expect.objectContaining({ data: [expect.objectContaining({ rawData: expect.objectContaining({ trace: expect.objectContaining({ sourceCell: 'B2', sourceFormula: 'ROUND(A2/2,2)' }) }) })] }))
+  })
+
   it('conserve le xlsx exact dans le Blob privé avant de créer le draft', async () => {
     const result = await importBaremeFile({
       buffer: sourceBytes,

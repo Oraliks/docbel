@@ -121,6 +121,11 @@ export async function importBaremeFile(
   const validFromFromName = extractValidFromFileName(input.fileName)
   const overrides = await loadSheetMappingOverrides('onem-rates').catch(() => ({}))
   const normalized = normalizeBaremeData(parsed, validFromFromName, overrides)
+  const formulasBySheet = new Map(parsed.sheets.map((sheet) => [sheet.name, sheet.formulaData]))
+  for (const amount of normalized.amounts) {
+    if (!amount.trace) continue
+    amount.trace.sourceFormula = formulasBySheet.get(amount.sourceSheet)?.[amount.trace.sourceCell] ?? null
+  }
 
   // 3bis) Validation zod finale des drafts — un draft invalide est écarté avec issue
   const validatedAmounts: BaremeAmountDraft[] = []

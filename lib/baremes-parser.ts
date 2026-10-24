@@ -7,6 +7,7 @@ export interface ParsedSheet {
   rowCount: number
   colCount: number
   cellData: string[][]  // Grid: rows of cells (string values)
+  formulaData?: Record<string, string>
   searchText: string    // Concatenated text for search
 }
 
@@ -44,7 +45,7 @@ export function parseBaremaFile(buffer: ArrayBuffer): ParsedBaremaData {
       const worksheet = workbook.Sheets[sheetName]
       const category = SHEET_CATEGORY_MAP[sheetName] || sheetName
 
-      const { cellData, rowCount, colCount, searchText } = extractGrid(worksheet)
+      const { cellData, rowCount, colCount, searchText, formulaData } = extractGrid(worksheet)
 
       return {
         name: sheetName,
@@ -53,6 +54,7 @@ export function parseBaremaFile(buffer: ArrayBuffer): ParsedBaremaData {
         rowCount,
         colCount,
         cellData,
+        formulaData,
         searchText,
       }
     })
@@ -73,12 +75,13 @@ export function parseBaremaFile(buffer: ArrayBuffer): ParsedBaremaData {
 
 function extractGrid(worksheet: XLSX.WorkSheet): {
   cellData: string[][]
+  formulaData: Record<string, string>
   rowCount: number
   colCount: number
   searchText: string
 } {
   if (!worksheet['!ref']) {
-    return { cellData: [], rowCount: 0, colCount: 0, searchText: '' }
+    return { cellData: [], formulaData: {}, rowCount: 0, colCount: 0, searchText: '' }
   }
 
   const range = XLSX.utils.decode_range(worksheet['!ref'])
@@ -86,6 +89,7 @@ function extractGrid(worksheet: XLSX.WorkSheet): {
   const maxCol = range.e.c
 
   const cellData: string[][] = []
+  const formulaData: Record<string, string> = {}
   const searchTextParts: string[] = []
 
   for (let r = 0; r <= maxRow; r++) {
@@ -96,6 +100,7 @@ function extractGrid(worksheet: XLSX.WorkSheet): {
 
       let value = ''
       if (cell) {
+        if (typeof cell.f === 'string' && cell.f.trim()) formulaData[cellRef] = cell.f
         if (cell.t === 'd' && cell.v instanceof Date) {
           // Cellule date : on émet du ISO (YYYY-MM-DD) non ambigu plutôt que la
           // chaîne formatée .w, qui peut être en format US (M/J/AA) sur certaines
@@ -127,6 +132,7 @@ function extractGrid(worksheet: XLSX.WorkSheet): {
 
   return {
     cellData,
+    formulaData,
     rowCount: cellData.length,
     colCount: maxCol + 1,
     searchText: searchTextParts.join(' '),

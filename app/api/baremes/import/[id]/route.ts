@@ -4,6 +4,7 @@ import { requireAdminAuth } from '@/lib/auth-check'
 import { getPublicationHistory } from '@/lib/baremes/publicationLog'
 import { isBlockingIssue, type BaremeAlert } from '@/lib/baremes/types'
 import { canResumeComparison } from '@/lib/baremes/comparisonReview'
+import { baremePublicationDateStatus } from '@/lib/baremes/calendar-date'
 
 export const runtime = 'nodejs'
 const jsonHeaders = { 'Content-Type': 'application/json; charset=utf-8' }
@@ -90,6 +91,7 @@ export async function GET(
           // imports historiques sans original doivent rester explicitement
           // identifiables, sans exposer leur référence de stockage.
           sourceAvailable: Boolean(filePath),
+          publicationDateStatus: baremePublicationDateStatus(file.validFrom),
         },
         exportAllowed,
         amountsPreview: amounts.map(serializeAmount),

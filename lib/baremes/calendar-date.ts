@@ -25,3 +25,11 @@ export function parseCalendarDate(value: string): Date | null {
     ? result
     : null
 }
+
+export type BaremePublicationDateStatus = 'missing' | 'future' | 'applicable'
+
+/** Règle unique partagée par la publication serveur et son état admin. */
+export function baremePublicationDateStatus(validFrom: Date | null, now = new Date()): BaremePublicationDateStatus {
+  if (!validFrom) return 'missing'
+  return validFrom > parseCalendarDate(brusselsCalendarDay(now))! ? 'future' : 'applicable'
+}

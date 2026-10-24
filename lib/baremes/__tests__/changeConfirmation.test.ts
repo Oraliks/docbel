@@ -6,7 +6,10 @@ const mocks = vi.hoisted(() => ({ file: vi.fn(), published: vi.fn(), compare: vi
 vi.mock('@/lib/prisma', () => ({ prisma: { baremeFile: { findUnique: mocks.file, findFirst: mocks.published }, $transaction: mocks.transaction }, withDbRetry: <T>(operation: () => T) => operation() }))
 vi.mock('@prisma/client', () => ({ Prisma: { TransactionIsolationLevel: { Serializable: 'Serializable' }, PrismaClientKnownRequestError: class extends Error {} } }))
 vi.mock('../compareBaremeVersions', () => ({ compareBaremeVersions: mocks.compare }))
-vi.mock('../comparisonReview', () => ({ readSnapshot: (diagnostics: { comparison?: BaremeComparisonSnapshot } | null) => diagnostics?.comparison ?? null }))
+vi.mock('../comparisonReview', () => ({
+  readSnapshot: (diagnostics: { comparison?: BaremeComparisonSnapshot } | null) => diagnostics?.comparison ?? null,
+  readCurrentDataRevision: async (_tx: unknown, fileId: string) => fileId === 'C' ? 'revision-C' : 'revision-A',
+}))
 vi.mock('@/lib/storage/blob-storage', () => ({ getBlob: mocks.blob, isPrivateBlobPath: (path: string) => path.startsWith('blobs:https://fixture.private.') }))
 
 import { confirmBaremeChange } from '../changeConfirmation'

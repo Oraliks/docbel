@@ -5,7 +5,7 @@ import { logPublicationEvent } from './publicationLog'
 import { readSnapshot } from './comparisonReview'
 import { dataRevisionFromAmounts } from './compareBaremeVersions'
 import { missingBaremeChangeConfirmations } from './changeConfirmation'
-import { brusselsCalendarDay, parseCalendarDate } from './calendar-date'
+import { baremePublicationDateStatus, brusselsCalendarDay, parseCalendarDate } from './calendar-date'
 
 export interface PublishBaremeOptions {
   /** Identité loggée dans BaremeFile.publishedBy (typiquement email). */
@@ -70,14 +70,15 @@ function validatePublicationCandidate(
         "Ce barème exige une double approbation. Utiliser le workflow d'approbation au lieu de la publication directe.",
     }
   }
-  if (!file.validFrom) {
+  const dateStatus = baremePublicationDateStatus(file.validFrom)
+  if (dateStatus === 'missing') {
     return {
       status: 'error',
       reason: 'missing_valid_from',
       message: "Date d'effet absente ou illisible — publication automatique bloquée.",
     }
   }
-  if (file.validFrom > parseCalendarDate(brusselsCalendarDay())!) {
+  if (dateStatus === 'future') {
     return {
       status: 'error',
       reason: 'future_valid_from',

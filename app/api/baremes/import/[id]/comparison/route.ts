@@ -43,6 +43,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       return NextResponse.json({ state: 'legacy_unavailable', error: 'Cet import ne conserve pas de paire de comparaison historique.' }, { status: 409, headers: jsonHeaders })
     }
     const diff = await compareBaremeVersions(id, snapshot.reference?.id ?? null)
+    const comparisonAlerts = (file.diagnostics as { comparisonAlerts?: unknown[] } | null)?.comparisonAlerts ?? []
     const currentPublished = await withDbRetry(() => prisma.baremeFile.findFirst({
       where: { status: 'published', fileType: file.fileType, NOT: { id } }, orderBy: [{ validFrom: 'desc' }, { publishedAt: 'desc' }], select: { id: true },
     }))
@@ -52,6 +53,15 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     const stale = snapshot.candidate.dataRevision !== diff.candidateDataRevision
       || (snapshot.reference?.dataRevision ?? null) !== diff.referenceDataRevision
       || (reviewingDraft && (snapshot.reference?.id ?? null) !== (currentPublished?.id ?? null))
+    const sourceIds = [id, diff.reference?.id].filter((value): value is string => Boolean(value))
+    const sourceFiles = await withDbRetry(() => prisma.baremeFile.findMany({
+      where: { id: { in: sourceIds } }, take: 2,
+      select: { id: true, filePath: true, uploadedAt: true, publishedAt: true, _count: { select: { amounts: true } } },
+    }))
+    const sources = Object.fromEntries(sourceFiles.map((source) => [source.id, {
+      available: Boolean(source.filePath), amountsCount: source._count.amounts,
+      uploadedAt: source.uploadedAt.toISOString(), publishedAt: source.publishedAt?.toISOString() ?? null,
+    }]))
     const filters = parsed.data
     const filtered = diff.changes.filter((row) => matchesFilters(row, filters))
     const ordered = [...filtered].sort(compareRows)
@@ -59,7 +69,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     const start = (filters.page - 1) * filters.pageSize
     const items = ordered.slice(start, start + filters.pageSize)
     return NextResponse.json({
-      state: stale ? 'stale' : 'ready', comparison: snapshot, current: {
+      state: stale ? 'stale' : 'ready', comparison: snapshot, comparisonAlerts, sources, current: {
         candidateDataRevision: diff.candidateDataRevision, referenceDataRevision: diff.referenceDataRevision, referenceFileId: currentPublished?.id ?? null,
       }, counts: diff.countsByType, countsByChange: diff.countsByChange,
       filteredTotal: total, total: diff.changes.length, page: filters.page, pageSize: filters.pageSize,
@@ -101,7 +111,7 @@ function matchesFilters(row: BaremeDiffChange, filters: z.infer<typeof querySche
     && (!filters.q || search.includes(filters.q.toLocaleLowerCase()))
 }
 function compareRows(a: BaremeDiffChange, b: BaremeDiffChange) {
-  const order: Record<BaremeDiffChangeType, number> = { modified: 0, unchanged: 1, added: 2, disappeared: 3, ambiguous: 4 }
+  const order: Record<BaremeDiffChangeType, number> = { modified: 0, added: 1, disappeared: 2, ambiguous: 3, unchanged: 4 }
   return order[a.type] - order[b.type] || (a.sourceSheet ?? '').localeCompare(b.sourceSheet ?? '') || a.key.localeCompare(b.key) || (a.current?.id ?? a.old?.id ?? '').localeCompare(b.current?.id ?? b.old?.id ?? '')
 }
 function makeFacets(rows: BaremeDiffChange[]) {

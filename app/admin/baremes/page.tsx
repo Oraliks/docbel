@@ -33,7 +33,6 @@ import {
   Plus,
   MoreHorizontal,
   Eye,
-  CheckCircle2,
   XCircle,
   Trash2,
   Download,
@@ -179,32 +178,6 @@ export default function BaremesAdminPage() {
     }
   }
 
-  const handlePublish = async (id: string, hasErrors: boolean) => {
-    const ok = await confirm({
-      title: hasErrors ? t('publishConfirmErrorsTitle') : t('publishConfirmTitle'),
-      description: hasErrors ? t('publishConfirmErrorsDescription') : t('publishConfirmDescription'),
-      confirmText: t('publish'),
-      destructive: false,
-    })
-    if (!ok) return
-    setActing(id)
-    try {
-      const res = await fetch(`/api/baremes/import/${id}/publish`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({}),
-      })
-      const body = await res.json()
-      if (!res.ok) throw new Error(body.error ?? t('failed'))
-      toast.success(t('publishSuccess'))
-      await load()
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : t('error'))
-    } finally {
-      setActing(null)
-    }
-  }
-
   const handleReject = async (id: string) => {
     const ok = await confirm({
       title: t('rejectConfirmTitle'),
@@ -283,6 +256,12 @@ export default function BaremesAdminPage() {
             </Button>
           </Link>
         </div>
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-3" aria-label={t('overviewSections')}>
+        <OverviewSection title={t('overviewPublished')} files={files.filter((file) => file.status === 'published')} empty={t('overviewPublishedEmpty')} />
+        <OverviewSection title={t('overviewDrafts')} files={files.filter((file) => file.status === 'draft' || file.status === 'pending_approval')} empty={t('overviewDraftsEmpty')} />
+        <OverviewSection title={t('overviewHistory')} files={files.filter((file) => ['archived', 'revoked', 'rejected'].includes(file.status))} empty={t('overviewHistoryEmpty')} />
       </div>
 
       {/* KPI */}
@@ -452,7 +431,6 @@ export default function BaremesAdminPage() {
                     <RowActions
                       file={f}
                       acting={acting === f.id}
-                      onPublish={() => handlePublish(f.id, false)}
                       onReject={() => handleReject(f.id)}
                       onDelete={() => handleDelete(f.id)}
                     />
@@ -471,6 +449,17 @@ export default function BaremesAdminPage() {
       )}
     </div>
   )
+}
+
+function OverviewSection({ title, files, empty }: { title: string; files: BareFile[]; empty: string }) {
+  const locale = useLocale()
+  return <Card><CardContent className="p-4 space-y-3">
+    <h2 className="font-semibold">{title} <span className="text-sm font-normal text-muted-foreground">({formatNumber(files.length, locale)})</span></h2>
+    {files.length === 0 ? <p className="text-sm text-muted-foreground">{empty}</p> : <ul className="space-y-2">{files.slice(0, 4).map((file) => <li key={file.id} className="border-t pt-2 first:border-0 first:pt-0">
+      <Link href={`/admin/baremes/import/${file.id}`} className="font-medium text-sm underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">{file.name}</Link>
+      <p className="text-xs text-muted-foreground">{file.validFrom ? formatDate(file.validFrom, locale) : file.effectiveDate} · {formatDate(file.uploadedAt, locale)}</p>
+    </li>)}</ul>}
+  </CardContent></Card>
 }
 
 function KpiCard({
@@ -540,13 +529,11 @@ function SortHead({
 function RowActions({
   file,
   acting,
-  onPublish,
   onReject,
   onDelete,
 }: {
   file: BareFile
   acting: boolean
-  onPublish: () => void
   onReject: () => void
   onDelete: () => void
 }) {
@@ -569,10 +556,6 @@ function RowActions({
         {file.status === 'draft' && (
           <>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={onPublish}>
-              <CheckCircle2 className="w-4 h-4 mr-2 text-green-600" />
-              {t('publish')}
-            </DropdownMenuItem>
             <DropdownMenuItem onClick={onReject}>
               <XCircle className="w-4 h-4 mr-2 text-red-600" />
               {t('reject')}

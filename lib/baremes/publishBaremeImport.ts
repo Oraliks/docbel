@@ -3,6 +3,8 @@ import { prisma, withDbRetry } from '@/lib/prisma'
 import { invalidateActiveBaremeCache } from './getActiveBaremeData'
 import { logPublicationEvent } from './publicationLog'
 import { readSnapshot } from './comparisonReview'
+import { dataRevisionFromAmounts } from './compareBaremeVersions'
+import { missingBaremeChangeConfirmations } from './changeConfirmation'
 import { brusselsCalendarDay, parseCalendarDate } from './calendar-date'
 
 export interface PublishBaremeOptions {
@@ -26,6 +28,7 @@ type PublicationFailureReason =
   | 'comparison_unavailable'
   | 'comparison_not_reviewed'
   | 'comparison_stale'
+  | 'change_confirmation_required'
 
 export type PublishResult =
   | { status: 'published'; fileId: string; archivedPreviousId: string | null }
@@ -164,6 +167,12 @@ export async function publishBaremeImport(
           if ((snapshot.reference?.id ?? null) !== (currentReference?.id ?? null)) {
             return { status: 'error', reason: 'comparison_stale', message: 'La référence publiée a changé depuis la comparaison : actualiser puis revoir l’import.' }
           }
+          const candidateRevision = await readCurrentDataRevision(tx, fileId)
+          const referenceRevision = currentReference ? await readCurrentDataRevision(tx, currentReference.id) : null
+          if (candidateRevision !== snapshot.candidate.dataRevision
+            || referenceRevision !== (snapshot.reference?.dataRevision ?? null)) {
+            return { status: 'error', reason: 'comparison_stale', message: 'Les données ou leur provenance ont changé depuis la revue : recalculer puis revoir la comparaison.' }
+          }
           const review = await tx.baremePublicationLog.findFirst({
             where: { fileId, action: 'comparison_reviewed' }, orderBy: { createdAt: 'desc' }, select: { details: true },
           })
@@ -179,6 +188,16 @@ export async function publishBaremeImport(
             return { status: 'error', reason: 'comparison_stale', message: 'La revue enregistrée ne porte plus sur la révision actuelle de comparaison.' }
           }
 
+          const comparisonAlerts = ((file.diagnostics as { comparisonAlerts?: import('./types').BaremeAlert[] } | null)?.comparisonAlerts ?? [])
+          const confirmationLogs = await tx.baremePublicationLog.findMany({
+            where: { fileId, action: 'comparison_change_confirmed' },
+            orderBy: { createdAt: 'desc' }, take: 500,
+            select: { action: true, actorEmail: true, details: true },
+          })
+          const missingConfirmations = missingBaremeChangeConfirmations(comparisonAlerts, snapshot, confirmationLogs)
+          if (missingConfirmations.length) {
+            return { status: 'error', reason: 'change_confirmation_required', message: `${missingConfirmations.length} variation(s) importante(s) doivent être confirmées avec justification avant publication.` }
+          }
           const previous = await tx.baremeFile.findFirst({
             where: {
               status: 'published',
@@ -246,6 +265,28 @@ export async function publishBaremeImport(
     }
     throw error
   }
+}
+
+async function readCurrentDataRevision(tx: Prisma.TransactionClient, fileId: string): Promise<string> {
+  const rows: import('./types').BaremeComparableAmount[] = []
+  let cursor: string | undefined
+  do {
+    const page = await tx.baremeAmount.findMany({
+      where: { fileId }, cursor: cursor ? { id: cursor } : undefined, skip: cursor ? 1 : 0,
+      take: 500, orderBy: { id: 'asc' },
+      select: { id: true, sourceSheet: true, category: true, allocationCode: true, salaryCode: true, article: true, labelFr: true, labelNl: true, unit: true, amount: true, minDailySalary: true, maxDailySalary: true, comparisonKey: true, rawData: true },
+    })
+    rows.push(...page.map((row) => ({
+      ...row,
+      amount: typeof row.amount === 'number' ? row.amount : row.amount.toNumber(),
+      minDailySalary: row.minDailySalary == null ? null : typeof row.minDailySalary === 'number' ? row.minDailySalary : row.minDailySalary.toNumber(),
+      maxDailySalary: row.maxDailySalary == null ? null : typeof row.maxDailySalary === 'number' ? row.maxDailySalary : row.maxDailySalary.toNumber(),
+      trace: ((((row.rawData ?? {}) as Record<string, unknown>).trace as import('./types').BaremeComparableAmount['trace']) ?? null),
+    })))
+    cursor = page.at(-1)?.id
+    if (page.length < 500) break
+  } while (cursor)
+  return dataRevisionFromAmounts(rows)
 }
 
 /** Rejette un import encore dans le workflow, sans pouvoir rétrograder un publié. */

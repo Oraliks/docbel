@@ -59,6 +59,8 @@ describe('téléchargement de la source barèmes', () => {
 
     expect(response.status).toBe(200)
     expect(response.headers.get('cache-control')).toBe('private, no-store')
+    expect(response.headers.get('content-type')).toContain('spreadsheetml.sheet')
+    expect(response.headers.get('content-disposition')).toContain('barema-new-01042026.xlsx')
     expect(Buffer.from(await response.arrayBuffer())).toEqual(original)
     expect(mocks.getBlob).toHaveBeenCalledWith(expect.stringContaining('private/baremes/file.xlsx'))
   })
@@ -96,5 +98,14 @@ describe('téléchargement de la source barèmes', () => {
 
     expect(response.status).toBe(404)
     expect(await response.json()).toEqual({ error: 'Fichier source original indisponible' })
+  })
+
+  it('n’essaie pas de récupérer un Blob si l’import ne référence aucune source', async () => {
+    mocks.findUnique.mockResolvedValue({ name: 'missing-source', filePath: null, fileHash: null, fileSize: null })
+
+    const response = await download()
+
+    expect(response.status).toBe(404)
+    expect(mocks.getBlob).not.toHaveBeenCalled()
   })
 })

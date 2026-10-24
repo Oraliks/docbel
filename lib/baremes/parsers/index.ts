@@ -99,7 +99,9 @@ export function dispatchParsers(
       ignoredSheets.push({ name: sheet.name, reason })
       alerts.push(
         makeIssue({
-          severity: 'warning',
+          // Une feuille non lue peut contenir des montants applicables : bloquer
+          // la publication jusqu'à prise en charge ou exclusion documentée.
+          severity: 'error',
           kind: 'unknown_sheet',
           title: 'Feuille inconnue',
           sheet: sheet.name,
@@ -126,7 +128,9 @@ export function dispatchParsers(
         })
         alerts.push(
           makeIssue({
-            severity: 'warning',
+            // Les erreurs de parsing laissent potentiellement une extraction
+            // incomplète ; une confirmation métier ne peut pas les couvrir.
+            severity: 'error',
             kind: 'partial_sheet',
             title: 'Feuille traitée partiellement',
             sheet: sheet.name,

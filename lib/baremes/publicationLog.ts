@@ -55,6 +55,7 @@ export async function getPublicationHistory(fileId: string) {
     prisma.baremePublicationLog.findMany({
       where: { fileId },
       orderBy: { createdAt: 'desc' },
+      take: 500,
     })
   )
 }

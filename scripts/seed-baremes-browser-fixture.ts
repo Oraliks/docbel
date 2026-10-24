@@ -46,21 +46,28 @@ async function main() {
     rawData: { trace: { sourceCell: `B${index + 2}`, sourceRowIndex: index + 2, sourceColumnIndex: 2, rawValue: String(amount), normalizedValue: amount, mappingFile: 'fixture-browser.ts', transformTemplate: 'synthetic' }, ...changes },
   })
   const oldRows = Array.from({ length: 130 }, (_, index) => row(old.id, index, index === 124 ? 0 : 100 + index / 10))
-  const candidateRows = Array.from({ length: 125 }, (_, index) => row(candidate.id, index, index === 124 ? 1 : 100 + index / 10 + 0.0001, index === 5 ? { trace: { sourceCell: 'C7', sourceRowIndex: 7, sourceColumnIndex: 3, rawValue: '100.5001', normalizedValue: 100.5001, mappingFile: 'fixture-browser.ts', transformTemplate: 'synthetic' } } : {}))
-  // 10 inchangées, 115 modifiées; 5 disparues, 10 ajoutées et un attribut significatif.
+  const candidateRows = Array.from({ length: 125 }, (_, index) => {
+    const base = 100 + index / 10
+    const amount = index === 124 ? 1 : index >= 10 && index < 66 ? base * 1.6 : index >= 66 && index < 75 ? base * 1.15 : base + 0.0001
+    return row(candidate.id, index, amount, index === 5 ? { trace: { sourceCell: 'C7', sourceRowIndex: 7, sourceColumnIndex: 3, rawValue: String(amount), normalizedValue: amount, mappingFile: 'fixture-browser.ts', transformTemplate: 'synthetic' } } : {})
+  })
+  // Jeu explicitement synthétique : 56 fortes variations, 9 autres variations
+  // notables, puis des changements minimes; 10 inchangées, 5 disparues, 10 ajoutées.
   for (let index = 0; index < 10; index++) candidateRows[index].amount = oldRows[index].amount
-  candidateRows[20].unit = 'monthly'
+  candidateRows[20].allocationCode = 'CODE-020-renamed'
   for (let index = 130; index < 140; index++) candidateRows.push(row(candidate.id, index, 200 + index / 100))
   await db.baremeAmount.createMany({ data: [...oldRows, ...candidateRows] })
-  const { compareBaremeVersions, comparisonSnapshot } = await import('../lib/baremes/compareBaremeVersions')
+  const { compareBaremeVersions, comparisonSnapshot, detectAnomaliesFromDiff } = await import('../lib/baremes/compareBaremeVersions')
   const diff = await compareBaremeVersions(candidate.id)
+  const comparisonAlerts = detectAnomaliesFromDiff(diff)
   assert.equal(diff.countsByType.modified, 115)
   assert.equal(diff.countsByType.unchanged, 10)
   assert.equal(diff.countsByType.added, 10)
   assert.equal(diff.countsByType.disappeared, 5)
-  const diagnostics = JSON.parse(JSON.stringify({ unknownCodes: [], ignoredRows: [], unsupportedSheets: [{ name: 'Feuille hors périmètre', reason: 'fixture de couverture' }], partialSheets: [], sheetPeriods: [], duplicates: [], contracts: [], comparison: comparisonSnapshot(diff) })) as Prisma.InputJsonValue
+  assert.deepEqual(comparisonAlerts.map((alert) => alert.problem?.affectedCount), [56, 9])
+  const diagnostics = JSON.parse(JSON.stringify({ unknownCodes: [], ignoredRows: [], unsupportedSheets: [{ name: 'Feuille hors périmètre', reason: 'fixture de couverture' }], partialSheets: [], sheetPeriods: [], duplicates: [], contracts: [], comparison: comparisonSnapshot(diff), comparisonAlerts })) as Prisma.InputJsonValue
   await db.baremeFile.update({ where: { id: candidate.id }, data: { diagnostics } })
-  console.log(JSON.stringify({ email, password, candidateId: candidate.id, referenceId: old.id, expected: diff.countsByType }, null, 2))
+  console.log(JSON.stringify({ email, candidateId: candidate.id, referenceId: old.id, expected: diff.countsByType, syntheticAnomalies: comparisonAlerts.map((alert) => alert.problem?.affectedCount) }, null, 2))
 }
 
 main().finally(() => db.$disconnect()).catch((error: unknown) => { console.error(error); process.exitCode = 1 })

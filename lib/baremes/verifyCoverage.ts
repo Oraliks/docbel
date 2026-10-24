@@ -113,7 +113,9 @@ export function verifyCoverage(
     if (orphans.length > 0) {
       alerts.push(
         makeIssue({
-          severity: 'warning',
+          // Une cellule montant non extraite rend la couverture incertaine.
+          // Bloquer jusqu'à correction du parser ou exclusion explicite.
+          severity: 'error',
           kind: 'anomaly',
           title: 'Cellules montant non extraites (couverture inverse)',
           sheet: spec.sheetName,

@@ -52,6 +52,46 @@ export interface BaremeAlert {
   reason?: string
   /** Action recommandée (ex: "ajouter AFoud dans code-mapping.ts"). */
   recommendation?: string
+  /** Contrat machine des problèmes émis par les nouveaux imports. Les archives anciennes restent sans ce champ. */
+  problem?: BaremeStructuredProblem
+}
+
+export type BaremeProblemAction = 'open_source' | 'view_comparison' | 'refresh_comparison' | 'reimport' | 'confirm_change' | 'technical_report'
+export type BaremeProblemOwner = 'admin' | 'developer' | 'system'
+export type BaremePublicationEffect = 'blocking' | 'review' | 'none'
+export type BaremeResolutionState = 'open' | 'confirmed' | 'fixed' | 'informational'
+
+export interface BaremeProblemEvidence {
+  sheet?: string
+  cell?: string
+  rawValue?: string
+  comparisonKey?: string
+  amountId?: string
+  oldValue?: number
+  newValue?: number
+  oldSource?: { sheet: string; cell: string; rawValue: string; unit: string | null }
+  newSource?: { sheet: string; cell: string; rawValue: string; unit: string | null }
+}
+
+export interface BaremeStructuredProblem {
+  id: string
+  groupId: string
+  category: BaremeIssueKind
+  severity: BaremeIssueSeverity
+  publicationEffect: BaremePublicationEffect
+  resolutionState: BaremeResolutionState
+  affectedCount: number
+  owner: BaremeProblemOwner
+  allowedActions: BaremeProblemAction[]
+  evidence: BaremeProblemEvidence[]
+  affectedKeys?: string[]
+  resolution?: {
+    actorEmail: string
+    confirmedAt: string
+    reason: string
+    reviewedKeys: string[]
+    comparison: BaremeComparisonSnapshot
+  }
 }
 
 const SEVERITY_TO_LEVEL: Record<BaremeIssueSeverity, BaremeAlertLevel> = {
@@ -72,10 +112,33 @@ export interface MakeIssueInput {
   column?: string
   rawValue?: string
   recommendation?: string
+  publicationEffect?: BaremePublicationEffect
+  resolutionState?: BaremeResolutionState
+  affectedCount?: number
+  owner?: BaremeProblemOwner
+  allowedActions?: BaremeProblemAction[]
+  evidence?: BaremeProblemEvidence[]
+  groupId?: string
+  affectedKeys?: string[]
+  resolution?: {
+    actorEmail: string
+    confirmedAt: string
+    reason: string
+    reviewedKeys: string[]
+    comparison: BaremeComparisonSnapshot
+  }
 }
 
 /** Construit une BaremeAlert enrichie avec level/message legacy dérivés. */
 export function makeIssue(input: MakeIssueInput): BaremeAlert {
+  const id = stableProblemId([input.kind, input.sheet ?? '', input.cell ?? '', input.row ?? '', input.title].join('|'))
+  const defaultActions: BaremeProblemAction[] = input.severity === 'info'
+    ? []
+    : input.kind === 'anomaly'
+      ? ['view_comparison', 'technical_report']
+      : input.severity === 'warning'
+        ? ['open_source', 'technical_report']
+        : ['open_source', 'reimport', 'technical_report']
   return {
     level: SEVERITY_TO_LEVEL[input.severity],
     message: input.title === input.reason ? input.reason : `${input.title} — ${input.reason}`,
@@ -89,7 +152,29 @@ export function makeIssue(input: MakeIssueInput): BaremeAlert {
     rawValue: input.rawValue,
     reason: input.reason,
     recommendation: input.recommendation,
+    problem: {
+      id,
+      groupId: input.groupId ?? id,
+      category: input.kind,
+      severity: input.severity,
+      publicationEffect: input.publicationEffect ?? (input.severity === 'error' || input.severity === 'critical' ? 'blocking' : input.severity === 'warning' ? 'review' : 'none'),
+      resolutionState: input.resolutionState ?? (input.severity === 'info' ? 'informational' : 'open'),
+      affectedCount: Math.max(1, Math.floor(input.affectedCount ?? 1)),
+      owner: input.owner ?? (input.kind === 'anomaly' || input.severity === 'warning' ? 'admin' : input.severity === 'info' ? 'system' : 'developer'),
+      allowedActions: input.allowedActions ?? defaultActions,
+      evidence: input.evidence ?? (input.sheet || input.cell || input.rawValue ? [{ sheet: input.sheet, cell: input.cell, rawValue: input.rawValue }] : []),
+      ...(input.affectedKeys ? { affectedKeys: [...new Set(input.affectedKeys)].sort() } : {}),
+    },
   }
+}
+
+function stableProblemId(identity: string): string {
+  let hash = 0x811c9dc5
+  for (let index = 0; index < identity.length; index++) {
+    hash ^= identity.charCodeAt(index)
+    hash = Math.imul(hash, 0x01000193)
+  }
+  return 'bp-' + (hash >>> 0).toString(16).padStart(8, '0')
 }
 
 /** Gravité effective d'une alerte (mappe les anciens imports sans severity). */
@@ -232,6 +317,8 @@ export interface BaremeDiagnostics {
   /** Date de validité détectée par feuille vs validFrom du fichier. */
   sheetPeriods: { sheet: string; detectedDate: string | null; matchesFile: boolean | null }[]
   duplicates: { comparisonKey: string; count: number; droppedCells: string[] }[]
+  /** Collisions des nouveaux imports : toutes les lignes restent dans l'extraction. */
+  collisions?: { comparisonKey: string; count: number; cells: string[] }[]
   /** Lignes ignorées tronquées ? (cap de stockage atteint) */
   ignoredRowsTruncated?: boolean
   /** Vérification round-trip (chaque montant relié à sa cellule source). */
@@ -305,7 +392,7 @@ export interface BaremeDiffChange {
   current?: BaremeComparableAmount
   amountChanged?: boolean
   changedAttributes?: BaremeDiffAttribute[]
-  warning?: 'ambiguous_identity'
+  warning?: 'ambiguous_identity' | 'incomparable_context'
 }
 
 export interface BaremeComparisonFileRef {

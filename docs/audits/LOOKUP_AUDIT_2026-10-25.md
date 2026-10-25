@@ -444,7 +444,9 @@ projections administrateur uniquement.
   Le schéma autorise des slugs identiques dans des catégories différentes:
   les résolveurs vérifient maintenant jusqu'à deux tables et signalent cette
   collision comme ambiguë au lieu de choisir silencieusement une table. Les
-  tests unitaires couvrent les modes unitaire et batch.
+  tests unitaires couvrent les modes unitaire et batch. La build Vercel du SHA
+  final `8815e57c` est `READY`; le statut combiné GitHub confirme le contrôle
+  Vercel `success` pour ce commit.
 - Outils et port PostgreSQL local absents/inactifs (pas de `docker`, `psql`,
   `pg_isready`; ports 5432 et 55432 fermés). Aucun serveur PostgreSQL isolé ou
   environnement navigateur authentifié par rôles n'était disponible. Les tests

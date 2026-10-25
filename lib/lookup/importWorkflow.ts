@@ -225,6 +225,7 @@ export async function publishLookupImportProposal(input: {
   proposalId: string
   publishedBy: string
   expectedTableId?: string
+  retryFailed?: boolean
 }): Promise<PublishLookupImportResult> {
   try {
     return await withSerializationRetry(() => prisma.$transaction(async (tx) => {
@@ -250,8 +251,12 @@ export async function publishLookupImportProposal(input: {
       if (proposal.state === 'published') {
         return { state: 'already_published', errors: [], totalRows: 0, diff, publishedRevision: table.publishedRevision }
       }
-      if (proposal.state !== 'prepared') {
+      const retryingFailure = proposal.state === 'failed' && input.retryFailed === true
+      if (proposal.state !== 'prepared' && !retryingFailure) {
         throw new Error(`Proposition non publiable (état ${proposal.state})`)
+      }
+      if (retryingFailure && (!proposal.payloadHash || proposal.normalizedPayload == null)) {
+        throw new Error('Cette proposition échouée ne contient pas de comparatif réessayable.')
       }
       if (proposal.parserVersion !== LOOKUP_IMPORT_PARSER_VERSION ||
           hashLookupValue(proposal.transformation) !== hashLookupValue(TRANSFORMATION) ||
@@ -275,6 +280,12 @@ export async function publishLookupImportProposal(input: {
 
       const approvalsCount = new Set(proposal.approvals.map((approval) => approval.approverEmail)).size
       if (table.requiresApproval && approvalsCount < 2) {
+        if (retryingFailure) {
+          await tx.lookupImportProposal.update({
+            where: { id: proposal.id },
+            data: { state: 'prepared' },
+          })
+        }
         return {
           state: 'pending_approvals', errors: [], totalRows: 0, diff,
           approvalsCount, requiredApprovals: 2,
@@ -358,7 +369,10 @@ export async function publishLookupImportProposal(input: {
     }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable, maxWait: 10_000, timeout: 60_000 }))
   } catch (error) {
     await prisma.lookupImportProposal.updateMany({
-      where: { id: input.proposalId, state: 'prepared' },
+      where: {
+        id: input.proposalId,
+        state: input.retryFailed ? { in: ['prepared', 'failed'] } : 'prepared',
+      },
       data: { state: 'failed', errorMessage: safeErrorMessage(error) },
     }).catch(() => undefined)
     throw error

@@ -58,6 +58,16 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  // The real reference workbook and local evidence belong only to isolated tests.
+  outputFileTracingExcludes: {
+    '/*': [
+      './lib/baremes-autonome/__tests__/**',
+      './docs/evidence/baremes-autonome/**',
+      './private/backups/autonomous-rates-test/**',
+      './test-results/autonomous-rates/**',
+      './test-results/browser/**',
+    ],
+  },
   // Cache distinct pour les vérifications HTTP sur une base de test isolée.
   distDir: process.env.DOCBEL_ACCESS_TEST_SERVER === "1" ? ".next-audit" : ".next",
   // Les types de `next dev` ne font pas partie du build de production : ils

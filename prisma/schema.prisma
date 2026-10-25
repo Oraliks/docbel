@@ -11,6 +11,61 @@ generator client {
   provider = "prisma-client-js"
 }
 
+// Independent rates reference. No relation to historical Bareme* records.
+model AutonomousRateVersion {
+  id            String   @id @default(cuid())
+  name          String
+  revision      String
+  fileHash      String
+  original      Bytes
+  reading       Json
+  effectiveFrom DateTime?
+  createdAt     DateTime @default(now())
+  createdBy     String
+  publishedAt   DateTime?
+  publications  AutonomousRatePublication[]
+  decisions     AutonomousRateDecision[]
+
+  @@index([createdAt])
+}
+
+model AutonomousRateRegistry {
+  id        String @id
+  versionId String?
+  generation Int @default(0)
+}
+
+model AutonomousRatePublication {
+  id          String @id @default(cuid())
+  versionId   String @unique
+  version     AutonomousRateVersion @relation(fields: [versionId], references: [id], onDelete: Restrict)
+  previousId  String?
+  actorId     String
+  snapshot    Json
+  createdAt   DateTime @default(now())
+}
+
+model AutonomousRateDecision {
+  id             String @id @default(cuid())
+  candidateId    String
+  candidate      AutonomousRateVersion @relation(fields: [candidateId], references: [id], onDelete: Restrict)
+  referenceId    String?
+  fingerprint    String
+  taskId         String
+  kind           String
+  status         String
+  reason         String
+  officialSource String?
+  regulatoryScope String?
+  effectiveDate  DateTime?
+  evidence       Json
+  previousId     String?
+  actorId        String
+  createdAt      DateTime @default(now())
+
+  @@index([candidateId, fingerprint, taskId, createdAt], map: "AutonomousRateDecision_review_idx")
+}
+
 enum UserRole {
   user
   partner

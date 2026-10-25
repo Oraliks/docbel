@@ -5,8 +5,8 @@
 ## Version de départ et Lookup
 
 - Base choisie pour le staging : `main` / `4ff84786b47d7da6fc6315c1b8aebdb76de68918`, commit de production vérifié dans Vercel.
-- PR #96 Lookup : développement techniquement terminé sur `621c832eb8c2057523f8578664f0ebe7011b5a3e`; CI générale, PostgreSQL isolé et recette navigateur réussis. Le PR est encore brouillon et sans revue humaine. Il n'est pas intégré à ce lot staging.
-- Toute recette Lookup sur staging devra être un lot identifié. Après revue humaine, intégrer le commit dans `staging`, vérifier le résultat combiné avec `main`, puis vérifier à nouveau les contrôles et le SHA. Aucune publication ni migration de Lookup en production n'est autorisée par ce guide.
+- PR #96 Lookup : le SHA `621c832eb8c2057523f8578664f0ebe7011b5a3e` est remplacé par le correctif retry `72d4a16477da9a32fb2624bc8c19129a1b13c2b7`. Selon la dernière coordination, PostgreSQL isolé/navigateur (run `40229483450`), isolation Barèmes (run `40229483478`) et CI générale lint/tests/i18n (run `40229483469`) réussissent; le build général est encore en cours. La revue indépendante finale n'a signalé aucun défaut matériel. Ne pas qualifier la clôture technique avant la fin de tous les checks sur `72d4a164`.
+- Ancien candidat combiné local gelé : branche `codex/staging-lookup-candidate`, merge commit `239cd533` (PR #96 ancien SHA `621c832` + préparation staging basée sur `main` `4ff84786`). Fusion sans conflit, suite locale 3 435 réussis/2 ignorés et revue indépendante sans défaut confirmé à ce moment-là. Ce candidat est dépassé par `72d4a164` et ne doit pas être publié. Il reste intact comme preuve jusqu'à la clôture CI du nouveau SHA, après quoi il faudra l'actualiser et retester la combinaison. Aucun staging distant n'a été déployé. Toute publication du lot exact reste soumise à l'autorisation humaine du propriétaire; aucune publication ni migration Lookup en production n'est autorisée par ce guide.
 
 ## Matrice des ressources constatées
 
@@ -79,7 +79,7 @@ Pour rollback, redéployer le SHA staging précédent connu et vérifier la sant
 | État | Détail |
 | --- | --- |
 | Implémenté localement | identité APP_ENV, gate Basic Auth staging, bandeau/i18n/noindex, cron staging refusé, vérifications de cible DB/Blob |
-| Vérifié localement | Suite Vitest complète : 3 408 tests passent, 2 ignorés. Les tests ciblés staging et `pnpm i18n:check` passent avec les avertissements historiques de couverture. ESLint ciblé passe. Le build a échoué avant compilation applicative car `@parcel/watcher` est indisponible après une installation locale interrompue/verrouillée (`EPERM` sur `next-swc`). |
+| Vérifié localement | Socle seul (`codex/staging-foundation`) : suite Vitest complète, 3 408 réussis/2 ignorés; tests staging après correction de typage : 8 réussis; i18n et ESLint ciblé passent. Contrôle TypeScript complet : 22 diagnostics ailleurs dans le dépôt, aucun dans les fichiers staging. Build non validé : échec avant compilation applicative, `@parcel/watcher` manquant après installation interrompue/verrouillée (`EPERM` sur `next-swc`). Ancien candidat combiné `239cd533` dépassé; nouveau `72d4a164` en attente de CI complète. |
 | Configuré à distance | aucun projet Vercel, Neon, Blob ou domaine staging; la création du projet Vercel a été refusée (403) |
 | Testé sur staging | non, aucun staging accessible |
-| Bloqué | droit de création Vercel; accès Neon; stores Blob et variables staging; choix/approbation des protections Preview Production; revue humaine PR #96 |
+| Bloqué | CI générale complète du SHA Lookup `72d4a164`; droit de création Vercel; accès Neon; stores Blob et variables staging; choix/approbation des protections Preview Production; autorisation humaine du lot exact avant sa publication |

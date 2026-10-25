@@ -5,7 +5,9 @@ import {
   getAppEnvironment,
 } from "@/lib/config/runtime-environment";
 
-const stagingEnv = {
+const testEnv: NodeJS.ProcessEnv = { NODE_ENV: "test" };
+const stagingEnv: NodeJS.ProcessEnv = {
+  NODE_ENV: "test",
   APP_ENV: "staging",
   APP_DATABASE_TARGET: "ep-stage.eu-central-1.aws.neon.tech",
   APP_PRODUCTION_DATABASE_TARGET: "ep-prod.eu-central-1.aws.neon.tech",
@@ -15,9 +17,9 @@ const stagingEnv = {
 
 describe("runtime environment identity", () => {
   it("accepts only an explicit supported environment", () => {
-    expect(getAppEnvironment({ APP_ENV: "staging" })).toBe("staging");
-    expect(getAppEnvironment({})).toBeNull();
-    expect(() => getAppEnvironment({ APP_ENV: "preview" })).toThrow(/APP_ENV/);
+    expect(getAppEnvironment({ ...testEnv, APP_ENV: "staging" })).toBe("staging");
+    expect(getAppEnvironment(testEnv)).toBeNull();
+    expect(() => getAppEnvironment({ ...testEnv, APP_ENV: "preview" })).toThrow(/APP_ENV/);
   });
 
   it("accepts matching pooled and direct staging targets", () => {
@@ -40,11 +42,12 @@ describe("runtime environment identity", () => {
   });
 
   it("fails closed when the staging database identity is incomplete", () => {
-    expect(() => assertStagingDatabaseTarget({ APP_ENV: "staging" })).toThrow(/must be configured/);
+    expect(() => assertStagingDatabaseTarget({ ...testEnv, APP_ENV: "staging" })).toThrow(/must be configured/);
   });
 
   it("requires four distinct public and private staging/production stores", () => {
-    const stores = {
+    const stores: NodeJS.ProcessEnv = {
+      ...testEnv,
       APP_ENV: "staging",
       APP_PUBLIC_BLOB_STORE_ID: "public-stage",
       APP_PRIVATE_BLOB_STORE_ID: "private-stage",
@@ -55,6 +58,6 @@ describe("runtime environment identity", () => {
     expect(() =>
       assertStagingStorageTargets({ ...stores, APP_PRIVATE_BLOB_STORE_ID: "public-prod" }),
     ).toThrow(/distinct/);
-    expect(() => assertStagingStorageTargets({ APP_ENV: "staging" })).toThrow(/must be configured/);
+    expect(() => assertStagingStorageTargets({ ...testEnv, APP_ENV: "staging" })).toThrow(/must be configured/);
   });
 });

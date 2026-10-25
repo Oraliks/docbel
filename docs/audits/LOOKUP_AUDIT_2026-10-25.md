@@ -1,6 +1,6 @@
 # DocBel — Audit ciblé Lookup ONEM
 
-Date : 25 octobre 2026  
+Date : 25 octobre 2026
 Périmètre : audit statique ciblé, sans raccordement ni changement de code métier.
 
 ## Synthèse
@@ -388,3 +388,51 @@ fuzzy automatique et aucun changement au moteur familial/résultat métier.
 L'évaluateur familial pur demeure sans appel Lookup; toute explication future
 doit rester dans une couche de restitution distincte. Aucun raccordement n'a
 été implémenté.
+
+## Reprise ciblée sur le `main` actuel — 25/10/2026
+
+Le correctif a été repris depuis `7f3b18af` sur le `main` vérifié
+`10c70ebf289a27365d40caf9d629f00c72162800`, dans le worktree isolé
+`codex/lookup-hardening-prod`. Aucun fichier du checkout historique ni aucun
+fichier familial/barèmes n'a été repris ou modifié. Une erreur TypeScript de
+rendu des erreurs JSON de proposition dans la page admin a été corrigée avec
+un test de présence booléen.
+
+### Validations réellement exécutées dans ce worktree
+
+- Tests Lookup ciblés : **30 réussis** sur 5 fichiers.
+- `pnpm test` seul : **3 365 réussis, 1 ignoré**, 328 fichiers réussis sur 329.
+  La première exécution menée en parallèle du lint/build avait dépassé le délai
+  d'un test de rate-limit; la relance seule a réussi.
+- ESLint Lookup ciblé : succès.
+- `pnpm i18n:check` : succès, avec les avertissements de couverture de langues
+  du dépôt.
+- `prisma validate` et `prisma generate` : succès avec URL PostgreSQL factices
+  pointant vers localhost; aucune connexion n'a été faite.
+- `pnpm lint` global : échec sur **119 erreurs / 58 warnings**, dispersés dans
+  des fichiers hors du périmètre Lookup; la documentation courante signale une
+  baseline d'erreurs lint préexistantes. Les fichiers Lookup ciblés passent.
+- `pnpm build` : compilation Next réussie; le contrôle TypeScript a révélé puis
+  permis de corriger l'erreur ci-dessus. Après correction, le worker de contrôle
+  est resté sans sortie et sans processus Node actif; la commande a été
+  interrompue, donc le build complet n'est pas attesté.
+- Outils et port PostgreSQL local absents/inactifs (pas de `docker`, `psql`,
+  `pg_isready`; ports 5432 et 55432 fermés). Aucun serveur PostgreSQL isolé ou
+  environnement navigateur authentifié par rôles n'était disponible. Les tests
+  d'intégration transactionnelle réels, la recette des profils dans le
+  navigateur et les tests multi-instance ne sont donc pas exécutés.
+
+### Statut de livraison
+
+**Corrigé et testé :** protections et projections Lookup, préparation/import,
+unicité des approbateurs, contrôles d'obsolescence, parsing, résolution datée,
+tests unitaires et suite Vitest complète. Aucun raccordement produit ajouté.
+
+**Modifié mais validation incomplète :** migration additive
+`60_lookup_import_proposals` et publication transactionnelle. Migration non
+appliquée. Aucun import réel, aucune donnée Lookup publiée et aucun déploiement.
+La vérification sur PostgreSQL isolé, le build complet, le contrôle CI sur le
+SHA final et la recette navigateur restent des prérequis avant publication.
+
+**Proposé uniquement :** pilote éditorial RioLex décrit ci-dessus; aucune
+association nouvelle n'a été activée. Le moteur familial n'a pas été touché.

@@ -359,7 +359,7 @@ export default function LookupTableDetailPage() {
                   <p className="text-xs text-muted-foreground break-all">SHA-256 source : {proposal.sourceSha256}</p>
                   {proposal.errorMessage && <p role="alert" className="text-sm text-destructive">{proposal.errorMessage}</p>}
                   <p className="text-sm">{tLookupImport('diffSummary', { added: diff.added?.length ?? 0, modified: diff.modified?.length ?? 0, absent: diff.absentFromExport?.length ?? 0 })}</p>
-                  {proposal.validationErrors && <pre className="max-h-48 overflow-auto rounded bg-muted p-2 text-xs">{JSON.stringify(proposal.validationErrors, null, 2)}</pre>}
+                  {Boolean(proposal.validationErrors) && <pre className="max-h-48 overflow-auto rounded bg-muted p-2 text-xs">{JSON.stringify(proposal.validationErrors, null, 2)}</pre>}
                   <details>
                     <summary className="cursor-pointer text-sm font-medium">{tLookupImport('reviewDiff')}</summary>
                     <pre className="mt-2 max-h-[32rem] overflow-auto rounded bg-muted p-3 text-xs">{JSON.stringify(diff, null, 2)}</pre>

@@ -1,7 +1,14 @@
 import { describe, expect, it } from 'vitest'
-import { privateLookupError, projectPublicLookupSearch, toLookupEntryProjection, toLookupTableProjection } from '../projections'
+import { lookupRepresentationEtag, privateLookupError, projectPublicLookupSearch, toLookupEntryProjection, toLookupTableProjection } from '../projections'
 
 describe('Lookup response projections', () => {
+  it('invalidates the bundle validator when a non-final entry changes', () => {
+    const original = JSON.stringify({ entries: [{ code: 'A', labelFr: 'Avant' }, { code: 'Z', labelFr: 'Stable' }] })
+    const changed = JSON.stringify({ entries: [{ code: 'A', labelFr: 'Après' }, { code: 'Z', labelFr: 'Stable' }] })
+
+    expect(lookupRepresentationEtag(changed)).not.toBe(lookupRepresentationEtag(original))
+  })
+
   it('keeps notes, arbitrary metadata and approvals out of partner entry data', () => {
     const result = toLookupEntryProjection({
       id: 'entry-1', code: '01', labelFr: 'Libellé', labelNl: 'Label',

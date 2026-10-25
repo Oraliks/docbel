@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({
-  table: { findUnique: vi.fn() },
+  table: { findFirst: vi.fn() },
   entry: { findMany: vi.fn(), groupBy: vi.fn() },
 }))
 
@@ -30,7 +30,7 @@ describe('Lookup dated resolution', () => {
   beforeEach(() => {
     invalidateLookupCache()
     vi.clearAllMocks()
-    mocks.table.findUnique.mockResolvedValue(table)
+  mocks.table.findFirst.mockResolvedValue(table)
   })
 
   it('uses inclusive UTC civil-day boundaries and returns publication provenance', async () => {
@@ -75,7 +75,7 @@ describe('Lookup dated resolution', () => {
   it('uses the new revision after any published entry changes', async () => {
     mocks.entry.findMany.mockResolvedValue([row])
     const first = await resolveLookupEntry('example', 'X', { asOf: '2026-10-25' })
-    mocks.table.findUnique.mockResolvedValue({ ...table, publishedRevision: 5 })
+    mocks.table.findFirst.mockResolvedValue({ ...table, publishedRevision: 5 })
     mocks.entry.findMany.mockResolvedValue([])
     const next = await resolveLookupEntry('example', 'X', { asOf: '2026-10-25' })
     expect(first.status).toBe('resolved')

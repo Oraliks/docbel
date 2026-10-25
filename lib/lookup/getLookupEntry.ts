@@ -84,8 +84,9 @@ export async function resolveLookupEntry(
   options: { force?: boolean; asOf?: string | Date | null } = {},
 ): Promise<LookupResolution> {
   const { date, day } = parseLookupCivilDate(options.asOf)
-  const table = await withDbRetry(() => prisma.lookupTable.findUnique({
+  const table = await withDbRetry(() => prisma.lookupTable.findFirst({
     where: { slug: tableSlug },
+    orderBy: { id: 'asc' },
     select: { id: true, slug: true, labelFr: true, publishedRevision: true, lastImportedAt: true, lastImportSource: true, category: { select: { slug: true } } },
   }))
   if (!table) return { status: 'absent', entry: null, effectiveDate: day, publishedRevision: 0 }
@@ -142,8 +143,9 @@ export async function resolveLookupEntriesByCodes(
   const { date, day } = parseLookupCivilDate(options.asOf)
   if (codes.length === 0) return new Map()
   return withDbRetry(() => prisma.$transaction(async (tx) => {
-    const table = await tx.lookupTable.findUnique({
+    const table = await tx.lookupTable.findFirst({
       where: { slug: tableSlug },
+      orderBy: { id: 'asc' },
       select: { id: true, slug: true, labelFr: true, publishedRevision: true, lastImportedAt: true, lastImportSource: true, category: { select: { slug: true } } },
     })
     if (!table) return new Map(codes.map((code) => [code, { status: 'absent' as const, entry: null, effectiveDate: day, publishedRevision: 0 }]))

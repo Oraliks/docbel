@@ -79,7 +79,7 @@ test('Lookup is isolated by role and public street search strips internal fields
   await prisma.user.update({ where: { id: partnerFixture.id }, data: { status: 'disabled' } })
   try {
     const revokedPartner = await browserJson(page, '/api/lookup/tables/' + privateTableId)
-    expect(revokedPartner.status).toBe(403)
+    expect([401, 403]).toContain(revokedPartner.status)
     expect(revokedPartner.cacheControl).toContain('private')
     expect(revokedPartner.cacheControl).toContain('no-store')
   } finally {

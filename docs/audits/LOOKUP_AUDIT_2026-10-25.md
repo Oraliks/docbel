@@ -412,10 +412,10 @@ projections administrateur uniquement.
 
 ### Validations réellement exécutées dans ce worktree
 
-- Tests Lookup ciblés : **34 réussis** sur 6 fichiers, dont résolution batch
+- Tests Lookup ciblés : **35 réussis** sur 6 fichiers, dont résolution batch
   après de nombreux historiques, corps d'approbation invalide/malformé et
   retrait du nom de source interne dans la réponse publique.
-- `pnpm test` seul : **3 369 réussis, 1 ignoré**, 329 fichiers réussis sur 330.
+- `pnpm test` seul : **3 370 réussis, 1 ignoré**, 329 fichiers réussis sur 330.
   La première exécution menée en parallèle du lint/build avait dépassé le délai
   d'un test de rate-limit; la relance seule a réussi.
 - ESLint Lookup ciblé : succès.
@@ -439,8 +439,12 @@ projections administrateur uniquement.
   dans la vue partenaire; les hooks et namespace ont été corrigés. Une nouvelle
   build a aussi révélé un `findUnique({slug})` invalide car le schéma ne rend
   `slug` unique qu'avec `categoryId`; les résolveurs unitaires et batch utilisent
-  maintenant `findFirst` ordonné par id. ESLint ciblé et `i18n:check` réussissent;
+  maintenant une recherche ordonnée et bornée à deux tables. ESLint ciblé et `i18n:check` réussissent;
   CI doit être relancée sur le nouveau SHA.
+  Le schéma autorise des slugs identiques dans des catégories différentes:
+  les résolveurs vérifient maintenant jusqu'à deux tables et signalent cette
+  collision comme ambiguë au lieu de choisir silencieusement une table. Les
+  tests unitaires couvrent les modes unitaire et batch.
 - Outils et port PostgreSQL local absents/inactifs (pas de `docker`, `psql`,
   `pg_isready`; ports 5432 et 55432 fermés). Aucun serveur PostgreSQL isolé ou
   environnement navigateur authentifié par rôles n'était disponible. Les tests

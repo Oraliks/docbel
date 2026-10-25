@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({
-  table: { findFirst: vi.fn() },
+  table: { findMany: vi.fn() },
   entry: { findMany: vi.fn(), groupBy: vi.fn() },
 }))
 
@@ -30,7 +30,7 @@ describe('Lookup dated resolution', () => {
   beforeEach(() => {
     invalidateLookupCache()
     vi.clearAllMocks()
-  mocks.table.findFirst.mockResolvedValue(table)
+    mocks.table.findMany.mockResolvedValue([table])
   })
 
   it('uses inclusive UTC civil-day boundaries and returns publication provenance', async () => {
@@ -59,6 +59,17 @@ describe('Lookup dated resolution', () => {
     expect(batch.get('X')?.status).toBe('ambiguous')
   })
 
+  it('does not choose a table silently when slugs collide across categories', async () => {
+    mocks.table.findMany.mockResolvedValue([table, { ...table, id: 'table-id-2' }])
+
+    const single = await resolveLookupEntry('example', 'X', { asOf: '2024-01-01' })
+    const batch = await resolveLookupEntriesByCodes('example', ['X'], { asOf: '2024-01-01' })
+
+    expect(single).toMatchObject({ status: 'ambiguous', ambiguity: 'table', candidates: 2 })
+    expect(batch.get('X')).toMatchObject({ status: 'ambiguous', ambiguity: 'table', candidates: 2 })
+    expect(mocks.entry.findMany).not.toHaveBeenCalled()
+  })
+
   it('does not let many historical matches for one code hide later codes in a batch', async () => {
     mocks.entry.groupBy.mockResolvedValue([
       { code: 'A', _count: { _all: 100 } },
@@ -75,7 +86,7 @@ describe('Lookup dated resolution', () => {
   it('uses the new revision after any published entry changes', async () => {
     mocks.entry.findMany.mockResolvedValue([row])
     const first = await resolveLookupEntry('example', 'X', { asOf: '2026-10-25' })
-    mocks.table.findFirst.mockResolvedValue({ ...table, publishedRevision: 5 })
+    mocks.table.findMany.mockResolvedValue([{ ...table, publishedRevision: 5 }])
     mocks.entry.findMany.mockResolvedValue([])
     const next = await resolveLookupEntry('example', 'X', { asOf: '2026-10-25' })
     expect(first.status).toBe('resolved')

@@ -205,6 +205,8 @@ async function main() {
   }
 
   const password = randomBytes(24).toString('base64url')
+  // Mask the ephemeral credential before exposing it to later workflow steps.
+  console.log('::add-mask::' + password)
   const passwordHash = await bcrypt.hash(password, 10)
   const suffix = randomBytes(5).toString('hex')
   const fixtures = [

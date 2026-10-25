@@ -405,13 +405,17 @@ renvoyant 500 sur corps invalide, et des erreurs GET protégées sans no-store;
 ces trois constats ont aussi été corrigés.
 La seconde passe a signalé que Prisma exige `orderBy` avec `groupBy` et `take`;
 un ordre explicite par code a été ajouté. La validation réelle de cette requête
-reste à faire sur PostgreSQL isolé.
+reste à faire sur PostgreSQL isolé. La revue a ensuite relevé que la recherche
+publique par rue pouvait exposer `lastImportSource`, y compris un nom de fichier
+ou chemin interne; l'attribut est désormais omis côté public et inclus dans les
+projections administrateur uniquement.
 
 ### Validations réellement exécutées dans ce worktree
 
-- Tests Lookup ciblés : **33 réussis** sur 6 fichiers, dont résolution batch
-  après de nombreux historiques et corps d'approbation invalide/malformé.
-- `pnpm test` seul : **3 368 réussis, 1 ignoré**, 329 fichiers réussis sur 330.
+- Tests Lookup ciblés : **34 réussis** sur 6 fichiers, dont résolution batch
+  après de nombreux historiques, corps d'approbation invalide/malformé et
+  retrait du nom de source interne dans la réponse publique.
+- `pnpm test` seul : **3 369 réussis, 1 ignoré**, 329 fichiers réussis sur 330.
   La première exécution menée en parallèle du lint/build avait dépassé le délai
   d'un test de rate-limit; la relance seule a réussi.
 - ESLint Lookup ciblé : succès.
@@ -420,6 +424,9 @@ reste à faire sur PostgreSQL isolé.
   du dépôt.
 - `prisma validate` et `prisma generate` : succès avec URL PostgreSQL factices
   pointant vers localhost; aucune connexion n'a été faite.
+- L'appel client Prisma `groupBy` ordonné a passé la validation locale du
+  client puis échoué à la connexion attendue sur le port fermé; cela ne remplace
+  pas l'exécution sur PostgreSQL.
 - `pnpm lint` global : échec sur **119 erreurs / 58 warnings**, dispersés dans
   des fichiers hors du périmètre Lookup; la documentation courante signale une
   baseline d'erreurs lint préexistantes. Les fichiers Lookup ciblés passent.
@@ -440,7 +447,8 @@ unicité des approbateurs, contrôles d'obsolescence, parsing, résolution daté
 tests unitaires et suite Vitest complète. Les batchs comptent les correspondances
 par code dans une transaction Repeatable Read, empêchant un code historisé de
 masquer les suivants. Les erreurs de corps d'approbation sont des 400. Aucun
-raccordement produit ajouté.
+raccordement produit ajouté. Les noms de fichiers source internes ne sont plus
+exposés par la recherche publique.
 
 **Modifié mais validation incomplète :** migration additive
 `60_lookup_import_proposals` et publication transactionnelle. Migration non

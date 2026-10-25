@@ -10,6 +10,25 @@ export function privateLookupError(response: Response): Response {
   return response;
 }
 
+export function projectPublicLookupSearch(payload: Record<string, unknown>) {
+  const results = Array.isArray(payload.results)
+    ? payload.results.map((value) => {
+        if (!value || typeof value !== 'object' || Array.isArray(value)) return value
+        const row = value as Record<string, unknown>
+        const projected = Object.fromEntries(
+          Object.entries(row).filter(([key]) => !['notes', 'metadata', 'importSource'].includes(key)),
+        )
+        if (row.table && typeof row.table === 'object' && !Array.isArray(row.table)) {
+          projected.table = Object.fromEntries(
+            Object.entries(row.table as Record<string, unknown>).filter(([key]) => key !== 'importSource'),
+          )
+        }
+        return projected
+      })
+    : []
+  return { ...payload, results }
+}
+
 export function toLookupEntryProjection<T extends {
   id: string;
   code: string;

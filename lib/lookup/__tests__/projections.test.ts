@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { privateLookupError, toLookupEntryProjection, toLookupTableProjection } from '../projections'
+import { privateLookupError, projectPublicLookupSearch, toLookupEntryProjection, toLookupTableProjection } from '../projections'
 
 describe('Lookup response projections', () => {
   it('keeps notes, arbitrary metadata and approvals out of partner entry data', () => {
@@ -31,5 +31,17 @@ describe('Lookup response projections', () => {
     privateLookupError(response)
     expect(response.headers.get('Cache-Control')).toBe('private, no-store')
     expect(response.headers.get('Vary')).toBe('Cookie, Authorization')
+  })
+
+  it('removes internal filenames and entry metadata from public search results', () => {
+    const projected = projectPublicLookupSearch({
+      results: [{
+        notes: 'internal note',
+        metadata: { x: 'y' },
+        table: { slug: 'code-rue', importSource: 'C:\\private\\export.csv' },
+      }],
+    })
+
+    expect(projected.results).toEqual([{ table: { slug: 'code-rue' } }])
   })
 })

@@ -3,7 +3,7 @@ import { prisma, withDbRetry } from '@/lib/prisma'
 import { requirePartnerOrAdminAuth } from '@/lib/auth-check'
 import { checkRateLimit, getClientIp } from '@/lib/utils/rate-limit'
 import { tooManyRequests } from '@/lib/api/rate-limit-response'
-import { privateLookupError } from '@/lib/lookup/projections'
+import { privateLookupError, projectPublicLookupSearch } from '@/lib/lookup/projections'
 import { PUBLIC_LOOKUP_TABLES } from '@/lib/lookup/projections'
 import { parseLookupCivilDate } from '@/lib/lookup/getLookupEntry'
 import { z } from 'zod'
@@ -141,7 +141,7 @@ export async function GET(req: NextRequest) {
         t.slug AS "tableSlug", t."labelFr" AS "tableLabelFr", t."labelNl" AS "tableLabelNl",
         t.prefix AS "tablePrefix",
         t."publishedRevision" AS "tableRevision", t."lastImportedAt" AS "tablePublishedAt",
-        t."lastImportSource" AS "tableImportSource",
+        ${isAdmin ? 't."lastImportSource" AS "tableImportSource",' : ''}
         c.slug AS "categorySlug", c."labelFr" AS "categoryLabelFr", c."labelNl" AS "categoryLabelNl",
         -- Match exact code → boost maximal
         CASE WHEN LOWER(e.code) = LOWER($1) THEN 10.0
@@ -222,7 +222,7 @@ export async function GET(req: NextRequest) {
       prefix: (r as unknown as { tablePrefix: string }).tablePrefix,
       publishedRevision: (r as unknown as { tableRevision: number }).tableRevision,
       publishedAt: (r as unknown as { tablePublishedAt: Date | null }).tablePublishedAt,
-      importSource: (r as unknown as { tableImportSource: string | null }).tableImportSource,
+      ...(isAdmin ? { importSource: (r as unknown as { tableImportSource: string | null }).tableImportSource } : {}),
       category: {
         slug: (r as unknown as { categorySlug: string }).categorySlug,
         labelFr: (r as unknown as { categoryLabelFr: string }).categoryLabelFr,
@@ -273,7 +273,8 @@ async function browseByTable({
         table: {
           select: {
             slug: true, labelFr: true, labelNl: true, prefix: true,
-            publishedRevision: true, lastImportedAt: true, lastImportSource: true,
+            publishedRevision: true, lastImportedAt: true,
+            ...(isAdmin ? { lastImportSource: true } : {}),
             category: { select: { slug: true, labelFr: true, labelNl: true } },
           },
         },
@@ -305,7 +306,7 @@ async function browseByTable({
       prefix: e.table.prefix,
       publishedRevision: e.table.publishedRevision,
       publishedAt: e.table.lastImportedAt,
-      importSource: e.table.lastImportSource,
+      ...(isAdmin ? { importSource: e.table.lastImportSource } : {}),
       category: {
         slug: e.table.category.slug,
         labelFr: e.table.category.labelFr,
@@ -334,10 +335,6 @@ async function sanitizePublicSearchResponse(response: NextResponse): Promise<Nex
   const body = await response.json()
   return NextResponse.json({
     ...body,
-    results: Array.isArray(body.results)
-      ? body.results.map((row: Record<string, unknown>) => Object.fromEntries(
-          Object.entries(row).filter(([key]) => key !== 'notes' && key !== 'metadata')
-        ))
-      : [],
+    ...projectPublicLookupSearch(body),
   }, { headers: publicJsonHeaders, status: response.status })
 }

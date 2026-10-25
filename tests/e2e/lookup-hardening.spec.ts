@@ -75,6 +75,17 @@ test('Lookup is isolated by role and public street search strips internal fields
   expect(partnerPage?.status()).toBe(200)
   await expect(page.getByRole('heading', { name: /Lookup\s*ONEM/i })).toBeVisible()
 
+  const partnerFixture = await prisma.user.findUniqueOrThrow({ where: { email: emails.partner! }, select: { id: true } })
+  await prisma.user.update({ where: { id: partnerFixture.id }, data: { status: 'disabled' } })
+  try {
+    const revokedPartner = await browserJson(page, '/api/lookup/tables/' + privateTableId)
+    expect(revokedPartner.status).toBe(403)
+    expect(revokedPartner.cacheControl).toContain('private')
+    expect(revokedPartner.cacheControl).toContain('no-store')
+  } finally {
+    await prisma.user.update({ where: { id: partnerFixture.id }, data: { status: 'active' } })
+  }
+
   await page.context().clearCookies()
   const disabledLogin = await signIn(page, emails.disabled!)
   expect(disabledLogin.status()).toBe(403)

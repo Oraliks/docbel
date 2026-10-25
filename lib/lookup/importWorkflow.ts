@@ -227,7 +227,7 @@ export async function publishLookupImportProposal(input: {
   expectedTableId?: string
 }): Promise<PublishLookupImportResult> {
   try {
-    return await prisma.$transaction(async (tx) => {
+    return await withSerializationRetry(() => prisma.$transaction(async (tx) => {
       const proposalIdentity = await tx.lookupImportProposal.findUnique({
         where: { id: input.proposalId },
         select: { id: true, tableId: true },
@@ -355,7 +355,7 @@ export async function publishLookupImportProposal(input: {
         diff,
         publishedRevision: publishedTable.publishedRevision,
       }
-    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable, maxWait: 10_000, timeout: 60_000 })
+    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable, maxWait: 10_000, timeout: 60_000 }))
   } catch (error) {
     await prisma.lookupImportProposal.updateMany({
       where: { id: input.proposalId, state: 'prepared' },
@@ -363,6 +363,29 @@ export async function publishLookupImportProposal(input: {
     }).catch(() => undefined)
     throw error
   }
+}
+
+async function withSerializationRetry<T>(operation: () => Promise<T>): Promise<T> {
+  const maxAttempts = 4
+  let lastError: unknown
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    try {
+      return await operation()
+    } catch (error) {
+      lastError = error
+      if (!isSerializationConflict(error) || attempt === maxAttempts - 1) throw error
+      await new Promise((resolve) => setTimeout(resolve, 25 * Math.pow(2, attempt)))
+    }
+  }
+  throw lastError
+}
+
+function isSerializationConflict(error: unknown): boolean {
+  if (error instanceof Prisma.PrismaClientKnownRequestError) {
+    const sqlState = typeof error.meta?.code === 'string' ? error.meta.code : ''
+    return error.code === 'P2034' || sqlState === '40001'
+  }
+  return error instanceof Error && /could not serialize access|serialization failure|SQLSTATE\\s*40001|\\b40001\\b/i.test(error.message)
 }
 
 function sanitizeFileName(fileName?: string): string {

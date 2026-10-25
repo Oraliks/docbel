@@ -2,7 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdminAuth } from "@/lib/auth-check";
 import { isKboConfigured, runKboEtl } from "@/lib/be-companies/kbo-etl";
 
-const json = { "Content-Type": "application/json; charset=utf-8" };
+const json = {
+  "Content-Type": "application/json; charset=utf-8",
+  "Cache-Control": "private, no-store",
+};
 
 /// Déclenche manuellement une ingestion KBO. Admin-only.
 /// Cf. /api/cron/kbo-refresh pour le déclenchement automatique mensuel.

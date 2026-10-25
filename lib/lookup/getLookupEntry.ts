@@ -1,6 +1,8 @@
+import { Prisma } from '@prisma/client'
 import { prisma, withDbRetry } from '@/lib/prisma'
 
 export interface ResolvedLookupEntry {
+  id: string
   code: string
   labelFr: string
   labelNl: string
@@ -12,18 +14,44 @@ export interface ResolvedLookupEntry {
   validFrom: Date | null
   validUntil: Date | null
   notes: string | null
+  effectiveDate: string
+  publishedRevision: number
+  publishedAt: Date | null
+  importSource: string | null
+}
+
+export type LookupResolution =
+  | { status: 'resolved'; entry: ResolvedLookupEntry }
+  | { status: 'absent'; entry: null; effectiveDate: string; publishedRevision: number }
+  | { status: 'ambiguous'; ambiguity: 'entries'; entry: null; effectiveDate: string; publishedRevision: number; candidates: number }
+  | { status: 'ambiguous'; ambiguity: 'table'; entry: null; effectiveDate: string; candidates: number }
+
+export function parseLookupCivilDate(value?: string | Date | null): { date: Date; day: string } {
+  if (value instanceof Date) {
+    if (Number.isNaN(value.getTime())) throw new Error('Date Lookup invalide')
+    const day = value.toISOString().slice(0, 10)
+    return { date: new Date(`${day}T00:00:00.000Z`), day }
+  }
+  if (value == null) {
+    const day = new Date().toISOString().slice(0, 10)
+    return { date: new Date(`${day}T00:00:00.000Z`), day }
+  }
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) throw new Error('Date Lookup invalide (AAAA-MM-JJ attendu)')
+  const date = new Date(`${value}T00:00:00.000Z`)
+  if (Number.isNaN(date.getTime()) || date.toISOString().slice(0, 10) !== value) throw new Error('Date Lookup invalide')
+  return { date, day: value }
 }
 
 // Cache mémoire 5 min — invalidé après chaque édition/import
 interface CacheEntry {
-  data: ResolvedLookupEntry | null
+  data: LookupResolution
   cachedAt: number
 }
 const CACHE_TTL_MS = 5 * 60 * 1000
 const cache = new Map<string, CacheEntry>()
 
-function cacheKey(tableSlug: string, code: string): string {
-  return `${tableSlug}::${code}`
+function cacheKey(tableSlug: string, tableId: string, code: string, day: string, revision: number): string {
+  return `${tableSlug}::${tableId}::${code}::${day}::${revision}`
 }
 
 export function invalidateLookupCache(tableSlug?: string) {
@@ -45,9 +73,28 @@ export function invalidateLookupCache(tableSlug?: string) {
 export async function getLookupEntry(
   tableSlug: string,
   code: string,
-  options: { force?: boolean } = {}
+  options: { force?: boolean; asOf?: string | Date | null } = {}
 ): Promise<ResolvedLookupEntry | null> {
-  const key = cacheKey(tableSlug, code)
+  const result = await resolveLookupEntry(tableSlug, code, options)
+  return result.status === 'resolved' ? result.entry : null
+}
+
+export async function resolveLookupEntry(
+  tableSlug: string,
+  code: string,
+  options: { force?: boolean; asOf?: string | Date | null } = {},
+): Promise<LookupResolution> {
+  const { date, day } = parseLookupCivilDate(options.asOf)
+  const tables = await withDbRetry(() => prisma.lookupTable.findMany({
+    where: { slug: tableSlug },
+    orderBy: { id: 'asc' },
+    take: 2,
+    select: { id: true, slug: true, labelFr: true, publishedRevision: true, lastImportedAt: true, lastImportSource: true, category: { select: { slug: true } } },
+  }))
+  if (tables.length === 0) return { status: 'absent', entry: null, effectiveDate: day, publishedRevision: 0 }
+  if (tables.length > 1) return { status: 'ambiguous', ambiguity: 'table', entry: null, effectiveDate: day, candidates: tables.length }
+  const table = tables[0]
+  const key = cacheKey(tableSlug, table.id, code, day, table.publishedRevision)
   if (!options.force) {
     const cached = cache.get(key)
     if (cached && Date.now() - cached.cachedAt < CACHE_TTL_MS) {
@@ -55,42 +102,28 @@ export async function getLookupEntry(
     }
   }
 
-  const now = new Date()
-  const entry = await withDbRetry(() =>
-    prisma.lookupEntry.findFirst({
+  const entries = await withDbRetry(() =>
+    prisma.lookupEntry.findMany({
       where: {
         code,
-        table: { slug: tableSlug },
-        AND: [
-          { OR: [{ validFrom: null }, { validFrom: { lte: now } }] },
-          { OR: [{ validUntil: null }, { validUntil: { gte: now } }] },
-        ],
+        tableId: table.id,
+        AND: [{ OR: [{ validFrom: null }, { validFrom: { lte: date } }] }, { OR: [{ validUntil: null }, { validUntil: { gte: date } }] }],
       },
-      orderBy: [{ validFrom: 'desc' }],
-      include: {
-        table: { include: { category: true } },
-      },
+      orderBy: [{ validFrom: 'desc' }, { id: 'asc' }],
+      take: 3,
+      select: { id: true, code: true, labelFr: true, labelNl: true, labelDe: true, labelEn: true, validFrom: true, validUntil: true, notes: true },
     })
   )
-
-  const resolved: ResolvedLookupEntry | null = entry
-    ? {
-        code: entry.code,
-        labelFr: entry.labelFr,
-        labelNl: entry.labelNl,
-        labelDe: entry.labelDe,
-        labelEn: entry.labelEn,
-        tableSlug: entry.table.slug,
-        tableLabelFr: entry.table.labelFr,
-        categorySlug: entry.table.category.slug,
-        validFrom: entry.validFrom,
-        validUntil: entry.validUntil,
-        notes: entry.notes,
-      }
-    : null
-
-  cache.set(key, { data: resolved, cachedAt: Date.now() })
-  return resolved
+  const data: LookupResolution = entries.length > 1
+    ? { status: 'ambiguous', ambiguity: 'entries', entry: null, effectiveDate: day, publishedRevision: table.publishedRevision, candidates: entries.length }
+    : entries.length === 0
+      ? { status: 'absent', entry: null, effectiveDate: day, publishedRevision: table.publishedRevision }
+      : { status: 'resolved', entry: {
+          ...entries[0], tableSlug: table.slug, tableLabelFr: table.labelFr, categorySlug: table.category.slug,
+          effectiveDate: day, publishedRevision: table.publishedRevision, publishedAt: table.lastImportedAt, importSource: table.lastImportSource,
+        } }
+  cache.set(key, { data, cachedAt: Date.now() })
+  return data
 }
 
 /**
@@ -99,43 +132,60 @@ export async function getLookupEntry(
  */
 export async function getLookupEntriesByCodes(
   tableSlug: string,
-  codes: string[]
+  codes: string[],
+  options: { asOf?: string | Date | null } = {},
 ): Promise<Map<string, ResolvedLookupEntry>> {
-  if (codes.length === 0) return new Map()
-  const now = new Date()
-  const entries = await withDbRetry(() =>
-    prisma.lookupEntry.findMany({
-      where: {
-        code: { in: codes },
-        table: { slug: tableSlug },
-        AND: [
-          { OR: [{ validFrom: null }, { validFrom: { lte: now } }] },
-          { OR: [{ validUntil: null }, { validUntil: { gte: now } }] },
-        ],
-      },
-      orderBy: [{ validFrom: 'desc' }],
-      include: { table: { include: { category: true } } },
-    })
-  )
+  const outcomes = await resolveLookupEntriesByCodes(tableSlug, codes, options)
+  return new Map([...outcomes].flatMap(([code, result]) => result.status === 'resolved' ? [[code, result.entry] as const] : []))
+}
 
-  // Dédupliquer par code : si plusieurs versions, on garde la première (la plus récente
-  // grâce à l'orderBy desc)
-  const map = new Map<string, ResolvedLookupEntry>()
-  for (const e of entries) {
-    if (map.has(e.code)) continue
-    map.set(e.code, {
-      code: e.code,
-      labelFr: e.labelFr,
-      labelNl: e.labelNl,
-      labelDe: e.labelDe,
-      labelEn: e.labelEn,
-      tableSlug: e.table.slug,
-      tableLabelFr: e.table.labelFr,
-      categorySlug: e.table.category.slug,
-      validFrom: e.validFrom,
-      validUntil: e.validUntil,
-      notes: e.notes,
+export async function resolveLookupEntriesByCodes(
+  tableSlug: string,
+  codes: string[],
+  options: { asOf?: string | Date | null } = {},
+): Promise<Map<string, LookupResolution>> {
+  const { date, day } = parseLookupCivilDate(options.asOf)
+  if (codes.length === 0) return new Map()
+  return withDbRetry(() => prisma.$transaction(async (tx) => {
+    const tables = await tx.lookupTable.findMany({
+      where: { slug: tableSlug },
+      orderBy: { id: 'asc' },
+      take: 2,
+      select: { id: true, slug: true, labelFr: true, publishedRevision: true, lastImportedAt: true, lastImportSource: true, category: { select: { slug: true } } },
     })
-  }
-  return map
+    if (tables.length === 0) return new Map(codes.map((code) => [code, { status: 'absent' as const, entry: null, effectiveDate: day, publishedRevision: 0 }]))
+    if (tables.length > 1) return new Map(codes.map((code) => [code, { status: 'ambiguous' as const, ambiguity: 'table' as const, entry: null, effectiveDate: day, candidates: tables.length }]))
+    const table = tables[0]
+
+    const where = {
+      code: { in: codes },
+      tableId: table.id,
+      AND: [{ OR: [{ validFrom: null }, { validFrom: { lte: date } }] }, { OR: [{ validUntil: null }, { validUntil: { gte: date } }] }],
+    }
+    // Count per code first: a global findMany(take) can let one code's historical
+    // overlaps hide all following codes and turn them into false absences.
+    const counts = await tx.lookupEntry.groupBy({
+      by: ['code'], where, _count: { _all: true }, orderBy: { code: 'asc' }, take: codes.length,
+    })
+    const countByCode = new Map(counts.map((item) => [item.code, item._count._all]))
+    const uniqueCodes = counts.filter((item) => item._count._all === 1).map((item) => item.code)
+    const entries = uniqueCodes.length === 0 ? [] : await tx.lookupEntry.findMany({
+      where: { ...where, code: { in: uniqueCodes } },
+      orderBy: [{ validFrom: 'desc' }, { id: 'asc' }],
+      take: uniqueCodes.length,
+      select: { id: true, code: true, labelFr: true, labelNl: true, labelDe: true, labelEn: true, validFrom: true, validUntil: true, notes: true },
+    })
+    const entryByCode = new Map(entries.map((entry) => [entry.code, entry]))
+    const map = new Map<string, LookupResolution>()
+    for (const code of codes) {
+      const count = countByCode.get(code) ?? 0
+      const entry = entryByCode.get(code)
+      map.set(code, count > 1
+        ? { status: 'ambiguous', ambiguity: 'entries', entry: null, effectiveDate: day, publishedRevision: table.publishedRevision, candidates: count }
+        : !entry
+          ? { status: 'absent', entry: null, effectiveDate: day, publishedRevision: table.publishedRevision }
+          : { status: 'resolved', entry: { ...entry, tableSlug: table.slug, tableLabelFr: table.labelFr, categorySlug: table.category.slug, effectiveDate: day, publishedRevision: table.publishedRevision, publishedAt: table.lastImportedAt, importSource: table.lastImportSource } })
+    }
+    return map
+  }, { isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead }))
 }

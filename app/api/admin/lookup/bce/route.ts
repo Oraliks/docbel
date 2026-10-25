@@ -2,7 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdminAuth } from "@/lib/auth-check";
 import { lookupByEnterpriseNumber, searchByName } from "@/lib/be-companies/kbo-lookup";
 
-const json = { "Content-Type": "application/json; charset=utf-8" };
+const json = {
+  "Content-Type": "application/json; charset=utf-8",
+  "Cache-Control": "private, no-store",
+};
 
 /// GET /api/admin/lookup/bce?number=0123456789
 /// GET /api/admin/lookup/bce?name=cantillon

@@ -3,7 +3,10 @@ import { requireAdminAuth } from "@/lib/auth-check";
 import { checkVat } from "@/lib/be-companies/vies";
 import { checkRateLimit, getClientIp } from "@/lib/pdf-forms/security";
 
-const json = { "Content-Type": "application/json; charset=utf-8" };
+const json = {
+  "Content-Type": "application/json; charset=utf-8",
+  "Cache-Control": "private, no-store",
+};
 
 /// GET /api/admin/lookup/vat?country=BE&number=0123456789
 /// Vérifie un numéro de TVA via VIES (gratuit). Pour BE, renvoie aussi

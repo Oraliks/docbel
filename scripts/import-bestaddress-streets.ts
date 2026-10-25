@@ -21,6 +21,7 @@ import { existsSync } from 'fs'
 import path from 'path'
 import os from 'os'
 import { prisma } from '@/lib/prisma'
+import { Prisma } from '@prisma/client'
 import { parseCsv } from '@/lib/lookup/importLookupCsv'
 
 const SKIP_DOWNLOAD = process.argv.includes('--skip-download')
@@ -115,46 +116,38 @@ async function main() {
 
   console.log(`Total dédupliqué : ${byKey.size} rues`)
 
-  // Étape 2 : purger l'existant (ré-import complet, pas de diff)
-  console.log('Purge de la table…')
-  await prisma.lookupEntry.deleteMany({ where: { tableId: table.id } })
-
-  // Étape 3 : insertion par batch
-  console.log(`Insertion par batchs de ${BATCH}…`)
+  // Étape 2 : remplacer tout le jeu dans une transaction. Les lecteurs voient
+  // l'ancien jeu jusqu'au commit; toute erreur restaure l'ancien contenu.
+  console.log('Remplacement atomique de la table…')
   const all = [...byKey.values()]
   const validFrom = new Date('1970-01-01')
-  let inserted = 0
   const t0 = Date.now()
-  for (let i = 0; i < all.length; i += BATCH) {
-    const chunk = all.slice(i, i + BATCH)
-    const created = await prisma.lookupEntry.createMany({
-      data: chunk.map((e) => ({
-        tableId: table.id,
-        code: e.code,
-        labelFr: e.labelFr,
-        labelNl: e.labelNl,
-        validFrom,
-        metadata: e.metadata,
-      })),
-      skipDuplicates: true,
-    })
-    inserted += created.count
-    if (i % (BATCH * 10) === 0) {
-      const pct = ((i / all.length) * 100).toFixed(0)
-      process.stdout.write(`\r  ${pct}% (${inserted}/${all.length})`)
+  const inserted = await prisma.$transaction(async (tx) => {
+    await tx.$queryRaw(Prisma.sql`SELECT "id" FROM "LookupTable" WHERE "id" = ${table.id} FOR UPDATE`)
+    const current = await tx.lookupTable.findUnique({ where: { id: table.id }, select: { requiresApproval: true } })
+    if (!current) throw new Error('Table code-rue introuvable en DB')
+    if (current.requiresApproval) throw new Error('La table exige une proposition approuvée; import direct refusé')
+    await tx.lookupEntry.deleteMany({ where: { tableId: table.id } })
+    let count = 0
+    for (let i = 0; i < all.length; i += BATCH) {
+      const chunk = all.slice(i, i + BATCH)
+      const created = await tx.lookupEntry.createMany({
+        data: chunk.map((e) => ({ tableId: table.id, code: e.code, labelFr: e.labelFr, labelNl: e.labelNl, validFrom, metadata: e.metadata })),
+        skipDuplicates: false,
+      })
+      count += created.count
+      if (i % (BATCH * 10) === 0) process.stdout.write(`\r  ${((i / all.length) * 100).toFixed(0)}% (${count}/${all.length})`)
     }
-  }
+    await tx.lookupTable.update({
+      where: { id: table.id },
+      data: {
+        entriesCount: count, lastImportedAt: new Date(), lastImportSource: 'BeStAddress (BOSA)',
+        lastImportedBy: 'import-bestaddress-streets', publishedRevision: { increment: 1 },
+      },
+    })
+    return count
+  }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable, maxWait: 10_000, timeout: 300_000 })
   process.stdout.write(`\r  100% (${inserted}/${all.length})\n`)
-
-  await prisma.lookupTable.update({
-    where: { id: table.id },
-    data: {
-      entriesCount: inserted,
-      lastImportedAt: new Date(),
-      lastImportSource: 'BeStAddress (BOSA)',
-      lastImportedBy: 'import-bestaddress-streets',
-    },
-  })
 
   console.log(`✓ ${inserted} rues insérées en ${((Date.now() - t0) / 1000).toFixed(1)}s`)
 }

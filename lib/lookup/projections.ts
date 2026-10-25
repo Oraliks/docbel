@@ -1,3 +1,5 @@
+import { createHash } from 'crypto'
+
 /**
  * Safe Lookup response shapes. Imported metadata and notes are internal unless
  * a route explicitly serves them to an administrator.
@@ -79,4 +81,9 @@ export function toLookupTableProjection<T extends {
       labelNl: table.category.labelNl ?? "",
     },
   };
+}
+
+export function lookupRepresentationEtag(json: string): string {
+  const digest = createHash('sha256').update(json).digest('hex')
+  return '"' + digest + '"'
 }

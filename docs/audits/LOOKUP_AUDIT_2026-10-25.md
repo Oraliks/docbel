@@ -435,8 +435,10 @@ projections administrateur uniquement.
   est resté sans sortie et sans processus Node actif; la commande a été
   interrompue, donc le build complet n'est pas attesté. La première build Vercel
   a ensuite révélé un appel de traduction absent dans la ligne de revue des
-  imports batch; le hook `useTranslations` a été placé dans le composant de ligne
-  et la vérification CI doit être relancée sur le nouveau SHA.
+  imports batch puis un appel à `retryWithError` depuis le mauvais namespace
+  dans la vue partenaire; les hooks et namespace ont été corrigés. ESLint ciblé
+  et `i18n:check` réussissent après ces corrections; la CI doit être relancée
+  sur le nouveau SHA.
 - Outils et port PostgreSQL local absents/inactifs (pas de `docker`, `psql`,
   `pg_isready`; ports 5432 et 55432 fermés). Aucun serveur PostgreSQL isolé ou
   environnement navigateur authentifié par rôles n'était disponible. Les tests

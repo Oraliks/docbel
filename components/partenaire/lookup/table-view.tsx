@@ -129,6 +129,7 @@ interface Props {
 export function LookupTableView({ table, locale = resolveLookupLocale(), initialCode }: Props) {
   const t = useTranslations('public.outils')
   const ta = useTranslations('public.auth')
+  const tc = useTranslations('public.changelog')
   const moduleInfo = getModuleInfo(table.prefix)
   const displayLabel = cleanTableLabel(table.labelFr, table.prefix)
 
@@ -496,7 +497,7 @@ export function LookupTableView({ table, locale = resolveLookupLocale(), initial
             <div role="alert" className="flex flex-col items-center gap-3 py-16 text-center">
               <p className="text-sm text-destructive">{ta('errNetwork')}</p>
               <Button variant="outline" size="sm" onClick={() => setReloadKey((key) => key + 1)}>
-                {ta('retryWithError', { error: ta('errGeneric') })}
+                {tc('retryWithError', { error: ta('errGeneric') })}
               </Button>
             </div>
           ) : rows.length === 0 && !loading ? (
@@ -947,6 +948,7 @@ function HistorySection({
 }) {
   const t = useTranslations('public.outils')
   const ta = useTranslations('public.auth')
+  const tc = useTranslations('public.changelog')
   return (
     <div>
       <div className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
@@ -956,7 +958,7 @@ function HistorySection({
         <div role="alert" className="space-y-1 text-destructive">
           <p>{ta('errNetwork')}</p>
           <Button variant="ghost" size="sm" onClick={onRetry}>
-            {ta('retryWithError', { error: ta('errGeneric') })}
+            {tc('retryWithError', { error: ta('errGeneric') })}
           </Button>
         </div>
       ) : loading || versions === null ? (

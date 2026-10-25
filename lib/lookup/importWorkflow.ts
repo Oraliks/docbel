@@ -283,7 +283,7 @@ export async function publishLookupImportProposal(input: {
         if (retryingFailure) {
           await tx.lookupImportProposal.update({
             where: { id: proposal.id },
-            data: { state: 'prepared' },
+            data: { state: 'prepared', errorMessage: null },
           })
         }
         return {

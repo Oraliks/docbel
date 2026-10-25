@@ -102,6 +102,29 @@ describe('Lookup publication proposal safeguards', () => {
     expect(mocks.createMany).not.toHaveBeenCalled()
   })
 
+  it('clears the old publication error when a failed retry returns to approval review', async () => {
+    const requiresApprovalTable = { ...tableSnapshot, requiresApproval: true }
+    setup(makeProposal({
+      state: 'failed',
+      errorMessage: 'write failed',
+      baseHash: hashLookupValue({ table: requiresApprovalTable, entries: [] }),
+    }))
+    mocks.tableFind.mockResolvedValue(requiresApprovalTable)
+
+    const result = await publishLookupImportProposal({
+      proposalId: 'proposal-1',
+      publishedBy: 'admin@example.test',
+      retryFailed: true,
+    })
+
+    expect(result.state).toBe('pending_approvals')
+    expect(mocks.proposalUpdate).toHaveBeenCalledWith({
+      where: { id: 'proposal-1' },
+      data: { state: 'prepared', errorMessage: null },
+    })
+    expect(mocks.createMany).not.toHaveBeenCalled()
+  })
+
   it('rolls back and records a failed state if a write chunk fails', async () => {
     const entry = {
       code: 'A', labelFr: 'Alpha', labelNl: 'Alpha NL', labelDe: null, labelEn: null,

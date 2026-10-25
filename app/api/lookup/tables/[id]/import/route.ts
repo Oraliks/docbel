@@ -18,8 +18,14 @@ export async function POST(
     const { id } = await params
     const formData = await req.formData()
     const proposalId = formData.get('proposalId')
+    const retryFailed = formData.get('retryFailed') === 'true'
     if (typeof proposalId === 'string' && proposalId.trim()) {
-      const result = await publishLookupImportProposal({ proposalId: proposalId.trim(), publishedBy: auth.user.email, expectedTableId: id })
+      const result = await publishLookupImportProposal({
+        proposalId: proposalId.trim(),
+        publishedBy: auth.user.email,
+        expectedTableId: id,
+        retryFailed,
+      })
       if (result.state !== 'published' && result.state !== 'already_published') {
         return NextResponse.json(result, {
           status: result.state === 'pending_approvals' ? 409 : 409,

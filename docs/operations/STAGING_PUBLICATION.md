@@ -12,7 +12,7 @@
 
 | Ressource | Production constatée | Cible staging | Isolation attendue | État constaté |
 | --- | --- | --- | --- | --- |
-| Git | `main`, déploiement `READY` sur `4ff84786` | branche permanente `staging` | même dépôt, lots de fonctionnalité distincts | branche staging et protection non vérifiées/créées à distance |
+| Git | `main`, déploiement `READY` sur `4ff84786` | branche permanente `staging` | même dépôt, lots de fonctionnalité distincts | branche locale `staging` préparée sur le candidat; aucun push; branche distante et protection non vérifiées/créées |
 | Vercel | équipe Docbel `team_QGE3ZmKTdwjFIVFmoO7W1u7f`, projet `docbel` `prj_6r3N3jyVPYTJjKTHcyTkgtfTgqcf`; `docbel.be` vérifié | projet `docbel-staging`, `staging.docbel.be` | projet, accès, variables et déploiements distincts | projet vide créé par CLI : `prj_C4kaNyfq7cZlzYecYvcUeapNdJTk`; aucun dépôt, domaine ni déploiement. Le connecteur API renvoie 404 pour ce projet nouvellement créé; CLI vérifie son existence. |
 | Déploiements Preview | Preview partage des variables sensibles avec Production, dont `DATABASE_URL`, `DIRECT_URL`, auth, clés fournisseurs et Blob public | aucun secret de production | aperçus désactivés ou secrets Preview séparés et non productifs | risques existants confirmés sur `docbel`; Preview désactivé sur le projet staging, qui n'a aucun lien Git. Aucun changement Production/Preview appliqué. |
 | Neon/PostgreSQL | connexions Vercel nommées, destinations vérifiées dans la console Neon | nouveau projet Neon et nouvelle base staging | projet distinct; URL poolée et directe même base; droits limités | console de l'organisation `Docbel` ouverte; seul le projet Production existe. Aucun projet staging créé car l'accord de dépense est refusé/en attente. |

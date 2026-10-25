@@ -422,6 +422,10 @@ projections administrateur uniquement.
 - ESLint ciblé des routes et services touchés : succès.
 - `pnpm i18n:check` : succès, avec les avertissements de couverture de langues
   du dépôt.
+- L'inventaire Vercel (valeurs non déchiffrées) montre `DATABASE_URL` ciblée
+  simultanément sur `preview` et `production`, sans variable de test distincte.
+  Le preview n'est donc pas une base isolée identifiée; aucune connexion n'y a
+  été tentée.
 - `prisma validate` et `prisma generate` : succès avec URL PostgreSQL factices
   pointant vers localhost; aucune connexion n'a été faite.
 - L'appel client Prisma `groupBy` ordonné a passé la validation locale du

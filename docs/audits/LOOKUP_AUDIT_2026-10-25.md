@@ -433,7 +433,10 @@ projections administrateur uniquement.
 - `pnpm build` : compilation Next réussie; le contrôle TypeScript a révélé puis
   permis de corriger l'erreur ci-dessus. Après correction, le worker de contrôle
   est resté sans sortie et sans processus Node actif; la commande a été
-  interrompue, donc le build complet n'est pas attesté.
+  interrompue, donc le build complet n'est pas attesté. La première build Vercel
+  a ensuite révélé un appel de traduction absent dans la ligne de revue des
+  imports batch; le hook `useTranslations` a été placé dans le composant de ligne
+  et la vérification CI doit être relancée sur le nouveau SHA.
 - Outils et port PostgreSQL local absents/inactifs (pas de `docker`, `psql`,
   `pg_isready`; ports 5432 et 55432 fermés). Aucun serveur PostgreSQL isolé ou
   environnement navigateur authentifié par rôles n'était disponible. Les tests

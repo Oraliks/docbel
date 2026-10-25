@@ -342,6 +342,7 @@ function SlotRow({
   slot: FileSlot
   onRemove: () => void
 }) {
+  const tLookupImport = useTranslations('admin.lookupImport')
   const StatusIcon = {
     pending: CheckCircle2,
     uploading: Loader2,

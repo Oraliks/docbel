@@ -180,13 +180,19 @@ export default function LookupTableDetailPage() {
     }
   }
 
-  const publishProposal = async (proposalId: string) => {
+  const publishProposal = async (proposalId: string, retryFailed = false) => {
     if (!id) return
     try {
       const formData = new FormData()
       formData.set('proposalId', proposalId)
+      if (retryFailed) formData.set('retryFailed', 'true')
       const res = await fetch(`/api/lookup/tables/${id}/import`, { method: 'POST', body: formData })
       const body = await res.json()
+      if (res.status === 409 && body.state === 'pending_approvals') {
+        toast.success(tLookupImport('reviewPending'))
+        await load()
+        return
+      }
       if (!res.ok) throw new Error(body.error ?? `Publication refusée (${body.state ?? res.status})`)
       toast.success(tLookupImport('publishedToast', { inserted: body.inserted ?? 0, updated: body.updated ?? 0 }))
       await load()
@@ -370,6 +376,11 @@ export default function LookupTableDetailPage() {
                       <Button size="sm" variant="outline" onClick={() => void approveProposal(proposal.id)}>{tLookupImport('approveButton')}</Button>
                       {approvals.length >= 2 && <Button size="sm" onClick={() => void publishProposal(proposal.id)}>{tLookupImport('publishButton')}</Button>}
                     </div>
+                  )}
+                  {proposal.state === 'failed' && proposal.payloadHash && (
+                    <Button size="sm" variant="outline" onClick={() => void publishProposal(proposal.id, true)}>
+                      {tLookupImport('retryPublishButton')}
+                    </Button>
                   )}
                   {!table.requiresApproval && proposal.state === 'prepared' && <p className="text-xs text-muted-foreground">{tLookupImport('autoPublishPending')}</p>}
                 </div>

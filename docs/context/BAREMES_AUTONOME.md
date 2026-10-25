@@ -13,6 +13,7 @@ Base de travail : `main` `10c70ebf`. Le checkout historique sale n'a pas été r
 | Versions, montants normalisés et originaux | `AutonomousRateVersion` : JSONB dédié et original BYTEA |
 | Référence publiée | `AutonomousRateRegistry` : pointeur et génération dédiés |
 | Historique de publication | `AutonomousRatePublication` : acteur, date, référence antérieure, snapshot |
+| Journal des vérifications | `AutonomousRateDecision` : décisions successives, périmètre exact, preuves, acteur et motif |
 
 Pas de lecture/écriture des objets `Bareme*` / `BareSheet`, de leurs fichiers,
 de leurs API, de leur cache ou de leurs événements. Aucun raccordement C1,
@@ -31,8 +32,8 @@ référence dans une transaction sérialisable avec verrou dédié. Un retry ide
 ne crée pas de seconde publication et ne réactive pas une ancienne version.
 Une date future ou antérieure à la référence courante bloque la publication.
 
-Lecteur courant v3 : les candidats v1/v2 doivent être réimportés pour bénéficier
-des douze contrats de feuilles. Les références publiées v1/v2 restent vérifiées
+Lecteur courant v4 : les candidats v1/v2/v3 doivent être réimportés pour bénéficier
+des contrôles de périmètre et de décision. Les références publiées v1/v2/v3 restent vérifiées
 avec leur lecteur autonome gelé (`readers/v1.ts`, `readers/v2.ts` et sa couverture),
 leur SHA-256 et leur révision ; une
 évolution du lecteur courant ne les rend donc pas illisibles. Une version de
@@ -68,10 +69,11 @@ suivants sont issus de la fixture réelle, sans variante synthétique :
 | **Total** | **5 735** | **312** | **12** | **503** |
 
 La publication active la version de ce fichier, sans assembler des cellules de
-versions différentes. Une feuille requise manquante, une nouvelle feuille non
-reconnue, une perte de couverture ou une lecture ambiguë bloque ; une absence ne
-remplace jamais une valeur par zéro. Les anciens imports v1/v2 restent consultables
-avec leur couverture historique de trois feuilles, sans les présenter comme v3.
+versions différentes. En v4, une absence reconnue et observable crée une vérification
+de retrait ; elle peut être acceptée pour le périmètre exact. Une feuille présente
+illisible, une nouveauté incomprise, une valeur requise vide ou une identité ambiguë
+reste bloquante. Une absence ne remplace jamais une valeur par zéro. Les anciens
+imports gardent leur couverture, leur lecteur et leurs octets historiques.
 
 Le contrat interne exige les 13 colonnes codées dans leur contexte et les tranches
 MIN puis 1 à 99 dans chaque matrice. Plusieurs tableaux concurrents, un taux
@@ -168,7 +170,96 @@ base et crée un administrateur local avec mot de passe aléatoire dans
 `private/backups/autonomous-rates-test/` ignoré. Placer aussi les données PostgreSQL
 hors de `test-results/`, que Playwright peut nettoyer. Les variantes synthétiques
 et comptes de recette restent dans cette base.
-L'option de reset de ce script ne vise que les trois tables nouvelles, en test.
+L'option de reset de ce script ne vise que les quatre tables autonomes, en test.
+
+## Parcours employé et décisions — pack validé du 25/10/2026
+
+Le pack `DOCBEL_PACK_CODEX_BAREMES_VALIDES.zip` fournit les exigences et les maquettes.
+L'écran existant utilise les services réels : parcours guidé, vues facultatives
+avant/après et thèmes, détails au clic, sources téléchargeables, historique et rapport
+JSON réel. Aucun écran de démonstration ni nouvel outil consommateur n'est ajouté.
+
+La politique serveur `review-policy.ts` fixe un seuil de vigilance produit de **20 %
+en valeur absolue, seuil inclus**, avec surcharges possibles par catégorie/unité.
+Ce n'est pas une règle juridique. Les calculs utilisent des décimales ; zéro et absence
+restent distincts. Les expressions restent textuelles et les changements de formule
+sont contrôlés même si le résultat enregistré est identique. Les références de formule
+suivent les identités connues pour éviter les fausses alertes lors d'un déplacement.
+
+Les fortes variations comparables d'une même cause peuvent être proposées ensemble.
+Toute décision porte sur la liste exhaustive des identités, jamais sur la seule page
+affichée. Les retraits sont regroupés par branche identifiée ou feuille effectivement
+absente. La preuve conserve la zone lue, les en-têtes observés, les feuilles présentes
+et les sources exactes des anciens éléments. Une référence de formule demeurant dirigée
+vers une donnée retirée reste une erreur technique.
+
+Le lecteur v4 accepte l'évolution de périmètres connus (lignes, séries et feuilles,
+branches d'activation, populations Bonus, fréquences des autres montants). Il ne
+transforme pas une cellule présente illisible en retrait. Les formats inconnus demandent
+une nouvelle adaptation du lecteur. Les lecteurs v1/v2/v3 restent inchangés.
+
+Une confirmation, un différé ou une révocation ajoute un événement au journal dédié.
+La confirmation ne publie pas. Une révocation remet la vérification en attente et
+n'efface aucun événement ; après publication elle est interdite. Les décisions sont
+liées aux révisions des deux versions, à la génération, au lecteur, à la politique et
+au périmètre exact. Un recalcul identique les conserve ; une modification pertinente
+les rend inapplicables. L'acteur vient exclusivement de la session administrateur.
+La publication fige également son bilan de vérification : une évolution ultérieure
+de politique ne réinterprète pas les confirmations d'une version déjà publiée.
+
+Les motifs documentaires sont des attestations prédéfinies, sans conclusion juridique.
+Une motivation réglementaire libre exige une URL HTTPS sur un domaine institutionnel
+reconnu et quatre champs : région, population, nouvelles demandes, dossiers existants.
+Ce contrôle de provenance ne certifie pas l'interprétation de la source : la vérification
+humaine reste explicite. Aucune fin ACTIVA en janvier 2027 n'est présumée ni programmée.
+
+La publication recontrôle intégrité, comparaison et décisions dans la même transaction
+que son activation. Une date future autorise import et vérification, mais bloque la
+publication manuelle jusqu'au jour d'effet **Europe/Brussels** ; aucun cron n'active
+la version. La migration du journal est additive et ne vise que les tables autonomes.
+Son application locale ne signifie pas qu'elle a été appliquée en production.
+
+### Recette du parcours validé
+
+Le test navigateur `tests/e2e/autonomous-rates.spec.ts` utilise les vrais services
+de cette base isolée : premier import, fichiers identiques, modification courante,
+vues facultatives, focus/Échap, panne de téléchargement suivie d'une récupération,
+grande hausse, confirmation/rechargement/révocation, retrait de la branche Wallonie
+et forte baisse, confirmations sur mobile, publication, historique et rapport réel.
+Il refuse également l'appel direct de publication avant les décisions et une
+cellule présente devenue illisible. Résultat local : **1 parcours réussi**, sans
+exception JavaScript non gérée, et **11 captures** dans
+`docs/evidence/baremes-autonome/employee-validated/`.
+
+La suite complète locale a passé **3 398 tests, 2 ignorés** ; les cas ajoutés ensuite
+ont leur recette ciblée : **57 tests autonomes réussis**, dont le scénario PostgreSQL
+avec refus/différé, révocation et bilan publié inchangé après évolution de politique.
+Une feuille encore déclarée mais non extraite reste illisible, jamais acceptée comme
+retrait. `pnpm i18n:check` et ESLint sur le périmètre sont réussis.
+Le build local a réussi ; la CI de la PR vérifie de nouveau le commit effectivement
+livré et régénère ses propres captures. Les variantes sont nommées `SYNTHETIC-…-TEST` ;
+l'original reste inchangé. Les anciennes captures v3 sont conservées séparément.
+
+Commandes, avec les variables de la base isolée décrites plus haut :
+
+```sh
+pnpm exec vitest run lib/baremes-autonome --maxWorkers=1
+pnpm test --maxWorkers=2
+pnpm exec playwright test --config tests/e2e/autonomous-rates.config.ts
+pnpm i18n:check
+pnpm build
+```
+
+**Pas de test humain réalisé.** Pour la recette accompagnée, demander à une personne
+non technique de mettre à jour le fichier, puis lui présenter une forte variation et
+un retrait : elle doit trouver les sources, confirmer, revenir sur sa décision avant
+publication et comprendre que confirmer n'a pas encore publié. Une URL institutionnelle
+ne certifie pas sa pertinence juridique : la personne doit lire et situer la source.
+
+La revue réglementaire informative n'a identifié aucune date ACTIVA 2027 présumée
+ni raccordement métier historique. Sa réserve technique initiale sur le motif libre
+a été corrigée par les attestations documentaires exactes et le formulaire réglementaire
+structuré ; la qualification humaine de la source reste nécessaire.
 
 ## Retrait ultérieur : aucune bascule autorisée ici
 

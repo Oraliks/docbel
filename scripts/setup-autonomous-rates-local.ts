@@ -11,6 +11,7 @@ async function main() {
   try {
     if (process.env.AUTONOMOUS_RATES_RESET_TEST === '1') {
       await prisma.$transaction(async tx => {
+        await tx.autonomousRateDecision.deleteMany({})
         await tx.autonomousRatePublication.deleteMany({})
         await tx.autonomousRateRegistry.update({ where: { id: 'autonomous-rates' }, data: { versionId: null, generation: 0 } })
         await tx.autonomousRateVersion.deleteMany({})

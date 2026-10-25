@@ -43,7 +43,7 @@ jobs:
           pnpm exec prisma migrate diff --from-empty --to-schema-datamodel prisma/schema.prisma --script --output /tmp/rates-schema.sql
           psql postgresql://docbel_test@127.0.0.1:55433/autonomous_rates_test -v ON_ERROR_STOP=1 -f /tmp/rates-schema.sql
           psql postgresql://docbel_test@127.0.0.1:55433/autonomous_rates_test -v ON_ERROR_STOP=1 -f scripts/autonomous-rates-test-db.sql
-      - run: pnpm exec vitest run lib/baremes-autonome
+      - run: pnpm exec vitest run lib/baremes-autonome --maxWorkers=1
       - run: pnpm exec playwright install --with-deps chromium
       - name: Browser acceptance on isolated reference
         env:

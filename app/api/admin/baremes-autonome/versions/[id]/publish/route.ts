@@ -1,10 +1,9 @@
-import { z } from 'zod'
+import { snapshotSchema } from '@/lib/baremes-autonome/request-schema'
 import { requireAdminAuth } from '@/lib/auth-check'
 import { apiOk } from '@/lib/api/response'
 import { publishVersion, RateError } from '@/lib/baremes-autonome/service'
 import { boundedBody, checkOrigin, rateFailure } from '@/lib/baremes-autonome/http'
 
-const snapshotSchema = z.object({ candidateId: z.string().min(1).max(100), candidateRevision: z.string().length(64), referenceId: z.string().max(100).nullable(), referenceRevision: z.string().length(64).nullable(), generation: z.number().int().nonnegative(), digest: z.string().length(64) }).strict()
 export async function POST(request: Request, context: { params: Promise<{ id: string }> }) {
   const auth = await requireAdminAuth()
   if (!auth.isAuthorized) return auth.error

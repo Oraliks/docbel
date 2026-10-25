@@ -64,10 +64,10 @@ describe('readWorkbook', () => {
     const path = process.env.DOCBEL_REFERENCE_XLSX ?? fileURLToPath(new URL('./fixtures/barema20260901-new.xlsx', import.meta.url))
     const bytes = readFileSync(path)
     const current = readCurrent(bytes)
-    const currentByVersion = readWorkbookVersion(bytes, 3)
+    const currentByVersion = readWorkbookVersion(bytes, 4)
     const v1 = readWorkbookVersion(bytes, 1)
 
-    expect(CURRENT_PARSER_VERSION).toBe(3)
+    expect(CURRENT_PARSER_VERSION).toBe(4)
     expect(isSupportedReaderVersion(1)).toBe(true)
     expect(isSupportedReaderVersion(2)).toBe(true)
     expect(isSupportedReaderVersion(3)).toBe(true)

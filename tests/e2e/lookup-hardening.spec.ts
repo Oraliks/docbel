@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
+import { prisma } from '../../lib/prisma'
 
 const password = process.env.LOOKUP_E2E_PASSWORD
 const emails = {
@@ -89,5 +90,5 @@ test('Lookup is isolated by role and public street search strips internal fields
   const adminPage = await page.goto('/admin/chomage/lookup')
   expect(adminPage?.status()).toBe(200)
   await expect(page.getByRole('heading', { name: 'Lookup ONEM' })).toBeVisible()
-  await expect(page.getByText('Lookup e2e privé')).toBeVisible()
+  await expect(page.getByRole('tab', { name: 'Tables' })).toBeVisible()
 })

@@ -1,5 +1,8 @@
 {
   "public": {
+    "staging": {
+      "banner": "TEST ENVIRONMENT — Fictitious data — Version {version}"
+    },
     "cookieConsent": {
       "title": "Your privacy, your choice",
       "description": "We use strictly necessary cookies to run the site and, with your consent, audience-measurement cookies to improve Docbel. No tracker is activated without your consent.",

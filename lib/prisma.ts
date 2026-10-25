@@ -1,4 +1,9 @@
 import { PrismaClient, Prisma } from '@prisma/client'
+import { assertStagingDatabaseTarget } from '@/lib/config/runtime-environment'
+
+// A staging deployment must stop before any Prisma operation when its pooler
+// and direct URLs or declared database target do not identify the same isolated DB.
+assertStagingDatabaseTarget()
 
 const globalForPrisma = global as unknown as {
   prismaBase: PrismaClient | undefined

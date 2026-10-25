@@ -3819,6 +3819,9 @@
     }
   },
   "public": {
+    "staging": {
+      "banner": "ENVIRONNEMENT DE TEST — Données fictives — Version {version}"
+    },
     "temporaryClosure": {
       "title": "Fonctionnalités temporairement en pause",
       "signup": "Les nouvelles inscriptions sont suspendues pendant les travaux du site. Les accès aux comptes existants restent disponibles.",

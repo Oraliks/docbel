@@ -2,6 +2,7 @@ import { writeFile, readFile, mkdir, unlink } from "fs/promises";
 import { existsSync } from "fs";
 import { join } from "path";
 import { nanoid } from "nanoid";
+import { assertStagingStorageTargets } from "@/lib/config/runtime-environment";
 import {
   getUploadDirectory,
   buildStoredFilePath,
@@ -30,6 +31,7 @@ export function isBlobPath(p: string | null | undefined): boolean {
 
 /// Enregistre un PDF source et renvoie son chemin de stockage opaque.
 export async function saveSourcePdf(buffer: Buffer, originalName: string): Promise<string> {
+  assertStagingStorageTargets();
   const safe = originalName.replace(/[^a-zA-Z0-9._-]/g, "_").slice(0, 120) || "form.pdf";
 
   if (blobEnabled()) {
@@ -70,6 +72,7 @@ export async function readSourcePdf(
   storagePath: string,
   fallbackName?: string | null
 ): Promise<Buffer | null> {
+  assertStagingStorageTargets();
   if (isBlobPath(storagePath)) {
     try {
       const res = await fetch(storagePath.slice(BLOB_PREFIX.length));
@@ -101,6 +104,7 @@ export async function readSourcePdf(
 
 /// Supprime un PDF source (à l'archivage/hard delete d'un formulaire).
 export async function deleteSourcePdf(storagePath: string): Promise<void> {
+  assertStagingStorageTargets();
   if (isBlobPath(storagePath)) {
     try {
       const { del } = await import("@vercel/blob");

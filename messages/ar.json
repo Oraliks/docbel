@@ -1,5 +1,8 @@
 {
   "public": {
+    "staging": {
+      "banner": "بيئة اختبار — بيانات وهمية — الإصدار {version}"
+    },
     "chrome": {
       "navHome": "الرئيسية",
       "navNews": "الأخبار",

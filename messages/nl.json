@@ -3151,6 +3151,9 @@
     "activity": {}
   },
   "public": {
+    "staging": {
+      "banner": "TESTOMGEVING — Fictieve gegevens — Versie {version}"
+    },
     "cookieConsent": {
       "title": "Uw privacy, uw keuze",
       "description": "We gebruiken strikt noodzakelijke cookies voor de werking van de site en, met uw toestemming, cookies voor publieksmeting om Docbel te verbeteren. Geen enkele tracker wordt geactiveerd zonder uw toestemming.",

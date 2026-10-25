@@ -2,14 +2,15 @@ name: CI
 
 on:
   push:
-    branches: [main, dev]
+    branches: [main, staging, dev]
   pull_request:
-    branches: [main, dev]
+    branches: [main, staging, dev]
 
 jobs:
   test:
     runs-on: ubuntu-latest
     env:
+      APP_ENV: ci
       # Valeurs factices : aucun secret de production requis pour compiler.
       DATABASE_URL: postgresql://docbel:docbel@127.0.0.1:5432/docbel_ci
       DIRECT_URL: postgresql://docbel:docbel@127.0.0.1:5432/docbel_ci

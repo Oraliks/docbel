@@ -8,13 +8,15 @@ export type RateValue = {
   category?: 'A' | 'N' | 'B'
   label: string
   context: string[]
-  unit: 'EUR/day' | 'EUR/month' | 'EUR' | 'ratio' | 'number'
+  unit: 'EUR/day' | 'EUR/month' | 'EUR/hour' | 'EUR/year' | 'EUR/half-day' | 'EUR' | 'ratio' | 'number'
   value: string
+  valueKind?: 'expression'
+  effectiveFrom?: string
   source: Source
   indexation?: { value: string; source: Source }
 }
 export type ReadingIssue = { code: string; sheet: string; cell?: string; blocking: boolean }
-export type Coverage = { contractVersion: 1; auxiliaryCells: number; tables: Array<{ sheet: string; mappedCells: number; auxiliaryCells: number }> }
+export type Coverage = { contractVersion: 1 | 2; auxiliaryCells: number; tables: Array<{ sheet: string; mappedCells: number; auxiliaryCells: number; metadataCells?: number; monetaryCells?: number; parameterCells?: number; expressionCells?: number; sections?: Array<{ id: string; values: number }> }> }
 export type Reading = { effectiveFrom: string | null; values: RateValue[]; sheets: string[]; issues: ReadingIssue[]; parserVersion: number; identityVersion?: number; coverage?: Coverage }
 export type VersionRef = { id: string; name: string; revision: string; effectiveFrom: string | null; createdAt: string; publishedAt: string | null; count: number }
 export type Difference = { key: string; kind: ChangeKind; before: RateValue | null; after: RateValue | null; contextChanged: boolean }

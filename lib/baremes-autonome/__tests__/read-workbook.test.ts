@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest'
 import * as XLSX from 'xlsx'
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
-import { CURRENT_PARSER_VERSION, isSupportedReaderVersion, readWorkbook, readWorkbookFromParsedWorkbook, readWorkbookVersion, UnsupportedReaderVersion } from '../read-workbook'
+import { CURRENT_PARSER_VERSION, isSupportedReaderVersion, readWorkbook as readCurrent, readWorkbookVersion, UnsupportedReaderVersion } from '../read-workbook'
+import { readWorkbook, readWorkbookFromParsedWorkbook } from '../readers/v2'
 import { digest } from '../compare'
 
 function workbookBuffer(sheets: Record<string, unknown[][]>, formula?: { sheet: string; address: string; expression: string; cached?: number }): Buffer {
@@ -62,13 +63,14 @@ describe('readWorkbook', () => {
   it('dispatches through an immutable reader registry and preserves the v1 result', () => {
     const path = process.env.DOCBEL_REFERENCE_XLSX ?? fileURLToPath(new URL('./fixtures/barema20260901-new.xlsx', import.meta.url))
     const bytes = readFileSync(path)
-    const current = readWorkbook(bytes)
-    const currentByVersion = readWorkbookVersion(bytes, 2)
+    const current = readCurrent(bytes)
+    const currentByVersion = readWorkbookVersion(bytes, 3)
     const v1 = readWorkbookVersion(bytes, 1)
 
-    expect(CURRENT_PARSER_VERSION).toBe(2)
+    expect(CURRENT_PARSER_VERSION).toBe(3)
     expect(isSupportedReaderVersion(1)).toBe(true)
     expect(isSupportedReaderVersion(2)).toBe(true)
+    expect(isSupportedReaderVersion(3)).toBe(true)
     expect(isSupportedReaderVersion(99)).toBe(false)
     expect(() => readWorkbookVersion(bytes, 99)).toThrow(UnsupportedReaderVersion)
     expect(digest(current)).toBe(digest(currentByVersion))

@@ -19,7 +19,8 @@ describe('independent runtime boundary', () => {
       visited.add(absolute)
       expect(absolute).not.toMatch(/\/lib\/(baremes(?:\/|-parser)|chomage\/params|calculators\/chomage)/)
       const source = fs.readFileSync(absolute, 'utf8')
-      expect(source).not.toMatch(/\/api\/baremes(?:\/|["'`])|prisma\.(?:bareme\w*|bareSheet)\b|(?:revalidateTag|revalidatePath|publishEvent)\s*\(/i)
+      if (absolute.includes('/baremes-autonome/')) expect(source).not.toMatch(/(?:from\s*|require\s*\()\s*["'](?:node:)?fs(?:\/promises)?["']|(?:writeFile|writeFileSync|unlink|unlinkSync|saveBlob|deleteBlob|moveBlob)\s*\(/)
+      expect(source).not.toMatch(/\/api\/baremes(?:\/|["'`])|prisma\.(?:bareme\w*|bareSheet)\b|(?:revalidateTag|revalidatePath|publishEvent|dispatchEvent)\s*\(/i)
       const file = ts.createSourceFile(absolute, source, ts.ScriptTarget.Latest, true)
       const visit = (node: ts.Node) => {
         let specifier: ts.Expression | undefined

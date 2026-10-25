@@ -8,6 +8,8 @@ describe('independent semantic comparison', () => {
     expect(compareReadings(reading([value]), reading([{ ...value, source: { ...value.source, cell: 'D48' } }]))[0].kind).toBe('unchanged')
     expect(compareReadings(reading([value]), reading([{ ...value, value: '78.0901' }]))[0].kind).toBe('modified')
     expect(compareReadings(reading([value]), reading([{ ...value, unit: 'EUR/month' }]))[0].contextChanged).toBe(true)
+    expect(compareReadings(reading([value]), reading([{ ...value, effectiveFrom: '2026-09-01' }]))[0].kind).toBe('unchanged')
+    expect(compareReadings(reading([value]), reading([{ ...value, effectiveFrom: '2023-01-01' }]))[0].contextChanged).toBe(true)
   })
   it('preserves absence instead of substituting zero', () => {
     expect(compareReadings(reading([value]), reading([]))[0]).toMatchObject({ kind: 'absent', after: null })

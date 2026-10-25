@@ -18,6 +18,10 @@ describe.skipIf(!url || !original)('isolated real PostgreSQL and workbook accept
       .map(file => path.resolve('lib/baremes', file))
     oldModules.push(path.resolve('lib/baremes-parser.ts'))
     for (const modulePath of oldModules) vi.doMock(modulePath, () => { throw new Error('HISTORICAL_SERVICE_FORBIDDEN') })
+    const blobAccess = vi.fn(() => { throw new Error('SHARED_BLOB_ACCESS_FORBIDDEN_IN_AUTONOMOUS_REFERENCE') })
+    vi.doMock('@/lib/storage/blob-storage', async importOriginal => ({ ...await importOriginal<typeof import('@/lib/storage/blob-storage')>(), getBlob: blobAccess, saveBlob: blobAccess, deleteBlob: blobAccess, moveBlob: blobAccess }))
+    const cacheInvalidation = vi.fn(() => { throw new Error('SHARED_CACHE_INVALIDATION_FORBIDDEN_IN_AUTONOMOUS_REFERENCE') })
+    vi.doMock('next/cache', async importOriginal => ({ ...await importOriginal<typeof import('next/cache')>(), revalidatePath: cacheInvalidation, revalidateTag: cacheInvalidation, updateTag: cacheInvalidation }))
     await expect(import('@/lib/baremes/getActiveBaremeData')).rejects.toMatchObject({ cause: { message: 'HISTORICAL_SERVICE_FORBIDDEN' } })
     const admin = new PrismaClient({ datasources: { db: { url: url!.replace('autonomous_app@', 'docbel_test@') } } })
     const { prisma } = await import('@/lib/prisma')
@@ -42,12 +46,16 @@ describe.skipIf(!url || !original)('isolated real PostgreSQL and workbook accept
         await tx.autonomousRateVersion.deleteMany({})
       })
       const bytes = fs.readFileSync(original!)
+      await expect(service.importVersion(Buffer.from('CORRUPT-XLSX-TEST-ONLY'), 'CORRUPT-TEST-ONLY.xlsx', 'local-admin')).rejects.toMatchObject({ code: 'INVALID_FILE' })
+      expect(await prisma.autonomousRateVersion.count()).toBe(0)
       const first = await service.importVersion(bytes, 'barema20260901-new.xlsx', 'local-admin')
       const initial = await service.getWorkspace(first.id, { page: 1 })
       expect(initial.reference).toBeNull()
       expect(initial.counts.added).toBeGreaterThan(2000)
       expect(initial.canPublish).toBe(true)
-      expect(initial.issues.some(i => !i.blocking)).toBe(true)
+      expect(initial.sheets).toHaveLength(12)
+      expect(initial.coverage?.tables).toHaveLength(12)
+      expect(initial.issues.filter(i => i.blocking)).toHaveLength(0)
       const source = await service.getSource(first.id)
       expect(Buffer.from(source.original).equals(bytes)).toBe(true)
       await service.publishVersion(first.id, initial.snapshot, 'local-admin')
@@ -125,9 +133,10 @@ describe.skipIf(!url || !original)('isolated real PostgreSQL and workbook accept
         await admin.$executeRawUnsafe(`DROP FUNCTION autonomous_test_failure()`)
       }
 
-      // A frozen v1 draft stays blocked; a pre-existing published v1 reference remains verifiable by v1.
+      // Frozen v1/v2 drafts stay blocked; published autonomous references retain their own readers.
       const { readWorkbookVersion } = await import('../read-workbook')
-      const legacyReading = readWorkbookVersion(bytes, 1)
+      for (const readerVersion of [1, 2]) {
+      const legacyReading = readWorkbookVersion(bytes, readerVersion)
       const legacyFileHash = createHash('sha256').update(bytes).digest('hex')
       const legacyRevision = digest({ fileHash: legacyFileHash, reading: legacyReading })
       const createStoredReading = (id: string, name: string, publishedAt: Date | null) => admin.autonomousRateVersion.create({ data: {
@@ -135,34 +144,35 @@ describe.skipIf(!url || !original)('isolated real PostgreSQL and workbook accept
         reading: JSON.parse(JSON.stringify(legacyReading)), effectiveFrom: new Date(legacyReading.effectiveFrom!),
         createdBy: 'local-admin', ...(publishedAt ? { publishedAt } : {}),
       } })
-      const outdatedDraft = await createStoredReading('autonomous-rate-v1-draft-test', 'V1-DRAFT-TEST-ONLY.xlsx', null)
+      const outdatedDraft = await createStoredReading(`autonomous-rate-v${readerVersion}-draft-test`, `V${readerVersion}-DRAFT-TEST-ONLY.xlsx`, null)
       const outdatedWorkspace = await service.getWorkspace(outdatedDraft.id, { page: 1 })
       expect(outdatedWorkspace.issues.some(i => i.code === 'PARSER_VERSION_OUTDATED' && i.blocking)).toBe(true)
       expect(outdatedWorkspace.canPublish).toBe(false)
       await expect(service.publishVersion(outdatedDraft.id, outdatedWorkspace.snapshot, 'local-admin')).rejects.toMatchObject({ code: 'BLOCKED' })
 
-      const legacyReferenceId = 'autonomous-rate-v1-published-test'
-      const legacyReference = await createStoredReading(legacyReferenceId, 'V1-PUBLISHED-REFERENCE-TEST-ONLY.xlsx', new Date())
+      const legacyReferenceId = `autonomous-rate-v${readerVersion}-published-test`
+      const legacyReference = await createStoredReading(legacyReferenceId, `V${readerVersion}-PUBLISHED-REFERENCE-TEST-ONLY.xlsx`, new Date())
       await admin.$transaction(async tx => {
         await tx.autonomousRatePublication.create({ data: {
-          versionId: legacyReference.id, previousId: registry.versionId, actorId: 'local-admin', snapshot: { seededReaderVersion: 1 },
+          versionId: legacyReference.id, previousId: registry.versionId, actorId: 'local-admin', snapshot: { seededReaderVersion: readerVersion },
         } })
         await tx.autonomousRateRegistry.update({ where: { id: 'autonomous-rates' }, data: { versionId: legacyReference.id, generation: { increment: 1 } } })
       })
       const stableReference = await admin.autonomousRateVersion.findUniqueOrThrow({ where: { id: legacyReference.id } })
-      const candidateV2 = await service.importVersion(bytes, 'V2-CANDIDATE-TEST-ONLY.xlsx', 'local-admin')
-      const workspaceV2 = await service.getWorkspace(candidateV2.id, { page: 1 })
-      expect(workspaceV2.reference?.id).toBe(legacyReference.id)
-      expect(workspaceV2.canPublish).toBe(true)
-      expect(workspaceV2.issues.filter(i => i.blocking)).toHaveLength(0)
-      await service.publishVersion(candidateV2.id, workspaceV2.snapshot, 'local-admin')
-      expect((await admin.autonomousRateRegistry.findUniqueOrThrow({ where: { id: 'autonomous-rates' } })).versionId).toBe(candidateV2.id)
+      const currentCandidate = await service.importVersion(bytes, 'V3-CANDIDATE-TEST-ONLY.xlsx', 'local-admin')
+      const currentWorkspace = await service.getWorkspace(currentCandidate.id, { page: 1 })
+      expect(currentWorkspace.reference?.id).toBe(legacyReference.id)
+      expect(currentWorkspace.canPublish).toBe(true)
+      expect(currentWorkspace.issues.filter(i => i.blocking)).toHaveLength(0)
+      await service.publishVersion(currentCandidate.id, currentWorkspace.snapshot, 'local-admin')
+      expect((await admin.autonomousRateRegistry.findUniqueOrThrow({ where: { id: 'autonomous-rates' } })).versionId).toBe(currentCandidate.id)
       const afterReference = await admin.autonomousRateVersion.findUniqueOrThrow({ where: { id: legacyReference.id } })
       expect(Buffer.from(afterReference.original).equals(bytes)).toBe(true)
       expect(afterReference.fileHash).toBe(stableReference.fileHash)
       expect(afterReference.revision).toBe(stableReference.revision)
       expect(digest(afterReference.reading)).toBe(digest(stableReference.reading))
-      expect((await admin.autonomousRatePublication.findUniqueOrThrow({ where: { versionId: candidateV2.id } })).previousId).toBe(legacyReference.id)
+      expect((await admin.autonomousRatePublication.findUniqueOrThrow({ where: { versionId: currentCandidate.id } })).previousId).toBe(legacyReference.id)
+      }
 
       const { apiError } = await import('@/lib/api/response')
       await withAdminAuthTestOverride(async () => ({ isAuthorized: false, error: apiError(401, 'Unauthorized') }), async () => {
@@ -173,7 +183,9 @@ describe.skipIf(!url || !original)('isolated real PostgreSQL and workbook accept
       })
       await withAdminAuthTestOverride(async () => ({ isAuthorized: false, error: apiError(403, 'Forbidden') }), async () => {
         expect((await routes.GET()).status).toBe(403)
+        expect((await routes.POST(new Request('http://localhost/api', { method: 'POST' }))).status).toBe(403)
         expect((await publishRoute.POST(new Request('http://localhost/api', { method: 'POST' }), { params: Promise.resolve({ id: first.id }) })).status).toBe(403)
+        expect((await sourceRoute.GET(new Request('http://localhost/api'), { params: Promise.resolve({ id: first.id }) })).status).toBe(403)
       })
       await withAdminAuthTestOverride(async () => ({ isAuthorized: true, user: { id: 'local-admin', name: 'Local admin', email: 'admin@local.test', role: 'admin', status: 'active' } }), async () => {
         const crossSite = await routes.POST(new Request('http://localhost/api', { method: 'POST', headers: { origin: 'https://other.test' } }))
@@ -181,7 +193,9 @@ describe.skipIf(!url || !original)('isolated real PostgreSQL and workbook accept
       })
       expect(digest(await admin.baremeFile.findMany({ take: 100, orderBy: { id: 'asc' } }))).toBe(digest(before))
       expect(await legacyState()).toEqual(legacyBefore)
-      console.info(JSON.stringify({ realValues: initial.candidate.count, firstImport: true, syntheticChanges: comparison.counts, historicalTablesInaccessible: true, historicalDataUnchanged: true, concurrency: true, permissions: true }))
+      expect(blobAccess).not.toHaveBeenCalled()
+      expect(cacheInvalidation).not.toHaveBeenCalled()
+      console.info(JSON.stringify({ realValues: initial.candidate.count, firstImport: true, syntheticChanges: comparison.counts, historicalTablesInaccessible: true, historicalDataUnchanged: true, sharedBlobUntouched: true, sharedCacheUntouched: true, concurrency: true, permissions: true }))
     } finally { await prisma.$disconnect(); await admin.$disconnect() }
-  }, 60000)
+  }, 120000)
 })

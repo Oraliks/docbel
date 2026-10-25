@@ -176,6 +176,7 @@ async function main() {
     BEFORE INSERT ON "LookupEntry"
     FOR EACH ROW EXECUTE FUNCTION lookup_e2e_reject_code()
   `)
+  let retryableProposalId: string | null = null
   try {
     const failedProposal = await createLookupImportProposal({
       tableId: publicationTable.id,
@@ -188,6 +189,7 @@ async function main() {
       createdBy: 'lookup-admin@local.test',
     })
     assert.equal(failedProposal.state, 'prepared', JSON.stringify(failedProposal.errors ?? []))
+    retryableProposalId = failedProposal.id
     await createApprovals(failedProposal.id)
     await assert.rejects(
       publishLookupImportProposal({ proposalId: failedProposal.id, publishedBy: 'lookup-admin@local.test' }),
@@ -199,10 +201,32 @@ async function main() {
     assert.equal(entriesAfterRollback, 4, 'the two rejected rows must leave no partial writes')
     assert.equal(tableAfterRollback.publishedRevision, 1, 'failed publication must not advance the revision')
     assert.equal(failedState.state, 'failed')
+    await prisma.lookupImportApproval.deleteMany({ where: { proposalId: failedProposal.id } })
   } finally {
     await prisma.$executeRawUnsafe('DROP TRIGGER IF EXISTS lookup_e2e_reject_code_trigger ON "LookupEntry"')
     await prisma.$executeRawUnsafe('DROP FUNCTION IF EXISTS lookup_e2e_reject_code()')
   }
+
+  assert.ok(retryableProposalId)
+  const retryWaiting = await publishLookupImportProposal({
+    proposalId: retryableProposalId,
+    publishedBy: 'lookup-admin@local.test',
+    retryFailed: true,
+  })
+  assert.equal(retryWaiting.state, 'pending_approvals', 'retry must still require distinct approvals')
+  const resetForReview = await prisma.lookupImportProposal.findUniqueOrThrow({ where: { id: retryableProposalId } })
+  assert.equal(resetForReview.state, 'prepared')
+  assert.equal(await prisma.lookupEntry.count({ where: { tableId: publicationTable.id } }), 4)
+  await createApprovals(retryableProposalId)
+  const retried = await publishLookupImportProposal({
+    proposalId: retryableProposalId,
+    publishedBy: 'lookup-admin@local.test',
+  })
+  assert.equal(retried.state, 'published')
+  assert.equal(retried.inserted, 2)
+  const afterRetryTable = await prisma.lookupTable.findUniqueOrThrow({ where: { id: publicationTable.id } })
+  assert.equal(afterRetryTable.entriesCount, 6)
+  assert.equal(afterRetryTable.publishedRevision, 2)
 
   const password = randomBytes(24).toString('base64url')
   // Mask the ephemeral credential before exposing it to later workflow steps.
@@ -249,7 +273,7 @@ async function main() {
     'LOOKUP_E2E_PRIVATE_TABLE_ID=' + publicTable.id,
   ].join('\n') + '\n')
 
-  console.info('Lookup PostgreSQL integration passed: isolation, migration-backed schema, approval gate, concurrent publish, rollback, dated resolution, ambiguity, and role fixtures.')
+  console.info('Lookup PostgreSQL integration passed: isolation, migration-backed schema, approval gate, concurrent publish, rollback, explicit retry, dated resolution, ambiguity, and role fixtures.')
 }
 
 main()

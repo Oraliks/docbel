@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { gzipSync } from 'zlib'
-import { createHash } from 'crypto'
 import { prisma, withDbRetry } from '@/lib/prisma'
 import { checkRateLimit, getClientIp } from '@/lib/utils/rate-limit'
 import { tooManyRequests } from '@/lib/api/rate-limit-response'
+import { lookupRepresentationEtag } from '@/lib/lookup/projections'
 
 export const runtime = 'nodejs'
 
@@ -135,8 +135,7 @@ export async function GET(req: NextRequest) {
 
   // The validator covers the exact public representation, including variants.
   const json = JSON.stringify(bundle)
-  const digest = createHash('sha256').update(json).digest('hex')
-  const etag = `"${digest}"`
+  const etag = lookupRepresentationEtag(json)
   const ifNoneMatch = req.headers.get('if-none-match')
   if (ifNoneMatch === etag) {
     return new NextResponse(null, {

@@ -4,7 +4,10 @@ import { requireAdminAuth } from '@/lib/auth-check'
 import { matchAllFileNames } from '@/lib/lookup/matchFileName'
 
 export const runtime = 'nodejs'
-const jsonHeaders = { 'Content-Type': 'application/json; charset=utf-8' }
+const jsonHeaders = {
+  'Content-Type': 'application/json; charset=utf-8',
+  'Cache-Control': 'private, no-store',
+}
 
 /**
  * Pour une liste de noms de fichiers, retourne pour chacun la LookupTable

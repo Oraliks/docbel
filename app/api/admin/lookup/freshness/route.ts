@@ -4,7 +4,10 @@ import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
 
-const jsonHeaders = { "Content-Type": "application/json; charset=utf-8" };
+const jsonHeaders = {
+  "Content-Type": "application/json; charset=utf-8",
+  "Cache-Control": "private, no-store",
+};
 
 // Drapeau de fraîcheur d'une table (notre côté uniquement).
 type Flag = "VIDE" | "JAMAIS IMPORTE" | "OK";

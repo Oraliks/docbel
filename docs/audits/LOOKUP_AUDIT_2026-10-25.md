@@ -396,7 +396,10 @@ Le correctif a été repris depuis `7f3b18af` sur le `main` vérifié
 `codex/lookup-hardening-prod`. Aucun fichier du checkout historique ni aucun
 fichier familial/barèmes n'a été repris ou modifié. Une erreur TypeScript de
 rendu des erreurs JSON de proposition dans la page admin a été corrigée avec
-un test de présence booléen.
+un test de présence booléen. Le contrôle des routes a aussi révélé quatre
+réponses administratives protégées sans directive HTTP explicite et la
+recherche publique par nom d'entreprise sans directive de cache; elles portent
+maintenant `private, no-store`.
 
 ### Validations réellement exécutées dans ce worktree
 
@@ -405,6 +408,7 @@ un test de présence booléen.
   La première exécution menée en parallèle du lint/build avait dépassé le délai
   d'un test de rate-limit; la relance seule a réussi.
 - ESLint Lookup ciblé : succès.
+- ESLint ciblé des cinq routes complémentaires : succès.
 - `pnpm i18n:check` : succès, avec les avertissements de couverture de langues
   du dépôt.
 - `prisma validate` et `prisma generate` : succès avec URL PostgreSQL factices

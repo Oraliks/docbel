@@ -10,6 +10,9 @@ export async function GET() {
 
   const report = await detectLookupAnomalies()
   return NextResponse.json(report, {
-    headers: { 'Content-Type': 'application/json; charset=utf-8' },
+    headers: {
+      'Content-Type': 'application/json; charset=utf-8',
+      'Cache-Control': 'private, no-store',
+    },
   })
 }

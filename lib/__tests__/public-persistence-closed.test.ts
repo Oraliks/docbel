@@ -123,9 +123,12 @@ describe("V1 — frontière HTTP des écritures de dossiers", () => {
     expect(response.headers.get("x-middleware-next")).toBe("1");
   });
 
-  it("n'intercepte pas les pages/outils publics", () => {
-    expect(unstable_doesMiddlewareMatch({ config, url: "/outils/ma-situation-familiale" })).toBe(false);
-    expect(unstable_doesMiddlewareMatch({ config, url: "/admin" })).toBe(false);
+  it("laisse les pages publiques continuer hors staging", async () => {
+    vi.stubEnv("APP_ENV", "development");
+    expect(unstable_doesMiddlewareMatch({ config, url: "/outils/ma-situation-familiale" })).toBe(true);
+    expect(unstable_doesMiddlewareMatch({ config, url: "/admin" })).toBe(true);
+    const response = await proxy(req("/outils/ma-situation-familiale", "GET"));
+    expect(response.headers.get("x-middleware-next")).toBe("1");
   });
 });
 

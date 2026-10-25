@@ -79,7 +79,7 @@ Pour rollback, redéployer le SHA staging précédent connu et vérifier la sant
 | État | Détail |
 | --- | --- |
 | Implémenté localement | identité APP_ENV, gate Basic Auth staging, bandeau/i18n/noindex, cron staging refusé, vérifications de cible DB/Blob |
-| Vérifié localement | 8 tests ciblés Vitest passent; `pnpm i18n:check` passe avec les avertissements historiques de couverture. ESLint ciblé et build complet restent à confirmer; le build a échoué avant compilation applicative car `@parcel/watcher` est indisponible après une installation locale interrompue/verrouillée (`EPERM` sur `next-swc`). |
+| Vérifié localement | Suite Vitest complète : 3 408 tests passent, 2 ignorés. Les tests ciblés staging et `pnpm i18n:check` passent avec les avertissements historiques de couverture. ESLint ciblé passe. Le build a échoué avant compilation applicative car `@parcel/watcher` est indisponible après une installation locale interrompue/verrouillée (`EPERM` sur `next-swc`). |
 | Configuré à distance | aucun projet Vercel, Neon, Blob ou domaine staging; la création du projet Vercel a été refusée (403) |
 | Testé sur staging | non, aucun staging accessible |
 | Bloqué | droit de création Vercel; accès Neon; stores Blob et variables staging; choix/approbation des protections Preview Production; revue humaine PR #96 |

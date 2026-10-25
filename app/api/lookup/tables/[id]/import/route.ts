@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdminAuth } from '@/lib/auth-check'
-import { importLookupCsv } from '@/lib/lookup/importLookupCsv'
+import { createLookupImportProposal, publishLookupImportProposal } from '@/lib/lookup/importWorkflow'
 import { logActivity } from '@/lib/activity-logger'
-import { prisma, withDbRetry } from '@/lib/prisma'
-import { REQUIRED_APPROVALS } from '@/lib/lookup/approvals'
 
 export const runtime = 'nodejs'
 const jsonHeaders = { 'Content-Type': 'application/json; charset=utf-8' }
@@ -19,9 +17,26 @@ export async function POST(
   try {
     const { id } = await params
     const formData = await req.formData()
-    const file = formData.get('file') as File | null
+    const proposalId = formData.get('proposalId')
+    if (typeof proposalId === 'string' && proposalId.trim()) {
+      const result = await publishLookupImportProposal({ proposalId: proposalId.trim(), publishedBy: auth.user.email, expectedTableId: id })
+      if (result.state !== 'published' && result.state !== 'already_published') {
+        return NextResponse.json(result, {
+          status: result.state === 'pending_approvals' ? 409 : 409,
+          headers: { ...jsonHeaders, 'Cache-Control': 'private, no-store' },
+        })
+      }
+      if (result.state === 'published') {
+        await logActivity(auth.user.email, 'created', 'file', `lookup-import-${proposalId}`, id,
+          `Publication lookup ONEM : ${result.inserted ?? 0} insérées, ${result.updated ?? 0} mises à jour`)
+          .catch((error) => console.error('[lookup import] activity log failed after publication:', error))
+      }
+      return NextResponse.json(result, { headers: { ...jsonHeaders, 'Cache-Control': 'private, no-store' } })
+    }
 
-    if (!file) {
+    const file = formData.get('file')
+
+    if (!(file instanceof File)) {
       return NextResponse.json(
         { error: 'Aucun fichier reçu (champ "file" attendu)' },
         { status: 400, headers: jsonHeaders }
@@ -34,54 +49,33 @@ export async function POST(
       )
     }
 
-    // Check approbations 4-yeux si table sensible
-    const tableInfo = await withDbRetry(() =>
-      prisma.lookupTable.findUnique({
-        where: { id },
-        select: {
-          requiresApproval: true,
-          approvals: { select: { approverEmail: true } },
-        },
-      })
-    )
-    if (tableInfo?.requiresApproval) {
-      const distinctApprovers = new Set(tableInfo.approvals.map((a) => a.approverEmail))
-      if (distinctApprovers.size < REQUIRED_APPROVALS) {
-        return NextResponse.json(
-          {
-            error: 'Approbation requise',
-            details: `Cette table requiert ${REQUIRED_APPROVALS} approbations distinctes (actuellement ${distinctApprovers.size}). Demande à un second admin d'approuver via la page table.`,
-            approvalsCount: distinctApprovers.size,
-            required: REQUIRED_APPROVALS,
-          },
-          { status: 403, headers: jsonHeaders }
-        )
-      }
-    }
-
     const content = await file.text()
-    const result = await importLookupCsv({
+    const proposal = await createLookupImportProposal({
       tableId: id,
       csvContent: content,
       fileName: file.name,
-      importedBy: auth.user.email,
+      createdBy: auth.user.email,
     })
-
-    // Reset des approbations après import réussi (cycle suivant doit re-approuver)
-    if (tableInfo?.requiresApproval) {
-      await withDbRetry(() => prisma.lookupApproval.deleteMany({ where: { tableId: id } }))
+    if (proposal.state === 'failed') {
+      return NextResponse.json(proposal, {
+        status: 422,
+        headers: { ...jsonHeaders, 'Cache-Control': 'private, no-store' },
+      })
     }
-
-    await logActivity(
-      auth.user.email,
-      'created',
-      'file',
-      file.name,
-      id,
-      `Import lookup ONEM : ${result.inserted} insérées, ${result.updated} mises à jour, ${result.errors.length} erreurs`
-    )
-
-    return NextResponse.json(result, { headers: jsonHeaders })
+    if (proposal.requiresApproval) {
+      return NextResponse.json(proposal, {
+        status: 202,
+        headers: { ...jsonHeaders, 'Cache-Control': 'private, no-store' },
+      })
+    }
+    const result = await publishLookupImportProposal({ proposalId: proposal.id, publishedBy: auth.user.email, expectedTableId: id })
+    if (result.state !== 'published' && result.state !== 'already_published') {
+      return NextResponse.json(result, { status: 409, headers: { ...jsonHeaders, 'Cache-Control': 'private, no-store' } })
+    }
+    await logActivity(auth.user.email, 'created', 'file', file.name, id,
+      `Import lookup ONEM : ${result.inserted ?? 0} insérées, ${result.updated ?? 0} mises à jour`)
+      .catch((error) => console.error('[lookup import] activity log failed after publication:', error))
+    return NextResponse.json({ ...proposal, ...result }, { headers: { ...jsonHeaders, 'Cache-Control': 'private, no-store' } })
   } catch (err) {
     console.error('[lookup/tables/[id]/import] error:', err)
     return NextResponse.json(

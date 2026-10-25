@@ -1,15 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma, withDbRetry } from '@/lib/prisma'
+import { Prisma } from '@prisma/client'
+import { prisma } from '@/lib/prisma'
 import { requireAdminAuth } from '@/lib/auth-check'
 import { REQUIRED_APPROVALS } from '@/lib/lookup/approvals'
+import { z } from 'zod'
 
 export const runtime = 'nodejs'
 const jsonHeaders = { 'Content-Type': 'application/json; charset=utf-8' }
 
 /**
- * Enregistre une approbation pour une LookupTable sensible (requiresApproval=true).
- * Un même approbateur ne peut approuver qu'une fois (contrainte unique).
- * Quand REQUIRED_APPROVALS distinctes sont atteintes, l'import est autorisé.
+ * Enregistre une approbation liée à une proposition immuable.
  */
 export async function POST(
   req: NextRequest,
@@ -20,56 +20,58 @@ export async function POST(
 
   try {
     const { id } = await params
-    const body = (await req.json().catch(() => ({}))) as { comment?: string }
-
-    const table = await withDbRetry(() =>
-      prisma.lookupTable.findUnique({
-        where: { id },
-        select: {
-          id: true,
-          requiresApproval: true,
-          approvals: { select: { approverEmail: true } },
+    const bodySchema = z.object({
+      proposalId: z.string().min(1).max(100),
+      comment: z.string().trim().max(1000).optional(),
+    })
+    const body = bodySchema.parse(await req.json())
+    const result = await prisma.$transaction(async (tx) => {
+      const identity = await tx.lookupImportProposal.findUnique({
+        where: { id: body.proposalId }, select: { id: true, tableId: true },
+      })
+      if (!identity || identity.tableId !== id) return { status: 'not_found' as const }
+      await tx.$queryRaw(Prisma.sql`SELECT "id" FROM "LookupTable" WHERE "id" = ${id} FOR UPDATE`)
+      await tx.$queryRaw(Prisma.sql`SELECT "id" FROM "LookupImportProposal" WHERE "id" = ${body.proposalId} FOR UPDATE`)
+      const proposal = await tx.lookupImportProposal.findUnique({
+        where: { id: body.proposalId },
+        include: {
+          table: { select: { requiresApproval: true } },
+          approvals: { select: { approverEmail: true }, take: 10 },
         },
       })
-    )
-    if (!table) {
-      return NextResponse.json({ error: 'Table introuvable' }, { status: 404, headers: jsonHeaders })
-    }
-    if (!table.requiresApproval) {
-      return NextResponse.json(
-        { error: 'Cette table ne requiert pas d\'approbation' },
-        { status: 400, headers: jsonHeaders }
-      )
-    }
-
-    if (table.approvals.some((a) => a.approverEmail === auth.user.email)) {
-      return NextResponse.json(
-        { status: 'already_approved', count: table.approvals.length },
-        { status: 409, headers: jsonHeaders }
-      )
-    }
-
-    await withDbRetry(() =>
-      prisma.lookupApproval.create({
+      if (!proposal) return { status: 'not_found' as const }
+      if (!proposal.table.requiresApproval) return { status: 'not_required' as const }
+      if (proposal.state !== 'prepared') return { status: 'not_prepared' as const }
+      const approverEmail = auth.user.email.trim().toLowerCase()
+      if (proposal.approvals.some((approval) => approval.approverEmail.trim().toLowerCase() === approverEmail)) {
+        return { status: 'already_approved' as const, count: proposal.approvals.length }
+      }
+      await tx.lookupImportApproval.create({
         data: {
-          tableId: id,
-          approverEmail: auth.user.email,
+          proposalId: proposal.id,
+          approverEmail,
           approverName: auth.user.name,
           comment: body.comment ?? null,
         },
       })
-    )
+      const count = proposal.approvals.length + 1
+      return { status: 'recorded' as const, count }
+    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable })
 
-    const count = table.approvals.length + 1
-    return NextResponse.json(
-      {
-        status: 'recorded',
-        count,
-        required: REQUIRED_APPROVALS,
-        canImport: count >= REQUIRED_APPROVALS,
-      },
-      { headers: jsonHeaders }
-    )
+    if (result.status === 'not_found') {
+      return NextResponse.json({ error: 'Proposition introuvable' }, { status: 404, headers: jsonHeaders })
+    }
+    if (result.status === 'not_required' || result.status === 'not_prepared') {
+      return NextResponse.json({ error: 'Proposition non approbable' }, { status: 409, headers: jsonHeaders })
+    }
+    if (result.status === 'already_approved') {
+      return NextResponse.json({ ...result, required: REQUIRED_APPROVALS }, { status: 409, headers: jsonHeaders })
+    }
+    return NextResponse.json({
+      ...result,
+      required: REQUIRED_APPROVALS,
+      canPublish: result.count >= REQUIRED_APPROVALS,
+    }, { headers: jsonHeaders })
   } catch (err) {
     console.error('[lookup approve] error:', err)
     return NextResponse.json(
@@ -77,20 +79,4 @@ export async function POST(
       { status: 500, headers: jsonHeaders }
     )
   }
-}
-
-/**
- * Reset des approbations (utilisé après un import réussi pour repartir à zéro
- * pour la prochaine modification).
- */
-export async function DELETE(
-  _req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const auth = await requireAdminAuth()
-  if (!auth.isAuthorized) return auth.error
-
-  const { id } = await params
-  await withDbRetry(() => prisma.lookupApproval.deleteMany({ where: { tableId: id } }))
-  return NextResponse.json({ status: 'reset' }, { headers: jsonHeaders })
 }

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { prisma, withDbRetry } from '@/lib/prisma'
 import { requireAdminAuth } from '@/lib/auth-check'
+import { Prisma } from '@prisma/client'
 import { invalidateLookupCache } from '@/lib/lookup/getLookupEntry'
 import { logActivity } from '@/lib/activity-logger'
 
@@ -35,7 +36,7 @@ export async function PATCH(
     const existing = await withDbRetry(() =>
       prisma.lookupEntry.findUnique({
         where: { id },
-        include: { table: { select: { slug: true } } },
+        include: { table: { select: { slug: true, id: true, requiresApproval: true } } },
       })
     )
     if (!existing) {
@@ -44,9 +45,17 @@ export async function PATCH(
         { status: 404, headers: jsonHeaders }
       )
     }
+    if (existing.table.requiresApproval) {
+      return NextResponse.json({ error: 'Les modifications de cette table doivent passer par une proposition approuvée.' }, {
+        status: 409, headers: { ...jsonHeaders, 'Cache-Control': 'private, no-store' },
+      })
+    }
 
-    const updated = await withDbRetry(() =>
-      prisma.lookupEntry.update({
+    const updated = await prisma.$transaction(async (tx) => {
+      await tx.$queryRaw(Prisma.sql`SELECT "id" FROM "LookupTable" WHERE "id" = ${existing.table.id} FOR UPDATE`)
+      const fresh = await tx.lookupTable.findUnique({ where: { id: existing.table.id }, select: { requiresApproval: true } })
+      if (!fresh || fresh.requiresApproval) throw new Error('Les modifications de cette table exigent une nouvelle proposition approuvée.')
+      const entry = await tx.lookupEntry.update({
         where: { id },
         data: {
           ...(parsed.labelFr !== undefined ? { labelFr: parsed.labelFr } : {}),
@@ -56,7 +65,9 @@ export async function PATCH(
           ...(parsed.notes !== undefined ? { notes: parsed.notes } : {}),
         },
       })
-    )
+      await tx.lookupTable.update({ where: { id: existing.table.id }, data: { publishedRevision: { increment: 1 } } })
+      return entry
+    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable })
 
     invalidateLookupCache(existing.table.slug)
 

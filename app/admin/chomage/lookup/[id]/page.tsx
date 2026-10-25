@@ -29,6 +29,7 @@ import {
   StickyNote,
 } from 'lucide-react'
 import { toast } from 'sonner'
+import { useTranslations } from 'next-intl'
 
 interface LookupTableData {
   id: string
@@ -46,6 +47,25 @@ interface LookupTableData {
   updatedLabel: string | null
   requiresApproval: boolean
   category: { slug: string; labelFr: string; labelNl: string }
+  importProposals?: LookupImportProposal[]
+}
+
+interface LookupImportProposal {
+  id: string
+  sourceFileName: string
+  sourceSha256: string
+  payloadHash: string | null
+  baseRevision: number
+  parserVersion: string
+  diff: { added?: unknown[]; modified?: unknown[]; absentFromExport?: unknown[] } | null
+  validationErrors: unknown
+  state: string
+  errorMessage: string | null
+  createdBy: string
+  createdAt: string
+  publishedAt: string | null
+  totalRows: number
+  approvals: { id: string; approverEmail: string; approverName: string | null; comment: string | null; createdAt: string }[]
 }
 
 interface LookupEntryData {
@@ -63,6 +83,7 @@ interface LookupEntryData {
 type LangCode = 'fr' | 'nl' | 'de' | 'en'
 
 export default function LookupTableDetailPage() {
+  const tLookupImport = useTranslations('admin.lookupImport')
   const params = useParams<{ id: string }>()
   const id = params?.id
 
@@ -126,6 +147,11 @@ export default function LookupTableDetailPage() {
         body: formData,
       })
       const body = await res.json()
+      if (res.status === 202) {
+        toast.success(tLookupImport('preparedToast', { added: body.diff?.added?.length ?? 0, modified: body.diff?.modified?.length ?? 0 }))
+        await load()
+        return
+      }
       if (!res.ok) throw new Error(body.error ?? 'Import échoué')
       toast.success(
         `Import : ${body.inserted} insérées, ${body.updated} mises à jour, ${body.unchanged} inchangées${body.errors?.length ? `, ${body.errors.length} erreurs` : ''}`
@@ -135,6 +161,37 @@ export default function LookupTableDetailPage() {
       toast.error(err instanceof Error ? err.message : 'Erreur')
     } finally {
       setUploading(false)
+    }
+  }
+
+  const approveProposal = async (proposalId: string) => {
+    if (!id) return
+    try {
+      const res = await fetch(`/api/lookup/tables/${id}/approve`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ proposalId }),
+      })
+      const body = await res.json()
+      if (!res.ok) throw new Error(body.error ?? 'Approbation échouée')
+      toast.success(tLookupImport('approvalToast', { count: body.count, required: body.required }))
+      await load()
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Erreur')
+    }
+  }
+
+  const publishProposal = async (proposalId: string) => {
+    if (!id) return
+    try {
+      const formData = new FormData()
+      formData.set('proposalId', proposalId)
+      const res = await fetch(`/api/lookup/tables/${id}/import`, { method: 'POST', body: formData })
+      const body = await res.json()
+      if (!res.ok) throw new Error(body.error ?? `Publication refusée (${body.state ?? res.status})`)
+      toast.success(tLookupImport('publishedToast', { inserted: body.inserted ?? 0, updated: body.updated ?? 0 }))
+      await load()
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Erreur')
     }
   }
 
@@ -283,6 +340,44 @@ export default function LookupTableDetailPage() {
           </div>
         </CardContent>
       </Card>
+
+      {(table.importProposals?.length ?? 0) > 0 && (
+        <Card>
+          <CardHeader className="pb-3"><CardTitle className="text-base">{tLookupImport('proposalsTitle')}</CardTitle></CardHeader>
+          <CardContent className="space-y-3">
+            {table.importProposals?.map((proposal) => {
+              const approvals = proposal.approvals ?? []
+              const diff = proposal.diff ?? {}
+              const waiting = table.requiresApproval && proposal.state === 'prepared'
+              return (
+                <div key={proposal.id} className="rounded-md border p-4 space-y-3">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <strong className="text-sm">{proposal.sourceFileName}</strong>
+                    <Badge variant="outline">{proposal.state}</Badge>
+                    <span className="text-xs text-muted-foreground">{proposal.totalRows} lignes · révision {proposal.baseRevision} · parseur {proposal.parserVersion}</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground break-all">SHA-256 source : {proposal.sourceSha256}</p>
+                  {proposal.errorMessage && <p role="alert" className="text-sm text-destructive">{proposal.errorMessage}</p>}
+                  <p className="text-sm">{tLookupImport('diffSummary', { added: diff.added?.length ?? 0, modified: diff.modified?.length ?? 0, absent: diff.absentFromExport?.length ?? 0 })}</p>
+                  {proposal.validationErrors && <pre className="max-h-48 overflow-auto rounded bg-muted p-2 text-xs">{JSON.stringify(proposal.validationErrors, null, 2)}</pre>}
+                  <details>
+                    <summary className="cursor-pointer text-sm font-medium">{tLookupImport('reviewDiff')}</summary>
+                    <pre className="mt-2 max-h-[32rem] overflow-auto rounded bg-muted p-3 text-xs">{JSON.stringify(diff, null, 2)}</pre>
+                  </details>
+                  {approvals.length > 0 && <p className="text-xs">{tLookupImport('approvals', { names: approvals.map((a) => a.approverName || a.approverEmail).join(', ') })}</p>}
+                  {waiting && (
+                    <div className="flex flex-wrap gap-2">
+                      <Button size="sm" variant="outline" onClick={() => void approveProposal(proposal.id)}>{tLookupImport('approveButton')}</Button>
+                      {approvals.length >= 2 && <Button size="sm" onClick={() => void publishProposal(proposal.id)}>{tLookupImport('publishButton')}</Button>}
+                    </div>
+                  )}
+                  {!table.requiresApproval && proposal.state === 'prepared' && <p className="text-xs text-muted-foreground">{tLookupImport('autoPublishPending')}</p>}
+                </div>
+              )
+            })}
+          </CardContent>
+        </Card>
+      )}
 
       {table.entriesCount === 0 ? (
         <Card>

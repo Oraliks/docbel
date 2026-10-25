@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { gzipSync } from 'zlib'
+import { createHash } from 'crypto'
 import { prisma, withDbRetry } from '@/lib/prisma'
+import { checkRateLimit, getClientIp } from '@/lib/utils/rate-limit'
+import { tooManyRequests } from '@/lib/api/rate-limit-response'
 
 export const runtime = 'nodejs'
 
@@ -10,26 +13,37 @@ export const runtime = 'nodejs'
  * Usage type :
  *   curl https://beldoc.../api/lookup/bundle.json --compressed > lookup.json
  *
- * Cache CDN long (24h) car les changements sont rares. ETag basé sur le hash
- * du contenu pour invalidation propre.
+ * Export public des seules définitions et périodes publiables. Les notes et
+ * métadonnées libres ne sont jamais incluses dans ce bundle.
  *
  * Query params :
  *   - validOnly=true  (défaut) : exclut les entrées expirées
- *   - includeNotes=true        : inclut les notes admin (sinon exclues)
+ *   - includeNotes=true        : rejeté (les notes admin ne sont jamais publiques)
  */
 export async function GET(req: NextRequest) {
+  const ip = getClientIp(req)
+  const rateLimit = await checkRateLimit(`lookup-bundle:${ip}`, { windowMs: 60_000, max: 10 })
+  if (!rateLimit.ok) return tooManyRequests({ limit: 10, resetAt: rateLimit.resetAt })
+
   const { searchParams } = new URL(req.url)
   const validOnly = searchParams.get('validOnly') !== 'false'
-  const includeNotes = searchParams.get('includeNotes') === 'true'
+  if (searchParams.get('includeNotes') === 'true') {
+    return NextResponse.json({ error: 'Les notes internes ne sont pas exportables' }, {
+      status: 400,
+      headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' },
+    })
+  }
 
   const now = new Date()
 
   const categories = await withDbRetry(() =>
     prisma.lookupCategory.findMany({
       orderBy: { order: 'asc' },
+      take: 100,
       include: {
         tables: {
           orderBy: [{ group: 'asc' }, { labelFr: 'asc' }],
+          take: 500,
           select: {
             slug: true,
             prefix: true,
@@ -37,7 +51,7 @@ export async function GET(req: NextRequest) {
             labelNl: true,
             group: true,
             entriesCount: true,
-            lastImportedAt: true,
+            updatedLabel: true,
           },
         },
       },
@@ -54,13 +68,29 @@ export async function GET(req: NextRequest) {
       }
     : {}
 
-  const entries = await withDbRetry(() =>
-    prisma.lookupEntry.findMany({
+  const entries: Array<{
+    code: string; labelFr: string; labelNl: string; labelDe: string | null;
+    labelEn: string | null; validFrom: Date | null; validUntil: Date | null;
+    table: { slug: string };
+  }> = []
+  let cursor: string | undefined
+  while (true) {
+    const chunk = await withDbRetry(() => prisma.lookupEntry.findMany({
       where,
-      orderBy: [{ tableId: 'asc' }, { code: 'asc' }],
-      include: { table: { select: { slug: true } } },
-    })
-  )
+      orderBy: { id: 'asc' },
+      take: 1000,
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+      select: {
+        id: true, code: true, labelFr: true, labelNl: true, labelDe: true,
+        labelEn: true, validFrom: true, validUntil: true,
+        table: { select: { slug: true } },
+      },
+    }))
+    if (chunk.length === 0) break
+    entries.push(...chunk)
+    cursor = chunk[chunk.length - 1].id
+    if (chunk.length < 1000) break
+  }
 
   // Grouper par tableSlug
   const entriesByTable: Record<string, unknown[]> = {}
@@ -75,12 +105,10 @@ export async function GET(req: NextRequest) {
       labelEn: e.labelEn,
       validFrom: e.validFrom,
       validUntil: e.validUntil,
-      ...(includeNotes && e.notes ? { notes: e.notes } : {}),
     })
   }
 
   const bundle = {
-    generatedAt: now.toISOString(),
     validOnly,
     counts: {
       categories: categories.length,
@@ -99,20 +127,25 @@ export async function GET(req: NextRequest) {
         labelNl: t.labelNl,
         group: t.group,
         entriesCount: t.entriesCount,
-        lastImportedAt: t.lastImportedAt,
+        updatedLabel: t.updatedLabel,
         entries: entriesByTable[t.slug] ?? [],
       })),
     })),
   }
 
+  // The validator covers the exact public representation, including variants.
   const json = JSON.stringify(bundle)
-  // Hash du contenu pour ETag
-  const etag = `"bundle-${entries.length}-${categories.length}-${entries[entries.length - 1]?.updatedAt?.getTime() ?? 0}"`
+  const digest = createHash('sha256').update(json).digest('hex')
+  const etag = `"${digest}"`
   const ifNoneMatch = req.headers.get('if-none-match')
   if (ifNoneMatch === etag) {
     return new NextResponse(null, {
       status: 304,
-      headers: { ETag: etag },
+      headers: {
+        ETag: etag,
+        Vary: 'Accept-Encoding',
+        'Cache-Control': 'public, max-age=0, must-revalidate',
+      },
     })
   }
 
@@ -124,7 +157,8 @@ export async function GET(req: NextRequest) {
       headers: {
         'Content-Type': 'application/json; charset=utf-8',
         'Content-Encoding': 'gzip',
-        'Cache-Control': 'public, max-age=3600, stale-while-revalidate=86400',
+        'Cache-Control': 'public, max-age=0, must-revalidate',
+        Vary: 'Accept-Encoding',
         ETag: etag,
         'X-Bundle-Entries': String(entries.length),
         'X-Bundle-Tables': String(bundle.counts.tables),
@@ -135,7 +169,8 @@ export async function GET(req: NextRequest) {
   return new NextResponse(json, {
     headers: {
       'Content-Type': 'application/json; charset=utf-8',
-      'Cache-Control': 'public, max-age=3600, stale-while-revalidate=86400',
+      'Cache-Control': 'public, max-age=0, must-revalidate',
+      Vary: 'Accept-Encoding',
       ETag: etag,
       'X-Bundle-Entries': String(entries.length),
     },

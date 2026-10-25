@@ -645,11 +645,15 @@ model LookupTable {
   // Workflow 4 yeux : si true, les modifications nécessitent 2 approbations.
   requiresApproval Boolean @default(false)
 
+  // Révision des données publiées. Incrémentée dans la transaction d'activation.
+  publishedRevision Int @default(0)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   entries   LookupEntry[]
   approvals LookupApproval[]
+  importProposals LookupImportProposal[]
 
   @@unique([categoryId, slug])
   @@index([prefix])
@@ -675,6 +679,51 @@ model LookupApproval {
 
   @@unique([tableId, approverEmail])
   @@index([tableId])
+}
+
+// Proposition immuable préparée à partir d'un fichier. Les entrées de cette
+// proposition restent invisibles aux lecteurs jusqu'à la publication atomique.
+model LookupImportProposal {
+  id               String   @id @default(cuid())
+  tableId          String
+  table            LookupTable @relation(fields: [tableId], references: [id], onDelete: Cascade)
+  sourceFileName   String
+  sourceContent    String   @db.Text
+  sourceSha256     String
+  payloadHash      String?
+  baseRevision     Int
+  baseHash         String
+  parserVersion    String
+  transformation   Json
+  normalizedPayload Json?
+  diff             Json?
+  validationErrors Json?
+  state            String   @default("prepared")
+  errorMessage     String?
+  totalRows        Int      @default(0)
+  createdBy        String
+  createdAt        DateTime @default(now())
+  publishedAt      DateTime?
+
+  approvals LookupImportApproval[]
+
+  @@index([tableId, state, createdAt])
+  @@index([sourceSha256])
+  @@unique([tableId, sourceSha256, baseHash, parserVersion])
+}
+
+// Approbations 4 yeux liées à une proposition et à son contenu exact.
+model LookupImportApproval {
+  id          String              @id @default(cuid())
+  proposalId  String
+  proposal    LookupImportProposal @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+  approverEmail String
+  approverName  String?
+  comment       String?
+  createdAt     DateTime @default(now())
+
+  @@unique([proposalId, approverEmail])
+  @@index([proposalId])
 }
 
 // Entrée individuelle (code + libellés FR/NL + validité temporelle).

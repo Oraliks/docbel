@@ -1,16 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma, withDbRetry } from '@/lib/prisma'
+import { requirePartnerOrAdminAuth } from '@/lib/auth-check'
+import { privateLookupError } from '@/lib/lookup/projections'
 
 export const runtime = 'nodejs'
 const jsonHeaders = {
   'Content-Type': 'application/json; charset=utf-8',
-  'Cache-Control': 'public, max-age=60',
+  'Cache-Control': 'private, no-store',
 }
 
 /**
  * Historique des versions d'un code dans une table de lookup.
  *
- * Public (pas d'auth, comme resolve) : sert à afficher l'évolution d'un libellé
+ * Réservé aux professionnels autorisés et aux administrateurs : évolution d'un libellé
  * ONEM au fil du temps (changements de description, périodes de validité).
  *
  * Params :
@@ -25,21 +27,26 @@ export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const auth = await requirePartnerOrAdminAuth()
+  if (!auth.isAuthorized) return privateLookupError(auth.error)
+
   const { id } = await params
   const { searchParams } = new URL(req.url)
   const code = searchParams.get('code')?.trim()
 
-  if (!code) {
+  if (!code || code.length > 120) {
     return NextResponse.json(
       { error: 'code requis' },
       { status: 400, headers: jsonHeaders }
     )
   }
 
+  try {
   const versions = await withDbRetry(() =>
     prisma.lookupEntry.findMany({
       where: { tableId: id, code },
       orderBy: [{ validFrom: 'desc' }],
+      take: 201,
       select: {
         labelFr: true,
         labelNl: true,
@@ -47,13 +54,17 @@ export async function GET(
         labelEn: true,
         validFrom: true,
         validUntil: true,
-        metadata: true,
+        ...(auth.user.isAdmin ? { metadata: true } : {}),
       },
     })
   )
 
   return NextResponse.json(
-    { code, count: versions.length, versions },
+    { code, count: Math.min(versions.length, 200), truncated: versions.length > 200, versions: versions.slice(0, 200) },
     { headers: jsonHeaders }
   )
+  } catch (error) {
+    console.error('[lookup history] error:', error)
+    return NextResponse.json({ error: 'Service Lookup indisponible' }, { status: 503, headers: jsonHeaders })
+  }
 }

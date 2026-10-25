@@ -28,6 +28,7 @@
       "approvals": "Approbations : {names}",
       "approveButton": "Approuver ce comparatif",
       "publishButton": "Publier cette proposition",
+      "retryPublishButton": "Retenter la publication",
       "autoPublishPending": "Publication automatique en cours ou à relancer avec un nouvel import.",
       "reviewPending": "Proposition créée; publication suspendue dans l’attente de deux approbateurs distincts.",
       "reviewLink": "Examiner le comparatif",

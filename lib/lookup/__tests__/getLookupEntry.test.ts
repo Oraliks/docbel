@@ -2,11 +2,15 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({
   table: { findUnique: vi.fn() },
-  entry: { findMany: vi.fn() },
+  entry: { findMany: vi.fn(), groupBy: vi.fn() },
 }))
 
 vi.mock('@/lib/prisma', () => ({
-  prisma: { lookupTable: mocks.table, lookupEntry: mocks.entry },
+  prisma: {
+    $transaction: (callback: (tx: unknown) => unknown) => callback({ lookupTable: mocks.table, lookupEntry: mocks.entry }),
+    lookupTable: mocks.table,
+    lookupEntry: mocks.entry,
+  },
   withDbRetry: (callback: () => unknown) => callback(),
 }))
 
@@ -49,9 +53,23 @@ describe('Lookup dated resolution', () => {
 
   it('reports overlapping valid rows as ambiguous for unit and batch resolution', async () => {
     mocks.entry.findMany.mockResolvedValue([row, { ...row, id: 'entry-2', validFrom: new Date('2022-01-01T00:00:00Z') }])
+    mocks.entry.groupBy.mockResolvedValue([{ code: 'X', _count: { _all: 2 } }])
     expect((await resolveLookupEntry('example', 'X', { asOf: '2024-01-01' })).status).toBe('ambiguous')
     const batch = await resolveLookupEntriesByCodes('example', ['X'], { asOf: '2024-01-01' })
     expect(batch.get('X')?.status).toBe('ambiguous')
+  })
+
+  it('does not let many historical matches for one code hide later codes in a batch', async () => {
+    mocks.entry.groupBy.mockResolvedValue([
+      { code: 'A', _count: { _all: 100 } },
+      { code: 'B', _count: { _all: 1 } },
+    ])
+    mocks.entry.findMany.mockResolvedValue([{ ...row, code: 'B', id: 'entry-B' }])
+
+    const result = await resolveLookupEntriesByCodes('example', ['A', 'B'], { asOf: '2024-01-01' })
+
+    expect(result.get('A')).toMatchObject({ status: 'ambiguous', candidates: 100 })
+    expect(result.get('B')).toMatchObject({ status: 'resolved', entry: { code: 'B', id: 'entry-B' } })
   })
 
   it('uses the new revision after any published entry changes', async () => {

@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client'
 import { prisma, withDbRetry } from '@/lib/prisma'
 
 export interface ResolvedLookupEntry {
@@ -140,35 +141,40 @@ export async function resolveLookupEntriesByCodes(
 ): Promise<Map<string, LookupResolution>> {
   const { date, day } = parseLookupCivilDate(options.asOf)
   if (codes.length === 0) return new Map()
-  const table = await withDbRetry(() => prisma.lookupTable.findUnique({
-    where: { slug: tableSlug },
-    select: { id: true, slug: true, labelFr: true, publishedRevision: true, lastImportedAt: true, lastImportSource: true, category: { select: { slug: true } } },
-  }))
-  if (!table) return new Map(codes.map((code) => [code, { status: 'absent', entry: null, effectiveDate: day, publishedRevision: 0 }]))
-  const entries = await withDbRetry(() =>
-    prisma.lookupEntry.findMany({
-      where: {
-        code: { in: codes },
-        tableId: table.id,
-        AND: [{ OR: [{ validFrom: null }, { validFrom: { lte: date } }] }, { OR: [{ validUntil: null }, { validUntil: { gte: date } }] }],
-      },
+  return withDbRetry(() => prisma.$transaction(async (tx) => {
+    const table = await tx.lookupTable.findUnique({
+      where: { slug: tableSlug },
+      select: { id: true, slug: true, labelFr: true, publishedRevision: true, lastImportedAt: true, lastImportSource: true, category: { select: { slug: true } } },
+    })
+    if (!table) return new Map(codes.map((code) => [code, { status: 'absent' as const, entry: null, effectiveDate: day, publishedRevision: 0 }]))
+
+    const where = {
+      code: { in: codes },
+      tableId: table.id,
+      AND: [{ OR: [{ validFrom: null }, { validFrom: { lte: date } }] }, { OR: [{ validUntil: null }, { validUntil: { gte: date } }] }],
+    }
+    // Count per code first: a global findMany(take) can let one code's historical
+    // overlaps hide all following codes and turn them into false absences.
+    const counts = await tx.lookupEntry.groupBy({ by: ['code'], where, _count: { _all: true }, take: codes.length })
+    const countByCode = new Map(counts.map((item) => [item.code, item._count._all]))
+    const uniqueCodes = counts.filter((item) => item._count._all === 1).map((item) => item.code)
+    const entries = uniqueCodes.length === 0 ? [] : await tx.lookupEntry.findMany({
+      where: { ...where, code: { in: uniqueCodes } },
       orderBy: [{ validFrom: 'desc' }, { id: 'asc' }],
-      take: Math.min(codes.length * 3, 3000),
+      take: uniqueCodes.length,
       select: { id: true, code: true, labelFr: true, labelNl: true, labelDe: true, labelEn: true, validFrom: true, validUntil: true, notes: true },
     })
-  )
-  const grouped = new Map<string, typeof entries>()
-  for (const e of entries) {
-    grouped.set(e.code, [...(grouped.get(e.code) ?? []), e])
-  }
-  const map = new Map<string, LookupResolution>()
-  for (const code of codes) {
-    const matches = grouped.get(code) ?? []
-    map.set(code, matches.length > 1
-      ? { status: 'ambiguous', entry: null, effectiveDate: day, publishedRevision: table.publishedRevision, candidates: matches.length }
-      : matches.length === 0
-        ? { status: 'absent', entry: null, effectiveDate: day, publishedRevision: table.publishedRevision }
-        : { status: 'resolved', entry: { ...matches[0], tableSlug: table.slug, tableLabelFr: table.labelFr, categorySlug: table.category.slug, effectiveDate: day, publishedRevision: table.publishedRevision, publishedAt: table.lastImportedAt, importSource: table.lastImportSource } })
-  }
-  return map
+    const entryByCode = new Map(entries.map((entry) => [entry.code, entry]))
+    const map = new Map<string, LookupResolution>()
+    for (const code of codes) {
+      const count = countByCode.get(code) ?? 0
+      const entry = entryByCode.get(code)
+      map.set(code, count > 1
+        ? { status: 'ambiguous', entry: null, effectiveDate: day, publishedRevision: table.publishedRevision, candidates: count }
+        : !entry
+          ? { status: 'absent', entry: null, effectiveDate: day, publishedRevision: table.publishedRevision }
+          : { status: 'resolved', entry: { ...entry, tableSlug: table.slug, tableLabelFr: table.labelFr, categorySlug: table.category.slug, effectiveDate: day, publishedRevision: table.publishedRevision, publishedAt: table.lastImportedAt, importSource: table.lastImportSource } })
+    }
+    return map
+  }, { isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead }))
 }

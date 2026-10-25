@@ -6,7 +6,10 @@ import { REQUIRED_APPROVALS } from '@/lib/lookup/approvals'
 import { z } from 'zod'
 
 export const runtime = 'nodejs'
-const jsonHeaders = { 'Content-Type': 'application/json; charset=utf-8' }
+const jsonHeaders = {
+  'Content-Type': 'application/json; charset=utf-8',
+  'Cache-Control': 'private, no-store',
+}
 
 /**
  * Enregistre une approbation liée à une proposition immuable.
@@ -24,7 +27,12 @@ export async function POST(
       proposalId: z.string().min(1).max(100),
       comment: z.string().trim().max(1000).optional(),
     })
-    const body = bodySchema.parse(await req.json())
+    const rawBody = await req.json()
+    const parsedBody = bodySchema.safeParse(rawBody)
+    if (!parsedBody.success) {
+      return NextResponse.json({ error: 'Validation', issues: parsedBody.error.issues }, { status: 400, headers: jsonHeaders })
+    }
+    const body = parsedBody.data
     const result = await prisma.$transaction(async (tx) => {
       const identity = await tx.lookupImportProposal.findUnique({
         where: { id: body.proposalId }, select: { id: true, tableId: true },
@@ -73,6 +81,9 @@ export async function POST(
       canPublish: result.count >= REQUIRED_APPROVALS,
     }, { headers: jsonHeaders })
   } catch (err) {
+    if (err instanceof SyntaxError) {
+      return NextResponse.json({ error: 'JSON invalide' }, { status: 400, headers: jsonHeaders })
+    }
     console.error('[lookup approve] error:', err)
     return NextResponse.json(
       { error: err instanceof Error ? err.message : 'Internal error' },

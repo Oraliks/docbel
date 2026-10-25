@@ -399,16 +399,20 @@ rendu des erreurs JSON de proposition dans la page admin a été corrigée avec
 un test de présence booléen. Le contrôle des routes a aussi révélé quatre
 réponses administratives protégées sans directive HTTP explicite et la
 recherche publique par nom d'entreprise sans directive de cache; elles portent
-maintenant `private, no-store`.
+maintenant `private, no-store`. La revue indépendante a détecté une limite
+globale incorrecte en résolution par lots, une validation d'approbation
+renvoyant 500 sur corps invalide, et des erreurs GET protégées sans no-store;
+ces trois constats ont aussi été corrigés.
 
 ### Validations réellement exécutées dans ce worktree
 
-- Tests Lookup ciblés : **30 réussis** sur 5 fichiers.
-- `pnpm test` seul : **3 365 réussis, 1 ignoré**, 328 fichiers réussis sur 329.
+- Tests Lookup ciblés : **33 réussis** sur 6 fichiers, dont résolution batch
+  après de nombreux historiques et corps d'approbation invalide/malformé.
+- `pnpm test` seul : **3 368 réussis, 1 ignoré**, 329 fichiers réussis sur 330.
   La première exécution menée en parallèle du lint/build avait dépassé le délai
   d'un test de rate-limit; la relance seule a réussi.
 - ESLint Lookup ciblé : succès.
-- ESLint ciblé des cinq routes complémentaires : succès.
+- ESLint ciblé des routes et services touchés : succès.
 - `pnpm i18n:check` : succès, avec les avertissements de couverture de langues
   du dépôt.
 - `prisma validate` et `prisma generate` : succès avec URL PostgreSQL factices
@@ -430,7 +434,10 @@ maintenant `private, no-store`.
 
 **Corrigé et testé :** protections et projections Lookup, préparation/import,
 unicité des approbateurs, contrôles d'obsolescence, parsing, résolution datée,
-tests unitaires et suite Vitest complète. Aucun raccordement produit ajouté.
+tests unitaires et suite Vitest complète. Les batchs comptent les correspondances
+par code dans une transaction Repeatable Read, empêchant un code historisé de
+masquer les suivants. Les erreurs de corps d'approbation sont des 400. Aucun
+raccordement produit ajouté.
 
 **Modifié mais validation incomplète :** migration additive
 `60_lookup_import_proposals` et publication transactionnelle. Migration non

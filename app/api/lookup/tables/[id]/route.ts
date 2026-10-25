@@ -7,7 +7,10 @@ import { buildEntryWhere, extractEntryFilters } from '@/lib/lookup/entryFilters'
 import { privateLookupError, toLookupEntryProjection, toLookupTableProjection } from '@/lib/lookup/projections'
 
 export const runtime = 'nodejs'
-const jsonHeaders = { 'Content-Type': 'application/json; charset=utf-8' }
+const jsonHeaders = {
+  'Content-Type': 'application/json; charset=utf-8',
+  'Cache-Control': 'private, no-store',
+}
 const DEFAULT_LIMIT = 100
 const MAX_LIMIT = 1000
 

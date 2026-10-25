@@ -3,6 +3,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import * as XLSX from 'xlsx'
 import { PrismaClient } from '@prisma/client'
+import { createHash } from 'node:crypto'
 
 const url = process.env.AUTONOMOUS_RATES_TEST_DATABASE_URL
 const original = process.env.DOCBEL_REFERENCE_XLSX ?? 'lib/baremes-autonome/__tests__/fixtures/barema20260901-new.xlsx'
@@ -123,6 +124,45 @@ describe.skipIf(!url || !original)('isolated real PostgreSQL and workbook accept
         await admin.$executeRawUnsafe(`DROP TRIGGER autonomous_test_failure ON "AutonomousRateRegistry"`)
         await admin.$executeRawUnsafe(`DROP FUNCTION autonomous_test_failure()`)
       }
+
+      // A frozen v1 draft stays blocked; a pre-existing published v1 reference remains verifiable by v1.
+      const { readWorkbookVersion } = await import('../read-workbook')
+      const legacyReading = readWorkbookVersion(bytes, 1)
+      const legacyFileHash = createHash('sha256').update(bytes).digest('hex')
+      const legacyRevision = digest({ fileHash: legacyFileHash, reading: legacyReading })
+      const createStoredReading = (id: string, name: string, publishedAt: Date | null) => admin.autonomousRateVersion.create({ data: {
+        id, name, original: bytes, fileHash: legacyFileHash, revision: legacyRevision,
+        reading: JSON.parse(JSON.stringify(legacyReading)), effectiveFrom: new Date(legacyReading.effectiveFrom!),
+        createdBy: 'local-admin', ...(publishedAt ? { publishedAt } : {}),
+      } })
+      const outdatedDraft = await createStoredReading('autonomous-rate-v1-draft-test', 'V1-DRAFT-TEST-ONLY.xlsx', null)
+      const outdatedWorkspace = await service.getWorkspace(outdatedDraft.id, { page: 1 })
+      expect(outdatedWorkspace.issues.some(i => i.code === 'PARSER_VERSION_OUTDATED' && i.blocking)).toBe(true)
+      expect(outdatedWorkspace.canPublish).toBe(false)
+      await expect(service.publishVersion(outdatedDraft.id, outdatedWorkspace.snapshot, 'local-admin')).rejects.toMatchObject({ code: 'BLOCKED' })
+
+      const legacyReferenceId = 'autonomous-rate-v1-published-test'
+      const legacyReference = await createStoredReading(legacyReferenceId, 'V1-PUBLISHED-REFERENCE-TEST-ONLY.xlsx', new Date())
+      await admin.$transaction(async tx => {
+        await tx.autonomousRatePublication.create({ data: {
+          versionId: legacyReference.id, previousId: registry.versionId, actorId: 'local-admin', snapshot: { seededReaderVersion: 1 },
+        } })
+        await tx.autonomousRateRegistry.update({ where: { id: 'autonomous-rates' }, data: { versionId: legacyReference.id, generation: { increment: 1 } } })
+      })
+      const stableReference = await admin.autonomousRateVersion.findUniqueOrThrow({ where: { id: legacyReference.id } })
+      const candidateV2 = await service.importVersion(bytes, 'V2-CANDIDATE-TEST-ONLY.xlsx', 'local-admin')
+      const workspaceV2 = await service.getWorkspace(candidateV2.id, { page: 1 })
+      expect(workspaceV2.reference?.id).toBe(legacyReference.id)
+      expect(workspaceV2.canPublish).toBe(true)
+      expect(workspaceV2.issues.filter(i => i.blocking)).toHaveLength(0)
+      await service.publishVersion(candidateV2.id, workspaceV2.snapshot, 'local-admin')
+      expect((await admin.autonomousRateRegistry.findUniqueOrThrow({ where: { id: 'autonomous-rates' } })).versionId).toBe(candidateV2.id)
+      const afterReference = await admin.autonomousRateVersion.findUniqueOrThrow({ where: { id: legacyReference.id } })
+      expect(Buffer.from(afterReference.original).equals(bytes)).toBe(true)
+      expect(afterReference.fileHash).toBe(stableReference.fileHash)
+      expect(afterReference.revision).toBe(stableReference.revision)
+      expect(digest(afterReference.reading)).toBe(digest(stableReference.reading))
+      expect((await admin.autonomousRatePublication.findUniqueOrThrow({ where: { versionId: candidateV2.id } })).previousId).toBe(legacyReference.id)
 
       const { apiError } = await import('@/lib/api/response')
       await withAdminAuthTestOverride(async () => ({ isAuthorized: false, error: apiError(401, 'Unauthorized') }), async () => {

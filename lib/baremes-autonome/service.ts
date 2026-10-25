@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto'
 import { Prisma, type AutonomousRateVersion } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
-import { readWorkbook } from './read-workbook'
+import { CURRENT_PARSER_VERSION, isSupportedReaderVersion, readWorkbook, readWorkbookVersion } from './read-workbook'
 import { compareReadings, digest, snapshotDigest } from './compare'
 import type { Reading, Snapshot, VersionRef, Workspace, ChangeKind } from './types'
 
@@ -67,6 +67,8 @@ export type Filters = { page: number; q?: string; sheet?: string; kind?: ChangeK
 function compose(candidate: AutonomousRateVersion, reference: AutonomousRateVersion | null, generation: number, filters: Filters): Workspace {
   const after = readingOf(candidate), before = reference ? readingOf(reference) : null
   const issues = [...after.issues]
+  if (after.parserVersion !== CURRENT_PARSER_VERSION) issues.push({ code: 'PARSER_VERSION_OUTDATED', sheet: '', blocking: true })
+  if (before && (!isSupportedReaderVersion(before.parserVersion) || (before.identityVersion ?? 1) !== (after.identityVersion ?? 1))) issues.push({ code: 'INCOMPATIBLE_READING', sheet: '', blocking: true })
   if ((candidate.effectiveFrom?.toISOString().slice(0, 10) ?? null) !== after.effectiveFrom) issues.push({ code: 'INVALID_EFFECTIVE_DATE', sheet: '', blocking: true })
   if (before && before.sheets.some(sheet => !after.sheets.includes(sheet))) issues.push({ code: 'COVERAGE_LOSS', sheet: '', blocking: true })
   const differences = compareReadings(before, after)
@@ -88,7 +90,7 @@ function compose(candidate: AutonomousRateVersion, reference: AutonomousRateVers
     snapshot: { ...token, digest: snapshotDigest(token) }, counts, issues,
     sheets: [...new Set(differences.map(r => (r.after ?? r.before!).source.sheet))],
     items: filtered.slice((filters.page - 1) * 50, filters.page * 50), total: filtered.length, page: filters.page,
-    canPublish: !candidate.publishedAt && !issues.some(i => i.blocking) }
+    canPublish: !candidate.publishedAt && !issues.some(i => i.blocking), coverage: after.coverage }
 }
 
 export async function getWorkspace(id: string, filters: Filters): Promise<Workspace> {
@@ -125,11 +127,11 @@ export async function publishVersion(id: string, expected: Snapshot, actorId: st
       // Revalidate both bytes and normalized content; never publish an edited/stale reading.
       const fileHash = hashFile(Buffer.from(candidate.original))
       if (fileHash !== candidate.fileHash || revisionOf(fileHash, readingOf(candidate)) !== candidate.revision
-        || digest(readWorkbook(Buffer.from(candidate.original))) !== digest(candidate.reading)) throw new RateError('REVISION_CHANGED', 409)
+        || digest(readWorkbookVersion(Buffer.from(candidate.original), readingOf(candidate).parserVersion)) !== digest(candidate.reading)) throw new RateError('REVISION_CHANGED', 409)
       if (reference && (hashFile(Buffer.from(reference.original)) !== reference.fileHash
         || (reference.effectiveFrom?.toISOString().slice(0, 10) ?? null) !== readingOf(reference).effectiveFrom
         || revisionOf(reference.fileHash, readingOf(reference)) !== reference.revision
-        || digest(readWorkbook(Buffer.from(reference.original))) !== digest(reference.reading))) throw new RateError('REVISION_CHANGED', 409)
+        || digest(readWorkbookVersion(Buffer.from(reference.original), readingOf(reference).parserVersion)) !== digest(reference.reading))) throw new RateError('REVISION_CHANGED', 409)
       await tx.autonomousRatePublication.create({ data: { versionId: id, previousId: registry.versionId, actorId, snapshot: json(expected) } })
       await tx.autonomousRateVersion.update({ where: { id }, data: { publishedAt: new Date() } })
       await tx.autonomousRateRegistry.update({ where: { id: registryId }, data: { versionId: id, generation: { increment: 1 } } })

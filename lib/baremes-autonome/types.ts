@@ -11,9 +11,11 @@ export type RateValue = {
   unit: 'EUR/day' | 'EUR/month' | 'EUR' | 'ratio' | 'number'
   value: string
   source: Source
+  indexation?: { value: string; source: Source }
 }
 export type ReadingIssue = { code: string; sheet: string; cell?: string; blocking: boolean }
-export type Reading = { effectiveFrom: string | null; values: RateValue[]; sheets: string[]; issues: ReadingIssue[]; parserVersion: number }
+export type Coverage = { contractVersion: 1; auxiliaryCells: number; tables: Array<{ sheet: string; mappedCells: number; auxiliaryCells: number }> }
+export type Reading = { effectiveFrom: string | null; values: RateValue[]; sheets: string[]; issues: ReadingIssue[]; parserVersion: number; identityVersion?: number; coverage?: Coverage }
 export type VersionRef = { id: string; name: string; revision: string; effectiveFrom: string | null; createdAt: string; publishedAt: string | null; count: number }
 export type Difference = { key: string; kind: ChangeKind; before: RateValue | null; after: RateValue | null; contextChanged: boolean }
 export type Snapshot = { candidateId: string; candidateRevision: string; referenceId: string | null; referenceRevision: string | null; generation: number; digest: string }
@@ -28,4 +30,5 @@ export type Workspace = {
   total: number
   page: number
   canPublish: boolean
+  coverage?: Coverage
 }

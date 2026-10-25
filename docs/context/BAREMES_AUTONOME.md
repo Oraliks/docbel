@@ -31,6 +31,14 @@ référence dans une transaction sérialisable avec verrou dédié. Un retry ide
 ne crée pas de seconde publication et ne réactive pas une ancienne version.
 Une date future ou antérieure à la référence courante bloque la publication.
 
+Lecteur courant v2 : les candidats v1 doivent être réimportés pour bénéficier des
+contrôles de couverture. Les références publiées v1 restent vérifiées avec le
+lecteur autonome v1 gelé (`readers/v1.ts`), leur SHA-256 et leur révision ; une
+évolution du lecteur courant ne les rend donc pas illisibles. Une version de
+lecteur inconnue ou un contrat d'identité incompatible bloque explicitement.
+Une future normalisation doit ajouter une version au registre, sans modifier les
+lecteurs historiques ni réécrire leurs snapshots.
+
 ## Lecture et limites explicites
 
 Le seul original fourni est `barema20260901-new.xlsx`, conservé strictement comme
@@ -43,6 +51,17 @@ d'indexation). Les neuf autres feuilles sont explicitement non couvertes.
 La publication active une version complète de ce périmètre, sans assembler des
 cellules de versions différentes. Une perte de couverture ou une lecture ambiguë
 bloque ; une absence ne remplace jamais une valeur par zéro.
+
+Le contrat interne exige les 13 colonnes codées dans leur contexte et les tranches
+MIN puis 1 à 99 dans chaque matrice. Plusieurs tableaux concurrents, un taux
+illisible, un montant de base manquant (y compris la section « Andere »), ou une
+ligne d'indexation dont l'identité manque sont bloquants. Les 500 cellules
+auxiliaires du fichier réel sont reconnues séparément : sans code, elles donnent
+zéro par une formule de demi-allocation vers une cellule entière vide. Elles
+restent dans l'original, ne constituent pas 500 montants et sont annoncées dans
+l'écran avant publication. Une valeur sans code sortant de ce cas bloque.
+Le taux source (p.ex. pourcentage du tableau) est distinct du multiplicateur
+d'indexation : ce dernier conserve sa cellule et sa formule propres.
 
 Identités sémantiques par code/catégorie/période/tranche ou article/libellé.
 Sources : feuille, cellule, valeur brute, formule. Les résultats enregistrés des
@@ -82,8 +101,10 @@ L'option de reset de ce script ne vise que les trois tables nouvelles, en test.
 
 ## Retrait ultérieur : aucune bascule autorisée ici
 
-Preuves locales : suite complète 3 355 tests réussis, 1 ignoré ; recette PostgreSQL
-du nouveau domaine 11 tests réussis ; Playwright sous Edge 1 parcours complet
+Preuves locales après contre-revue : suite complète 3 357 tests réussis,
+2 ignorés (dont la recette PostgreSQL, exécutée séparément avec son URL isolée) ;
+suite ciblée du nouveau domaine 14 tests réussis avec PostgreSQL ;
+Playwright sous Edge 1 parcours complet
 réussi (original puis variante synthétique, deux publications et rechargements).
 Captures réelles : `docs/evidence/baremes-autonome/`. Le nom synthétique apparaît
 dans la capture de comparaison ; les deux premières captures montrent le premier
@@ -120,3 +141,19 @@ nouvelle règle d'orientation ni promesse d'allocation.
 
 ### Fraîcheur
 RAS : aucun rule_id n'est câblé dans un nouveau moteur d'orientation par ce lot.
+
+### Contre-revue du lecteur v2 — 25/10/2026
+
+5 conformes · 0 écart · 2 non couverts. La contre-revue confirme le périmètre
+documentaire autonome, les trois matrices annoncées, la distinction taux source /
+multiplicateur d'indexation, les identités strictes et les 500 cellules auxiliaires
+zéro (qui ne sont pas des montants publiés). Elle ne certifie ni la validité
+juridique exhaustive des montants du fichier ni leur applicabilité individuelle.
+Aucun `rule_id` utilisé ; référence familiale verrouillée relue intégralement.
+
+Les omissions de D88 et H2, les identités de tranche inconnues et les en-têtes
+dupliqués trouvés en revue ont des régressions bloquantes. La recette PostgreSQL
+couvre aussi une référence autonome publiée avec le lecteur v1, puis une
+publication v2 conservant cette référence intacte. Les deux contre-revues
+indépendantes du lecteur et du service n'ont plus de constat actionnable sur les
+corrections ; elles portent sur ce périmètre, sans ré-audit global.

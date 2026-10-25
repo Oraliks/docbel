@@ -19,7 +19,7 @@ export function compareReadings(before: Reading | null, after: Reading): Differe
   return [...new Set([...old.keys(), ...current.keys()])].sort().map((key) => {
     const a = old.get(key) ?? null
     const b = current.get(key) ?? null
-    const contextChanged = !!a && !!b && digest([a.label, a.unit, a.context]) !== digest([b.label, b.unit, b.context])
+    const contextChanged = !!a && !!b && digest([a.label, a.unit, a.context, a.indexation?.value ?? null]) !== digest([b.label, b.unit, b.context, b.indexation?.value ?? null])
     return { key, before: a, after: b, contextChanged,
       kind: !a ? 'added' : !b ? 'absent' : a.value !== b.value || contextChanged ? 'modified' : 'unchanged' }
   })

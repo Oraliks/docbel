@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest'
 import * as XLSX from 'xlsx'
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
-import { readWorkbook, readWorkbookFromParsedWorkbook } from '../read-workbook'
+import { CURRENT_PARSER_VERSION, isSupportedReaderVersion, readWorkbook, readWorkbookFromParsedWorkbook, readWorkbookVersion, UnsupportedReaderVersion } from '../read-workbook'
+import { digest } from '../compare'
 
 function workbookBuffer(sheets: Record<string, unknown[][]>, formula?: { sheet: string; address: string; expression: string; cached?: number }): Buffer {
   const wb = XLSX.utils.book_new()
@@ -19,6 +20,7 @@ function workbookBuffer(sheets: Record<string, unknown[][]>, formula?: { sheet: 
 function dailySheet(amount: number | string = 12.34): unknown[][] {
   const rows: unknown[][] = Array.from({ length: 111 }, () => [])
   rows[0][0] = 'Geldig/valable'
+  rows[0][20] = 'Multiplicateur'; rows[0][22] = 1.8114
   rows[1][0] = new Date(Date.UTC(2026, 8, 1))
   rows[3][2] = 'Werknemers met gezinslast / Travailleurs ayant charge de famille'
   rows[3][8] = 'Alleenwonenden / Isolés'; rows[3][14] = 'Samenwonenden / Cohabitants'
@@ -51,7 +53,35 @@ function basisSheet(amount: number | string = 43.11, unit = 'dag'): unknown[][] 
   return rows
 }
 
+function referenceWorkbook(): XLSX.WorkBook {
+  const path = process.env.DOCBEL_REFERENCE_XLSX ?? fileURLToPath(new URL('./fixtures/barema20260901-new.xlsx', import.meta.url))
+  return XLSX.read(readFileSync(path), { type: 'buffer', cellFormula: true, cellDates: false })
+}
+
 describe('readWorkbook', () => {
+  it('dispatches through an immutable reader registry and preserves the v1 result', () => {
+    const path = process.env.DOCBEL_REFERENCE_XLSX ?? fileURLToPath(new URL('./fixtures/barema20260901-new.xlsx', import.meta.url))
+    const bytes = readFileSync(path)
+    const current = readWorkbook(bytes)
+    const currentByVersion = readWorkbookVersion(bytes, 2)
+    const v1 = readWorkbookVersion(bytes, 1)
+
+    expect(CURRENT_PARSER_VERSION).toBe(2)
+    expect(isSupportedReaderVersion(1)).toBe(true)
+    expect(isSupportedReaderVersion(2)).toBe(true)
+    expect(isSupportedReaderVersion(99)).toBe(false)
+    expect(() => readWorkbookVersion(bytes, 99)).toThrow(UnsupportedReaderVersion)
+    expect(digest(current)).toBe(digest(currentByVersion))
+    expect(v1).toMatchObject({ parserVersion: 1, effectiveFrom: '2026-09-01' })
+    expect(v1.values).toHaveLength(2685)
+    expect(v1.issues.filter(issue => issue.blocking)).toHaveLength(0)
+    expect(v1.values[0].context).toEqual([
+      'Allocation entière', 'Werknemers met gezinslast Travailleurs ayant charge de famille',
+      '1e periode', 'Montant indexé: 65%', 'Tranche: MIN',
+    ])
+    expect(v1.values.find(value => value.source.cell === 'C12')?.source.formula).toBe('ROUND(Basisbedragen!$D$34*$W$1,2)')
+  })
+
   it('reads the supplied reference workbook', () => {
     const path = process.env.DOCBEL_REFERENCE_XLSX ?? fileURLToPath(new URL('./fixtures/barema20260901-new.xlsx', import.meta.url))
     const reading = readWorkbook(readFileSync(path))
@@ -65,6 +95,13 @@ describe('readWorkbook', () => {
     expect(reading.values.some(v => v.table === 'basisbedragen' && v.unit === 'ratio')).toBe(true)
     expect(reading.values.some(v => v.table === 'allocation_journaliere_entiere')).toBe(true)
     expect(reading.values.some(v => v.table === 'allocation_journaliere_demi')).toBe(true)
+    expect(reading.parserVersion).toBe(2)
+    expect(reading.coverage).toMatchObject({ contractVersion: 1, auxiliaryCells: 500, tables: [
+      { sheet: 'A_N_B_vol_plein', mappedCells: 1300, auxiliaryCells: 0 },
+      { sheet: 'A_N_B_half_demi', mappedCells: 1300, auxiliaryCells: 500 },
+      { sheet: 'Basisbedragen', mappedCells: 85, auxiliaryCells: 0 },
+    ] })
+    expect(reading.sheets).toEqual(['A_N_B_vol_plein', 'A_N_B_half_demi', 'Basisbedragen'])
     expect(reading.issues.filter(i => i.blocking)).toHaveLength(0)
     expect(reading.issues.filter(i => !i.blocking)).toHaveLength(9)
   })
@@ -78,9 +115,10 @@ describe('readWorkbook', () => {
     const result = readWorkbook(buffer)
     expect(result.effectiveFrom).toBe('2026-09-01')
     expect(result.values.find(v => v.table === 'allocation_journaliere_entiere')?.context).toEqual([
-      'Allocation entière', 'Werknemers met gezinslast / Travailleurs ayant charge de famille', '1e periode 1ère période', 'Montant indexé: 65%', 'Tranche: MIN',
+      'Allocation entière', 'Werknemers met gezinslast / Travailleurs ayant charge de famille', '1e periode 1ère période', 'Taux source: 65%', 'Tranche: MIN',
     ])
     expect(result.values.find(v => v.table === 'basisbedragen')).toMatchObject({ value: '43.11', unit: 'EUR/day', context: ['base_non_indexee', 'frequence:dag', 'provenance:KB 1'] })
+    expect(result.values.find(v => v.source.sheet === 'A_N_B_vol_plein' && v.source.cell === 'C12')?.indexation).toMatchObject({ value: '1.8114', source: { sheet: 'A_N_B_vol_plein', cell: 'W1' } })
     expect(result.issues.filter(i => i.blocking)).toHaveLength(0)
     expect(result.values.find(v => v.source.cell === 'C12')?.source).toMatchObject({ formula: 'ROUND(12.345,2)', raw: '12.35' })
     const moved = readWorkbook(workbookBuffer({
@@ -121,5 +159,35 @@ describe('readWorkbook', () => {
     delete formulaCell.v
     const result = readWorkbookFromParsedWorkbook(workbook)
     expect(result.issues).toContainEqual(expect.objectContaining({ code: 'formula_without_cached_result', sheet: 'A_N_B_vol_plein', cell: 'C13', blocking: true }))
+  })
+
+  it('verifies minimum, maximum tranche, rate codes, base amounts, index values and provenance from the source cells', () => {
+    const result = readWorkbook(readFileSync(process.env.DOCBEL_REFERENCE_XLSX ?? fileURLToPath(new URL('./fixtures/barema20260901-new.xlsx', import.meta.url))))
+    expect(result.values.find(v => v.source.sheet === 'A_N_B_vol_plein' && v.source.cell === 'C12')).toMatchObject({ code: 'AA1:MIN', category: 'A', value: '78.09', unit: 'EUR/day' })
+    expect(result.values.find(v => v.source.sheet === 'A_N_B_half_demi' && v.source.cell === 'C12')).toMatchObject({ code: 'AA1:MIN', category: 'A', value: '39.05', unit: 'EUR/day' })
+    expect(result.values.find(v => v.source.sheet === 'A_N_B_vol_plein' && v.source.cell === 'C111')).toMatchObject({ code: 'AA1:99', value: '108.19' })
+    expect(result.values.find(v => v.source.sheet === 'A_N_B_half_demi' && v.source.cell === 'C111')).toMatchObject({ code: 'AA1:99', value: '54.4' })
+    expect(result.values.find(v => v.source.sheet === 'Basisbedragen' && v.source.cell === 'D27')).toMatchObject({ value: '92.3956', unit: 'EUR/day' })
+    expect(result.values.find(v => v.source.sheet === 'Basisbedragen' && v.source.cell === 'I2')).toMatchObject({ table: 'basisbedragen_index', value: '1.8114', unit: 'number' })
+    expect(result.values.find(v => v.source.sheet === 'Basisbedragen' && v.source.cell === 'D80')?.context).toContain('provenance:KB 03/05/2007, art. 11, § 1, 3e lid')
+  })
+
+  it('blocks incomplete basis, index and tranche identities, duplicate tables, and invalid rate percentages', () => {
+    const cases: Array<{ name: string; mutate: (workbook: XLSX.WorkBook) => void; issue: string }> = [
+      { name: 'missing final other-section base amount', mutate: workbook => { delete workbook.Sheets.Basisbedragen.D88 }, issue: 'missing_basis_value' },
+      { name: 'missing index label', mutate: workbook => { delete workbook.Sheets.Basisbedragen.H2 }, issue: 'unknown_index_identity' },
+      { name: 'unknown tranche label', mutate: workbook => { workbook.Sheets.A_N_B_vol_plein.A13 = { t: 's', v: 'X' } }, issue: 'unknown_rate_row_identity' },
+      { name: 'duplicate daily table header', mutate: workbook => { workbook.Sheets.A_N_B_vol_plein.A200 = { t: 's', v: 'Code' }; workbook.Sheets.A_N_B_vol_plein['!ref'] = 'A1:W200' }, issue: 'ambiguous_table_header' },
+      { name: 'error rate percentage', mutate: workbook => { workbook.Sheets.A_N_B_vol_plein.C11 = { t: 'e', v: 0 } }, issue: 'unknown_rate_percentage' },
+      { name: 'missing rate percentage', mutate: workbook => { delete workbook.Sheets.A_N_B_vol_plein.C11 }, issue: 'missing_rate_percentage' },
+      { name: 'nonzero unlabelled auxiliary value', mutate: workbook => { workbook.Sheets.A_N_B_half_demi.F12 = { t: 'n', v: 1 } }, issue: 'unmapped_daily_value' },
+      { name: 'unrecognized auxiliary formula', mutate: workbook => { workbook.Sheets.A_N_B_half_demi.F12 = { t: 'n', f: 'ROUND(A_N_B_vol_plein!F12/3,2)', v: 0 } }, issue: 'unmapped_daily_value' },
+    ]
+    for (const testCase of cases) {
+      const workbook = referenceWorkbook()
+      testCase.mutate(workbook)
+      const result = readWorkbookFromParsedWorkbook(workbook)
+      expect(result.issues, testCase.name).toContainEqual(expect.objectContaining({ code: testCase.issue, blocking: true }))
+    }
   })
 })

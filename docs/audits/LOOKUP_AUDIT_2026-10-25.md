@@ -403,6 +403,9 @@ maintenant `private, no-store`. La revue indépendante a détecté une limite
 globale incorrecte en résolution par lots, une validation d'approbation
 renvoyant 500 sur corps invalide, et des erreurs GET protégées sans no-store;
 ces trois constats ont aussi été corrigés.
+La seconde passe a signalé que Prisma exige `orderBy` avec `groupBy` et `take`;
+un ordre explicite par code a été ajouté. La validation réelle de cette requête
+reste à faire sur PostgreSQL isolé.
 
 ### Validations réellement exécutées dans ce worktree
 

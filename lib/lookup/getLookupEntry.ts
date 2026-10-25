@@ -155,7 +155,9 @@ export async function resolveLookupEntriesByCodes(
     }
     // Count per code first: a global findMany(take) can let one code's historical
     // overlaps hide all following codes and turn them into false absences.
-    const counts = await tx.lookupEntry.groupBy({ by: ['code'], where, _count: { _all: true }, take: codes.length })
+    const counts = await tx.lookupEntry.groupBy({
+      by: ['code'], where, _count: { _all: true }, orderBy: { code: 'asc' }, take: codes.length,
+    })
     const countByCode = new Map(counts.map((item) => [item.code, item._count._all]))
     const uniqueCodes = counts.filter((item) => item._count._all === 1).map((item) => item.code)
     const entries = uniqueCodes.length === 0 ? [] : await tx.lookupEntry.findMany({

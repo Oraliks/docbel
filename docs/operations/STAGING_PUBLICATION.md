@@ -1,47 +1,56 @@
 # Staging et publication DocBel
 
-État vérifié le 26/10/2026. Ce document décrit le flux actif et distingue le code, les schémas de données et le contenu métier.
+Mise à jour du 26/10/2026. Ce guide décrit les flux vérifiés et distingue le code, le schéma et le contenu administré.
 
-## Ressources et accès
+## Environnements et protections
 
-- Le projet de staging est distinct du projet de production et dispose de sa propre base Neon, de ses propres stores Blob, de ses propres secrets d’authentification et d’un compte admin fictif. Les valeurs de connexion et les identifiants ne sont pas publiés ici.
-- L’alias Vercel de staging exige SSO et le Basic Auth applicatif. Les réponses staging portent noindex et no-store; les routes de cron, d’IMAP et d’ingestion restent bloquées.
-- staging.docbel.be est rattaché au projet staging, mais le DNS externe ne le résout pas encore. L’enregistrement CNAME communiqué au propriétaire doit être publié chez le DNS autoritaire avant les essais sur ce nom. Better Auth doit alors utiliser cette origine de façon explicite et les cookies doivent rester limités à l’hôte. Le Basic Auth applicatif doit être vérifié sur le domaine personnalisé, car la protection SSO Vercel ne couvre pas les domaines personnalisés.
-- Le projet de production ne construit que la branche de production. Le dépôt exige une PR vers main, le contrôle CI test et interdit force-push et suppression de main. La connexion Neon Native de production est limitée à l’environnement Production. Son préfixe de variables gérées est DOCBEL_NEON_NATIVE; les variables Prisma principales restent manuelles et Production-only. Lors d’une rotation Neon, vérifier et renouveler explicitement ces deux connexions manuelles avant un déploiement.
-- La base de production est maintenant servie par une nouvelle ressource Neon gérée par Vercel. L’ancienne base et le compte Neon direct sont conservés pour retour arrière; aucune fermeture ni suppression n’est incluse dans cette livraison. Le retour arrière applicatif vers l’ancienne base après de nouvelles écritures exige une réconciliation des données, pas un simple changement d’URL.
+- Le projet staging et ses bases et stores Blob sont distincts de la production. Les recettes utilisent des données et comptes fictifs. Les secrets et identifiants de ressources ne sont pas publiés dans ce dépôt.
+- L’alias Vercel staging exige SSO Vercel et Basic Auth applicatif. Le domaine personnalisé `staging.docbel.be` dispose de DNS et TLS valides et exige Basic Auth applicatif; la protection SSO Vercel ne couvre pas les domaines personnalisés. Les réponses observées sont privées, sans indexation et sans cache partagé. Les cookies d’authentification restent Secure et limités à l’hôte.
+- La création et la sauvegarde de dossiers fictifs dans l’interface exigent les deux variables publiques d’opt-in de staging. Les écritures API exigent séparément le drapeau serveur staging et les gardes d’authentification/propriété. La fermeture globale reste active en production; les inscriptions, profils, rendez-vous, emails et tâches planifiées ne sont pas rouverts.
+- Les identifiants de fournisseurs d’email, d’IA, d’IMAP, de paiement et de tâches planifiées ne sont pas configurés dans le projet staging. Les contrôles anonymes des routes sensibles ont répondu fermé, sans appel fournisseur. Les tests de recette n’utilisent pas de destinataire réel.
+- Les futures variables de production et la connexion Neon gérée sont limitées à l’environnement Production. Les variables gérées de Neon portent un préfixe dédié; les deux variables Prisma de connexion restent manuelles et doivent être vérifiées et renouvelées explicitement lors d’une rotation.
+- Les règles GitHub imposent une PR vers `main`, un contrôle CI vert et interdisent force-push et suppression de `main`. Le projet Vercel de production ne construit que la branche de production. La validation humaine du SHA de déploiement reste une étape de procédure: le dépôt ne requiert pas d’approbation GitHub indépendante (mainteneur unique). Les restrictions d’environnement s’appliquent aux futurs déploiements; d’anciens aperçus immuables restent protégés par SSO et ne sont ni supprimés ni réécrits par cette procédure.
 
-## Garde staging et version
+## Versions et recette staging
 
-L’activation de l’écriture de test exige simultanément l’environnement staging, le projet et la branche staging, un Basic Auth valide, une base et des stores dédiés, ainsi que le drapeau serveur STAGING_TEST_PERSISTENCE=1. Le flux UI de dossier/PDF staging nécessite aussi NEXT_PUBLIC_APP_ENV=staging et NEXT_PUBLIC_STAGING_TEST_PERSISTENCE=1. Ces variables sont configurées uniquement sur le projet staging. Elles ne désactivent pas la fermeture des inscriptions, profils, prises de rendez-vous, emails ou tâches planifiées en production.
+Chaque lot staging est vérifié sur le SHA déployé exact. La recette UI doit exercer le vrai parcours de création, le code de reprise, l’autosauvegarde, la reprise et le téléchargement PDF, avec des données fictives. Le résultat, le SHA, les commandes et les captures expurgées sont consignés dans un reçu de recette séparé; ce guide décrit la procédure durable.
 
-La branche de fonctionnalité codex/lookup-postgres-utc-staging et la PR #97 vers staging corrigent la mise à jour des dates Lookup et ouvrent, sous ces garde-fous, l’enregistrement et la reprise de dossiers fictifs. Les changements client sérialisent les sauvegardes et suppressions concurrentes. Le contrôle CI est requis avant fusion vers staging; le SHA déployé doit ensuite être vérifié dans Vercel avant la recette. Cette PR ne vise pas main et ne publie aucun contenu de production.
+Le correctif Lookup normalise les dates en UTC avant l’écriture dans les colonnes `timestamp without time zone`. Les tests PostgreSQL réels couvrent UTC, Europe/Paris et America/Los_Angeles, les valeurs nulles, le retry et la préservation des entrées omises d’un export.
 
-## Publication de code, structure et contenu
+La preuve interbases fictive a réussi sur une cible PostgreSQL locale jetable: diff de deux modifications et une omission, empreinte inchangée avant publication, rejet d’une proposition altérée sans écriture, deux approbations distinctes, publication ciblée et préservation de la ligne omise. Cette preuve couvre ce parcours Lookup précis; elle ne démontre pas une synchronisation générale de toutes les données entre environnements.
 
-Une fusion Git ne publie pas les données éditées dans l’administration. Les lots sont distincts :
+Les essais API staging couvrent la création du dossier, l’autosauvegarde rattachée au run, la reprise par code, la restauration SSR du brouillon, la génération PDF fictive et les accès Blob (upload, téléchargement privé authentifié, refus anonyme et suppression). L’isolement entre utilisateurs et les refus des routes sensibles ont été contrôlés. Compléter les contrôles API par un parcours navigateur sur le SHA staging courant; consigner le résultat dans le reçu de recette séparé.
 
-1. **Code** : PR vers staging, CI verte, revue, puis vérification du déploiement staging au SHA exact. Une publication en production requiert une PR distincte vers main et une autorisation du propriétaire sur le SHA.
-2. **Schéma** : migrations additives et versionnées. Ne jamais utiliser prisma db push, db:setup ou reset sur une base partagée. Vérifier les extensions, objets hors Prisma et migrations couvertes avant toute opération.
-3. **Contenu métier** : utiliser l’import CSV Lookup existant. Conserver la proposition et son empreinte, examiner le diff (y compris les entrées absentes de l’export), exiger les approbations distinctes prévues et valider le résultat par une résolution à date. Répéter d’abord sur des bases non productives. Une approbation de contenu est distincte de l’approbation d’un déploiement de code.
+## Publication du code, du schéma et du contenu
 
-Aucun synchroniseur général ni export global staging→production n’est autorisé par ce guide. Les dépendances de contenu entre deux bases non productives restent à vérifier; la recette d’un seul projet ne prouve pas une synchronisation universelle.
+Une fusion Git ne publie pas les données éditées dans l’administration. Les flux restent distincts:
 
-## Vérifications et retour arrière
+1. **Code**: PR ciblée vers `staging`, revue, CI complète verte sur le SHA exact, fusion puis vérification du déploiement staging sur ce SHA. Toute publication en production demande une PR distincte vers `main` et une autorisation du propriétaire sur le SHA; ce contrôle humain est documenté et n’est pas un verrou technique indépendant.
+2. **Schéma**: migrations additives et versionnées. Les commandes `db:push` et `db:setup` refusent les bases partagées et n’acceptent que la fixture locale jetable explicitement reconnue. Ne jamais lancer `prisma db push`, `db:setup` ou reset sur une base Neon, Vercel, staging ou production. Vérifier extensions, objets hors Prisma et migrations couvertes avant toute opération.
+3. **Contenu métier**: utiliser l’import CSV Lookup existant. Conserver la proposition et son empreinte, examiner le diff, y compris les entrées absentes de l’export, exiger les approbations distinctes et valider la résolution à date. Répéter sur une cible non productive avant toute publication de contenu en production.
 
-Les contrôles locaux du correctif Lookup couvrent l’écriture de dates UTC vers timestamp without time zone sous des sessions PostgreSQL UTC, Europe/Paris et America/Los_Angeles, le maintien des lignes absentes d’un export, le rollback transactionnel, le retry explicite et les valeurs nulles. Les tests ciblés des garde-fous, de l’autosave et de l’écran de reprise passent localement. La CI complète, le déploiement staging du SHA final et les parcours UI/API de bout en bout restent les preuves à obtenir avant clôture.
+### Validation propriétaire
 
-La recette staging doit encore vérifier sur des données fictives : import/approbations/résolution Lookup, création et reprise du dossier, génération PDF en téléchargement local, upload/téléchargement/suppression Blob, protection Basic sur l’alias et le domaine personnalisé, cookies host-only et refus des crons/effets externes. N’utiliser aucun vrai destinataire ni fournisseur externe.
+Ouvrir `https://staging.docbel.be`, vérifier la version affichée et signaler l’URL, les étapes suivies et une capture contenant uniquement des données fictives. Avant toute publication, le propriétaire valide le SHA du code et les CSV de contenu sélectionnés. Une fusion autorisée vers `main` déclenche le déploiement Vercel de production; elle ne transfère automatiquement ni contenu administré, ni dossiers, fichiers ou secrets. Si le lot ou `main` change après validation, refaire les vérifications et renouveler l’accord. Un correctif fait sur `main` doit ensuite être réintégré à `staging`.
 
-Avant tout rollback staging, conserver le SHA staging précédent et les preuves des données de test. Vérifier que migrations additives et nouveaux enregistrements restent compatibles avec ce SHA, puis redéployer le précédent SHA et contrôler que les versions/drafts/fichiers de recette restent accessibles après rechargement. Aucun test de restauration globale de production n’est prévu. L’ancienne base directe est conservée jusqu’à une décision distincte de décommissionnement.
+Aucun synchroniseur général ni export global staging→production n’est prévu. Les dépendances de contenu entre bases restent propres à chaque lot; une recette Lookup ne prouve pas la publication universelle des contenus.
 
-## État actuel
+## Retour arrière et limites
+
+Le rollback staging a été exercé: le code a été temporairement ramené au SHA staging antérieur puis restauré. Après rechargement, les données de recette vérifiées (versions Lookup, brouillon de dossier et métadonnées PDF) étaient toujours disponibles. Aucun reset de base ni restauration de données de production n’a été effectué. Avant un nouveau rollback, vérifier que migrations et écritures récentes restent compatibles avec le SHA visé.
+
+La nouvelle base Neon de production est utilisée par le site; l’ancienne base et le compte Neon direct restent conservés. Un retour vers l’ancienne base après de nouvelles écritures nécessite une réconciliation des données; ce n’est pas un simple changement d’URL. La fermeture du compte ou la suppression de l’ancienne base demande une décision distincte.
+
+Le plan gratuit peut approcher sa limite d’heures de calcul. Surveiller l’usage et arrêter avant toute opération facturable non couverte. Aucun achat, changement de plan ou frais additionnel n’est autorisé par ce guide.
+
+## État à cette mise à jour
 
 | Élément | État |
 | --- | --- |
-| Migration de production | Runtime vérifié sur la cible Neon gérée par Vercel; l’ancienne cible reste intacte. Santé de production vérifiée après le raccordement. |
-| Protections de publication | Réglages Vercel Production-only et règles GitHub main relus après application. Le premier push de la branche de fonctionnalité n’a créé ni aperçu Vercel de production ni nouvelle branche Neon. |
-| PR vers staging | PR #97 contient le correctif et cette version du guide. Le contrôle CI test doit être vert sur le SHA final avant fusion. Aucun merge ni déploiement de ce correctif vers staging n’est confirmé ici. |
-| Domaine personnalisé | Domaine rattaché au projet staging; DNS externe manquant, domaine non résolvable. |
-| Recette de bout en bout | Incomplète. Les parcours finaux après déploiement et la recette sur le domaine personnalisé restent à faire. |
-| Rollback staging | Procédure définie; exercice réel de rollback avec vérification des données de test encore à effectuer. |
-| Coût | Aucun achat, changement de plan ou frais supplémentaires n’a été autorisé par ce guide. La consommation d’un plan gratuit peut atteindre sa limite; surveiller l’usage et arrêter les essais avant toute opération facturable non couverte. |
+| Migration de production | Runtime et santé vérifiés sur la nouvelle ressource Neon gérée par Vercel; ancienne base intacte. |
+| Protections de production | Connexion Neon et variables futures limitées à Production; builds de production ciblés; règles `main` relues. Les anciens aperçus immuables restent protégés par SSO. |
+| Domaine staging | `staging.docbel.be` rattaché au projet staging, DNS et TLS valides; contrôles Basic Auth et santé API réussis. |
+| Recette API et interbases | Parcours Lookup, brouillon/reprise SSR, PDF, Blob et une simulation interbases fictive vérifiés. |
+| Recette UI dossier | Vérifier chaque SHA staging selon le parcours décrit ci-dessus; consigner le résultat dans le reçu de recette séparé. |
+| Rollback staging | Exercé sur le code; données fictives vérifiées après retour et restauration du déploiement courant. |
+| Coût | Aucun achat ou changement de plan; suivre la marge du plan gratuit avant de poursuivre les essais. |

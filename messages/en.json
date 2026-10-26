@@ -7368,6 +7368,21 @@
     }
   },
   "admin": {
+    "lookupImport": {
+      "preparedToast": "Proposal prepared ({added} additions, {modified} changes). Review it before publishing.",
+      "approvalToast": "Approval recorded ({count}/{required})",
+      "publishedToast": "Publication complete: {inserted} inserted, {updated} updated",
+      "proposalsTitle": "Import proposals",
+      "proposalMeta": "{rows} rows · revision {revision} · parser {parser}",
+      "diffSummary": "Comparison: {added} additions · {modified} changes · {absent} absent from export (retained)",
+      "reviewDiff": "Review the full comparison",
+      "approvals": "Approvals: {names}",
+      "approveButton": "Approve this comparison",
+      "publishButton": "Publish this proposal",
+      "retryPublishButton": "Retry publication",
+      "autoPublishPending": "Publication is in progress or can be retried with a new import.",
+      "reviewPending": "Proposal created; publication is paused until two distinct approvers review it."
+    },
     "bureaux": {
       "title": "Offices & branches",
       "description": "Directory of CPAS, municipalities, ONEM, trade unions, health insurers and walk-in offices. Serves the public resolver and contextual links at the end of document generation.",

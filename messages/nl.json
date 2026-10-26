@@ -1,5 +1,20 @@
 {
   "admin": {
+    "lookupImport": {
+      "preparedToast": "Voorstel voorbereid ({added} toevoegingen, {modified} wijzigingen). Beoordeel het vóór publicatie.",
+      "approvalToast": "Goedkeuring geregistreerd ({count}/{required})",
+      "publishedToast": "Publicatie voltooid: {inserted} toegevoegd, {updated} bijgewerkt",
+      "proposalsTitle": "Importvoorstellen",
+      "proposalMeta": "{rows} rijen · revisie {revision} · parser {parser}",
+      "diffSummary": "Vergelijking: {added} toevoegingen · {modified} wijzigingen · {absent} ontbreken in de export (behouden)",
+      "reviewDiff": "Volledige vergelijking bekijken",
+      "approvals": "Goedkeuringen: {names}",
+      "approveButton": "Deze vergelijking goedkeuren",
+      "publishButton": "Dit voorstel publiceren",
+      "retryPublishButton": "Publicatie opnieuw proberen",
+      "autoPublishPending": "Publicatie wordt uitgevoerd of kan met een nieuwe import opnieuw worden gestart.",
+      "reviewPending": "Voorstel aangemaakt; publicatie wacht op beoordeling door twee verschillende goedkeurders."
+    },
     "baremes": {
       "tabSummary": "Samenvatting",
       "tabAllocations": "Allocaties",

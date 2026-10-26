@@ -360,7 +360,7 @@ export default function LookupTableDetailPage() {
                   <div className="flex flex-wrap items-center gap-2">
                     <strong className="text-sm">{proposal.sourceFileName}</strong>
                     <Badge variant="outline">{proposal.state}</Badge>
-                    <span className="text-xs text-muted-foreground">{proposal.totalRows} lignes · révision {proposal.baseRevision} · parseur {proposal.parserVersion}</span>
+                    <span className="text-xs text-muted-foreground">{tLookupImport('proposalMeta', { rows: proposal.totalRows, revision: proposal.baseRevision, parser: proposal.parserVersion })}</span>
                   </div>
                   <p className="text-xs text-muted-foreground break-all">SHA-256 source : {proposal.sourceSha256}</p>
                   {proposal.errorMessage && <p role="alert" className="text-sm text-destructive">{proposal.errorMessage}</p>}

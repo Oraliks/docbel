@@ -1,4 +1,21 @@
 {
+  "admin": {
+    "lookupImport": {
+      "preparedToast": "تم إعداد الاقتراح ({added} إضافات، {modified} تعديلات). يُرجى مراجعته قبل النشر.",
+      "approvalToast": "تم تسجيل الموافقة ({count}/{required})",
+      "publishedToast": "اكتمل النشر: أُضيف {inserted} وتم تحديث {updated}",
+      "proposalsTitle": "مقترحات الاستيراد",
+      "proposalMeta": "{rows} صفوف · المراجعة {revision} · المحلل {parser}",
+      "diffSummary": "المقارنة: {added} إضافات · {modified} تعديلات · {absent} غير موجودة في التصدير (تم الاحتفاظ بها)",
+      "reviewDiff": "مراجعة المقارنة كاملة",
+      "approvals": "الموافقات: {names}",
+      "approveButton": "الموافقة على هذه المقارنة",
+      "publishButton": "نشر هذا الاقتراح",
+      "retryPublishButton": "إعادة محاولة النشر",
+      "autoPublishPending": "النشر جارٍ أو يمكن إعادة المحاولة باستيراد جديد.",
+      "reviewPending": "تم إنشاء الاقتراح؛ النشر متوقف بانتظار مراجعة موافقَين مختلفَين."
+    }
+  },
   "public": {
     "staging": {
       "banner": "بيئة اختبار — بيانات وهمية — الإصدار {version}"

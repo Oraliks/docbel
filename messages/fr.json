@@ -23,6 +23,7 @@
       "approvalToast": "Approbation enregistrée ({count}/{required})",
       "publishedToast": "Publication terminée : {inserted} insérées, {updated} modifiées",
       "proposalsTitle": "Propositions d’import",
+      "proposalMeta": "{rows} lignes · révision {revision} · parseur {parser}",
       "diffSummary": "Comparatif : {added} ajouts · {modified} modifications · {absent} absents de l’export (conservés)",
       "reviewDiff": "Examiner le comparatif complet",
       "approvals": "Approbations : {names}",

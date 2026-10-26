@@ -13,7 +13,10 @@
       "publishButton": "Dit voorstel publiceren",
       "retryPublishButton": "Publicatie opnieuw proberen",
       "autoPublishPending": "Publicatie wordt uitgevoerd of kan met een nieuwe import opnieuw worden gestart.",
-      "reviewPending": "Voorstel aangemaakt; publicatie wacht op beoordeling door twee verschillende goedkeurders."
+      "reviewPending": "Voorstel aangemaakt; publicatie wacht op beoordeling door twee verschillende goedkeurders.",
+      "reviewLink": "Vergelijking bekijken",
+      "batchReviewToast": "Imports voltooid; {count} voorstel(len) te beoordelen",
+      "reviewCount": "{count} ter beoordeling"
     },
     "baremes": {
       "tabSummary": "Samenvatting",

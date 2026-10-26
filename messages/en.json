@@ -7381,7 +7381,10 @@
       "publishButton": "Publish this proposal",
       "retryPublishButton": "Retry publication",
       "autoPublishPending": "Publication is in progress or can be retried with a new import.",
-      "reviewPending": "Proposal created; publication is paused until two distinct approvers review it."
+      "reviewPending": "Proposal created; publication is paused until two distinct approvers review it.",
+      "reviewLink": "Review comparison",
+      "batchReviewToast": "Imports finished; {count} proposal(s) to review",
+      "reviewCount": "{count} under review"
     },
     "bureaux": {
       "title": "Offices & branches",

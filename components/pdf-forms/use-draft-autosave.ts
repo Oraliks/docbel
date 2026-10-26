@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useState } from "react";
 import type { FormPayload } from "@/lib/pdf-forms/types";
 import { isStagingTestPersistenceEnabled } from "@/lib/public-access";
 
@@ -136,7 +136,10 @@ export function createDraftAutosaveActions(options: {
     options.onResetSavedAt();
     clearSaveTimer();
     if (Date.now() - lastSaveStartedAt >= DRAFT_MAX_WAIT_MS) {
-      flushDraft();
+      // This callback runs from the input event, immediately after setValues.
+      // Defer the max-wait flush so React can commit the new values and run
+      // updateValues before the snapshot is serialized.
+      saveTimer = setTimeout(flushDraft, 0);
       return;
     }
     saveTimer = setTimeout(flushDraft, DRAFT_DEBOUNCE_MS);
@@ -181,7 +184,7 @@ export function useDraftAutosave(options: {
     onResetSavedAt: () => setLastSavedAt(null),
   }), [enabled, options.slug, options.bundleRunId]);
 
-  useEffect(() => actions.updateValues(options.values), [actions, options.values]);
+  useLayoutEffect(() => actions.updateValues(options.values), [actions, options.values]);
 
   useEffect(() => {
     if (!enabled) return;

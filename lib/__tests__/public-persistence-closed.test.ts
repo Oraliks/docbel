@@ -260,6 +260,30 @@ describe("autosauvegarde staging explicitement activée", () => {
     test.controller.dispose();
   });
 
+  it("diffère le flush maximum jusqu'après la synchronisation des valeurs React", async () => {
+    enableStagingFixture();
+    vi.useFakeTimers();
+    const fetcher = vi.fn().mockResolvedValue({ ok: true });
+    const test = actions(true, fetcher);
+
+    // Reproduit un premier edit après une longue inactivité: scheduleSave
+    // est appelé dans le handler avant le commit et l'effet updateValues.
+    await vi.advanceTimersByTimeAsync(10_001);
+    test.controller.scheduleSave("step-1", "fictional-field");
+    expect(fetcher).not.toHaveBeenCalled();
+    test.controller.updateValues({ fixture: "first post-idle fictional value" });
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(fetcher).toHaveBeenCalledTimes(1);
+    expect(JSON.parse(String(fetcher.mock.calls[0][1]?.body))).toMatchObject({
+      payload: { fixture: "first post-idle fictional value" },
+      stepId: "step-1",
+      field: "fictional-field",
+    });
+    expect(test.onSaved).toHaveBeenCalledTimes(1);
+    test.controller.dispose();
+  });
+
   it("garde le snapshot après une réponse 401 et le retente sur flush explicite", async () => {
     enableStagingFixture();
     vi.useFakeTimers();

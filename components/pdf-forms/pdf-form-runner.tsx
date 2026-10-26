@@ -1,6 +1,6 @@
 "use client";
 
-import { arePublicDossierWritesPaused } from "@/lib/public-access";
+import { arePublicDossierWritesPaused, isStagingTestPersistenceEnabled } from "@/lib/public-access";
 import { TemporaryClosureNotice } from "@/components/docbel/temporary-closure-notice";
 import { useMemo, useState, useRef, useEffect, useLayoutEffect, useCallback } from "react";
 import { toast } from "sonner";
@@ -625,8 +625,9 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
     const manque = Math.max(0, plancherPage.current - naturelle);
     if (manque !== caleActuelle) el.style.height = `${manque}px`;
   });
-  // V1 publique : le hook de brouillon est éphémère, même connecté.
-  const serverSaved = false;
+  // Les dossiers staging enregistrent leurs brouillons serveur après le
+  // succès du PUT; AutoSaveNotice attend aussi lastSavedAt avant de l'affirmer.
+  const serverSaved = Boolean(bundleRunId) && isStagingTestPersistenceEnabled();
 
   // Map champ → index d'étape (pour sauter sur la 1ʳᵉ erreur) — macro-aware.
   const fieldStepIndex = useMemo(() => {

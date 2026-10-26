@@ -32,6 +32,7 @@ export async function GET() {
             group: true,
             sourcePath: true,
             entriesCount: true,
+            lastImportedAt: true,
             updatedLabel: true,
           },
         },
@@ -43,9 +44,12 @@ export async function GET() {
     slug: category.slug,
     labelFr: category.labelFr,
     labelNl: category.labelNl,
-    tables: category.tables.map((table) => toLookupTableProjection({
-      ...table,
-      category: { slug: category.slug, labelFr: category.labelFr, labelNl: category.labelNl },
+    tables: category.tables.map((table) => ({
+      ...toLookupTableProjection({
+        ...table,
+        category: { slug: category.slug, labelFr: category.labelFr, labelNl: category.labelNl },
+      }),
+      lastImportedAt: table.lastImportedAt,
     })),
   }))
   return NextResponse.json({ categories: safeCategories }, {

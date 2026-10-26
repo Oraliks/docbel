@@ -60,6 +60,7 @@ async function main() {
       labelNl: 'Teststraat Lookup',
       notes: PRIVATE_MARKER + '_TABLE_NOTE',
       lastImportSource: 'internal/lookup-e2e-secret-file.csv',
+      lastImportedAt: new Date(),
       entriesCount: 1,
     },
   })

@@ -2,9 +2,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 import { unstable_doesMiddlewareMatch } from "next/experimental/testing/server";
 import { proxy, config } from "@/proxy";
-import { useDraftAutosave } from "@/components/pdf-forms/use-draft-autosave";
+import { createDraftAutosaveActions } from "@/components/pdf-forms/use-draft-autosave";
 import { GET as readRun } from "@/app/api/documents/bundles/[id]/run/route";
 import { POST as resume } from "@/app/api/bundles/resume/route";
+import { isStagingTestPersistenceEnabled } from "@/lib/public-access";
 
 const io = vi.hoisted(() => ({
   session: vi.fn(), cookieGet: vi.fn(), cookieSet: vi.fn(),
@@ -43,7 +44,7 @@ beforeEach(() => {
   io.findUnique.mockResolvedValue(existing());
   io.findFirst.mockResolvedValue(null);
 });
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => { vi.unstubAllGlobals(); vi.unstubAllEnvs(); vi.useRealTimers(); });
 
 describe("V1 — frontière HTTP des écritures de dossiers", () => {
   it.each([
@@ -123,13 +124,33 @@ describe("V1 — frontière HTTP des écritures de dossiers", () => {
     expect(response.headers.get("x-middleware-next")).toBe("1");
   });
 
-  it("n'intercepte pas les pages/outils publics", () => {
-    expect(unstable_doesMiddlewareMatch({ config, url: "/outils/ma-situation-familiale" })).toBe(false);
-    expect(unstable_doesMiddlewareMatch({ config, url: "/admin" })).toBe(false);
+  it("laisse les pages publiques continuer hors staging", async () => {
+    vi.stubEnv("APP_ENV", "development");
+    expect(unstable_doesMiddlewareMatch({ config, url: "/outils/ma-situation-familiale" })).toBe(true);
+    expect(unstable_doesMiddlewareMatch({ config, url: "/admin" })).toBe(true);
+    const response = await proxy(req("/outils/ma-situation-familiale", "GET"));
+    expect(response.headers.get("x-middleware-next")).toBe("1");
   });
 });
 
 describe("lecture et reprise existantes sans mutation de dossier", () => {
+  it("restitue le brouillon de formulaire stocké dans le run au rechargement", async () => {
+    io.cookieGet.mockReturnValue({ value: "fictional-session-id" });
+    const savedDraft = { fictionalField: "saved synthetic answer" };
+    io.findFirst.mockResolvedValue({
+      ...existing(),
+      draftPayloads: { "fictional-form": savedDraft },
+      lastFormId: "fictional-form-id",
+      lastStepId: "fictional-step",
+      lastActiveField: "fictionalField",
+    });
+    const response = await readRun(req("/api/documents/bundles/bundle/run", "GET"), { params: Promise.resolve({ id: "bundle" }) });
+    const resumed = await response.json();
+    expect(resumed.draftPayloads["fictional-form"]).toEqual(savedDraft);
+    expect(resumed.lastFormId).toBe("fictional-form-id");
+    expect(resumed.lastStepId).toBe("fictional-step");
+    expect(io.update).not.toHaveBeenCalled();
+  });
   it("GET sans propriétaire renvoie null sans créer cookie ou interroger un dossier", async () => {
     const response = await readRun(req("/api/documents/bundles/bundle/run", "GET"), { params: Promise.resolve({ id: "bundle" }) });
     expect(await response.json()).toBeNull();
@@ -165,17 +186,242 @@ describe("lecture et reprise existantes sans mutation de dossier", () => {
   });
 });
 
-it("autosave n'envoie ni réponses ni suppression de brouillon et n'annonce aucune sauvegarde", () => {
-  const fetch = vi.fn();
-  const timer = vi.fn();
-  vi.stubGlobal("fetch", fetch);
-  vi.stubGlobal("setTimeout", timer);
-  const draft = useDraftAutosave({ slug: "fixture", bundleRunId: "existing-run", values: { fixture: "ephemeral" } });
-  draft.scheduleSave("step", "fixture");
-  draft.flushDraft();
-  draft.discardDraft();
-  draft.resetSavedAt();
-  expect(draft.lastSavedAt).toBeNull();
-  expect(fetch).not.toHaveBeenCalled();
-  expect(timer).not.toHaveBeenCalled();
+describe("autosauvegarde staging explicitement activée", () => {
+  const values = { fixture: "fictional value" };
+  function actions(enabled: boolean, fetcher = vi.fn().mockResolvedValue({ ok: true })) {
+
+    const onSaved = vi.fn();
+    const onResetSavedAt = vi.fn();
+    return { controller: createDraftAutosaveActions({
+      enabled, slug: "c1-changement-situation", bundleRunId: "fictional-run", values,
+      onSaved, onResetSavedAt, fetcher,
+    }), onSaved, onResetSavedAt, fetcher };
+  }
+
+  function enableStagingFixture() {
+    vi.stubEnv("NEXT_PUBLIC_APP_ENV", "staging");
+    vi.stubEnv("NEXT_PUBLIC_STAGING_TEST_PERSISTENCE", "1");
+    return isStagingTestPersistenceEnabled();
+  }
+
+  it("la production, le flag absent ou staging sans second flag restent sans écriture", () => {
+    vi.stubEnv("NEXT_PUBLIC_APP_ENV", "production");
+    vi.stubEnv("NEXT_PUBLIC_STAGING_TEST_PERSISTENCE", "1");
+    expect(isStagingTestPersistenceEnabled()).toBe(false);
+    vi.stubEnv("NEXT_PUBLIC_APP_ENV", "staging");
+    delete process.env.NEXT_PUBLIC_STAGING_TEST_PERSISTENCE;
+    expect(isStagingTestPersistenceEnabled()).toBe(false);
+    vi.stubEnv("NEXT_PUBLIC_STAGING_TEST_PERSISTENCE", "0");
+    expect(isStagingTestPersistenceEnabled()).toBe(false);
+    vi.stubEnv("NEXT_PUBLIC_STAGING_TEST_PERSISTENCE", "1");
+    expect(isStagingTestPersistenceEnabled()).toBe(true);
+
+    vi.useFakeTimers();
+    const disabled = actions(false);
+    disabled.controller.scheduleSave("step", "fixture");
+    disabled.controller.flushDraft();
+    disabled.controller.discardDraft();
+    vi.advanceTimersByTime(2_000);
+    expect(disabled.fetcher).not.toHaveBeenCalled();
+    expect(disabled.onSaved).not.toHaveBeenCalled();
+  });
+
+  it("sauve les valeurs les plus récentes et confirme uniquement une réponse 2xx", async () => {
+    vi.stubEnv("NEXT_PUBLIC_APP_ENV", "staging");
+    vi.stubEnv("NEXT_PUBLIC_STAGING_TEST_PERSISTENCE", "1");
+    vi.useFakeTimers();
+    const fetcher = vi.fn().mockResolvedValue({ ok: true });
+    const test = actions(enableStagingFixture(), fetcher);
+    test.controller.scheduleSave("step-1", "fictional-field");
+    test.controller.updateValues({ fixture: "updated fictional value" });
+    await vi.advanceTimersByTimeAsync(1_500);
+    expect(fetcher).toHaveBeenCalledTimes(1);
+    expect(fetcher.mock.calls[0][0]).toBe("/api/pdf/c1-changement-situation/draft");
+    expect(fetcher.mock.calls[0][1]).toMatchObject({ method: "PUT", keepalive: true });
+    expect(JSON.parse(String(fetcher.mock.calls[0][1]?.body))).toEqual({
+      payload: { fixture: "updated fictional value" }, stepId: "step-1", field: "fictional-field", bundleRunId: "fictional-run",
+    });
+    expect(test.onSaved).toHaveBeenCalledTimes(1);
+
+    io.cookieGet.mockReturnValue({ value: "fictional-session-id" });
+    const savedPayload = JSON.parse(String(fetcher.mock.calls[0][1]?.body)).payload;
+    io.findFirst.mockResolvedValue({
+      ...existing(), draftPayloads: { "c1-changement-situation": savedPayload },
+      lastFormId: "fictional-form-id", lastStepId: "step-1", lastActiveField: "fictional-field",
+    });
+    const resumedResponse = await readRun(req("/api/documents/bundles/bundle/run", "GET"), { params: Promise.resolve({ id: "bundle" }) });
+    expect((await resumedResponse.json()).draftPayloads["c1-changement-situation"]).toEqual(savedPayload);
+
+    test.controller.resetSavedAt();
+    test.controller.discardDraft();
+    expect(test.onResetSavedAt).toHaveBeenCalledTimes(3);
+    expect(fetcher.mock.calls[1][1]).toMatchObject({ method: "DELETE" });
+    expect(JSON.parse(String(fetcher.mock.calls[1][1]?.body))).toEqual({ bundleRunId: "fictional-run" });
+    test.controller.dispose();
+  });
+
+  it("diffère le flush maximum jusqu'après la synchronisation des valeurs React", async () => {
+    enableStagingFixture();
+    vi.useFakeTimers();
+    const fetcher = vi.fn().mockResolvedValue({ ok: true });
+    const test = actions(true, fetcher);
+
+    // Reproduit un premier edit après une longue inactivité: scheduleSave
+    // est appelé dans le handler avant le commit et l'effet updateValues.
+    await vi.advanceTimersByTimeAsync(10_001);
+    test.controller.scheduleSave("step-1", "fictional-field");
+    expect(fetcher).not.toHaveBeenCalled();
+    test.controller.updateValues({ fixture: "first post-idle fictional value" });
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(fetcher).toHaveBeenCalledTimes(1);
+    expect(JSON.parse(String(fetcher.mock.calls[0][1]?.body))).toMatchObject({
+      payload: { fixture: "first post-idle fictional value" },
+      stepId: "step-1",
+      field: "fictional-field",
+    });
+    expect(test.onSaved).toHaveBeenCalledTimes(1);
+    test.controller.dispose();
+  });
+
+  it("garde le snapshot après une réponse 401 et le retente sur flush explicite", async () => {
+    enableStagingFixture();
+    vi.useFakeTimers();
+    const fetcher = vi.fn().mockResolvedValueOnce({ ok: false, status: 401 }).mockResolvedValueOnce({ ok: true });
+    const test = actions(true, fetcher);
+    test.controller.scheduleSave("step-1", "fictional-field");
+    await vi.advanceTimersByTimeAsync(1_500);
+    expect(test.onSaved).not.toHaveBeenCalled();
+    const firstBody = fetcher.mock.calls[0][1]?.body;
+    test.controller.flushDraft();
+    await Promise.resolve();
+    expect(fetcher).toHaveBeenCalledTimes(2);
+    expect(fetcher.mock.calls[1][1]?.body).toBe(firstBody);
+    expect(test.onSaved).toHaveBeenCalledTimes(1);
+    test.controller.dispose();
+  });
+
+  it("sérialise le dernier snapshot derrière le PUT en cours", async () => {
+    enableStagingFixture();
+    vi.useFakeTimers();
+    let resolveFirst!: (value: { ok: boolean }) => void;
+    const fetcher = vi.fn((_: RequestInfo | URL, init?: RequestInit) => {
+      if (init?.method === "PUT" && fetcher.mock.calls.length === 1) {
+        return new Promise<{ ok: boolean }>((resolve) => { resolveFirst = resolve; });
+      }
+      return Promise.resolve({ ok: true });
+    });
+    const test = actions(true, fetcher);
+    test.controller.scheduleSave("step-1", "fictional-field");
+    await vi.advanceTimersByTimeAsync(1_500);
+    expect(fetcher).toHaveBeenCalledTimes(1);
+
+    test.controller.updateValues({ fixture: "new fictional value" });
+    test.controller.scheduleSave("step-2", "fictional-field");
+    test.controller.flushDraft();
+    expect(fetcher).toHaveBeenCalledTimes(1);
+
+    resolveFirst({ ok: true });
+    await Promise.resolve();
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(fetcher).toHaveBeenCalledTimes(2);
+    expect(JSON.parse(String(fetcher.mock.calls[1][1]?.body))).toMatchObject({
+      payload: { fixture: "new fictional value" }, stepId: "step-2",
+    });
+    await Promise.resolve();
+    expect(test.onSaved).toHaveBeenCalledTimes(1);
+    test.controller.dispose();
+  });
+
+  it("diffère DELETE jusqu'à la fin du PUT en cours sans recréer le brouillon", async () => {
+    enableStagingFixture();
+    vi.useFakeTimers();
+    let resolvePut!: (value: { ok: boolean }) => void;
+    const fetcher = vi.fn((_: RequestInfo | URL, init?: RequestInit) => {
+      if (init?.method === "PUT") return new Promise<{ ok: boolean }>((resolve) => { resolvePut = resolve; });
+      return Promise.resolve({ ok: true });
+    });
+    const test = actions(true, fetcher);
+    test.controller.scheduleSave("step-1", "fictional-field");
+    await vi.advanceTimersByTimeAsync(1_500);
+    test.controller.discardDraft();
+    expect(fetcher).toHaveBeenCalledTimes(1);
+    expect(test.onSaved).not.toHaveBeenCalled();
+
+    resolvePut({ ok: true });
+    await Promise.resolve();
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(fetcher).toHaveBeenCalledTimes(2);
+    expect(fetcher.mock.calls[1][1]).toMatchObject({ method: "DELETE" });
+    expect(test.onSaved).not.toHaveBeenCalled();
+    test.controller.flushDraft();
+    expect(fetcher).toHaveBeenCalledTimes(2);
+    test.controller.dispose();
+  });
+
+  it("attend la fin du DELETE avant d'envoyer une nouvelle édition", async () => {
+    enableStagingFixture();
+    vi.useFakeTimers();
+    let resolvePut!: (value: { ok: boolean }) => void;
+    let resolveDelete!: (value: { ok: boolean }) => void;
+    const fetcher = vi.fn((_: RequestInfo | URL, init?: RequestInit) => {
+      if (init?.method === "PUT") return new Promise<{ ok: boolean }>((resolve) => { resolvePut = resolve; });
+      if (init?.method === "DELETE") return new Promise<{ ok: boolean }>((resolve) => { resolveDelete = resolve; });
+      return Promise.resolve({ ok: true });
+    });
+    const test = actions(true, fetcher);
+    test.controller.scheduleSave("step-1", "fictional-field");
+    await vi.advanceTimersByTimeAsync(1_500);
+    test.controller.discardDraft();
+    resolvePut({ ok: true });
+    await Promise.resolve();
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(fetcher.mock.calls.map((call) => call[1]?.method)).toEqual(["PUT", "DELETE"]);
+
+    test.controller.updateValues({ fixture: "post-discard fictional value" });
+    test.controller.scheduleSave("step-2", "fictional-field");
+    test.controller.flushDraft();
+    await vi.advanceTimersByTimeAsync(2_000);
+    expect(fetcher).toHaveBeenCalledTimes(2);
+
+    resolveDelete({ ok: true });
+    await Promise.resolve();
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(fetcher).toHaveBeenCalledTimes(3);
+    expect(fetcher.mock.calls[2][1]?.method).toBe("PUT");
+    expect(JSON.parse(String(fetcher.mock.calls[2][1]?.body))).toMatchObject({
+      payload: { fixture: "post-discard fictional value" }, stepId: "step-2",
+    });
+    test.controller.dispose();
+  });
+
+  it("ne retente pas un DELETE échoué sans action explicite et conserve le brouillon dirty", async () => {
+    enableStagingFixture();
+    vi.useFakeTimers();
+    const fetcher = vi.fn()
+      .mockResolvedValueOnce({ ok: true })
+      .mockResolvedValueOnce({ ok: false })
+      .mockResolvedValueOnce({ ok: true })
+      .mockResolvedValueOnce({ ok: true });
+    const test = actions(true, fetcher);
+    test.controller.scheduleSave("step-1", "fictional-field");
+    await vi.advanceTimersByTimeAsync(1_500);
+    test.controller.discardDraft();
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(fetcher).toHaveBeenCalledTimes(2);
+    expect(fetcher.mock.calls[1][1]?.method).toBe("DELETE");
+
+    test.controller.updateValues({ fixture: "retry fictional value" });
+    test.controller.scheduleSave("step-2", "fictional-field");
+    await vi.advanceTimersByTimeAsync(1_500);
+    expect(fetcher).toHaveBeenCalledTimes(4);
+    expect(fetcher.mock.calls[2][1]?.method).toBe("DELETE");
+    expect(fetcher.mock.calls[3][1]?.method).toBe("PUT");
+    test.controller.dispose();
+  });
 });

@@ -20,6 +20,8 @@ import { AcronymHydrator } from "@/components/docbel/acronym-hydrator";
 import { VersionWatcher } from "@/components/version-watcher";
 import { AuthSessionProvider } from "@/components/auth-session-provider";
 import { ImpersonationBanner } from "@/components/impersonation-banner";
+import { StagingEnvironmentBanner } from "@/components/staging-environment-banner";
+import { isStagingEnvironment } from "@/lib/config/runtime-environment";
 import { WelcomeLocaleModal } from "@/components/welcome-locale-modal";
 import { getServerAuthSession } from "@/lib/auth-session";
 import { getSiteSettings } from "@/lib/site-settings.server";
@@ -83,7 +85,9 @@ export async function generateMetadata(): Promise<Metadata> {
       description,
       images: ogImages,
     },
-    ...(s.seo.noindex ? { robots: { index: false, follow: false } } : {}),
+    ...(isStagingEnvironment() || s.seo.noindex
+      ? { robots: { index: false, follow: false } }
+      : {}),
     ...(s.seo.verification.google || s.seo.verification.bing
       ? {
           verification: {
@@ -152,6 +156,7 @@ export default async function RootLayout({
           }}
         />
         <NextIntlClientProvider locale={locale} messages={publicMessages}>
+          <StagingEnvironmentBanner />
           <ThemeProvider attribute="class" defaultTheme="light" disableTransitionOnChange>
             <CookieConsentProvider initialConsent={initialConsent}>
               <AuthSessionProvider initialSession={initialSession}>

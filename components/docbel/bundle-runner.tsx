@@ -9,12 +9,14 @@ import { useTranslations } from "next-intl";
 import { FileText, Download, ArrowRight, CircleHelp } from "lucide-react";
 import { BundleWarnings } from "./onboarding/bundle-warnings";
 import { parseBundleWarnings } from "@/lib/bundles/types";
+import { isStagingTestPersistenceEnabled } from "@/lib/public-access";
+import { BundleWorkflowRunner } from "./bundle-workflow-runner";
 import { parseEligibilityQuestions, type EligibilityAnswers } from "@/lib/bundles/eligibility";
 import { describeCondition, type CollectedPayloads } from "@/lib/bundles/conditions";
 import { computeItemStatuses, itemTitle, itemDescription, type BundleItem } from "./bundle-runner/compute";
 import type { DemandeSummary } from "@/lib/bundles/demande-summary";
 
-interface Bundle {
+export interface Bundle {
   id: string;
   slug: string;
   name: string;
@@ -39,7 +41,7 @@ export interface ExternalDocument {
   responsibilityUrl: string | null;
 }
 
-interface BundleRunnerProps {
+export interface BundleRunnerProps {
   bundle: Bundle;
   availableFormSlugs?: string[];
   runId: string | null;
@@ -81,7 +83,7 @@ interface BundleRunnerProps {
  * Existing run data is passed only by the route after its ownership guard.
  * No creation, mutation, code email or persistent form action is exposed here.
  */
-export function BundleRunner({ bundle, runId, eligibilityAnswers, completedTemplateIds, payloads, templateNames, fieldLabels, applicableSlugs, externalDocuments = [], availableFormSlugs = [] }: BundleRunnerProps) {
+function ConsultationBundleRunner({ bundle, runId, eligibilityAnswers, completedTemplateIds, payloads, templateNames, fieldLabels, applicableSlugs, externalDocuments = [], availableFormSlugs = [] }: BundleRunnerProps) {
   const t = useTranslations("public.dossier");
   const d = useTranslations("public.design");
   const [op, setOp] = useState<OpCode | null>(null);
@@ -125,4 +127,12 @@ export function BundleRunner({ bundle, runId, eligibilityAnswers, completedTempl
     {runId && !allRequiredDone ? <p className="rounded-xl border p-4 text-sm text-muted-foreground">{d("downloadIncomplete")}</p> : null}
     <p className="text-sm leading-relaxed text-muted-foreground">{d("preparedNotSent")}</p>
   </section>;
+}
+
+/** Staging opts into the existing dossier workflow; production keeps the V1 consultation view. */
+export function BundleRunner(props: BundleRunnerProps) {
+  if (isStagingTestPersistenceEnabled()) {
+    return <BundleWorkflowRunner {...props} />;
+  }
+  return <ConsultationBundleRunner {...props} />;
 }

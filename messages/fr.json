@@ -18,6 +18,24 @@
       "yes": "Oui",
       "no": "Non"
     },
+    "lookupImport": {
+      "preparedToast": "Proposition préparée ({added} ajouts, {modified} modifications). Elle doit être examinée avant publication.",
+      "approvalToast": "Approbation enregistrée ({count}/{required})",
+      "publishedToast": "Publication terminée : {inserted} insérées, {updated} modifiées",
+      "proposalsTitle": "Propositions d’import",
+      "proposalMeta": "{rows} lignes · révision {revision} · parseur {parser}",
+      "diffSummary": "Comparatif : {added} ajouts · {modified} modifications · {absent} absents de l’export (conservés)",
+      "reviewDiff": "Examiner le comparatif complet",
+      "approvals": "Approbations : {names}",
+      "approveButton": "Approuver ce comparatif",
+      "publishButton": "Publier cette proposition",
+      "retryPublishButton": "Retenter la publication",
+      "autoPublishPending": "Publication automatique en cours ou à relancer avec un nouvel import.",
+      "reviewPending": "Proposition créée; publication suspendue dans l’attente de deux approbateurs distincts.",
+      "reviewLink": "Examiner le comparatif",
+      "batchReviewToast": "Importations terminées ; {count} proposition(s) à examiner",
+      "reviewCount": "{count} en revue"
+    },
     "nav": {
       "actualites": "Actualités",
       "articles": "Articles",
@@ -3819,6 +3837,9 @@
     }
   },
   "public": {
+    "staging": {
+      "banner": "ENVIRONNEMENT DE TEST — Données fictives — Version {version}"
+    },
     "temporaryClosure": {
       "title": "Fonctionnalités temporairement en pause",
       "signup": "Les nouvelles inscriptions sont suspendues pendant les travaux du site. Les accès aux comptes existants restent disponibles.",

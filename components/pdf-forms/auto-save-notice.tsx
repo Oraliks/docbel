@@ -1,7 +1,7 @@
 "use client";
 
 import { useLocale, useTranslations } from "next-intl";
-import { PUBLIC_WRITES_PAUSED } from "@/lib/public-access";
+import { isStagingTestPersistenceEnabled, PUBLIC_WRITES_PAUSED } from "@/lib/public-access";
 import { TemporaryClosureNotice } from "@/components/docbel/temporary-closure-notice";
 
 import { formatDateTime } from "@/lib/i18n/format";
@@ -27,18 +27,18 @@ export function AutoSaveNotice({ lastSavedAt, isPartOfBundle, serverSaved }: Aut
   const design = useTranslations("public.design");
   const locale = useLocale();
 
-  if (PUBLIC_WRITES_PAUSED) {
+  if (PUBLIC_WRITES_PAUSED && !isStagingTestPersistenceEnabled()) {
     return <TemporaryClosureNotice kind={isPartOfBundle ? "existing" : "ephemeral"} compact />;
   }
 
-  if (!serverSaved || !lastSavedAt) {
+  if (!serverSaved) {
     return (
       <p className="text-xs text-[color:var(--glass-ink-soft)]">
-        {isPartOfBundle ? design("oldReadOnlyBody") : design("ephemeralTitle")}
+        {design("ephemeralTitle")}
       </p>
     );
   }
-  const time = formatDateTime(lastSavedAt, locale);
+  const time = lastSavedAt ? formatDateTime(lastSavedAt, locale) : "none";
   return (
     <p className="text-xs text-[color:var(--glass-ink-soft)]">
       {t("autoSaveSaved", { time })}

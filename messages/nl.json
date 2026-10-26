@@ -1,5 +1,23 @@
 {
   "admin": {
+    "lookupImport": {
+      "preparedToast": "Voorstel voorbereid ({added} toevoegingen, {modified} wijzigingen). Beoordeel het vóór publicatie.",
+      "approvalToast": "Goedkeuring geregistreerd ({count}/{required})",
+      "publishedToast": "Publicatie voltooid: {inserted} toegevoegd, {updated} bijgewerkt",
+      "proposalsTitle": "Importvoorstellen",
+      "proposalMeta": "{rows} rijen · revisie {revision} · parser {parser}",
+      "diffSummary": "Vergelijking: {added} toevoegingen · {modified} wijzigingen · {absent} ontbreken in de export (behouden)",
+      "reviewDiff": "Volledige vergelijking bekijken",
+      "approvals": "Goedkeuringen: {names}",
+      "approveButton": "Deze vergelijking goedkeuren",
+      "publishButton": "Dit voorstel publiceren",
+      "retryPublishButton": "Publicatie opnieuw proberen",
+      "autoPublishPending": "Publicatie wordt uitgevoerd of kan met een nieuwe import opnieuw worden gestart.",
+      "reviewPending": "Voorstel aangemaakt; publicatie wacht op beoordeling door twee verschillende goedkeurders.",
+      "reviewLink": "Vergelijking bekijken",
+      "batchReviewToast": "Imports voltooid; {count} voorstel(len) te beoordelen",
+      "reviewCount": "{count} ter beoordeling"
+    },
     "baremes": {
       "tabSummary": "Samenvatting",
       "tabAllocations": "Allocaties",
@@ -3151,6 +3169,9 @@
     "activity": {}
   },
   "public": {
+    "staging": {
+      "banner": "TESTOMGEVING — Fictieve gegevens — Versie {version}"
+    },
     "cookieConsent": {
       "title": "Uw privacy, uw keuze",
       "description": "We gebruiken strikt noodzakelijke cookies voor de werking van de site en, met uw toestemming, cookies voor publieksmeting om Docbel te verbeteren. Geen enkele tracker wordt geactiveerd zonder uw toestemming.",

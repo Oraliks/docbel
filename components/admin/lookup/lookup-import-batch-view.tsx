@@ -14,6 +14,8 @@ import {
   X,
 } from 'lucide-react'
 import { toast } from 'sonner'
+import Link from 'next/link'
+import { useTranslations } from 'next-intl'
 
 interface TableOption {
   id: string
@@ -31,7 +33,8 @@ interface FileSlot {
   tableLabel: string | null
   matchConfidence: number
   matchReason: string
-  status: 'pending' | 'uploading' | 'done' | 'error' | 'unmatched'
+  status: 'pending' | 'uploading' | 'done' | 'review' | 'error' | 'unmatched'
+  proposalId?: string
   result?: {
     inserted: number
     updated: number
@@ -42,6 +45,7 @@ interface FileSlot {
 }
 
 export function LookupImportBatchView() {
+  const tLookupImport = useTranslations('admin.lookupImport')
   const [tables, setTables] = useState<TableOption[]>([])
   const [slots, setSlots] = useState<FileSlot[]>([])
   const [dragOver, setDragOver] = useState(false)
@@ -142,6 +146,7 @@ export function LookupImportBatchView() {
     }
     setImporting(true)
     try {
+      let pendingReview = 0
       for (const slot of queue) {
         setSlots((prev) =>
           prev.map((s) => (s.id === slot.id ? { ...s, status: 'uploading' } : s))
@@ -155,6 +160,13 @@ export function LookupImportBatchView() {
           })
           const body = await res.json()
           if (!res.ok) throw new Error(body.error ?? 'Échec import')
+          if (res.status === 202) {
+            pendingReview += 1
+            setSlots((prev) => prev.map((s) => s.id === slot.id
+              ? { ...s, status: 'review', proposalId: body.id }
+              : s))
+            continue
+          }
           setSlots((prev) =>
             prev.map((s) =>
               s.id === slot.id ? { ...s, status: 'done', result: body } : s
@@ -174,7 +186,7 @@ export function LookupImportBatchView() {
           )
         }
       }
-      toast.success('Imports terminés')
+      toast.success(pendingReview ? tLookupImport('batchReviewToast', { count: pendingReview }) : 'Imports terminés')
     } finally {
       setImporting(false)
     }
@@ -192,8 +204,9 @@ export function LookupImportBatchView() {
     const ready = slots.filter((s) => s.tableId && s.status === 'pending').length
     const unmatched = slots.filter((s) => s.status === 'unmatched').length
     const done = slots.filter((s) => s.status === 'done').length
+    const review = slots.filter((s) => s.status === 'review').length
     const error = slots.filter((s) => s.status === 'error').length
-    return { total: slots.length, ready, unmatched, done, error }
+    return { total: slots.length, ready, unmatched, done, review, error }
   }, [slots])
 
   return (
@@ -259,6 +272,7 @@ export function LookupImportBatchView() {
                 {stats.done > 0 && (
                   <span className="text-green-700">{stats.done} importés</span>
                 )}
+                {stats.review > 0 && <span className="text-amber-700">{tLookupImport('reviewCount', { count: stats.review })}</span>}
                 {stats.error > 0 && (
                   <span className="text-red-700">{stats.error} erreurs</span>
                 )}
@@ -328,10 +342,12 @@ function SlotRow({
   slot: FileSlot
   onRemove: () => void
 }) {
+  const tLookupImport = useTranslations('admin.lookupImport')
   const StatusIcon = {
     pending: CheckCircle2,
     uploading: Loader2,
     done: CheckCircle2,
+    review: AlertTriangle,
     error: XCircle,
     unmatched: AlertTriangle,
   }[slot.status]
@@ -339,6 +355,7 @@ function SlotRow({
     pending: 'text-blue-600',
     uploading: 'text-blue-600 animate-spin',
     done: 'text-green-600',
+    review: 'text-amber-600',
     error: 'text-red-600',
     unmatched: 'text-orange-600',
   }[slot.status]
@@ -346,6 +363,7 @@ function SlotRow({
     pending: 'bg-background',
     uploading: 'bg-background',
     done: 'bg-green-50/40 dark:bg-green-950/10 border-green-200',
+    review: 'bg-amber-50/40 dark:bg-amber-950/10 border-amber-200',
     error: 'bg-red-50/40 dark:bg-red-950/10 border-red-200',
     unmatched: 'bg-orange-50/40 dark:bg-orange-950/10 border-orange-200',
   }[slot.status]
@@ -399,6 +417,12 @@ function SlotRow({
         )}
         {slot.status === 'error' && (
           <p className="text-xs text-red-700 mt-1">✗ {slot.errorMessage}</p>
+        )}
+        {slot.status === 'review' && slot.tableId && (
+          <p className="text-xs text-amber-800 mt-1">
+            {tLookupImport('reviewPending')}{' '}
+            <Link className="underline font-medium" href={`/admin/chomage/lookup/${slot.tableId}`}>{tLookupImport('reviewLink')}</Link>
+          </p>
         )}
       </div>
       <div className="flex items-center gap-2 shrink-0">

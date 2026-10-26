@@ -4,7 +4,10 @@ import { prisma, withDbRetry } from '@/lib/prisma'
 import { memoCache } from '@/lib/memo-cache'
 
 export const runtime = 'nodejs'
-const jsonHeaders = { 'Content-Type': 'application/json; charset=utf-8' }
+const jsonHeaders = {
+  'Content-Type': 'application/json; charset=utf-8',
+  'Cache-Control': 'private, no-store',
+}
 
 /**
  * Stats globales du lookup : volumes, couverture multilingue, tendances.

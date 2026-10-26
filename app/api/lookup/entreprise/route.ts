@@ -3,7 +3,10 @@ import { searchByName } from "@/lib/be-companies/kbo-lookup";
 import { parseEnterpriseSuggestions } from "@/lib/pdf-forms/enterprise-suggestions";
 import { checkRateLimit, getClientIp } from "@/lib/pdf-forms/security";
 
-const json = { "Content-Type": "application/json; charset=utf-8" };
+const json = {
+  "Content-Type": "application/json; charset=utf-8",
+  "Cache-Control": "private, no-store",
+};
 
 /// GET /api/lookup/entreprise?q=<nom> — recherche PUBLIQUE d'entreprise belge
 /// par nom, mirroir KBO local rafraîchi par /api/cron/kbo-refresh. Sœur de

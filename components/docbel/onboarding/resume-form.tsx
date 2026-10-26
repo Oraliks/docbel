@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { PUBLIC_WRITES_PAUSED } from "@/lib/public-access";
+import { isStagingTestPersistenceEnabled, PUBLIC_WRITES_PAUSED } from "@/lib/public-access";
 import { TemporaryClosureNotice } from "../temporary-closure-notice";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -44,6 +44,7 @@ export function ResumeForm() {
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const writesPaused = PUBLIC_WRITES_PAUSED && !isStagingTestPersistenceEnabled();
 
   const normalized = normalizeResumeCode(code);
   const formatLooksValid =
@@ -152,12 +153,12 @@ export function ResumeForm() {
                   <AlertDescription className="flex flex-col items-start gap-3">
                     <p>{error}</p>
                     <Button
-                      render={<Link href={PUBLIC_WRITES_PAUSED ? "/outils" : "/mon-dossier"} />}
+                      render={<Link href={writesPaused ? "/outils" : "/mon-dossier"} />}
                       nativeButton={false}
                       variant="outline"
                       size="sm"
                     >
-                      {PUBLIC_WRITES_PAUSED ? tp("tools") : design("findJourney")}
+                      {writesPaused ? tp("tools") : design("findJourney")}
                       <ArrowRightIcon data-icon="inline-end" aria-hidden />
                     </Button>
                   </AlertDescription>
@@ -189,7 +190,7 @@ export function ResumeForm() {
         </form>
       </Card>
 
-      {PUBLIC_WRITES_PAUSED ? <TemporaryClosureNotice kind="dossier" /> : <Card className="rounded-3xl">
+      {writesPaused ? <TemporaryClosureNotice kind="dossier" /> : <Card className="rounded-3xl">
         <CardHeader className="gap-3 px-5 sm:px-6">
           <span className="flex size-10 items-center justify-center rounded-2xl bg-[color:var(--glass-surface-strong)] text-[color:var(--glass-accent-deep)]">
             <CompassIcon className="size-5" aria-hidden />
@@ -197,9 +198,11 @@ export function ResumeForm() {
           <CardTitle>
             <h2 className="text-xl font-semibold">{t("resumeNoCodeTitle")}</h2>
           </CardTitle>
-          <CardDescription className="text-sm leading-relaxed">
-            {design("ephemeralBody")}
-          </CardDescription>
+          {!isStagingTestPersistenceEnabled() && (
+            <CardDescription className="text-sm leading-relaxed">
+              {design("ephemeralBody")}
+            </CardDescription>
+          )}
         </CardHeader>
         <CardContent className="flex-1 px-5 sm:px-6">
           <p className="text-xs leading-relaxed text-[color:var(--glass-ink-faint)]">

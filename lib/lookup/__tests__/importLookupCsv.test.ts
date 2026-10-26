@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { parseCsv, detectColumns } from '../importLookupCsv'
+import { parseCsv, detectColumns, prepareLookupCsv } from '../importLookupCsv'
 
 describe('parseCsv (ONEM CSV)', () => {
   it('parse un CSV ONEM type avec 5 lignes meta puis en-tête', () => {
@@ -114,5 +114,33 @@ Code;Date de début;Description française;Description néerlandaise;
     const dataRows = rows.slice(headerIdx + 1)
     expect(dataRows[0][0].trim()).toBe('1')
     expect(dataRows[0][2]).toBe('Test FR')
+  })
+})
+
+describe('prepareLookupCsv safety checks', () => {
+  const emptySnapshot = []
+  const headers = 'Code;Date de début;Date de fin;Description française;Description néerlandaise\n'
+
+  it('reports entries absent from an export without expiring them', async () => {
+    const prepared = await prepareLookupCsv('table-1', `${headers}A;01/01/2020;;Alpha;Alpha NL\n`, [{
+      id: 'old-1', code: 'OLD', validFrom: null, validUntil: null,
+      labelFr: 'Ancien', labelNl: 'Oud', labelDe: null, labelEn: null, metadata: null,
+    }])
+    expect(prepared.diff.absentFromExport.map((entry) => entry.code)).toEqual(['OLD'])
+    expect(prepared.diff.absentFromExport[0].oldValidUntil).toBeNull()
+    expect(prepared.entries).toHaveLength(1)
+  })
+
+  it('rejects contradictory duplicates instead of using the last line', async () => {
+    const prepared = await prepareLookupCsv('table-1', `${headers}A;01/01/2020;;Alpha;Alpha NL\nA;01/01/2020;;Autre;Other NL\n`, emptySnapshot)
+    expect(prepared.errors).toHaveLength(1)
+    expect(prepared.errors[0].message).toContain('Doublon contradictoire')
+  })
+
+  it('rejects impossible calendar dates', async () => {
+    const prepared = await prepareLookupCsv('table-1', `${headers}A;31/02/2020;;Alpha;Alpha NL\n`, emptySnapshot)
+    expect(prepared.errors).toHaveLength(1)
+    expect(prepared.errors[0].message).toContain('Date invalide')
+    expect(prepared.entries).toHaveLength(0)
   })
 })

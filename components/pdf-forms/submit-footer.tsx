@@ -9,6 +9,7 @@ import {
   SendIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { arePublicDossierWritesPaused } from "@/lib/public-access";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
@@ -35,6 +36,8 @@ interface CommonProps {
   /// Rendu DANS un dossier : ni choix de livraison, ni destinataire Doccle, et
   /// le bouton final valide au lieu de générer.
   bundleRunId?: string;
+  /// L'ancien run est consultatif seulement tant que la fermeture V1 s'applique.
+  readOnlyExistingRun?: boolean;
   serverSaved: boolean;
   lastSavedAt: Date | null;
   submitting: boolean;
@@ -143,6 +146,7 @@ export function SubmitFooter(props: SubmitFooterProps) {
     variant,
     t,
     bundleRunId,
+    readOnlyExistingRun = Boolean(bundleRunId) && arePublicDossierWritesPaused(),
     allowDownload,
     allowDoccle,
     delivery,
@@ -262,7 +266,7 @@ export function SubmitFooter(props: SubmitFooterProps) {
   // Les anciennes démarches restent consultables ; aucune action ne promet
   // une sauvegarde refusée par le garde HTTP V1. Le téléchargement historique
   // conserve sa destination dédiée dans le récapitulatif de la démarche.
-  if (bundleRunId) {
+  if (readOnlyExistingRun) {
     return (
       <div className="mt-auto flex flex-col gap-4 border-t border-[color:var(--glass-border)] pt-4">
         <div className="rounded-2xl border border-[color:var(--glass-info-border)] bg-[color:var(--glass-info-surface)] p-4 text-[color:var(--glass-info-ink)]">

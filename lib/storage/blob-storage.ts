@@ -1,5 +1,6 @@
 import { put, del, get } from "@vercel/blob";
 import { AsyncLocalStorage } from "node:async_hooks";
+import { assertStagingStorageTargets } from "@/lib/config/runtime-environment";
 
 const BLOB_PREFIX = "blobs:";
 type BlobAccess = "public" | "private";
@@ -64,6 +65,7 @@ function blobToken(access: BlobAccess): string {
 export async function saveBlob(buffer: Buffer, key: string, isPrivate = false): Promise<string> {
   const testAdapter = testAdapters.getStore();
   if (testAdapter) return testAdapter.save(buffer, key, isPrivate);
+  assertStagingStorageTargets();
   const access = isPrivate ? "private" : "public";
   const token = blobToken(access);
   const { url } = await put(key, buffer, { access, token, addRandomSuffix: true });
@@ -80,6 +82,7 @@ export async function saveBlob(buffer: Buffer, key: string, isPrivate = false): 
 export async function getBlob(filePath: string): Promise<Buffer | null> {
   const testAdapter = testAdapters.getStore();
   if (testAdapter) return testAdapter.get(filePath);
+  assertStagingStorageTargets();
   const { url, access } = blobLocation(filePath);
   if (access === "public") {
     const response = await fetch(url, { cache: "no-store", redirect: "error" });
@@ -93,6 +96,7 @@ export async function getBlob(filePath: string): Promise<Buffer | null> {
 export async function deleteBlob(filePath: string): Promise<void> {
   const testAdapter = testAdapters.getStore();
   if (testAdapter) return testAdapter.delete(filePath);
+  assertStagingStorageTargets();
   const { url, access } = blobLocation(filePath);
   await del(url, { token: blobToken(access) });
 }
@@ -100,6 +104,7 @@ export async function deleteBlob(filePath: string): Promise<void> {
 /** Stage a verified copy. The caller commits references, then deletes the source
  * only when unreferenced. Never remove source bytes before the DB commit. */
 export async function moveBlob(filePath: string, targetIsPrivate: boolean): Promise<string> {
+  assertStagingStorageTargets();
   const { url, access } = blobLocation(filePath);
   if ((access === "private") === targetIsPrivate) return filePath;
   blobToken(targetIsPrivate ? "private" : "public");

@@ -1,0 +1,116 @@
+name: Lookup isolated PostgreSQL and browser acceptance
+
+on:
+  pull_request:
+    branches: [main, dev]
+    paths:
+      - 'lib/lookup/**'
+      - 'app/api/lookup/**'
+      - 'app/admin/chomage/lookup/**'
+      - 'app/outils/lookup-onem/**'
+      - 'components/admin/lookup/**'
+      - 'components/partenaire/lookup/**'
+      - 'prisma/schema.prisma'
+      - 'prisma/migrations/60_lookup_import_proposals/**'
+      - 'scripts/lookup-postgres-integration.ts'
+      - 'tests/e2e/lookup-hardening.spec.ts'
+      - 'playwright.config.ts'
+      - '.github/workflows/lookup-hardening-postgres.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lookup-postgres-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  postgres-and-browser:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: docbel_test
+          POSTGRES_PASSWORD: lookup-e2e-only
+          POSTGRES_DB: lookup_hardening_test
+        ports: ['55434:5432']
+        options: >-
+          --health-cmd "pg_isready -U docbel_test -d lookup_hardening_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://docbel_test:lookup-e2e-only@127.0.0.1:55434/lookup_hardening_test
+      DIRECT_URL: postgresql://docbel_test:lookup-e2e-only@127.0.0.1:55434/lookup_hardening_test
+      BETTER_AUTH_SECRET: lookup-e2e-auth-secret-not-for-production
+      BETTER_AUTH_URL: http://127.0.0.1:3010
+      NEXT_PUBLIC_BETTER_AUTH_URL: http://127.0.0.1:3010
+      BETTER_AUTH_TRUSTED_ORIGINS: http://127.0.0.1:3010
+      BOOKING_NRN_SECRET: lookup-e2e-nrn-secret-not-for-production
+      RATE_LIMIT_BACKEND: memory
+      NEXT_TELEMETRY_DISABLED: '1'
+      PLAYWRIGHT_BASE_URL: http://127.0.0.1:3010
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 1
+
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          path: base-main
+          fetch-depth: 1
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec prisma generate
+
+      - name: Create base schema, then apply the additive Lookup migration
+        run: |
+          pnpm exec prisma migrate diff --from-empty --to-schema-datamodel base-main/prisma/schema.prisma --script --output /tmp/lookup-main-schema.sql
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f /tmp/lookup-main-schema.sql
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -c 'CREATE EXTENSION IF NOT EXISTS pg_trgm'
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -c 'CREATE TABLE "_prisma_migrations" ("id" VARCHAR(36) NOT NULL, "checksum" VARCHAR(64) NOT NULL, "finished_at" TIMESTAMPTZ, "migration_name" VARCHAR(255) NOT NULL, "logs" TEXT, "rolled_back_at" TIMESTAMPTZ, "started_at" TIMESTAMPTZ NOT NULL DEFAULT now(), "applied_steps_count" INTEGER NOT NULL DEFAULT 0, CONSTRAINT "_prisma_migrations_pkey" PRIMARY KEY ("id"))'
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f prisma/migrations/60_lookup_import_proposals/preflight.sql
+          psql "$DATABASE_URL" --single-transaction -v ON_ERROR_STOP=1 -f prisma/migrations/60_lookup_import_proposals/migration.sql
+
+      - name: Exercise real PostgreSQL transactions and seed disposable role accounts
+        run: pnpm exec tsx scripts/lookup-postgres-integration.ts
+
+      - name: Install Chromium
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Browser acceptance against isolated PostgreSQL
+        run: |
+          set -euo pipefail
+          pnpm exec next dev --webpack -H 127.0.0.1 -p 3010 >/tmp/lookup-next.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for attempt in $(seq 1 120); do
+            if curl --fail --silent http://127.0.0.1:3010/login >/dev/null; then
+              break
+            fi
+            if [ "$attempt" -eq 120 ]; then
+              cat /tmp/lookup-next.log
+              exit 1
+            fi
+            sleep 1
+          done
+          pnpm exec playwright test tests/e2e/lookup-hardening.spec.ts --project=chromium
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: lookup-isolated-postgres-browser-evidence
+          path: |
+            test-results/
+            playwright-report/
+            /tmp/lookup-next.log

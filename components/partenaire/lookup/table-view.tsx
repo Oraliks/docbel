@@ -46,6 +46,7 @@ import { cleanTableLabel } from '@/lib/lookup/cleanTableLabel'
 import { resolveLookupLocale, pickLabel, type LookupLocale } from '@/lib/lookup/locale'
 import { useLookupFavorites } from '@/hooks/useLookupFavorites'
 import { FlagPrefix } from './flag-prefix'
+import { formatDate } from '@/lib/i18n/format'
 
 // ─── Types (forme renvoyée par GET /api/lookup/tables/[id]) ──────────────────
 
@@ -127,6 +128,8 @@ interface Props {
  */
 export function LookupTableView({ table, locale = resolveLookupLocale(), initialCode }: Props) {
   const t = useTranslations('public.outils')
+  const ta = useTranslations('public.auth')
+  const tc = useTranslations('public.changelog')
   const moduleInfo = getModuleInfo(table.prefix)
   const displayLabel = cleanTableLabel(table.labelFr, table.prefix)
 
@@ -146,6 +149,8 @@ export function LookupTableView({ table, locale = resolveLookupLocale(), initial
   const [rows, setRows] = useState<EntryRow[]>([])
   const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState(false)
+  const [reloadKey, setReloadKey] = useState(0)
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
 
   // Champ Code (cible du raccourci « / » et du focus au deep-link).
@@ -173,18 +178,20 @@ export function LookupTableView({ table, locale = resolveLookupLocale(), initial
     let cancelled = false
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true)
+    setLoadError(false)
     const qs = buildQuery(applied, pageSize, (page - 1) * pageSize)
     fetch(`/api/lookup/tables/${table.id}?${qs}`)
       .then((r) => r.json())
       .then((data: { entries?: EntryRow[]; pagination?: { total: number } }) => {
         if (cancelled) return
+        if (!data.entries || !data.pagination) throw new Error('Lookup response invalid')
+        setLoadError(false)
         setRows(data.entries ?? [])
         setTotal(data.pagination?.total ?? 0)
       })
       .catch(() => {
         if (cancelled) return
-        setRows([])
-        setTotal(0)
+        setLoadError(true)
       })
       .finally(() => {
         if (!cancelled) setLoading(false)
@@ -192,7 +199,7 @@ export function LookupTableView({ table, locale = resolveLookupLocale(), initial
     return () => {
       cancelled = true
     }
-  }, [table.id, applied, page, pageSize, buildQuery])
+  }, [table.id, applied, page, pageSize, buildQuery, reloadKey])
 
   // Deep-link ?code= : une fois les lignes chargées, déplier la 1ère dont le code === initialCode.
   useEffect(() => {
@@ -486,7 +493,14 @@ export function LookupTableView({ table, locale = resolveLookupLocale(), initial
             {loading && <Loader2 className="size-4 animate-spin text-muted-foreground" />}
           </div>
 
-          {rows.length === 0 && !loading ? (
+          {loadError && !loading ? (
+            <div role="alert" className="flex flex-col items-center gap-3 py-16 text-center">
+              <p className="text-sm text-destructive">{ta('errNetwork')}</p>
+              <Button variant="outline" size="sm" onClick={() => setReloadKey((key) => key + 1)}>
+                {tc('retryWithError', { error: ta('errGeneric') })}
+              </Button>
+            </div>
+          ) : rows.length === 0 && !loading ? (
             <div className="flex flex-col items-center gap-2 py-16 text-center">
               <Search className="size-9 text-muted-foreground/40" />
               <p className="text-sm text-muted-foreground">
@@ -759,28 +773,38 @@ function EntryTableRow({
 
   // Toujours dépliable : on a au minimum la section Historique + les traductions.
   const isFav = fav.isFavorite(tableSlug, row.code)
+  const pushRecent = fav.pushRecent
 
   // ── Historique (lazy : fetch au 1er dépli) ──
   const [history, setHistory] = useState<HistoryVersion[] | null>(null)
   const [historyLoading, setHistoryLoading] = useState(false)
+  const [historyError, setHistoryError] = useState(false)
+  const [historyRetry, setHistoryRetry] = useState(0)
   const historyRequested = useRef(false)
 
   useEffect(() => {
     if (!open) return
     // Pousse l'entrée dans les récents à chaque ouverture.
-    fav.pushRecent({ tableSlug, code: row.code, label: primaryLabel })
+    pushRecent({ tableSlug, code: row.code, label: primaryLabel })
     // Charge l'historique une seule fois.
     if (historyRequested.current) return
     historyRequested.current = true
+    setHistoryError(false)
     setHistoryLoading(true)
     let cancelled = false
     fetch(`/api/lookup/tables/${tableId}/history?code=${encodeURIComponent(row.code)}`)
-      .then((r) => r.json())
+      .then((r) => {
+        if (!r.ok) throw new Error('Lookup history unavailable')
+        return r.json()
+      })
       .then((data: { versions?: HistoryVersion[] }) => {
         if (!cancelled) setHistory(data.versions ?? [])
       })
       .catch(() => {
-        if (!cancelled) setHistory([])
+        if (!cancelled) {
+          historyRequested.current = false
+          setHistoryError(true)
+        }
       })
       .finally(() => {
         if (!cancelled) setHistoryLoading(false)
@@ -788,9 +812,8 @@ function EntryTableRow({
     return () => {
       cancelled = true
     }
-    // On ne dépend que de `open` : le fetch ne doit partir qu'à l'ouverture, une fois.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open])
+    // On charge à l'ouverture et lors d'une demande explicite de réessai.
+  }, [open, historyRetry, pushRecent, primaryLabel, row.code, tableId, tableSlug])
 
   const toggleFav = (e: React.MouseEvent) => {
     e.stopPropagation()
@@ -845,12 +868,12 @@ function EntryTableRow({
           </span>
         </TableCell>
         <TableCell className="text-xs text-muted-foreground align-top tabular-nums">
-          {row.validFrom ? new Date(row.validFrom).toLocaleDateString('fr-BE') : '—'}
+          {row.validFrom ? formatDate(row.validFrom, locale) : '—'}
         </TableCell>
         <TableCell className="text-xs align-top tabular-nums">
           {row.validUntil ? (
             <span className="text-orange-700">
-              {new Date(row.validUntil).toLocaleDateString('fr-BE')}
+              {formatDate(row.validUntil, locale)}
             </span>
           ) : (
             <span className="text-green-700">—</span>
@@ -892,8 +915,14 @@ function EntryTableRow({
               )}
               <HistorySection
                 loading={historyLoading}
+                error={historyError}
                 versions={history}
                 locale={locale}
+                onRetry={() => {
+                  historyRequested.current = false
+                  setHistory(null)
+                  setHistoryRetry((retry) => retry + 1)
+                }}
               />
             </div>
           </TableCell>
@@ -906,20 +935,33 @@ function EntryTableRow({
 /** Section « Historique » du panneau détail : liste les versions d'un code (lazy). */
 function HistorySection({
   loading,
+  error,
   versions,
   locale,
+  onRetry,
 }: {
   loading: boolean
+  error: boolean
   versions: HistoryVersion[] | null
   locale: LookupLocale
+  onRetry: () => void
 }) {
   const t = useTranslations('public.outils')
+  const ta = useTranslations('public.auth')
+  const tc = useTranslations('public.changelog')
   return (
     <div>
       <div className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
         {t('lkpHistoryTitle')}
       </div>
-      {loading || versions === null ? (
+      {error ? (
+        <div role="alert" className="space-y-1 text-destructive">
+          <p>{ta('errNetwork')}</p>
+          <Button variant="ghost" size="sm" onClick={onRetry}>
+            {tc('retryWithError', { error: ta('errGeneric') })}
+          </Button>
+        </div>
+      ) : loading || versions === null ? (
         <span className="inline-flex items-center gap-1.5 text-muted-foreground">
           <Loader2 className="size-3 animate-spin" />
           {t('lkpHistoryLoading')}
@@ -932,9 +974,9 @@ function HistorySection({
             <li key={i} className="flex flex-col gap-0.5 sm:flex-row sm:items-baseline sm:gap-2">
               <span className="inline-flex shrink-0 items-center gap-1.5 tabular-nums text-muted-foreground">
                 <span>
-                  {v.validFrom ? new Date(v.validFrom).toLocaleDateString('fr-BE') : '—'}
+                  {v.validFrom ? formatDate(v.validFrom, locale) : '—'}
                   {' → '}
-                  {v.validUntil ? new Date(v.validUntil).toLocaleDateString('fr-BE') : '—'}
+                  {v.validUntil ? formatDate(v.validUntil, locale) : '—'}
                 </span>
                 <StatusBadge validFrom={v.validFrom} validUntil={v.validUntil} />
               </span>

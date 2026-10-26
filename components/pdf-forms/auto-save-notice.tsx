@@ -34,7 +34,7 @@ export function AutoSaveNotice({ lastSavedAt, isPartOfBundle, serverSaved }: Aut
   if (!serverSaved || !lastSavedAt) {
     return (
       <p className="text-xs text-[color:var(--glass-ink-soft)]">
-        {isPartOfBundle ? design("oldReadOnlyBody") : design("ephemeralTitle")}
+        {design("ephemeralTitle")}
       </p>
     );
   }

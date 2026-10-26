@@ -40,7 +40,7 @@ Avant tout rollback staging, conserver le SHA staging précédent et les preuves
 | --- | --- |
 | Migration de production | Runtime vérifié sur la cible Neon gérée par Vercel; l’ancienne cible reste intacte. Santé de production vérifiée après le raccordement. |
 | Protections de publication | Réglages Vercel Production-only et règles GitHub main relus après application. Le premier push de la branche de fonctionnalité n’a créé ni aperçu Vercel de production ni nouvelle branche Neon. |
-| PR vers staging | PR #97 mise à jour au SHA c79d3e14; CI test encore en cours lors de la dernière vérification. Aucun merge ni déploiement de ce correctif vers staging n’est confirmé ici. |
+| PR vers staging | PR #97 contient le correctif et cette version du guide. Le contrôle CI test doit être vert sur le SHA final avant fusion. Aucun merge ni déploiement de ce correctif vers staging n’est confirmé ici. |
 | Domaine personnalisé | Domaine rattaché au projet staging; DNS externe manquant, domaine non résolvable. |
 | Recette de bout en bout | Incomplète. Les parcours finaux après déploiement et la recette sur le domaine personnalisé restent à faire. |
 | Rollback staging | Procédure définie; exercice réel de rollback avec vérification des données de test encore à effectuer. |

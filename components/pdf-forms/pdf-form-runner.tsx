@@ -1119,7 +1119,7 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
     );
   }
 
-  if (readOnlyExistingRun) {
+  if (readOnlyExistingRun && bundleRunId) {
     return <div className="flex w-full flex-col gap-4">
       <TemporaryClosureNotice kind="existing" compact />
       {bundleSlug && <a className="text-sm underline underline-offset-4" href={`/d/${encodeURIComponent(bundleSlug)}?bundleRun=${encodeURIComponent(bundleRunId)}`}>{t("runnerContinuationBack")}</a>}

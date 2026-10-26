@@ -120,6 +120,127 @@ async function main() {
   const savedProposal = await prisma.lookupImportProposal.findUniqueOrThrow({ where: { id: proposal.id } })
   assert.equal(savedProposal.state, 'published')
 
+  const dateUpdateTable = await prisma.lookupTable.create({
+    data: {
+      id: 'lookup-e2e-date-update-table',
+      categoryId: category.id,
+      slug: 'lookup-e2e-date-update',
+      prefix: 'E2E-DATE',
+      labelFr: 'Dates Lookup E2E',
+      labelNl: 'Lookup E2E datums',
+      entriesCount: 0,
+    },
+  })
+  const dateHeader = 'Code;Date de début;Date de fin;Description française;Description néerlandaise'
+  const dateInitial = await createLookupImportProposal({
+    tableId: dateUpdateTable.id,
+    csvContent: [
+      dateHeader,
+      'DATE-UPDATE;01/01/2020;31/12/2024;Libellé initial;Initial label',
+      'DATE-PRESERVE;01/01/2020;;À conserver;Keep this entry',
+    ].join('\n'),
+    fileName: 'lookup-e2e-dates-initial.csv',
+    createdBy: 'lookup-admin@local.test',
+  })
+  assert.equal(dateInitial.state, 'prepared', JSON.stringify(dateInitial.errors ?? []))
+  const dateInitialPublished = await publishLookupImportProposal({
+    proposalId: dateInitial.id,
+    publishedBy: 'lookup-admin@local.test',
+  })
+  assert.equal(dateInitialPublished.state, 'published')
+
+  await prisma.$executeRawUnsafe(`
+    CREATE OR REPLACE FUNCTION lookup_e2e_reject_date_update() RETURNS trigger LANGUAGE plpgsql AS $body$
+    BEGIN
+      IF NEW."code" = 'DATE-UPDATE' AND NEW."validUntil"::date = DATE '2025-12-31' THEN
+        RAISE EXCEPTION 'LOOKUP_E2E_DATE_UPDATE_REJECTED';
+      END IF;
+      RETURN NEW;
+    END;
+    $body$
+  `)
+  await prisma.$executeRawUnsafe(`
+    CREATE TRIGGER lookup_e2e_reject_date_update_trigger
+    BEFORE UPDATE ON "LookupEntry"
+    FOR EACH ROW EXECUTE FUNCTION lookup_e2e_reject_date_update()
+  `)
+  let dateRetryProposalId: string | null = null
+  try {
+    const updateToDate = await createLookupImportProposal({
+      tableId: dateUpdateTable.id,
+      csvContent: [dateHeader, 'DATE-UPDATE;01/01/2020;31/12/2025;Libellé daté;Dated label'].join('\n'),
+      fileName: 'lookup-e2e-dates-update.csv',
+      createdBy: 'lookup-admin@local.test',
+    })
+    assert.equal(updateToDate.state, 'prepared', JSON.stringify(updateToDate.errors ?? []))
+    assert.deepEqual(updateToDate.diff.absentFromExport.map((entry) => entry.code), ['DATE-PRESERVE'])
+    dateRetryProposalId = updateToDate.id
+    await assert.rejects(
+      publishLookupImportProposal({ proposalId: updateToDate.id, publishedBy: 'lookup-admin@local.test' }),
+      /LOOKUP_E2E_DATE_UPDATE_REJECTED/,
+    )
+    const afterDateRollback = await prisma.lookupEntry.findMany({
+      where: { tableId: dateUpdateTable.id },
+      select: { code: true, validUntil: true },
+      orderBy: { code: 'asc' },
+    })
+    assert.equal(afterDateRollback.length, 2)
+    assert.equal(afterDateRollback.find((entry) => entry.code === 'DATE-UPDATE')?.validUntil?.toISOString(), '2024-12-31T00:00:00.000Z')
+    assert.equal(afterDateRollback.find((entry) => entry.code === 'DATE-PRESERVE')?.validUntil, null)
+    const dateTableAfterRollback = await prisma.lookupTable.findUniqueOrThrow({ where: { id: dateUpdateTable.id } })
+    assert.equal(dateTableAfterRollback.publishedRevision, 1)
+    assert.equal(dateTableAfterRollback.entriesCount, 2)
+    const dateProposalAfterRollback = await prisma.lookupImportProposal.findUniqueOrThrow({ where: { id: updateToDate.id } })
+    assert.equal(dateProposalAfterRollback.state, 'failed')
+  } finally {
+    await prisma.$executeRawUnsafe('DROP TRIGGER IF EXISTS lookup_e2e_reject_date_update_trigger ON "LookupEntry"')
+    await prisma.$executeRawUnsafe('DROP FUNCTION IF EXISTS lookup_e2e_reject_date_update()')
+  }
+
+  assert.ok(dateRetryProposalId)
+  const dateRetry = await publishLookupImportProposal({
+    proposalId: dateRetryProposalId,
+    publishedBy: 'lookup-admin@local.test',
+    retryFailed: true,
+  })
+  assert.equal(dateRetry.state, 'published')
+  assert.equal(dateRetry.updated, 1)
+  const afterDateRetry = await prisma.lookupEntry.findMany({
+    where: { tableId: dateUpdateTable.id },
+    select: { code: true, validUntil: true },
+    orderBy: { code: 'asc' },
+  })
+  assert.equal(afterDateRetry.length, 2, 'entries absent from the export must remain published')
+  assert.equal(afterDateRetry.find((entry) => entry.code === 'DATE-UPDATE')?.validUntil?.toISOString(), '2025-12-31T00:00:00.000Z')
+  assert.equal(afterDateRetry.find((entry) => entry.code === 'DATE-PRESERVE')?.validUntil, null)
+  const dateTableAfterRetry = await prisma.lookupTable.findUniqueOrThrow({ where: { id: dateUpdateTable.id } })
+  assert.equal(dateTableAfterRetry.publishedRevision, 2)
+  assert.equal(dateTableAfterRetry.entriesCount, 2)
+
+  const clearDate = await createLookupImportProposal({
+    tableId: dateUpdateTable.id,
+    csvContent: [dateHeader, 'DATE-UPDATE;01/01/2020;;Libellé sans fin;Open-ended label'].join('\n'),
+    fileName: 'lookup-e2e-dates-open-ended.csv',
+    createdBy: 'lookup-admin@local.test',
+  })
+  assert.equal(clearDate.state, 'prepared', JSON.stringify(clearDate.errors ?? []))
+  const clearDatePublished = await publishLookupImportProposal({
+    proposalId: clearDate.id,
+    publishedBy: 'lookup-admin@local.test',
+  })
+  assert.equal(clearDatePublished.state, 'published')
+  const afterClearDate = await prisma.lookupEntry.findMany({
+    where: { tableId: dateUpdateTable.id },
+    select: { code: true, validUntil: true },
+    orderBy: { code: 'asc' },
+  })
+  assert.equal(afterClearDate.length, 2, 'clearing a date must not remove entries omitted from the export')
+  assert.equal(afterClearDate.find((entry) => entry.code === 'DATE-UPDATE')?.validUntil, null)
+  assert.equal(afterClearDate.find((entry) => entry.code === 'DATE-PRESERVE')?.validUntil, null)
+  const dateTableAfterClear = await prisma.lookupTable.findUniqueOrThrow({ where: { id: dateUpdateTable.id } })
+  assert.equal(dateTableAfterClear.publishedRevision, 3)
+  assert.equal(dateTableAfterClear.entriesCount, 2)
+
   await prisma.lookupEntry.createMany({
     data: [
       { tableId: publicationTable.id, code: 'HIST', labelFr: 'Historique A', labelNl: 'Historiek A', validFrom: new Date('2020-01-01T00:00:00.000Z') },

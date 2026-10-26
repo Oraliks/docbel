@@ -326,7 +326,7 @@ export async function publishLookupImportProposal(input: {
         const chunk = updates.slice(start, start + WRITE_CHUNK)
         const values = chunk.map((entry) => Prisma.sql`(
           ${entry.existingId}, ${entry.labelFr}, ${entry.labelNl}, ${entry.labelDe}, ${entry.labelEn},
-          ${entry.validUntil ? new Date(entry.validUntil) : null},
+          ${entry.validUntil ? new Date(entry.validUntil).toISOString() : null}::timestamp,
           ${entry.metadata ? JSON.stringify(entry.metadata) : null}::jsonb
         )`)
         const count = await tx.$executeRaw(Prisma.sql`

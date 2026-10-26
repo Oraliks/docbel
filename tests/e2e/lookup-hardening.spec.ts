@@ -120,8 +120,7 @@ test('Lookup is isolated by role and public street search strips internal fields
   await expect(page.getByRole('tab', { name: 'Tables' })).toBeVisible()
   const importedTablesKpi = page.getByText('Tables alimentées', { exact: true })
   await expect(importedTablesKpi).toBeVisible()
-  const importedTablesKpiValue = await importedTablesKpi.evaluate(
-    (label) => label.parentElement?.querySelector('div')?.textContent?.trim() ?? '',
-  )
-  expect(importedTablesKpiValue).toBe(expectedImportedTableCount.toLocaleString('fr-BE'))
+  await expect(
+    importedTablesKpi.locator('..').getByText(expectedImportedTableCount.toLocaleString('fr-BE'), { exact: true }),
+  ).toBeVisible()
 })

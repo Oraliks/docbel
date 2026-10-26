@@ -289,6 +289,9 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
     bundleRunId,
     values,
   });
+  const [hasRestoredServerDraft, setHasRestoredServerDraft] = useState(() =>
+    Boolean(bundleRunId) && isStagingTestPersistenceEnabled() && Object.keys(draftValues ?? {}).length > 0,
+  );
   // Champs déjà modifiés par l'utilisateur — le brouillon serveur, qui arrive
   // de façon asynchrone au montage, ne doit JAMAIS les réécrire (cf. l'effet
   // de chargement plus bas).
@@ -348,6 +351,7 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
     // `discardDraft` annule au passage la sauvegarde en attente : sans ça, un
     // minuteur déjà armé réécrivait le brouillon juste après l'avoir effacé.
     discardDraft();
+    setHasRestoredServerDraft(false);
     setValues(defaultValues(form, bundlePrefill));
     autoFilledBic.current.clear();
     touchedFields.current.clear();
@@ -625,9 +629,10 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
     const manque = Math.max(0, plancherPage.current - naturelle);
     if (manque !== caleActuelle) el.style.height = `${manque}px`;
   });
-  // Les dossiers staging enregistrent leurs brouillons serveur après le
-  // succès du PUT; AutoSaveNotice attend aussi lastSavedAt avant de l'affirmer.
-  const serverSaved = Boolean(bundleRunId) && isStagingTestPersistenceEnabled();
+  // Un succès PUT confirme la sauvegarde courante; des valeurs reçues du SSR
+  // confirment qu'un brouillon enregistré a été restauré après rechargement.
+  const serverSaved = Boolean(bundleRunId) && isStagingTestPersistenceEnabled() &&
+    (lastSavedAt !== null || hasRestoredServerDraft);
 
   // Map champ → index d'étape (pour sauter sur la 1ʳᵉ erreur) — macro-aware.
   const fieldStepIndex = useMemo(() => {
@@ -650,6 +655,7 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
   const setValue = useCallback(
     (id: string, value: FieldValue) => {
       const field = form.fields.find((candidate) => candidate.id === id);
+      setHasRestoredServerDraft(false);
       touchedFields.current.add(id);
       const bicField = field?.canonicalKey === "banque.iban"
         ? form.fields.find((candidate) => candidate.canonicalKey === "banque.bic")

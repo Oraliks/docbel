@@ -80,6 +80,19 @@ describe("staging-only resume screen", () => {
     expect(html).not.toContain(messages.public.design.oldReadOnlyBody);
   });
 
+  it("confirms a restored server draft without inventing a save time", () => {
+    vi.stubEnv("NEXT_PUBLIC_APP_ENV", "staging");
+    vi.stubEnv("NEXT_PUBLIC_STAGING_TEST_PERSISTENCE", "1");
+
+    const html = renderClient(createElement(AutoSaveNotice, {
+      lastSavedAt: null,
+      isPartOfBundle: true,
+      serverSaved: true,
+    }));
+    expect(html).toContain("Vos réponses sont enregistrées automatiquement.");
+    expect(html).not.toContain(messages.public.design.ephemeralTitle);
+  });
+
   it("hides only dossier closure notices during opted-in staging", () => {
     vi.stubEnv("NEXT_PUBLIC_APP_ENV", "staging");
     vi.stubEnv("NEXT_PUBLIC_STAGING_TEST_PERSISTENCE", "1");

@@ -55,6 +55,8 @@ export function createDraftAutosaveActions(options: {
   let revision = 0;
   let lastSaveStartedAt = Date.now();
   let inFlightSave = false;
+  let inFlightDelete = false;
+  let deletePending = false;
   let discardAfterInFlight = false;
   let currentValues = options.values;
 
@@ -66,16 +68,31 @@ export function createDraftAutosaveActions(options: {
   };
 
   const sendDelete = () => {
+    if (inFlightDelete) return;
+    inFlightDelete = true;
+    deletePending = true;
     void fetcher(`/api/pdf/${options.slug}/draft`, {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ bundleRunId: options.bundleRunId }),
-    }).catch(() => {});
+    })
+      .then((response) => {
+        if (response.ok) deletePending = false;
+      })
+      .catch(() => {})
+      .finally(() => {
+        inFlightDelete = false;
+        if (!deletePending && pendingSave) flushDraft();
+      });
   };
 
   const flushDraft = () => {
     const pending = pendingSave;
-    if (!pending || inFlightSave) return;
+    if (!pending || inFlightSave || inFlightDelete) return;
+    if (deletePending) {
+      sendDelete();
+      return;
+    }
     pendingSave = pending;
     clearSaveTimer();
     lastSaveStartedAt = Date.now();
@@ -106,9 +123,6 @@ export function createDraftAutosaveActions(options: {
         if (discardAfterInFlight) {
           discardAfterInFlight = false;
           sendDelete();
-          if (pendingSave) {
-            saveTimer = setTimeout(flushDraft, DRAFT_DEBOUNCE_MS);
-          }
           return;
         }
         // A newer edit waits behind the current request. A failed request is

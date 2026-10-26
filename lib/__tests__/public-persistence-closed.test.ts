@@ -336,4 +336,68 @@ describe("autosauvegarde staging explicitement activée", () => {
     expect(fetcher).toHaveBeenCalledTimes(2);
     test.controller.dispose();
   });
+
+  it("attend la fin du DELETE avant d'envoyer une nouvelle édition", async () => {
+    enableStagingFixture();
+    vi.useFakeTimers();
+    let resolvePut!: (value: { ok: boolean }) => void;
+    let resolveDelete!: (value: { ok: boolean }) => void;
+    const fetcher = vi.fn((_: RequestInfo | URL, init?: RequestInit) => {
+      if (init?.method === "PUT") return new Promise<{ ok: boolean }>((resolve) => { resolvePut = resolve; });
+      if (init?.method === "DELETE") return new Promise<{ ok: boolean }>((resolve) => { resolveDelete = resolve; });
+      return Promise.resolve({ ok: true });
+    });
+    const test = actions(true, fetcher);
+    test.controller.scheduleSave("step-1", "fictional-field");
+    await vi.advanceTimersByTimeAsync(1_500);
+    test.controller.discardDraft();
+    resolvePut({ ok: true });
+    await Promise.resolve();
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(fetcher.mock.calls.map((call) => call[1]?.method)).toEqual(["PUT", "DELETE"]);
+
+    test.controller.updateValues({ fixture: "post-discard fictional value" });
+    test.controller.scheduleSave("step-2", "fictional-field");
+    test.controller.flushDraft();
+    await vi.advanceTimersByTimeAsync(2_000);
+    expect(fetcher).toHaveBeenCalledTimes(2);
+
+    resolveDelete({ ok: true });
+    await Promise.resolve();
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(fetcher).toHaveBeenCalledTimes(3);
+    expect(fetcher.mock.calls[2][1]?.method).toBe("PUT");
+    expect(JSON.parse(String(fetcher.mock.calls[2][1]?.body))).toMatchObject({
+      payload: { fixture: "post-discard fictional value" }, stepId: "step-2",
+    });
+    test.controller.dispose();
+  });
+
+  it("ne retente pas un DELETE échoué sans action explicite et conserve le brouillon dirty", async () => {
+    enableStagingFixture();
+    vi.useFakeTimers();
+    const fetcher = vi.fn()
+      .mockResolvedValueOnce({ ok: true })
+      .mockResolvedValueOnce({ ok: false })
+      .mockResolvedValueOnce({ ok: true })
+      .mockResolvedValueOnce({ ok: true });
+    const test = actions(true, fetcher);
+    test.controller.scheduleSave("step-1", "fictional-field");
+    await vi.advanceTimersByTimeAsync(1_500);
+    test.controller.discardDraft();
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(fetcher).toHaveBeenCalledTimes(2);
+    expect(fetcher.mock.calls[1][1]?.method).toBe("DELETE");
+
+    test.controller.updateValues({ fixture: "retry fictional value" });
+    test.controller.scheduleSave("step-2", "fictional-field");
+    await vi.advanceTimersByTimeAsync(1_500);
+    expect(fetcher).toHaveBeenCalledTimes(4);
+    expect(fetcher.mock.calls[2][1]?.method).toBe("DELETE");
+    expect(fetcher.mock.calls[3][1]?.method).toBe("PUT");
+    test.controller.dispose();
+  });
 });

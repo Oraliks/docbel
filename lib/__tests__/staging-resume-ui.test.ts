@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import messages from "@/messages/fr.json";
 import ReprendrePage from "@/app/reprendre/page";
 import { AutoSaveNotice } from "@/components/pdf-forms/auto-save-notice";
+import { TemporaryClosureNotice } from "@/components/docbel/temporary-closure-notice";
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }) }));
 vi.mock("@/components/ui/confirm-dialog", () => ({ useConfirm: () => vi.fn() }));
@@ -77,5 +78,23 @@ describe("staging-only resume screen", () => {
     }));
     expect(html).toContain(messages.public.design.ephemeralTitle);
     expect(html).not.toContain(messages.public.design.oldReadOnlyBody);
+  });
+
+  it("hides only dossier closure notices during opted-in staging", () => {
+    vi.stubEnv("NEXT_PUBLIC_APP_ENV", "staging");
+    vi.stubEnv("NEXT_PUBLIC_STAGING_TEST_PERSISTENCE", "1");
+    expect(renderClient(createElement(TemporaryClosureNotice, { kind: "dossier" }))).toBe("");
+    expect(renderClient(createElement(TemporaryClosureNotice, { kind: "existing", compact: true }))).toBe("");
+    expect(renderClient(createElement(TemporaryClosureNotice, { kind: "ephemeral", compact: true }))).toBe("");
+    expect(renderClient(createElement(TemporaryClosureNotice, { kind: "profile", compact: true }))).toContain(messages.public.temporaryClosure.profile);
+  });
+
+  it("keeps the dossier closure notice in production and staging without the opt-in", () => {
+    for (const [appEnvironment, flag] of [["production", "1"], ["staging", "0"]]) {
+      vi.stubEnv("NEXT_PUBLIC_APP_ENV", appEnvironment);
+      vi.stubEnv("NEXT_PUBLIC_STAGING_TEST_PERSISTENCE", flag);
+      expect(renderClient(createElement(TemporaryClosureNotice, { kind: "dossier", compact: true }))).toContain(messages.public.temporaryClosure.dossier);
+      vi.unstubAllEnvs();
+    }
   });
 });

@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import type { TemporaryClosureKind } from "@/lib/public-access";
+import { isStagingTestPersistenceEnabled, type TemporaryClosureKind } from "@/lib/public-access";
 
 export function TemporaryClosureNotice({ kind, compact = false }: { kind: TemporaryClosureKind; compact?: boolean }) {
   const t = useTranslations("public.temporaryClosure");
+  if (isStagingTestPersistenceEnabled() && ["dossier", "existing", "ephemeral"].includes(kind)) return null;
   return (
     <section aria-label={t("title")} className="flex w-full flex-col gap-3 rounded-2xl border border-border bg-card p-5 text-card-foreground">
       <h2 className="text-lg font-semibold">{t("title")}</h2>

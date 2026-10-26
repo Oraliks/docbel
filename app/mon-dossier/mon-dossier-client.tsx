@@ -1,6 +1,6 @@
 "use client";
 
-import { PUBLIC_WRITES_PAUSED } from "@/lib/public-access";
+import { arePublicDossierWritesPaused } from "@/lib/public-access";
 import { TemporaryClosureNotice } from "@/components/docbel/temporary-closure-notice";
 import { useMemo, useState } from "react";
 import Link from "next/link";
@@ -408,7 +408,7 @@ export function MonDossierClient({
       className="docbel-a11y-scope relative isolate flex w-full flex-col gap-5 sm:gap-6"
       data-docbel-readable
     >
-      {PUBLIC_WRITES_PAUSED && <TemporaryClosureNotice kind="dossier" />}
+      {arePublicDossierWritesPaused() && <TemporaryClosureNotice kind="dossier" />}
       <header
         className="grid items-stretch gap-5 px-1 lg:grid-cols-[minmax(0,1.25fr)_minmax(22rem,0.75fr)]"
       >

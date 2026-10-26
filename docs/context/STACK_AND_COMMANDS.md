@@ -36,9 +36,12 @@ pnpm lint:i18n        # eslint config i18n
 - **Il n'y a PAS de `pnpm typecheck`.** Le typecheck passe par `pnpm build`.
 - `pnpm lint` sort en **exit 1** : ~74 erreurs ESLint **pré-existantes**. Objectif =
   ne pas en ajouter, pas « faire passer le lint » d'un coup.
-- DB : `db:migrate:deploy`, `db:migrate:dev`, `db:generate`, `seed*`. **Jamais `db:push`
-  sur la Neon partagée** (le script existe mais il est dangereux ici → SQL additif via
-  `prisma db execute`).
+- DB : `db:migrate:deploy`, `db:migrate:dev`, `db:generate`, `seed*`. `db:push` et
+  `db:setup` refusent toute cible sauf la fixture locale jetable `lookup_hardening_test`
+  (`127.0.0.1:55434`, rôle `docbel_test`). Les deux URL doivent correspondre exactement,
+  `DOCBEL_DB_PUSH_CONFIRM=lookup_hardening_test` doit être explicite, et le garde refuse
+  Vercel ainsi que `APP_ENV=staging|production`. Sur la Neon partagée, utiliser uniquement
+  des migrations SQL additives via `prisma db execute`.
 - Serveur dev : l'environnement Claude injecte parfois `ANTHROPIC_API_KEY=""` qui casse
   les endpoints IA → lancer `pnpm dev` depuis un PowerShell qui nettoie la variable.
 - Bash sandboxé (défaut) peut revert les fichiers **trackés** à HEAD → pour git/build/test

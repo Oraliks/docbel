@@ -1,4 +1,4 @@
-import { PUBLIC_WRITES_PAUSED } from "@/lib/public-access";
+import { isStagingTestPersistenceEnabled, PUBLIC_WRITES_PAUSED } from "@/lib/public-access";
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import { ResumeForm } from "@/components/docbel/onboarding/resume-form";
@@ -13,6 +13,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function ReprendrePage() {
   const [t, tp] = await Promise.all([getTranslations("public.dossier"), getTranslations("public.temporaryClosure")]);
+  const writesPaused = PUBLIC_WRITES_PAUSED && !isStagingTestPersistenceEnabled();
   return (
     <section className="flex w-full flex-col gap-6 sm:gap-8">
       <header className="flex flex-col gap-3 px-1 sm:px-2">
@@ -20,10 +21,10 @@ export default async function ReprendrePage() {
           {t("reprendreEyebrow")}
         </p>
         <h1 className="glass-display text-4xl font-semibold leading-[1.05] sm:text-5xl">
-          {PUBLIC_WRITES_PAUSED ? tp("consult") : t.rich("reprendreTitle", { em: (chunks) => <em>{chunks}</em> })}
+          {writesPaused ? tp("consult") : t.rich("reprendreTitle", { em: (chunks) => <em>{chunks}</em> })}
         </h1>
         <p className="max-w-2xl text-sm leading-relaxed text-[color:var(--glass-ink-soft)]">
-          {PUBLIC_WRITES_PAUSED ? tp("existing") : t("reprendreIntro")}
+          {writesPaused ? tp("existing") : t("reprendreIntro")}
         </p>
       </header>
 

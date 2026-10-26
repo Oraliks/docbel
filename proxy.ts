@@ -26,7 +26,7 @@ function unavailable(): NextResponse {
   });
 }
 
-async function applyExistingApiClosures(request: NextRequest, staging: boolean) {
+async function applyExistingApiClosures(request: NextRequest, staging: boolean, allowStagingTestPersistence = false) {
   let parts: string[];
   try {
     parts = request.nextUrl.pathname.split("/").filter(Boolean).map(decodeURIComponent);
@@ -38,16 +38,23 @@ async function applyExistingApiClosures(request: NextRequest, staging: boolean) 
 
   if (parts.length === 3 && parts[1] === "user" && parts[2] === "profile") return closed(staging);
   if (parts.length === 4 && parts[1] === "booking" && ["book", "waitlist"].includes(parts[3])) return closed(staging);
-  if (parts.length === 5 && parts[1] === "documents" && parts[2] === "bundles" && parts[4] === "run") return closed(staging);
+  if (parts.length === 5 && parts[1] === "documents" && parts[2] === "bundles" && parts[4] === "run" && !allowStagingTestPersistence) return closed(staging);
   if (parts[1] === "bundles" && parts[2] === "runs" &&
       (parts.length === 4 || (parts.length === 5 && parts[4] === "email-code"))) return closed(staging);
-  if (parts.length === 4 && parts[1] === "pdf" && parts[3] === "draft") return closed(staging);
+  if (parts.length === 4 && parts[1] === "pdf" && parts[3] === "draft" && !allowStagingTestPersistence) return closed(staging);
   if (request.method === "POST" && parts.length === 4 && parts[1] === "pdf" && parts[3] === "generate") {
     let body: Record<string, unknown> | null;
     try {
       body = await request.clone().json();
     } catch {
       return apiError(400, "Invalid JSON", { code: "invalid_json" });
+    }
+    if (allowStagingTestPersistence && staging) {
+      const delivery = body?.delivery;
+      const hasBundleRun = typeof body?.bundleRunId === "string" && body.bundleRunId.length > 0;
+      if (delivery === "save" && hasBundleRun) return null;
+      if ((delivery === undefined || delivery === "download") && !hasBundleRun) return null;
+      return closed(staging);
     }
     if (body?.delivery === "save" || typeof body?.bundleRunId === "string") return closed(staging);
   }
@@ -98,7 +105,9 @@ export async function proxy(request: NextRequest) {
       const [providedUsername, ...passwordParts] = Buffer.from(match[1], "base64").toString("utf8").split(":");
       const providedPassword = passwordParts.join(":");
       if (equalSecret(providedUsername, username) && equalSecret(providedPassword, password)) {
-        const closedResponse = await applyExistingApiClosures(request, true);
+        const allowStagingTestPersistence = process.env.STAGING_TEST_PERSISTENCE === "1" &&
+          process.env.VERCEL === "1" && gitBranch === "staging";
+        const closedResponse = await applyExistingApiClosures(request, true, allowStagingTestPersistence);
         if (closedResponse) return closedResponse;
         const response = NextResponse.next();
         response.headers.set("X-Robots-Tag", responseHeaders["X-Robots-Tag"]);

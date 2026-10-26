@@ -1,6 +1,6 @@
 "use client";
 
-import { PUBLIC_WRITES_PAUSED } from "@/lib/public-access";
+import { isStagingTestPersistenceEnabled, PUBLIC_WRITES_PAUSED } from "@/lib/public-access";
 import { TemporaryClosureNotice } from "@/components/docbel/temporary-closure-notice";
 import { useMemo, useState, useRef, useEffect, useLayoutEffect, useCallback } from "react";
 import { toast } from "sonner";
@@ -1118,7 +1118,7 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
     );
   }
 
-  if (PUBLIC_WRITES_PAUSED && bundleRunId) {
+  if (PUBLIC_WRITES_PAUSED && !isStagingTestPersistenceEnabled() && bundleRunId) {
     return <div className="flex w-full flex-col gap-4">
       <TemporaryClosureNotice kind="existing" compact />
       {bundleSlug && <a className="text-sm underline underline-offset-4" href={`/d/${encodeURIComponent(bundleSlug)}?bundleRun=${encodeURIComponent(bundleRunId)}`}>{t("runnerContinuationBack")}</a>}

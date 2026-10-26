@@ -61,6 +61,13 @@ test('Lookup is isolated by role and public street search strips internal fields
   expect(partnerTable.status).toBe(200)
   expect(JSON.stringify(partnerTable.body)).not.toContain('LOOKUP_E2E_PRIVATE_SENTINEL')
   expect(JSON.stringify(partnerTable.body)).not.toContain('internal/lookup-e2e-secret-file.csv')
+  const partnerTables = await browserJson(page, '/api/lookup/tables')
+  expect(partnerTables.status).toBe(200)
+  const partnerListedFixtureTable = partnerTables.body.categories
+    .flatMap((category: { tables: Array<{ id: string; lastImportedAt?: string | null }> }) => category.tables)
+    .find((table: { id: string }) => table.id === privateTableId)
+  expect(partnerListedFixtureTable).toBeDefined()
+  expect(partnerListedFixtureTable).not.toHaveProperty('lastImportedAt')
   const partnerPatch = await page.evaluate(async (id) => {
     const response = await fetch('/api/lookup/tables/' + id, {
       method: 'PATCH',

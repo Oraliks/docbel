@@ -49,7 +49,7 @@ export async function GET() {
         ...table,
         category: { slug: category.slug, labelFr: category.labelFr, labelNl: category.labelNl },
       }),
-      lastImportedAt: table.lastImportedAt,
+      ...(auth.user.isAdmin ? { lastImportedAt: table.lastImportedAt } : {}),
     })),
   }))
   return NextResponse.json({ categories: safeCategories }, {

@@ -31,14 +31,14 @@ export function AutoSaveNotice({ lastSavedAt, isPartOfBundle, serverSaved }: Aut
     return <TemporaryClosureNotice kind={isPartOfBundle ? "existing" : "ephemeral"} compact />;
   }
 
-  if (!serverSaved || !lastSavedAt) {
+  if (!serverSaved) {
     return (
       <p className="text-xs text-[color:var(--glass-ink-soft)]">
         {design("ephemeralTitle")}
       </p>
     );
   }
-  const time = formatDateTime(lastSavedAt, locale);
+  const time = lastSavedAt ? formatDateTime(lastSavedAt, locale) : "none";
   return (
     <p className="text-xs text-[color:var(--glass-ink-soft)]">
       {t("autoSaveSaved", { time })}

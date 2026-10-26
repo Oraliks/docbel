@@ -1,6 +1,6 @@
 "use client";
 
-import { isStagingTestPersistenceEnabled, PUBLIC_WRITES_PAUSED } from "@/lib/public-access";
+import { arePublicDossierWritesPaused } from "@/lib/public-access";
 import { TemporaryClosureNotice } from "@/components/docbel/temporary-closure-notice";
 import { useMemo, useState, useRef, useEffect, useLayoutEffect, useCallback } from "react";
 import { toast } from "sonner";
@@ -233,6 +233,7 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
   const t = useTranslations("public.dossier");
   const design = useTranslations("public.design");
   const router = useRouter();
+  const readOnlyExistingRun = Boolean(bundleRunId) && arePublicDossierWritesPaused();
   const [locale, setLocale] = useState<Locale>(form.defaultLocale);
   // Valeurs initiales : défauts (+ prefill profil/inter-documents), PUIS le
   // brouillon en cours restauré par-dessus (plus haute précédence — la dernière
@@ -752,7 +753,7 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
 
   async function submit() {
     // Le contexte ancien reste consultable. Intercepte aussi Entrée dans un champ.
-    if (bundleRunId) {
+    if (readOnlyExistingRun) {
       toast.info(design("oldReadOnly"));
       return;
     }
@@ -1118,7 +1119,7 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
     );
   }
 
-  if (PUBLIC_WRITES_PAUSED && !isStagingTestPersistenceEnabled() && bundleRunId) {
+  if (readOnlyExistingRun) {
     return <div className="flex w-full flex-col gap-4">
       <TemporaryClosureNotice kind="existing" compact />
       {bundleSlug && <a className="text-sm underline underline-offset-4" href={`/d/${encodeURIComponent(bundleSlug)}?bundleRun=${encodeURIComponent(bundleRunId)}`}>{t("runnerContinuationBack")}</a>}
@@ -1163,6 +1164,7 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
         serverSaved={serverSaved}
         liveTriggers={liveTriggers}
         bundleRunId={bundleRunId}
+        readOnlyExistingRun={readOnlyExistingRun}
         onStreetVerifiedChange={handleStreetVerified}
         verifiedStreets={verifiedStreets}
         onFocusField={handleFocusField}
@@ -1301,11 +1303,11 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
 
               {/* Contenu de l'étape */}
               {current.kind === "summary" ? (
-                <><FormAnswerSummary fields={form.fields} values={derivedValues} locale={locale} editableFieldIds={Object.keys(fieldStepIndex)} onEdit={bundleRunId ? undefined : jumpToInvalidField} /><ConfirmationCard hasSignature={form.fields.some(isSignatureField)} signerName={signerName} /></>
+                <><FormAnswerSummary fields={form.fields} values={derivedValues} locale={locale} editableFieldIds={Object.keys(fieldStepIndex)} onEdit={readOnlyExistingRun ? undefined : jumpToInvalidField} /><ConfirmationCard hasSignature={form.fields.some(isSignatureField)} signerName={signerName} /></>
               ) : current.kind === "optional-group" ? (
                 <CompactAccordionSection
                   sections={current.sections}
-                  readOnly={Boolean(bundleRunId)}
+                  readOnly={readOnlyExistingRun}
                   renderFields={(fields) => (
                     <FieldsCluster
                       fields={fields}
@@ -1321,7 +1323,7 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
                   )}
                 />
               ) : (
-                <ReadOnlyFields readOnly={Boolean(bundleRunId)}>
+                <ReadOnlyFields readOnly={readOnlyExistingRun}>
                 <FieldsCluster
                   fields={current.fields}
                   values={values}
@@ -1342,6 +1344,7 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, bundleSlug, on
                   variant="compact"
                   t={t}
                   bundleRunId={bundleRunId}
+                  readOnlyExistingRun={readOnlyExistingRun}
                   allowDownload={form.allowDownload}
                   allowDoccle={form.allowDoccle}
                   delivery={delivery}
@@ -1902,6 +1905,7 @@ interface MacroRunnerBodyProps {
   serverSaved: boolean;
   liveTriggers: PdfFormTrigger[];
   bundleRunId?: string;
+  readOnlyExistingRun: boolean;
   /// Rues déjà validées via la liste — sert au décompte du stepper
   /// (`requireListMatch` bloque « Continuer » sans rien rendre « manquant »).
   verifiedStreets: ReadonlySet<string>;
@@ -1923,7 +1927,7 @@ interface MacroRunnerBodyProps {
 function MacroRunnerBody({
   form, macroSteps, activeIndex, setActive, attemptAdvance, locale, setLocale, values, summaryValues, editableFieldIds, errors,
   setValue, signerName, consent, setConsent, consentError, delivery, setDelivery, doccleRef,
-  setDoccleRef, submitting, submit, resetForm, lastSavedAt, serverSaved, liveTriggers, bundleRunId, onStreetVerifiedChange, verifiedStreets, onFocusField, activeFieldId, contextTips, rail, t,
+  setDoccleRef, submitting, submit, resetForm, lastSavedAt, serverSaved, liveTriggers, bundleRunId, readOnlyExistingRun, onStreetVerifiedChange, verifiedStreets, onFocusField, activeFieldId, contextTips, rail, t,
   invalidFields, jumpToInvalidField,
 }: MacroRunnerBodyProps) {
   const current = macroSteps[activeIndex];
@@ -2119,7 +2123,7 @@ function MacroRunnerBody({
                 // `c1-fields-improvements.test.ts`) : rendu inchangé pour lui.
                 if (sec.fields.some((f) => f.requiredGroup && f.renderAs === "chip")) {
                   return (
-                    <ReadOnlyFields key={sec.key ?? `sec-${i}`} readOnly={Boolean(bundleRunId)}>
+                    <ReadOnlyFields key={sec.key ?? `sec-${i}`} readOnly={readOnlyExistingRun}>
                     <MotifSituationPicker
                       fields={sec.fields}
                       values={values}
@@ -2137,7 +2141,7 @@ function MacroRunnerBody({
                 // rendu, quel que soit le formulaire qui la porte.
                 if (sec.key === "mode-paiement") {
                   return (
-                    <ReadOnlyFields key={sec.key} readOnly={Boolean(bundleRunId)}>
+                    <ReadOnlyFields key={sec.key} readOnly={readOnlyExistingRun}>
                     <PaymentMethodPanel
                       title={sectionLabel(sec.key, locale)}
                       fields={sec.fields}
@@ -2183,14 +2187,14 @@ function MacroRunnerBody({
                         {sectionLabel(sec.key, locale)}
                       </h3>
                     )}
-                    <ReadOnlyFields readOnly={Boolean(bundleRunId)}>{cluster(sec.fields)}</ReadOnlyFields>
+                    <ReadOnlyFields readOnly={readOnlyExistingRun}>{cluster(sec.fields)}</ReadOnlyFields>
                   </div>
                 );
               })}
 
               {current.advanced.length > 0 && (
                 <CompactAccordionSection
-                  readOnly={Boolean(bundleRunId)}
+                  readOnly={readOnlyExistingRun}
                   sections={[{ key: "advanced", title: t("runnerAdvancedSectionTitle"), fields: current.advanced, defaultOpen: false }]}
                   renderFields={cluster}
                 />
@@ -2198,11 +2202,12 @@ function MacroRunnerBody({
 
               {isLast ? (
                 <>
-                <FormAnswerSummary fields={form.fields} values={summaryValues} locale={locale} editableFieldIds={editableFieldIds} onEdit={bundleRunId ? undefined : jumpToInvalidField} />
+                <FormAnswerSummary fields={form.fields} values={summaryValues} locale={locale} editableFieldIds={editableFieldIds} onEdit={readOnlyExistingRun ? undefined : jumpToInvalidField} />
                 <SubmitFooter
                   variant="confortable"
                   t={t}
                   bundleRunId={bundleRunId}
+                  readOnlyExistingRun={readOnlyExistingRun}
                   allowDownload={form.allowDownload}
                   allowDoccle={form.allowDoccle}
                   delivery={delivery}

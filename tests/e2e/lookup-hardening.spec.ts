@@ -106,16 +106,22 @@ test('Lookup is isolated by role and public street search strips internal fields
   expect(JSON.stringify(adminTable.body)).toContain('internal/lookup-e2e-secret-file.csv')
   const adminTables = await browserJson(page, '/api/lookup/tables')
   expect(adminTables.status).toBe(200)
-  const listedFixtureTable = adminTables.body.categories
-    .flatMap((category: { tables: Array<{ id: string; lastImportedAt: string | null }> }) => category.tables)
-    .find((table: { id: string }) => table.id === privateTableId)
+  const listedTables = adminTables.body.categories.flatMap(
+    (category: { tables: Array<{ id: string; lastImportedAt: string | null }> }) => category.tables,
+  )
+  const listedFixtureTable = listedTables.find((table: { id: string }) => table.id === privateTableId)
   expect(listedFixtureTable?.lastImportedAt).toBeTruthy()
+  const expectedImportedTableCount = listedTables.filter((table: { lastImportedAt: string | null }) => table.lastImportedAt).length
+  expect(expectedImportedTableCount).toBeGreaterThan(0)
 
   const adminPage = await page.goto('/admin/chomage/lookup')
   expect(adminPage?.status()).toBe(200)
   await expect(page.getByRole('heading', { name: 'Lookup ONEM' })).toBeVisible()
   await expect(page.getByRole('tab', { name: 'Tables' })).toBeVisible()
-  await expect(
-    page.getByText('Tables alimentées').locator('..').getByText('1', { exact: true }),
-  ).toBeVisible()
+  const importedTablesKpi = page.getByText('Tables alimentées', { exact: true })
+  await expect(importedTablesKpi).toBeVisible()
+  const importedTablesKpiValue = await importedTablesKpi.evaluate(
+    (label) => label.parentElement?.querySelector('div')?.textContent?.trim() ?? '',
+  )
+  expect(importedTablesKpiValue).toBe(expectedImportedTableCount.toLocaleString('fr-BE'))
 })
